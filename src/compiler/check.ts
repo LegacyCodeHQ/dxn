@@ -9,6 +9,7 @@ import {
   expectObject,
   keys,
   report,
+  stringElements,
   uniqueStrings,
 } from "./shape.js";
 import type { StateSet, TreeSymbols } from "./symbols.js";
@@ -20,6 +21,8 @@ export function emptySymbols(): TreeSymbols {
     ids: new Map(),
     taskTypes: new Map(),
     children: new Map(),
+    checks: new Set(),
+    typeChecks: new Map(),
   };
 }
 
@@ -37,7 +40,7 @@ export function checkTypesFile(
     diagnostics,
     document,
     "$",
-    ["$schema", "version", "customAttributes", "types"],
+    ["$schema", "version", "customAttributes", "customChecks", "types"],
     {
       required: ["version"],
     },
@@ -50,9 +53,33 @@ export function checkTypesFile(
     checkDeclarations(diagnostics, symbols, declarations, "$.customAttributes");
   }
 
+  const checks = members.get("customChecks");
+  if (checks !== undefined) {
+    checkCheckDeclarations(diagnostics, symbols, checks, "$.customChecks");
+  }
+
   const types = members.get("types");
   if (types !== undefined) {
     checkTypes(diagnostics, symbols, types, "$.types");
+  }
+}
+
+// Each check is declared as an empty object, leaving room for settings later.
+function checkCheckDeclarations(
+  diagnostics: Diagnostics,
+  symbols: TreeSymbols,
+  node: JsonNode,
+  path: string,
+): void {
+  const declarations = expectObject(diagnostics, node, path);
+  for (const { key, value } of declarations?.members ?? []) {
+    const checkPath = childPath(path, key.value);
+    expectName(diagnostics, key, checkPath);
+    symbols.checks.add(key.value);
+    const declaration = expectObject(diagnostics, value, checkPath);
+    if (declaration !== undefined) {
+      keys(diagnostics, declaration, checkPath, []);
+    }
   }
 }
 
@@ -158,7 +185,33 @@ function checkTypes(
     if (type === undefined) {
       continue;
     }
-    const members = keys(diagnostics, type, typePath, ["states", "customAttributes"]);
+    const members = keys(diagnostics, type, typePath, ["states", "checks", "customAttributes"]);
+    const checkList = members.get("checks");
+    if (
+      checkList !== undefined &&
+      expectKind(diagnostics, checkList, `${typePath}.checks`, "array")
+    ) {
+      const required = new Set<string>();
+      for (const [check, checkPath] of stringElements(
+        diagnostics,
+        checkList,
+        `${typePath}.checks`,
+        "duplicate-check",
+      )) {
+        if (!symbols.checks.has(check.value)) {
+          report(
+            diagnostics,
+            "undeclared-check",
+            `check ${JSON.stringify(check.value)} is not declared`,
+            checkPath,
+            check,
+          );
+          continue;
+        }
+        required.add(check.value);
+      }
+      symbols.typeChecks.set(key.value, required);
+    }
     const stateList = members.get("states");
     if (
       stateList !== undefined &&

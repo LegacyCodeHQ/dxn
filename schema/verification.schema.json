@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "task-tree verification",
+  "description": "Editor aid for verification/<root-id>.json; the file name is the root task whose subtree the records cover. The task-tree compiler is the authority: it also checks that tasks exist in this root task, that each context names exactly the task's dimensions and a state it has there, that checks are declared and required by the task's type, that timestamps are real dates, and that records are unique, which this schema cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "records"],
+  "properties": {
+    "$schema": {
+      "description": "Path or URL of this schema, for editors.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Format version.",
+      "const": 1
+    },
+    "records": {
+      "description": "At most one record per task, context and check; a re-check replaces the record.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/record"
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "description": "Non-blank, without leading or trailing whitespace or control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])\\S(?:[\\s\\S]*\\S)?$"
+    },
+    "text": {
+      "description": "Non-blank, without control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])[\\s\\S]*\\S[\\s\\S]*$"
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task", "context", "check", "result", "by", "at"],
+      "properties": {
+        "task": {
+          "description": "Id of a typed task in this file's root task.",
+          "$ref": "#/$defs/name"
+        },
+        "context": {
+          "description": "The task's state, when it has states, and a value for every dimension that applies to it.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "check": {
+          "description": "A check the task's type requires.",
+          "$ref": "#/$defs/name"
+        },
+        "result": {
+          "enum": ["passed", "failed"]
+        },
+        "by": {
+          "description": "Who verified it: a person or an agent.",
+          "$ref": "#/$defs/text"
+        },
+        "at": {
+          "description": "ISO 8601 date and time with a time zone.",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?(?:Z|[+-]\\d{2}:\\d{2})$"
+        },
+        "evidence": {
+          "description": "Where the evidence is, such as a screenshot path or URL.",
+          "$ref": "#/$defs/text"
+        }
+      }
+    }
+  }
+}

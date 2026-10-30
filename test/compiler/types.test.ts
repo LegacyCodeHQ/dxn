@@ -191,3 +191,45 @@ describe("type customAttributes", () => {
     ]);
   });
 });
+
+describe("customChecks declarations", () => {
+  const declare = (customChecks: unknown) => typesFile({ version: 1, customChecks });
+
+  it("declare each check as an empty object", () => {
+    expect(declare({ visual: {}, behavior: {} })).toEqual([]);
+  });
+
+  it("must be an object of objects", () => {
+    expect(declare([])).toEqual([t("wrong-type", "$.customChecks")]);
+    expect(declare({ visual: true })).toEqual([t("wrong-type", "$.customChecks.visual")]);
+    expect(declare({ visual: { kind: 1 } })).toEqual([
+      t("unknown-key", "$.customChecks.visual.kind"),
+    ]);
+  });
+
+  it("require check names to be valid names", () => {
+    expect(declare({ "": {} })).toEqual([t("empty-string", '$.customChecks[""]')]);
+    expect(declare({ "visual ": {} })).toEqual([
+      t("surrounding-whitespace", '$.customChecks["visual "]'),
+    ]);
+  });
+});
+
+describe("type checks", () => {
+  const checks = (value: unknown) =>
+    typesFile({ version: 1, customChecks: { visual: {} }, types: { link: { checks: value } } });
+
+  it("list declared checks the type requires", () => {
+    expect(checks(["visual"])).toEqual([]);
+  });
+
+  it("must be an array of valid unique names", () => {
+    expect(checks("visual")).toEqual([t("wrong-type", "$.types.link.checks")]);
+    expect(checks([""])).toEqual([t("empty-string", "$.types.link.checks[0]")]);
+    expect(checks(["visual", "visual"])).toEqual([t("duplicate-check", "$.types.link.checks[1]")]);
+  });
+
+  it("must be declared", () => {
+    expect(checks(["a11y"])).toEqual([t("undeclared-check", "$.types.link.checks[0]")]);
+  });
+});

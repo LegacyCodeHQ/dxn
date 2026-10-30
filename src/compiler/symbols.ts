@@ -12,6 +12,9 @@ export interface TreeSymbols {
   taskTypes: Map<string, string>;
   // Task id -> ids of its children.
   children: Map<string, string[]>;
+  // Declared check names, and the checks each type requires.
+  checks: Set<string>;
+  typeChecks: Map<string, Set<string>>;
 }
 
 // A dimension's declared values (undefined when invalid) and the ids of every
@@ -28,3 +31,15 @@ export interface StateSet {
   states: Set<string>;
   removed: Set<string>;
 }
+
+// States an override adds and removes, as applied.
+export interface StateChanges {
+  add: Set<string>;
+  remove: Set<string>;
+}
+
+// Dimension value -> state changes for types (by name) and tasks (by id).
+export type OverrideStates = Map<
+  string,
+  { types: Map<string, StateChanges>; tasks: Map<string, StateChanges> }
+>;

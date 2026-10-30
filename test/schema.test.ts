@@ -57,6 +57,10 @@ const withDeclaration = (declaration: unknown) => ({
 agree("types", (doc) => ({ "types.json": doc }), {
   valid: [
     ["the smallest file", { version: 1 }],
+    [
+      "checks declared and required by a type",
+      { version: 1, customChecks: { visual: {} }, types: { link: { checks: ["visual"] } } },
+    ],
     ["the website example", readJson("../examples/website/types.json")],
     ["a $schema reference", { $schema: "x", version: 1 }],
     [
@@ -84,6 +88,16 @@ agree("types", (doc) => ({ "types.json": doc }), {
     ["surrounding-whitespace", withDeclaration({ values: [" a"] })],
     ["control-character", withDeclaration({ values: ["a\u0001"] })],
     ["duplicate-value", withDeclaration({ values: ["a", "a"] })],
+    ["wrong-type", { ...types, customChecks: [] }],
+    ["wrong-type", { ...types, customChecks: { visual: true } }],
+    ["unknown-key", { ...types, customChecks: { visual: { kind: 1 } } }],
+    ["empty-string", { ...types, customChecks: { "": {} } }],
+    ["wrong-type", withType({ checks: "visual" })],
+    ["empty-string", withType({ checks: [""] })],
+    [
+      "duplicate-check",
+      { ...types, customChecks: { a: {} }, types: { link: { checks: ["a", "a"] } } },
+    ],
     ["wrong-type", { ...types, types: [] }],
     ["empty-string", { ...types, types: { " ": {} } }],
     ["surrounding-whitespace", { ...types, types: { "link ": {} } }],
@@ -99,6 +113,7 @@ agree("types", (doc) => ({ "types.json": doc }), {
     ["wrong-type", withType({ states: ["normal"], customAttributes: { design: { normal: 1 } } })],
   ],
   crossReference: [
+    ["undeclared-check", withType({ checks: ["visual"] })],
     ["undeclared-attribute", withType({ states: ["normal"], customAttributes: { size: {} } })],
     [
       "unknown-state",
@@ -260,6 +275,67 @@ agree(
   },
 );
 
+const checked: Files = {
+  ...tree,
+  "types.json": {
+    version: 1,
+    customChecks: { visual: {}, a11y: {} },
+    types: { link: { states: ["normal", "hovered"], checks: ["visual"] } },
+  },
+  "dimensions/pointer.json": pointer,
+};
+const record = (fields: Record<string, unknown> = {}) => ({
+  task: "blog-link",
+  context: { state: "normal", pointer: "mouse" },
+  check: "visual",
+  result: "passed",
+  by: "agent",
+  at: "2026-10-30T19:20:00Z",
+  ...fields,
+});
+const records = (...entries: unknown[]) => ({ version: 1, records: entries });
+
+agree("verification", (doc) => ({ ...checked, "verification/page.json": doc }), {
+  valid: [
+    ["no records", records()],
+    ["a record with evidence", records(record({ evidence: "shots/a.png" }))],
+    ["a $schema reference", { $schema: "x", ...records() }],
+  ],
+  structural: [
+    ["wrong-type", []],
+    ["missing-key", { version: 1 }],
+    ["unknown-key", { ...records(), extra: 1 }],
+    ["wrong-type", { $schema: 1, ...records() }],
+    ["unsupported-version", { version: 2, records: [] }],
+    ["wrong-type", { version: 1, records: {} }],
+    ["wrong-type", records(1)],
+    ["missing-key", records({ ...record(), by: undefined })],
+    ["unknown-key", records(record({ note: "x" }))],
+    ["wrong-type", records(record({ task: 1 }))],
+    ["empty-string", records(record({ task: "" }))],
+    ["wrong-type", records(record({ context: [] }))],
+    ["wrong-type", records(record({ context: { state: "normal", pointer: 1 } }))],
+    ["wrong-type", records(record({ check: 1 }))],
+    ["unknown-result", records(record({ result: "ok" }))],
+    ["empty-string", records(record({ by: " " }))],
+    ["invalid-timestamp", records(record({ at: "yesterday" }))],
+    ["empty-string", records(record({ evidence: "" }))],
+  ],
+  crossReference: [
+    ["unknown-task", records(record({ task: "nope" }))],
+    ["task-outside-file", records(record({ task: "footer-link", context: { state: "normal" } }))],
+    ["verification-without-type", records(record({ task: "logo", context: { pointer: "mouse" } }))],
+    ["missing-key", records(record({ context: { state: "normal" } }))],
+    ["unknown-key", records(record({ context: { state: "normal", pointer: "mouse", x: "y" } }))],
+    ["unknown-dimension-value", records(record({ context: { state: "normal", pointer: "pen" } }))],
+    ["unknown-state", records(record({ context: { state: "pressed", pointer: "mouse" } }))],
+    ["undeclared-check", records(record({ check: "speed" }))],
+    ["check-not-required", records(record({ check: "a11y" }))],
+    ["invalid-timestamp", records(record({ at: "2026-13-01T00:00:00Z" }))],
+    ["duplicate-record", records(record(), record())],
+  ],
+});
+
 describe("website example", () => {
   it.each([
     ["types", "types.json"],
@@ -267,6 +343,7 @@ describe("website example", () => {
     ["dimension", "dimensions/breakpoint.json"],
     ["dimension", "dimensions/pointer.json"],
     ["overrides", "overrides/pointer.json"],
+    ["verification", "verification/article-page.json"],
   ])("passes the %s schema: %s", (schema, file) => {
     const validate = validator(schema);
     expect(validate(readJson(`../examples/website/${file}`))).toBe(true);

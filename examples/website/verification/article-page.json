@@ -1,0 +1,19 @@
+{
+  "$schema": "../../../schema/verification.schema.json",
+  "version": 1,
+  "records": [
+    {
+      "task": "blog-link",
+      "context": {
+        "state": "hovered",
+        "breakpoint": "lg",
+        "pointer": "mouse"
+      },
+      "check": "visual",
+      "result": "passed",
+      "by": "agent",
+      "at": "2026-10-30T19:20:00Z",
+      "evidence": "screenshots/blog-link-hovered-lg-mouse.png"
+    }
+  ]
+}

@@ -29,12 +29,19 @@ describe("compileDirectory", () => {
     expect(result.project?.overrides.pointer?.overrides.touch?.types?.link?.states).toEqual({
       remove: ["hovered"],
     });
+    expect(result.project?.verification["article-page"]?.records).toHaveLength(1);
   });
 
   it("accepts a project with only types.json", () => {
     const result = compileFiles({ "types.json": types });
     expect(result.diagnostics).toEqual([]);
-    expect(result.project).toEqual({ types, tasks: [], dimensions: {}, overrides: {} });
+    expect(result.project).toEqual({
+      types,
+      tasks: [],
+      dimensions: {},
+      overrides: {},
+      verification: {},
+    });
   });
 
   it("requires types.json", () => {
@@ -92,7 +99,7 @@ describe("filesystem", () => {
   });
 
   it("reports a task, dimension or override folder that is a file", () => {
-    for (const folder of ["tasks", "dimensions", "overrides"]) {
+    for (const folder of ["tasks", "dimensions", "overrides", "verification"]) {
       const directory = writeProject({ "types.json": types });
       writeFileSync(join(directory, folder), "");
       expect(compileDirectory(directory).diagnostics).toMatchObject([

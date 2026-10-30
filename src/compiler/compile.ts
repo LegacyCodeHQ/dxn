@@ -1,6 +1,13 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import type { DimensionFile, OverridesFile, Project, TaskFile, TypesFile } from "../tree.js";
+import type {
+  DimensionFile,
+  OverridesFile,
+  Project,
+  TaskFile,
+  TypesFile,
+  VerificationFile,
+} from "../tree.js";
 import { checkTaskFile, checkTypesFile, emptySymbols } from "./check.js";
 import { type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { checkDimensionFile } from "./dimensions.js";
@@ -9,6 +16,7 @@ import { checkOverridesFile } from "./overrides.js";
 import { readSource } from "./read.js";
 import { isName } from "./shape.js";
 import type { DimensionSymbol } from "./symbols.js";
+import { checkVerificationFile, type DimensionInfo } from "./verification.js";
 
 export interface FileDiagnostic extends Diagnostic {
   // Relative to the project directory, e.g. "tasks/article-page.json".
@@ -19,6 +27,10 @@ export interface DirectoryResult {
   // Present only when no file has diagnostics.
   project?: Project;
   diagnostics: FileDiagnostic[];
+}
+
+interface DimensionEntry extends DimensionInfo {
+  parsed: ParsedFile;
 }
 
 interface ParsedFile {
@@ -34,6 +46,7 @@ interface ParsedFile {
 //   tasks/<id>.json          one root task per file, named after its id
 //   dimensions/<name>.json   one dimension per file
 //   overrides/<name>.json    overrides for the dimension of the same name
+//   verification/<id>.json   verification records for the root task <id>
 //
 // Anything else in the directory is ignored.
 export function compileDirectory(directory: string): DirectoryResult {
@@ -82,7 +95,7 @@ export function compileDirectory(directory: string): DirectoryResult {
     return result();
   }
 
-  const dimensions = new Map<string, { parsed: ParsedFile; symbol: DimensionSymbol }>();
+  const dimensions = new Map<string, DimensionEntry>();
   for (const name of listJson(directory, "dimensions", problems)) {
     const path = `dimensions/${name}.json`;
     if (!isName(name)) {
@@ -91,6 +104,16 @@ export function compileDirectory(directory: string): DirectoryResult {
           path,
           "invalid-file-name",
           `${JSON.stringify(name)} is not a valid dimension name`,
+        ),
+      );
+      continue;
+    }
+    if (name === "state") {
+      problems.push(
+        fileDiagnostic(
+          path,
+          "reserved-name",
+          'a dimension cannot be named "state": verification contexts use it for task states',
         ),
       );
       continue;
@@ -136,9 +159,36 @@ export function compileDirectory(directory: string): DirectoryResult {
     }
     parsed.push(file);
     if (file.root !== undefined) {
-      checkOverridesFile(file.root, file.diagnostics, symbols, dimension.symbol);
+      dimension.overrides = checkOverridesFile(
+        file.root,
+        file.diagnostics,
+        symbols,
+        dimension.symbol,
+      );
     }
     overrides.push([name, file]);
+  }
+
+  const rootIds = new Set(tasks.map((file) => file.file.slice("tasks/".length, -".json".length)));
+  const verification: [string, ParsedFile][] = [];
+  for (const name of listJson(directory, "verification", problems)) {
+    const path = `verification/${name}.json`;
+    if (!rootIds.has(name) || !symbols.ids.has(name)) {
+      problems.push(
+        fileDiagnostic(path, "unknown-root-task", `no tasks/${name}.json defines this root task`),
+      );
+      continue;
+    }
+    const file = readJson(directory, path);
+    if (file === undefined || "code" in file) {
+      if (file !== undefined) problems.push(file);
+      continue;
+    }
+    parsed.push(file);
+    if (file.root !== undefined) {
+      checkVerificationFile(file.root, file.diagnostics, symbols, dimensions, name);
+    }
+    verification.push([name, file]);
   }
 
   const diagnostics = result().diagnostics;
@@ -157,6 +207,9 @@ export function compileDirectory(directory: string): DirectoryResult {
       ),
       overrides: Object.fromEntries(
         overrides.map(([name, file]) => [name, JSON.parse(file.source) as OverridesFile]),
+      ),
+      verification: Object.fromEntries(
+        verification.map(([name, file]) => [name, JSON.parse(file.source) as VerificationFile]),
       ),
     },
     diagnostics: [],

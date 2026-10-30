@@ -51,6 +51,25 @@ export interface OverridesFile {
   overrides: Record<string, { types?: Record<string, Override>; tasks?: Record<string, Override> }>;
 }
 
+export interface VerificationRecord {
+  task: string;
+  // The state (when the task has states) and a value for every dimension that
+  // applies to the task.
+  context: Record<string, string>;
+  check: string;
+  result: "passed" | "failed";
+  by: string;
+  // ISO 8601 date and time with a time zone.
+  at: string;
+  evidence?: string;
+}
+
+// verification/<root-id>.json: records for tasks in that root task's subtree.
+export interface VerificationFile {
+  version: number;
+  records: VerificationRecord[];
+}
+
 export interface Project {
   types: TypesFile;
   // Root tasks, in task file name order.
@@ -58,6 +77,8 @@ export interface Project {
   // By dimension name.
   dimensions: Record<string, DimensionFile>;
   overrides: Record<string, OverridesFile>;
+  // By root task id.
+  verification: Record<string, VerificationFile>;
 }
 
 export function findTask(tasks: Task[], id: string): Task | undefined {

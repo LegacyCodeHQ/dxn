@@ -37,6 +37,12 @@ describe("dimension files", () => {
     }
   });
 
+  it("must not be named state, which contexts use for task states", () => {
+    expect(diagnose({ ...tree, "dimensions/state.json": pointer })).toEqual([
+      { file: "dimensions/state.json", code: "reserved-name", path: "$" },
+    ]);
+  });
+
   it("ignore files that are not .json", () => {
     expect(diagnose({ ...tree, "dimensions/README.md": "# notes" })).toEqual([]);
   });

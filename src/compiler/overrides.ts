@@ -10,18 +10,26 @@ import {
   report,
   stringElements,
 } from "./shape.js";
-import type { DimensionSymbol, StateSet, TreeSymbols } from "./symbols.js";
+import type {
+  DimensionSymbol,
+  OverrideStates,
+  StateChanges,
+  StateSet,
+  TreeSymbols,
+} from "./symbols.js";
 
 // overrides/<dimension>.json: overrides by dimension value, then by type or task.
+// Returns the valid state changes, for checking verification contexts.
 export function checkOverridesFile(
   root: JsonNode,
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   dimension: DimensionSymbol,
-): void {
+): OverrideStates {
+  const changes: OverrideStates = new Map();
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
-    return;
+    return changes;
   }
   const members = keys(diagnostics, document, "$", ["$schema", "version", "overrides"], {
     required: ["version", "overrides"],
@@ -46,8 +54,12 @@ export function checkOverridesFile(
       );
       continue;
     }
-    checkValueOverrides(diagnostics, tree, dimension, entry.value, valuePath);
+    changes.set(
+      entry.key.value,
+      checkValueOverrides(diagnostics, tree, dimension, entry.value, valuePath),
+    );
   }
+  return changes;
 }
 
 // Overrides for one dimension value: type overrides first, so task overrides
@@ -58,10 +70,14 @@ function checkValueOverrides(
   dimension: DimensionSymbol,
   node: JsonNode,
   path: string,
-): void {
+): { types: Map<string, StateChanges>; tasks: Map<string, StateChanges> } {
+  const changes = {
+    types: new Map<string, StateChanges>(),
+    tasks: new Map<string, StateChanges>(),
+  };
   const targets = expectObject(diagnostics, node, path);
   if (targets === undefined) {
-    return;
+    return changes;
   }
   const members = keys(diagnostics, targets, path, ["types", "tasks"]);
 
@@ -82,10 +98,12 @@ function checkValueOverrides(
       );
       continue;
     }
-    typeStates.set(
-      key.value,
-      checkOverride(diagnostics, tree, value, typePath, { states, removed: new Set() }),
-    );
+    const result = checkOverride(diagnostics, tree, value, typePath, {
+      states,
+      removed: new Set(),
+    });
+    typeStates.set(key.value, result.states);
+    changes.types.set(key.value, result.changes);
   }
 
   const tasksNode = members.get("tasks");
@@ -124,37 +142,42 @@ function checkValueOverrides(
       );
       continue;
     }
-    checkOverride(
-      diagnostics,
-      tree,
-      value,
-      taskPath,
-      typeStates.get(type) ?? { states, removed: new Set() },
+    changes.tasks.set(
+      key.value,
+      checkOverride(
+        diagnostics,
+        tree,
+        value,
+        taskPath,
+        typeStates.get(type) ?? { states, removed: new Set() },
+      ).changes,
     );
   }
+  return changes;
 }
 
 // Checks one override against the states it starts from, and returns the
-// states in effect after it.
+// states in effect after it along with the changes it made.
 function checkOverride(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   node: JsonNode,
   path: string,
   start: StateSet,
-): StateSet {
+): { states: StateSet; changes: StateChanges } {
   const result: StateSet = { states: new Set(start.states), removed: new Set(start.removed) };
+  const changes: StateChanges = { add: new Set(), remove: new Set() };
   const override = expectObject(diagnostics, node, path);
   if (override === undefined) {
-    return result;
+    return { states: result, changes };
   }
   const members = keys(diagnostics, override, path, ["states", "customAttributes"]);
 
   const statesNode = members.get("states");
-  const changes =
+  const stateLists =
     statesNode === undefined ? undefined : expectObject(diagnostics, statesNode, `${path}.states`);
-  if (changes !== undefined) {
-    const lists = keys(diagnostics, changes, `${path}.states`, ["remove", "add"]);
+  if (stateLists !== undefined) {
+    const lists = keys(diagnostics, stateLists, `${path}.states`, ["remove", "add"]);
     for (const [state, statePath] of listElements(
       diagnostics,
       lists.get("remove"),
@@ -180,6 +203,7 @@ function checkOverride(
       } else {
         result.states.delete(state.value);
         result.removed.add(state.value);
+        changes.remove.add(state.value);
       }
     }
     for (const [state, statePath] of listElements(diagnostics, lists.get("add"), path, "add")) {
@@ -202,6 +226,7 @@ function checkOverride(
       } else {
         result.states.add(state.value);
         result.removed.delete(state.value);
+        changes.add.add(state.value);
       }
     }
   }
@@ -210,7 +235,7 @@ function checkOverride(
   if (attributes !== undefined) {
     checkAttributeValues(diagnostics, tree, attributes, `${path}.customAttributes`, result);
   }
-  return result;
+  return { states: result, changes };
 }
 
 function listElements(

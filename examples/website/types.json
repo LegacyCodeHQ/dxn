@@ -6,9 +6,14 @@
       "values": ["available", "missing"]
     }
   },
+  "customChecks": {
+    "visual": {},
+    "behavior": {}
+  },
   "types": {
     "link": {
       "states": ["normal", "hovered", "selected"],
+      "checks": ["visual", "behavior"],
       "customAttributes": {
         "design": {
           "normal": "available",
