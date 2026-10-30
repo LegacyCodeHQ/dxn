@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Commit subjects are `type: subject`, lowercase and imperative, without a period
+# (AGENTS.md). Merge, fixup and revert subjects that git writes are left alone.
+set -euo pipefail
+
+subject=$(sed -n '/^[^#]/{p;q;}' "$1")
+case "$subject" in
+  Merge\ *|fixup!\ *|squash!\ *|amend!\ *|Revert\ *) exit 0 ;;
+esac
+if ! printf '%s\n' "$subject" | grep -Eq '^(feat|fix|docs|test|refactor|perf|build|ci|chore|style)(\([a-z0-9/_-]+\))?!?: [a-z0-9`].*[^.]$'; then
+  echo "commit-msg: subject must be 'type: lowercase imperative summary' with no period" >&2
+  echo "commit-msg: got: $subject" >&2
+  exit 1
+fi
