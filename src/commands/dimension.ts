@@ -2,6 +2,8 @@ import type { Json, Workspace } from "../workspace.js";
 import type { Command } from "./context.js";
 import {
   editCommand,
+  editExpectations,
+  editRecords,
   group,
   isObject,
   list,
@@ -9,6 +11,7 @@ import {
   Refusal,
   renameKey,
   reorder,
+  treeNodes,
   UsageError,
 } from "./edit.js";
 import { dimensions } from "./reading.js";
@@ -156,12 +159,21 @@ const renameValue = editCommand(usage, (workspace, args) => {
     workspace.touch(file);
   }
 
-  for (const file of workspace.list("verification")) {
-    const verification = workspace.read(file);
-    if (!Array.isArray(verification?.records)) continue;
-    for (const record of verification.records) {
-      if (isObject(record) && isObject(record.context) && record.context[name] === from) {
-        record.context[name] = to;
+  const swapIn = (context: unknown) => {
+    if (!isObject(context) || context[name] !== from) return false;
+    context[name] = to;
+    return true;
+  };
+  editRecords(workspace, (record) => swapIn(record.context));
+  editExpectations(workspace, (expectation) => swapIn(expectation.where));
+  for (const [file, item] of treeNodes(workspace)) {
+    for (const transition of Array.isArray(item.transitions) ? item.transitions : []) {
+      const values =
+        isObject(transition) && isObject(transition.when) ? transition.when[name] : undefined;
+      if (Array.isArray(values) && values.includes(from)) {
+        (transition.when as Record<string, unknown>)[name] = values.map((value) =>
+          value === from ? to : value,
+        );
         workspace.touch(file);
       }
     }

@@ -275,7 +275,7 @@ Subcommands:
                                      Clear some or all of those values
 ```
 
-Edits nodes in `roots/` and `fragments/`. Renames and removals update every reference: overrides, `only`, `appliesTo`, `onlyWhen`, transitions, include states and verification records. `node only` and `node only-when` say where a node exists: at some values of a dimension (stored as `only` in `overrides/<dimension>.json`), or in some states of a shared ancestor.
+Edits nodes in `roots/` and `fragments/`. Renames update every reference: `appliesTo`, `only`, overrides, `onlyWhen`, transitions, include states, verification records and expectations. `node only` and `node only-when` say where a node exists: at some values of a dimension (stored as `only` in `overrides/<dimension>.json`), or in some states of a shared ancestor.
 
 ```bash
 dimensions node add article-page --title "Article page"

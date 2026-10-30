@@ -2,10 +2,12 @@ import type { Workspace } from "../workspace.js";
 import type { Command } from "./context.js";
 import {
   editCommand,
+  editExpectations,
+  editRecords,
   group,
   isObject,
+  isSharedNode,
   type Located,
-  nodeNodes,
   nodeOrder,
   ordered,
   overrideTargets,
@@ -16,6 +18,7 @@ import {
   reorder,
   requireNode,
   setValues,
+  treeNodes,
   UsageError,
   unsetValues,
 } from "./edit.js";
@@ -134,7 +137,7 @@ const rename = editCommand(usage, (workspace, args) => {
     if (located.key === "root") {
       workspace.move(`verification/${id}.json`, `verification/${next}.json`);
     } else {
-      for (const [file, item] of nodeNodes(workspace)) {
+      for (const [file, item] of treeNodes(workspace)) {
         renameIncludes(workspace, file, item, id, next);
       }
     }
@@ -402,14 +405,49 @@ function renameNodeReferences(workspace: Workspace, from: string, to: string): v
     });
     if (changed) workspace.touch(file);
   }
-  for (const file of workspace.list("verification")) {
-    const verification = workspace.read(file);
-    if (!Array.isArray(verification?.records)) continue;
-    for (const record of verification.records) {
-      if (isObject(record) && record.node === from) {
-        record.node = to;
-        workspace.touch(file);
+  // A shared node's id is also a context key, for its own state and for the
+  // nodes below it.
+  const shared = isSharedNode(workspace, to);
+  const renameContextKey = (context: unknown) => {
+    if (!shared || !isObject(context) || !(from in context)) return false;
+    renameKey(context, from, to);
+    return true;
+  };
+  editRecords(workspace, (record) => {
+    const named = record.node === from;
+    if (named) record.node = to;
+    return renameContextKey(record.context) || named;
+  });
+  editExpectations(workspace, (expectation) => {
+    let changed = renameContextKey(expectation.where);
+    for (const key of ["node", "root"]) {
+      if (expectation[key] === from) {
+        expectation[key] = to;
+        changed = true;
       }
     }
+    return changed;
+  });
+  for (const [file, item] of treeNodes(workspace)) {
+    let changed = false;
+    if (isObject(item.onlyWhen) && from in item.onlyWhen) {
+      renameKey(item.onlyWhen, from, to);
+      changed = true;
+    }
+    if (isObject(item.states) && from in item.states) {
+      // An include's states, by node id.
+      renameKey(item.states, from, to);
+      changed = true;
+    }
+    for (const transition of Array.isArray(item.transitions) ? item.transitions : []) {
+      if (!isObject(transition)) continue;
+      for (const key of ["target", "outside", "focus"]) {
+        if (transition[key] === from) {
+          transition[key] = to;
+          changed = true;
+        }
+      }
+    }
+    if (changed) workspace.touch(file);
   }
 }

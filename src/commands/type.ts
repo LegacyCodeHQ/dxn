@@ -5,7 +5,6 @@ import {
   group,
   isObject,
   list,
-  nodeNodes,
   overrideTargets,
   pairs,
   parse,
@@ -13,6 +12,7 @@ import {
   renameKey,
   reorder,
   setValues,
+  treeNodes,
   typeOrder,
   typesFile,
   typesOrder,
@@ -207,7 +207,7 @@ const rename = edit((workspace, args) => {
   const [name, next] = parse(args, ["name", "new-name"], {}).positionals as [string, string];
   requireType(workspace, name);
   renameKey(typeMap(workspace), name, next);
-  for (const [file, item] of nodeNodes(workspace)) {
+  for (const [file, item] of treeNodes(workspace)) {
     if (item.type === name) {
       item.type = next;
       workspace.touch(file);

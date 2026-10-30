@@ -2,15 +2,17 @@ import type { Json, Workspace } from "../workspace.js";
 import type { Command } from "./context.js";
 import {
   editCommand,
+  editExpectations,
+  editRecords,
   group,
   isObject,
   list,
-  nodeNodes,
   overrideTargets,
   parse,
   Refusal,
   renameKey,
   reorder,
+  treeNodes,
   typesFile,
   typesOrder,
   UsageError,
@@ -124,14 +126,16 @@ const renameValue = edit((workspace, args) => {
   }
 
   const nodesUsing = new Set<string>();
-  for (const [file, item] of nodeNodes(workspace)) {
+  const nodeType = new Map<string, string>();
+  for (const [file, item] of treeNodes(workspace)) {
     if (typeof item.type === "string" && using.has(item.type)) {
       nodesUsing.add(item.id as string);
+      nodeType.set(item.id as string, item.type);
       renameStates(item);
       workspace.touch(file);
     }
   }
-  for (const [file, item] of nodeNodes(workspace)) {
+  for (const [file, item] of treeNodes(workspace)) {
     const conditions = item.onlyWhen;
     if (!isObject(conditions)) continue;
     for (const [ancestor, states] of Object.entries(conditions)) {
@@ -161,21 +165,54 @@ const renameValue = edit((workspace, args) => {
     });
   }
 
-  for (const file of workspace.list("verification")) {
-    const verification = workspace.read(file);
-    if (!Array.isArray(verification?.records)) continue;
-    for (const record of verification.records) {
-      if (
-        isObject(record) &&
-        nodesUsing.has(record.node as string) &&
-        isObject(record.context) &&
-        record.context[name] === from
-      ) {
-        record.context[name] = to;
-        workspace.touch(file);
+  // A shared node using the group is named by its id in contexts, and its
+  // transitions move between the group's values.
+  const sharedUsing = new Set(
+    [...nodesUsing].filter((id) => {
+      const type = isObject(types) ? types[nodeType.get(id) as string] : undefined;
+      return isObject(type) && type.shared === true;
+    }),
+  );
+  // The context keys that hold this group's values.
+  const keysFor = (node: unknown) =>
+    nodesUsing.has(node as string) ? [name, ...sharedUsing] : [...sharedUsing];
+  const swapIn = (context: unknown, keys: string[]) => {
+    if (!isObject(context)) return false;
+    let changed = false;
+    for (const key of keys) {
+      if (context[key] === from) {
+        context[key] = to;
+        changed = true;
       }
     }
+    return changed;
+  };
+  for (const [file, item] of treeNodes(workspace)) {
+    let changed = false;
+    if (sharedUsing.has(item.id as string) && Array.isArray(item.transitions)) {
+      for (const transition of item.transitions) {
+        if (!isObject(transition)) continue;
+        for (const key of ["from", "to"]) {
+          if (transition[key] === from) {
+            transition[key] = to;
+            changed = true;
+          }
+        }
+      }
+    }
+    if (isObject(item.states)) {
+      // An include's states: node id -> group -> values.
+      for (const [node, byGroup] of Object.entries(item.states)) {
+        if (nodesUsing.has(node) && isObject(byGroup) && Array.isArray(byGroup[name])) {
+          byGroup[name] = swap(byGroup[name]);
+          changed = true;
+        }
+      }
+    }
+    if (changed) workspace.touch(file);
   }
+  editRecords(workspace, (record) => swapIn(record.context, keysFor(record.node)));
+  editExpectations(workspace, (expectation) => swapIn(expectation.where, [name, ...sharedUsing]));
 });
 
 export const stateGroup: Command = group(usage, {

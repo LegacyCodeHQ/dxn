@@ -191,7 +191,7 @@ export function requireNode(workspace: Workspace, id: string): Located {
 }
 
 // Every node in the root and fragment files, with its file.
-export function* nodeNodes(workspace: Workspace): Generator<[string, Json]> {
+export function* treeNodes(workspace: Workspace): Generator<[string, Json]> {
   for (const [folder, key] of [
     ["fragments", "fragment"],
     ["roots", "root"],
@@ -209,6 +209,46 @@ function* walk(file: string, item: Json): Generator<[string, Json]> {
     for (const child of item.children) {
       if (isObject(child)) yield* walk(file, child);
     }
+  }
+}
+
+// Whether the node with this id has a shared type.
+export function isSharedNode(workspace: Workspace, id: string): boolean {
+  for (const [, item] of treeNodes(workspace)) {
+    if (item.id !== id || typeof item.type !== "string") continue;
+    const types = typesFile(workspace).types;
+    const type = isObject(types) ? types[item.type] : undefined;
+    return isObject(type) && type.shared === true;
+  }
+  return false;
+}
+
+// The expectations in expectations.json, each marking the file changed when
+// visit returns true.
+export function editExpectations(
+  workspace: Workspace,
+  visit: (expectation: Json) => boolean,
+): void {
+  const file = workspace.read("expectations.json");
+  if (!Array.isArray(file?.expectations)) return;
+  let changed = false;
+  for (const expectation of file.expectations) {
+    if (isObject(expectation) && visit(expectation)) changed = true;
+  }
+  if (changed) workspace.touch("expectations.json");
+}
+
+// Every record in the verification files, each marking its file changed when
+// visit returns true.
+export function editRecords(workspace: Workspace, visit: (record: Json) => boolean): void {
+  for (const file of workspace.list("verification")) {
+    const verification = workspace.read(file);
+    if (!Array.isArray(verification?.records)) continue;
+    let changed = false;
+    for (const record of verification.records) {
+      if (isObject(record) && visit(record)) changed = true;
+    }
+    if (changed) workspace.touch(file);
   }
 }
 
