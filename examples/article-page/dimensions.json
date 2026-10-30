@@ -1,0 +1,14 @@
+{
+  "$schema": "../../schema/dimensions.schema.json",
+  "version": 1,
+  "dimensions": {
+    "breakpoint": {
+      "values": ["sm", "md", "lg"],
+      "appliesTo": ["article-page"]
+    },
+    "pointer": {
+      "values": ["mouse", "touch"],
+      "appliesTo": ["article-page"]
+    }
+  }
+}

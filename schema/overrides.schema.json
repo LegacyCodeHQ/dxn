@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "task-tree overrides",
+  "description": "Editor aid for overrides.json. The task-tree compiler is the authority: it also checks that dimensions, values, types, tasks, states and attribute values exist and are in scope, which this schema cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "overrides"],
+  "properties": {
+    "$schema": {
+      "description": "Path or URL of this schema, for editors.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Format version.",
+      "const": 1
+    },
+    "overrides": {
+      "description": "Overrides by dimension, then by dimension value.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "$ref": "#/$defs/valueOverrides" }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "valueOverrides": {
+      "description": "What changes for types and tasks when the dimension has this value.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "types": {
+          "description": "Overrides by type name.",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/override" }
+        },
+        "tasks": {
+          "description": "Overrides by task id; applied after the task's type override.",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/override" }
+        }
+      }
+    },
+    "override": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "states": {
+          "description": "States removed from or added to the type in this context.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "remove": { "$ref": "#/$defs/stateList" },
+            "add": { "$ref": "#/$defs/stateList" }
+          }
+        },
+        "customAttributes": {
+          "description": "Custom attribute values in this context, by attribute name, then by state.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    "stateList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    }
+  }
+}
