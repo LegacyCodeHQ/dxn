@@ -429,3 +429,56 @@ describe("shared states in the other reading commands", () => {
     expect(json(run("status", "menu-link")).summary).toEqual({ passed: 1, failed: 0, missing: 3 });
   });
 });
+
+describe("show, like view", () => {
+  it("needs the state of each shared node above the node, where it exists", () => {
+    const { run } = cliProject(files);
+    const snapshot: unknown[] = [];
+    snapshot.push(run("show", "menu-link", "breakpoint=sm"));
+    snapshot.push(run("show", "menu-link", "breakpoint=lg", "menu=open"));
+    snapshot.push(json(run("show", "menu-link", "breakpoint=lg")).present);
+    snapshot.push(json(run("show", "menu-link", "breakpoint=sm", "menu=open")).present);
+    expect(snapshot).toEqual([
+      {
+        code: 1,
+        stdout: "",
+        stderr: "dimensions: give menu=<closed|open> for this node\n",
+      },
+      {
+        code: 1,
+        stdout: "",
+        stderr: 'dimensions: "menu" does not exist when breakpoint=lg; leave out menu=open\n',
+      },
+      false,
+      true,
+    ]);
+  });
+
+  it("shows a component's node on its own unless --root names a root", () => {
+    const { run } = cliProject({
+      ...files,
+      "types.json": {
+        version: 1,
+        stateGroups: { selection: ["unselected", "selected"] },
+        types: {
+          menu: { states: ["closed", "open"], shared: true },
+          "toolbar-link": { stateGroups: ["selection"] },
+        },
+      },
+      "roots/article-page.json": rootFile({
+        id: "article-page",
+        title: "Article page",
+        children: [{ include: "toolbar", states: { "blog-link": { selection: ["selected"] } } }],
+      }),
+    });
+    expect([
+      json(run("show", "blog-link")).stateGroups,
+      json(run("show", "blog-link", "--root", "article-page")).stateGroups,
+      run("show", "blog-link", "--root", "nope").stderr,
+    ]).toEqual([
+      { selection: ["unselected", "selected"] },
+      { selection: ["selected"] },
+      'dimensions: "blog-link" is not in root "nope"\n',
+    ]);
+  });
+});

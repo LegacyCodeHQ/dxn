@@ -131,6 +131,8 @@ it has them. Each list is `[]` when nothing is declared.
 
 ## show
 
+For `show blog-link pointer=touch --root article-page`:
+
 ```json
 {
   "id": "blog-link",
@@ -144,7 +146,10 @@ it has them. Each list is `[]` when nothing is declared.
 }
 ```
 
-- `context` is the full context the answer is for, with defaults filled in.
+- `context` is the full context the answer is for, with defaults filled in,
+  and the state of each shared node above the node. Without `--root`, a
+  component's node is shown on its own, so the article page's include would
+  not fix `selection` to `selected`.
 - `present` is false when `only` or `onlyWhen` leaves the node out here. The
   states are still what the node would have.
 - `states` lists every state in effect. `stateGroups` lists them by group, and

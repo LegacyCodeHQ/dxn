@@ -91,9 +91,12 @@ dimensions tree
 
 ```text
 Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+                       [--root <root-id>]
 
 Shows the node's states and custom attribute values in a context. Dimensions
-left out take their default; those without one are not applied.
+left out take their default; those without one are not applied. Each shared
+node above the node needs its state wherever it exists. Without --root, a
+component's node is shown on its own, without any root's include states.
 ```
 
 Prints one node in one context as JSON: its states, its state groups, custom attribute values, and whether it is present. A context argument can be a dimension (`breakpoint=sm`) or a shared node's state (`menu=open`).

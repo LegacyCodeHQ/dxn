@@ -242,17 +242,21 @@ function existsWhenFor(
 }
 
 const showUsage = `Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+                       [--root <root-id>]
 
 Shows the node's states and custom attribute values in a context. Dimensions
-left out take their default; those without one are not applied.
+left out take their default; those without one are not applied. Each shared
+node above the node needs its state wherever it exists. Without --root, a
+component's node is shown on its own, without any root's include states.
 `;
 
 export const show = readCommand(showUsage, (resolver, args, io) => {
-  const [id, ...rest] = parse(args, ["node-id"], {}, true).positionals as [string, ...string[]];
+  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } }, true);
+  const [id, ...rest] = positionals as [string, ...string[]];
   requireNodeId(resolver, id);
+  requireRoot(resolver, id, values.root);
   const node = resolver.node(id) as NonNullable<ReturnType<Resolver["node"]>>;
-  const [root] = resolver.roots(id);
-  const lineage = resolver.lineage(id, root);
+  const lineage = resolver.lineage(id, values.root);
   const shared = resolver.sharedAncestors(lineage);
   const given = contextValues(
     resolver,
@@ -261,14 +265,28 @@ export const show = readCommand(showUsage, (resolver, args, io) => {
     shared,
     (name, allowed) => `"${name}" is not a dimension of ${id} (${allowed})`,
   );
-  const context = {
-    ...resolver.withDefaults(id, given),
-    ...Object.fromEntries(
-      shared
-        .filter((name) => given[name] !== undefined)
-        .map((name) => [name, given[name] as string]),
-    ),
-  };
+  const context: NodeContext = { ...resolver.withDefaults(id, given) };
+  for (const ancestor of shared) {
+    const present = resolver.resolve(
+      ancestor,
+      { ...context, ...given },
+      resolver.lineage(ancestor, values.root),
+    ).present;
+    if (!present) {
+      if (given[ancestor] !== undefined) {
+        throw new Refusal(
+          `"${ancestor}" does not exist when ${describe(context)}; leave out ${ancestor}=${given[ancestor]}`,
+        );
+      }
+      continue;
+    }
+    if (given[ancestor] === undefined) {
+      throw new Refusal(
+        `give ${ancestor}=<${sharedStates(resolver, ancestor).join("|")}> for this node`,
+      );
+    }
+    context[ancestor] = given[ancestor];
+  }
   const resolved = resolver.resolve(id, context, lineage);
   print(io, {
     id: node.id,
