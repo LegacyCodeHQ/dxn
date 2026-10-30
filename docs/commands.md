@@ -93,13 +93,13 @@ dimensions tree
 Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
                        [--root <root-id>]
 
-Shows the node's states and custom attribute values in a context. Dimensions
+Shows the node's states and attribute values in a context. Dimensions
 left out take their default; those without one are not applied. Each shared
 node above the node needs its state wherever it exists. Without --root, a
 fragment's node is shown on its own, without any root's include states.
 ```
 
-Prints one node in one context as JSON: its states, its state groups, custom attribute values, and whether it is present. A context argument can be a dimension (`breakpoint=sm`) or a shared node's state (`menu=open`).
+Prints one node in one context as JSON: its states, its state groups, attribute values, and whether it is present. A context argument can be a dimension (`breakpoint=sm`) or a shared node's state (`menu=open`).
 
 ```bash
 dimensions show blog-link
@@ -269,7 +269,7 @@ Subcommands:
   uninclude <parent-id> <fragment-id>
                                      Remove that include
   set <id> <attribute> <state>=<value>...
-                                     Set the node's own custom attribute values
+                                     Set the node's own attribute values
   unset <id> <attribute> [<state>...]
                                      Clear some or all of those values
 ```
@@ -324,7 +324,7 @@ Subcommands:
   add-state <type> <state>           Add a state to a type
   remove-state <type> <state>        Remove a state from a type
   set <type> <attribute> <state>=<value>...
-                                     Set the type's custom attribute values
+                                     Set the type's attribute values
   unset <type> <attribute> [<state>...]
                                      Clear some or all of those values
   require <type> <check>             Make every instance of the type need a check
@@ -376,14 +376,14 @@ dimensions state-group rename-value focus blurred idle
 Usage: dimensions attribute <subcommand>
 
 Subcommands:
-  list                               List every custom attribute and its values
-  add <name> --values a,b            Declare a custom attribute and its values
+  list                               List every attribute and its values
+  add <name> --values a,b            Declare a attribute and its values
   add-value <name> <value>           Add a value to an attribute
   remove-value <name> <value>        Remove a value from an attribute
   remove <name>                      Remove an attribute
 ```
 
-Edits `customAttributes` in `types.json`; `attribute list` prints them. Values are set on types (`type set`), nodes (`node set`) and overrides (`override set`).
+Edits `attributes` in `types.json`; `attribute list` prints them. Values are set on types (`type set`), nodes (`node set`) and overrides (`override set`).
 
 ```bash
 dimensions attribute list
@@ -402,7 +402,7 @@ Subcommands:
   remove <name>                      Remove a check
 ```
 
-Edits `customChecks` in `types.json`; `check list` prints them with the types that require them. Types require checks with `type require`.
+Edits `checks` in `types.json`; `check list` prints them with the types that require them. Types require checks with `type require`.
 
 ```bash
 dimensions check list
@@ -448,7 +448,7 @@ Subcommands:
   states <context> (--type <t> | --node <id>) [--add <state>]... [--remove <state>]...
                                      Add or remove states in that context
   set <context> (--type <t> | --node <id>) <attribute> <state>=<value>...
-                                     Set custom attribute values in that context
+                                     Set attribute values in that context
   unset <context> (--type <t> | --node <id>) [<attribute> [<state>...]]
                                      Clear some values, an attribute, or the whole override
 ```

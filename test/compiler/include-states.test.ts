@@ -9,7 +9,7 @@ const types = {
     hover: ["rest", "hovered"],
     selection: ["unselected", "selected"],
   },
-  customChecks: { visual: {} },
+  checks: { visual: {} },
   types: {
     link: { stateGroups: ["hover", "selection"], checks: ["visual"] },
     logo: { stateGroups: ["hover"] },

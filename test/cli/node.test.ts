@@ -8,7 +8,7 @@ afterAll(cleanup);
 
 const typed = {
   version: 1,
-  customAttributes: { design: { values: ["available", "missing"] } },
+  attributes: { design: { values: ["available", "missing"] } },
   types: { link: { states: ["normal", "hovered"] } },
 };
 
@@ -257,11 +257,11 @@ describe("node set-title and set-type", () => {
     `);
   });
 
-  it("refuse to leave custom attributes without a type", () => {
+  it("refuse to leave attributes without a type", () => {
     const snapshot: unknown[] = [];
     const { run } = project({
       "roots/page.json": page([
-        { id: "a", title: "A", type: "link", customAttributes: { design: { normal: "missing" } } },
+        { id: "a", title: "A", type: "link", attributes: { design: { normal: "missing" } } },
       ]),
     });
     const result = run("node", "set-type", "a", "--none");
@@ -271,7 +271,7 @@ describe("node set-title and set-type", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "<tmp>/.dimensions/roots/page.json:10:9: attributes-without-type: customAttributes on a node require the node to have a type
+    "<tmp>/.dimensions/roots/page.json:10:9: attributes-without-type: attributes on a node require the node to have a type
   ",
   ]
 `);
@@ -503,7 +503,7 @@ describe("node rename", () => {
     const { run, read } = project({
       "types.json": {
         version: 1,
-        customChecks: { visual: {} },
+        checks: { visual: {} },
         types: { link: { states: ["normal"], checks: ["visual"] } },
       },
       "roots/page.json": page([{ id: "a", title: "A", type: "link" }]),
@@ -615,7 +615,7 @@ describe("node set and unset", () => {
           "root": {
             "children": [
               {
-                "customAttributes": {
+                "attributes": {
                   "design": {
                     "hovered": "available",
                     "normal": "missing",
@@ -636,7 +636,7 @@ describe("node set and unset", () => {
           "root": {
             "children": [
               {
-                "customAttributes": {
+                "attributes": {
                   "design": {
                     "normal": "missing",
                   },
@@ -740,7 +740,7 @@ describe("files the CLI writes", () => {
   [
     0,
     {
-      "customAttributes": {
+      "attributes": {
         "design": {
           "values": [
             "available",

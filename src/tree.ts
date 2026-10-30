@@ -1,9 +1,9 @@
 // The project model: what compileDirectory returns for a valid directory.
 
-// Custom attribute name -> state -> value.
-export type CustomAttributeValues = Record<string, Record<string, string>>;
+// Attribute name -> state -> value.
+export type AttributeValues = Record<string, Record<string, string>>;
 
-export interface CustomAttributeDeclaration {
+export interface AttributeDeclaration {
   values: string[];
 }
 
@@ -15,7 +15,7 @@ export interface TypeDefinition {
   shared?: boolean;
   // Declared checks every instance must pass, in every context.
   checks?: string[];
-  customAttributes?: CustomAttributeValues;
+  attributes?: AttributeValues;
 }
 
 export interface TreeNode {
@@ -27,7 +27,7 @@ export interface TreeNode {
   // How this shared node's state changes.
   transitions?: Transition[];
   children?: Child[];
-  customAttributes?: CustomAttributeValues;
+  attributes?: AttributeValues;
 }
 
 // A change of a shared node's state on a DOM event.
@@ -66,9 +66,9 @@ export interface TypesFile {
   version: number;
   // Named groups of independent states, such as interaction and selection.
   stateGroups?: Record<string, string[]>;
-  customAttributes?: Record<string, CustomAttributeDeclaration>;
+  attributes?: Record<string, AttributeDeclaration>;
   // Declared checks, each an empty object for now.
-  customChecks?: Record<string, Record<string, never>>;
+  checks?: Record<string, Record<string, never>>;
   types?: Record<string, TypeDefinition>;
 }
 
@@ -95,7 +95,7 @@ export interface DimensionFile {
 
 export interface Override {
   states?: { add?: string[]; remove?: string[] };
-  customAttributes?: CustomAttributeValues;
+  attributes?: AttributeValues;
 }
 
 // overrides/<dimension>.json: dimension value -> overrides of types and nodes.

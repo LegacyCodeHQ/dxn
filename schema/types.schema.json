@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "dimensions types",
-  "description": "Editor aid for types.json. The dimensions compiler is the authority: it also checks that custom attribute values use declared attributes, the type's states and declared values, that required checks and state groups are declared, and that a type's groups do not share values, which this schema cannot express.",
+  "description": "Editor aid for types.json. The dimensions compiler is the authority: it also checks that attribute values use declared attributes, the type's states and declared values, that required checks and state groups are declared, and that a type's groups do not share values, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version"],
@@ -29,8 +29,8 @@
         }
       }
     },
-    "customAttributes": {
-      "description": "Declares the custom attributes that types and nodes may use, and their allowed values.",
+    "attributes": {
+      "description": "Declares the attributes that types and nodes may use, and their allowed values.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/declaration"
@@ -39,7 +39,7 @@
         "$ref": "#/$defs/name"
       }
     },
-    "customChecks": {
+    "checks": {
       "description": "Declares the checks types may require, such as visual or behavior.",
       "type": "object",
       "propertyNames": {
@@ -133,13 +133,13 @@
             "$ref": "#/$defs/name"
           }
         },
-        "customAttributes": {
+        "attributes": {
           "$ref": "#/$defs/attributeValues"
         }
       }
     },
     "attributeValues": {
-      "description": "Custom attribute values, by attribute name, then by state.",
+      "description": "Attribute values, by attribute name, then by state.",
       "type": "object",
       "additionalProperties": {
         "type": "object",

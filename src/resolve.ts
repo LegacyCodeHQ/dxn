@@ -21,7 +21,7 @@ export interface Resolved {
   // The states in effect per group; a plain states list is the group "state".
   groups: Record<string, string[]>;
   // Attribute -> state -> value, for the states in effect.
-  customAttributes: Record<string, Record<string, string>>;
+  attributes: Record<string, Record<string, string>>;
 }
 
 // A view of a node: the tree present in one context.
@@ -34,7 +34,7 @@ export interface ViewNode {
   // A node's own states here: a plain list, or per state group.
   states?: string[];
   stateGroups?: Record<string, string[]>;
-  customAttributes?: Record<string, Record<string, string>>;
+  attributes?: Record<string, Record<string, string>>;
   children?: ViewNode[];
 }
 
@@ -221,10 +221,10 @@ export class Resolver {
     }
     const values: Record<string, Record<string, string>> = {};
     const layers = [
-      type?.customAttributes,
-      ...levels.slice(0, levels.length / 2).map((level) => level?.customAttributes),
-      node.customAttributes,
-      ...levels.slice(levels.length / 2).map((level) => level?.customAttributes),
+      type?.attributes,
+      ...levels.slice(0, levels.length / 2).map((level) => level?.attributes),
+      node.attributes,
+      ...levels.slice(levels.length / 2).map((level) => level?.attributes),
     ];
     for (const layer of layers) {
       for (const [attribute, byState] of Object.entries(layer ?? {})) {
@@ -254,7 +254,7 @@ export class Resolver {
     if (Object.keys(typeGroups).length === 0 && states.size > 0) {
       groups.state = [...states];
     }
-    return { present, states: [...states], groups, customAttributes: values };
+    return { present, states: [...states], groups, attributes: values };
   }
 
   // A type's state groups and the values it uses from each; a plain states
@@ -298,8 +298,8 @@ export class Resolver {
         item.stateGroups = resolved.groups;
       }
     }
-    if (Object.keys(resolved.customAttributes).length > 0) {
-      item.customAttributes = resolved.customAttributes;
+    if (Object.keys(resolved.attributes).length > 0) {
+      item.attributes = resolved.attributes;
     }
     const children = (this.children.get(id) ?? [])
       .map((child) => this.render(child, context, [...lineage, child]))

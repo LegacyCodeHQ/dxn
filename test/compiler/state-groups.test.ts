@@ -188,13 +188,13 @@ const project = (extra: Files = {}): Files => ({
   "types.json": {
     version: 1,
     stateGroups,
-    customAttributes: { design: { values: ["available", "missing"] } },
-    customChecks: { visual: {} },
+    attributes: { design: { values: ["available", "missing"] } },
+    checks: { visual: {} },
     types: {
       link: {
         stateGroups: ["interaction", "selection"],
         checks: ["visual"],
-        customAttributes: { design: { hovered: "missing", selected: "available" } },
+        attributes: { design: { hovered: "missing", selected: "available" } },
       },
     },
   },

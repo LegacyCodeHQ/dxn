@@ -23,7 +23,7 @@ Subcommands:
   states <context> (--type <t> | --node <id>) [--add <state>]... [--remove <state>]...
                                      Add or remove states in that context
   set <context> (--type <t> | --node <id>) <attribute> <state>=<value>...
-                                     Set custom attribute values in that context
+                                     Set attribute values in that context
   unset <context> (--type <t> | --node <id>) [<attribute> [<state>...]]
                                      Clear some values, an attribute, or the whole override
 `;
@@ -159,7 +159,7 @@ const states = editCommand(overrideUsage, (workspace, args) => {
     ...(changes.remove === undefined ? {} : { remove: changes.remove }),
     ...(changes.add === undefined ? {} : { add: changes.add }),
   };
-  reorder(override as Json, ["states", "customAttributes"]);
+  reorder(override as Json, ["states", "attributes"]);
   workspace.touch(file);
 });
 
@@ -170,7 +170,7 @@ const set = editCommand(overrideUsage, (workspace, args) => {
     throw new UsageError("missing attribute");
   }
   setValues(override as Json, attribute, pairs(assignments));
-  reorder(override as Json, ["states", "customAttributes"]);
+  reorder(override as Json, ["states", "attributes"]);
   workspace.touch(file);
 });
 

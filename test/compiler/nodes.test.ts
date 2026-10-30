@@ -284,17 +284,17 @@ describe("node children", () => {
   });
 });
 
-describe("node customAttributes", () => {
-  const withAttributes = (customAttributes: unknown, type: unknown = "link") =>
-    node({ id: "a", title: "A", type, customAttributes });
-  const path = "$.root.customAttributes";
+describe("node attributes", () => {
+  const withAttributes = (attributes: unknown, type: unknown = "link") =>
+    node({ id: "a", title: "A", type, attributes });
+  const path = "$.root.attributes";
 
   it("override the type's values", () => {
     expect(withAttributes({ design: { selected: "available" } })).toEqual([]);
   });
 
   it("require the node to have a type", () => {
-    expect(node({ id: "a", title: "A", customAttributes: { design: {} } })).toEqual([
+    expect(node({ id: "a", title: "A", attributes: { design: {} } })).toEqual([
       k("attributes-without-type", path),
     ]);
   });

@@ -17,8 +17,8 @@ import { attributeList } from "./reading.js";
 const usage = `Usage: dimensions attribute <subcommand>
 
 Subcommands:
-  list                               List every custom attribute and its values
-  add <name> --values a,b            Declare a custom attribute and its values
+  list                               List every attribute and its values
+  add <name> --values a,b            Declare a attribute and its values
   add-value <name> <value>           Add a value to an attribute
   remove-value <name> <value>        Remove a value from an attribute
   remove <name>                      Remove an attribute
@@ -26,11 +26,11 @@ Subcommands:
 
 function attributes(workspace: Workspace): Json {
   const types = typesFile(workspace);
-  if (!isObject(types.customAttributes)) {
-    types.customAttributes = {};
+  if (!isObject(types.attributes)) {
+    types.attributes = {};
     reorder(types, typesOrder);
   }
-  return types.customAttributes as Json;
+  return types.attributes as Json;
 }
 
 function requireAttribute(workspace: Workspace, name: string): Json {

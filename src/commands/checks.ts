@@ -22,11 +22,11 @@ Subcommands:
 
 function checks(workspace: Workspace): Json {
   const types = typesFile(workspace);
-  if (!isObject(types.customChecks)) {
-    types.customChecks = {};
+  if (!isObject(types.checks)) {
+    types.checks = {};
     reorder(types, typesOrder);
   }
-  return types.customChecks as Json;
+  return types.checks as Json;
 }
 
 const add = editCommand(usage, (workspace, args) => {

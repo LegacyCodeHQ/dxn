@@ -12,7 +12,7 @@ function project(files: Files = {}) {
       Object.entries({
         "types.json": {
           version: 1,
-          customAttributes: { design: { values: ["available", "missing"] } },
+          attributes: { design: { values: ["available", "missing"] } },
         },
         ...files,
       }).map(([name, content]) => [`.dimensions/${name}`, content]),
@@ -143,7 +143,7 @@ describe("type set and unset", () => {
     0,
     {
       "link": {
-        "customAttributes": {
+        "attributes": {
           "design": {
             "hovered": "missing",
             "normal": "available",

@@ -11,7 +11,7 @@ const files = {
       interaction: ["normal", "hovered", "focused"],
       selection: ["unselected", "selected"],
     },
-    customChecks: { visual: {} },
+    checks: { visual: {} },
     types: {
       link: { stateGroups: ["interaction", "selection"], checks: ["visual"] },
       wordmark: { stateGroups: { interaction: ["normal", "focused"] }, checks: ["visual"] },
@@ -370,13 +370,13 @@ describe("state group commands", () => {
       "types.json": {
         version: 1,
         stateGroups: { hover: ["unhovered", "hovered"], selection: ["unselected", "selected"] },
-        customAttributes: { design: { values: ["available", "missing"] } },
-        customChecks: { visual: {} },
+        attributes: { design: { values: ["available", "missing"] } },
+        checks: { visual: {} },
         types: {
           link: {
             stateGroups: ["hover", "selection"],
             checks: ["visual"],
-            customAttributes: { design: { unhovered: "available" } },
+            attributes: { design: { unhovered: "available" } },
           },
           logo: { stateGroups: { hover: ["unhovered"] } },
           // Not using the group: its own "unhovered" is left alone.
@@ -391,7 +391,7 @@ describe("state group commands", () => {
             id: "blog-link",
             title: "Blog link",
             type: "link",
-            customAttributes: { design: { unhovered: "missing" } },
+            attributes: { design: { unhovered: "missing" } },
           },
           { id: "logo", title: "Logo", type: "logo" },
           { id: "other", title: "Other", type: "other" },
@@ -402,7 +402,7 @@ describe("state group commands", () => {
         version: 1,
         overrides: {
           touch: {
-            types: { link: { customAttributes: { design: { unhovered: "missing" } } } },
+            types: { link: { attributes: { design: { unhovered: "missing" } } } },
             nodes: { other: { states: { remove: ["unhovered"] } } },
           },
         },
@@ -419,7 +419,7 @@ describe("state group commands", () => {
       [
         0,
         {
-          "customAttributes": {
+          "attributes": {
             "design": {
               "values": [
                 "available",
@@ -427,7 +427,7 @@ describe("state group commands", () => {
               ],
             },
           },
-          "customChecks": {
+          "checks": {
             "visual": {},
           },
           "stateGroups": {
@@ -442,14 +442,14 @@ describe("state group commands", () => {
           },
           "types": {
             "link": {
-              "checks": [
-                "visual",
-              ],
-              "customAttributes": {
+              "attributes": {
                 "design": {
                   "rest": "available",
                 },
               },
+              "checks": [
+                "visual",
+              ],
               "stateGroups": [
                 "hover",
                 "selection",
@@ -474,7 +474,7 @@ describe("state group commands", () => {
           "root": {
             "children": [
               {
-                "customAttributes": {
+                "attributes": {
                   "design": {
                     "rest": "missing",
                   },
@@ -513,7 +513,7 @@ describe("state group commands", () => {
               },
               "types": {
                 "link": {
-                  "customAttributes": {
+                  "attributes": {
                     "design": {
                       "rest": "missing",
                     },

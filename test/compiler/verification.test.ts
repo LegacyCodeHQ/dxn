@@ -17,7 +17,7 @@ const project: Files = {
   ...tree,
   "types.json": {
     version: 1,
-    customChecks: { visual: {}, behavior: {}, a11y: {} },
+    checks: { visual: {}, behavior: {}, a11y: {} },
     types: { link: { states: ["normal", "hovered", "selected"], checks: ["visual", "behavior"] } },
   },
   "dimensions/pointer.json": pointer,

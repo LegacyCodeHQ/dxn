@@ -139,17 +139,10 @@ export const nodeOrder = [
   "onlyWhen",
   "transitions",
   "children",
-  "customAttributes",
+  "attributes",
 ];
-export const typesOrder = [
-  "$schema",
-  "version",
-  "stateGroups",
-  "customAttributes",
-  "customChecks",
-  "types",
-];
-export const typeOrder = ["states", "stateGroups", "shared", "checks", "customAttributes"];
+export const typesOrder = ["$schema", "version", "stateGroups", "attributes", "checks", "types"];
+export const typeOrder = ["states", "stateGroups", "shared", "checks", "attributes"];
 
 // Where a node is defined.
 export interface Located {
@@ -250,16 +243,16 @@ export function setOrdered(workspace: Workspace, path: string, value: Json, orde
 
 // Sets attribute values on a type or a node.
 export function setValues(item: Json, attribute: string, values: [string, string][]): void {
-  const attributes = isObject(item.customAttributes) ? item.customAttributes : {};
+  const attributes = isObject(item.attributes) ? item.attributes : {};
   const byState = isObject(attributes[attribute]) ? attributes[attribute] : {};
   for (const [state, value] of values) byState[state] = value;
   attributes[attribute] = byState;
-  item.customAttributes = attributes;
+  item.attributes = attributes;
 }
 
 // Clears some states of an attribute, or all of it; drops empty containers.
 export function unsetValues(item: Json, attribute: string, states: string[]): void {
-  const attributes = item.customAttributes;
+  const attributes = item.attributes;
   if (!isObject(attributes)) return;
   const byState = attributes[attribute];
   if (states.length === 0 || !isObject(byState)) {
@@ -268,5 +261,5 @@ export function unsetValues(item: Json, attribute: string, states: string[]): vo
     for (const state of states) delete byState[state];
     if (Object.keys(byState).length === 0) delete attributes[attribute];
   }
-  if (Object.keys(attributes).length === 0) delete item.customAttributes;
+  if (Object.keys(attributes).length === 0) delete item.attributes;
 }

@@ -80,7 +80,7 @@ describe("compileDirectory", () => {
           "overrides": {},
           "roots": [],
           "types": {
-            "customAttributes": {
+            "attributes": {
               "design": {
                 "values": [
                   "available",

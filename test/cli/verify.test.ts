@@ -7,7 +7,7 @@ afterAll(cleanup);
 const files = {
   "types.json": {
     version: 1,
-    customChecks: { visual: {} },
+    checks: { visual: {} },
     types: { link: { states: ["normal", "hovered"], checks: ["visual"] } },
   },
   "fragments/toolbar.json": {

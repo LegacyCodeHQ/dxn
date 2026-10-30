@@ -47,7 +47,7 @@ interface ParsedFile {
 
 // Compiles a project directory:
 //
-//   types.json               required: custom attribute declarations and types
+//   types.json               required: attribute declarations and types
 //   fragments/<id>.json     one reusable fragment per file, named after its id
 //   roots/<id>.json          one root per file, named after its id
 //   dimensions/<name>.json   one dimension per file

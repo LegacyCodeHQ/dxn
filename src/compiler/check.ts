@@ -40,7 +40,7 @@ export function emptySymbols(): TreeSymbols {
   };
 }
 
-// types.json: custom attribute declarations and types.
+// types.json: attribute declarations and types.
 export function checkTypesFile(
   root: JsonNode,
   diagnostics: Diagnostics,
@@ -54,7 +54,7 @@ export function checkTypesFile(
     diagnostics,
     document,
     "$",
-    ["$schema", "version", "stateGroups", "customAttributes", "customChecks", "types"],
+    ["$schema", "version", "stateGroups", "attributes", "checks", "types"],
     {
       required: ["version"],
     },
@@ -62,9 +62,9 @@ export function checkTypesFile(
   checkSchema(diagnostics, members.get("$schema"));
   checkVersion(diagnostics, members.get("version"));
 
-  const declarations = members.get("customAttributes");
+  const declarations = members.get("attributes");
   if (declarations !== undefined) {
-    checkDeclarations(diagnostics, symbols, declarations, "$.customAttributes");
+    checkDeclarations(diagnostics, symbols, declarations, "$.attributes");
   }
 
   const groups = members.get("stateGroups");
@@ -72,9 +72,9 @@ export function checkTypesFile(
     checkStateGroupDeclarations(diagnostics, symbols, groups, "$.stateGroups");
   }
 
-  const checks = members.get("customChecks");
+  const checks = members.get("checks");
   if (checks !== undefined) {
-    checkCheckDeclarations(diagnostics, symbols, checks, "$.customChecks");
+    checkCheckDeclarations(diagnostics, symbols, checks, "$.checks");
   }
 
   const types = members.get("types");
@@ -277,7 +277,7 @@ function checkTypes(
       "stateGroups",
       "shared",
       "checks",
-      "customAttributes",
+      "attributes",
     ]);
     const checkList = members.get("checks");
     if (
@@ -364,11 +364,11 @@ function checkTypes(
         symbols.sharedTypes.add(key.value);
       }
     }
-    bodies.push([typePath, states, members.get("customAttributes")]);
+    bodies.push([typePath, states, members.get("attributes")]);
   }
   for (const [typePath, states, attributes] of bodies) {
     if (attributes !== undefined) {
-      checkAttributeValues(diagnostics, symbols, attributes, `${typePath}.customAttributes`, {
+      checkAttributeValues(diagnostics, symbols, attributes, `${typePath}.attributes`, {
         states,
         removed: new Set(),
       });
@@ -376,7 +376,7 @@ function checkTypes(
   }
 }
 
-// Checks a customAttributes block. accept is called for each valid value.
+// Checks a attributes block. accept is called for each valid value.
 export function checkAttributeValues(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
@@ -395,7 +395,7 @@ export function checkAttributeValues(
       report(
         diagnostics,
         "undeclared-attribute",
-        `custom attribute ${JSON.stringify(key.value)} is not declared`,
+        `attribute ${JSON.stringify(key.value)} is not declared`,
         attributePath,
         key,
       );
@@ -491,7 +491,7 @@ function checkNode(
     diagnostics,
     node,
     path,
-    ["id", "title", "type", "onlyWhen", "transitions", "children", "customAttributes"],
+    ["id", "title", "type", "onlyWhen", "transitions", "children", "attributes"],
     { required: ["id", "title"] },
   );
 
@@ -535,15 +535,15 @@ function checkNode(
     }
   }
 
-  const attributes = members.get("customAttributes");
+  const attributes = members.get("attributes");
   if (attributes !== undefined) {
     if (type === undefined) {
-      const key = node.members.find((member) => member.key.value === "customAttributes")?.key;
+      const key = node.members.find((member) => member.key.value === "attributes")?.key;
       report(
         diagnostics,
         "attributes-without-type",
-        "customAttributes on a node require the node to have a type",
-        `${path}.customAttributes`,
+        "attributes on a node require the node to have a type",
+        `${path}.attributes`,
         key ?? attributes,
       );
     } else if (states !== undefined) {
@@ -552,7 +552,7 @@ function checkNode(
         diagnostics,
         symbols,
         attributes,
-        `${path}.customAttributes`,
+        `${path}.attributes`,
         { states, removed: new Set() },
         (attribute, state) => own.add(valueKey(attribute, state)),
       );

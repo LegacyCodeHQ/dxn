@@ -5,7 +5,7 @@ afterAll(cleanup);
 
 const types = {
   version: 1,
-  customChecks: { visual: {} },
+  checks: { visual: {} },
   types: {
     menu: { states: ["closed", "open"], shared: true },
     "menu-link": { states: ["normal", "hovered"], checks: ["visual"] },

@@ -17,7 +17,7 @@
             "id": "blog-link",
             "title": "Blog link",
             "type": "link",
-            "customAttributes": {
+            "attributes": {
               "design": {
                 "selected": "available"
               }

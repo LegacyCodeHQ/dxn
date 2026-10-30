@@ -17,7 +17,7 @@ const project: Files = {
   ...tree,
   "types.json": {
     version: 1,
-    customAttributes: { design: { values: ["available", "missing"] } },
+    attributes: { design: { values: ["available", "missing"] } },
     types: { link: { states: ["normal", "hovered", "selected"] } },
   },
   "dimensions/breakpoint.json": { version: 1, values: ["sm", "lg"], appliesTo: ["page"] },
@@ -25,7 +25,7 @@ const project: Files = {
 };
 
 const overrides = (byValue: unknown) => ({ version: 1, overrides: byValue });
-const design = (values: Record<string, string>) => ({ customAttributes: { design: values } });
+const design = (values: Record<string, string>) => ({ attributes: { design: values } });
 const conflicts = (breakpoint: unknown, touch: unknown, extra: Files = {}) =>
   diagnose({
     ...project,
@@ -46,7 +46,7 @@ describe("conflicting overrides", () => {
         { types: { link: design({ normal: "missing" }) } },
         { types: { link: design({ normal: "available" }) } },
       ),
-    ).toEqual([conflict("types.link.customAttributes.design.normal")]);
+    ).toEqual([conflict("types.link.attributes.design.normal")]);
   });
 
   it("report two dimensions setting a node's value differently", () => {
@@ -55,7 +55,7 @@ describe("conflicting overrides", () => {
         { nodes: { "blog-link": design({ normal: "missing" }) } },
         { nodes: { "blog-link": design({ normal: "available" }) } },
       ),
-    ).toEqual([conflict("nodes.blog-link.customAttributes.design.normal")]);
+    ).toEqual([conflict("nodes.blog-link.attributes.design.normal")]);
   });
 
   it("report one dimension removing a node's state that another adds", () => {

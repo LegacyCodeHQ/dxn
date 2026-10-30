@@ -13,9 +13,9 @@ function project() {
     attributes: () =>
       (
         JSON.parse(readFileSync(join(root, ".dimensions", "types.json"), "utf8")) as {
-          customAttributes?: unknown;
+          attributes?: unknown;
         }
-      ).customAttributes,
+      ).attributes,
   };
 }
 
@@ -81,7 +81,7 @@ describe("attribute commands", () => {
   [
     "<tmp>/.dimensions/types.json:13:21: unknown-value: "missing" is not a declared value of "design"
   ",
-    "<tmp>/.dimensions/types.json:8:9: undeclared-attribute: custom attribute "design" is not declared
+    "<tmp>/.dimensions/types.json:8:9: undeclared-attribute: attribute "design" is not declared
   ",
   ]
 `);

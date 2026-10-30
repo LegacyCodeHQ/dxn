@@ -149,7 +149,7 @@ describe("type overrides", () => {
   const link = (entry: unknown) => touch({ types: { link: entry } });
   const base = "$.overrides.touch.types.link";
 
-  it("must target a defined type with states and customAttributes only", () => {
+  it("must target a defined type with states and attributes only", () => {
     const snapshot: unknown[] = [];
     snapshot.push(touch({ types: { button: {} } }));
     snapshot.push(link([]));
@@ -284,7 +284,7 @@ describe("type overrides", () => {
     expect(
       link({
         states: { remove: ["hovered"], add: ["pressed"] },
-        customAttributes: { design: { normal: "missing", pressed: "missing" } },
+        attributes: { design: { normal: "missing", pressed: "missing" } },
       }),
     ).toEqual([]);
   });
@@ -292,12 +292,12 @@ describe("type overrides", () => {
   it("reject undeclared attributes, unknown states and undeclared values", () => {
     expect(
       link({
-        customAttributes: { implemented: {}, design: { pressed: "missing", normal: "maybe" } },
+        attributes: { implemented: {}, design: { pressed: "missing", normal: "maybe" } },
       }),
     ).toEqual([
-      o("undeclared-attribute", `${base}.customAttributes.implemented`),
-      o("unknown-state", `${base}.customAttributes.design.pressed`),
-      o("unknown-value", `${base}.customAttributes.design.normal`),
+      o("undeclared-attribute", `${base}.attributes.implemented`),
+      o("unknown-state", `${base}.attributes.design.pressed`),
+      o("unknown-value", `${base}.attributes.design.normal`),
     ]);
   });
 
@@ -305,9 +305,9 @@ describe("type overrides", () => {
     expect(
       link({
         states: { remove: ["hovered"] },
-        customAttributes: { design: { hovered: "missing" } },
+        attributes: { design: { hovered: "missing" } },
       }),
-    ).toEqual([o("removed-state", `${base}.customAttributes.design.hovered`)]);
+    ).toEqual([o("removed-state", `${base}.attributes.design.hovered`)]);
   });
 });
 
@@ -316,7 +316,7 @@ describe("node overrides", () => {
 
   it("override a typed node within the dimension's scope", () => {
     expect(
-      touch({ nodes: { "blog-link": { customAttributes: { design: { normal: "missing" } } } } }),
+      touch({ nodes: { "blog-link": { attributes: { design: { normal: "missing" } } } } }),
     ).toEqual([]);
   });
 
@@ -354,13 +354,13 @@ describe("node overrides", () => {
         nodes: {
           "blog-link": {
             states: { remove: ["hovered"] },
-            customAttributes: { design: { hovered: "missing" } },
+            attributes: { design: { hovered: "missing" } },
           },
         },
       }),
     ).toEqual([
       o("removed-state", `${base}.blog-link.states.remove[0]`),
-      o("removed-state", `${base}.blog-link.customAttributes.design.hovered`),
+      o("removed-state", `${base}.blog-link.attributes.design.hovered`),
     ]);
   });
 });

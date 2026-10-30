@@ -32,7 +32,7 @@ const transitions = [
 const project = (menu: Record<string, unknown> = {}, extra: Files = {}): Files => ({
   "types.json": {
     version: 1,
-    customChecks: { behavior: {} },
+    checks: { behavior: {} },
     types: { menu: { states: ["closed", "open"], shared: true, checks: ["behavior"] } },
   },
   "fragments/toolbar.json": {

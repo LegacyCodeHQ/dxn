@@ -10,15 +10,15 @@ const declared = {
   "types.json": {
     version: 1,
     stateGroups: { selection: ["unselected", "selected"], hover: ["rest", "hovered"] },
-    customAttributes: { design: { values: ["missing", "ready"] } },
-    customChecks: { visual: {}, behavior: {} },
+    attributes: { design: { values: ["missing", "ready"] } },
+    checks: { visual: {}, behavior: {} },
     types: {
       wordmark: { stateGroups: { selection: ["selected"] } },
       menu: { states: ["closed", "open"], shared: true, checks: ["behavior"] },
       link: {
         stateGroups: ["hover", "selection"],
         checks: ["visual"],
-        customAttributes: { design: { rest: "ready" } },
+        attributes: { design: { rest: "ready" } },
       },
     },
   },
@@ -33,7 +33,7 @@ describe("list commands", () => {
           name: "link",
           stateGroups: { hover: ["rest", "hovered"], selection: ["unselected", "selected"] },
           checks: ["visual"],
-          customAttributes: { design: { rest: "ready" } },
+          attributes: { design: { rest: "ready" } },
         },
         { name: "menu", states: ["closed", "open"], shared: true, checks: ["behavior"] },
         { name: "wordmark", stateGroups: { selection: ["selected"] } },

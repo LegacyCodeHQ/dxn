@@ -22,7 +22,7 @@ describe("check commands", () => {
     0,
     0,
     {
-      "customChecks": {
+      "checks": {
         "behavior": {},
         "visual": {},
       },
@@ -38,7 +38,7 @@ describe("check commands", () => {
     0,
     0,
     {
-      "customChecks": {
+      "checks": {
         "visual": {},
       },
       "types": {

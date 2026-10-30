@@ -81,8 +81,8 @@
             }
           }
         },
-        "customAttributes": {
-          "description": "Custom attribute values in this context, by attribute name, then by state.",
+        "attributes": {
+          "description": "Attribute values in this context, by attribute name, then by state.",
           "type": "object",
           "additionalProperties": {
             "type": "object",

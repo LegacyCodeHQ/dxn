@@ -1,12 +1,12 @@
 {
   "$schema": "../../schema/types.schema.json",
   "version": 1,
-  "customAttributes": {
+  "attributes": {
     "design": {
       "values": ["available", "missing"]
     }
   },
-  "customChecks": {
+  "checks": {
     "visual": {},
     "behavior": {}
   },
@@ -14,7 +14,7 @@
     "link": {
       "states": ["normal", "hovered", "selected"],
       "checks": ["visual", "behavior"],
-      "customAttributes": {
+      "attributes": {
         "design": {
           "normal": "available",
           "hovered": "available",

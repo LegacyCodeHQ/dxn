@@ -104,7 +104,7 @@ const renameValue = edit((workspace, args) => {
   const swap = (list: unknown) =>
     Array.isArray(list) ? list.map((value) => (value === from ? to : value)) : list;
   const renameStates = (owner: Json | undefined) => {
-    const attributes = owner?.customAttributes;
+    const attributes = owner?.attributes;
     if (!isObject(attributes)) return;
     for (const byState of Object.values(attributes)) {
       if (isObject(byState)) renameKey(byState, from, to);

@@ -51,7 +51,7 @@ function agree(
 const withType = (type: unknown) => ({ ...types, types: { link: type } });
 const withDeclaration = (declaration: unknown) => ({
   ...types,
-  customAttributes: { design: declaration },
+  attributes: { design: declaration },
 });
 
 agree("types", (doc) => ({ "types.json": doc }), {
@@ -70,13 +70,13 @@ agree("types", (doc) => ({ "types.json": doc }), {
     ],
     [
       "checks declared and required by a type",
-      { version: 1, customChecks: { visual: {} }, types: { link: { checks: ["visual"] } } },
+      { version: 1, checks: { visual: {} }, types: { link: { checks: ["visual"] } } },
     ],
     ["the website example", readJson("../examples/website/types.json")],
     ["a $schema reference", { $schema: "x", version: 1 }],
     [
       "a type with values",
-      withType({ states: ["normal"], customAttributes: { design: { normal: "missing" } } }),
+      withType({ states: ["normal"], attributes: { design: { normal: "missing" } } }),
     ],
   ],
   structural: [
@@ -86,9 +86,9 @@ agree("types", (doc) => ({ "types.json": doc }), {
     ["wrong-type", { $schema: 1, version: 1 }],
     ["wrong-type", { version: "1" }],
     ["unsupported-version", { version: 2 }],
-    ["wrong-type", { ...types, customAttributes: [] }],
-    ["empty-string", { ...types, customAttributes: { "": { values: ["a"] } } }],
-    ["surrounding-whitespace", { ...types, customAttributes: { "design ": { values: ["a"] } } }],
+    ["wrong-type", { ...types, attributes: [] }],
+    ["empty-string", { ...types, attributes: { "": { values: ["a"] } } }],
+    ["surrounding-whitespace", { ...types, attributes: { "design ": { values: ["a"] } } }],
     ["wrong-type", withDeclaration("x")],
     ["missing-key", withDeclaration({})],
     ["unknown-key", withDeclaration({ values: ["a"], color: 1 })],
@@ -104,16 +104,13 @@ agree("types", (doc) => ({ "types.json": doc }), {
     ["empty-values", { ...types, stateGroups: { interaction: [] } }],
     ["duplicate-value", { ...types, stateGroups: { interaction: ["a", "a"] } }],
     ["wrong-type", withType({ stateGroups: "interaction" })],
-    ["wrong-type", { ...types, customChecks: [] }],
-    ["wrong-type", { ...types, customChecks: { visual: true } }],
-    ["unknown-key", { ...types, customChecks: { visual: { kind: 1 } } }],
-    ["empty-string", { ...types, customChecks: { "": {} } }],
+    ["wrong-type", { ...types, checks: [] }],
+    ["wrong-type", { ...types, checks: { visual: true } }],
+    ["unknown-key", { ...types, checks: { visual: { kind: 1 } } }],
+    ["empty-string", { ...types, checks: { "": {} } }],
     ["wrong-type", withType({ checks: "visual" })],
     ["empty-string", withType({ checks: [""] })],
-    [
-      "duplicate-check",
-      { ...types, customChecks: { a: {} }, types: { link: { checks: ["a", "a"] } } },
-    ],
+    ["duplicate-check", { ...types, checks: { a: {} }, types: { link: { checks: ["a", "a"] } } }],
     ["wrong-type", { ...types, types: [] }],
     ["empty-string", { ...types, types: { " ": {} } }],
     ["surrounding-whitespace", { ...types, types: { "link ": {} } }],
@@ -124,23 +121,23 @@ agree("types", (doc) => ({ "types.json": doc }), {
     ["empty-string", withType({ states: [""] })],
     ["surrounding-whitespace", withType({ states: [" a"] })],
     ["duplicate-state", withType({ states: ["a", "a"] })],
-    ["wrong-type", withType({ states: ["normal"], customAttributes: [] })],
-    ["wrong-type", withType({ states: ["normal"], customAttributes: { design: "x" } })],
-    ["wrong-type", withType({ states: ["normal"], customAttributes: { design: { normal: 1 } } })],
+    ["wrong-type", withType({ states: ["normal"], attributes: [] })],
+    ["wrong-type", withType({ states: ["normal"], attributes: { design: "x" } })],
+    ["wrong-type", withType({ states: ["normal"], attributes: { design: { normal: 1 } } })],
   ],
   crossReference: [
     ["shared-without-states", withType({ shared: true })],
     ["undeclared-state-group", withType({ stateGroups: ["interaction"] })],
     ["reserved-name", { ...types, stateGroups: { state: ["a"] } }],
     ["undeclared-check", withType({ checks: ["visual"] })],
-    ["undeclared-attribute", withType({ states: ["normal"], customAttributes: { size: {} } })],
+    ["undeclared-attribute", withType({ states: ["normal"], attributes: { size: {} } })],
     [
       "unknown-state",
-      withType({ states: ["normal"], customAttributes: { design: { pressed: "missing" } } }),
+      withType({ states: ["normal"], attributes: { design: { pressed: "missing" } } }),
     ],
     [
       "unknown-value",
-      withType({ states: ["normal"], customAttributes: { design: { normal: "maybe" } } }),
+      withType({ states: ["normal"], attributes: { design: { normal: "maybe" } } }),
     ],
   ],
 });
@@ -157,7 +154,7 @@ agree("root", (doc) => ({ "types.json": types, "roots/a.json": doc }), {
       "a typed node with an override and children",
       a({
         type: "link",
-        customAttributes: { design: { selected: "available" } },
+        attributes: { design: { selected: "available" } },
         children: [{ id: "b", title: "B" }],
       }),
     ],
@@ -186,11 +183,11 @@ agree("root", (doc) => ({ "types.json": types, "roots/a.json": doc }), {
     ["missing-key", a({ children: [{ id: "b" }] })],
     ["empty-string", a({ children: [{ include: "" }] })],
     ["include-at-root", node({ include: "x" })],
-    ["attributes-without-type", a({ customAttributes: {} })],
+    ["attributes-without-type", a({ attributes: {} })],
     ["wrong-type", a({ onlyWhen: [] })],
     ["empty-only", a({ onlyWhen: { a: [] } })],
-    ["wrong-type", a({ type: "link", customAttributes: [] })],
-    ["wrong-type", a({ type: "link", customAttributes: { design: { normal: 1 } } })],
+    ["wrong-type", a({ type: "link", attributes: [] })],
+    ["wrong-type", a({ type: "link", attributes: { design: { normal: 1 } } })],
   ],
   crossReference: [
     ["file-name-mismatch", node({ id: "b", title: "B" })],
@@ -198,9 +195,9 @@ agree("root", (doc) => ({ "types.json": types, "roots/a.json": doc }), {
     ["not-an-ancestor", a({ children: [{ id: "b", title: "B", onlyWhen: { x: ["y"] } }] })],
     ["duplicate-id", a({ children: [{ id: "a", title: "Again" }] })],
     ["undefined-type", a({ type: "button" })],
-    ["undeclared-attribute", a({ type: "link", customAttributes: { size: {} } })],
-    ["unknown-state", a({ type: "link", customAttributes: { design: { pressed: "missing" } } })],
-    ["unknown-value", a({ type: "link", customAttributes: { design: { normal: "maybe" } } })],
+    ["undeclared-attribute", a({ type: "link", attributes: { size: {} } })],
+    ["unknown-state", a({ type: "link", attributes: { design: { pressed: "missing" } } })],
+    ["unknown-value", a({ type: "link", attributes: { design: { normal: "maybe" } } })],
   ],
 });
 
@@ -293,7 +290,7 @@ agree(
         "type and node overrides",
         touch({
           types: { link: { states: { remove: ["hovered"], add: ["pressed"] } } },
-          nodes: { "blog-link": { customAttributes: { design: { pressed: "missing" } } } },
+          nodes: { "blog-link": { attributes: { design: { pressed: "missing" } } } },
         }),
       ],
     ],
@@ -319,9 +316,9 @@ agree(
       ["surrounding-whitespace", link({ states: { add: [" pressed"] } })],
       ["control-character", link({ states: { add: ["p\u0002"] } })],
       ["duplicate-state", link({ states: { remove: ["hovered", "hovered"] } })],
-      ["wrong-type", link({ customAttributes: [] })],
-      ["wrong-type", link({ customAttributes: { design: "x" } })],
-      ["wrong-type", link({ customAttributes: { design: { normal: 1 } } })],
+      ["wrong-type", link({ attributes: [] })],
+      ["wrong-type", link({ attributes: { design: "x" } })],
+      ["wrong-type", link({ attributes: { design: { normal: 1 } } })],
       ["wrong-type", { ...overrides({}), only: [] }],
       ["wrong-type", { ...overrides({}), only: { "blog-link": "touch" } }],
       ["empty-only", { ...overrides({}), only: { "blog-link": [] } }],
@@ -341,10 +338,10 @@ agree(
       ["conflicting-state", link({ states: { remove: ["hovered"], add: ["hovered"] } })],
       [
         "removed-state",
-        link({ states: { remove: ["hovered"] }, customAttributes: { design: { hovered: "x" } } }),
+        link({ states: { remove: ["hovered"] }, attributes: { design: { hovered: "x" } } }),
       ],
-      ["undeclared-attribute", link({ customAttributes: { size: {} } })],
-      ["unknown-value", link({ customAttributes: { design: { normal: "maybe" } } })],
+      ["undeclared-attribute", link({ attributes: { size: {} } })],
+      ["unknown-value", link({ attributes: { design: { normal: "maybe" } } })],
     ],
   },
 );
@@ -368,7 +365,7 @@ agree(
         "type and node overrides for a combination",
         smTouch({
           types: { link: { states: { remove: ["hovered"] } } },
-          nodes: { "blog-link": { customAttributes: { design: { normal: "missing" } } } },
+          nodes: { "blog-link": { attributes: { design: { normal: "missing" } } } },
         }),
       ],
     ],
@@ -380,7 +377,7 @@ agree(
       ["unsupported-version", { version: 2, overrides: {} }],
       ["wrong-type", { version: 1, overrides: [] }],
       ["wrong-type", comboLink({ states: [] })],
-      ["wrong-type", comboLink({ customAttributes: { design: { normal: 1 } } })],
+      ["wrong-type", comboLink({ attributes: { design: { normal: 1 } } })],
     ],
     // The schema cannot tell nesting depth from the file name.
     crossReference: [
@@ -395,7 +392,7 @@ const checked: Files = {
   ...tree,
   "types.json": {
     version: 1,
-    customChecks: { visual: {}, a11y: {} },
+    checks: { visual: {}, a11y: {} },
     types: { link: { states: ["normal", "hovered"], checks: ["visual"] } },
   },
   "dimensions/pointer.json": pointer,

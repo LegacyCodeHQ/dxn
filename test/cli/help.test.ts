@@ -107,7 +107,7 @@ describe("help", () => {
         state-group <subcommand>
                             List and declare groups of states that exclude each other
         attribute <subcommand>
-                            List and declare custom attributes and their values
+                            List and declare attributes and their values
         check <subcommand>  List and declare checks that types can require
         dimension <subcommand>
                             List and add dimensions, their values, default and scope

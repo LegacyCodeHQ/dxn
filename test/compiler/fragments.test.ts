@@ -10,7 +10,7 @@ const include = (id: string) => ({ include: id });
 const project: Files = {
   "types.json": {
     version: 1,
-    customChecks: { visual: {} },
+    checks: { visual: {} },
     types: { "toolbar-link": { states: ["normal", "hovered"], checks: ["visual"] } },
   },
   "fragments/toolbar.json": fragmentFile({

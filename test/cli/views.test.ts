@@ -9,7 +9,7 @@ afterAll(cleanup);
 const files = {
   "types.json": {
     version: 1,
-    customChecks: { visual: {} },
+    checks: { visual: {} },
     types: {
       menu: { states: ["closed", "open"], shared: true },
       "toolbar-link": { states: ["normal", "hovered"], checks: ["visual"] },

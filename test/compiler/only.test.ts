@@ -15,7 +15,7 @@ afterAll(cleanup);
 const project: Files = {
   "types.json": {
     version: 1,
-    customChecks: { visual: {} },
+    checks: { visual: {} },
     types: { "toolbar-link": { states: ["normal", "hovered"], checks: ["visual"] } },
   },
   "roots/page.json": rootFile({

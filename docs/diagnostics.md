@@ -186,7 +186,7 @@ A name, id or title starts or ends with whitespace. Trim it.
 ### `empty-values`
 
 A list of values is empty: a dimension's values, a state group's values, a
-custom attribute's values, a type's states, the group values a type uses, or
+attribute's values, a type's states, the group values a type uses, or
 the values an include fixes. List at least one.
 
 ### `duplicate-value`
@@ -246,29 +246,29 @@ states list.
 ### `unknown-state`
 
 A state that the type (or the shared ancestor) doesn't have here: in an
-override, a custom attribute value, an `onlyWhen` list, a transition, an
+override, a attribute value, an `onlyWhen` list, a transition, an
 include state, or a verification record. The message names the state. Check
 the spelling, or add the state to the type.
 
 ### `undeclared-attribute`
 
-A custom attribute that `customAttributes` doesn't declare. Declare it with
+A attribute that `attributes` doesn't declare. Declare it with
 `attribute add`, or fix the name.
 
 ### `unknown-value`
 
-A custom attribute value that the attribute doesn't declare. Add it with
+A attribute value that the attribute doesn't declare. Add it with
 `attribute add-value`, or use a declared value. In an expectation's `where`,
 it is a value that the dimension, state group or shared node doesn't have.
 
 ### `attributes-without-type`
 
-A node sets `customAttributes` but has no type, so it has no states to set
+A node sets `attributes` but has no type, so it has no states to set
 them for. Give the node a type, or set the values on a type.
 
 ### `undeclared-check`
 
-A type requires a check, or a record names one, that `customChecks` doesn't
+A type requires a check, or a record names one, that `checks` doesn't
 declare. Declare it with `check add`.
 
 ### `duplicate-check`
@@ -371,7 +371,7 @@ An override both adds and removes the same state. Keep one.
 ### `removed-state`
 
 A state that is already removed in this context: an override removes it
-again, a custom attribute value is set for it, or a verification record names
+again, a attribute value is set for it, or a verification record names
 it. For example, under `pointer=touch` the toolbar links have no `hovered`
 state.
 

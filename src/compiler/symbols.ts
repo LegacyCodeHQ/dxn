@@ -4,7 +4,7 @@ import type { StringNode } from "./json.js";
 // What types.json and the root and fragment files declare, used to check references from
 // dimension and override files.
 export interface TreeSymbols {
-  // Declared custom attribute name -> allowed values (undefined when the
+  // Declared attribute name -> allowed values (undefined when the
   // declaration itself is invalid, so its uses are not checked again).
   attributes: Map<string, Set<string> | undefined>;
   // Type name -> its states: every value of every group it uses.
@@ -26,7 +26,7 @@ export interface TreeSymbols {
   children: Map<string, string[]>;
   // Node id -> its parent within its own file (include edges excluded).
   parents: Map<string, string>;
-  // Node id -> the attribute/state pairs its own customAttributes set, as keys
+  // Node id -> the attribute/state pairs its own attributes set, as keys
   // from valueKey.
   nodeValues: Map<string, Set<string>>;
   // Ids of the fragments in fragments/.

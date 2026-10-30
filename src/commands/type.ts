@@ -35,7 +35,7 @@ Subcommands:
   add-state <type> <state>           Add a state to a type
   remove-state <type> <state>        Remove a state from a type
   set <type> <attribute> <state>=<value>...
-                                     Set the type's custom attribute values
+                                     Set the type's attribute values
   unset <type> <attribute> [<state>...]
                                      Clear some or all of those values
   require <type> <check>             Make every instance of the type need a check

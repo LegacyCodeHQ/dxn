@@ -45,7 +45,7 @@ Subcommands:
   uninclude <parent-id> <fragment-id>
                                      Remove that include
   set <id> <attribute> <state>=<value>...
-                                     Set the node's own custom attribute values
+                                     Set the node's own attribute values
   unset <id> <attribute> [<state>...]
                                      Clear some or all of those values
 `;

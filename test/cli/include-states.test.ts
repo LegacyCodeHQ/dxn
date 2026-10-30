@@ -8,7 +8,7 @@ const files = {
   "types.json": {
     version: 1,
     stateGroups: { hover: ["rest", "hovered"], selection: ["unselected", "selected"] },
-    customChecks: { visual: {} },
+    checks: { visual: {} },
     types: { link: { stateGroups: ["hover", "selection"], checks: ["visual"] } },
   },
   "fragments/toolbar.json": {

@@ -6,7 +6,7 @@ afterAll(cleanup);
 
 const types = {
   version: 1,
-  customChecks: { visual: {} },
+  checks: { visual: {} },
   types: { link: { states: ["normal", "hovered"], checks: ["visual"] } },
 };
 const page = rootFile({
@@ -246,7 +246,7 @@ describe("dimension rename-value", () => {
       at: "2026-10-30T19:20:00Z",
     };
     const { run, read } = cliProject({
-      "types.json": { ...types, customAttributes: { design: { values: ["missing"] } } },
+      "types.json": { ...types, attributes: { design: { values: ["missing"] } } },
       "roots/page.json": page,
       "dimensions/breakpoint.json": {
         version: 1,
@@ -259,7 +259,7 @@ describe("dimension rename-value", () => {
         version: 1,
         only: { b: ["0"] },
         overrides: {
-          "0": { nodes: { a: { customAttributes: { design: { normal: "missing" } } } } },
+          "0": { nodes: { a: { attributes: { design: { normal: "missing" } } } } },
         },
       },
       "overrides/breakpoint+pointer.json": {
@@ -298,7 +298,7 @@ describe("dimension rename-value", () => {
             "base": {
               "nodes": {
                 "a": {
-                  "customAttributes": {
+                  "attributes": {
                     "design": {
                       "normal": "missing",
                     },

@@ -119,14 +119,14 @@ What `types.json` declares, sorted by name:
 { "types": [
     { "name": "menu", "states": ["closed", "open"], "shared": true, "checks": ["behavior"] },
     { "name": "toolbar-link", "stateGroups": { "hover": ["rest", "hovered"], "focus": ["blurred", "focused"] },
-      "checks": ["visual"], "customAttributes": { "design": { "rest": "ready" } } } ] }
+      "checks": ["visual"], "attributes": { "design": { "rest": "ready" } } } ] }
 { "stateGroups": [ { "name": "hover", "values": ["rest", "hovered"], "usedBy": ["menu-button", "toolbar-link"] } ] }
 { "checks": [ { "name": "visual", "requiredBy": ["toolbar-link"] } ] }
 { "attributes": [ { "name": "design", "values": ["missing", "ready"] } ] }
 ```
 
 A type has `states` (a plain list) or `stateGroups` (each group with the
-values the type uses), and `shared`, `checks` and `customAttributes` only when
+values the type uses), and `shared`, `checks` and `attributes` only when
 it has them. Each list is `[]` when nothing is declared.
 
 ## show
@@ -142,7 +142,7 @@ For `show blog-link pointer=touch --root article-page`:
   "present": true,
   "states": ["rest", "blurred", "focused", "selected"],
   "stateGroups": { "hover": ["rest"], "focus": ["blurred", "focused"], "selection": ["selected"] },
-  "customAttributes": { "design": { "rest": "ready" } }
+  "attributes": { "design": { "rest": "ready" } }
 }
 ```
 
@@ -154,7 +154,7 @@ For `show blog-link pointer=touch --root article-page`:
   states are still what the node would have.
 - `states` lists every state in effect. `stateGroups` lists them by group, and
   a plain states list appears as the group `state`.
-- `type`, `stateGroups` and `customAttributes` are left out when the node has
+- `type`, `stateGroups` and `attributes` are left out when the node has
   none. `states` is then `[]`.
 
 ## contexts
@@ -300,7 +300,7 @@ dimension, plus a state for each shared node that is present in it.
 ```
 
 Only the nodes present in the view appear. A shared node has its `state`.
-Other typed nodes have `stateGroups` (or `states`) and `customAttributes`.
+Other typed nodes have `stateGroups` (or `states`) and `attributes`.
 
 ## transitions
 

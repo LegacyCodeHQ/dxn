@@ -108,7 +108,7 @@ export const typeList = readCommand("Usage: dimensions type list\n", (resolver, 
         : { stateGroups: resolver.groupsOf(name) }),
       ...(type.shared === true ? { shared: true } : {}),
       ...(type.checks === undefined ? {} : { checks: type.checks }),
-      ...(type.customAttributes === undefined ? {} : { customAttributes: type.customAttributes }),
+      ...(type.attributes === undefined ? {} : { attributes: type.attributes }),
     })),
   });
 });
@@ -142,7 +142,7 @@ export const stateGroupList = readCommand(
 export const checkList = readCommand("Usage: dimensions check list\n", (resolver, args, io) => {
   parse(args, [], {});
   print(io, {
-    checks: Object.keys(resolver.project.types.customChecks ?? {})
+    checks: Object.keys(resolver.project.types.checks ?? {})
       .sort()
       .map((name) => ({
         name,
@@ -159,7 +159,7 @@ export const attributeList = readCommand(
   (resolver, args, io) => {
     parse(args, [], {});
     print(io, {
-      attributes: byName(Object.entries(resolver.project.types.customAttributes ?? {})).map(
+      attributes: byName(Object.entries(resolver.project.types.attributes ?? {})).map(
         ([name, { values }]) => ({ name, values }),
       ),
     });
@@ -244,7 +244,7 @@ function existsWhenFor(
 const showUsage = `Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
                        [--root <root-id>]
 
-Shows the node's states and custom attribute values in a context. Dimensions
+Shows the node's states and attribute values in a context. Dimensions
 left out take their default; those without one are not applied. Each shared
 node above the node needs its state wherever it exists. Without --root, a
 fragment's node is shown on its own, without any root's include states.
@@ -299,9 +299,7 @@ export const show = readCommand(showUsage, (resolver, args, io) => {
     resolver.project.types.types?.[node.type]?.stateGroups !== undefined
       ? { stateGroups: resolved.groups }
       : {}),
-    ...(Object.keys(resolved.customAttributes).length === 0
-      ? {}
-      : { customAttributes: resolved.customAttributes }),
+    ...(Object.keys(resolved.attributes).length === 0 ? {} : { attributes: resolved.attributes }),
   });
 });
 

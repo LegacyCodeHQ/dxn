@@ -59,11 +59,11 @@ describe("version", () => {
   });
 });
 
-describe("customAttributes declarations", () => {
-  const declare = (customAttributes: unknown) => typesFile({ version: 1, customAttributes });
+describe("attributes declarations", () => {
+  const declare = (attributes: unknown) => typesFile({ version: 1, attributes });
 
   it("must be an object", () => {
-    expect(declare([])).toEqual([t("wrong-type", "$.customAttributes")]);
+    expect(declare([])).toEqual([t("wrong-type", "$.attributes")]);
   });
 
   it("require attribute names to be non-blank without surrounding whitespace", () => {
@@ -77,14 +77,14 @@ describe("customAttributes declarations", () => {
       {
         "code": "empty-string",
         "file": "types.json",
-        "path": "$.customAttributes[""]",
+        "path": "$.attributes[""]",
       },
     ],
     [
       {
         "code": "surrounding-whitespace",
         "file": "types.json",
-        "path": "$.customAttributes[" design"]",
+        "path": "$.attributes[" design"]",
       },
     ],
   ]
@@ -92,16 +92,16 @@ describe("customAttributes declarations", () => {
   });
 
   it("declare each attribute as an object", () => {
-    expect(declare({ design: "x" })).toEqual([t("wrong-type", "$.customAttributes.design")]);
+    expect(declare({ design: "x" })).toEqual([t("wrong-type", "$.attributes.design")]);
   });
 
   it("require values", () => {
-    expect(declare({ design: {} })).toEqual([t("missing-key", "$.customAttributes.design.values")]);
+    expect(declare({ design: {} })).toEqual([t("missing-key", "$.attributes.design.values")]);
   });
 
   it("reject unknown keys", () => {
     expect(declare({ design: { values: ["a"], color: 1 } })).toEqual([
-      t("unknown-key", "$.customAttributes.design.color"),
+      t("unknown-key", "$.attributes.design.color"),
     ]);
   });
 
@@ -116,14 +116,14 @@ describe("customAttributes declarations", () => {
       {
         "code": "wrong-type",
         "file": "types.json",
-        "path": "$.customAttributes.design.values",
+        "path": "$.attributes.design.values",
       },
     ],
     [
       {
         "code": "empty-values",
         "file": "types.json",
-        "path": "$.customAttributes.design.values",
+        "path": "$.attributes.design.values",
       },
     ],
   ]
@@ -133,7 +133,7 @@ describe("customAttributes declarations", () => {
   it("require values to be valid unique names", () => {
     const snapshot: unknown[] = [];
     const value = (v: unknown) => declare({ design: { values: [v, "z"] } });
-    const _path = "$.customAttributes.design.values[0]";
+    const _path = "$.attributes.design.values[0]";
     snapshot.push(value(1));
     snapshot.push(value(""));
     snapshot.push(value("a "));
@@ -146,35 +146,35 @@ describe("customAttributes declarations", () => {
       {
         "code": "wrong-type",
         "file": "types.json",
-        "path": "$.customAttributes.design.values[0]",
+        "path": "$.attributes.design.values[0]",
       },
     ],
     [
       {
         "code": "empty-string",
         "file": "types.json",
-        "path": "$.customAttributes.design.values[0]",
+        "path": "$.attributes.design.values[0]",
       },
     ],
     [
       {
         "code": "surrounding-whitespace",
         "file": "types.json",
-        "path": "$.customAttributes.design.values[0]",
+        "path": "$.attributes.design.values[0]",
       },
     ],
     [
       {
         "code": "control-character",
         "file": "types.json",
-        "path": "$.customAttributes.design.values[0]",
+        "path": "$.attributes.design.values[0]",
       },
     ],
     [
       {
         "code": "duplicate-value",
         "file": "types.json",
-        "path": "$.customAttributes.design.values[1]",
+        "path": "$.attributes.design.values[1]",
       },
     ],
   ]
@@ -184,7 +184,7 @@ describe("customAttributes declarations", () => {
 
 describe("types", () => {
   const define = (typeMap: unknown) =>
-    typesFile({ version: 1, customAttributes: declarations, types: typeMap });
+    typesFile({ version: 1, attributes: declarations, types: typeMap });
 
   it("must be an object", () => {
     expect(define([])).toEqual([t("wrong-type", "$.types")]);
@@ -294,14 +294,14 @@ describe("type states", () => {
   });
 });
 
-describe("type customAttributes", () => {
-  const values = (customAttributes: unknown) =>
+describe("type attributes", () => {
+  const values = (attributes: unknown) =>
     typesFile({
       version: 1,
-      customAttributes: declarations,
-      types: { link: { states: ["normal", "hovered", "selected"], customAttributes } },
+      attributes: declarations,
+      types: { link: { states: ["normal", "hovered", "selected"], attributes } },
     });
-  const path = "$.types.link.customAttributes";
+  const path = "$.types.link.attributes";
 
   it("accept a value for each state", () => {
     expect(values({ design: { normal: "available", selected: "missing" } })).toEqual([]);
@@ -336,14 +336,14 @@ describe("type customAttributes", () => {
       {
         "code": "wrong-type",
         "file": "types.json",
-        "path": "$.types.link.customAttributes.design.normal",
+        "path": "$.types.link.attributes.design.normal",
       },
     ],
     [
       {
         "code": "unknown-value",
         "file": "types.json",
-        "path": "$.types.link.customAttributes.design.normal",
+        "path": "$.types.link.attributes.design.normal",
       },
     ],
   ]
@@ -351,8 +351,8 @@ describe("type customAttributes", () => {
   });
 });
 
-describe("customChecks declarations", () => {
-  const declare = (customChecks: unknown) => typesFile({ version: 1, customChecks });
+describe("checks declarations", () => {
+  const declare = (checks: unknown) => typesFile({ version: 1, checks });
 
   it("declare each check as an empty object", () => {
     expect(declare({ visual: {}, behavior: {} })).toEqual([]);
@@ -370,21 +370,21 @@ describe("customChecks declarations", () => {
       {
         "code": "wrong-type",
         "file": "types.json",
-        "path": "$.customChecks",
+        "path": "$.checks",
       },
     ],
     [
       {
         "code": "wrong-type",
         "file": "types.json",
-        "path": "$.customChecks.visual",
+        "path": "$.checks.visual",
       },
     ],
     [
       {
         "code": "unknown-key",
         "file": "types.json",
-        "path": "$.customChecks.visual.kind",
+        "path": "$.checks.visual.kind",
       },
     ],
   ]
@@ -402,14 +402,14 @@ describe("customChecks declarations", () => {
       {
         "code": "empty-string",
         "file": "types.json",
-        "path": "$.customChecks[""]",
+        "path": "$.checks[""]",
       },
     ],
     [
       {
         "code": "surrounding-whitespace",
         "file": "types.json",
-        "path": "$.customChecks["visual "]",
+        "path": "$.checks["visual "]",
       },
     ],
   ]
@@ -419,7 +419,7 @@ describe("customChecks declarations", () => {
 
 describe("type checks", () => {
   const checks = (value: unknown) =>
-    typesFile({ version: 1, customChecks: { visual: {} }, types: { link: { checks: value } } });
+    typesFile({ version: 1, checks: { visual: {} }, types: { link: { checks: value } } });
 
   it("list declared checks the type requires", () => {
     expect(checks(["visual"])).toEqual([]);

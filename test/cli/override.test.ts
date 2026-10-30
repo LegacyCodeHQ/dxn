@@ -7,7 +7,7 @@ afterAll(cleanup);
 const files = {
   "types.json": {
     version: 1,
-    customAttributes: { design: { values: ["available", "missing"] } },
+    attributes: { design: { values: ["available", "missing"] } },
     types: { link: { states: ["normal", "hovered", "selected"] } },
   },
   "roots/page.json": rootFile({
@@ -257,7 +257,7 @@ describe("override set and unset", () => {
         "sm": {
           "nodes": {
             "blog-link": {
-              "customAttributes": {
+              "attributes": {
                 "design": {
                   "normal": "missing",
                 },

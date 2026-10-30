@@ -45,7 +45,7 @@ export function at(file: string) {
 
 export const types = {
   version: 1,
-  customAttributes: { design: { values: ["available", "missing"] } },
+  attributes: { design: { values: ["available", "missing"] } },
   types: { link: { states: ["normal", "hovered", "selected"] } },
 };
 

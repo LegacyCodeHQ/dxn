@@ -16,7 +16,7 @@ const project: Files = {
   ...tree,
   "types.json": {
     version: 1,
-    customAttributes: { design: { values: ["available", "missing"] } },
+    attributes: { design: { values: ["available", "missing"] } },
     types: { link: { states: ["normal", "hovered", "selected"] } },
   },
   "dimensions/breakpoint.json": { version: 1, values: ["sm", "lg"], appliesTo: ["page"] },
@@ -25,7 +25,7 @@ const project: Files = {
 };
 
 const file = (byValue: unknown) => ({ version: 1, overrides: byValue });
-const design = (values: Record<string, string>) => ({ customAttributes: { design: values } });
+const design = (values: Record<string, string>) => ({ attributes: { design: values } });
 const smTouch = (body: unknown) => file({ sm: { touch: body } });
 const c = at("overrides/breakpoint+pointer.json");
 const combination = (doc: unknown, extra: Files = {}) =>
@@ -52,7 +52,7 @@ describe("combination files", () => {
         "touch": {
           "nodes": {
             "blog-link": {
-              "customAttributes": {
+              "attributes": {
                 "design": {
                   "selected": "missing",
                 },
@@ -61,7 +61,7 @@ describe("combination files", () => {
           },
           "types": {
             "link": {
-              "customAttributes": {
+              "attributes": {
                 "design": {
                   "normal": "missing",
                 },
@@ -221,7 +221,7 @@ describe("combination states", () => {
       {
         "code": "removed-state",
         "file": "overrides/breakpoint+pointer.json",
-        "path": "$.overrides.sm.touch.types.link.customAttributes.design.hovered",
+        "path": "$.overrides.sm.touch.types.link.attributes.design.hovered",
       },
     ],
     [],
@@ -237,7 +237,7 @@ describe("combination states", () => {
         }),
       }),
     ).toEqual([
-      c("removed-state", "$.overrides.sm.touch.nodes.blog-link.customAttributes.design.selected"),
+      c("removed-state", "$.overrides.sm.touch.nodes.blog-link.attributes.design.selected"),
     ]);
   });
 
@@ -260,7 +260,7 @@ describe("combination states", () => {
       ...project,
       "types.json": {
         version: 1,
-        customChecks: { visual: {} },
+        checks: { visual: {} },
         types: { link: { states: ["normal", "hovered", "selected"], checks: ["visual"] } },
       },
       ...noHoverOnTouch,
@@ -353,9 +353,7 @@ describe("combinations and conflicts", () => {
           touch: { dark: { types: { link: design({ normal: "available" }) } } },
         }),
       }),
-    ).toEqual([
-      { ...conflict, path: "$.overrides.touch.types.link.customAttributes.design.normal" },
-    ]);
+    ).toEqual([{ ...conflict, path: "$.overrides.touch.types.link.attributes.design.normal" }]);
   });
 
   it("beat single-dimension overrides from other dimensions", () => {
@@ -380,7 +378,7 @@ describe("combinations and conflicts", () => {
       {
         file: "overrides/pointer+theme.json",
         code: "conflicting-override",
-        path: "$.overrides.touch.dark.types.link.customAttributes.design.normal",
+        path: "$.overrides.touch.dark.types.link.attributes.design.normal",
         message:
           'conflicts with breakpoint=sm and pointer=touch, which sets "missing" (overrides/breakpoint+pointer.json); both apply when breakpoint=sm and pointer=touch and theme=dark',
       },

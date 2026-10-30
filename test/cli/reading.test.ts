@@ -19,13 +19,13 @@ const record = (node: string, context: Record<string, string>, result: string) =
 const files = {
   "types.json": {
     version: 1,
-    customAttributes: { design: { values: ["available", "missing"] } },
-    customChecks: { visual: {} },
+    attributes: { design: { values: ["available", "missing"] } },
+    checks: { visual: {} },
     types: {
       link: {
         states: ["normal", "hovered"],
         checks: ["visual"],
-        customAttributes: { design: { normal: "available", hovered: "available" } },
+        attributes: { design: { normal: "available", hovered: "available" } },
       },
     },
   },
@@ -41,7 +41,7 @@ const files = {
             id: "blog-link",
             title: "Blog link",
             type: "link",
-            customAttributes: { design: { hovered: "missing" } },
+            attributes: { design: { hovered: "missing" } },
           },
         ],
       },
@@ -71,7 +71,7 @@ const files = {
         types: {
           link: {
             states: { remove: ["hovered"] },
-            customAttributes: { design: { normal: "missing" } },
+            attributes: { design: { normal: "missing" } },
           },
         },
       },
@@ -80,7 +80,7 @@ const files = {
   "overrides/breakpoint+pointer.json": {
     version: 1,
     overrides: {
-      lg: { touch: { types: { link: { customAttributes: { design: { normal: "available" } } } } } },
+      lg: { touch: { types: { link: { attributes: { design: { normal: "available" } } } } } },
     },
   },
   "verification/page.json": {
@@ -104,7 +104,7 @@ describe("show", () => {
       context: { breakpoint: "lg", pointer: "touch" },
       present: true,
       states: ["normal"],
-      customAttributes: { design: { normal: "available" } },
+      attributes: { design: { normal: "available" } },
     });
   });
 
@@ -115,48 +115,48 @@ describe("show", () => {
     snapshot.push(json(run("show", "blog-link")));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    {
-      "context": {
-        "breakpoint": "lg",
-        "pointer": "mouse",
-      },
-      "customAttributes": {
-        "design": {
-          "hovered": "missing",
-          "normal": "available",
+      [
+        {
+          "attributes": {
+            "design": {
+              "hovered": "missing",
+              "normal": "available",
+            },
+          },
+          "context": {
+            "breakpoint": "lg",
+            "pointer": "mouse",
+          },
+          "id": "blog-link",
+          "present": true,
+          "states": [
+            "normal",
+            "hovered",
+          ],
+          "title": "Blog link",
+          "type": "link",
         },
-      },
-      "id": "blog-link",
-      "present": true,
-      "states": [
-        "normal",
-        "hovered",
-      ],
-      "title": "Blog link",
-      "type": "link",
-    },
-    {
-      "context": {
-        "breakpoint": "lg",
-      },
-      "customAttributes": {
-        "design": {
-          "hovered": "missing",
-          "normal": "available",
+        {
+          "attributes": {
+            "design": {
+              "hovered": "missing",
+              "normal": "available",
+            },
+          },
+          "context": {
+            "breakpoint": "lg",
+          },
+          "id": "blog-link",
+          "present": true,
+          "states": [
+            "normal",
+            "hovered",
+          ],
+          "title": "Blog link",
+          "type": "link",
         },
-      },
-      "id": "blog-link",
-      "present": true,
-      "states": [
-        "normal",
-        "hovered",
-      ],
-      "title": "Blog link",
-      "type": "link",
-    },
-  ]
-`);
+      ]
+    `);
   });
 
   it("says when a node does not exist in the context", () => {
@@ -343,7 +343,7 @@ describe("nodes no root includes", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     {
-      "customAttributes": {
+      "attributes": {
         "design": {
           "hovered": "available",
           "normal": "available",

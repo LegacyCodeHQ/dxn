@@ -20,7 +20,7 @@ opens a panel with the same link on narrow screens.
 - [Shared states and onlyWhen](#shared-states-and-onlywhen)
 - [Transitions](#transitions)
 - [Includes and include states](#includes-and-include-states)
-- [Custom attributes](#custom-attributes)
+- [Attributes](#attributes)
 - [Checks and verification](#checks-and-verification)
 - [Expectations](#expectations)
 - [Views and axes](#views-and-axes)
@@ -172,7 +172,7 @@ contexts. Set it with `dimensions node only menu breakpoint base sm`.
 
 ## Overrides
 
-An **override** changes a type's or a node's states (or custom attribute
+An **override** changes a type's or a node's states (or attribute
 values) at one value of a dimension. On a touch screen nothing can be
 hovered:
 
@@ -292,15 +292,15 @@ This narrows the root's contexts without changing the fragment. Set it with
 `dimensions node include-states article-page toolbar blog-link selection
 selected`.
 
-## Custom attributes
+## Attributes
 
-A **custom attribute** is a value per state, with declared values. For
+A **attribute** is a value per state, with declared values. For
 example, a `design` attribute says whether each state has a design yet:
 
 ```json
-"customAttributes": { "design": { "values": ["missing", "ready"] } },
+"attributes": { "design": { "values": ["missing", "ready"] } },
 "types": { "toolbar-link": { "stateGroups": ["hover"],
-  "customAttributes": { "design": { "rest": "ready", "hovered": "missing" } } } }
+  "attributes": { "design": { "rest": "ready", "hovered": "missing" } } } }
 ```
 
 A node with a type can set its own values, and overrides can change them per
@@ -309,7 +309,7 @@ dimension value. `show` shows the resolved values.
 ## Checks and verification
 
 A **check** is a kind of verification, such as `visual` or `behavior`. Checks
-are declared in `types.json` under `customChecks`, and types say which ones
+are declared in `types.json` under `checks`, and types say which ones
 their nodes need (`"checks": ["visual"]`). Every typed node must then pass
 each required check in every context it exists in.
 

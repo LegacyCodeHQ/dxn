@@ -454,7 +454,7 @@ function checkOverride(
   if (override === undefined) {
     return { states: result, changes };
   }
-  const members = keys(diagnostics, override, path, ["states", "customAttributes"]);
+  const members = keys(diagnostics, override, path, ["states", "attributes"]);
 
   const statesNode = members.get("states");
   const stateLists =
@@ -532,13 +532,13 @@ function checkOverride(
     }
   }
 
-  const attributes = members.get("customAttributes");
+  const attributes = members.get("attributes");
   if (attributes !== undefined) {
     checkAttributeValues(
       diagnostics,
       tree,
       attributes,
-      `${path}.customAttributes`,
+      `${path}.attributes`,
       result,
       (attribute, state, value, valuePath) =>
         entry.values.set(valueKey(attribute, state), {

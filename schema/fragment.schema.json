@@ -31,7 +31,7 @@
       "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])[\\s\\S]*\\S[\\s\\S]*$"
     },
     "attributeValues": {
-      "description": "Custom attribute values, by attribute name, then by state.",
+      "description": "Attribute values, by attribute name, then by state.",
       "type": "object",
       "additionalProperties": {
         "type": "object",
@@ -45,7 +45,7 @@
       "additionalProperties": false,
       "required": ["id", "title"],
       "dependentRequired": {
-        "customAttributes": ["type"]
+        "attributes": ["type"]
       },
       "properties": {
         "id": {
@@ -94,7 +94,7 @@
             ]
           }
         },
-        "customAttributes": {
+        "attributes": {
           "description": "Overrides the type's values, state by state.",
           "$ref": "#/$defs/attributeValues"
         }
