@@ -9,7 +9,8 @@
     "task-tree": "dist/main.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "schema"
   ],
   "engines": {
     "node": ">=22"
@@ -28,6 +29,7 @@
     "@biomejs/biome": "2.6.4",
     "@types/node": "22.20.5",
     "@vitest/coverage-v8": "5.0.5",
+    "ajv": "8.20.0",
     "typescript": "7.0.2",
     "vitest": "5.0.5"
   }

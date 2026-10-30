@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "task-tree",
+  "description": "Editor aid for task-tree files. The task-tree compiler is the authority: it also checks cross-references (declared attributes, type states and values, defined types, unique ids) that this schema cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "tasks"],
+  "properties": {
+    "$schema": {
+      "description": "Path or URL of this schema, for editors.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Format version.",
+      "const": 1
+    },
+    "customAttributes": {
+      "description": "Declares the custom attributes that types and tasks may use, and their allowed values.",
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/declaration" }
+    },
+    "types": {
+      "description": "Reusable task types, by name.",
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/type" }
+    },
+    "tasks": {
+      "description": "The root tasks of the tree.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/task" }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["values"],
+      "properties": {
+        "values": {
+          "description": "Allowed values of this attribute.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      }
+    },
+    "type": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "states": {
+          "description": "States every instance of this type has.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "customAttributes": { "$ref": "#/$defs/attributeValues" }
+      }
+    },
+    "attributeValues": {
+      "description": "Custom attribute values, by attribute name, then by state.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title"],
+      "dependentRequired": { "customAttributes": ["type"] },
+      "properties": {
+        "id": {
+          "description": "Unique across the whole tree.",
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "title": { "$ref": "#/$defs/nonEmptyString" },
+        "type": {
+          "description": "Name of a type in the top-level types.",
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/task" }
+        },
+        "customAttributes": {
+          "description": "Overrides the type's values, state by state.",
+          "$ref": "#/$defs/attributeValues"
+        }
+      }
+    }
+  }
+}
