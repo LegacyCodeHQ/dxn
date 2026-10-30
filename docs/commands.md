@@ -212,9 +212,11 @@ the states of shared nodes above it; dimensions left out take their default.
 --at defaults to now; --root is needed when several roots include the node.
 ```
 
-Writes a record to `verification/<root-id>.json`. The node's type must require the check (`type require`), and the context must be one the node exists in.
+Writes a record to `verification/<root-id>.json`. The check must be declared (`check add`) and required by the node's type (`type require`), and the context must be one the node exists in. Every state group needs a value; dimensions left out take their default. The neo-website project declares no checks yet, so the first two lines below set them up.
 
 ```bash
+dimensions check add visual
+dimensions type require toolbar-link visual
 dimensions verify blog-link --check visual --result passed --by pen.dev breakpoint=lg hover=hovered focus=blurred selection=selected
 dimensions verify menu --check behavior --result passed --by agent --transition escape
 ```

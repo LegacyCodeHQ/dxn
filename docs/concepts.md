@@ -313,6 +313,17 @@ are declared in `types.json` under `customChecks`, and types say which ones
 their nodes need (`"checks": ["visual"]`). Every typed node must then pass
 each required check in every context it exists in.
 
+The neo-website project declares no checks yet. The examples below assume
+these two commands have run:
+
+```bash
+dimensions check add visual
+dimensions type require toolbar-link visual
+```
+
+`check list` shows which checks a project declares and which types require
+them.
+
 A **verification record** says that a check passed or failed in one context,
 by whom and when. Records live in `verification/<root-id>.json`:
 

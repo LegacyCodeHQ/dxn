@@ -19,7 +19,9 @@ dimensions help contexts           # one command's usage; no project needed
 dimensions validate                # does the project compile? errors: file:line:col: code: message
 dimensions tree                    # the roots and components
 dimensions dimension list          # what nodes vary over
-dimensions axes toolbar            # what views and queries of a node accept
+dimensions type list               # each type's states, checks and values
+dimensions check list              # declared checks and the types that require them
+dimensions axes toolbar            # what view and show accept for a node
 dimensions contexts toolbar --subtree --tree   # every combination, merged, for reading
 dimensions views toolbar           # one entry per diagram to draw
 dimensions show blog-link pointer=touch        # one node in one context
@@ -27,7 +29,9 @@ dimensions status                  # each required check: passed, failed or miss
 ```
 
 To record a result, use `dimensions verify <node> --check <c> --result
-passed|failed --by <who> <name>=<value>...`. To change the model, use the
+passed|failed --by <who> <name>=<value>...`. The check must be declared
+and required by the node's type first: `check list` shows what is, and
+`check add` and `type require` set it up. To change the model, use the
 editing commands (`node`, `type`, `dimension`, `override`, …) rather than
 editing the files: they refuse any change that would break the project, and
 `--dry-run` shows what they would write. Exit code 1 means the project
