@@ -103,6 +103,16 @@ function checkNodeTransitions(
     };
     const from = state("from");
     const to = state("to");
+    if (from !== undefined && to !== undefined && from.value === to.value) {
+      report(
+        diagnostics,
+        "same-state-transition",
+        `a transition must change the state, but "from" and "to" are both ${JSON.stringify(to.value)}`,
+        `${path}.to`,
+        to,
+      );
+      valid = false;
+    }
 
     const on = name("on");
     const needs = on === undefined ? undefined : events[on.value];

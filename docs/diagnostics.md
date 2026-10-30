@@ -401,6 +401,11 @@ override at `breakpoint=sm` for `blog-link` is an error.
 A node has transitions, but its type isn't shared. Transitions change a
 shared node's state, so mark the type shared (`type share`).
 
+### `same-state-transition`
+
+A transition's `from` and `to` are the same state. A transition must change
+the state; to describe an event that leaves it as it is, leave it out.
+
 ### `target-and-outside`
 
 A `pointerdown` transition names both `target` and `outside`. It happens on

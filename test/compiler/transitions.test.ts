@@ -410,3 +410,11 @@ describe("transition fields", () => {
     ).toEqual([]);
   });
 });
+
+describe("same-state transitions", () => {
+  it("are an error: a transition must change the state", () => {
+    expect(
+      withTransition({ id: "t", from: "open", to: "open", on: "click", target: "menu-link" }),
+    ).toEqual([k("same-state-transition", `${path}[0].to`)]);
+  });
+});
