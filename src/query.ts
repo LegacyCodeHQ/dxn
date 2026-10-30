@@ -1,29 +1,31 @@
-import { join } from "node:path";
 import { compileDirectory } from "./compiler/compile.js";
 import type { Io } from "./io.js";
+import { printDiagnostics, requireProject } from "./project.js";
 import { findTask } from "./tree.js";
 
-export const queryUsage = "Usage: task-tree query <directory> <task-id>\n";
+export const queryUsage = "Usage: task-tree query <task-id> [--dir <directory>]\n";
 
-export function query(args: string[], io: Io): number {
-  const [directory, id] = args;
-  if (directory === undefined || id === undefined) {
+export function query(args: string[], io: Io, cwd: string, dir: string | undefined): number {
+  const [id, ...rest] = args;
+  if (id === undefined || rest.length > 0) {
     io.stderr(queryUsage);
     return 2;
   }
-  const { project, diagnostics } = compileDirectory(directory);
+  const project = requireProject(io, cwd, dir);
   if (project === undefined) {
-    for (const { file, line, column, code, message } of diagnostics) {
-      io.stderr(`${join(directory, file)}:${line}:${column}: ${code}: ${message}\n`);
-    }
     return 1;
   }
-  const task = findTask([...project.tasks, ...project.components], id);
+  const { project: model, diagnostics } = compileDirectory(project);
+  if (model === undefined) {
+    printDiagnostics(io, project, diagnostics);
+    return 1;
+  }
+  const task = findTask([...model.tasks, ...model.components], id);
   if (task === undefined) {
     io.stderr(`task-tree: task not found: ${id}\n`);
     return 1;
   }
-  const states = task.type === undefined ? [] : (project.types.types?.[task.type]?.states ?? []);
+  const states = task.type === undefined ? [] : (model.types.types?.[task.type]?.states ?? []);
   const result = {
     id: task.id,
     title: task.title,

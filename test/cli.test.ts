@@ -1,20 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { run } from "../src/cli.js";
-
-function capture(argv: string[]) {
-  let stdout = "";
-  let stderr = "";
-  const code = run(argv, {
-    stdout: (text) => {
-      stdout += text;
-    },
-    stderr: (text) => {
-      stderr += text;
-    },
-  });
-  return { code, stdout, stderr };
-}
+import { capture } from "./support/cli.js";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
   version: string;

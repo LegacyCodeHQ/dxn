@@ -1,0 +1,21 @@
+import { compileDirectory } from "../compiler/compile.js";
+import type { Io } from "../io.js";
+import { printDiagnostics, requireProject } from "../project.js";
+
+export const validateUsage = "Usage: task-tree validate [--dir <directory>]\n";
+
+// Compiles the project and reports every diagnostic.
+export function validate(args: string[], io: Io, cwd: string, dir: string | undefined): number {
+  if (args.length > 0) {
+    io.stderr(validateUsage);
+    return 2;
+  }
+  const project = requireProject(io, cwd, dir);
+  if (project === undefined) {
+    return 1;
+  }
+  const { diagnostics } = compileDirectory(project);
+  printDiagnostics(io, project, diagnostics);
+  io.stdout(`${JSON.stringify({ project, errors: diagnostics.length })}\n`);
+  return diagnostics.length > 0 ? 1 : 0;
+}
