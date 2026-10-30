@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../schema/dimension.schema.json",
+  "version": 1,
+  "values": ["mouse", "touch"],
+  "appliesTo": ["article-page"]
+}

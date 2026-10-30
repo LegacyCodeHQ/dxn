@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../schema/overrides.schema.json",
+  "version": 1,
+  "overrides": {
+    "touch": {
+      "types": {
+        "link": {
+          "states": {
+            "remove": ["hovered"]
+          }
+        }
+      }
+    }
+  }
+}

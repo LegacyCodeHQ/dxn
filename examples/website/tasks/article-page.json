@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../schema/task.schema.json",
+  "version": 1,
+  "task": {
+    "id": "article-page",
+    "title": "Article page",
+    "children": [
+      {
+        "id": "top-toolbar",
+        "title": "Top toolbar",
+        "children": [
+          {
+            "id": "logo-mark",
+            "title": "Logo mark"
+          },
+          {
+            "id": "blog-link",
+            "title": "Blog link",
+            "type": "link",
+            "customAttributes": {
+              "design": {
+                "selected": "available"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

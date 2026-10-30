@@ -1,12 +1,12 @@
-// What the tree declares, collected while checking tree.json and used to check
-// references from dimensions.json and overrides.json.
+// What types.json and the task files declare, used to check references from
+// dimension and override files.
 export interface TreeSymbols {
   // Declared custom attribute name -> allowed values (undefined when the
   // declaration itself is invalid, so its uses are not checked again).
   attributes: Map<string, Set<string> | undefined>;
   // Type name -> its states.
   types: Map<string, Set<string>>;
-  // Task id -> path of its first occurrence.
+  // Task id -> where it is first defined, as "<file> <path>".
   ids: Map<string, string>;
   // Task id -> its type name, for tasks that name one.
   taskTypes: Map<string, string>;
@@ -14,13 +14,14 @@ export interface TreeSymbols {
   children: Map<string, string[]>;
 }
 
-// Dimension name -> declared values (undefined when invalid) and the ids of
-// every task it applies to, subtrees included. scopeComplete is false when
-// appliesTo had invalid entries, so scope errors would only be follow-on noise.
-export type DimensionSymbols = Map<
-  string,
-  { values: Set<string> | undefined; scope: Set<string>; scopeComplete: boolean }
->;
+// A dimension's declared values (undefined when invalid) and the ids of every
+// task it applies to, subtrees included. scopeComplete is false when appliesTo
+// had invalid entries, so scope errors would only be follow-on noise.
+export interface DimensionSymbol {
+  values: Set<string> | undefined;
+  scope: Set<string>;
+  scopeComplete: boolean;
+}
 
 // States in effect, and the states an override removed.
 export interface StateSet {

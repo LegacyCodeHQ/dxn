@@ -10,13 +10,14 @@ import {
   report,
   stringElements,
 } from "./shape.js";
-import type { DimensionSymbols, StateSet, TreeSymbols } from "./symbols.js";
+import type { DimensionSymbol, StateSet, TreeSymbols } from "./symbols.js";
 
-export function checkOverrides(
+// overrides/<dimension>.json: overrides by dimension value, then by type or task.
+export function checkOverridesFile(
   root: JsonNode,
   diagnostics: Diagnostics,
   tree: TreeSymbols,
-  dimensions: DimensionSymbols,
+  dimension: DimensionSymbol,
 ): void {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
@@ -29,38 +30,23 @@ export function checkOverrides(
   checkVersion(diagnostics, members.get("version"));
 
   const overridesNode = members.get("overrides");
-  const overrides =
+  const byValue =
     overridesNode === undefined
       ? undefined
       : expectObject(diagnostics, overridesNode, "$.overrides");
-  for (const { key, value } of overrides?.members ?? []) {
-    const dimensionPath = childPath("$.overrides", key.value);
-    const dimension = dimensions.get(key.value);
-    if (dimension === undefined) {
+  for (const entry of byValue?.members ?? []) {
+    const valuePath = childPath("$.overrides", entry.key.value);
+    if (dimension.values !== undefined && !dimension.values.has(entry.key.value)) {
       report(
         diagnostics,
-        "undeclared-dimension",
-        `dimension ${JSON.stringify(key.value)} is not declared`,
-        dimensionPath,
-        key,
+        "unknown-dimension-value",
+        `${JSON.stringify(entry.key.value)} is not a value of this dimension`,
+        valuePath,
+        entry.key,
       );
       continue;
     }
-    const byValue = expectObject(diagnostics, value, dimensionPath);
-    for (const entry of byValue?.members ?? []) {
-      const valuePath = childPath(dimensionPath, entry.key.value);
-      if (dimension.values !== undefined && !dimension.values.has(entry.key.value)) {
-        report(
-          diagnostics,
-          "unknown-dimension-value",
-          `${JSON.stringify(entry.key.value)} is not a value of dimension ${JSON.stringify(key.value)}`,
-          valuePath,
-          entry.key,
-        );
-        continue;
-      }
-      checkValueOverrides(diagnostics, tree, dimension, entry.value, valuePath);
-    }
+    checkValueOverrides(diagnostics, tree, dimension, entry.value, valuePath);
   }
 }
 
@@ -69,7 +55,7 @@ export function checkOverrides(
 function checkValueOverrides(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
-  dimension: { scope: Set<string>; scopeComplete: boolean },
+  dimension: DimensionSymbol,
   node: JsonNode,
   path: string,
 ): void {

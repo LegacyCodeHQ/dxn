@@ -1,31 +1,23 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { afterAll, describe, expect, it } from "vitest";
-import { compile, compileDirectory } from "../src/compiler/compile.js";
+import {
+  cleanup,
+  diagnose,
+  type Files,
+  pointer,
+  taskFile,
+  tree,
+  types,
+} from "./support/project.js";
 
 // The schemas are editor aids; the compiler is the authority. These cases keep
 // the two from drifting: whatever a schema can express, it must agree with.
+afterAll(cleanup);
+
 const ajv = new Ajv2020({ allErrors: true });
 const readJson = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const validator = (name: string) => ajv.compile(readJson(`../schema/${name}.schema.json`));
-
-const directories: string[] = [];
-afterAll(() => {
-  for (const directory of directories) {
-    rmSync(directory, { recursive: true, force: true });
-  }
-});
-
-function compileFiles(files: Record<string, unknown>): string[] {
-  const directory = mkdtempSync(join(tmpdir(), "task-tree-schema-"));
-  directories.push(directory);
-  for (const [name, content] of Object.entries(files)) {
-    writeFileSync(join(directory, name), JSON.stringify(content));
-  }
-  return compileDirectory(directory).diagnostics.map((d) => d.code);
-}
 
 type Case = [string, unknown];
 
@@ -33,10 +25,11 @@ type Case = [string, unknown];
 // both; cross-reference errors pass the schema and only the compiler rejects them.
 function agree(
   name: string,
-  codes: (doc: unknown) => string[],
+  project: (doc: unknown) => Files,
   cases: { valid: Case[]; structural: Case[]; crossReference: Case[] },
 ) {
   const validate = validator(name);
+  const codes = (doc: unknown) => diagnose(project(doc)).map(({ code }) => code);
   describe(`${name} schema`, () => {
     it.each(cases.valid)("accepts %s, as the compiler does", (_, doc) => {
       expect(codes(doc)).toEqual([]);
@@ -55,56 +48,32 @@ function agree(
   });
 }
 
-const declarations = { design: { values: ["available", "missing"] } };
-const types = { link: { states: ["normal", "hovered", "selected"] } };
-const base = { version: 1, customAttributes: declarations, types, tasks: [] };
-const withTask = (task: unknown) => ({ ...base, tasks: [task] });
-const withType = (type: unknown) => ({ ...base, types: { link: type } });
+const withType = (type: unknown) => ({ ...types, types: { link: type } });
 const withDeclaration = (declaration: unknown) => ({
-  ...base,
+  ...types,
   customAttributes: { design: declaration },
 });
 
-agree("tree", (doc) => compile(JSON.stringify(doc)).diagnostics.map((d) => d.code), {
+agree("types", (doc) => ({ "types.json": doc }), {
   valid: [
-    ["the smallest document", { version: 1, tasks: [] }],
-    ["the article page example", readJson("../examples/article-page/tree.json")],
-    ["a $schema reference", { $schema: "x", version: 1, tasks: [] }],
-    ["a title with surrounding whitespace", withTask({ id: "a", title: " A " })],
+    ["the smallest file", { version: 1 }],
+    ["the website example", readJson("../examples/website/types.json")],
+    ["a $schema reference", { $schema: "x", version: 1 }],
     [
-      "a type with values and an instance override",
-      withTask({
-        id: "a",
-        title: "A",
-        type: "link",
-        customAttributes: { design: { selected: "available" } },
-      }),
+      "a type with values",
+      withType({ states: ["normal"], customAttributes: { design: { normal: "missing" } } }),
     ],
   ],
   structural: [
     ["wrong-type", []],
-    ["missing-key", { tasks: [] }],
-    ["unknown-key", { version: 1, tasks: [], extra: 1 }],
-    ["wrong-type", { $schema: 1, version: 1, tasks: [] }],
-    ["wrong-type", { version: "1", tasks: [] }],
-    ["unsupported-version", { version: 2, tasks: [] }],
-    ["wrong-type", { version: 1, tasks: {} }],
-    ["wrong-type", { version: 1, tasks: [1] }],
-    ["missing-key", withTask({ id: "a" })],
-    ["unknown-key", withTask({ id: "a", title: "A", design: {} })],
-    ["wrong-type", withTask({ id: 1, title: "A" })],
-    ["empty-string", withTask({ id: "", title: "A" })],
-    ["empty-string", withTask({ id: "  ", title: "A" })],
-    ["surrounding-whitespace", withTask({ id: "a ", title: "A" })],
-    ["control-character", withTask({ id: "a\u0000", title: "A" })],
-    ["control-character", withTask({ id: "a", title: "A\u0007" })],
-    ["wrong-type", withTask({ id: "a", title: 1 })],
-    ["empty-string", withTask({ id: "a", title: "" })],
-    ["empty-string", withTask({ id: "a", title: " " })],
-    ["wrong-type", withTask({ id: "a", title: "A", type: 1 })],
-    ["wrong-type", withTask({ id: "a", title: "A", children: {} })],
-    ["attributes-without-type", withTask({ id: "a", title: "A", customAttributes: {} })],
-    ["wrong-type", { ...base, customAttributes: [] }],
+    ["missing-key", {}],
+    ["unknown-key", { version: 1, tasks: [] }],
+    ["wrong-type", { $schema: 1, version: 1 }],
+    ["wrong-type", { version: "1" }],
+    ["unsupported-version", { version: 2 }],
+    ["wrong-type", { ...types, customAttributes: [] }],
+    ["empty-string", { ...types, customAttributes: { "": { values: ["a"] } } }],
+    ["surrounding-whitespace", { ...types, customAttributes: { "design ": { values: ["a"] } } }],
     ["wrong-type", withDeclaration("x")],
     ["missing-key", withDeclaration({})],
     ["unknown-key", withDeclaration({ values: ["a"], color: 1 })],
@@ -112,130 +81,131 @@ agree("tree", (doc) => compile(JSON.stringify(doc)).diagnostics.map((d) => d.cod
     ["empty-values", withDeclaration({ values: [] })],
     ["wrong-type", withDeclaration({ values: [1] })],
     ["empty-string", withDeclaration({ values: [""] })],
-    ["duplicate-value", withDeclaration({ values: ["a", "a"] })],
     ["surrounding-whitespace", withDeclaration({ values: [" a"] })],
-    ["empty-string", { ...base, customAttributes: { "": { values: ["a"] } } }],
-    ["surrounding-whitespace", { ...base, customAttributes: { "design ": { values: ["a"] } } }],
-    ["wrong-type", { ...base, types: [] }],
+    ["control-character", withDeclaration({ values: ["a\u0001"] })],
+    ["duplicate-value", withDeclaration({ values: ["a", "a"] })],
+    ["wrong-type", { ...types, types: [] }],
+    ["empty-string", { ...types, types: { " ": {} } }],
+    ["surrounding-whitespace", { ...types, types: { "link ": {} } }],
     ["wrong-type", withType(1)],
     ["unknown-key", withType({ kind: "x" })],
     ["wrong-type", withType({ states: "x" })],
     ["wrong-type", withType({ states: [1] })],
     ["empty-string", withType({ states: [""] })],
-    ["duplicate-state", withType({ states: ["a", "a"] })],
     ["surrounding-whitespace", withType({ states: [" a"] })],
-    ["empty-string", { ...base, types: { " ": {} } }],
-    ["surrounding-whitespace", { ...base, types: { "link ": {} } }],
+    ["duplicate-state", withType({ states: ["a", "a"] })],
     ["wrong-type", withType({ states: ["normal"], customAttributes: [] })],
     ["wrong-type", withType({ states: ["normal"], customAttributes: { design: "x" } })],
     ["wrong-type", withType({ states: ["normal"], customAttributes: { design: { normal: 1 } } })],
   ],
   crossReference: [
-    ["duplicate-id", withTask({ id: "a", title: "A", children: [{ id: "a", title: "B" }] })],
-    ["undefined-type", withTask({ id: "a", title: "A", type: "button" })],
-    [
-      "undeclared-attribute",
-      withTask({ id: "a", title: "A", type: "link", customAttributes: { implemented: {} } }),
-    ],
+    ["undeclared-attribute", withType({ states: ["normal"], customAttributes: { size: {} } })],
     [
       "unknown-state",
-      withTask({
-        id: "a",
-        title: "A",
-        type: "link",
-        customAttributes: { design: { pressed: "available" } },
-      }),
+      withType({ states: ["normal"], customAttributes: { design: { pressed: "missing" } } }),
     ],
     [
       "unknown-value",
-      withTask({
-        id: "a",
-        title: "A",
-        type: "link",
-        customAttributes: { design: { normal: "maybe" } },
-      }),
+      withType({ states: ["normal"], customAttributes: { design: { normal: "maybe" } } }),
     ],
   ],
 });
 
-const tree = {
-  ...base,
-  tasks: [
-    {
-      id: "page",
-      title: "Page",
-      children: [
-        { id: "blog-link", title: "Blog link", type: "link" },
-        { id: "logo", title: "Logo" },
-      ],
-    },
-    { id: "footer-link", title: "Footer link", type: "link" },
-  ],
-};
-const dimensions = {
-  version: 1,
-  dimensions: { pointer: { values: ["mouse", "touch"], appliesTo: ["page"] } },
-};
-const dimension = (declaration: unknown) => ({
-  version: 1,
-  dimensions: { pointer: declaration },
-});
+const task = (value: unknown) => taskFile(value);
+const a = (fields: Record<string, unknown> = {}) => task({ id: "a", title: "A", ...fields });
 
-agree("dimensions", (doc) => compileFiles({ "tree.json": tree, "dimensions.json": doc }), {
+agree("task", (doc) => ({ "types.json": types, "tasks/a.json": doc }), {
   valid: [
-    ["no dimensions", { version: 1, dimensions: {} }],
-    ["a dimension over existing tasks", dimensions],
-    ["a $schema reference", { $schema: "x", ...dimensions }],
+    ["a root task", a()],
+    ["a $schema reference", { $schema: "x", ...a() }],
+    ["a title with surrounding whitespace", a({ title: " A " })],
+    [
+      "a typed task with an override and children",
+      a({
+        type: "link",
+        customAttributes: { design: { selected: "available" } },
+        children: [{ id: "b", title: "B" }],
+      }),
+    ],
   ],
   structural: [
     ["wrong-type", []],
     ["missing-key", { version: 1 }],
-    ["unknown-key", { ...dimensions, extra: 1 }],
-    ["wrong-type", { $schema: 1, ...dimensions }],
-    ["wrong-type", { version: "1", dimensions: {} }],
-    ["unsupported-version", { version: 2, dimensions: {} }],
-    ["wrong-type", { version: 1, dimensions: [] }],
-    ["wrong-type", dimension("x")],
-    ["missing-key", dimension({ values: ["mouse"] })],
-    ["unknown-key", dimension({ values: ["mouse"], appliesTo: ["page"], kind: 1 })],
-    ["wrong-type", dimension({ values: "x", appliesTo: ["page"] })],
-    ["empty-values", dimension({ values: [], appliesTo: ["page"] })],
-    ["wrong-type", dimension({ values: [1], appliesTo: ["page"] })],
-    ["empty-string", dimension({ values: [""], appliesTo: ["page"] })],
-    ["duplicate-value", dimension({ values: ["a", "a"], appliesTo: ["page"] })],
-    ["empty-string", dimension({ values: [" "], appliesTo: ["page"] })],
-    ["surrounding-whitespace", dimension({ values: ["sm "], appliesTo: ["page"] })],
-    ["control-character", dimension({ values: ["s\u0001m"], appliesTo: ["page"] })],
-    [
-      "empty-string",
-      { version: 1, dimensions: { "": { values: ["mouse"], appliesTo: ["page"] } } },
-    ],
-    [
-      "surrounding-whitespace",
-      { version: 1, dimensions: { " pointer": { values: ["mouse"], appliesTo: ["page"] } } },
-    ],
-    ["wrong-type", dimension({ values: ["mouse"], appliesTo: "page" })],
-    ["empty-applies-to", dimension({ values: ["mouse"], appliesTo: [] })],
-    ["wrong-type", dimension({ values: ["mouse"], appliesTo: [1] })],
-    ["empty-string", dimension({ values: ["mouse"], appliesTo: [""] })],
-    ["duplicate-task", dimension({ values: ["mouse"], appliesTo: ["page", "page"] })],
+    ["unknown-key", { ...a(), extra: 1 }],
+    ["wrong-type", { $schema: 1, ...a() }],
+    ["wrong-type", { version: "1", task: { id: "a", title: "A" } }],
+    ["unsupported-version", { version: 2, task: { id: "a", title: "A" } }],
+    ["wrong-type", task([])],
+    ["missing-key", task({ id: "a" })],
+    ["unknown-key", a({ design: {} })],
+    ["wrong-type", a({ id: 1 })],
+    ["empty-string", a({ id: "" })],
+    ["empty-string", a({ id: "  " })],
+    ["surrounding-whitespace", a({ id: "a " })],
+    ["control-character", a({ id: "a\u0000" })],
+    ["wrong-type", a({ title: 1 })],
+    ["empty-string", a({ title: "" })],
+    ["empty-string", a({ title: " " })],
+    ["control-character", a({ title: "A\u0007" })],
+    ["wrong-type", a({ type: 1 })],
+    ["wrong-type", a({ children: {} })],
+    ["missing-key", a({ children: [{ id: "b" }] })],
+    ["attributes-without-type", a({ customAttributes: {} })],
+    ["wrong-type", a({ type: "link", customAttributes: [] })],
+    ["wrong-type", a({ type: "link", customAttributes: { design: { normal: 1 } } })],
   ],
-  crossReference: [["unknown-task", dimension({ values: ["mouse"], appliesTo: ["nope"] })]],
+  crossReference: [
+    ["file-name-mismatch", task({ id: "b", title: "B" })],
+    ["duplicate-id", a({ children: [{ id: "a", title: "Again" }] })],
+    ["undefined-type", a({ type: "button" })],
+    ["undeclared-attribute", a({ type: "link", customAttributes: { size: {} } })],
+    ["unknown-state", a({ type: "link", customAttributes: { design: { pressed: "missing" } } })],
+    ["unknown-value", a({ type: "link", customAttributes: { design: { normal: "maybe" } } })],
+  ],
+});
+
+const dimension = (fields: Record<string, unknown>) => ({ ...pointer, ...fields });
+
+agree("dimension", (doc) => ({ ...tree, "dimensions/pointer.json": doc }), {
+  valid: [
+    ["a dimension over existing tasks", pointer],
+    ["a $schema reference", { $schema: "x", ...pointer }],
+  ],
+  structural: [
+    ["wrong-type", []],
+    ["missing-key", { version: 1, values: ["mouse"] }],
+    ["unknown-key", dimension({ extra: 1 })],
+    ["wrong-type", dimension({ $schema: 1 })],
+    ["wrong-type", dimension({ version: "1" })],
+    ["unsupported-version", dimension({ version: 2 })],
+    ["wrong-type", dimension({ values: "x" })],
+    ["empty-values", dimension({ values: [] })],
+    ["wrong-type", dimension({ values: [1] })],
+    ["empty-string", dimension({ values: [" "] })],
+    ["surrounding-whitespace", dimension({ values: ["sm "] })],
+    ["control-character", dimension({ values: ["s\u0001m"] })],
+    ["duplicate-value", dimension({ values: ["a", "a"] })],
+    ["wrong-type", dimension({ appliesTo: "page" })],
+    ["empty-applies-to", dimension({ appliesTo: [] })],
+    ["wrong-type", dimension({ appliesTo: [1] })],
+    ["empty-string", dimension({ appliesTo: [""] })],
+    ["duplicate-task", dimension({ appliesTo: ["page", "page"] })],
+  ],
+  crossReference: [["unknown-task", dimension({ appliesTo: ["nope"] })]],
 });
 
 const overrides = (value: unknown) => ({ version: 1, overrides: value });
-const touch = (entry: unknown) => overrides({ pointer: { touch: entry } });
+const touch = (entry: unknown) => overrides({ touch: entry });
 const link = (entry: unknown) => touch({ types: { link: entry } });
-const task = (id: string, entry: unknown) => touch({ tasks: { [id]: entry } });
+const taskOverride = (id: string, entry: unknown) => touch({ tasks: { [id]: entry } });
 
 agree(
   "overrides",
-  (doc) =>
-    compileFiles({ "tree.json": tree, "dimensions.json": dimensions, "overrides.json": doc }),
+  (doc) => ({ ...tree, "dimensions/pointer.json": pointer, "overrides/pointer.json": doc }),
   {
     valid: [
       ["no overrides", overrides({})],
-      ["the article page example", readJson("../examples/article-page/overrides.json")],
+      ["the website pointer overrides", readJson("../examples/website/overrides/pointer.json")],
       ["a $schema reference", { $schema: "x", ...overrides({}) }],
       [
         "type and task overrides",
@@ -253,7 +223,6 @@ agree(
       ["wrong-type", { version: "1", overrides: {} }],
       ["unsupported-version", { version: 2, overrides: {} }],
       ["wrong-type", overrides([])],
-      ["wrong-type", overrides({ pointer: [] })],
       ["wrong-type", touch([])],
       ["unknown-key", touch({ screens: {} })],
       ["wrong-type", touch({ types: [] })],
@@ -273,12 +242,11 @@ agree(
       ["wrong-type", link({ customAttributes: { design: { normal: 1 } } })],
     ],
     crossReference: [
-      ["undeclared-dimension", overrides({ theme: {} })],
-      ["unknown-dimension-value", overrides({ pointer: { pen: {} } })],
+      ["unknown-dimension-value", overrides({ pen: {} })],
       ["undefined-type", touch({ types: { button: {} } })],
-      ["unknown-task", task("nope", {})],
-      ["task-out-of-scope", task("footer-link", {})],
-      ["override-without-type", task("logo", {})],
+      ["unknown-task", taskOverride("nope", {})],
+      ["task-out-of-scope", taskOverride("footer-link", {})],
+      ["override-without-type", taskOverride("logo", {})],
       ["unknown-state", link({ states: { remove: ["pressed"] } })],
       ["duplicate-state", link({ states: { add: ["normal"] } })],
       ["conflicting-state", link({ states: { remove: ["hovered"], add: ["hovered"] } })],
@@ -286,16 +254,22 @@ agree(
         "removed-state",
         link({ states: { remove: ["hovered"] }, customAttributes: { design: { hovered: "x" } } }),
       ],
-      ["undeclared-attribute", link({ customAttributes: { implemented: {} } })],
+      ["undeclared-attribute", link({ customAttributes: { size: {} } })],
       ["unknown-value", link({ customAttributes: { design: { normal: "maybe" } } })],
     ],
   },
 );
 
-describe("article page example", () => {
-  it.each(["tree", "dimensions", "overrides"])("%s.json passes its schema", (name) => {
-    const validate = validator(name);
-    expect(validate(readJson(`../examples/article-page/${name}.json`))).toBe(true);
+describe("website example", () => {
+  it.each([
+    ["types", "types.json"],
+    ["task", "tasks/article-page.json"],
+    ["dimension", "dimensions/breakpoint.json"],
+    ["dimension", "dimensions/pointer.json"],
+    ["overrides", "overrides/pointer.json"],
+  ])("passes the %s schema: %s", (schema, file) => {
+    const validate = validator(schema);
+    expect(validate(readJson(`../examples/website/${file}`))).toBe(true);
     expect(validate.errors ?? []).toEqual([]);
   });
 });

@@ -13,26 +13,35 @@ import {
 } from "./shape.js";
 import type { StateSet, TreeSymbols } from "./symbols.js";
 
-export function check(root: JsonNode, diagnostics: Diagnostics): TreeSymbols {
-  const symbols: TreeSymbols = {
+export function emptySymbols(): TreeSymbols {
+  return {
     attributes: new Map(),
     types: new Map(),
     ids: new Map(),
     taskTypes: new Map(),
     children: new Map(),
   };
+}
+
+// types.json: custom attribute declarations and types.
+export function checkTypesFile(
+  root: JsonNode,
+  diagnostics: Diagnostics,
+  symbols: TreeSymbols,
+): void {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
-    return symbols;
+    return;
   }
   const members = keys(
     diagnostics,
     document,
     "$",
-    ["$schema", "version", "customAttributes", "types", "tasks"],
-    { required: ["version", "tasks"] },
+    ["$schema", "version", "customAttributes", "types"],
+    {
+      required: ["version"],
+    },
   );
-
   checkSchema(diagnostics, members.get("$schema"));
   checkVersion(diagnostics, members.get("version"));
 
@@ -45,12 +54,41 @@ export function check(root: JsonNode, diagnostics: Diagnostics): TreeSymbols {
   if (types !== undefined) {
     checkTypes(diagnostics, symbols, types, "$.types");
   }
+}
 
-  const tasks = members.get("tasks");
-  if (tasks !== undefined) {
-    checkTaskList(diagnostics, symbols, tasks, "$.tasks");
+// tasks/<id>.json: one root task, named after the file.
+export function checkTaskFile(
+  root: JsonNode,
+  diagnostics: Diagnostics,
+  symbols: TreeSymbols,
+  file: string,
+  expectedId: string,
+): void {
+  const document = expectObject(diagnostics, root, "$");
+  if (document === undefined) {
+    return;
   }
-  return symbols;
+  const members = keys(diagnostics, document, "$", ["$schema", "version", "task"], {
+    required: ["version", "task"],
+  });
+  checkSchema(diagnostics, members.get("$schema"));
+  checkVersion(diagnostics, members.get("version"));
+
+  const task = members.get("task");
+  if (task === undefined) {
+    return;
+  }
+  const id = checkTask(diagnostics, symbols, task, "$.task", file);
+  if (id !== undefined && id !== expectedId && task.kind === "object") {
+    const idNode = task.members.find((member) => member.key.value === "id")?.value ?? task;
+    report(
+      diagnostics,
+      "file-name-mismatch",
+      `root task ${JSON.stringify(id)} must be in tasks/${id}.json`,
+      "$.task.id",
+      idNode,
+    );
+  }
 }
 
 function checkDeclarations(
@@ -218,13 +256,14 @@ function checkTaskList(
   symbols: TreeSymbols,
   node: JsonNode,
   path: string,
+  file: string,
 ): string[] {
   if (!expectKind(diagnostics, node, path, "array")) {
     return [];
   }
   const ids: string[] = [];
   node.elements.forEach((element, index) => {
-    const id = checkTask(diagnostics, symbols, element, `${path}[${index}]`);
+    const id = checkTask(diagnostics, symbols, element, `${path}[${index}]`, file);
     if (id !== undefined) {
       ids.push(id);
     }
@@ -238,6 +277,7 @@ function checkTask(
   symbols: TreeSymbols,
   node: JsonNode,
   path: string,
+  file: string,
 ): string | undefined {
   const task = expectObject(diagnostics, node, path);
   if (task === undefined) {
@@ -264,7 +304,7 @@ function checkTask(
         id,
       );
     } else {
-      symbols.ids.set(id.value, path);
+      symbols.ids.set(id.value, `${file} ${path}`);
       taskId = id.value;
     }
   }
@@ -312,7 +352,9 @@ function checkTask(
 
   const children = members.get("children");
   const childIds =
-    children === undefined ? [] : checkTaskList(diagnostics, symbols, children, `${path}.children`);
+    children === undefined
+      ? []
+      : checkTaskList(diagnostics, symbols, children, `${path}.children`, file);
   if (taskId !== undefined) {
     symbols.children.set(taskId, childIds);
   }

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "task-tree task",
+  "description": "Editor aid for tasks/<id>.json. The task-tree compiler is the authority: it also checks that the root task's id matches the file name, that ids are unique across the project, and that types, attributes, states and values exist, which this schema cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "task"],
+  "properties": {
+    "$schema": {
+      "description": "Path or URL of this schema, for editors.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Format version.",
+      "const": 1
+    },
+    "task": {
+      "description": "The root task of this file; its id must match the file name.",
+      "$ref": "#/$defs/task"
+    }
+  },
+  "$defs": {
+    "name": {
+      "description": "Non-blank, without leading or trailing whitespace or control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])\\S(?:[\\s\\S]*\\S)?$"
+    },
+    "text": {
+      "description": "Non-blank, without control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])[\\s\\S]*\\S[\\s\\S]*$"
+    },
+    "attributeValues": {
+      "description": "Custom attribute values, by attribute name, then by state.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title"],
+      "dependentRequired": {
+        "customAttributes": ["type"]
+      },
+      "properties": {
+        "id": {
+          "description": "Unique across the whole tree.",
+          "$ref": "#/$defs/name"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "type": {
+          "description": "Name of a type in the top-level types.",
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/task"
+          }
+        },
+        "customAttributes": {
+          "description": "Overrides the type's values, state by state.",
+          "$ref": "#/$defs/attributeValues"
+        }
+      }
+    }
+  }
+}

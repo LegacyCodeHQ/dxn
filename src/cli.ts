@@ -7,7 +7,7 @@ export type { Io } from "./io.js";
 const usage = `Usage: task-tree <command> [options]
 
 Commands:
-  query <tree.json> <task-id>  Show a task and the states it has
+  query <directory> <task-id>  Show a task and the states it has
 
 Options:
   -h, --help     Show this help

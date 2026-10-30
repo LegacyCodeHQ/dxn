@@ -80,6 +80,11 @@ function hasControlCharacter(text: string): boolean {
   return false;
 }
 
+// Whether text is a valid name, for names that come from file names.
+export function isName(text: string): boolean {
+  return text !== "" && text.trim() === text && !hasControlCharacter(text);
+}
+
 // A name (id, type, state, attribute, dimension or value): non-blank and
 // without surrounding whitespace, so "a" and "a " cannot both exist.
 export function expectName(

@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "task-tree",
-  "description": "Editor aid for task-tree files. The task-tree compiler is the authority: it also checks cross-references (declared attributes, type states and values, defined types, unique ids) that this schema cannot express.",
+  "title": "task-tree types",
+  "description": "Editor aid for types.json. The task-tree compiler is the authority: it also checks that custom attribute values use declared attributes, the type's states and declared values, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "tasks"],
+  "required": ["version"],
   "properties": {
     "$schema": {
       "description": "Path or URL of this schema, for editors.",
@@ -33,13 +33,6 @@
       "propertyNames": {
         "$ref": "#/$defs/name"
       }
-    },
-    "tasks": {
-      "description": "The root tasks of the tree.",
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/task"
-      }
     }
   },
   "$defs": {
@@ -47,11 +40,6 @@
       "description": "Non-blank, without leading or trailing whitespace or control characters.",
       "type": "string",
       "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])\\S(?:[\\s\\S]*\\S)?$"
-    },
-    "text": {
-      "description": "Non-blank, without control characters.",
-      "type": "string",
-      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])[\\s\\S]*\\S[\\s\\S]*$"
     },
     "declaration": {
       "type": "object",
@@ -93,37 +81,6 @@
         "type": "object",
         "additionalProperties": {
           "type": "string"
-        }
-      }
-    },
-    "task": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "title"],
-      "dependentRequired": {
-        "customAttributes": ["type"]
-      },
-      "properties": {
-        "id": {
-          "description": "Unique across the whole tree.",
-          "$ref": "#/$defs/name"
-        },
-        "title": {
-          "$ref": "#/$defs/text"
-        },
-        "type": {
-          "description": "Name of a type in the top-level types.",
-          "type": "string"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/task"
-          }
-        },
-        "customAttributes": {
-          "description": "Overrides the type's values, state by state.",
-          "$ref": "#/$defs/attributeValues"
         }
       }
     }

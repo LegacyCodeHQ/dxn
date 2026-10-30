@@ -1,34 +1,29 @@
-import { compile } from "./compiler/compile.js";
-import { readSource } from "./compiler/read.js";
+import { join } from "node:path";
+import { compileDirectory } from "./compiler/compile.js";
 import type { Io } from "./io.js";
 import { findTask } from "./tree.js";
 
-export const queryUsage = "Usage: task-tree query <tree.json> <task-id>\n";
+export const queryUsage = "Usage: task-tree query <directory> <task-id>\n";
 
 export function query(args: string[], io: Io): number {
-  const [path, id] = args;
-  if (path === undefined || id === undefined) {
+  const [directory, id] = args;
+  if (directory === undefined || id === undefined) {
     io.stderr(queryUsage);
     return 2;
   }
-  const read = readSource(path);
-  if (!read.ok) {
-    io.stderr(`${path}:${read.line}:${read.column}: ${read.code}: ${read.message}\n`);
-    return 1;
-  }
-  const { document: tree, diagnostics } = compile(read.source);
-  if (tree === undefined) {
-    for (const { line, column, code, message } of diagnostics) {
-      io.stderr(`${path}:${line}:${column}: ${code}: ${message}\n`);
+  const { project, diagnostics } = compileDirectory(directory);
+  if (project === undefined) {
+    for (const { file, line, column, code, message } of diagnostics) {
+      io.stderr(`${join(directory, file)}:${line}:${column}: ${code}: ${message}\n`);
     }
     return 1;
   }
-  const task = findTask(tree.tasks, id);
+  const task = findTask(project.tasks, id);
   if (task === undefined) {
     io.stderr(`task-tree: task not found: ${id}\n`);
     return 1;
   }
-  const states = task.type === undefined ? [] : (tree.types?.[task.type]?.states ?? []);
+  const states = task.type === undefined ? [] : (project.types.types?.[task.type]?.states ?? []);
   const result = {
     id: task.id,
     title: task.title,

@@ -1,111 +1,89 @@
-import { childPath, type Diagnostics } from "./diagnostic.js";
+import type { Diagnostics } from "./diagnostic.js";
 import type { JsonNode } from "./json.js";
 import {
   checkSchema,
   checkVersion,
   expectKind,
-  expectName,
   expectObject,
   keys,
   report,
   stringElements,
   uniqueStrings,
 } from "./shape.js";
-import type { DimensionSymbols, TreeSymbols } from "./symbols.js";
+import type { DimensionSymbol, TreeSymbols } from "./symbols.js";
 
-export function checkDimensions(
+// dimensions/<name>.json: the dimension's values and the tasks it applies to.
+export function checkDimensionFile(
   root: JsonNode,
   diagnostics: Diagnostics,
   tree: TreeSymbols,
-): DimensionSymbols {
-  const dimensions: DimensionSymbols = new Map();
+): DimensionSymbol {
+  const dimension: DimensionSymbol = {
+    values: undefined,
+    scope: new Set(),
+    scopeComplete: false,
+  };
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
-    return dimensions;
+    return dimension;
   }
-  const members = keys(diagnostics, document, "$", ["$schema", "version", "dimensions"], {
-    required: ["version", "dimensions"],
+  const fields = keys(diagnostics, document, "$", ["$schema", "version", "values", "appliesTo"], {
+    required: ["version", "values", "appliesTo"],
   });
-  checkSchema(diagnostics, members.get("$schema"));
-  checkVersion(diagnostics, members.get("version"));
+  checkSchema(diagnostics, fields.get("$schema"));
+  checkVersion(diagnostics, fields.get("version"));
 
-  const declarationsNode = members.get("dimensions");
-  const declarations =
-    declarationsNode === undefined
-      ? undefined
-      : expectObject(diagnostics, declarationsNode, "$.dimensions");
-  for (const { key, value } of declarations?.members ?? []) {
-    const path = childPath("$.dimensions", key.value);
-    expectName(diagnostics, key, path);
-    const dimension = {
-      values: undefined as Set<string> | undefined,
-      scope: new Set<string>(),
-      scopeComplete: false,
-    };
-    dimensions.set(key.value, dimension);
-    const declaration = expectObject(diagnostics, value, path);
-    if (declaration === undefined) {
-      continue;
-    }
-    const fields = keys(diagnostics, declaration, path, ["values", "appliesTo"], {
-      required: ["values", "appliesTo"],
-    });
-
-    const values = fields.get("values");
-    if (values !== undefined && expectKind(diagnostics, values, `${path}.values`, "array")) {
-      if (values.elements.length === 0) {
-        report(
-          diagnostics,
-          "empty-values",
-          "a dimension must declare at least one value",
-          `${path}.values`,
-          values,
-        );
-      } else {
-        dimension.values = uniqueStrings(diagnostics, values, `${path}.values`, "duplicate-value");
-      }
-    }
-
-    const appliesTo = fields.get("appliesTo");
-    if (
-      appliesTo !== undefined &&
-      expectKind(diagnostics, appliesTo, `${path}.appliesTo`, "array")
-    ) {
-      const before = diagnostics.items.length;
-      if (appliesTo.elements.length === 0) {
-        report(
-          diagnostics,
-          "empty-applies-to",
-          "a dimension must apply to at least one task",
-          `${path}.appliesTo`,
-          appliesTo,
-        );
-      }
-      for (const [id, idPath] of stringElements(
+  const values = fields.get("values");
+  if (values !== undefined && expectKind(diagnostics, values, "$.values", "array")) {
+    if (values.elements.length === 0) {
+      report(
         diagnostics,
-        appliesTo,
-        `${path}.appliesTo`,
-        "duplicate-task",
-      )) {
-        if (!tree.ids.has(id.value)) {
-          report(
-            diagnostics,
-            "unknown-task",
-            `task ${JSON.stringify(id.value)} does not exist`,
-            idPath,
-            id,
-          );
-          continue;
-        }
-        addSubtree(tree, id.value, dimension.scope);
-      }
-      // A duplicate entry does not shrink the scope; any other problem does.
-      dimension.scopeComplete = diagnostics.items
-        .slice(before)
-        .every(({ code }) => code === "duplicate-task");
+        "empty-values",
+        "a dimension must declare at least one value",
+        "$.values",
+        values,
+      );
+    } else {
+      dimension.values = uniqueStrings(diagnostics, values, "$.values", "duplicate-value");
     }
   }
-  return dimensions;
+
+  const appliesTo = fields.get("appliesTo");
+  if (appliesTo !== undefined && expectKind(diagnostics, appliesTo, "$.appliesTo", "array")) {
+    const before = diagnostics.items.length;
+    if (appliesTo.elements.length === 0) {
+      report(
+        diagnostics,
+        "empty-applies-to",
+        "a dimension must apply to at least one task",
+        "$.appliesTo",
+        appliesTo,
+      );
+    }
+    for (const [id, idPath] of stringElements(
+      diagnostics,
+      appliesTo,
+      "$.appliesTo",
+      "duplicate-task",
+    )) {
+      if (!tree.ids.has(id.value)) {
+        report(
+          diagnostics,
+          "unknown-task",
+          `task ${JSON.stringify(id.value)} does not exist`,
+          idPath,
+          id,
+        );
+        continue;
+      }
+      addSubtree(tree, id.value, dimension.scope);
+    }
+    // A duplicate entry does not shrink the scope; any other problem does.
+    dimension.scopeComplete = diagnostics.items
+      .slice(before)
+      .every(({ code }) => code === "duplicate-task");
+  }
+  return dimension;
 }
 
 function addSubtree(tree: TreeSymbols, id: string, scope: Set<string>): void {

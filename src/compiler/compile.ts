@@ -1,35 +1,17 @@
-import { statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import type { DimensionsFile, OverridesFile, Project, Tree } from "../tree.js";
-import { check } from "./check.js";
+import type { DimensionFile, OverridesFile, Project, TaskFile, TypesFile } from "../tree.js";
+import { checkTaskFile, checkTypesFile, emptySymbols } from "./check.js";
 import { type Diagnostic, Diagnostics } from "./diagnostic.js";
-import { checkDimensions } from "./dimensions.js";
+import { checkDimensionFile } from "./dimensions.js";
 import { type JsonNode, parseJson } from "./json.js";
-import { checkOverrides } from "./overrides.js";
+import { checkOverridesFile } from "./overrides.js";
 import { readSource } from "./read.js";
-import type { DimensionSymbols } from "./symbols.js";
-
-export interface CompileResult {
-  // Present only when the source has no diagnostics.
-  document?: Tree;
-  diagnostics: Diagnostic[];
-}
-
-export function compile(source: string): CompileResult {
-  const parsed = parseJson(source);
-  if (parsed.root === undefined) {
-    return { diagnostics: parsed.diagnostics };
-  }
-  const diagnostics = new Diagnostics(source);
-  check(parsed.root, diagnostics);
-  const all = [...parsed.diagnostics, ...diagnostics.items];
-  if (all.length > 0) {
-    return { diagnostics: all };
-  }
-  return { document: JSON.parse(source) as Tree, diagnostics: [] };
-}
+import { isName } from "./shape.js";
+import type { DimensionSymbol } from "./symbols.js";
 
 export interface FileDiagnostic extends Diagnostic {
+  // Relative to the project directory, e.g. "tasks/article-page.json".
   file: string;
 }
 
@@ -40,67 +22,163 @@ export interface DirectoryResult {
 }
 
 interface ParsedFile {
-  name: string;
+  file: string;
   source: string;
   root?: JsonNode;
   diagnostics: Diagnostics;
 }
 
-// Compiles a task-tree directory. tree.json is required; dimensions.json and
-// overrides.json are optional; any other file is ignored.
+// Compiles a project directory:
+//
+//   types.json               required: custom attribute declarations and types
+//   tasks/<id>.json          one root task per file, named after its id
+//   dimensions/<name>.json   one dimension per file
+//   overrides/<name>.json    overrides for the dimension of the same name
+//
+// Anything else in the directory is ignored.
 export function compileDirectory(directory: string): DirectoryResult {
   if (statSync(directory, { throwIfNoEntry: false })?.isDirectory() === false) {
     return { diagnostics: [fileDiagnostic(".", "not-a-directory", "not a directory")] };
   }
-  const files: ParsedFile[] = [];
-  const tree = readJson(directory, "tree.json");
-  if (tree === undefined) {
-    return { diagnostics: [fileDiagnostic("tree.json", "missing-file", "tree.json not found")] };
-  }
-  if ("code" in tree) {
-    return { diagnostics: [tree] };
-  }
-  files.push(tree);
-  if (tree.root === undefined) {
-    // Without a tree, every reference in the other files would be reported as unknown.
-    return { diagnostics: collect(files) };
-  }
-  const symbols = check(tree.root, tree.diagnostics);
   const problems: FileDiagnostic[] = [];
+  const parsed: ParsedFile[] = [];
+  const result = () => ({ diagnostics: [...problems, ...collect(parsed)] });
 
-  let dimensions: DimensionSymbols = new Map();
-  const dimensionsFile = readJson(directory, "dimensions.json");
-  if (dimensionsFile !== undefined && "code" in dimensionsFile) {
-    problems.push(dimensionsFile);
-  } else if (dimensionsFile !== undefined) {
-    files.push(dimensionsFile);
-    if (dimensionsFile.root !== undefined) {
-      dimensions = checkDimensions(dimensionsFile.root, dimensionsFile.diagnostics, symbols);
+  const types = readJson(directory, "types.json");
+  if (types === undefined) {
+    return { diagnostics: [fileDiagnostic("types.json", "missing-file", "types.json not found")] };
+  }
+  if ("code" in types) {
+    return { diagnostics: [types] };
+  }
+  parsed.push(types);
+  if (types.root === undefined) {
+    // Without types, every task's type would be reported as undefined.
+    return result();
+  }
+  const symbols = emptySymbols();
+  checkTypesFile(types.root, types.diagnostics, symbols);
+
+  const tasks: ParsedFile[] = [];
+  let tasksComplete = true;
+  for (const name of listJson(directory, "tasks", problems)) {
+    const file = readJson(directory, `tasks/${name}.json`);
+    if (file === undefined || "code" in file) {
+      tasksComplete = false;
+      if (file !== undefined) problems.push(file);
+      continue;
     }
+    parsed.push(file);
+    if (file.root === undefined) {
+      tasksComplete = false;
+      continue;
+    }
+    tasks.push(file);
+    checkTaskFile(file.root, file.diagnostics, symbols, file.file, name);
+  }
+  if (!tasksComplete) {
+    // Dimension and override files would report every task in the unreadable
+    // file as unknown.
+    return result();
   }
 
-  const overridesFile = readJson(directory, "overrides.json");
-  if (overridesFile !== undefined && "code" in overridesFile) {
-    problems.push(overridesFile);
-  } else if (overridesFile !== undefined) {
-    files.push(overridesFile);
-    if (overridesFile.root !== undefined) {
-      checkOverrides(overridesFile.root, overridesFile.diagnostics, symbols, dimensions);
+  const dimensions = new Map<string, { parsed: ParsedFile; symbol: DimensionSymbol }>();
+  for (const name of listJson(directory, "dimensions", problems)) {
+    const path = `dimensions/${name}.json`;
+    if (!isName(name)) {
+      problems.push(
+        fileDiagnostic(
+          path,
+          "invalid-file-name",
+          `${JSON.stringify(name)} is not a valid dimension name`,
+        ),
+      );
+      continue;
     }
+    // Declared even when unreadable, so its override file is not reported as
+    // undeclared on top of the real problem.
+    const symbol: DimensionSymbol = { values: undefined, scope: new Set(), scopeComplete: false };
+    const file = readJson(directory, path);
+    if (file === undefined || "code" in file) {
+      if (file !== undefined) problems.push(file);
+      dimensions.set(name, {
+        parsed: { file: path, source: "", diagnostics: new Diagnostics("") },
+        symbol,
+      });
+      continue;
+    }
+    parsed.push(file);
+    dimensions.set(name, {
+      parsed: file,
+      symbol:
+        file.root === undefined ? symbol : checkDimensionFile(file.root, file.diagnostics, symbols),
+    });
   }
 
-  const diagnostics = [...problems, ...collect(files)];
+  const overrides: [string, ParsedFile][] = [];
+  for (const name of listJson(directory, "overrides", problems)) {
+    const path = `overrides/${name}.json`;
+    const dimension = dimensions.get(name);
+    if (dimension === undefined) {
+      problems.push(
+        fileDiagnostic(
+          path,
+          "undeclared-dimension",
+          `no dimensions/${name}.json declares this dimension`,
+        ),
+      );
+      continue;
+    }
+    const file = readJson(directory, path);
+    if (file === undefined || "code" in file) {
+      if (file !== undefined) problems.push(file);
+      continue;
+    }
+    parsed.push(file);
+    if (file.root !== undefined) {
+      checkOverridesFile(file.root, file.diagnostics, symbols, dimension.symbol);
+    }
+    overrides.push([name, file]);
+  }
+
+  const diagnostics = result().diagnostics;
   if (diagnostics.length > 0) {
     return { diagnostics };
   }
-  const project: Project = { tree: JSON.parse(tree.source) as Tree };
-  if (dimensionsFile !== undefined && !("code" in dimensionsFile)) {
-    project.dimensions = JSON.parse(dimensionsFile.source) as DimensionsFile;
+  return {
+    project: {
+      types: JSON.parse(types.source) as TypesFile,
+      tasks: tasks.map((file) => (JSON.parse(file.source) as TaskFile).task),
+      dimensions: Object.fromEntries(
+        [...dimensions].map(([name, { parsed: file }]) => [
+          name,
+          JSON.parse(file.source) as DimensionFile,
+        ]),
+      ),
+      overrides: Object.fromEntries(
+        overrides.map(([name, file]) => [name, JSON.parse(file.source) as OverridesFile]),
+      ),
+    },
+    diagnostics: [],
+  };
+}
+
+// Names (without .json) of the JSON files directly inside a folder, sorted.
+// A missing folder has none; a folder that is a file is reported.
+function listJson(directory: string, folder: string, problems: FileDiagnostic[]): string[] {
+  const path = join(directory, folder);
+  const stat = statSync(path, { throwIfNoEntry: false });
+  if (stat === undefined) {
+    return [];
   }
-  if (overridesFile !== undefined && !("code" in overridesFile)) {
-    project.overrides = JSON.parse(overridesFile.source) as OverridesFile;
+  if (!stat.isDirectory()) {
+    problems.push(fileDiagnostic(folder, "not-a-directory", "not a directory"));
+    return [];
   }
-  return { project, diagnostics: [] };
+  return readdirSync(path, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => entry.name.slice(0, -".json".length))
+    .sort();
 }
 
 function fileDiagnostic(
@@ -114,21 +192,21 @@ function fileDiagnostic(
 }
 
 // Undefined when the file does not exist; a diagnostic when it cannot be read.
-function readJson(directory: string, name: string): ParsedFile | FileDiagnostic | undefined {
-  const read = readSource(join(directory, name));
+function readJson(directory: string, file: string): ParsedFile | FileDiagnostic | undefined {
+  const read = readSource(join(directory, file));
   if (!read.ok) {
     return read.code === "missing-file"
       ? undefined
-      : fileDiagnostic(name, read.code, read.message, read.line, read.column);
+      : fileDiagnostic(file, read.code, read.message, read.line, read.column);
   }
   const parsed = parseJson(read.source);
   const diagnostics = new Diagnostics(read.source);
   diagnostics.items.push(...parsed.diagnostics);
-  return { name, source: read.source, root: parsed.root, diagnostics };
+  return { file, source: read.source, root: parsed.root, diagnostics };
 }
 
 function collect(files: ParsedFile[]): FileDiagnostic[] {
-  return files.flatMap(({ name, diagnostics }) =>
-    diagnostics.items.map((diagnostic) => ({ file: name, ...diagnostic })),
+  return files.flatMap(({ file, diagnostics }) =>
+    diagnostics.items.map((diagnostic) => ({ file, ...diagnostic })),
   );
 }

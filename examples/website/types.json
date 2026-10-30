@@ -1,0 +1,21 @@
+{
+  "$schema": "../../schema/types.schema.json",
+  "version": 1,
+  "customAttributes": {
+    "design": {
+      "values": ["available", "missing"]
+    }
+  },
+  "types": {
+    "link": {
+      "states": ["normal", "hovered", "selected"],
+      "customAttributes": {
+        "design": {
+          "normal": "available",
+          "hovered": "available",
+          "selected": "missing"
+        }
+      }
+    }
+  }
+}
