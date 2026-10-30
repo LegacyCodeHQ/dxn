@@ -432,6 +432,28 @@ describe("contexts filters", () => {
     `);
   });
 
+  it("keep parts a shared state does not apply to, where that shared task exists", () => {
+    const { run } = cliProject(files);
+    expect(
+      json(run("contexts", "toolbar", "--subtree", "breakpoint=sm", "menu=open", "--count")),
+    ).toMatchInlineSnapshot(`
+      {
+        "counts": {
+          "blog-link": 0,
+          "menu": 1,
+          "menu-button": 4,
+          "menu-link": 8,
+          "menu-panel": 1,
+          "toolbar": 1,
+          "toolbar-links": 0,
+          "wordmark": 4,
+        },
+        "task": "toolbar",
+        "total": 19,
+      }
+    `);
+  });
+
   it("reject unknown names and values, listing the valid ones", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);

@@ -253,6 +253,7 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
       resolver,
       filterArgs,
       tasks.flatMap((task) => task.contexts),
+      values.page,
     );
     const kept = tasks.map((task) => ({ id: task.id, contexts: task.contexts.filter(keep) }));
     const page = values.page === undefined ? {} : { page: values.page };
@@ -277,6 +278,7 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     resolver,
     filterArgs,
     all.map(({ context }) => context),
+    values.page,
   );
   const kept = all.filter(({ context }) => keep(context));
   print(
@@ -291,6 +293,7 @@ function filter(
   resolver: Resolver,
   args: string[],
   contexts: TaskContext[],
+  page: string | undefined,
 ): (context: TaskContext) => boolean {
   const names = [...new Set(contexts.flatMap((context) => Object.keys(context)))].sort();
   const wanted: [string, string][] = args.map((arg) => {
@@ -318,7 +321,18 @@ function filter(
     }
     return [name, value];
   });
-  return (context) => wanted.every(([name, value]) => context[name] === value);
+  // Dimensions and shared tasks pick a view, so a part they do not apply to
+  // is in that view too, as long as a shared task exists there to have that
+  // state. State groups pick states: a part without the group is left out.
+  const inView = (name: string, context: TaskContext) => {
+    if (resolver.project.dimensions[name] !== undefined) return true;
+    if (!resolver.isShared(name)) return false;
+    return resolver.resolve(name, context, resolver.lineage(name, page)).present;
+  };
+  return (context) =>
+    wanted.every(([name, value]) =>
+      context[name] === undefined ? inView(name, context) : context[name] === value,
+    );
 }
 
 const viewsUsage = `Usage: task-tree views <task-id> [--page <page-id>]
