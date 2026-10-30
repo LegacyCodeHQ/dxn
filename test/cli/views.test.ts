@@ -230,33 +230,33 @@ describe("view", () => {
     snapshot.push(run("view", "toolbar", "theme=dark"));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    {
-      "code": 1,
-      "stderr": "task-tree: give menu=<closed|open> for this view
-  ",
-      "stdout": "",
-    },
-    {
-      "code": 1,
-      "stderr": "task-tree: "md" is not a value of breakpoint
-  ",
-      "stdout": "",
-    },
-    {
-      "code": 1,
-      "stderr": "task-tree: "ajar" is not a state of menu
-  ",
-      "stdout": "",
-    },
-    {
-      "code": 1,
-      "stderr": "task-tree: "theme" is not a dimension or shared task in this view
-  ",
-      "stdout": "",
-    },
-  ]
-`);
+      [
+        {
+          "code": 1,
+          "stderr": "task-tree: give menu=<closed|open> for this view
+      ",
+          "stdout": "",
+        },
+        {
+          "code": 1,
+          "stderr": "task-tree: "md" is not a value of breakpoint (base, sm, lg, xl)
+      ",
+          "stdout": "",
+        },
+        {
+          "code": 1,
+          "stderr": "task-tree: "ajar" is not a state of menu (closed, open)
+      ",
+          "stdout": "",
+        },
+        {
+          "code": 1,
+          "stderr": "task-tree: "theme" is not a dimension or shared task in this view (breakpoint, menu)
+      ",
+          "stdout": "",
+        },
+      ]
+    `);
   });
 });
 

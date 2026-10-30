@@ -5,7 +5,16 @@ import type { Command } from "./commands/context.js";
 import { dimension } from "./commands/dimension.js";
 import { init } from "./commands/init.js";
 import { only, override } from "./commands/override.js";
-import { contexts, query, status, tree, view, views } from "./commands/reading.js";
+import {
+  axes,
+  contexts,
+  dimensions,
+  query,
+  status,
+  tree,
+  view,
+  views,
+} from "./commands/reading.js";
 import { task } from "./commands/task.js";
 import { type } from "./commands/type.js";
 import { validate } from "./commands/validate.js";
@@ -25,6 +34,8 @@ Commands:
                       Show a task's states and values in a context
   contexts <task-id>  List every context a task exists in
   status [<task-id>]  Report each required check as passed, failed or missing
+  dimensions          List every dimension, its values, default and scope
+  axes <task-id>      List what a view or query of a task accepts
   views <task-id>     List every distinct view of a task's subtree: one diagram each
   view <task-id> [<context>...]
                       Print the tree present in one view
@@ -63,6 +74,8 @@ const commands: Record<string, Command> = {
   tree,
   views,
   view,
+  dimensions,
+  axes,
   task,
   type,
   attribute,

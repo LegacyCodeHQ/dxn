@@ -172,22 +172,22 @@ describe("query", () => {
     snapshot.push(run("query", "blog-link", "pointer").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    {
-      "code": 1,
-      "stderr": "task-tree: "theme" is not a dimension of blog-link
-  ",
-      "stdout": "",
-    },
-    {
-      "code": 1,
-      "stderr": "task-tree: "pen" is not a value of pointer
-  ",
-      "stdout": "",
-    },
-    2,
-  ]
-`);
+      [
+        {
+          "code": 1,
+          "stderr": "task-tree: "theme" is not a dimension of blog-link (breakpoint, pointer)
+      ",
+          "stdout": "",
+        },
+        {
+          "code": 1,
+          "stderr": "task-tree: "pen" is not a value of pointer (mouse, touch)
+      ",
+          "stdout": "",
+        },
+        2,
+      ]
+    `);
   });
 });
 

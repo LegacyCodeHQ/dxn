@@ -58,7 +58,7 @@ function contextValues(
   args: string[],
   dimensions: string[],
   shared: string[],
-  unknown: (name: string) => string,
+  unknown: (name: string, choices: string) => string,
 ): TaskContext {
   const context: TaskContext = {};
   for (const arg of args) {
@@ -68,20 +68,110 @@ function contextValues(
     }
     const [name, value] = [arg.slice(0, at), arg.slice(at + 1)];
     if (dimensions.includes(name)) {
-      if (!resolver.project.dimensions[name]?.values.includes(value)) {
-        throw new Refusal(`"${value}" is not a value of ${name}`);
+      const values = resolver.project.dimensions[name]?.values ?? [];
+      if (!values.includes(value)) {
+        throw new Refusal(`"${value}" is not a value of ${name} (${choices(values)})`);
       }
     } else if (shared.includes(name)) {
-      const type = resolver.task(name)?.type as string;
-      if (!resolver.project.types.types?.[type]?.states?.includes(value)) {
-        throw new Refusal(`"${value}" is not a state of ${name}`);
+      const states = sharedStates(resolver, name);
+      if (!states.includes(value)) {
+        throw new Refusal(`"${value}" is not a state of ${name} (${choices(states)})`);
       }
     } else {
-      throw new Refusal(unknown(name));
+      throw new Refusal(unknown(name, choices([...dimensions, ...shared])));
     }
     context[name] = value;
   }
   return context;
+}
+
+function choices(names: string[]): string {
+  return names.length === 0 ? "none" : names.join(", ");
+}
+
+function sharedStates(resolver: Resolver, task: string): string[] {
+  const type = resolver.task(task)?.type as string;
+  return resolver.project.types.types?.[type]?.states ?? [];
+}
+
+const dimensionsUsage = `Usage: task-tree dimensions
+
+Lists every dimension: its values, default, and the tasks it applies to.
+`;
+
+export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
+  parse(args, [], {});
+  print(io, {
+    dimensions: Object.entries(resolver.project.dimensions)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([name, dimension]) => ({
+        name,
+        values: dimension.values,
+        ...(dimension.default === undefined ? {} : { default: dimension.default }),
+        appliesTo: dimension.appliesTo,
+      })),
+  });
+});
+
+const axesUsage = `Usage: task-tree axes <task-id> [--page <page-id>]
+
+Lists what a view or query of the task accepts: the dimensions that apply in
+its subtree, with their values and defaults, and the shared tasks above or in
+it, with their states and the dimension values where each exists.
+`;
+
+export const axes = readCommand(axesUsage, (resolver, args, io) => {
+  const { values, positionals } = parse(args, ["task-id"], { page: { type: "string" } });
+  const [id] = positionals as [string];
+  requireTaskId(resolver, id);
+  requirePage(resolver, id, values.page);
+  const found = resolver.axes(id, values.page);
+  print(io, {
+    task: id,
+    dimensions: found.dimensions.map((name) => {
+      const dimension = resolver.project.dimensions[name];
+      return {
+        name,
+        values: dimension?.values ?? [],
+        ...(dimension?.default === undefined ? {} : { default: dimension.default }),
+      };
+    }),
+    shared: found.shared.map((task) => {
+      const existsWhen = existsWhenFor(resolver, id, task, values.page);
+      return {
+        task,
+        states: sharedStates(resolver, task),
+        ...(Object.keys(existsWhen).length === 0 ? {} : { existsWhen }),
+      };
+    }),
+  });
+});
+
+// The values of each of a shared task's dimensions at which it exists in some
+// context, leaving out dimensions it exists at in full.
+function existsWhenFor(
+  resolver: Resolver,
+  id: string,
+  task: string,
+  page: string | undefined,
+): Record<string, string[]> {
+  const names = resolver.dimensions(task);
+  let contexts: TaskContext[] = [{}];
+  for (const name of names) {
+    const values = resolver.project.dimensions[name]?.values ?? [];
+    contexts = contexts.flatMap((context) =>
+      values.map((value) => ({ ...context, [name]: value })),
+    );
+  }
+  const lineage = resolver.lineageWithin(id, task, page);
+  const present = contexts.filter((context) => resolver.resolve(task, context, lineage).present);
+  const existsWhen: Record<string, string[]> = {};
+  for (const name of names) {
+    const all = resolver.project.dimensions[name]?.values ?? [];
+    const where = all.filter((value) => present.some((context) => context[name] === value));
+    if (where.length < all.length) existsWhen[name] = where;
+  }
+  return existsWhen;
 }
 
 const queryUsage = `Usage: task-tree query <task-id> [<dimension>=<value>...] [<shared-task>=<state>...]
@@ -102,7 +192,7 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
     rest,
     resolver.dimensions(id),
     shared,
-    (name) => `"${name}" is not a dimension of ${id}`,
+    (name, allowed) => `"${name}" is not a dimension of ${id} (${allowed})`,
   );
   const context = {
     ...resolver.withDefaults(id, given),
@@ -176,7 +266,7 @@ export const view = readCommand(viewUsage, (resolver, args, io) => {
     rest,
     axes.dimensions,
     axes.shared,
-    (name) => `"${name}" is not a dimension or shared task in this view`,
+    (name, allowed) => `"${name}" is not a dimension or shared task in this view (${allowed})`,
   );
   const context: TaskContext = {};
   for (const name of axes.dimensions) {
