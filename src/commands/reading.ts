@@ -220,14 +220,16 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
   });
 });
 
-const contextsUsage = `Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--count]
+const contextsUsage = `Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--count | --tree]
                          [--page <page-id>]
 
 Lists every context the task exists in, on each page that contains it.
 --subtree lists every part of the task's subtree instead, with the component
 on its own unless --page names a page. <name>=<value> filters keep only the
 contexts with that dimension value, state or shared task state. --count
-prints counts instead of the contexts.
+prints counts instead of the contexts. --tree prints them as a text tree,
+dimensions first, then shared states, then the task's own states, merging
+sibling branches that are identical.
 `;
 
 export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
@@ -237,10 +239,14 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     {
       subtree: { type: "boolean" },
       count: { type: "boolean" },
+      tree: { type: "boolean" },
       page: { type: "string" },
     },
     true,
   );
+  if (values.count === true && values.tree === true) {
+    throw new UsageError("give --count or --tree, not both");
+  }
   const [id, ...filterArgs] = positionals as [string, ...string[]];
   requireTaskId(resolver, id);
   requirePage(resolver, id, values.page);
@@ -257,6 +263,15 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     );
     const kept = tasks.map((task) => ({ id: task.id, contexts: task.contexts.filter(keep) }));
     const page = values.page === undefined ? {} : { page: values.page };
+    if (values.tree === true) {
+      io.stdout(
+        kept
+          .filter((task) => task.contexts.length > 0)
+          .map((task) => drawTree(resolver, task.id, task.contexts))
+          .join(""),
+      );
+      return;
+    }
     if (values.count === true) {
       print(io, {
         task: id,
@@ -281,11 +296,81 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     values.page,
   );
   const kept = all.filter(({ context }) => keep(context));
+  if (values.tree === true) {
+    // The page is a level of its own only when the task is on several.
+    const several = new Set(kept.map(({ page }) => page)).size > 1;
+    io.stdout(
+      drawTree(
+        resolver,
+        id,
+        kept.map(({ page, context }) => (several ? { page, ...context } : context)),
+      ),
+    );
+    return;
+  }
   print(
     io,
     values.count === true ? { task: id, count: kept.length } : { task: id, contexts: kept },
   );
 });
+
+// Draws a task's contexts as a text tree: one level per key, dimensions
+// first, then shared states, then the task's own states; sibling branches
+// with identical subtrees are merged into one line.
+function drawTree(resolver: Resolver, id: string, contexts: TaskContext[]): string {
+  const seen = [...new Set(contexts.flatMap((context) => Object.keys(context)))];
+  const rank = (key: string) =>
+    key === "page"
+      ? 0
+      : resolver.project.dimensions[key] !== undefined
+        ? 1
+        : resolver.isShared(key)
+          ? 2
+          : 3;
+  const order = [...seen].sort((a, b) => {
+    const byRank = rank(a) - rank(b);
+    if (byRank !== 0) return byRank;
+    return rank(a) === 1 ? (a < b ? -1 : a > b ? 1 : 0) : seen.indexOf(a) - seen.indexOf(b);
+  });
+
+  interface Branch {
+    label: string;
+    children: Branch[];
+  }
+  const build = (group: TaskContext[], keys: string[]): Branch[] => {
+    const [key, ...rest] = keys;
+    if (key === undefined) return [];
+    const values = [...new Set(group.map((context) => context[key] ?? "-"))];
+    const merged: { values: string[]; children: Branch[] }[] = [];
+    for (const value of values) {
+      const children = build(
+        group.filter((context) => (context[key] ?? "-") === value),
+        rest,
+      );
+      // Siblings whose subtrees are identical share one line.
+      const twin = merged.find(
+        (other) => JSON.stringify(other.children) === JSON.stringify(children),
+      );
+      if (twin === undefined) merged.push({ values: [value], children });
+      else twin.values.push(value);
+    }
+    return merged.map((branch) => ({
+      label: `${key}=${branch.values.join(", ")}`,
+      children: branch.children,
+    }));
+  };
+
+  const lines = [`${id} (${contexts.length} combination${contexts.length === 1 ? "" : "s"})`];
+  const draw = (branches: Branch[], prefix: string) => {
+    branches.forEach((branch, index) => {
+      const last = index === branches.length - 1;
+      lines.push(`${prefix}${last ? "└── " : "├── "}${branch.label}`);
+      draw(branch.children, `${prefix}${last ? "    " : "│   "}`);
+    });
+  };
+  draw(build(contexts, order), "");
+  return `${lines.join("\n")}\n`;
+}
 
 // A predicate for <name>=<value> filters. Names must appear in the contexts
 // (dimensions, state groups, shared tasks); values must be declared for them.

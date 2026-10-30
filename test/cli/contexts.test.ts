@@ -496,3 +496,63 @@ describe("contexts --count", () => {
     `);
   });
 });
+
+describe("contexts --tree", () => {
+  it("prints one task's contexts as a tree, merging identical branches", () => {
+    const { run } = cliProject(files);
+    expect(run("contexts", "wordmark", "--tree").stdout).toMatchInlineSnapshot(`
+      "wordmark (16 combinations)
+      └── breakpoint=base, sm, lg, xl
+          └── hover=unhovered, hovered
+              └── focus=unfocused, focused
+      "
+    `);
+  });
+
+  it("prints every part of a subtree, splitting only where they differ", () => {
+    const { run } = cliProject(files);
+    expect(run("contexts", "menu", "--subtree", "--tree").stdout).toMatchInlineSnapshot(`
+      "menu (4 combinations)
+      └── breakpoint=base, sm
+          └── menu=closed, open
+      menu-button (16 combinations)
+      └── breakpoint=base, sm
+          └── menu=closed, open
+              └── hover=unhovered, hovered
+                  └── focus=unfocused, focused
+      menu-panel (2 combinations)
+      └── breakpoint=base, sm
+          └── menu=open
+      menu-link (16 combinations)
+      └── breakpoint=base, sm
+          └── menu=open
+              └── hover=unhovered, hovered
+                  └── focus=unfocused, focused
+                      └── selection=unselected, selected
+      "
+    `);
+  });
+
+  it("applies filters first", () => {
+    const { run } = cliProject(files);
+    expect(
+      run("contexts", "toolbar", "--subtree", "--tree", "breakpoint=lg", "focus=focused").stdout,
+    ).toMatchInlineSnapshot(`
+      "wordmark (2 combinations)
+      └── breakpoint=lg
+          └── hover=unhovered, hovered
+              └── focus=focused
+      blog-link (4 combinations)
+      └── breakpoint=lg
+          └── hover=unhovered, hovered
+              └── focus=focused
+                  └── selection=unselected, selected
+      "
+    `);
+  });
+
+  it("cannot be combined with --count", () => {
+    const { run } = cliProject(files);
+    expect(run("contexts", "wordmark", "--tree", "--count").code).toBe(2);
+  });
+});
