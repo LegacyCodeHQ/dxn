@@ -1,6 +1,7 @@
 import { compileDirectory } from "../compiler/compile.js";
 import type { Io } from "../io.js";
 import { printDiagnostics, requireProject } from "../project.js";
+import { choices, contextFilter, QueryError, sharedStates, subtreeContexts } from "../queries.js";
 import { contextKey, Resolver, type Context as TaskContext } from "../resolve.js";
 import type { Command, Context } from "./context.js";
 import { parse, Refusal, UsageError } from "./edit.js";
@@ -83,15 +84,6 @@ function contextValues(
     context[name] = value;
   }
   return context;
-}
-
-function choices(names: string[]): string {
-  return names.length === 0 ? "none" : names.join(", ");
-}
-
-function sharedStates(resolver: Resolver, task: string): string[] {
-  const type = resolver.task(task)?.type as string;
-  return resolver.project.types.types?.[type]?.states ?? [];
 }
 
 const dimensionsUsage = `Usage: task-tree dimensions
@@ -252,9 +244,7 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
   requirePage(resolver, id, values.page);
 
   if (values.subtree === true) {
-    const tasks = resolver
-      .subtree(id)
-      .map((task) => ({ id: task, contexts: resolver.contexts(task, values.page) }));
+    const tasks = subtreeContexts(resolver, id, values.page);
     const keep = filter(
       resolver,
       filterArgs,
@@ -372,52 +362,26 @@ function drawTree(resolver: Resolver, id: string, contexts: TaskContext[]): stri
   return `${lines.join("\n")}\n`;
 }
 
-// A predicate for <name>=<value> filters. Names must appear in the contexts
-// (dimensions, state groups, shared tasks); values must be declared for them.
+// A predicate for <name>=<value> command-line filters.
 function filter(
   resolver: Resolver,
   args: string[],
   contexts: TaskContext[],
   page: string | undefined,
 ): (context: TaskContext) => boolean {
-  const names = [...new Set(contexts.flatMap((context) => Object.keys(context)))].sort();
   const wanted: [string, string][] = args.map((arg) => {
     const at = arg.indexOf("=");
     if (at <= 0 || at === arg.length - 1) {
       throw new UsageError(`expected <name>=<value>, got ${JSON.stringify(arg)}`);
     }
-    const [name, value] = [arg.slice(0, at), arg.slice(at + 1)];
-    if (!names.includes(name)) {
-      throw new Refusal(
-        `"${name}" is not a dimension, state group or shared task here (${choices(names)})`,
-      );
-    }
-    const dimension = resolver.project.dimensions[name];
-    const group = resolver.project.types.stateGroups?.[name];
-    const allowed =
-      dimension?.values ??
-      group ??
-      (resolver.isShared(name)
-        ? sharedStates(resolver, name)
-        : [...new Set(contexts.map((context) => context[name]).filter((v) => v !== undefined))]);
-    if (!allowed.includes(value)) {
-      const kind = resolver.isShared(name) ? "a state" : "a value";
-      throw new Refusal(`"${value}" is not ${kind} of ${name} (${choices(allowed as string[])})`);
-    }
-    return [name, value];
+    return [arg.slice(0, at), arg.slice(at + 1)];
   });
-  // Dimensions and shared tasks pick a view, so a part they do not apply to
-  // is in that view too, as long as a shared task exists there to have that
-  // state. State groups pick states: a part without the group is left out.
-  const inView = (name: string, context: TaskContext) => {
-    if (resolver.project.dimensions[name] !== undefined) return true;
-    if (!resolver.isShared(name)) return false;
-    return resolver.resolve(name, context, resolver.lineage(name, page)).present;
-  };
-  return (context) =>
-    wanted.every(([name, value]) =>
-      context[name] === undefined ? inView(name, context) : context[name] === value,
-    );
+  try {
+    return contextFilter(resolver, wanted, contexts, page);
+  } catch (error) {
+    if (error instanceof QueryError) throw new Refusal(error.message);
+    throw error;
+  }
 }
 
 const viewsUsage = `Usage: task-tree views <task-id> [--page <page-id>]
