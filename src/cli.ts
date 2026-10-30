@@ -5,12 +5,12 @@ import type { Command } from "./commands/context.js";
 import { dimension } from "./commands/dimension.js";
 import { init } from "./commands/init.js";
 import { only, override } from "./commands/override.js";
+import { contexts, query, status, tree } from "./commands/reading.js";
 import { task } from "./commands/task.js";
 import { type } from "./commands/type.js";
 import { validate } from "./commands/validate.js";
 import type { Io } from "./io.js";
 import { parseGlobal } from "./project.js";
-import { query } from "./query.js";
 import { version } from "./version.js";
 
 export type { Io } from "./io.js";
@@ -20,7 +20,11 @@ const usage = `Usage: task-tree <command> [options]
 Commands:
   init                Create a .task-tree project in the working directory
   validate            Compile the project and report every error
-  query <task-id>     Show a task and the states it has
+  query <task-id> [<dimension>=<value>...]
+                      Show a task's states and values in a context
+  contexts <task-id>  List every context a task exists in
+  status [<task-id>]  Report each required check as passed, failed or missing
+  tree                Print the pages and components
   task <subcommand>   Add, move, rename and remove tasks, and set their values
   type <subcommand>   Add types and states, and set their values
   attribute <subcommand>
@@ -46,6 +50,9 @@ const commands: Record<string, Command> = {
   init,
   validate,
   query,
+  contexts,
+  status,
+  tree,
   task,
   type,
   attribute,

@@ -9,6 +9,8 @@ export interface CustomAttributeDeclaration {
 
 export interface TypeDefinition {
   states?: string[];
+  // Declared checks every instance must pass, in every context.
+  checks?: string[];
   customAttributes?: CustomAttributeValues;
 }
 
@@ -35,6 +37,8 @@ export function isInclude(node: TaskNode): node is Include {
 export interface TypesFile {
   version: number;
   customAttributes?: Record<string, CustomAttributeDeclaration>;
+  // Declared checks, each an empty object for now.
+  customChecks?: Record<string, Record<string, never>>;
   types?: Record<string, TypeDefinition>;
 }
 

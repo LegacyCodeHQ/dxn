@@ -16,7 +16,11 @@ describe("task-tree query", () => {
       id: "blog-link",
       title: "Blog link",
       type: "link",
+      present: true,
       states: ["normal", "hovered", "selected"],
+      customAttributes: {
+        design: { normal: "available", hovered: "available", selected: "available" },
+      },
     });
     expect(result.stderr).toBe("");
   });
@@ -24,7 +28,12 @@ describe("task-tree query", () => {
   it("reports no states for a task without a type", () => {
     const result = capture(["query", "--dir", website, "logo-mark"]);
     expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({ id: "logo-mark", title: "Logo mark", states: [] });
+    expect(JSON.parse(result.stdout)).toEqual({
+      id: "logo-mark",
+      title: "Logo mark",
+      present: true,
+      states: [],
+    });
   });
 
   it("fails with exit code 1 when the task does not exist", () => {
@@ -37,7 +46,7 @@ describe("task-tree query", () => {
   it("fails with exit code 2 when arguments are missing", () => {
     const result = capture(["query", "--dir", website]);
     expect(result.code).toBe(2);
-    expect(result.stderr).toContain("Usage: task-tree query <task-id>");
+    expect(result.stderr).toContain("Usage: task-tree query <task-id> [<dimension>=<value>...]");
   });
 
   it("finds the project from the working directory", () => {
@@ -47,7 +56,7 @@ describe("task-tree query", () => {
     });
     const result = capture(["query", "a"], root);
     expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({ id: "a", title: "A", states: [] });
+    expect(JSON.parse(result.stdout)).toEqual({ id: "a", title: "A", present: true, states: [] });
   });
 
   it("reports when there is no project", () => {
@@ -89,7 +98,7 @@ describe("task-tree query", () => {
     });
     const result = capture(["query", "--dir", directory, "c"]);
     expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({ id: "c", title: "C", states: [] });
+    expect(JSON.parse(result.stdout)).toEqual({ id: "c", title: "C", present: true, states: [] });
   });
 
   it("finds tasks in any task file", () => {
@@ -100,6 +109,6 @@ describe("task-tree query", () => {
     });
     const result = capture(["query", "--dir", directory, "c"]);
     expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({ id: "c", title: "C", states: [] });
+    expect(JSON.parse(result.stdout)).toEqual({ id: "c", title: "C", present: true, states: [] });
   });
 });
