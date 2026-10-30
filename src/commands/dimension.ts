@@ -11,10 +11,12 @@ import {
   reorder,
   UsageError,
 } from "./edit.js";
+import { dimensions } from "./reading.js";
 
 const usage = `Usage: task-tree dimension <subcommand>
 
 Subcommands:
+  list                               List every dimension, its values, default and scope
   add <name> --values a,b --applies-to <id>[,<id>] [--default <value>]
                                      Add a dimension in dimensions/<name>.json
   add-value <name> <value>           Add a value
@@ -173,6 +175,7 @@ const remove = editCommand(usage, (workspace, args) => {
 });
 
 export const dimension: Command = group(usage, {
+  list: dimensions,
   add,
   "add-value": addValue,
   "remove-value": removeValue,

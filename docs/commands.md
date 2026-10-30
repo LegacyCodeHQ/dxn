@@ -26,14 +26,12 @@ plain-states type (`state=open`), or a shared node's state (`menu=open`).
 
 ## Contents
 
-- Setup and checking: [init](#init), [validate](#validate)
-- Reading: [tree](#tree), [dimensions](#dimensions), [query](#query), [contexts](#contexts), [axes](#axes), [views](#views), [view](#view), [transitions](#transitions), [status](#status)
-- Verifying: [verify](#verify), [unverify](#unverify)
-- Editing the tree: [node](#node), [component](#component)
-- Editing types and states: [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check)
-- Editing dimensions: [dimension](#dimension), [only](#only), [override](#override)
+- Project: [init](#init), [validate](#validate), [status](#status)
+- Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions)
+- Record: [verify](#verify), [unverify](#unverify)
+- Model: [node](#node), [component](#component), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [override](#override)
 
-## Setup and checking
+## Project
 
 ### init
 
@@ -59,7 +57,23 @@ Compiles the project and checks `expectations.json`. Prints each problem to stde
 task-tree validate
 ```
 
-## Reading
+### status
+
+```text
+Usage: task-tree status [<node-id>]
+
+Reports every check each typed node requires, in every context it exists in,
+as passed, failed or missing.
+```
+
+Prints, as JSON, a summary of passed, failed and missing checks, plus one item per required check per context. Pass a node id to cover only its subtree.
+
+```bash
+task-tree status
+task-tree status toolbar
+```
+
+## Explore
 
 ### tree
 
@@ -73,24 +87,10 @@ Prints the roots and components as JSON, as they are written in the files.
 task-tree tree
 ```
 
-### dimensions
+### show
 
 ```text
-Usage: task-tree dimensions
-
-Lists every dimension: its values, default, and the nodes it applies to.
-```
-
-Prints every dimension as JSON.
-
-```bash
-task-tree dimensions
-```
-
-### query
-
-```text
-Usage: task-tree query <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+Usage: task-tree show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 
 Shows the node's states and custom attribute values in a context. Dimensions
 left out take their default; those without one are not applied.
@@ -99,9 +99,9 @@ left out take their default; those without one are not applied.
 Prints one node in one context as JSON: its states, its state groups, custom attribute values, and whether it is present. A context argument can be a dimension (`breakpoint=sm`) or a shared node's state (`menu=open`).
 
 ```bash
-task-tree query blog-link
-task-tree query blog-link pointer=touch
-task-tree query menu-blog-link breakpoint=base menu=open
+task-tree show blog-link
+task-tree show blog-link pointer=touch
+task-tree show menu-blog-link breakpoint=base menu=open
 ```
 
 ### contexts
@@ -129,22 +129,6 @@ task-tree contexts toolbar --subtree --root article-page pointer=touch hover=hov
 task-tree contexts wordmark --tree
 task-tree contexts toolbar --subtree --tree --by breakpoint
 task-tree contexts menu --tree --transitions
-```
-
-### axes
-
-```text
-Usage: task-tree axes <node-id> [--root <root-id>]
-
-Lists what a view or query of the node accepts: the dimensions that apply in
-its subtree, with their values and defaults, and the shared nodes above or in
-it, with their states and the dimension values where each exists.
-```
-
-Prints what a view or query of a node accepts, as JSON: the dimensions that apply in its subtree, and the shared nodes with their states and where they exist. Read this first to learn which `<name>=<value>` arguments make sense.
-
-```bash
-task-tree axes toolbar
 ```
 
 ### views
@@ -180,6 +164,22 @@ Prints the tree present in one view as JSON, with each node's states and values.
 task-tree view toolbar breakpoint=base menu=open
 ```
 
+### axes
+
+```text
+Usage: task-tree axes <node-id> [--root <root-id>]
+
+Lists what view and show accept for the node: the dimensions that apply in
+its subtree, with their values and defaults, and the shared nodes above or in
+it, with their states and the dimension values where each exists.
+```
+
+Prints what a view or query of a node accepts, as JSON: the dimensions that apply in its subtree, and the shared nodes with their states and where they exist. Read this first to learn which `<name>=<value>` arguments make sense.
+
+```bash
+task-tree axes toolbar
+```
+
 ### transitions
 
 ```text
@@ -195,23 +195,7 @@ Prints a shared node's transitions as JSON.
 task-tree transitions menu
 ```
 
-### status
-
-```text
-Usage: task-tree status [<node-id>]
-
-Reports every check each typed node requires, in every context it exists in,
-as passed, failed or missing.
-```
-
-Prints, as JSON, a summary of passed, failed and missing checks, plus one item per required check per context. Pass a node id to cover only its subtree.
-
-```bash
-task-tree status
-task-tree status toolbar
-```
-
-## Verifying
+## Record
 
 ### verify
 
@@ -251,7 +235,7 @@ Removes a record written by `verify`.
 task-tree unverify blog-link --check visual breakpoint=lg hover=hovered focus=blurred selection=selected
 ```
 
-## Editing the tree
+## Model
 
 ### node
 
@@ -266,6 +250,8 @@ Subcommands:
   move <id> --parent <id>            Move a node and its subtree under another node
   rename <id> <new-id>               Rename a node and every reference to it
   remove <id>                        Remove a node and its subtree
+  only <id> <dimension> (<value>... | --everywhere)
+                                     Make a node exist only at some values of a dimension
   only-when <id> <ancestor-id> (<state>... | --always)
                                      Make a node exist only in some states of a shared ancestor
   transition add <node-id> <id> --from <state> --to <state> --on click|keydown|pointerdown|resize
@@ -283,7 +269,7 @@ Subcommands:
                                      Clear some or all of those values
 ```
 
-Edits nodes in `roots/` and `components/`. Renames and removals update every reference: overrides, `only`, `appliesTo`, `onlyWhen`, transitions, include states and verification records.
+Edits nodes in `roots/` and `components/`. Renames and removals update every reference: overrides, `only`, `appliesTo`, `onlyWhen`, transitions, include states and verification records. `node only` and `node only-when` say where a node exists: at some values of a dimension (stored as `only` in `overrides/<dimension>.json`), or in some states of a shared ancestor.
 
 ```bash
 task-tree node add article-page --title "Article page"
@@ -292,6 +278,9 @@ task-tree node include article-page toolbar
 task-tree node include-states article-page toolbar blog-link selection selected
 task-tree node only-when menu-panel menu open
 task-tree node transition add menu escape --from open --to closed --on keydown --key Escape --focus menu-button
+task-tree node only toolbar-links breakpoint lg xl
+task-tree node only menu breakpoint base sm
+task-tree node only menu breakpoint --everywhere
 ```
 
 ### component
@@ -312,8 +301,6 @@ task-tree component add toolbar --title Toolbar
 # toolbar was a child of article-page: move it to components/toolbar.json
 task-tree component extract toolbar
 ```
-
-## Editing types and states
 
 ### type
 
@@ -409,14 +396,13 @@ Edits `customChecks` in `types.json`. Types require checks with `type require`.
 task-tree check add visual
 ```
 
-## Editing dimensions
-
 ### dimension
 
 ```text
 Usage: task-tree dimension <subcommand>
 
 Subcommands:
+  list                               List every dimension, its values, default and scope
   add <name> --values a,b --applies-to <id>[,<id>] [--default <value>]
                                      Add a dimension in dimensions/<name>.json
   add-value <name> <value>           Add a value
@@ -429,28 +415,12 @@ Subcommands:
   remove <name>                      Remove the dimension
 ```
 
-Edits `dimensions/<name>.json`. Renaming a value updates overrides, `only`, records and expectations.
+Edits `dimensions/<name>.json`, and `dimension list` prints every dimension as JSON. Renaming a value updates overrides, `only`, records and expectations.
 
 ```bash
+task-tree dimension list
 task-tree dimension add breakpoint --values base,sm,lg,xl --applies-to toolbar --default xl
 task-tree dimension add pointer --values mouse,touch --applies-to toolbar --default mouse
-```
-
-### only
-
-```text
-Usage: task-tree only <dimension> <node-id> (<value>... | --everywhere)
-
-Says where a node and its subtree exist: only at the given values of the
-dimension, or everywhere again with --everywhere.
-```
-
-Edits `only` in `overrides/<dimension>.json`.
-
-```bash
-task-tree only breakpoint toolbar-links lg xl
-task-tree only breakpoint menu base sm
-task-tree only breakpoint menu --everywhere
 ```
 
 ### override

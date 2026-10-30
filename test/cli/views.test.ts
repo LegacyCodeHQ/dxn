@@ -385,8 +385,8 @@ describe("shared states in the other reading commands", () => {
   it("decide presence in query", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("query", "menu-link", "breakpoint=sm", "menu=closed")));
-    snapshot.push(json(run("query", "menu-link", "breakpoint=sm", "menu=open")).present);
+    snapshot.push(json(run("show", "menu-link", "breakpoint=sm", "menu=closed")));
+    snapshot.push(json(run("show", "menu-link", "breakpoint=sm", "menu=open")).present);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [

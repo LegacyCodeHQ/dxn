@@ -27,7 +27,7 @@ A refusal (exit 1) is one line.
 ```text
 task-tree: missing node-id
 
-Usage: task-tree query <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+Usage: task-tree show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 ...
 ```
 
@@ -94,7 +94,7 @@ is above 0.
 
 The roots, exactly as written in `roots/` and `components/`.
 
-## dimensions
+## dimension list
 
 ```json
 {
@@ -111,7 +111,7 @@ The roots, exactly as written in `roots/` and `components/`.
 
 `default` is left out when the dimension has none.
 
-## query
+## show
 
 ```json
 {

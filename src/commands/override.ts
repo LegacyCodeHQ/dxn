@@ -28,7 +28,7 @@ Subcommands:
                                      Clear some values, an attribute, or the whole override
 `;
 
-const onlyUsage = `Usage: task-tree only <dimension> <node-id> (<value>... | --everywhere)
+const onlyUsage = `Usage: task-tree node only <node-id> <dimension> (<value>... | --everywhere)
 
 Says where a node and its subtree exist: only at the given values of the
 dimension, or everywhere again with --everywhere.
@@ -194,11 +194,11 @@ export const override: Command = group(overrideUsage, { states, set, unset });
 export const only: Command = editCommand(onlyUsage, (workspace, args) => {
   const { values, positionals } = parse(
     args,
-    ["dimension", "node-id"],
+    ["node-id", "dimension"],
     { everywhere: { type: "boolean" } },
     true,
   );
-  const [dimension, node, ...listed] = positionals as [string, string, ...string[]];
+  const [node, dimension, ...listed] = positionals as [string, string, ...string[]];
   if ((listed.length === 0) === (values.everywhere !== true)) {
     throw new UsageError("give the values where the node exists, or --everywhere");
   }

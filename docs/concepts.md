@@ -102,7 +102,7 @@ either a plain list:
 
 or a set of state groups (next section). A node without a type has no states.
 
-`task-tree query blog-link` shows a node's states in one context.
+`task-tree show blog-link` shows a node's states in one context.
 
 ## State groups
 
@@ -151,7 +151,7 @@ A **context** is one value for every dimension that applies to a node, one
 value for each of its state groups (or its one plain state), and the state of
 every shared node above it. `task-tree contexts blog-link` lists all of
 them, `--count` counts them, and `--tree` draws them as a merged tree.
-`task-tree dimensions` lists every dimension.
+`task-tree dimension list` lists every dimension.
 
 ## Presence: only
 
@@ -166,9 +166,9 @@ wide screens, and the menu only on narrow ones. `only` in
   "overrides": {} }
 ```
 
-A node left out of `only` exists at every value. `query` reports
+A node left out of `only` exists at every value. `show` reports
 `"present": false` where a node doesn't exist, and `contexts` skips those
-contexts. Set it with `task-tree only breakpoint menu base sm`.
+contexts. Set it with `task-tree node only menu breakpoint base sm`.
 
 ## Overrides
 
@@ -304,7 +304,7 @@ example, a `design` attribute says whether each state has a design yet:
 ```
 
 A node with a type can set its own values, and overrides can change them per
-dimension value. `query` shows the resolved values.
+dimension value. `show` shows the resolved values.
 
 ## Checks and verification
 

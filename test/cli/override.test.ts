@@ -30,15 +30,15 @@ const files = {
   "dimensions/pointer.json": { version: 1, values: ["mouse", "touch"], appliesTo: ["page"] },
 };
 
-describe("only", () => {
+describe("node only", () => {
   it("says where a node exists, creating the override file", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    snapshot.push(run("only", "breakpoint", "links", "lg", "xl").code);
-    snapshot.push(run("only", "breakpoint", "menu", "base", "sm").code);
+    snapshot.push(run("node", "only", "links", "breakpoint", "lg", "xl").code);
+    snapshot.push(run("node", "only", "menu", "breakpoint", "base", "sm").code);
     snapshot.push(read("overrides/breakpoint.json"));
-    snapshot.push(run("only", "breakpoint", "links", "--everywhere").code);
-    snapshot.push(run("only", "breakpoint", "menu", "--everywhere").code);
+    snapshot.push(run("node", "only", "links", "breakpoint", "--everywhere").code);
+    snapshot.push(run("node", "only", "menu", "breakpoint", "--everywhere").code);
     snapshot.push(read("overrides/breakpoint.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -72,10 +72,10 @@ describe("only", () => {
   it("refuses invalid values and usage errors", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("only", "breakpoint", "links", "md").stderr);
-    snapshot.push(run("only", "theme", "links", "dark").stderr);
-    snapshot.push(run("only", "breakpoint", "links").code);
-    snapshot.push(run("only", "breakpoint", "links", "lg", "--everywhere").code);
+    snapshot.push(run("node", "only", "links", "breakpoint", "md").stderr);
+    snapshot.push(run("node", "only", "links", "theme", "dark").stderr);
+    snapshot.push(run("node", "only", "links", "breakpoint").code);
+    snapshot.push(run("node", "only", "links", "breakpoint", "lg", "--everywhere").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [

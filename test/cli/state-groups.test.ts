@@ -106,7 +106,7 @@ describe("state groups in reading commands", () => {
   it("show each group's values in query and view", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("query", "blog-link", "pointer=touch")));
+    snapshot.push(json(run("show", "blog-link", "pointer=touch")));
     snapshot.push(json(run("view", "page", "pointer=mouse")).tree);
     expect(snapshot).toMatchInlineSnapshot(`
       [

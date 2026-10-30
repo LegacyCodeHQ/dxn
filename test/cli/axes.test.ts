@@ -65,7 +65,7 @@ const files = {
 describe("dimensions", () => {
   it("lists every dimension with its values, default and scope", () => {
     const { run } = cliProject(files);
-    expect(run("dimensions")).toMatchInlineSnapshot(`
+    expect(run("dimension", "list")).toMatchInlineSnapshot(`
       {
         "code": 0,
         "stderr": "",
@@ -255,7 +255,7 @@ describe("errors for wrong names and values", () => {
     snapshot.push(run("view", "toolbar", "breakpoint=md").stderr);
     snapshot.push(run("view", "toolbar", "breakpoint=sm", "menu=ajar").stderr);
     snapshot.push(run("view", "toolbar", "theme=dark").stderr);
-    snapshot.push(run("query", "blog-link", "theme=dark").stderr);
+    snapshot.push(run("show", "blog-link", "theme=dark").stderr);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "task-tree: "md" is not a value of breakpoint (base, sm, lg, xl)

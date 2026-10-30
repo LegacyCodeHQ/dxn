@@ -19,6 +19,7 @@ import {
   UsageError,
   unsetValues,
 } from "./edit.js";
+import { only } from "./override.js";
 
 const usage = `Usage: task-tree node <subcommand>
 
@@ -30,6 +31,8 @@ Subcommands:
   move <id> --parent <id>            Move a node and its subtree under another node
   rename <id> <new-id>               Rename a node and every reference to it
   remove <id>                        Remove a node and its subtree
+  only <id> <dimension> (<value>... | --everywhere)
+                                     Make a node exist only at some values of a dimension
   only-when <id> <ancestor-id> (<state>... | --always)
                                      Make a node exist only in some states of a shared ancestor
   transition add <node-id> <id> --from <state> --to <state> --on click|keydown|pointerdown|resize
@@ -325,6 +328,7 @@ const removeTransition = editCommand(usage, (workspace, args) => {
 export const node: Command = group(usage, {
   transition: group(usage, { add: addTransition, remove: removeTransition }),
   "include-states": includeStates,
+  only,
   "only-when": onlyWhen,
   include,
   uninclude,

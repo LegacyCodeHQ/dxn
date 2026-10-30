@@ -75,41 +75,46 @@ describe("help", () => {
 
       Usage: task-tree <command> [options]
 
-      Commands:
-        help [<command>]    Show this overview, or a command's usage
+      Project
         init                Create a .task-tree project in the working directory
         validate            Compile the project and report every error
-        query <node-id> [<dimension>=<value>...]
-                            Show a node's states and values in a context
-        contexts <node-id>  List every context a node exists in
         status [<node-id>]  Report each required check as passed, failed or missing
-        transitions <node-id>
-                            List how a shared node's state changes
-        dimensions          List every dimension, its values, default and scope
-        axes <node-id>      List what a view or query of a node accepts
+
+      Explore
+        tree                Print the roots and components
+        show <node-id> [<context>...]
+                            Show a node's states and values in one context
+        contexts <node-id> [<filter>...]
+                            List every context a node exists in
         views <node-id>     List every distinct view of a node's subtree: one diagram each
         view <node-id> [<context>...]
                             Print the tree present in one view
-        tree                Print the roots and components
+        axes <node-id>      List what a view or show of a node accepts
+        transitions <node-id>
+                            List how a shared node's state changes
+
+      Record
         verify <node-id> --check <c> --result passed|failed --by <who> [<context>...]
                             Record a check's result for a node in one context
         unverify <node-id> --check <c> [<context>...]
                             Remove that record
-        node <subcommand>   Add, move, rename and remove nodes, and set their values
+
+      Model
+        node <subcommand>   Add, move, rename and remove nodes; say where they exist
+        component <subcommand>
+                            Add, extract and remove reusable components
         type <subcommand>   Add types and states, and set their values
         state-group <subcommand>
-                            Declare groups of independent states, such as interaction
+                            Declare groups of states that exclude each other, such as hover
         attribute <subcommand>
                             Declare custom attributes and their values
         check <subcommand>  Declare checks that types can require
-        component <subcommand>
-                            Add, extract and remove reusable components
         dimension <subcommand>
-                            Add dimensions, their values, default and scope
-        only <dimension> <node-id> <value>...
-                            Say at which values of a dimension a node exists
+                            List and add dimensions, their values, default and scope
         override <subcommand>
                             Change states and values for a dimension value or combination
+
+        help [<command>]    Show this overview, or a command's usage
 
       Run "task-tree help <command>" (or "task-tree <command> --help") for a command's
       options. The docs/ folder of the task-tree package explains the concepts

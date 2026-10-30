@@ -7,10 +7,10 @@ afterAll(cleanup);
 
 const website = fileURLToPath(new URL("../examples/website", import.meta.url));
 
-describe("task-tree query", () => {
+describe("task-tree show", () => {
   it("reports the states blog-link gets from its type", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["query", "--dir", website, "blog-link"]);
+    const result = capture(["show", "--dir", website, "blog-link"]);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
     snapshot.push(result.stderr);
@@ -43,7 +43,7 @@ describe("task-tree query", () => {
 
   it("reports no states for a node without a type", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["query", "--dir", website, "logo-mark"]);
+    const result = capture(["show", "--dir", website, "logo-mark"]);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
 
@@ -62,7 +62,7 @@ describe("task-tree query", () => {
 
   it("fails with exit code 1 when the node does not exist", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["query", "--dir", website, "missing-link"]);
+    const result = capture(["show", "--dir", website, "missing-link"]);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
     snapshot.push(result.stdout);
@@ -79,7 +79,7 @@ describe("task-tree query", () => {
 
   it("fails with exit code 2 when arguments are missing", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["query", "--dir", website]);
+    const result = capture(["show", "--dir", website]);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
 
@@ -88,7 +88,7 @@ describe("task-tree query", () => {
     2,
     "task-tree: missing node-id
 
-  Usage: task-tree query <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+  Usage: task-tree show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 
   Shows the node's states and custom attribute values in a context. Dimensions
   left out take their default; those without one are not applied.
@@ -103,7 +103,7 @@ describe("task-tree query", () => {
       ".task-tree/types.json": types,
       ".task-tree/roots/a.json": rootFile({ id: "a", title: "A" }),
     });
-    const result = capture(["query", "a"], root);
+    const result = capture(["show", "a"], root);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
 
@@ -122,7 +122,7 @@ describe("task-tree query", () => {
 
   it("reports when there is no project", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["query", "a"], writeProject({}));
+    const result = capture(["show", "a"], writeProject({}));
     snapshot.push(result.code);
     snapshot.push(result.stderr);
 
@@ -138,7 +138,7 @@ describe("task-tree query", () => {
   it("reports a directory without types.json", () => {
     const snapshot: unknown[] = [];
     const directory = writeProject({});
-    const result = capture(["query", "--dir", directory, "x"]);
+    const result = capture(["show", "--dir", directory, "x"]);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
 
@@ -157,7 +157,7 @@ describe("task-tree query", () => {
       "types.json": types,
       "roots/x.json": '{"version":1,"root":{"id":"x","title":"X","type":"nope"}}',
     });
-    const result = capture(["query", "--dir", directory, "x"]);
+    const result = capture(["show", "--dir", directory, "x"]);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
     snapshot.push(result.stdout);
@@ -182,7 +182,7 @@ describe("task-tree query", () => {
       },
       "roots/a.json": rootFile({ id: "a", title: "A", children: [{ include: "toolbar" }] }),
     });
-    const result = capture(["query", "--dir", directory, "c"]);
+    const result = capture(["show", "--dir", directory, "c"]);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
 
@@ -206,7 +206,7 @@ describe("task-tree query", () => {
       "roots/a.json": rootFile({ id: "a", title: "A" }),
       "roots/b.json": rootFile({ id: "b", title: "B", children: [{ id: "c", title: "C" }] }),
     });
-    const result = capture(["query", "--dir", directory, "c"]);
+    const result = capture(["show", "--dir", directory, "c"]);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
 

@@ -87,7 +87,7 @@ function contextValues(
   return context;
 }
 
-const dimensionsUsage = `Usage: task-tree dimensions
+const dimensionsUsage = `Usage: task-tree dimension list
 
 Lists every dimension: its values, default, and the nodes it applies to.
 `;
@@ -108,7 +108,7 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
 
 const axesUsage = `Usage: task-tree axes <node-id> [--root <root-id>]
 
-Lists what a view or query of the node accepts: the dimensions that apply in
+Lists what view and show accept for the node: the dimensions that apply in
 its subtree, with their values and defaults, and the shared nodes above or in
 it, with their states and the dimension values where each exists.
 `;
@@ -167,13 +167,13 @@ function existsWhenFor(
   return existsWhen;
 }
 
-const queryUsage = `Usage: task-tree query <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+const showUsage = `Usage: task-tree show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 
 Shows the node's states and custom attribute values in a context. Dimensions
 left out take their default; those without one are not applied.
 `;
 
-export const query = readCommand(queryUsage, (resolver, args, io) => {
+export const show = readCommand(showUsage, (resolver, args, io) => {
   const [id, ...rest] = parse(args, ["node-id"], {}, true).positionals as [string, ...string[]];
   requireNodeId(resolver, id);
   const node = resolver.node(id) as NonNullable<ReturnType<Resolver["node"]>>;

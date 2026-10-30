@@ -94,10 +94,10 @@ const files = {
 
 const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 
-describe("query", () => {
+describe("show", () => {
   it("resolves states and values in a context, applying precedence", () => {
     const { run } = cliProject(files);
-    expect(json(run("query", "blog-link", "breakpoint=lg", "pointer=touch"))).toEqual({
+    expect(json(run("show", "blog-link", "breakpoint=lg", "pointer=touch"))).toEqual({
       id: "blog-link",
       title: "Blog link",
       type: "link",
@@ -111,8 +111,8 @@ describe("query", () => {
   it("fills in defaults and leaves dimensions without one unapplied", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("query", "blog-link", "pointer=mouse")));
-    snapshot.push(json(run("query", "blog-link")));
+    snapshot.push(json(run("show", "blog-link", "pointer=mouse")));
+    snapshot.push(json(run("show", "blog-link")));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -161,15 +161,15 @@ describe("query", () => {
 
   it("says when a node does not exist in the context", () => {
     const { run } = cliProject(files);
-    expect(json(run("query", "menu-link", "breakpoint=lg"))).toMatchObject({ present: false });
+    expect(json(run("show", "menu-link", "breakpoint=lg"))).toMatchObject({ present: false });
   });
 
   it("rejects dimensions the node does not have and unknown values", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("query", "blog-link", "theme=dark"));
-    snapshot.push(run("query", "blog-link", "pointer=pen"));
-    snapshot.push(run("query", "blog-link", "pointer").code);
+    snapshot.push(run("show", "blog-link", "theme=dark"));
+    snapshot.push(run("show", "blog-link", "pointer=pen"));
+    snapshot.push(run("show", "blog-link", "pointer").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -337,7 +337,7 @@ describe("nodes no root includes", () => {
         },
       },
     });
-    snapshot.push(json(run("query", "footer-link")));
+    snapshot.push(json(run("show", "footer-link")));
     snapshot.push(json(run("contexts", "footer-link")).contexts);
 
     expect(snapshot).toMatchInlineSnapshot(`

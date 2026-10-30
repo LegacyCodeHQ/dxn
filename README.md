@@ -18,11 +18,11 @@ task-tree --help                  # every command
 task-tree help contexts           # one command's usage; no project needed
 task-tree validate                # does the project compile? errors: file:line:col: code: message
 task-tree tree                    # the roots and components
-task-tree dimensions              # what nodes vary over
+task-tree dimension list          # what nodes vary over
 task-tree axes toolbar            # what views and queries of a node accept
 task-tree contexts toolbar --subtree --tree   # every combination, merged, for reading
 task-tree views toolbar           # one entry per diagram to draw
-task-tree query blog-link pointer=touch       # one node in one context
+task-tree show blog-link pointer=touch        # one node in one context
 task-tree status                  # each required check: passed, failed or missing
 ```
 

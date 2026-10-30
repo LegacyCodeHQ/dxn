@@ -315,7 +315,7 @@ An include's `states` names a state group the node doesn't use.
 
 An `only` entry or an `onlyWhen` list is empty, so the node would never
 exist. List at least one value. To remove a restriction,
-delete the entry (`only ... --everywhere`, `node only-when ... --always`).
+delete the entry (`node only ... --everywhere`, `node only-when ... --always`).
 
 ## Shared states and onlyWhen
 
