@@ -2,6 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type {
   CombinationOverridesFile,
+  ComponentFile,
   DimensionFile,
   OverridesFile,
   Project,
@@ -13,6 +14,7 @@ import { checkTaskFile, checkTypesFile, emptySymbols } from "./check.js";
 import { checkConflicts } from "./conflicts.js";
 import { type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { checkDimensionFile } from "./dimensions.js";
+import { resolveIncludes } from "./includes.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { checkCombinationFile, checkOverridesFile } from "./overrides.js";
 import { readSource } from "./read.js";
@@ -45,7 +47,8 @@ interface ParsedFile {
 // Compiles a project directory:
 //
 //   types.json               required: custom attribute declarations and types
-//   tasks/<id>.json          one root task per file, named after its id
+//   components/<id>.json     one reusable component per file, named after its id
+//   tasks/<id>.json          one root task (a page) per file, named after its id
 //   dimensions/<name>.json   one dimension per file
 //   overrides/<name>.json    overrides for the dimension of the same name
 //   overrides/<a>+<b>.json   overrides for combinations of those dimensions' values
@@ -75,22 +78,38 @@ export function compileDirectory(directory: string): DirectoryResult {
   const symbols = emptySymbols();
   checkTypesFile(types.root, types.diagnostics, symbols);
 
+  // Components first, so their ids come before any task that reuses one.
+  const components: ParsedFile[] = [];
   const tasks: ParsedFile[] = [];
   let tasksComplete = true;
-  for (const name of listJson(directory, "tasks", problems)) {
-    const file = readJson(directory, `tasks/${name}.json`);
-    if (file === undefined || "code" in file) {
-      tasksComplete = false;
-      if (file !== undefined) problems.push(file);
-      continue;
+  for (const [folder, key, files] of [
+    ["components", "component", components],
+    ["tasks", "task", tasks],
+  ] as const) {
+    for (const name of listJson(directory, folder, problems)) {
+      const file = readJson(directory, `${folder}/${name}.json`);
+      if (file === undefined || "code" in file) {
+        tasksComplete = false;
+        if (file !== undefined) problems.push(file);
+        continue;
+      }
+      parsed.push(file);
+      if (file.root === undefined) {
+        tasksComplete = false;
+        continue;
+      }
+      files.push(file);
+      if (key === "component") {
+        symbols.components.add(name);
+      }
+      checkTaskFile(file.root, file.diagnostics, symbols, file.file, name, key);
     }
-    parsed.push(file);
-    if (file.root === undefined) {
-      tasksComplete = false;
-      continue;
-    }
-    tasks.push(file);
-    checkTaskFile(file.root, file.diagnostics, symbols, file.file, name);
+  }
+  if (tasksComplete) {
+    resolveIncludes(
+      symbols,
+      tasks.map((file) => file.file.slice("tasks/".length, -".json".length)),
+    );
   }
   if (!tasksComplete) {
     // Dimension and override files would report every task in the unreadable
@@ -245,6 +264,7 @@ export function compileDirectory(directory: string): DirectoryResult {
   return {
     project: {
       types: JSON.parse(types.source) as TypesFile,
+      components: components.map((file) => (JSON.parse(file.source) as ComponentFile).component),
       tasks: tasks.map((file) => (JSON.parse(file.source) as TaskFile).task),
       dimensions: Object.fromEntries(
         [...dimensions].map(([name, { parsed: file }]) => [

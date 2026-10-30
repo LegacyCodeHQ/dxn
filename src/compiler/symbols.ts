@@ -18,6 +18,10 @@ export interface TreeSymbols {
   // Task id -> the attribute/state pairs its own customAttributes set, as keys
   // from valueKey.
   taskValues: Map<string, Set<string>>;
+  // Ids of the components in components/.
+  components: Set<string>;
+  // Every include node, resolved once all task and component files are read.
+  includes: IncludeRef[];
   // Declared check names, and the checks each type requires.
   checks: Set<string>;
   typeChecks: Map<string, Set<string>>;
@@ -86,4 +90,15 @@ export interface OverrideEntry {
   values: Map<string, Located & { value: string }>;
   added: Map<string, Located>;
   removed: Map<string, Located>;
+}
+
+// An { "include": "<component>" } node.
+export interface IncludeRef {
+  component: StringNode;
+  path: string;
+  diagnostics: Diagnostics;
+  // Id of the task the include is a child of, when that task is valid.
+  parent: string | undefined;
+  // Id of the root task or component of the file the include is in.
+  root: string;
 }

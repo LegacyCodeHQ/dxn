@@ -1,5 +1,5 @@
 import { childPath, type Diagnostics } from "./diagnostic.js";
-import type { JsonNode, StringNode } from "./json.js";
+import type { JsonNode, ObjectNode, StringNode } from "./json.js";
 import {
   checkSchema,
   checkVersion,
@@ -22,6 +22,8 @@ export function emptySymbols(): TreeSymbols {
     taskTypes: new Map(),
     children: new Map(),
     taskValues: new Map(),
+    components: new Set(),
+    includes: [],
     checks: new Set(),
     typeChecks: new Map(),
   };
@@ -84,38 +86,80 @@ function checkCheckDeclarations(
   }
 }
 
-// tasks/<id>.json: one root task, named after the file.
+// Where a task is defined: its file, and the root task or component of it.
+interface Where {
+  file: string;
+  root: string;
+}
+
+// tasks/<id>.json (key "task") and components/<id>.json (key "component"):
+// one root task, named after the file.
 export function checkTaskFile(
   root: JsonNode,
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
   file: string,
   expectedId: string,
+  key: "task" | "component" = "task",
 ): void {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
     return;
   }
-  const members = keys(diagnostics, document, "$", ["$schema", "version", "task"], {
-    required: ["version", "task"],
+  const members = keys(diagnostics, document, "$", ["$schema", "version", key], {
+    required: ["version", key],
   });
   checkSchema(diagnostics, members.get("$schema"));
   checkVersion(diagnostics, members.get("version"));
 
-  const task = members.get("task");
+  const task = members.get(key);
   if (task === undefined) {
     return;
   }
-  const id = checkTask(diagnostics, symbols, task, "$.task", file);
+  const path = `$.${key}`;
+  if (task.kind === "object" && task.members.some((member) => member.key.value === "include")) {
+    report(
+      diagnostics,
+      "include-at-root",
+      `a file's root ${key} cannot be an include; include components from its children`,
+      path,
+      task,
+    );
+    return;
+  }
+  const id = checkTask(diagnostics, symbols, task, path, { file, root: expectedId });
   if (id !== undefined && id !== expectedId && task.kind === "object") {
     const idNode = task.members.find((member) => member.key.value === "id")?.value ?? task;
     report(
       diagnostics,
       "file-name-mismatch",
-      `root task ${JSON.stringify(id)} must be in tasks/${id}.json`,
-      "$.task.id",
+      `root ${key} ${JSON.stringify(id)} must be in ${key === "task" ? "tasks" : "components"}/${id}.json`,
+      `${path}.id`,
       idNode,
     );
+  }
+}
+
+// { "include": "<component>" }: recorded now, resolved once every file is read.
+function checkInclude(
+  diagnostics: Diagnostics,
+  symbols: TreeSymbols,
+  node: ObjectNode,
+  path: string,
+  where: Where,
+  parent: string | undefined,
+): void {
+  const component = keys(diagnostics, node, path, ["include"], { required: ["include"] }).get(
+    "include",
+  );
+  if (component !== undefined && expectName(diagnostics, component, `${path}.include`)) {
+    symbols.includes.push({
+      component,
+      path: `${path}.include`,
+      diagnostics,
+      parent,
+      root: where.root,
+    });
   }
 }
 
@@ -314,14 +358,23 @@ function checkTaskList(
   symbols: TreeSymbols,
   node: JsonNode,
   path: string,
-  file: string,
+  where: Where,
+  parent: string | undefined,
 ): string[] {
   if (!expectKind(diagnostics, node, path, "array")) {
     return [];
   }
   const ids: string[] = [];
   node.elements.forEach((element, index) => {
-    const id = checkTask(diagnostics, symbols, element, `${path}[${index}]`, file);
+    const elementPath = `${path}[${index}]`;
+    if (
+      element.kind === "object" &&
+      element.members.some((member) => member.key.value === "include")
+    ) {
+      checkInclude(diagnostics, symbols, element, elementPath, where, parent);
+      return;
+    }
+    const id = checkTask(diagnostics, symbols, element, elementPath, where);
     if (id !== undefined) {
       ids.push(id);
     }
@@ -335,7 +388,7 @@ function checkTask(
   symbols: TreeSymbols,
   node: JsonNode,
   path: string,
-  file: string,
+  where: Where,
 ): string | undefined {
   const task = expectObject(diagnostics, node, path);
   if (task === undefined) {
@@ -362,7 +415,7 @@ function checkTask(
         id,
       );
     } else {
-      symbols.ids.set(id.value, `${file} ${path}`);
+      symbols.ids.set(id.value, `${where.file} ${path}`);
       taskId = id.value;
     }
   }
@@ -420,7 +473,7 @@ function checkTask(
   const childIds =
     children === undefined
       ? []
-      : checkTaskList(diagnostics, symbols, children, `${path}.children`, file);
+      : checkTaskList(diagnostics, symbols, children, `${path}.children`, where, taskId);
   if (taskId !== undefined) {
     symbols.children.set(taskId, childIds);
   }

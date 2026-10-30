@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "task-tree component",
+  "description": "Editor aid for components/<id>.json: a reusable task tree that pages bring in with { \"include\": \"<id>\" }. The task-tree compiler is the authority: it also checks that the component's id matches the file name, that ids are unique across the project, that included components exist without cycles, and that types, attributes, states and values exist, which this schema cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "component"],
+  "properties": {
+    "$schema": {
+      "description": "Path or URL of this schema, for editors.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Format version.",
+      "const": 1
+    },
+    "component": {
+      "description": "The component's root task; its id must match the file name.",
+      "$ref": "#/$defs/task"
+    }
+  },
+  "$defs": {
+    "name": {
+      "description": "Non-blank, without leading or trailing whitespace or control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])\\S(?:[\\s\\S]*\\S)?$"
+    },
+    "text": {
+      "description": "Non-blank, without control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])[\\s\\S]*\\S[\\s\\S]*$"
+    },
+    "attributeValues": {
+      "description": "Custom attribute values, by attribute name, then by state.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title"],
+      "dependentRequired": {
+        "customAttributes": ["type"]
+      },
+      "properties": {
+        "id": {
+          "description": "Unique across the whole tree.",
+          "$ref": "#/$defs/name"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "type": {
+          "description": "Name of a type in the top-level types.",
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/task"
+              },
+              {
+                "$ref": "#/$defs/include"
+              }
+            ]
+          }
+        },
+        "customAttributes": {
+          "description": "Overrides the type's values, state by state.",
+          "$ref": "#/$defs/attributeValues"
+        }
+      }
+    },
+    "include": {
+      "description": "Brings a component's subtree in at this position.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["include"],
+      "properties": {
+        "include": {
+          "description": "Id of a component in components/.",
+          "$ref": "#/$defs/name"
+        }
+      }
+    }
+  }
+}

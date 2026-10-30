@@ -37,6 +37,7 @@ describe("compileDirectory", () => {
     expect(result.diagnostics).toEqual([]);
     expect(result.project).toEqual({
       types,
+      components: [],
       tasks: [],
       dimensions: {},
       overrides: {},
@@ -100,7 +101,7 @@ describe("filesystem", () => {
   });
 
   it("reports a task, dimension or override folder that is a file", () => {
-    for (const folder of ["tasks", "dimensions", "overrides", "verification"]) {
+    for (const folder of ["components", "tasks", "dimensions", "overrides", "verification"]) {
       const directory = writeProject({ "types.json": types });
       writeFileSync(join(directory, folder), "");
       expect(compileDirectory(directory).diagnostics).toMatchObject([

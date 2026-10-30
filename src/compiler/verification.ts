@@ -382,6 +382,9 @@ function statesInContext(
 }
 
 function subtree(tree: TreeSymbols, id: string, into = new Set<string>()): Set<string> {
+  if (into.has(id)) {
+    return into;
+  }
   into.add(id);
   for (const child of tree.children.get(id) ?? []) {
     subtree(tree, child, into);

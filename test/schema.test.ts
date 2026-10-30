@@ -165,17 +165,55 @@ agree("task", (doc) => ({ "types.json": types, "tasks/a.json": doc }), {
     ["wrong-type", a({ type: 1 })],
     ["wrong-type", a({ children: {} })],
     ["missing-key", a({ children: [{ id: "b" }] })],
+    ["empty-string", a({ children: [{ include: "" }] })],
+    ["include-at-root", task({ include: "x" })],
     ["attributes-without-type", a({ customAttributes: {} })],
     ["wrong-type", a({ type: "link", customAttributes: [] })],
     ["wrong-type", a({ type: "link", customAttributes: { design: { normal: 1 } } })],
   ],
   crossReference: [
     ["file-name-mismatch", task({ id: "b", title: "B" })],
+    ["unknown-component", a({ children: [{ include: "footer" }] })],
     ["duplicate-id", a({ children: [{ id: "a", title: "Again" }] })],
     ["undefined-type", a({ type: "button" })],
     ["undeclared-attribute", a({ type: "link", customAttributes: { size: {} } })],
     ["unknown-state", a({ type: "link", customAttributes: { design: { pressed: "missing" } } })],
     ["unknown-value", a({ type: "link", customAttributes: { design: { normal: "maybe" } } })],
+  ],
+});
+
+const toolbar = { version: 1, component: { id: "toolbar", title: "Toolbar" } };
+
+agree("component", (doc) => ({ "types.json": types, "components/toolbar.json": doc }), {
+  valid: [
+    ["a component", toolbar],
+    ["a $schema reference", { $schema: "x", ...toolbar }],
+    [
+      "a component with children",
+      {
+        version: 1,
+        component: { id: "toolbar", title: "Toolbar", children: [{ id: "b", title: "B" }] },
+      },
+    ],
+  ],
+  structural: [
+    ["wrong-type", []],
+    ["missing-key", { version: 1 }],
+    ["unknown-key", { ...toolbar, extra: 1 }],
+    [
+      "unknown-key",
+      { version: 1, task: { id: "toolbar", title: "T" }, component: toolbar.component },
+    ],
+    ["wrong-type", { version: 1, component: [] }],
+    ["missing-key", { version: 1, component: { id: "toolbar" } }],
+    ["include-at-root", { version: 1, component: { include: "x" } }],
+  ],
+  crossReference: [
+    ["file-name-mismatch", { version: 1, component: { id: "header", title: "Header" } }],
+    [
+      "include-cycle",
+      { version: 1, component: { id: "toolbar", title: "T", children: [{ include: "toolbar" }] } },
+    ],
   ],
 });
 

@@ -76,6 +76,20 @@ describe("task-tree query", () => {
     expect(result.stdout).toBe("");
   });
 
+  it("finds tasks inside components", () => {
+    const directory = writeProject({
+      "types.json": types,
+      "components/toolbar.json": {
+        version: 1,
+        component: { id: "toolbar", title: "Toolbar", children: [{ id: "c", title: "C" }] },
+      },
+      "tasks/a.json": taskFile({ id: "a", title: "A", children: [{ include: "toolbar" }] }),
+    });
+    const result = capture(["query", directory, "c"]);
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({ id: "c", title: "C", states: [] });
+  });
+
   it("finds tasks in any task file", () => {
     const directory = writeProject({
       "types.json": types,

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "task-tree task",
-  "description": "Editor aid for tasks/<id>.json. The task-tree compiler is the authority: it also checks that the root task's id matches the file name, that ids are unique across the project, and that types, attributes, states and values exist, which this schema cannot express.",
+  "description": "Editor aid for tasks/<id>.json. The task-tree compiler is the authority: it also checks that the root task's id matches the file name, that ids are unique across the project, that included components exist without cycles or repeats, and that types, attributes, states and values exist, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "task"],
@@ -62,12 +62,31 @@
         "children": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/task"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/task"
+              },
+              {
+                "$ref": "#/$defs/include"
+              }
+            ]
           }
         },
         "customAttributes": {
           "description": "Overrides the type's values, state by state.",
           "$ref": "#/$defs/attributeValues"
+        }
+      }
+    },
+    "include": {
+      "description": "Brings a component's subtree in at this position.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["include"],
+      "properties": {
+        "include": {
+          "description": "Id of a component in components/.",
+          "$ref": "#/$defs/name"
         }
       }
     }

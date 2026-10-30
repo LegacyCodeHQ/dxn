@@ -16,8 +16,19 @@ export interface Task {
   id: string;
   title: string;
   type?: string;
-  children?: Task[];
+  children?: TaskNode[];
   customAttributes?: CustomAttributeValues;
+}
+
+// Brings a component's subtree in at this position.
+export interface Include {
+  include: string;
+}
+
+export type TaskNode = Task | Include;
+
+export function isInclude(node: TaskNode): node is Include {
+  return "include" in node;
 }
 
 // types.json
@@ -31,6 +42,12 @@ export interface TypesFile {
 export interface TaskFile {
   version: number;
   task: Task;
+}
+
+// components/<id>.json
+export interface ComponentFile {
+  version: number;
+  component: Task;
 }
 
 // dimensions/<name>.json
@@ -91,6 +108,8 @@ export interface VerificationFile {
 
 export interface Project {
   types: TypesFile;
+  // Reusable components, in file name order.
+  components: Task[];
   // Root tasks, in task file name order.
   tasks: Task[];
   // By dimension name.
@@ -102,8 +121,13 @@ export interface Project {
   verification: Record<string, VerificationFile>;
 }
 
-export function findTask(tasks: Task[], id: string): Task | undefined {
+// Finds a task by id among the given trees. Include nodes are skipped: an
+// included task is found by searching the components as well.
+export function findTask(tasks: TaskNode[], id: string): Task | undefined {
   for (const task of tasks) {
+    if (isInclude(task)) {
+      continue;
+    }
     if (task.id === id) {
       return task;
     }

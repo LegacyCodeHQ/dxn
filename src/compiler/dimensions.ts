@@ -87,6 +87,9 @@ export function checkDimensionFile(
 }
 
 function addSubtree(tree: TreeSymbols, id: string, scope: Set<string>): void {
+  if (scope.has(id)) {
+    return;
+  }
   scope.add(id);
   for (const child of tree.children.get(id) ?? []) {
     addSubtree(tree, child, scope);

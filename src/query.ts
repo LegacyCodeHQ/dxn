@@ -18,7 +18,7 @@ export function query(args: string[], io: Io): number {
     }
     return 1;
   }
-  const task = findTask(project.tasks, id);
+  const task = findTask([...project.tasks, ...project.components], id);
   if (task === undefined) {
     io.stderr(`task-tree: task not found: ${id}\n`);
     return 1;
