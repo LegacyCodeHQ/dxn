@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { capture } from "./support/cli.js";
 
@@ -23,5 +23,39 @@ describe("docs/commands.md", () => {
       return !reference.includes(`\`\`\`text\n${usage}\n\`\`\``);
     });
     expect(stale).toEqual([]);
+  });
+});
+
+// Diagnostic codes are the kebab-case strings in the compiler and in the
+// expectation checks; each one gets a "### `code`" section.
+function sourceCodes(): string[] {
+  const src = new URL("../src/", import.meta.url);
+  const files = [
+    ...readdirSync(new URL("compiler/", src)).map((name) => `compiler/${name}`),
+    "expectations.ts",
+  ].filter((name) => name.endsWith(".ts"));
+  const codes = files.flatMap((name) => [
+    ...readFileSync(new URL(name, src), "utf8").matchAll(/"([a-z]+(?:-[a-z]+)+)"/g),
+  ]);
+  return [...new Set(codes.map((match) => match[1] as string))].sort();
+}
+
+describe("docs/diagnostics.md", () => {
+  const reference = doc("diagnostics.md");
+  const documented = [...reference.matchAll(/^### `([a-z-]+)`$/gm)].map(
+    (match) => match[1] as string,
+  );
+
+  it("documents every diagnostic code", () => {
+    expect(sourceCodes().filter((code) => !documented.includes(code))).toEqual([]);
+  });
+
+  it("documents no code that no longer exists", () => {
+    const codes = sourceCodes();
+    expect(documented.filter((code) => !codes.includes(code))).toEqual([]);
+  });
+
+  it("documents each code once", () => {
+    expect(documented.filter((code, index) => documented.indexOf(code) !== index)).toEqual([]);
   });
 });
