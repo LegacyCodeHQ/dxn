@@ -2,6 +2,7 @@ import { attribute } from "./commands/attribute.js";
 import { check } from "./commands/checks.js";
 import { component } from "./commands/component.js";
 import type { Command } from "./commands/context.js";
+import { dimension } from "./commands/dimension.js";
 import { init } from "./commands/init.js";
 import { task } from "./commands/task.js";
 import { type } from "./commands/type.js";
@@ -26,6 +27,8 @@ Commands:
   check <subcommand>  Declare checks that types can require
   component <subcommand>
                       Add, extract and remove reusable components
+  dimension <subcommand>
+                      Add dimensions, their values, default and scope
 
 Options:
   --dir <directory>   Use this project directory instead of the nearest .task-tree
@@ -43,6 +46,7 @@ const commands: Record<string, Command> = {
   attribute,
   check,
   component,
+  dimension,
 };
 
 export function run(argv: string[], io: Io): number {
