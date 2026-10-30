@@ -162,7 +162,10 @@ verification record without `context` or `transition`.
 
 ### `unknown-key`
 
-A key that isn't allowed here, often a typo. In a verification record's
+A key that isn't allowed here, often a typo. On a transition, it is also a
+field its event doesn't use: `click` takes only `target`, `keydown` only `key`,
+`pointerdown` only `target` or `outside`, and `resize` only `when`, each with an
+optional `focus`. In a verification record's
 context, it is a name that is neither a dimension of the node nor one of its
 state groups or shared ancestors.
 
@@ -397,6 +400,11 @@ override at `breakpoint=sm` for `blog-link` is an error.
 
 A node has transitions, but its type isn't shared. Transitions change a
 shared node's state, so mark the type shared (`type share`).
+
+### `target-and-outside`
+
+A `pointerdown` transition names both `target` and `outside`. It happens on
+one node or outside one, so keep one of them.
 
 ### `unknown-event`
 

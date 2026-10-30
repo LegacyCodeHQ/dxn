@@ -364,3 +364,49 @@ describe("verifying transitions", () => {
     `);
   });
 });
+
+describe("transition fields", () => {
+  const t = (field: string) => k("unknown-key", `${path}[0].${field}`);
+
+  it("are only the ones their event uses", () => {
+    expect([
+      withTransition({ ...base, on: "click", target: "menu-button", key: "Enter" }),
+      withTransition({ ...base, on: "click", target: "menu-button", when: { breakpoint: ["lg"] } }),
+      withTransition({ ...base, on: "click", target: "menu-button", outside: "toolbar" }),
+      withTransition({ ...base, on: "keydown", key: "Escape", target: "menu-button" }),
+      withTransition({
+        ...base,
+        on: "resize",
+        when: { breakpoint: ["lg"] },
+        target: "menu-button",
+      }),
+      withTransition({ ...base, on: "resize", when: { breakpoint: ["lg"] }, key: "Escape" }),
+      withTransition({
+        ...base,
+        on: "pointerdown",
+        outside: "toolbar",
+        when: { breakpoint: ["lg"] },
+      }),
+    ]).toEqual([
+      [t("key")],
+      [t("when")],
+      [t("outside")],
+      [t("target")],
+      [t("target")],
+      [t("key")],
+      [t("when")],
+    ]);
+  });
+
+  it("give a pointerdown a target or an outside, not both", () => {
+    expect(
+      withTransition({ ...base, on: "pointerdown", target: "menu-button", outside: "toolbar" }),
+    ).toEqual([k("target-and-outside", `${path}[0]`)]);
+  });
+
+  it("let focus go with any event", () => {
+    expect(
+      withTransition({ ...base, on: "pointerdown", outside: "toolbar", focus: "menu-button" }),
+    ).toEqual([]);
+  });
+});

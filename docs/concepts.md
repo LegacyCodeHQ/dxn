@@ -266,7 +266,8 @@ A shared node can list how its state changes, as DOM events:
 | `pointerdown` | `target`, or `outside`: a node          |
 | `resize`      | `when`: the dimension values it reaches |
 
-`focus` (optional) is where keyboard focus ends up. The compiler checks that
+Each event takes only its own field, and `focus` (optional) is where keyboard
+focus ends up. The compiler checks that
 `target` exists in the `from` state, and that `focus` exists after the
 transition. `dimensions transitions menu` lists them, and
 `contexts menu --tree --transitions` draws them under the states. A

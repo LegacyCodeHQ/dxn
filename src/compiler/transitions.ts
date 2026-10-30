@@ -14,6 +14,14 @@ const events: Record<string, string> = {
 
 const fields = ["id", "from", "to", "on", "key", "target", "outside", "when", "focus"];
 
+// The event fields each event uses; focus goes with any of them.
+const uses: Record<string, string[]> = {
+  click: ["target"],
+  keydown: ["key"],
+  pointerdown: ["target", "outside"],
+  resize: ["when"],
+};
+
 // Checks every node's transitions: how its shared state changes. Runs once
 // dimensions and their "only" restrictions are known, so it can tell whether
 // a target exists in the state the transition starts from and whether the
@@ -123,6 +131,32 @@ function checkNodeTransitions(
         transition,
       );
       valid = false;
+    }
+
+    if (on !== undefined && needs !== undefined) {
+      for (const field of ["key", "target", "outside", "when"]) {
+        const item = members.get(field);
+        if (item !== undefined && !uses[on.value]?.includes(field)) {
+          report(
+            diagnostics,
+            "unknown-key",
+            `${JSON.stringify(field)} does not apply to a ${on.value} transition`,
+            childPath(path, field),
+            item,
+          );
+          valid = false;
+        }
+      }
+      if (on.value === "pointerdown" && members.has("target") && members.has("outside")) {
+        report(
+          diagnostics,
+          "target-and-outside",
+          'a pointerdown transition happens on a "target" or "outside" one, not both',
+          path,
+          transition,
+        );
+        valid = false;
+      }
     }
 
     const key = name("key");
