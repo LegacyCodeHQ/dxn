@@ -44,14 +44,14 @@
   },
   "$defs": {
     "name": {
-      "description": "Non-blank, without leading or trailing whitespace.",
+      "description": "Non-blank, without leading or trailing whitespace or control characters.",
       "type": "string",
-      "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])\\S(?:[\\s\\S]*\\S)?$"
     },
     "text": {
-      "description": "Non-blank.",
+      "description": "Non-blank, without control characters.",
       "type": "string",
-      "pattern": "\\S"
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])[\\s\\S]*\\S[\\s\\S]*$"
     },
     "declaration": {
       "type": "object",

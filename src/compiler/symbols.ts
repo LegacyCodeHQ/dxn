@@ -15,8 +15,12 @@ export interface TreeSymbols {
 }
 
 // Dimension name -> declared values (undefined when invalid) and the ids of
-// every task it applies to, subtrees included.
-export type DimensionSymbols = Map<string, { values: Set<string> | undefined; scope: Set<string> }>;
+// every task it applies to, subtrees included. scopeComplete is false when
+// appliesTo had invalid entries, so scope errors would only be follow-on noise.
+export type DimensionSymbols = Map<
+  string,
+  { values: Set<string> | undefined; scope: Set<string>; scopeComplete: boolean }
+>;
 
 // States in effect, and the states an override removed.
 export interface StateSet {

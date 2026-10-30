@@ -62,7 +62,22 @@ export function expectNonEmptyString(
     report(diagnostics, "empty-string", "must not be empty or blank", path, node);
     return false;
   }
+  if (hasControlCharacter(node.value)) {
+    report(diagnostics, "control-character", "must not contain control characters", path, node);
+    return false;
+  }
   return true;
+}
+
+// C0 and C1 control characters, including tab and newline.
+function hasControlCharacter(text: string): boolean {
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code <= 0x1f || (code >= 0x7f && code <= 0x9f)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // A name (id, type, state, attribute, dimension or value): non-blank and

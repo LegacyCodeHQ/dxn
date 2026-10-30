@@ -83,4 +83,21 @@ describe("json parser", () => {
       { code: "too-deep", line: 1, column: 513 },
     ]);
   });
+
+  it("reports a byte order mark and keeps parsing", () => {
+    const result = parseJson("\uFEFF{}");
+    expect(result.root).toMatchObject({ kind: "object", members: [] });
+    expect(errors("\uFEFF{}")).toEqual([{ code: "byte-order-mark", line: 1, column: 1 }]);
+  });
+
+  it("reports unpaired surrogates in values and keys", () => {
+    expect(parseJson('["\\ud800"]').diagnostics).toMatchObject([
+      { code: "invalid-surrogate", path: "$[0]", line: 1, column: 2 },
+    ]);
+    expect(errors('{ "\\udc00": 1 }')).toEqual([{ code: "invalid-surrogate", line: 1, column: 3 }]);
+  });
+
+  it("accepts surrogate pairs", () => {
+    expect(errors('["\\ud83d\\ude00"]')).toEqual([]);
+  });
 });

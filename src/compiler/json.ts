@@ -69,6 +69,8 @@ const escapes: Record<string, string> = {
 // checkers cannot overflow the stack. 512 levels allows about 256 nested tasks.
 export const maxDepth = 512;
 
+const unpairedSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
 const numberPattern = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
 
 // RFC 8259 JSON, parsed by hand so every node keeps its source span and
@@ -109,7 +111,7 @@ export function parseJson(source: string): ParseResult {
     const char = source[pos];
     if (char === "{") return parseObject(path);
     if (char === "[") return parseArray(path);
-    if (char === '"') return parseString();
+    if (char === '"') return checkSurrogates(parseString(), path);
     if (char === "-" || (char !== undefined && char >= "0" && char <= "9")) return parseNumber();
     for (const [word, node] of literals) {
       if (source.startsWith(word, pos)) {
@@ -147,6 +149,7 @@ export function parseJson(source: string): ParseResult {
       }
       const key = parseString();
       const memberPath = childPath(path, key.value);
+      checkSurrogates(key, memberPath);
       if (seen.has(key.value)) {
         diagnostics.report(
           "duplicate-key",
@@ -239,6 +242,19 @@ export function parseJson(source: string): ParseResult {
     }
   }
 
+  // Escapes such as "\\ud800" can decode to a lone surrogate, which is not text.
+  function checkSurrogates(node: StringNode, path: string): StringNode {
+    if (unpairedSurrogate.test(node.value)) {
+      diagnostics.report(
+        "invalid-surrogate",
+        "string contains an unpaired surrogate",
+        path,
+        node.span.start,
+      );
+    }
+    return node;
+  }
+
   function parseNumber(): NumberNode {
     const start = pos;
     numberPattern.lastIndex = pos;
@@ -248,6 +264,16 @@ export function parseJson(source: string): ParseResult {
     }
     pos += match[0].length;
     return { kind: "number", value: Number(match[0]), span: { start, end: pos } };
+  }
+
+  if (source.startsWith("\uFEFF")) {
+    diagnostics.report(
+      "byte-order-mark",
+      "file starts with a byte order mark; save it as UTF-8 without a BOM",
+      "$",
+      0,
+    );
+    pos = 1;
   }
 
   try {

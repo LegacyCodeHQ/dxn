@@ -37,7 +37,11 @@ export function checkDimensions(
   for (const { key, value } of declarations?.members ?? []) {
     const path = childPath("$.dimensions", key.value);
     expectName(diagnostics, key, path);
-    const dimension = { values: undefined as Set<string> | undefined, scope: new Set<string>() };
+    const dimension = {
+      values: undefined as Set<string> | undefined,
+      scope: new Set<string>(),
+      scopeComplete: false,
+    };
     dimensions.set(key.value, dimension);
     const declaration = expectObject(diagnostics, value, path);
     if (declaration === undefined) {
@@ -67,6 +71,7 @@ export function checkDimensions(
       appliesTo !== undefined &&
       expectKind(diagnostics, appliesTo, `${path}.appliesTo`, "array")
     ) {
+      const before = diagnostics.items.length;
       if (appliesTo.elements.length === 0) {
         report(
           diagnostics,
@@ -94,6 +99,10 @@ export function checkDimensions(
         }
         addSubtree(tree, id.value, dimension.scope);
       }
+      // A duplicate entry does not shrink the scope; any other problem does.
+      dimension.scopeComplete = diagnostics.items
+        .slice(before)
+        .every(({ code }) => code === "duplicate-task");
     }
   }
   return dimensions;

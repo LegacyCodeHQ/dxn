@@ -59,7 +59,7 @@ export function checkOverrides(
         );
         continue;
       }
-      checkValueOverrides(diagnostics, tree, dimension.scope, entry.value, valuePath);
+      checkValueOverrides(diagnostics, tree, dimension, entry.value, valuePath);
     }
   }
 }
@@ -69,7 +69,7 @@ export function checkOverrides(
 function checkValueOverrides(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
-  scope: Set<string>,
+  dimension: { scope: Set<string>; scopeComplete: boolean },
   node: JsonNode,
   path: string,
 ): void {
@@ -112,7 +112,11 @@ function checkValueOverrides(
       report(diagnostics, "unknown-task", `task ${id} does not exist`, taskPath, key);
       continue;
     }
-    if (!scope.has(key.value)) {
+    if (!dimension.scope.has(key.value)) {
+      if (!dimension.scopeComplete) {
+        // appliesTo already has an error; this task may be meant to be in scope.
+        continue;
+      }
       report(
         diagnostics,
         "task-out-of-scope",

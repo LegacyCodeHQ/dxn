@@ -13,7 +13,7 @@ export function query(args: string[], io: Io): number {
   }
   const read = readSource(path);
   if (!read.ok) {
-    io.stderr(`${path}:1:1: ${read.code}: ${read.message}\n`);
+    io.stderr(`${path}:${read.line}:${read.column}: ${read.code}: ${read.message}\n`);
     return 1;
   }
   const { document: tree, diagnostics } = compile(read.source);

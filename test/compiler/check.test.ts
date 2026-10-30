@@ -150,6 +150,15 @@ describe("task id", () => {
     ]);
   });
 
+  it("must not contain control characters", () => {
+    expect(diagnose(withTask({ id: "a\u0000b", title: "A" }))).toEqual([
+      { code: "control-character", path: "$.tasks[0].id" },
+    ]);
+    expect(diagnose(withTask({ id: "a\tb", title: "A" }))).toEqual([
+      { code: "control-character", path: "$.tasks[0].id" },
+    ]);
+  });
+
   it("must not have surrounding whitespace", () => {
     expect(diagnose(withTask({ id: "a ", title: "A" }))).toEqual([
       { code: "surrounding-whitespace", path: "$.tasks[0].id" },
@@ -179,6 +188,12 @@ describe("task title", () => {
   it("must not be blank", () => {
     expect(diagnose(withTask({ id: "a", title: " \t" }))).toEqual([
       { code: "empty-string", path: "$.tasks[0].title" },
+    ]);
+  });
+
+  it("must not contain control characters", () => {
+    expect(diagnose(withTask({ id: "a", title: "A\u0007" }))).toEqual([
+      { code: "control-character", path: "$.tasks[0].title" },
     ]);
   });
 

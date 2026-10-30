@@ -27,9 +27,9 @@
   },
   "$defs": {
     "name": {
-      "description": "Non-blank, without leading or trailing whitespace.",
+      "description": "Non-blank, without leading or trailing whitespace or control characters.",
       "type": "string",
-      "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])\\S(?:[\\s\\S]*\\S)?$"
     },
     "valueOverrides": {
       "description": "What changes for types and tasks when the dimension has this value.",

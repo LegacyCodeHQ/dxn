@@ -141,6 +141,39 @@ describe("compileDirectory", () => {
     ]);
   });
 
+  it("reports invalid UTF-8 at the first bad byte", () => {
+    const directory = mkdtempSync(join(tmpdir(), "task-tree-"));
+    directories.push(directory);
+    const bytes = (...parts: (string | number[])[]) =>
+      Buffer.concat(parts.map((p) => (typeof p === "string" ? Buffer.from(p) : Buffer.from(p))));
+    writeFileSync(join(directory, "tree.json"), bytes('{\n  "a": "é', [0xff], '" }'));
+    expect(compileDirectory(directory).diagnostics).toMatchObject([
+      { file: "tree.json", code: "invalid-encoding", line: 2, column: 10 },
+    ]);
+    // Valid four-byte sequences (U+1F600) pass; tree.json then compiles normally.
+    writeFileSync(
+      join(directory, "tree.json"),
+      bytes(
+        '{ "version": 1, "tasks": [{ "id": "a", "title": "',
+        [0xf0, 0x9f, 0x98, 0x80],
+        '" }] }',
+      ),
+    );
+    expect(compileDirectory(directory).diagnostics).toEqual([]);
+    // Above U+10FFFF, overlong, truncated and stray continuation bytes are not.
+    for (const bad of [[0xf4, 0x90, 0x80, 0x80], [0xe0, 0x80, 0x80], [0xe2, 0x82], [0x80]]) {
+      writeFileSync(join(directory, "tree.json"), bytes('["', bad, '"]'));
+      expect(compileDirectory(directory).diagnostics).toMatchObject([
+        { file: "tree.json", code: "invalid-encoding", line: 1, column: 3 },
+      ]);
+    }
+    // An encoded surrogate (U+D800) is not valid UTF-8 either.
+    writeFileSync(join(directory, "tree.json"), bytes('["', [0xed, 0xa0, 0x80], '"]'));
+    expect(compileDirectory(directory).diagnostics).toMatchObject([
+      { file: "tree.json", code: "invalid-encoding", line: 1, column: 3 },
+    ]);
+  });
+
   it("tags tree.json diagnostics with their file", () => {
     expect(diagnose({ "tree.json": { ...tree, extra: 1 } })).toEqual([
       at("tree.json", "unknown-key", "$.extra"),
@@ -162,6 +195,24 @@ describe("compileDirectory", () => {
 
   it("returns no project when there are diagnostics", () => {
     expect(project({ "tree.json": { ...tree, extra: 1 } }).project).toBeUndefined();
+  });
+});
+
+describe("cascades", () => {
+  it("does not report task overrides out of scope when appliesTo is invalid", () => {
+    expect(
+      diagnose({
+        "tree.json": tree,
+        "dimensions.json": {
+          version: 1,
+          dimensions: { pointer: { values: ["touch"], appliesTo: ["nope"] } },
+        },
+        "overrides.json": {
+          version: 1,
+          overrides: { pointer: { touch: { tasks: { "blog-link": {} } } } },
+        },
+      }),
+    ).toEqual([d("unknown-task", "$.dimensions.pointer.appliesTo[0]")]);
   });
 });
 

@@ -103,15 +103,23 @@ export function compileDirectory(directory: string): DirectoryResult {
   return { project, diagnostics: [] };
 }
 
-function fileDiagnostic(file: string, code: string, message: string): FileDiagnostic {
-  return { file, code, message, path: "$", line: 1, column: 1 };
+function fileDiagnostic(
+  file: string,
+  code: string,
+  message: string,
+  line = 1,
+  column = 1,
+): FileDiagnostic {
+  return { file, code, message, path: "$", line, column };
 }
 
 // Undefined when the file does not exist; a diagnostic when it cannot be read.
 function readJson(directory: string, name: string): ParsedFile | FileDiagnostic | undefined {
   const read = readSource(join(directory, name));
   if (!read.ok) {
-    return read.code === "missing-file" ? undefined : fileDiagnostic(name, read.code, read.message);
+    return read.code === "missing-file"
+      ? undefined
+      : fileDiagnostic(name, read.code, read.message, read.line, read.column);
   }
   const parsed = parseJson(read.source);
   const diagnostics = new Diagnostics(read.source);
