@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, rootFile } from "../support/project.js";
+import { cleanup, compileFiles, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -151,5 +151,43 @@ describe("expectations checked by validate", () => {
       <tmp>/.dimensions/overrides/pointer.json:6:9: undefined-type: type "link" is not defined
       "
     `);
+  });
+});
+
+describe("expectations in the compiler", () => {
+  const passing = expectations([
+    {
+      title: "Touch screens never show hover",
+      node: "blog-link",
+      where: { pointer: "touch", hover: "hovered" },
+      count: 0,
+    },
+  ]);
+
+  it("refuse an edit that would make one fail, and write nothing", () => {
+    const { run, read } = cliProject({ ...files, "expectations.json": passing });
+    const result = run("override", "unset", "pointer=touch", "--type", "link");
+    expect([result.code, result.stdout, result.stderr.includes("expectation-failed")]).toEqual([
+      1,
+      "",
+      true,
+    ]);
+    expect(read("overrides/pointer.json")).toEqual(files["overrides/pointer.json"]);
+  });
+
+  it("stop reading commands, as any other error does", () => {
+    const { run } = cliProject({
+      ...files,
+      "overrides/pointer.json": { version: 1, overrides: {} },
+      "expectations.json": passing,
+    });
+    const result = run("show", "blog-link");
+    expect([result.code, result.stderr.includes("expectation-failed")]).toEqual([1, true]);
+  });
+
+  it("are part of the compiled project", () => {
+    const result = compileFiles({ ...files, "expectations.json": passing });
+    expect(result.project?.expectations).toEqual(passing);
+    expect(compileFiles(files).project?.expectations).toBeUndefined();
   });
 });

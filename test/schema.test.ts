@@ -449,6 +449,50 @@ agree("verification", (doc) => ({ ...checked, "verification/page.json": doc }), 
   ],
 });
 
+const expectation = (fields: Record<string, unknown> = {}) => ({
+  title: "Every state of the blog link",
+  node: "blog-link",
+  count: 3,
+  ...fields,
+});
+const expectationsFile = (...entries: unknown[]) => ({ version: 1, expectations: entries });
+
+agree("expectations", (doc) => ({ ...tree, "expectations.json": doc }), {
+  valid: [
+    ["no expectations", expectationsFile()],
+    ["an expectation", expectationsFile(expectation())],
+    [
+      "a subtree in a root",
+      expectationsFile(expectation({ node: "toolbar", subtree: true, root: "page", count: 5 })),
+    ],
+    ["a filter", expectationsFile(expectation({ where: { state: "hovered" }, count: 1 }))],
+    ["a $schema reference", { $schema: "x", ...expectationsFile() }],
+  ],
+  structural: [
+    ["wrong-type", []],
+    ["missing-key", { version: 1 }],
+    ["unknown-key", { ...expectationsFile(), extra: 1 }],
+    ["unsupported-version", { version: 2, expectations: [] }],
+    ["wrong-type", { version: 1, expectations: {} }],
+    ["wrong-type", expectationsFile(1)],
+    ["missing-key", expectationsFile({ node: "blog-link", count: 3 })],
+    ["unknown-key", expectationsFile(expectation({ page: "page" }))],
+    ["empty-string", expectationsFile(expectation({ title: " " }))],
+    ["wrong-type", expectationsFile(expectation({ subtree: "yes" }))],
+    ["wrong-type", expectationsFile(expectation({ where: [] }))],
+    ["wrong-type", expectationsFile(expectation({ where: { state: 1 } }))],
+    ["invalid-count", expectationsFile(expectation({ count: -1 }))],
+    ["invalid-count", expectationsFile(expectation({ count: 1.5 }))],
+  ],
+  crossReference: [
+    ["unknown-node", expectationsFile(expectation({ node: "nope" }))],
+    ["node-outside-root", expectationsFile(expectation({ root: "footer-link" }))],
+    ["unknown-name", expectationsFile(expectation({ where: { pointer: "mouse" } }))],
+    ["unknown-value", expectationsFile(expectation({ where: { state: "pressed" } }))],
+    ["expectation-failed", expectationsFile(expectation({ count: 5 }))],
+  ],
+});
+
 describe("website example", () => {
   it.each([
     ["types", "types.json"],
@@ -457,6 +501,7 @@ describe("website example", () => {
     ["dimension", "dimensions/pointer.json"],
     ["overrides", "overrides/pointer.json"],
     ["verification", "verification/article-page.json"],
+    ["expectations", "expectations.json"],
   ])("passes the %s schema: %s", (schema, file) => {
     const validate = validator(schema);
     expect(validate(readJson(`../examples/website/${file}`))).toBe(true);

@@ -158,6 +158,25 @@ export interface Project {
   combinations: Record<string, CombinationOverridesFile>;
   // By root id.
   verification: Record<string, VerificationFile>;
+  // expectations.json, when the project has one.
+  expectations?: ExpectationsFile;
+}
+
+// expectations.json: how many contexts each filter must select.
+export interface ExpectationsFile {
+  version: number;
+  expectations: Expectation[];
+}
+
+export interface Expectation {
+  title: string;
+  node: string;
+  // Every node in the node's subtree, not just the node.
+  subtree?: boolean;
+  root?: string;
+  // Dimension, state group or shared node -> the value to keep.
+  where?: Record<string, string>;
+  count: number;
 }
 
 // Finds a node by id among the given trees. Includes are skipped: an

@@ -1,6 +1,5 @@
 import { join } from "node:path";
-import type { FileDiagnostic } from "./compiler/compile.js";
-import { childPath, Diagnostics } from "./compiler/diagnostic.js";
+import { childPath, Diagnostics, type FileDiagnostic } from "./compiler/diagnostic.js";
 import { parseJson } from "./compiler/json.js";
 import { readSource } from "./compiler/read.js";
 import {

@@ -1,8 +1,11 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { checkExpectations } from "../expectations.js";
+import { Resolver } from "../resolve.js";
 import type {
   CombinationOverridesFile,
   DimensionFile,
+  ExpectationsFile,
   FragmentFile,
   OverridesFile,
   Project,
@@ -12,7 +15,7 @@ import type {
 } from "../tree.js";
 import { checkRootFile, checkTypesFile, emptySymbols, resolveOnlyWhen } from "./check.js";
 import { checkConflicts } from "./conflicts.js";
-import { type Diagnostic, Diagnostics } from "./diagnostic.js";
+import { Diagnostics, type FileDiagnostic } from "./diagnostic.js";
 import { checkDimensionFile } from "./dimensions.js";
 import { resolveIncludes } from "./includes.js";
 import { type JsonNode, parseJson } from "./json.js";
@@ -23,10 +26,7 @@ import type { CombinationStates, DimensionSymbol, OverrideEntry } from "./symbol
 import { checkTransitions } from "./transitions.js";
 import { checkVerificationFile, type DimensionInfo } from "./verification.js";
 
-export interface FileDiagnostic extends Diagnostic {
-  // Relative to the project directory, e.g. "roots/article-root.json".
-  file: string;
-}
+export type { FileDiagnostic } from "./diagnostic.js";
 
 export interface DirectoryResult {
   // Present only when no file has diagnostics.
@@ -286,32 +286,39 @@ export function compileDirectory(directory: string): DirectoryResult {
   if (diagnostics.length > 0) {
     return { diagnostics };
   }
-  return {
-    project: {
-      types: JSON.parse(types.source) as TypesFile,
-      fragments: fragments.map((file) => (JSON.parse(file.source) as FragmentFile).fragment),
-      roots: nodes.map((file) => (JSON.parse(file.source) as RootFile).root),
-      dimensions: Object.fromEntries(
-        [...dimensions].map(([name, { parsed: file }]) => [
-          name,
-          JSON.parse(file.source) as DimensionFile,
-        ]),
-      ),
-      overrides: Object.fromEntries(
-        overrides.map(([name, file]) => [name, JSON.parse(file.source) as OverridesFile]),
-      ),
-      combinations: Object.fromEntries(
-        combinations.map(([name, file]) => [
-          name,
-          JSON.parse(file.source) as CombinationOverridesFile,
-        ]),
-      ),
-      verification: Object.fromEntries(
-        verification.map(([name, file]) => [name, JSON.parse(file.source) as VerificationFile]),
-      ),
-    },
-    diagnostics: [],
+  const project: Project = {
+    types: JSON.parse(types.source) as TypesFile,
+    fragments: fragments.map((file) => (JSON.parse(file.source) as FragmentFile).fragment),
+    roots: nodes.map((file) => (JSON.parse(file.source) as RootFile).root),
+    dimensions: Object.fromEntries(
+      [...dimensions].map(([name, { parsed: file }]) => [
+        name,
+        JSON.parse(file.source) as DimensionFile,
+      ]),
+    ),
+    overrides: Object.fromEntries(
+      overrides.map(([name, file]) => [name, JSON.parse(file.source) as OverridesFile]),
+    ),
+    combinations: Object.fromEntries(
+      combinations.map(([name, file]) => [
+        name,
+        JSON.parse(file.source) as CombinationOverridesFile,
+      ]),
+    ),
+    verification: Object.fromEntries(
+      verification.map(([name, file]) => [name, JSON.parse(file.source) as VerificationFile]),
+    ),
   };
+  // Expectations are checked against the model, so only once it compiles.
+  const expected = checkExpectations(directory, new Resolver(project));
+  if (expected.length > 0) {
+    return { diagnostics: expected };
+  }
+  const expectations = readJson(directory, "expectations.json");
+  if (expectations !== undefined && !("code" in expectations)) {
+    project.expectations = JSON.parse(expectations.source) as ExpectationsFile;
+  }
+  return { project, diagnostics: [] };
 }
 
 // Why a combination file name like "breakpoint+pointer" is invalid, if it is.

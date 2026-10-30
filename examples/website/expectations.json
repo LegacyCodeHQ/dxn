@@ -1,0 +1,12 @@
+{
+  "$schema": "../../schema/expectations.schema.json",
+  "version": 1,
+  "expectations": [
+    {
+      "title": "Touch screens never show hover",
+      "node": "blog-link",
+      "where": { "pointer": "touch", "state": "hovered" },
+      "count": 0
+    }
+  ]
+}

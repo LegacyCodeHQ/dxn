@@ -465,7 +465,9 @@ fixes to `selected`.
 
 ## Expectations
 
-`validate` checks `expectations.json` only once everything else compiles.
+The compiler checks `expectations.json` once everything else compiles. Like
+any other error, a failing expectation stops reading commands and refuses the
+edit that caused it.
 
 ### `node-outside-root`
 

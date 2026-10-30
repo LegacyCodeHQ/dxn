@@ -350,9 +350,9 @@ missing.
 
 ## Expectations
 
-`expectations.json` states how many contexts a filter must find. `validate`
-checks them once the project compiles, so a modeling mistake shows up as an
-error:
+`expectations.json` states how many contexts a filter must find. The
+compiler checks them once the rest of the project compiles, so a modeling
+mistake shows up as an error, and an edit that would break one is refused:
 
 ```json
 {

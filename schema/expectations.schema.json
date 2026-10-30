@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "dimensions expectations",
+  "description": "Editor aid for expectations.json: how many contexts each filter must select. The dimensions compiler is the authority: it also checks that nodes and roots exist, that each where name is a dimension, state group or shared node of the node with one of its values, and that each count matches, which this schema cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "expectations"],
+  "properties": {
+    "$schema": {
+      "description": "Path or URL of this schema, for editors.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Format version.",
+      "const": 1
+    },
+    "expectations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/expectation"
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "description": "Non-blank, without leading or trailing whitespace or control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])\\S(?:[\\s\\S]*\\S)?$"
+    },
+    "text": {
+      "description": "Non-blank, without control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])[\\s\\S]*\\S[\\s\\S]*$"
+    },
+    "expectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "node", "count"],
+      "properties": {
+        "title": {
+          "description": "What the expectation says, shown when it fails.",
+          "$ref": "#/$defs/text"
+        },
+        "node": {
+          "description": "The node whose contexts are counted.",
+          "$ref": "#/$defs/name"
+        },
+        "subtree": {
+          "description": "Count the contexts of every node in the node's subtree.",
+          "type": "boolean"
+        },
+        "root": {
+          "description": "Count only in this root; without it, in every root that contains the node.",
+          "$ref": "#/$defs/name"
+        },
+        "where": {
+          "description": "Dimension, state group or shared node -> the value to keep.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/name"
+          }
+        },
+        "count": {
+          "description": "How many contexts the filter must select.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
