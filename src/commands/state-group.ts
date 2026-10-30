@@ -5,9 +5,12 @@ import {
   group,
   isObject,
   list,
+  overrideTargets,
   parse,
   Refusal,
+  renameKey,
   reorder,
+  taskNodes,
   typesFile,
   typesOrder,
   UsageError,
@@ -23,6 +26,7 @@ Subcommands:
   add <name> --values a,b            Declare a state group
   add-value <name> <value>           Add a value
   remove-value <name> <value>        Remove a value
+  rename-value <name> <old> <new>    Rename a value everywhere the group's types use it
   remove <name>                      Remove a state group
 `;
 
@@ -80,7 +84,99 @@ const remove = edit((workspace, args) => {
   delete groups(workspace)[name];
 });
 
+// Renames a value in the group and wherever a type using the group refers to
+// it: the type's subset and values, its tasks' values and onlyWhen lists,
+// overrides of the type and its tasks, and verification contexts.
+const renameValue = edit((workspace, args) => {
+  const [name, from, to] = parse(args, ["name", "old", "new"], {}).positionals as [
+    string,
+    string,
+    string,
+  ];
+  const values = requireGroup(workspace, name);
+  if (!values.includes(from)) {
+    throw new Refusal(`state group "${name}" has no value "${from}"`);
+  }
+  groups(workspace)[name] = values.map((value) => (value === from ? to : value));
+  const swap = (list: unknown) =>
+    Array.isArray(list) ? list.map((value) => (value === from ? to : value)) : list;
+  const renameStates = (owner: Json | undefined) => {
+    const attributes = owner?.customAttributes;
+    if (!isObject(attributes)) return;
+    for (const byState of Object.values(attributes)) {
+      if (isObject(byState)) renameKey(byState, from, to);
+    }
+  };
+
+  const types = typesFile(workspace).types;
+  const using = new Set<string>();
+  for (const [typeName, type] of Object.entries(isObject(types) ? types : {})) {
+    if (!isObject(type)) continue;
+    const used = type.stateGroups;
+    if (Array.isArray(used) ? used.includes(name) : isObject(used) && name in used) {
+      using.add(typeName);
+      if (isObject(used)) used[name] = swap(used[name]);
+      renameStates(type);
+    }
+  }
+
+  const tasksUsing = new Set<string>();
+  for (const [file, node] of taskNodes(workspace)) {
+    if (typeof node.type === "string" && using.has(node.type)) {
+      tasksUsing.add(node.id as string);
+      renameStates(node);
+      workspace.touch(file);
+    }
+  }
+  for (const [file, node] of taskNodes(workspace)) {
+    const conditions = node.onlyWhen;
+    if (!isObject(conditions)) continue;
+    for (const [ancestor, states] of Object.entries(conditions)) {
+      if (tasksUsing.has(ancestor)) {
+        conditions[ancestor] = swap(states);
+        workspace.touch(file);
+      }
+    }
+  }
+
+  for (const file of workspace.list("overrides")) {
+    const overrides = workspace.read(file);
+    overrideTargets(overrides?.overrides, (kind, targets) => {
+      for (const [target, override] of Object.entries(targets)) {
+        const affected = kind === "types" ? using.has(target) : tasksUsing.has(target);
+        if (!affected || !isObject(override)) continue;
+        if (isObject(override.states)) {
+          override.states.add = swap(override.states.add);
+          override.states.remove = swap(override.states.remove);
+          for (const key of ["add", "remove"]) {
+            if (override.states[key] === undefined) delete override.states[key];
+          }
+        }
+        renameStates(override);
+        workspace.touch(file);
+      }
+    });
+  }
+
+  for (const file of workspace.list("verification")) {
+    const verification = workspace.read(file);
+    if (!Array.isArray(verification?.records)) continue;
+    for (const record of verification.records) {
+      if (
+        isObject(record) &&
+        tasksUsing.has(record.task as string) &&
+        isObject(record.context) &&
+        record.context[name] === from
+      ) {
+        record.context[name] = to;
+        workspace.touch(file);
+      }
+    }
+  }
+});
+
 export const stateGroup: Command = group(usage, {
+  "rename-value": renameValue,
   add,
   "add-value": addValue,
   "remove-value": removeValue,

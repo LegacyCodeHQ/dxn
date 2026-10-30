@@ -356,6 +356,194 @@ describe("state group commands", () => {
     `);
   });
 
+  it("rename a value everywhere the types using the group refer to it", () => {
+    const snapshot: unknown[] = [];
+    const record = {
+      task: "blog-link",
+      context: { hover: "unhovered", selection: "selected", pointer: "mouse" },
+      check: "visual",
+      result: "passed",
+      by: "agent",
+      at: "2026-10-30T19:20:00Z",
+    };
+    const { run, read } = cliProject({
+      "types.json": {
+        version: 1,
+        stateGroups: { hover: ["unhovered", "hovered"], selection: ["unselected", "selected"] },
+        customAttributes: { design: { values: ["available", "missing"] } },
+        customChecks: { visual: {} },
+        types: {
+          link: {
+            stateGroups: ["hover", "selection"],
+            checks: ["visual"],
+            customAttributes: { design: { unhovered: "available" } },
+          },
+          logo: { stateGroups: { hover: ["unhovered"] } },
+          // Not using the group: its own "unhovered" is left alone.
+          other: { states: ["unhovered"] },
+        },
+      },
+      "tasks/page.json": taskFile({
+        id: "page",
+        title: "Page",
+        children: [
+          {
+            id: "blog-link",
+            title: "Blog link",
+            type: "link",
+            customAttributes: { design: { unhovered: "missing" } },
+          },
+          { id: "logo", title: "Logo", type: "logo" },
+          { id: "other", title: "Other", type: "other" },
+        ],
+      }),
+      "dimensions/pointer.json": { version: 1, values: ["mouse", "touch"], appliesTo: ["page"] },
+      "overrides/pointer.json": {
+        version: 1,
+        overrides: {
+          touch: {
+            types: { link: { customAttributes: { design: { unhovered: "missing" } } } },
+            tasks: { other: { states: { remove: ["unhovered"] } } },
+          },
+        },
+      },
+      "verification/page.json": { version: 1, records: [record] },
+    });
+    snapshot.push(run("state-group", "rename-value", "hover", "unhovered", "rest").code);
+    snapshot.push(read("types.json"));
+    snapshot.push(read("tasks/page.json"));
+    snapshot.push(read("overrides/pointer.json"));
+    snapshot.push(read("verification/page.json").records);
+    snapshot.push(run("state-group", "rename-value", "hover", "pressed", "x").stderr);
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        0,
+        {
+          "customAttributes": {
+            "design": {
+              "values": [
+                "available",
+                "missing",
+              ],
+            },
+          },
+          "customChecks": {
+            "visual": {},
+          },
+          "stateGroups": {
+            "hover": [
+              "rest",
+              "hovered",
+            ],
+            "selection": [
+              "unselected",
+              "selected",
+            ],
+          },
+          "types": {
+            "link": {
+              "checks": [
+                "visual",
+              ],
+              "customAttributes": {
+                "design": {
+                  "rest": "available",
+                },
+              },
+              "stateGroups": [
+                "hover",
+                "selection",
+              ],
+            },
+            "logo": {
+              "stateGroups": {
+                "hover": [
+                  "rest",
+                ],
+              },
+            },
+            "other": {
+              "states": [
+                "unhovered",
+              ],
+            },
+          },
+          "version": 1,
+        },
+        {
+          "task": {
+            "children": [
+              {
+                "customAttributes": {
+                  "design": {
+                    "rest": "missing",
+                  },
+                },
+                "id": "blog-link",
+                "title": "Blog link",
+                "type": "link",
+              },
+              {
+                "id": "logo",
+                "title": "Logo",
+                "type": "logo",
+              },
+              {
+                "id": "other",
+                "title": "Other",
+                "type": "other",
+              },
+            ],
+            "id": "page",
+            "title": "Page",
+          },
+          "version": 1,
+        },
+        {
+          "overrides": {
+            "touch": {
+              "tasks": {
+                "other": {
+                  "states": {
+                    "remove": [
+                      "unhovered",
+                    ],
+                  },
+                },
+              },
+              "types": {
+                "link": {
+                  "customAttributes": {
+                    "design": {
+                      "rest": "missing",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "version": 1,
+        },
+        [
+          {
+            "at": "2026-10-30T19:20:00Z",
+            "by": "agent",
+            "check": "visual",
+            "context": {
+              "hover": "rest",
+              "pointer": "mouse",
+              "selection": "selected",
+            },
+            "result": "passed",
+            "task": "blog-link",
+          },
+        ],
+        "task-tree: state group "hover" has no value "pressed"
+      ",
+      ]
+    `);
+  });
+
   it("refuse what the compiler rejects and unknown names", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({ "types.json": { version: 1 } });
