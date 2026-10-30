@@ -45,28 +45,46 @@ function requireTaskId(resolver: Resolver, id: string): void {
   }
 }
 
-// <dimension>=<value> arguments, checked against the task's dimensions.
-export function dimensionValues(resolver: Resolver, id: string, args: string[]): TaskContext {
+function requirePage(resolver: Resolver, id: string, page: string | undefined): void {
+  if (page !== undefined && !resolver.pages(id).includes(page)) {
+    throw new Refusal(`"${id}" is not on page "${page}"`);
+  }
+}
+
+// <name>=<value> arguments for dimensions and shared tasks, checked against
+// the ones allowed here. unknown names what an unexpected name is not.
+function contextValues(
+  resolver: Resolver,
+  args: string[],
+  dimensions: string[],
+  shared: string[],
+  unknown: (name: string) => string,
+): TaskContext {
   const context: TaskContext = {};
-  const dimensions = resolver.dimensions(id);
   for (const arg of args) {
     const at = arg.indexOf("=");
     if (at <= 0 || at === arg.length - 1) {
       throw new UsageError(`expected <dimension>=<value>, got ${JSON.stringify(arg)}`);
     }
     const [name, value] = [arg.slice(0, at), arg.slice(at + 1)];
-    if (!dimensions.includes(name)) {
-      throw new Refusal(`"${name}" is not a dimension of ${id}`);
-    }
-    if (!resolver.project.dimensions[name]?.values.includes(value)) {
-      throw new Refusal(`"${value}" is not a value of ${name}`);
+    if (dimensions.includes(name)) {
+      if (!resolver.project.dimensions[name]?.values.includes(value)) {
+        throw new Refusal(`"${value}" is not a value of ${name}`);
+      }
+    } else if (shared.includes(name)) {
+      const type = resolver.task(name)?.type as string;
+      if (!resolver.project.types.types?.[type]?.states?.includes(value)) {
+        throw new Refusal(`"${value}" is not a state of ${name}`);
+      }
+    } else {
+      throw new Refusal(unknown(name));
     }
     context[name] = value;
   }
   return context;
 }
 
-const queryUsage = `Usage: task-tree query <task-id> [<dimension>=<value>...]
+const queryUsage = `Usage: task-tree query <task-id> [<dimension>=<value>...] [<shared-task>=<state>...]
 
 Shows the task's states and custom attribute values in a context. Dimensions
 left out take their default; those without one are not applied.
@@ -76,9 +94,25 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
   const [id, ...rest] = parse(args, ["task-id"], {}, true).positionals as [string, ...string[]];
   requireTaskId(resolver, id);
   const task = resolver.task(id) as NonNullable<ReturnType<Resolver["task"]>>;
-  const context = resolver.withDefaults(id, dimensionValues(resolver, id, rest));
   const [page] = resolver.pages(id);
-  const resolved = resolver.resolve(id, context, page);
+  const lineage = resolver.lineage(id, page);
+  const shared = resolver.sharedAncestors(lineage);
+  const given = contextValues(
+    resolver,
+    rest,
+    resolver.dimensions(id),
+    shared,
+    (name) => `"${name}" is not a dimension of ${id}`,
+  );
+  const context = {
+    ...resolver.withDefaults(id, given),
+    ...Object.fromEntries(
+      shared
+        .filter((name) => given[name] !== undefined)
+        .map((name) => [name, given[name] as string]),
+    ),
+  };
+  const resolved = resolver.resolve(id, context, lineage);
   print(io, {
     id: task.id,
     title: task.title,
@@ -108,6 +142,64 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
   });
 });
 
+const viewsUsage = `Usage: task-tree views <task-id> [--page <page-id>]
+
+Lists every distinct view of the task's subtree: each combination of the
+dimensions that apply in it, and the states of shared tasks wherever those
+tasks are present. Each view is one diagram to draw.
+`;
+
+export const views = readCommand(viewsUsage, (resolver, args, io) => {
+  const { values, positionals } = parse(args, ["task-id"], { page: { type: "string" } });
+  const [id] = positionals as [string];
+  requireTaskId(resolver, id);
+  requirePage(resolver, id, values.page);
+  print(io, { task: id, views: resolver.views(id, values.page) });
+});
+
+const viewUsage = `Usage: task-tree view <task-id> [<dimension>=<value>...] [<shared-task>=<state>...]
+                     [--page <page-id>]
+
+Prints the tree present in one view, with each task's states and values.
+Dimensions left out take their default; each shared task in the view needs
+its state.
+`;
+
+export const view = readCommand(viewUsage, (resolver, args, io) => {
+  const { values, positionals } = parse(args, ["task-id"], { page: { type: "string" } }, true);
+  const [id, ...rest] = positionals as [string, ...string[]];
+  requireTaskId(resolver, id);
+  requirePage(resolver, id, values.page);
+  const axes = resolver.axes(id, values.page);
+  const given = contextValues(
+    resolver,
+    rest,
+    axes.dimensions,
+    axes.shared,
+    (name) => `"${name}" is not a dimension or shared task in this view`,
+  );
+  const context: TaskContext = {};
+  for (const name of axes.dimensions) {
+    const value = given[name] ?? resolver.project.dimensions[name]?.default;
+    if (value !== undefined) context[name] = value;
+  }
+  for (const task of axes.shared) {
+    const present = resolver.resolve(
+      task,
+      { ...context, ...given },
+      resolver.lineageWithin(id, task, values.page),
+    ).present;
+    if (!present) continue;
+    if (given[task] === undefined) {
+      const type = resolver.task(task)?.type as string;
+      const states = resolver.project.types.types?.[type]?.states ?? [];
+      throw new Refusal(`give ${task}=<${states.join("|")}> for this view`);
+    }
+    context[task] = given[task];
+  }
+  print(io, { task: id, context, tree: resolver.view(id, context, values.page) });
+});
+
 const statusUsage = `Usage: task-tree status [<task-id>]
 
 Reports every check each typed task requires, in every context it exists in,
@@ -128,7 +220,10 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
   for (const page of project.tasks) {
     const results = new Map<string, string>();
     for (const record of project.verification[page.id]?.records ?? []) {
-      const key = contextKey(withState(resolver, record.task, record.context));
+      const key = contextKey({
+        ...record.context,
+        ...resolver.withDefaults(record.task, record.context),
+      });
       results.set(JSON.stringify([record.task, key, record.check]), record.result);
     }
     for (const id of only === undefined ? tasksIn(resolver, page.id) : [only]) {
@@ -155,12 +250,6 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
     items,
   });
 });
-
-// A record's context with defaults filled in, keeping its state.
-function withState(resolver: Resolver, id: string, context: TaskContext): TaskContext {
-  const filled = resolver.withDefaults(id, context);
-  return context.state === undefined ? filled : { state: context.state, ...filled };
-}
 
 // Every task id in a page's tree, through includes, in tree order.
 function tasksIn(resolver: Resolver, page: string): string[] {

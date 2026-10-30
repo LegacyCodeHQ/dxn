@@ -9,7 +9,8 @@ import {
   type ValueOverrides,
 } from "./tree.js";
 
-// A context: dimension name -> value, plus "state" when the task has one.
+// A context: dimension name -> value, shared task id -> its state, plus
+// "state" for the task's own state.
 export type Context = Record<string, string>;
 
 // What a task is in one context, after every override and restriction.
@@ -20,9 +21,22 @@ export interface Resolved {
   customAttributes: Record<string, Record<string, string>>;
 }
 
+// A view of a task: the tree present in one context.
+export interface ViewNode {
+  id: string;
+  title: string;
+  type?: string;
+  // A shared task's state in this view.
+  state?: string;
+  // A task's own states here.
+  states?: string[];
+  customAttributes?: Record<string, Record<string, string>>;
+  children?: ViewNode[];
+}
+
 // Answers questions about a compiled project: where tasks are, which
-// dimensions apply to them, and what they resolve to in a context.
-// Precedence, weakest first: type base, type overrides for single
+// dimensions and shared states apply to them, and what they resolve to in a
+// context. Precedence, weakest first: type base, type overrides for single
 // dimensions, type combinations (fewer dimensions first), the instance's own
 // values, then instance overrides in the same order.
 export class Resolver {
@@ -53,6 +67,11 @@ export class Resolver {
       .sort();
   }
 
+  isShared(id: string): boolean {
+    const type = this.tasks.get(id)?.type;
+    return type !== undefined && this.project.types.types?.[type]?.shared === true;
+  }
+
   // Pages whose tree, through includes, contains the task.
   pages(id: string): string[] {
     return this.project.tasks
@@ -60,40 +79,117 @@ export class Resolver {
       .filter((page) => this.path(page, id) !== undefined);
   }
 
+  // The ids from a page (or, without one, the task's own file root) down to
+  // the task.
+  lineage(id: string, page?: string): string[] {
+    return (page === undefined ? undefined : this.path(page, id)) ?? this.ancestry(id);
+  }
+
+  // Shared tasks above the task on its lineage.
+  sharedAncestors(lineage: string[]): string[] {
+    return lineage.slice(0, -1).filter((id) => this.isShared(id));
+  }
+
   // Every context the task exists in on a page: each combination of its
-  // dimensions' values, times its states there.
+  // dimensions' values and its shared ancestors' states, times its own states.
   contexts(id: string, page: string): Context[] {
     const task = this.tasks.get(id);
     if (task === undefined) return [];
-    const names = this.dimensions(id);
-    let combinations: Context[] = [{}];
-    for (const name of names) {
+    const lineage = this.lineage(id, page);
+    let contexts: Context[] = [{}];
+    for (const name of this.dimensions(id)) {
       const values = this.project.dimensions[name]?.values ?? [];
-      combinations = combinations.flatMap((context) =>
+      contexts = contexts.flatMap((context) =>
         values.map((value) => ({ ...context, [name]: value })),
       );
     }
-    return combinations.flatMap((context) => {
-      const resolved = this.resolve(id, context, page);
+    for (const ancestor of this.sharedAncestors(lineage)) {
+      contexts = contexts.flatMap((context) =>
+        this.resolve(ancestor, context, this.lineage(ancestor, page)).states.map((state) => ({
+          ...context,
+          [ancestor]: state,
+        })),
+      );
+    }
+    return contexts.flatMap((context) => {
+      const resolved = this.resolve(id, context, lineage);
       if (!resolved.present) return [];
-      if (task.type === undefined || !this.hasStates(task.type)) return [context];
+      if (task.type === undefined || !this.hasStates(task.type) || this.isShared(id)) {
+        return [context];
+      }
       return resolved.states.map((state) => ({ state, ...context }));
     });
   }
 
+  // Every distinct view of a task's subtree: its dimensions' values, and the
+  // states of shared tasks wherever those tasks are present.
+  views(id: string, page?: string): Context[] {
+    const { dimensions: names, shared } = this.axes(id, page);
+    let views: Context[] = [{}];
+    for (const name of names) {
+      const values = this.project.dimensions[name]?.values ?? [];
+      views = views.flatMap((view) => values.map((value) => ({ ...view, [name]: value })));
+    }
+    for (const task of shared) {
+      const taskLineage = this.lineageWithin(id, task, page);
+      views = views.flatMap((view) => {
+        const resolved = this.resolve(task, view, taskLineage);
+        return resolved.present
+          ? resolved.states.map((state) => ({ ...view, [task]: state }))
+          : [view];
+      });
+    }
+    // Only the views in which the task itself exists.
+    return views.filter((view) => this.resolve(id, view, this.lineage(id, page)).present);
+  }
+
+  // The dimensions that apply anywhere in a task's subtree, and the shared
+  // tasks above it or in it, in tree order.
+  axes(id: string, page?: string): { dimensions: string[]; shared: string[] } {
+    const subtree = this.subtree(id);
+    return {
+      dimensions: [...this.scopes]
+        .filter(([, scope]) => subtree.some((node) => scope.has(node)))
+        .map(([name]) => name)
+        .sort(),
+      shared: [
+        ...this.sharedAncestors(this.lineage(id, page)),
+        ...subtree.filter((node) => this.isShared(node)),
+      ],
+    };
+  }
+
+  // The lineage of a task inside a view of another task.
+  lineageWithin(id: string, task: string, page?: string): string[] {
+    return [...this.lineage(id, page).slice(0, -1), ...(this.path(id, task) ?? [task])];
+  }
+
+  // The tree present in a view.
+  view(id: string, context: Context, page?: string): ViewNode | undefined {
+    const lineage = this.lineage(id, page);
+    return this.render(id, context, lineage);
+  }
+
   // The task in a context. Dimensions missing from the context take their
-  // default; ones without a default are not applied.
-  resolve(id: string, given: Context, page?: string): Resolved {
+  // default; ones without a default are not applied. lineage decides "only"
+  // and onlyWhen; it defaults to the path within the task's own file.
+  resolve(id: string, given: Context, lineage: string[] = this.ancestry(id)): Resolved {
     const task = this.tasks.get(id) as Task;
     const context = this.withDefaults(id, given);
-    const lineage = (page === undefined ? undefined : this.path(page, id)) ?? this.ancestry(id);
-    const present = !Object.entries(context).some(([name, value]) => {
-      const only = this.project.overrides[name]?.only;
-      return lineage.some((ancestor) => {
-        const allowed = only?.[ancestor];
-        return allowed !== undefined && !allowed.includes(value);
-      });
-    });
+    const full = { ...given, ...context };
+    const present =
+      !Object.entries(context).some(([name, value]) => {
+        const only = this.project.overrides[name]?.only;
+        return lineage.some((ancestor) => {
+          const allowed = only?.[ancestor];
+          return allowed !== undefined && !allowed.includes(value);
+        });
+      }) &&
+      !lineage.some((node) =>
+        Object.entries(this.tasks.get(node)?.onlyWhen ?? {}).some(
+          ([ancestor, states]) => full[ancestor] !== undefined && !states.includes(full[ancestor]),
+        ),
+      );
 
     const type = task.type === undefined ? undefined : this.project.types.types?.[task.type];
     const levels = this.levels(id, task.type, context);
@@ -120,7 +216,7 @@ export class Resolver {
     return { present, states: [...states], customAttributes: values };
   }
 
-  // Fills in defaults for the task's dimensions the context leaves out.
+  // The task's dimensions from the context, with defaults filled in.
   withDefaults(id: string, given: Context): Context {
     const context: Context = {};
     for (const name of this.dimensions(id)) {
@@ -128,6 +224,27 @@ export class Resolver {
       if (value !== undefined) context[name] = value;
     }
     return context;
+  }
+
+  private render(id: string, context: Context, lineage: string[]): ViewNode | undefined {
+    const task = this.tasks.get(id) as Task;
+    const resolved = this.resolve(id, context, lineage);
+    if (!resolved.present) return undefined;
+    const node: ViewNode = { id: task.id, title: task.title };
+    if (task.type !== undefined) node.type = task.type;
+    if (this.isShared(id)) {
+      node.state = context[id] as string;
+    } else if (task.type !== undefined && this.hasStates(task.type)) {
+      node.states = resolved.states;
+    }
+    if (Object.keys(resolved.customAttributes).length > 0) {
+      node.customAttributes = resolved.customAttributes;
+    }
+    const children = (this.children.get(id) ?? [])
+      .map((child) => this.render(child, context, [...lineage, child]))
+      .filter((child): child is ViewNode => child !== undefined);
+    if (children.length > 0) node.children = children;
+    return node;
   }
 
   // Whether the type has states, so contexts include one.
@@ -172,6 +289,18 @@ export class Resolver {
     if (into.has(id)) return;
     into.add(id);
     for (const child of this.children.get(id) ?? []) this.collect(child, into);
+  }
+
+  // The task and everything under it, through includes, in tree order.
+  private subtree(id: string): string[] {
+    const ids: string[] = [];
+    const visit = (current: string) => {
+      if (ids.includes(current)) return;
+      ids.push(current);
+      for (const child of this.children.get(current) ?? []) visit(child);
+    };
+    visit(id);
+    return ids;
   }
 
   private path(from: string, to: string, seen = new Set<string>()): string[] | undefined {

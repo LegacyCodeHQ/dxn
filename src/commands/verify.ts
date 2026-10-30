@@ -66,9 +66,11 @@ function pageFor(resolver: Resolver, id: string, chosen: string | undefined): st
 
 // A record's identity: task, context with defaults filled in, and check.
 function identity(resolver: Resolver, task: string, context: Context, check: string): string {
-  const filled = resolver.withDefaults(task, context);
-  const full = context.state === undefined ? filled : { state: context.state, ...filled };
-  return JSON.stringify([task, contextKey(full), check]);
+  return JSON.stringify([
+    task,
+    contextKey({ ...context, ...resolver.withDefaults(task, context) }),
+    check,
+  ]);
 }
 
 function records(workspace: Workspace, page: string, create: boolean): unknown[] | undefined {

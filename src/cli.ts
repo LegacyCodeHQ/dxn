@@ -5,7 +5,7 @@ import type { Command } from "./commands/context.js";
 import { dimension } from "./commands/dimension.js";
 import { init } from "./commands/init.js";
 import { only, override } from "./commands/override.js";
-import { contexts, query, status, tree } from "./commands/reading.js";
+import { contexts, query, status, tree, view, views } from "./commands/reading.js";
 import { task } from "./commands/task.js";
 import { type } from "./commands/type.js";
 import { validate } from "./commands/validate.js";
@@ -25,6 +25,9 @@ Commands:
                       Show a task's states and values in a context
   contexts <task-id>  List every context a task exists in
   status [<task-id>]  Report each required check as passed, failed or missing
+  views <task-id>     List every distinct view of a task's subtree: one diagram each
+  view <task-id> [<context>...]
+                      Print the tree present in one view
   tree                Print the pages and components
   verify <task-id> --check <c> --result passed|failed --by <who> [<context>...]
                       Record a check's result for a task in one context
@@ -58,6 +61,8 @@ const commands: Record<string, Command> = {
   contexts,
   status,
   tree,
+  views,
+  view,
   task,
   type,
   attribute,
