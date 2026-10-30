@@ -334,3 +334,114 @@ describe("transitions in status and verify", () => {
     `);
   });
 });
+
+describe("contexts --tree --transitions", () => {
+  const withTransitions = () => {
+    const project = cliProject(files);
+    const add = (...args: string[]) => project.run("task", "transition", "add", "menu", ...args);
+    add("open", "--from", "closed", "--to", "open", "--on", "click", "--target", "menu-button");
+    add(
+      "escape",
+      "--from",
+      "open",
+      "--to",
+      "closed",
+      "--on",
+      "keydown",
+      "--key",
+      "Escape",
+      "--focus",
+      "menu-button",
+    );
+    add(
+      "outside",
+      "--from",
+      "open",
+      "--to",
+      "closed",
+      "--on",
+      "pointerdown",
+      "--outside",
+      "toolbar",
+    );
+    return project;
+  };
+
+  it("lists each part's transitions under it", () => {
+    const { run } = withTransitions();
+    expect(
+      run("contexts", "toolbar", "--subtree", "--tree", "--transitions").stdout,
+    ).toMatchInlineSnapshot(`
+      "toolbar (1 combination)
+      menu (2 combinations)
+      ├── menu=closed, open
+      └── transitions
+          ├── closed → open: click on menu-button  [open]
+          ├── open → closed: keydown Escape, focus menu-button  [escape]
+          └── open → closed: pointerdown outside toolbar  [outside]
+      menu-button (2 combinations)
+      └── menu=closed, open
+      menu-panel (1 combination)
+      └── menu=open
+      menu-link (1 combination)
+      └── menu=open
+      "
+    `);
+  });
+
+  it("adds them to the JSON tree", () => {
+    const { run } = withTransitions();
+    expect(
+      JSON.parse(run("contexts", "menu", "--tree", "--json", "--transitions").stdout),
+    ).toMatchInlineSnapshot(`
+      {
+        "task": "menu",
+        "tree": [
+          {
+            "children": [
+              {
+                "count": 2,
+                "name": "menu",
+                "values": [
+                  "closed",
+                  "open",
+                ],
+              },
+            ],
+            "count": 2,
+            "task": "menu",
+            "transitions": [
+              {
+                "from": "closed",
+                "id": "open",
+                "on": "click",
+                "target": "menu-button",
+                "to": "open",
+              },
+              {
+                "focus": "menu-button",
+                "from": "open",
+                "id": "escape",
+                "key": "Escape",
+                "on": "keydown",
+                "to": "closed",
+              },
+              {
+                "from": "open",
+                "id": "outside",
+                "on": "pointerdown",
+                "outside": "toolbar",
+                "to": "closed",
+              },
+            ],
+          },
+        ],
+      }
+    `);
+  });
+
+  it("needs --tree", () => {
+    const { run } = withTransitions();
+    expect(run("contexts", "menu", "--transitions").code).toBe(2);
+  });
+});

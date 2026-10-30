@@ -1,4 +1,5 @@
 import type { Context, Resolver } from "./resolve.js";
+import type { Transition } from "./tree.js";
 
 // A task's contexts, one entry per context.
 export interface Entry {
@@ -9,7 +10,7 @@ export interface Entry {
 // A level of the tree: a task, or a name (dimension, shared task, state
 // group, page) with the values that lead to the same subtree.
 export type StateNode =
-  | { task: string; count: number; children?: StateNode[] }
+  | { task: string; count: number; transitions?: Transition[]; children?: StateNode[] }
   | { name: string; values: string[]; count: number; children?: StateNode[] };
 
 export interface TreeOptions {
@@ -17,6 +18,8 @@ export interface TreeOptions {
   by?: string[];
   // The only names to show; others are merged away.
   only?: string[];
+  // Whether task nodes list their transitions.
+  transitions?: boolean;
 }
 
 // The names that appear in the entries' contexts, for validating options.
@@ -64,7 +67,11 @@ export function buildStateTree(
       const tasks = [...new Set(group.map(({ task }) => task))];
       return tasks.map((task) => {
         const own = group.filter((entry) => entry.task === task);
-        return withChildren({ task, count: own.length }, build(own, below));
+        const transitions = options.transitions ? (resolver.task(task)?.transitions ?? []) : [];
+        return withChildren(
+          { task, count: own.length, ...(transitions.length === 0 ? {} : { transitions }) },
+          build(own, below),
+        );
       });
     }
     // A level none of these contexts have does not exist here.
@@ -123,18 +130,60 @@ export function drawStateTree(nodes: StateNode[]): string {
     "task" in node
       ? `${node.task} (${node.count} combination${node.count === 1 ? "" : "s"})`
       : `${node.name}=${node.values.join(", ")}`;
-  const draw = (children: StateNode[], prefix: string) => {
-    children.forEach((node, index) => {
+  // A task's children, then its transitions as a branch of their own.
+  const below = (node: StateNode): Line[] => [
+    ...(node.children ?? []).map((child) => ({
+      text: label(child),
+      children: below(child),
+    })),
+    ...("task" in node && node.transitions !== undefined
+      ? [
+          {
+            text: "transitions",
+            children: node.transitions.map((transition) => ({
+              text: describeTransition(transition),
+              children: [],
+            })),
+          },
+        ]
+      : []),
+  ];
+  const draw = (children: Line[], prefix: string) => {
+    children.forEach((line, index) => {
       const last = index === children.length - 1;
-      lines.push(`${prefix}${last ? "└── " : "├── "}${label(node)}`);
-      draw(node.children ?? [], `${prefix}${last ? "    " : "│   "}`);
+      lines.push(`${prefix}${last ? "└── " : "├── "}${line.text}`);
+      draw(line.children, `${prefix}${last ? "    " : "│   "}`);
     });
   };
   for (const node of nodes) {
     lines.push(label(node));
-    draw(node.children ?? [], "");
+    draw(below(node), "");
   }
   return `${lines.join("\n")}\n`;
+}
+
+interface Line {
+  text: string;
+  children: Line[];
+}
+
+// "closed → open: click on menu-button, focus menu-button  [open]"
+export function describeTransition(transition: Transition): string {
+  const event = [
+    transition.on,
+    transition.key,
+    transition.target === undefined ? undefined : `on ${transition.target}`,
+    transition.outside === undefined ? undefined : `outside ${transition.outside}`,
+    transition.when === undefined
+      ? undefined
+      : `to ${Object.entries(transition.when)
+          .map(([name, values]) => `${name}=${values.join("|")}`)
+          .join(" ")}`,
+  ]
+    .filter((part) => part !== undefined)
+    .join(" ");
+  const focus = transition.focus === undefined ? "" : `, focus ${transition.focus}`;
+  return `${transition.from} → ${transition.to}: ${event}${focus}  [${transition.id}]`;
 }
 
 const TASK = "\u0000task";

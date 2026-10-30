@@ -214,7 +214,7 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
 });
 
 const contextsUsage = `Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--page <page-id>]
-                         [--count | --tree [--by a,b] [--only a,b] [--json]]
+                         [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
 
 Lists every context the task exists in, on each page that contains it.
 --subtree lists every part of the task's subtree instead, with the component
@@ -223,7 +223,8 @@ contexts with that dimension value, state or shared task state. --count
 prints counts instead of the contexts. --tree prints them as a merged tree:
 sibling branches with identical subtrees share a line, and dimensions that
 change nothing are left out. --by a,b puts those levels first, --only a,b
-keeps only those levels, and --json prints the tree as JSON for tools.
+keeps only those levels, --transitions lists each part's transitions under
+it, and --json prints the tree as JSON for tools.
 `;
 
 export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
@@ -237,6 +238,7 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
       by: { type: "string" },
       only: { type: "string" },
       json: { type: "boolean" },
+      transitions: { type: "boolean" },
       page: { type: "string" },
     },
     true,
@@ -246,9 +248,12 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
   }
   if (
     values.tree !== true &&
-    (values.by !== undefined || values.only !== undefined || values.json === true)
+    (values.by !== undefined ||
+      values.only !== undefined ||
+      values.json === true ||
+      values.transitions === true)
   ) {
-    throw new UsageError("--by, --only and --json need --tree");
+    throw new UsageError("--by, --only, --json and --transitions need --tree");
   }
   // Draws the entries as a merged state tree, as text or JSON.
   const showTree = (entries: Entry[]) => {
@@ -265,6 +270,7 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     const nodes = buildStateTree(resolver, entries, {
       by: levels(values.by),
       only: levels(values.only),
+      transitions: values.transitions === true,
     });
     if (values.json === true) print(io, { task: id, tree: nodes });
     else io.stdout(drawStateTree(nodes));
