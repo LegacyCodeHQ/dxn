@@ -189,7 +189,14 @@ export const view = readCommand(viewUsage, (resolver, args, io) => {
       { ...context, ...given },
       resolver.lineageWithin(id, task, values.page),
     ).present;
-    if (!present) continue;
+    if (!present) {
+      if (given[task] !== undefined) {
+        throw new Refusal(
+          `"${task}" does not exist when ${describe(context)}; leave out ${task}=${given[task]}`,
+        );
+      }
+      continue;
+    }
     if (given[task] === undefined) {
       const type = resolver.task(task)?.type as string;
       const states = resolver.project.types.types?.[type]?.states ?? [];
@@ -197,8 +204,18 @@ export const view = readCommand(viewUsage, (resolver, args, io) => {
     }
     context[task] = given[task];
   }
-  print(io, { task: id, context, tree: resolver.view(id, context, values.page) });
+  const tree = resolver.view(id, context, values.page);
+  if (tree === undefined) {
+    throw new Refusal(`"${id}" does not exist when ${describe(context)}`);
+  }
+  print(io, { task: id, context, tree });
 });
+
+function describe(context: TaskContext): string {
+  return Object.entries(context)
+    .map(([name, value]) => `${name}=${value}`)
+    .join(" and ");
+}
 
 const statusUsage = `Usage: task-tree status [<task-id>]
 

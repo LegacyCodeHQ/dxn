@@ -260,6 +260,51 @@ describe("view", () => {
   });
 });
 
+describe("view configurations that cannot exist", () => {
+  it("reject a shared task's state where that task does not exist", () => {
+    const snapshot: unknown[] = [];
+    const { run } = cliProject(files);
+    snapshot.push(run("view", "toolbar", "breakpoint=lg", "menu=open"));
+    snapshot.push(run("view", "toolbar", "breakpoint=xl", "menu=closed").code);
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        {
+          "code": 1,
+          "stderr": "task-tree: "menu" does not exist when breakpoint=lg; leave out menu=open
+      ",
+          "stdout": "",
+        },
+        1,
+      ]
+    `);
+  });
+
+  it("reject viewing a task where it does not exist", () => {
+    const snapshot: unknown[] = [];
+    const { run } = cliProject(files);
+    snapshot.push(run("view", "menu", "breakpoint=lg"));
+    snapshot.push(run("view", "menu-panel", "breakpoint=sm", "menu=closed"));
+    snapshot.push(run("view", "menu-panel", "breakpoint=sm", "menu=open").code);
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        {
+          "code": 1,
+          "stderr": "task-tree: "menu" does not exist when breakpoint=lg
+      ",
+          "stdout": "",
+        },
+        {
+          "code": 1,
+          "stderr": "task-tree: "menu-panel" does not exist when breakpoint=sm and menu=closed
+      ",
+          "stdout": "",
+        },
+        0,
+      ]
+    `);
+  });
+});
+
 describe("shared states in the other reading commands", () => {
   it("are part of a task's contexts", () => {
     const snapshot: unknown[] = [];
