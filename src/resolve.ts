@@ -46,6 +46,8 @@ export interface ViewNode {
 export class Resolver {
   private readonly tasks = new Map<string, Task>();
   private readonly children = new Map<string, string[]>();
+  // Task id -> its parent in the same file; roots have none.
+  private readonly parents = new Map<string, string>();
   private readonly scopes = new Map<string, Set<string>>();
   // "<parent>><component>" -> the include's "states".
   private readonly includeStates = new Map<string, Record<string, Record<string, string[]>>>();
@@ -345,7 +347,10 @@ export class Resolver {
       }
     }
     for (const child of node.children ?? []) {
-      if (!isInclude(child)) this.index(child);
+      if (!isInclude(child)) {
+        this.parents.set(child.id, node.id);
+        this.index(child);
+      }
     }
   }
 
@@ -380,11 +385,15 @@ export class Resolver {
 
   // The task and its ancestors within its own file.
   private ancestry(id: string): string[] {
-    for (const root of [...this.project.tasks, ...this.project.components]) {
-      const found = this.path(root.id, id);
-      if (found !== undefined) return found;
+    const lineage = [id];
+    for (
+      let parent = this.parents.get(id);
+      parent !== undefined;
+      parent = this.parents.get(parent)
+    ) {
+      lineage.unshift(parent);
     }
-    return [id];
+    return lineage;
   }
 }
 

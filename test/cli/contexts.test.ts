@@ -70,6 +70,34 @@ const files = {
 const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 
 describe("contexts --subtree", () => {
+  it("leaves out a page's include states unless --page names the page", () => {
+    const { run } = cliProject({
+      ...files,
+      "tasks/article-page.json": taskFile({
+        id: "article-page",
+        title: "Article page",
+        children: [{ include: "toolbar", states: { "blog-link": { selection: ["selected"] } } }],
+      }),
+    });
+    const snapshot: unknown[] = [];
+    for (const page of [[], ["--page", "article-page"]]) {
+      const result = json(run("contexts", "toolbar", "--subtree", "--count", ...page));
+      snapshot.push(result.counts["blog-link"]);
+      const selected = json(
+        run("contexts", "toolbar", "--subtree", "selection=unselected", "--count", ...page),
+      );
+      snapshot.push(selected.counts["blog-link"]);
+    }
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        16,
+        8,
+        8,
+        0,
+      ]
+    `);
+  });
+
   it("lists every part's combinations, the component on its own by default", () => {
     const { run } = cliProject(files);
     const result = json(run("contexts", "toolbar", "--subtree"));
