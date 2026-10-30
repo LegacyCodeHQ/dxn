@@ -9,6 +9,8 @@ export interface CustomAttributeDeclaration {
 
 export interface TypeDefinition {
   states?: string[];
+  // State groups the type uses: whole groups, or group -> the values it uses.
+  stateGroups?: string[] | Record<string, string[]>;
   // Whether instances' subtrees vary with the instance's state.
   shared?: boolean;
   // Declared checks every instance must pass, in every context.
@@ -40,6 +42,8 @@ export function isInclude(node: TaskNode): node is Include {
 // types.json
 export interface TypesFile {
   version: number;
+  // Named groups of independent states, such as interaction and selection.
+  stateGroups?: Record<string, string[]>;
   customAttributes?: Record<string, CustomAttributeDeclaration>;
   // Declared checks, each an empty object for now.
   customChecks?: Record<string, Record<string, never>>;

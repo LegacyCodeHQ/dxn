@@ -141,6 +141,16 @@ export function compileDirectory(directory: string): DirectoryResult {
       );
       continue;
     }
+    if (symbols.stateGroups.has(name)) {
+      problems.push(
+        fileDiagnostic(
+          path,
+          "reserved-name",
+          `a dimension cannot be named after the state group "${name}": contexts use it for that group`,
+        ),
+      );
+      continue;
+    }
     if (name === "state") {
       problems.push(
         fileDiagnostic(

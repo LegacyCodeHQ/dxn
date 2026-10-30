@@ -58,6 +58,17 @@ agree("types", (doc) => ({ "types.json": doc }), {
   valid: [
     ["the smallest file", { version: 1 }],
     [
+      "state groups used whole and in part",
+      {
+        version: 1,
+        stateGroups: { interaction: ["normal", "hovered"], selection: ["no", "yes"] },
+        types: {
+          link: { stateGroups: ["interaction", "selection"] },
+          logo: { stateGroups: { interaction: ["normal"] } },
+        },
+      },
+    ],
+    [
       "checks declared and required by a type",
       { version: 1, customChecks: { visual: {} }, types: { link: { checks: ["visual"] } } },
     ],
@@ -89,6 +100,10 @@ agree("types", (doc) => ({ "types.json": doc }), {
     ["control-character", withDeclaration({ values: ["a\u0001"] })],
     ["duplicate-value", withDeclaration({ values: ["a", "a"] })],
     ["wrong-type", withType({ states: ["a"], shared: "yes" })],
+    ["wrong-type", { ...types, stateGroups: [] }],
+    ["empty-values", { ...types, stateGroups: { interaction: [] } }],
+    ["duplicate-value", { ...types, stateGroups: { interaction: ["a", "a"] } }],
+    ["wrong-type", withType({ stateGroups: "interaction" })],
     ["wrong-type", { ...types, customChecks: [] }],
     ["wrong-type", { ...types, customChecks: { visual: true } }],
     ["unknown-key", { ...types, customChecks: { visual: { kind: 1 } } }],
@@ -115,6 +130,8 @@ agree("types", (doc) => ({ "types.json": doc }), {
   ],
   crossReference: [
     ["shared-without-states", withType({ shared: true })],
+    ["undeclared-state-group", withType({ stateGroups: ["interaction"] })],
+    ["reserved-name", { ...types, stateGroups: { state: ["a"] } }],
     ["undeclared-check", withType({ checks: ["visual"] })],
     ["undeclared-attribute", withType({ states: ["normal"], customAttributes: { size: {} } })],
     [

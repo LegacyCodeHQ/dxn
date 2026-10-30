@@ -15,6 +15,7 @@ import {
   view,
   views,
 } from "./commands/reading.js";
+import { stateGroup } from "./commands/state-group.js";
 import { task } from "./commands/task.js";
 import { type } from "./commands/type.js";
 import { validate } from "./commands/validate.js";
@@ -46,6 +47,8 @@ Commands:
                       Remove that record
   task <subcommand>   Add, move, rename and remove tasks, and set their values
   type <subcommand>   Add types and states, and set their values
+  state-group <subcommand>
+                      Declare groups of independent states, such as interaction
   attribute <subcommand>
                       Declare custom attributes and their values
   check <subcommand>  Declare checks that types can require
@@ -79,6 +82,7 @@ const commands: Record<string, Command> = {
   task,
   type,
   attribute,
+  "state-group": stateGroup,
   check,
   component,
   dimension,

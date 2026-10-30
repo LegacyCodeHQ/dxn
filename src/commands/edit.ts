@@ -133,8 +133,15 @@ export function renameKey(object: Json, from: string, to: string): void {
 }
 
 export const taskOrder = ["id", "title", "type", "onlyWhen", "children", "customAttributes"];
-export const typesOrder = ["$schema", "version", "customAttributes", "customChecks", "types"];
-export const typeOrder = ["states", "shared", "checks", "customAttributes"];
+export const typesOrder = [
+  "$schema",
+  "version",
+  "stateGroups",
+  "customAttributes",
+  "customChecks",
+  "types",
+];
+export const typeOrder = ["states", "stateGroups", "shared", "checks", "customAttributes"];
 
 // Where a task is defined.
 export interface Located {

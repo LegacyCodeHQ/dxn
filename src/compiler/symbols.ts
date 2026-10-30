@@ -7,8 +7,16 @@ export interface TreeSymbols {
   // Declared custom attribute name -> allowed values (undefined when the
   // declaration itself is invalid, so its uses are not checked again).
   attributes: Map<string, Set<string> | undefined>;
-  // Type name -> its states.
+  // Type name -> its states: every value of every group it uses.
   types: Map<string, Set<string>>;
+  // Declared state group -> its values (undefined when the declaration is invalid).
+  stateGroups: Map<string, Set<string> | undefined>;
+  // Type name -> its groups and the values it uses from each. A plain
+  // "states" list is one group named "state".
+  typeGroups: Map<string, Map<string, Set<string>>>;
+  // Type name -> the values an override may add: every value of the groups it
+  // uses. Absent for types with a plain "states" list, which may add any.
+  addable: Map<string, Set<string>>;
   // Task id -> where it is first defined, as "<file> <path>".
   ids: Map<string, string>;
   // Task id -> its type name, for tasks that name one.

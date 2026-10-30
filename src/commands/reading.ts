@@ -210,6 +210,10 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
     ...(Object.keys(context).length === 0 ? {} : { context }),
     present: resolved.present,
     states: resolved.states,
+    ...(task.type !== undefined &&
+    resolver.project.types.types?.[task.type]?.stateGroups !== undefined
+      ? { stateGroups: resolved.groups }
+      : {}),
     ...(Object.keys(resolved.customAttributes).length === 0
       ? {}
       : { customAttributes: resolved.customAttributes }),

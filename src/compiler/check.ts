@@ -18,6 +18,9 @@ export function emptySymbols(): TreeSymbols {
   return {
     attributes: new Map(),
     types: new Map(),
+    stateGroups: new Map(),
+    typeGroups: new Map(),
+    addable: new Map(),
     ids: new Map(),
     taskTypes: new Map(),
     children: new Map(),
@@ -47,7 +50,7 @@ export function checkTypesFile(
     diagnostics,
     document,
     "$",
-    ["$schema", "version", "customAttributes", "customChecks", "types"],
+    ["$schema", "version", "stateGroups", "customAttributes", "customChecks", "types"],
     {
       required: ["version"],
     },
@@ -58,6 +61,11 @@ export function checkTypesFile(
   const declarations = members.get("customAttributes");
   if (declarations !== undefined) {
     checkDeclarations(diagnostics, symbols, declarations, "$.customAttributes");
+  }
+
+  const groups = members.get("stateGroups");
+  if (groups !== undefined) {
+    checkStateGroupDeclarations(diagnostics, symbols, groups, "$.stateGroups");
   }
 
   const checks = members.get("customChecks");
@@ -236,6 +244,7 @@ function checkTypes(
     }
     const members = keys(diagnostics, type, typePath, [
       "states",
+      "stateGroups",
       "shared",
       "checks",
       "customAttributes",
@@ -280,6 +289,29 @@ function checkTypes(
         states.add(state);
       }
     }
+    const groupsNode = members.get("stateGroups");
+    const groups = new Map<string, Set<string>>();
+    if (groupsNode !== undefined && stateList !== undefined) {
+      report(
+        diagnostics,
+        "states-and-groups",
+        "use either states or stateGroups, not both",
+        `${typePath}.stateGroups`,
+        groupsNode,
+      );
+    } else if (groupsNode !== undefined) {
+      checkTypeGroups(diagnostics, symbols, groupsNode, `${typePath}.stateGroups`, groups);
+      for (const values of groups.values()) {
+        for (const value of values) states.add(value);
+      }
+      symbols.addable.set(
+        key.value,
+        new Set([...groups.keys()].flatMap((group) => [...(symbols.stateGroups.get(group) ?? [])])),
+      );
+    } else if (states.size > 0) {
+      groups.set("state", states);
+    }
+    symbols.typeGroups.set(key.value, groups);
     const shared = members.get("shared");
     if (shared !== undefined && expectKind(diagnostics, shared, `${typePath}.shared`, "boolean")) {
       if (shared.value && states.size === 0) {
@@ -287,6 +319,14 @@ function checkTypes(
           diagnostics,
           "shared-without-states",
           "a shared type needs states for its instances' subtrees to vary with",
+          `${typePath}.shared`,
+          shared,
+        );
+      } else if (shared.value && groups.size > 1) {
+        report(
+          diagnostics,
+          "shared-with-several-groups",
+          "a shared type's state is named by its task id, so it can use only one state group",
           `${typePath}.shared`,
           shared,
         );
@@ -585,5 +625,147 @@ export function resolveOnlyWhen(symbols: TreeSymbols): void {
     const byAncestor = symbols.onlyWhen.get(ref.task) ?? new Map<string, Set<string>>();
     byAncestor.set(ancestor, allowed);
     symbols.onlyWhen.set(ref.task, byAncestor);
+  }
+}
+
+// stateGroups in types.json: group name -> its values.
+function checkStateGroupDeclarations(
+  diagnostics: Diagnostics,
+  symbols: TreeSymbols,
+  node: JsonNode,
+  path: string,
+): void {
+  const declarations = expectObject(diagnostics, node, path);
+  for (const { key, value } of declarations?.members ?? []) {
+    const groupPath = childPath(path, key.value);
+    if (!expectName(diagnostics, key, groupPath)) {
+      continue;
+    }
+    if (key.value === "state") {
+      report(
+        diagnostics,
+        "reserved-name",
+        'a state group cannot be named "state": that is the key for a plain states list',
+        groupPath,
+        key,
+      );
+      continue;
+    }
+    symbols.stateGroups.set(key.value, undefined);
+    if (!expectKind(diagnostics, value, groupPath, "array")) {
+      continue;
+    }
+    if (value.elements.length === 0) {
+      report(
+        diagnostics,
+        "empty-values",
+        "a state group needs at least one value",
+        groupPath,
+        value,
+      );
+      continue;
+    }
+    symbols.stateGroups.set(
+      key.value,
+      uniqueStrings(diagnostics, value, groupPath, "duplicate-value"),
+    );
+  }
+}
+
+// A type's stateGroups: names of whole groups, or group -> the values it uses.
+function checkTypeGroups(
+  diagnostics: Diagnostics,
+  symbols: TreeSymbols,
+  node: JsonNode,
+  path: string,
+  groups: Map<string, Set<string>>,
+): void {
+  const owner = new Map<string, string>();
+  const use = (
+    group: string,
+    values: Set<string>,
+    at: { span: { start: number } },
+    atPath: string,
+  ) => {
+    const clash = [...values].find((value) => owner.has(value));
+    if (clash !== undefined) {
+      report(
+        diagnostics,
+        "ambiguous-state",
+        `${JSON.stringify(clash)} is in both ${JSON.stringify(owner.get(clash))} and ${JSON.stringify(group)}; a type's groups cannot share a value`,
+        atPath,
+        at,
+      );
+      return;
+    }
+    for (const value of values) owner.set(value, group);
+    groups.set(group, values);
+  };
+  const declared = (name: StringNode, namePath: string): Set<string> | undefined => {
+    if (!symbols.stateGroups.has(name.value)) {
+      report(
+        diagnostics,
+        "undeclared-state-group",
+        `state group ${JSON.stringify(name.value)} is not declared`,
+        namePath,
+        name,
+      );
+      return undefined;
+    }
+    return symbols.stateGroups.get(name.value);
+  };
+
+  if (node.kind === "array") {
+    for (const [name, namePath] of stringElements(
+      diagnostics,
+      node,
+      path,
+      "duplicate-state-group",
+    )) {
+      const values = declared(name, namePath);
+      if (values !== undefined) use(name.value, new Set(values), name, namePath);
+    }
+    return;
+  }
+  if (node.kind !== "object") {
+    report(
+      diagnostics,
+      "wrong-type",
+      "expected a list of state groups, or an object of groups and their values",
+      path,
+      node,
+    );
+    return;
+  }
+  for (const { key, value } of node.members) {
+    const groupPath = childPath(path, key.value);
+    const all = declared(key, groupPath);
+    if (!expectKind(diagnostics, value, groupPath, "array")) {
+      continue;
+    }
+    if (value.elements.length === 0) {
+      report(diagnostics, "empty-values", "use at least one value of the group", groupPath, value);
+      continue;
+    }
+    const chosen = new Set<string>();
+    for (const [state, statePath] of stringElements(
+      diagnostics,
+      value,
+      groupPath,
+      "duplicate-state",
+    )) {
+      if (all !== undefined && !all.has(state.value)) {
+        report(
+          diagnostics,
+          "unknown-state",
+          `${JSON.stringify(state.value)} is not a value of state group ${JSON.stringify(key.value)}`,
+          statePath,
+          state,
+        );
+        continue;
+      }
+      chosen.add(state.value);
+    }
+    if (all !== undefined) use(key.value, chosen, key, groupPath);
   }
 }

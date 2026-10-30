@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "task-tree types",
-  "description": "Editor aid for types.json. The task-tree compiler is the authority: it also checks that custom attribute values use declared attributes, the type's states and declared values, and that required checks are declared, which this schema cannot express.",
+  "description": "Editor aid for types.json. The task-tree compiler is the authority: it also checks that custom attribute values use declared attributes, the type's states and declared values, that required checks and state groups are declared, and that a type's groups do not share values, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version"],
@@ -13,6 +13,21 @@
     "version": {
       "description": "Format version.",
       "const": 1
+    },
+    "stateGroups": {
+      "description": "Named groups of independent states, such as interaction (normal, hovered, focused) and selection (unselected, selected). A type's states are the combinations of the groups it uses.",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": {
+          "$ref": "#/$defs/name"
+        }
+      }
     },
     "customAttributes": {
       "description": "Declares the custom attributes that types and tasks may use, and their allowed values.",
@@ -79,6 +94,32 @@
           "items": {
             "$ref": "#/$defs/name"
           }
+        },
+        "stateGroups": {
+          "description": "State groups the type uses: a list of whole groups, or group -> the values it uses. Not together with states.",
+          "anyOf": [
+            {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/name"
+              }
+            },
+            {
+              "type": "object",
+              "propertyNames": {
+                "$ref": "#/$defs/name"
+              },
+              "additionalProperties": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/name"
+                }
+              }
+            }
+          ]
         },
         "shared": {
           "description": "Whether the subtree of each instance varies with the instance's state, so children can depend on it with onlyWhen.",

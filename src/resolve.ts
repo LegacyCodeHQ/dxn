@@ -16,7 +16,10 @@ export type Context = Record<string, string>;
 // What a task is in one context, after every override and restriction.
 export interface Resolved {
   present: boolean;
+  // Every state in effect, across the type's groups.
   states: string[];
+  // The states in effect per group; a plain states list is the group "state".
+  groups: Record<string, string[]>;
   // Attribute -> state -> value, for the states in effect.
   customAttributes: Record<string, Record<string, string>>;
 }
@@ -28,8 +31,9 @@ export interface ViewNode {
   type?: string;
   // A shared task's state in this view.
   state?: string;
-  // A task's own states here.
+  // A task's own states here: a plain list, or per state group.
   states?: string[];
+  stateGroups?: Record<string, string[]>;
   customAttributes?: Record<string, Record<string, string>>;
   children?: ViewNode[];
 }
@@ -117,7 +121,14 @@ export class Resolver {
       if (task.type === undefined || !this.hasStates(task.type) || this.isShared(id)) {
         return [context];
       }
-      return resolved.states.map((state) => ({ state, ...context }));
+      // One value per group: the matrix of the type's groups.
+      let combinations: Context[] = [{}];
+      for (const [group, values] of Object.entries(resolved.groups)) {
+        combinations = combinations.flatMap((combination) =>
+          values.map((value) => ({ ...combination, [group]: value })),
+        );
+      }
+      return combinations.map((combination) => ({ ...combination, ...context }));
     });
   }
 
@@ -193,7 +204,8 @@ export class Resolver {
 
     const type = task.type === undefined ? undefined : this.project.types.types?.[task.type];
     const levels = this.levels(id, task.type, context);
-    const states = new Set(type?.states ?? []);
+    const typeGroups = task.type === undefined ? {} : this.groupsOf(task.type);
+    const states = new Set(Object.values(typeGroups).flat());
     for (const override of levels) {
       for (const state of override?.states?.remove ?? []) states.delete(state);
       for (const state of override?.states?.add ?? []) states.add(state);
@@ -213,7 +225,33 @@ export class Resolver {
         }
       }
     }
-    return { present, states: [...states], customAttributes: values };
+    const groups: Record<string, string[]> = {};
+    for (const group of Object.keys(typeGroups)) {
+      const declared = this.project.types.stateGroups?.[group];
+      groups[group] = [...states].filter(
+        (state) => declared === undefined || declared.includes(state),
+      );
+    }
+    if (Object.keys(typeGroups).length === 0 && states.size > 0) {
+      groups.state = [...states];
+    }
+    return { present, states: [...states], groups, customAttributes: values };
+  }
+
+  // A type's state groups and the values it uses from each; a plain states
+  // list is the group "state".
+  groupsOf(typeName: string): Record<string, string[]> {
+    const type = this.project.types.types?.[typeName];
+    const used = type?.stateGroups;
+    if (used === undefined) {
+      return (type?.states ?? []).length > 0 ? { state: type?.states ?? [] } : {};
+    }
+    if (Array.isArray(used)) {
+      return Object.fromEntries(
+        used.map((group) => [group, this.project.types.stateGroups?.[group] ?? []]),
+      );
+    }
+    return { ...used };
   }
 
   // The task's dimensions from the context, with defaults filled in.
@@ -235,7 +273,11 @@ export class Resolver {
     if (this.isShared(id)) {
       node.state = context[id] as string;
     } else if (task.type !== undefined && this.hasStates(task.type)) {
-      node.states = resolved.states;
+      if (this.project.types.types?.[task.type]?.stateGroups === undefined) {
+        node.states = resolved.states;
+      } else {
+        node.stateGroups = resolved.groups;
+      }
     }
     if (Object.keys(resolved.customAttributes).length > 0) {
       node.customAttributes = resolved.customAttributes;
@@ -249,7 +291,7 @@ export class Resolver {
 
   // Whether the type has states, so contexts include one.
   private hasStates(type: string): boolean {
-    return (this.project.types.types?.[type]?.states ?? []).length > 0;
+    return Object.keys(this.groupsOf(type)).length > 0;
   }
 
   // Type overrides then task overrides: singles, then combinations by size.

@@ -97,6 +97,8 @@ describe("finding the project", () => {
                             Remove that record
         task <subcommand>   Add, move, rename and remove tasks, and set their values
         type <subcommand>   Add types and states, and set their values
+        state-group <subcommand>
+                            Declare groups of independent states, such as interaction
         attribute <subcommand>
                             Declare custom attributes and their values
         check <subcommand>  Declare checks that types can require

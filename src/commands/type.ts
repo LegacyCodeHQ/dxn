@@ -16,14 +16,19 @@ import {
   typeOrder,
   typesFile,
   typesOrder,
+  UsageError,
   unsetValues,
 } from "./edit.js";
 
 const usage = `Usage: task-tree type <subcommand>
 
 Subcommands:
-  add <name> [--states a,b,c] [--shared]
-                                     Add a type; --shared lets instances' subtrees vary with its state
+  add <name> [--states a,b,c | --groups g,h] [--shared]
+                                     Add a type with plain states or state groups;
+                                     --shared lets instances' subtrees vary with its state
+  use-group <type> <group> [--values a,b]
+                                     Use a state group, or only some of its values
+  drop-group <type> <group>          Stop using a state group
   share <name> / unshare <name>      Make a type shared, or stop sharing it
   add-state <type> <state>           Add a state to a type
   remove-state <type> <state>        Remove a state from a type
@@ -65,6 +70,7 @@ function edit(run: (workspace: Workspace, args: string[]) => void): Command {
 const add = edit((workspace, args) => {
   const { values, positionals } = parse(args, ["name"], {
     states: { type: "string" },
+    groups: { type: "string" },
     shared: { type: "boolean" },
   });
   const [name] = positionals as [string];
@@ -73,10 +79,72 @@ const add = edit((workspace, args) => {
     throw new Refusal(`type "${name}" already exists`);
   }
   const states = list(values.states);
+  const groups = list(values.groups);
+  if (states !== undefined && groups !== undefined) {
+    throw new UsageError("give --states or --groups, not both");
+  }
   types[name] = {
     ...(states === undefined ? {} : { states }),
+    ...(groups === undefined ? {} : { stateGroups: groups }),
     ...(values.shared === true ? { shared: true } : {}),
   };
+});
+
+// A type's stateGroups as group -> values (undefined: the whole group).
+function usedGroups(type: Json): Map<string, string[] | undefined> {
+  const used = type.stateGroups;
+  if (Array.isArray(used)) {
+    return new Map(used.map((group) => [group as string, undefined]));
+  }
+  if (isObject(used)) {
+    return new Map(Object.entries(used).map(([group, values]) => [group, values as string[]]));
+  }
+  return new Map();
+}
+
+// Writes stateGroups back: a list when every group is used whole, otherwise
+// group -> values, spelling out the whole groups from their declarations.
+function setGroups(
+  workspace: Workspace,
+  type: Json,
+  groups: Map<string, string[] | undefined>,
+): void {
+  if (groups.size === 0) {
+    delete type.stateGroups;
+  } else if ([...groups.values()].every((values) => values === undefined)) {
+    type.stateGroups = [...groups.keys()];
+  } else {
+    const declared = typesFile(workspace).stateGroups;
+    type.stateGroups = Object.fromEntries(
+      [...groups].map(([group, values]) => [
+        group,
+        values ?? (isObject(declared) && Array.isArray(declared[group]) ? declared[group] : []),
+      ]),
+    );
+  }
+  reorder(type, typeOrder);
+}
+
+const useGroup = editCommand(usage, (workspace, args) => {
+  const { values, positionals } = parse(args, ["type", "group"], { values: { type: "string" } });
+  const [name, groupName] = positionals as [string, string];
+  const type = requireType(workspace, name);
+  const groups = usedGroups(type);
+  groups.set(groupName, list(values.values));
+  setGroups(workspace, type, groups);
+  workspace.touch("types.json");
+});
+
+const dropGroup = editCommand(usage, (workspace, args) => {
+  const [name, groupName] = parse(args, ["type", "group"], {}).positionals as [string, string];
+  const type = requireType(workspace, name);
+  const groups = usedGroups(type);
+  if (!groups.has(groupName)) {
+    throw new Refusal(`type "${name}" does not use state group "${groupName}"`);
+  }
+  groups.delete(groupName);
+  setGroups(workspace, type, groups);
+  workspace.touch("types.json");
 });
 
 function sharing(shared: boolean): Command {
@@ -171,6 +239,8 @@ const unrequireCheck = edit((workspace, args) => {
 });
 
 export const type: Command = group(usage, {
+  "use-group": useGroup,
+  "drop-group": dropGroup,
   share: sharing(true),
   unshare: sharing(false),
   require: requireCheck,

@@ -368,6 +368,7 @@ function checkValueOverrides(
       typePath,
       start.type(key.value, states),
       entryFor("types", key.value),
+      tree.addable.get(key.value),
     );
     typeStates.set(key.value, result.states);
     changes.types.set(key.value, result.changes);
@@ -428,6 +429,7 @@ function checkValueOverrides(
         taskPath,
         start.task(key.value, typeStates.get(type) ?? start.type(type, states)),
         entryFor("tasks", key.value),
+        tree.addable.get(type),
       ).changes,
     );
   }
@@ -443,6 +445,8 @@ function checkOverride(
   path: string,
   start: StateSet,
   entry: OverrideEntry,
+  // For types using state groups: the only values an override may add.
+  addable?: Set<string>,
 ): { states: StateSet; changes: StateChanges } {
   const result: StateSet = { states: new Set(start.states), removed: new Set(start.removed) };
   const changes: StateChanges = { add: new Set(), remove: new Set() };
@@ -490,6 +494,16 @@ function checkOverride(
       entry.removed.set(state.value, { node: state, path: statePath });
     }
     for (const [state, statePath] of listElements(diagnostics, lists.get("add"), path, "add")) {
+      if (addable !== undefined && !addable.has(state.value)) {
+        report(
+          diagnostics,
+          "unknown-state",
+          `${JSON.stringify(state.value)} is not a value of this type's state groups`,
+          statePath,
+          state,
+        );
+        continue;
+      }
       if (start.contested?.has(state.value) && !changes.remove.has(state.value)) {
         // Settling a state the single-dimension overrides disagree on.
       } else if (result.states.has(state.value)) {

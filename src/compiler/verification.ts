@@ -288,7 +288,17 @@ function checkContext(
     type,
     taskId,
   );
-  const hasStates = base.size > 0 || states.size > 0 || removed.size > 0;
+  // Each of the type's state groups is a context key; a plain states list is
+  // one group, "state".
+  const typeGroups = tree.typeGroups.get(type) ?? new Map<string, Set<string>>();
+  const groupNames =
+    typeGroups.size > 0
+      ? [...typeGroups.keys()]
+      : states.size > 0 || removed.size > 0
+        ? ["state"]
+        : [];
+  const inGroup = (group: string, value: string) =>
+    group === "state" || tree.stateGroups.get(group)?.has(value) === true;
 
   // Shared ancestors on the path from the page: their states are context keys.
   const shared = ancestry.slice(0, -1).filter((id) => {
@@ -327,7 +337,7 @@ function checkContext(
     values.set(ancestor, entry.value.value);
   }
 
-  const allowed = [...applicable, ...(hasStates ? ["state"] : []), ...shared];
+  const allowed = [...applicable, ...groupNames, ...shared];
   for (const { key } of context.members) {
     if (!allowed.includes(key.value)) {
       report(
@@ -353,34 +363,40 @@ function checkContext(
     }
   }
 
-  const state = given.get("state");
-  if (hasStates && state !== undefined) {
-    const statePath = childPath(path, "state");
-    if (!expectKind(diagnostics, state.value, statePath, "string")) {
+  for (const group of groupNames) {
+    const entry = given.get(group);
+    if (entry === undefined) continue;
+    const statePath = childPath(path, group);
+    if (!expectKind(diagnostics, entry.value, statePath, "string")) {
       valid = false;
-    } else if (!states.has(state.value.value)) {
-      const name = JSON.stringify(state.value.value);
-      if (removed.has(state.value.value)) {
-        report(
-          diagnostics,
-          "removed-state",
-          `state ${name} is removed in this context`,
-          statePath,
-          state.value,
-        );
-      } else {
-        report(
-          diagnostics,
-          "unknown-state",
-          `${name} is not a state of this task here`,
-          statePath,
-          state.value,
-        );
-      }
-      valid = false;
-    } else {
-      values.set("state", state.value.value);
+      continue;
     }
+    const value = entry.value.value;
+    const name = JSON.stringify(value);
+    if (states.has(value) && inGroup(group, value)) {
+      values.set(group, value);
+      continue;
+    }
+    if (removed.has(value) && inGroup(group, value)) {
+      report(
+        diagnostics,
+        "removed-state",
+        `state ${name} is removed in this context`,
+        statePath,
+        entry.value,
+      );
+    } else {
+      report(
+        diagnostics,
+        "unknown-state",
+        group === "state"
+          ? `${name} is not a state of this task here`
+          : `${name} is not in this task's ${JSON.stringify(group)} group here`,
+        statePath,
+        entry.value,
+      );
+    }
+    valid = false;
   }
 
   if (!valid) {
