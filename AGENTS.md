@@ -8,6 +8,10 @@ built and verified for every applicable combination. Data is stored as JSON.
 
 - Write a failing test first, confirm it fails, then implement the smallest
   change that makes it pass.
+- A test that checks several values collects them with `snapshot.push(...)` and
+  asserts once with `expect(snapshot).toMatchInlineSnapshot()`; run
+  `npx vitest run -u` to fill it in and review the result. Temporary project
+  paths appear as `<tmp>`. Parameterized `it.each` tests keep plain assertions.
 - One capability per commit. Run `make check` before pushing; the hooks enforce
   the same gates.
 - Commit directly to `main`. Rebase, never merge.

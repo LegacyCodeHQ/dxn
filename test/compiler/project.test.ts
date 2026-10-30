@@ -20,45 +20,112 @@ const bytes = (...parts: (string | number[])[]) =>
 
 describe("compileDirectory", () => {
   it("compiles the website example without diagnostics", () => {
+    const snapshot: unknown[] = [];
     const result = compileDirectory(
       fileURLToPath(new URL("../../examples/website", import.meta.url)),
     );
-    expect(result.diagnostics).toEqual([]);
-    expect(result.project?.tasks.map(({ id }) => id)).toEqual(["article-page"]);
-    expect(Object.keys(result.project?.dimensions ?? {})).toEqual(["breakpoint", "pointer"]);
-    expect(result.project?.overrides.pointer?.overrides.touch?.types?.link?.states).toEqual({
-      remove: ["hovered"],
-    });
-    expect(result.project?.verification["article-page"]?.records).toHaveLength(1);
+    snapshot.push(result.diagnostics);
+    snapshot.push(result.project?.tasks.map(({ id }) => id));
+    snapshot.push(Object.keys(result.project?.dimensions ?? {}));
+    snapshot.push(result.project?.overrides.pointer?.overrides.touch?.types?.link?.states);
+    snapshot.push(result.project?.verification["article-page"]?.records);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      "article-page",
+    ],
+    [
+      "breakpoint",
+      "pointer",
+    ],
+    {
+      "remove": [
+        "hovered",
+      ],
+    },
+    [
+      {
+        "at": "2026-10-30T19:20:00Z",
+        "by": "agent",
+        "check": "visual",
+        "context": {
+          "breakpoint": "lg",
+          "pointer": "mouse",
+          "state": "hovered",
+        },
+        "evidence": "screenshots/blog-link-hovered-lg-mouse.png",
+        "result": "passed",
+        "task": "blog-link",
+      },
+    ],
+  ]
+`);
   });
 
   it("accepts a project with only types.json", () => {
+    const snapshot: unknown[] = [];
     const result = compileFiles({ "types.json": types });
-    expect(result.diagnostics).toEqual([]);
-    expect(result.project).toEqual({
-      types,
-      components: [],
-      tasks: [],
-      dimensions: {},
-      overrides: {},
-      combinations: {},
-      verification: {},
-    });
+    snapshot.push(result.diagnostics);
+    snapshot.push(result.project);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    {
+      "combinations": {},
+      "components": [],
+      "dimensions": {},
+      "overrides": {},
+      "tasks": [],
+      "types": {
+        "customAttributes": {
+          "design": {
+            "values": [
+              "available",
+              "missing",
+            ],
+          },
+        },
+        "types": {
+          "link": {
+            "states": [
+              "normal",
+              "hovered",
+              "selected",
+            ],
+          },
+        },
+        "version": 1,
+      },
+      "verification": {},
+    },
+  ]
+`);
   });
 
   it("requires types.json", () => {
+    const snapshot: unknown[] = [];
     const result = compileFiles({ "tasks/a.json": taskFile({ id: "a", title: "A" }) });
-    expect(result.project).toBeUndefined();
-    expect(result.diagnostics).toEqual([
+    snapshot.push(result.project);
+    snapshot.push(result.diagnostics);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    undefined,
+    [
       {
-        file: "types.json",
-        code: "missing-file",
-        message: "types.json not found",
-        path: "$",
-        line: 1,
-        column: 1,
+        "code": "missing-file",
+        "column": 1,
+        "file": "types.json",
+        "line": 1,
+        "message": "types.json not found",
+        "path": "$",
       },
-    ]);
+    ],
+  ]
+`);
   });
 
   it("ignores files and folders it does not know", () => {
@@ -138,15 +205,14 @@ describe("cascades", () => {
 
 describe("encoding", () => {
   it("reports invalid UTF-8 at the first bad byte", () => {
+    const snapshot: unknown[] = [];
     const directory = writeProject({});
     const write = (content: Buffer) => writeFileSync(join(directory, "types.json"), content);
     write(bytes('{\n  "a": "é', [0xff], '" }'));
-    expect(compileDirectory(directory).diagnostics).toMatchObject([
-      { file: "types.json", code: "invalid-encoding", line: 2, column: 10 },
-    ]);
+    snapshot.push(compileDirectory(directory).diagnostics);
     // Valid four-byte sequences (U+1F600) pass.
     write(bytes('{ "version": 1, "types": { "', [0xf0, 0x9f, 0x98, 0x80], '": {} } }'));
-    expect(compileDirectory(directory).diagnostics).toEqual([]);
+    snapshot.push(compileDirectory(directory).diagnostics);
     // Above U+10FFFF, overlong, truncated, stray continuation and surrogate bytes do not.
     for (const bad of [
       [0xf4, 0x90, 0x80, 0x80],
@@ -156,11 +222,74 @@ describe("encoding", () => {
       [0xed, 0xa0, 0x80],
     ]) {
       write(bytes('["', bad, '"]'));
-      expect(compileDirectory(directory).diagnostics).toMatchObject([
-        { file: "types.json", code: "invalid-encoding", line: 1, column: 3 },
-      ]);
+      snapshot.push(compileDirectory(directory).diagnostics);
     }
     rmSync(directory, { recursive: true });
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "code": "invalid-encoding",
+            "column": 10,
+            "file": "types.json",
+            "line": 2,
+            "message": "invalid UTF-8 byte 0xff",
+            "path": "$",
+          },
+        ],
+        [],
+        [
+          {
+            "code": "invalid-encoding",
+            "column": 3,
+            "file": "types.json",
+            "line": 1,
+            "message": "invalid UTF-8 byte 0xf4",
+            "path": "$",
+          },
+        ],
+        [
+          {
+            "code": "invalid-encoding",
+            "column": 3,
+            "file": "types.json",
+            "line": 1,
+            "message": "invalid UTF-8 byte 0xe0",
+            "path": "$",
+          },
+        ],
+        [
+          {
+            "code": "invalid-encoding",
+            "column": 3,
+            "file": "types.json",
+            "line": 1,
+            "message": "invalid UTF-8 byte 0xe2",
+            "path": "$",
+          },
+        ],
+        [
+          {
+            "code": "invalid-encoding",
+            "column": 3,
+            "file": "types.json",
+            "line": 1,
+            "message": "invalid UTF-8 byte 0x80",
+            "path": "$",
+          },
+        ],
+        [
+          {
+            "code": "invalid-encoding",
+            "column": 3,
+            "file": "types.json",
+            "line": 1,
+            "message": "invalid UTF-8 byte 0xed",
+            "path": "$",
+          },
+        ],
+      ]
+    `);
   });
 
   it("reports unreadable dimension and override files without follow-on errors", () => {

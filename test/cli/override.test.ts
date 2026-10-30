@@ -32,55 +32,130 @@ const files = {
 
 describe("only", () => {
   it("says where a task exists, creating the override file", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    expect(run("only", "breakpoint", "links", "lg", "xl").code).toBe(0);
-    expect(run("only", "breakpoint", "menu", "base", "sm").code).toBe(0);
-    expect(read("overrides/breakpoint.json")).toEqual({
-      version: 1,
-      only: { links: ["lg", "xl"], menu: ["base", "sm"] },
-      overrides: {},
-    });
-    expect(run("only", "breakpoint", "links", "--everywhere").code).toBe(0);
-    expect(run("only", "breakpoint", "menu", "--everywhere").code).toBe(0);
-    expect(read("overrides/breakpoint.json")).toEqual({ version: 1, overrides: {} });
+    snapshot.push(run("only", "breakpoint", "links", "lg", "xl").code);
+    snapshot.push(run("only", "breakpoint", "menu", "base", "sm").code);
+    snapshot.push(read("overrides/breakpoint.json"));
+    snapshot.push(run("only", "breakpoint", "links", "--everywhere").code);
+    snapshot.push(run("only", "breakpoint", "menu", "--everywhere").code);
+    snapshot.push(read("overrides/breakpoint.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    0,
+    {
+      "only": {
+        "links": [
+          "lg",
+          "xl",
+        ],
+        "menu": [
+          "base",
+          "sm",
+        ],
+      },
+      "overrides": {},
+      "version": 1,
+    },
+    0,
+    0,
+    {
+      "overrides": {},
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("refuses invalid values and usage errors", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(run("only", "breakpoint", "links", "md").stderr).toContain("unknown-dimension-value");
-    expect(run("only", "theme", "links", "dark").stderr).toContain("undeclared-dimension");
-    expect(run("only", "breakpoint", "links").code).toBe(2);
-    expect(run("only", "breakpoint", "links", "lg", "--everywhere").code).toBe(2);
+    snapshot.push(run("only", "breakpoint", "links", "md").stderr);
+    snapshot.push(run("only", "theme", "links", "dark").stderr);
+    snapshot.push(run("only", "breakpoint", "links").code);
+    snapshot.push(run("only", "breakpoint", "links", "lg", "--everywhere").code);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    "<tmp>/.task-tree/overrides/breakpoint.json:4:15: unknown-dimension-value: "md" is not a value of this dimension
+  ",
+    "<tmp>/.task-tree/overrides/theme.json:1:1: undeclared-dimension: no dimensions/theme.json declares this dimension
+  ",
+    2,
+    2,
+  ]
+`);
   });
 });
 
 describe("override states", () => {
   it("removes and adds a type's states for one value", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    expect(
+    snapshot.push(
       run("override", "states", "pointer=touch", "--type", "link", "--remove", "hovered").code,
-    ).toBe(0);
-    expect(read("overrides/pointer.json")).toEqual({
-      version: 1,
-      overrides: { touch: { types: { link: { states: { remove: ["hovered"] } } } } },
-    });
-    expect(
+    );
+    snapshot.push(read("overrides/pointer.json"));
+    snapshot.push(
       run("override", "states", "pointer=touch", "--task", "blog-link", "--add", "hovered").code,
-    ).toBe(0);
-    expect(read("overrides/pointer.json")).toEqual({
-      version: 1,
-      overrides: {
-        touch: {
-          types: { link: { states: { remove: ["hovered"] } } },
-          tasks: { "blog-link": { states: { add: ["hovered"] } } },
+    );
+    snapshot.push(read("overrides/pointer.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "overrides": {
+        "touch": {
+          "types": {
+            "link": {
+              "states": {
+                "remove": [
+                  "hovered",
+                ],
+              },
+            },
+          },
         },
       },
-    });
+      "version": 1,
+    },
+    0,
+    {
+      "overrides": {
+        "touch": {
+          "tasks": {
+            "blog-link": {
+              "states": {
+                "add": [
+                  "hovered",
+                ],
+              },
+            },
+          },
+          "types": {
+            "link": {
+              "states": {
+                "remove": [
+                  "hovered",
+                ],
+              },
+            },
+          },
+        },
+      },
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("writes combinations to the combination file, nested in dimension order", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    expect(
+    snapshot.push(
       run(
         "override",
         "states",
@@ -90,20 +165,42 @@ describe("override states", () => {
         "--remove",
         "selected",
       ).code,
-    ).toBe(0);
-    expect(read("overrides/breakpoint+pointer.json")).toEqual({
-      version: 1,
-      overrides: { sm: { touch: { types: { link: { states: { remove: ["selected"] } } } } } },
-    });
+    );
+    snapshot.push(read("overrides/breakpoint+pointer.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "overrides": {
+        "sm": {
+          "touch": {
+            "types": {
+              "link": {
+                "states": {
+                  "remove": [
+                    "selected",
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("refuses what the compiler rejects and usage errors", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(
+    snapshot.push(
       run("override", "states", "pointer=touch", "--type", "link", "--remove", "pressed").stderr,
-    ).toContain("unknown-state");
-    expect(run("override", "states", "pointer=touch", "--remove", "hovered").code).toBe(2);
-    expect(
+    );
+    snapshot.push(run("override", "states", "pointer=touch", "--remove", "hovered").code);
+    snapshot.push(
       run(
         "override",
         "states",
@@ -115,51 +212,109 @@ describe("override states", () => {
         "--add",
         "x",
       ).code,
-    ).toBe(2);
-    expect(run("override", "states", "pointer", "--type", "link", "--add", "x").code).toBe(2);
-    expect(
+    );
+    snapshot.push(run("override", "states", "pointer", "--type", "link", "--add", "x").code);
+    snapshot.push(
       run("override", "states", "pointer=touch,pointer=mouse", "--type", "link", "--add", "x").code,
-    ).toBe(2);
-    expect(run("override", "states", "pointer=touch", "--type", "link").code).toBe(2);
-    expect(run("override").code).toBe(2);
+    );
+    snapshot.push(run("override", "states", "pointer=touch", "--type", "link").code);
+    snapshot.push(run("override").code);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    "<tmp>/.task-tree/overrides/pointer.json:8:24: unknown-state: "pressed" is not a state of this type
+  ",
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+  ]
+`);
   });
 });
 
 describe("override set and unset", () => {
   it("set values and clear them, pruning empty levels", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    expect(
+    snapshot.push(
       run("override", "set", "breakpoint=sm", "--task", "blog-link", "design", "normal=missing")
         .code,
-    ).toBe(0);
-    expect(read("overrides/breakpoint.json")).toEqual({
-      version: 1,
-      overrides: {
-        sm: { tasks: { "blog-link": { customAttributes: { design: { normal: "missing" } } } } },
-      },
-    });
-    expect(
+    );
+    snapshot.push(read("overrides/breakpoint.json"));
+    snapshot.push(
       run("override", "unset", "breakpoint=sm", "--task", "blog-link", "design", "normal").code,
-    ).toBe(0);
-    expect(read("overrides/breakpoint.json")).toEqual({ version: 1, overrides: {} });
+    );
+    snapshot.push(read("overrides/breakpoint.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "overrides": {
+        "sm": {
+          "tasks": {
+            "blog-link": {
+              "customAttributes": {
+                "design": {
+                  "normal": "missing",
+                },
+              },
+            },
+          },
+        },
+      },
+      "version": 1,
+    },
+    0,
+    {
+      "overrides": {},
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("unset a whole override", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
     run("override", "states", "pointer=touch", "--type", "link", "--remove", "hovered");
     run("override", "set", "pointer=touch", "--type", "link", "design", "normal=missing");
-    expect(run("override", "unset", "pointer=touch", "--type", "link").code).toBe(0);
-    expect(read("overrides/pointer.json")).toEqual({ version: 1, overrides: {} });
+    snapshot.push(run("override", "unset", "pointer=touch", "--type", "link").code);
+    snapshot.push(read("overrides/pointer.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "overrides": {},
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("refuse unknown values and overrides that do not exist", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(
+    snapshot.push(
       run("override", "set", "pointer=touch", "--type", "link", "design", "normal=maybe").stderr,
-    ).toContain("unknown-value");
-    expect(run("override", "unset", "pointer=touch", "--type", "link")).toMatchObject({
-      code: 1,
-      stderr: "task-tree: no override for type link at pointer=touch\n",
-    });
+    );
+    snapshot.push(run("override", "unset", "pointer=touch", "--type", "link"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    "<tmp>/.task-tree/overrides/pointer.json:9:25: unknown-value: "maybe" is not a declared value of "design"
+  ",
+    {
+      "code": 1,
+      "stderr": "task-tree: no override for type link at pointer=touch
+  ",
+      "stdout": "",
+    },
+  ]
+`);
   });
 });

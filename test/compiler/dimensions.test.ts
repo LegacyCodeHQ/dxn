@@ -3,7 +3,7 @@ import { at, cleanup, diagnose, pointer, tree } from "../support/project.js";
 
 afterAll(cleanup);
 
-const d = at("dimensions/pointer.json");
+const _d = at("dimensions/pointer.json");
 const dimension = (doc: unknown) => diagnose({ ...tree, "dimensions/pointer.json": doc });
 const field = (key: string, value: unknown) => dimension({ ...pointer, [key]: value });
 
@@ -13,19 +13,73 @@ describe("dimension files", () => {
   });
 
   it("must be an object with version, values and appliesTo", () => {
-    expect(dimension([])).toEqual([d("wrong-type", "$")]);
-    expect(dimension({})).toEqual([
-      d("missing-key", "$.version"),
-      d("missing-key", "$.values"),
-      d("missing-key", "$.appliesTo"),
-    ]);
-    expect(dimension({ ...pointer, extra: 1 })).toEqual([d("unknown-key", "$.extra")]);
-    expect(dimension({ ...pointer, version: 2 })).toEqual([d("unsupported-version", "$.version")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(dimension([]));
+    snapshot.push(dimension({}));
+    snapshot.push(dimension({ ...pointer, extra: 1 }));
+    snapshot.push(dimension({ ...pointer, version: 2 }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "dimensions/pointer.json",
+        "path": "$",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "dimensions/pointer.json",
+        "path": "$.version",
+      },
+      {
+        "code": "missing-key",
+        "file": "dimensions/pointer.json",
+        "path": "$.values",
+      },
+      {
+        "code": "missing-key",
+        "file": "dimensions/pointer.json",
+        "path": "$.appliesTo",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "dimensions/pointer.json",
+        "path": "$.extra",
+      },
+    ],
+    [
+      {
+        "code": "unsupported-version",
+        "file": "dimensions/pointer.json",
+        "path": "$.version",
+      },
+    ],
+  ]
+`);
   });
 
   it("may point editors at the JSON schema", () => {
-    expect(dimension({ $schema: "x", ...pointer })).toEqual([]);
-    expect(dimension({ $schema: 1, ...pointer })).toEqual([d("wrong-type", "$.$schema")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(dimension({ $schema: "x", ...pointer }));
+    snapshot.push(dimension({ $schema: 1, ...pointer }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "wrong-type",
+        "file": "dimensions/pointer.json",
+        "path": "$.$schema",
+      },
+    ],
+  ]
+`);
   });
 
   it("are named after a valid dimension name", () => {
@@ -50,18 +104,86 @@ describe("dimension files", () => {
 
 describe("dimension values", () => {
   it("must be an array with at least one value", () => {
-    expect(field("values", "x")).toEqual([d("wrong-type", "$.values")]);
-    expect(field("values", [])).toEqual([d("empty-values", "$.values")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(field("values", "x"));
+    snapshot.push(field("values", []));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "dimensions/pointer.json",
+        "path": "$.values",
+      },
+    ],
+    [
+      {
+        "code": "empty-values",
+        "file": "dimensions/pointer.json",
+        "path": "$.values",
+      },
+    ],
+  ]
+`);
   });
 
   it("must be valid unique names", () => {
+    const snapshot: unknown[] = [];
     const value = (v: unknown) => field("values", [v, "z"]);
-    expect(value(1)).toEqual([d("wrong-type", "$.values[0]")]);
-    expect(value("")).toEqual([d("empty-string", "$.values[0]")]);
-    expect(value("  ")).toEqual([d("empty-string", "$.values[0]")]);
-    expect(value("sm ")).toEqual([d("surrounding-whitespace", "$.values[0]")]);
-    expect(value("s\u0001m")).toEqual([d("control-character", "$.values[0]")]);
-    expect(value("z")).toEqual([d("duplicate-value", "$.values[1]")]);
+    snapshot.push(value(1));
+    snapshot.push(value(""));
+    snapshot.push(value("  "));
+    snapshot.push(value("sm "));
+    snapshot.push(value("s\u0001m"));
+    snapshot.push(value("z"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "dimensions/pointer.json",
+        "path": "$.values[0]",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "dimensions/pointer.json",
+        "path": "$.values[0]",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "dimensions/pointer.json",
+        "path": "$.values[0]",
+      },
+    ],
+    [
+      {
+        "code": "surrounding-whitespace",
+        "file": "dimensions/pointer.json",
+        "path": "$.values[0]",
+      },
+    ],
+    [
+      {
+        "code": "control-character",
+        "file": "dimensions/pointer.json",
+        "path": "$.values[0]",
+      },
+    ],
+    [
+      {
+        "code": "duplicate-value",
+        "file": "dimensions/pointer.json",
+        "path": "$.values[1]",
+      },
+    ],
+  ]
+`);
   });
 });
 
@@ -73,14 +195,61 @@ describe("dimension appliesTo", () => {
   });
 
   it("must be an array naming at least one task", () => {
-    expect(appliesTo("page")).toEqual([d("wrong-type", "$.appliesTo")]);
-    expect(appliesTo([])).toEqual([d("empty-applies-to", "$.appliesTo")]);
-    expect(appliesTo([1])).toEqual([d("wrong-type", "$.appliesTo[0]")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(appliesTo("page"));
+    snapshot.push(appliesTo([]));
+    snapshot.push(appliesTo([1]));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "dimensions/pointer.json",
+        "path": "$.appliesTo",
+      },
+    ],
+    [
+      {
+        "code": "empty-applies-to",
+        "file": "dimensions/pointer.json",
+        "path": "$.appliesTo",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "dimensions/pointer.json",
+        "path": "$.appliesTo[0]",
+      },
+    ],
+  ]
+`);
   });
 
   it("must name existing tasks, once each", () => {
-    expect(appliesTo(["nope"])).toEqual([d("unknown-task", "$.appliesTo[0]")]);
-    expect(appliesTo(["page", "page"])).toEqual([d("duplicate-task", "$.appliesTo[1]")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(appliesTo(["nope"]));
+    snapshot.push(appliesTo(["page", "page"]));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "unknown-task",
+        "file": "dimensions/pointer.json",
+        "path": "$.appliesTo[0]",
+      },
+    ],
+    [
+      {
+        "code": "duplicate-task",
+        "file": "dimensions/pointer.json",
+        "path": "$.appliesTo[1]",
+      },
+    ],
+  ]
+`);
   });
 });
 
@@ -90,8 +259,35 @@ describe("dimension default", () => {
   });
 
   it("must be a valid name among the values", () => {
-    expect(field("default", 1)).toEqual([d("wrong-type", "$.default")]);
-    expect(field("default", "")).toEqual([d("empty-string", "$.default")]);
-    expect(field("default", "pen")).toEqual([d("unknown-dimension-value", "$.default")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(field("default", 1));
+    snapshot.push(field("default", ""));
+    snapshot.push(field("default", "pen"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "dimensions/pointer.json",
+        "path": "$.default",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "dimensions/pointer.json",
+        "path": "$.default",
+      },
+    ],
+    [
+      {
+        "code": "unknown-dimension-value",
+        "file": "dimensions/pointer.json",
+        "path": "$.default",
+      },
+    ],
+  ]
+`);
   });
 });

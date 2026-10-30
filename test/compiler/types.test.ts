@@ -67,12 +67,28 @@ describe("customAttributes declarations", () => {
   });
 
   it("require attribute names to be non-blank without surrounding whitespace", () => {
-    expect(declare({ "": { values: ["a"] } })).toEqual([
-      t("empty-string", '$.customAttributes[""]'),
-    ]);
-    expect(declare({ " design": { values: ["a"] } })).toEqual([
-      t("surrounding-whitespace", '$.customAttributes[" design"]'),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(declare({ "": { values: ["a"] } }));
+    snapshot.push(declare({ " design": { values: ["a"] } }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "empty-string",
+        "file": "types.json",
+        "path": "$.customAttributes[""]",
+      },
+    ],
+    [
+      {
+        "code": "surrounding-whitespace",
+        "file": "types.json",
+        "path": "$.customAttributes[" design"]",
+      },
+    ],
+  ]
+`);
   });
 
   it("declare each attribute as an object", () => {
@@ -90,22 +106,79 @@ describe("customAttributes declarations", () => {
   });
 
   it("require values to be an array with at least one value", () => {
-    expect(declare({ design: { values: "x" } })).toEqual([
-      t("wrong-type", "$.customAttributes.design.values"),
-    ]);
-    expect(declare({ design: { values: [] } })).toEqual([
-      t("empty-values", "$.customAttributes.design.values"),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(declare({ design: { values: "x" } }));
+    snapshot.push(declare({ design: { values: [] } }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "types.json",
+        "path": "$.customAttributes.design.values",
+      },
+    ],
+    [
+      {
+        "code": "empty-values",
+        "file": "types.json",
+        "path": "$.customAttributes.design.values",
+      },
+    ],
+  ]
+`);
   });
 
   it("require values to be valid unique names", () => {
+    const snapshot: unknown[] = [];
     const value = (v: unknown) => declare({ design: { values: [v, "z"] } });
-    const path = "$.customAttributes.design.values[0]";
-    expect(value(1)).toEqual([t("wrong-type", path)]);
-    expect(value("")).toEqual([t("empty-string", path)]);
-    expect(value("a ")).toEqual([t("surrounding-whitespace", path)]);
-    expect(value("a\u0001")).toEqual([t("control-character", path)]);
-    expect(value("z")).toEqual([t("duplicate-value", "$.customAttributes.design.values[1]")]);
+    const _path = "$.customAttributes.design.values[0]";
+    snapshot.push(value(1));
+    snapshot.push(value(""));
+    snapshot.push(value("a "));
+    snapshot.push(value("a\u0001"));
+    snapshot.push(value("z"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "types.json",
+        "path": "$.customAttributes.design.values[0]",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "types.json",
+        "path": "$.customAttributes.design.values[0]",
+      },
+    ],
+    [
+      {
+        "code": "surrounding-whitespace",
+        "file": "types.json",
+        "path": "$.customAttributes.design.values[0]",
+      },
+    ],
+    [
+      {
+        "code": "control-character",
+        "file": "types.json",
+        "path": "$.customAttributes.design.values[0]",
+      },
+    ],
+    [
+      {
+        "code": "duplicate-value",
+        "file": "types.json",
+        "path": "$.customAttributes.design.values[1]",
+      },
+    ],
+  ]
+`);
   });
 });
 
@@ -118,8 +191,28 @@ describe("types", () => {
   });
 
   it("require type names to be non-blank without surrounding whitespace", () => {
-    expect(define({ " ": {} })).toEqual([t("empty-string", '$.types[" "]')]);
-    expect(define({ "link ": {} })).toEqual([t("surrounding-whitespace", '$.types["link "]')]);
+    const snapshot: unknown[] = [];
+    snapshot.push(define({ " ": {} }));
+    snapshot.push(define({ "link ": {} }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "empty-string",
+        "file": "types.json",
+        "path": "$.types[" "]",
+      },
+    ],
+    [
+      {
+        "code": "surrounding-whitespace",
+        "file": "types.json",
+        "path": "$.types["link "]",
+      },
+    ],
+  ]
+`);
   });
 
   it("define each type as an object", () => {
@@ -143,13 +236,61 @@ describe("type states", () => {
   });
 
   it("must be valid unique names", () => {
-    const path = "$.types.link.states[0]";
-    expect(states([1])).toEqual([t("wrong-type", path)]);
-    expect(states([""])).toEqual([t("empty-string", path)]);
-    expect(states([" "])).toEqual([t("empty-string", path)]);
-    expect(states([" normal"])).toEqual([t("surrounding-whitespace", path)]);
-    expect(states(["a\tb"])).toEqual([t("control-character", path)]);
-    expect(states(["a", "a"])).toEqual([t("duplicate-state", "$.types.link.states[1]")]);
+    const snapshot: unknown[] = [];
+    const _path = "$.types.link.states[0]";
+    snapshot.push(states([1]));
+    snapshot.push(states([""]));
+    snapshot.push(states([" "]));
+    snapshot.push(states([" normal"]));
+    snapshot.push(states(["a\tb"]));
+    snapshot.push(states(["a", "a"]));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "types.json",
+        "path": "$.types.link.states[0]",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "types.json",
+        "path": "$.types.link.states[0]",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "types.json",
+        "path": "$.types.link.states[0]",
+      },
+    ],
+    [
+      {
+        "code": "surrounding-whitespace",
+        "file": "types.json",
+        "path": "$.types.link.states[0]",
+      },
+    ],
+    [
+      {
+        "code": "control-character",
+        "file": "types.json",
+        "path": "$.types.link.states[0]",
+      },
+    ],
+    [
+      {
+        "code": "duplicate-state",
+        "file": "types.json",
+        "path": "$.types.link.states[1]",
+      },
+    ],
+  ]
+`);
   });
 });
 
@@ -185,10 +326,28 @@ describe("type customAttributes", () => {
   });
 
   it("must use declared values", () => {
-    expect(values({ design: { normal: 1 } })).toEqual([t("wrong-type", `${path}.design.normal`)]);
-    expect(values({ design: { normal: "maybe" } })).toEqual([
-      t("unknown-value", `${path}.design.normal`),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(values({ design: { normal: 1 } }));
+    snapshot.push(values({ design: { normal: "maybe" } }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "types.json",
+        "path": "$.types.link.customAttributes.design.normal",
+      },
+    ],
+    [
+      {
+        "code": "unknown-value",
+        "file": "types.json",
+        "path": "$.types.link.customAttributes.design.normal",
+      },
+    ],
+  ]
+`);
   });
 });
 
@@ -200,18 +359,61 @@ describe("customChecks declarations", () => {
   });
 
   it("must be an object of objects", () => {
-    expect(declare([])).toEqual([t("wrong-type", "$.customChecks")]);
-    expect(declare({ visual: true })).toEqual([t("wrong-type", "$.customChecks.visual")]);
-    expect(declare({ visual: { kind: 1 } })).toEqual([
-      t("unknown-key", "$.customChecks.visual.kind"),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(declare([]));
+    snapshot.push(declare({ visual: true }));
+    snapshot.push(declare({ visual: { kind: 1 } }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "types.json",
+        "path": "$.customChecks",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "types.json",
+        "path": "$.customChecks.visual",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "types.json",
+        "path": "$.customChecks.visual.kind",
+      },
+    ],
+  ]
+`);
   });
 
   it("require check names to be valid names", () => {
-    expect(declare({ "": {} })).toEqual([t("empty-string", '$.customChecks[""]')]);
-    expect(declare({ "visual ": {} })).toEqual([
-      t("surrounding-whitespace", '$.customChecks["visual "]'),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(declare({ "": {} }));
+    snapshot.push(declare({ "visual ": {} }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "empty-string",
+        "file": "types.json",
+        "path": "$.customChecks[""]",
+      },
+    ],
+    [
+      {
+        "code": "surrounding-whitespace",
+        "file": "types.json",
+        "path": "$.customChecks["visual "]",
+      },
+    ],
+  ]
+`);
   });
 });
 
@@ -224,9 +426,36 @@ describe("type checks", () => {
   });
 
   it("must be an array of valid unique names", () => {
-    expect(checks("visual")).toEqual([t("wrong-type", "$.types.link.checks")]);
-    expect(checks([""])).toEqual([t("empty-string", "$.types.link.checks[0]")]);
-    expect(checks(["visual", "visual"])).toEqual([t("duplicate-check", "$.types.link.checks[1]")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(checks("visual"));
+    snapshot.push(checks([""]));
+    snapshot.push(checks(["visual", "visual"]));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "types.json",
+        "path": "$.types.link.checks",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "types.json",
+        "path": "$.types.link.checks[0]",
+      },
+    ],
+    [
+      {
+        "code": "duplicate-check",
+        "file": "types.json",
+        "path": "$.types.link.checks[1]",
+      },
+    ],
+  ]
+`);
   });
 
   it("must be declared", () => {

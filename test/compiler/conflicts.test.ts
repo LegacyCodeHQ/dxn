@@ -95,7 +95,8 @@ describe("conflicting overrides", () => {
   });
 
   it("do not report different states, attributes or values of one dimension", () => {
-    expect(
+    const snapshot: unknown[] = [];
+    snapshot.push(
       conflicts(
         { types: { link: design({ normal: "missing" }) } },
         {
@@ -104,8 +105,8 @@ describe("conflicting overrides", () => {
           },
         },
       ),
-    ).toEqual([]);
-    expect(
+    );
+    snapshot.push(
       diagnose({
         ...project,
         "overrides/pointer.json": overrides({
@@ -113,7 +114,14 @@ describe("conflicting overrides", () => {
           touch: { types: { link: design({ normal: "available" }) } },
         }),
       }),
-    ).toEqual([]);
+    );
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [],
+  ]
+`);
   });
 
   it("let an instance override beat type overrides from other dimensions", () => {
@@ -130,8 +138,9 @@ describe("conflicting overrides", () => {
       { types: { link: design({ normal: "missing" }) } },
       { types: { link: design({ normal: "available" }) } },
     ] as const;
+    const snapshot: unknown[] = [];
     // blog-link sets the value itself in its task file...
-    expect(
+    snapshot.push(
       conflicts(...typeConflict, {
         "tasks/page.json": taskFile({
           id: "page",
@@ -146,14 +155,20 @@ describe("conflicting overrides", () => {
           ],
         }),
       }),
-    ).toEqual([]);
+    );
     // ...or in an override for one of the two values.
-    expect(
+    snapshot.push(
       conflicts(typeConflict[0], {
         ...typeConflict[1],
         tasks: { "blog-link": design({ normal: "missing" }) },
       }),
-    ).toEqual([]);
+    );
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [],
+        [],
+      ]
+    `);
   });
 
   it("do not report dimensions whose scopes share no instance", () => {

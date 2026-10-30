@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
     environment: "node",
+    snapshotSerializers: ["test/support/serializer.ts"],
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],

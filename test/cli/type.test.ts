@@ -29,24 +29,50 @@ const types = (read: (name: string) => Record<string, unknown>) => read("types.j
 
 describe("type add", () => {
   it("adds a type, with or without states", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = project();
-    expect(run("type", "add", "link", "--states", "normal,hovered,selected").code).toBe(0);
-    expect(run("type", "add", "button").code).toBe(0);
-    expect(types(read)).toEqual({
-      link: { states: ["normal", "hovered", "selected"] },
-      button: {},
-    });
+    snapshot.push(run("type", "add", "link", "--states", "normal,hovered,selected").code);
+    snapshot.push(run("type", "add", "button").code);
+    snapshot.push(types(read));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    0,
+    {
+      "button": {},
+      "link": {
+        "states": [
+          "normal",
+          "hovered",
+          "selected",
+        ],
+      },
+    },
+  ]
+`);
   });
 
   it("refuses an existing type and usage errors", () => {
+    const snapshot: unknown[] = [];
     const { run } = project();
     run("type", "add", "link");
-    expect(run("type", "add", "link")).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: type "link" already exists\n',
-    });
-    expect(run("type", "add").code).toBe(2);
-    expect(run("type", "frobnicate").code).toBe(2);
+    snapshot.push(run("type", "add", "link"));
+    snapshot.push(run("type", "add").code);
+    snapshot.push(run("type", "frobnicate").code);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "code": 1,
+      "stderr": "task-tree: type "link" already exists
+  ",
+      "stdout": "",
+    },
+    2,
+    2,
+  ]
+`);
   });
 
   it("refuses names the compiler rejects", () => {
@@ -57,45 +83,95 @@ describe("type add", () => {
 
 describe("type add-state and remove-state", () => {
   it("add and remove states", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = project();
     run("type", "add", "link", "--states", "normal");
-    expect(run("type", "add-state", "link", "hovered").code).toBe(0);
-    expect(run("type", "remove-state", "link", "normal").code).toBe(0);
-    expect(types(read)).toEqual({ link: { states: ["hovered"] } });
+    snapshot.push(run("type", "add-state", "link", "hovered").code);
+    snapshot.push(run("type", "remove-state", "link", "normal").code);
+    snapshot.push(types(read));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    0,
+    {
+      "link": {
+        "states": [
+          "hovered",
+        ],
+      },
+    },
+  ]
+`);
   });
 
   it("refuse to remove a state that has values, and unknown types", () => {
+    const snapshot: unknown[] = [];
     const { run } = project();
     run("type", "add", "link", "--states", "normal");
     run("type", "set", "link", "design", "normal=missing");
-    expect(run("type", "remove-state", "link", "normal").stderr).toContain("unknown-state");
-    expect(run("type", "add-state", "button", "x")).toMatchObject({
-      code: 1,
-      stderr: "task-tree: type not found: button\n",
-    });
+    snapshot.push(run("type", "remove-state", "link", "normal").stderr);
+    snapshot.push(run("type", "add-state", "button", "x"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    "<tmp>/.task-tree/types.json:13:11: unknown-state: "normal" is not a state of this type
+  ",
+    {
+      "code": 1,
+      "stderr": "task-tree: type not found: button
+  ",
+      "stdout": "",
+    },
+  ]
+`);
   });
 });
 
 describe("type set and unset", () => {
   it("set and clear a type's attribute values", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = project();
     run("type", "add", "link", "--states", "normal,hovered");
-    expect(run("type", "set", "link", "design", "normal=available", "hovered=missing").code).toBe(
-      0,
-    );
-    expect(types(read)).toEqual({
-      link: {
-        states: ["normal", "hovered"],
-        customAttributes: { design: { normal: "available", hovered: "missing" } },
+    snapshot.push(run("type", "set", "link", "design", "normal=available", "hovered=missing").code);
+    snapshot.push(types(read));
+    snapshot.push(run("type", "unset", "link", "design").code);
+    snapshot.push(types(read));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "link": {
+        "customAttributes": {
+          "design": {
+            "hovered": "missing",
+            "normal": "available",
+          },
+        },
+        "states": [
+          "normal",
+          "hovered",
+        ],
       },
-    });
-    expect(run("type", "unset", "link", "design").code).toBe(0);
-    expect(types(read)).toEqual({ link: { states: ["normal", "hovered"] } });
+    },
+    0,
+    {
+      "link": {
+        "states": [
+          "normal",
+          "hovered",
+        ],
+      },
+    },
+  ]
+`);
   });
 });
 
 describe("type rename", () => {
   it("updates the tasks and overrides that use it", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = project({
       "tasks/page.json": taskFile({
         id: "page",
@@ -109,24 +185,60 @@ describe("type rename", () => {
       },
     });
     run("type", "add", "link", "--states", "normal,hovered");
-    expect(run("type", "rename", "link", "toolbar-link").code).toBe(0);
-    expect(types(read)).toEqual({ "toolbar-link": { states: ["normal", "hovered"] } });
-    expect(read("tasks/page.json")).toEqual(
-      taskFile({
-        id: "page",
-        title: "Page",
-        children: [{ id: "a", title: "A", type: "toolbar-link" }],
-      }),
-    );
-    expect(read("overrides/pointer.json")).toEqual({
-      version: 1,
-      overrides: { touch: { types: { "toolbar-link": { states: { remove: ["hovered"] } } } } },
-    });
+    snapshot.push(run("type", "rename", "link", "toolbar-link").code);
+    snapshot.push(types(read));
+    snapshot.push(read("tasks/page.json"));
+    snapshot.push(read("overrides/pointer.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "toolbar-link": {
+        "states": [
+          "normal",
+          "hovered",
+        ],
+      },
+    },
+    {
+      "task": {
+        "children": [
+          {
+            "id": "a",
+            "title": "A",
+            "type": "toolbar-link",
+          },
+        ],
+        "id": "page",
+        "title": "Page",
+      },
+      "version": 1,
+    },
+    {
+      "overrides": {
+        "touch": {
+          "types": {
+            "toolbar-link": {
+              "states": {
+                "remove": [
+                  "hovered",
+                ],
+              },
+            },
+          },
+        },
+      },
+      "version": 1,
+    },
+  ]
+`);
   });
 });
 
 describe("type remove", () => {
   it("removes an unused type and refuses one in use", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = project({
       "tasks/page.json": taskFile({
         id: "page",
@@ -136,8 +248,19 @@ describe("type remove", () => {
     });
     run("type", "add", "link");
     run("type", "add", "button");
-    expect(run("type", "remove", "button").code).toBe(0);
-    expect(run("type", "remove", "link").stderr).toContain("undefined-type");
-    expect(types(read)).toEqual({ link: {} });
+    snapshot.push(run("type", "remove", "button").code);
+    snapshot.push(run("type", "remove", "link").stderr);
+    snapshot.push(types(read));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    "<tmp>/.task-tree/tasks/page.json:10:17: undefined-type: type "link" is not defined
+  ",
+    {
+      "link": {},
+    },
+  ]
+`);
   });
 });

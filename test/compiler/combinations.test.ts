@@ -33,6 +33,7 @@ const combination = (doc: unknown, extra: Files = {}) =>
 
 describe("combination files", () => {
   it("override types and tasks for a combination of values", () => {
+    const snapshot: unknown[] = [];
     const files = {
       ...project,
       "overrides/breakpoint+pointer.json": smTouch({
@@ -40,15 +41,38 @@ describe("combination files", () => {
         tasks: { "blog-link": design({ selected: "missing" }) },
       }),
     };
-    expect(diagnose(files)).toEqual([]);
-    expect(compileFiles(files).project?.combinations["breakpoint+pointer"]?.overrides).toEqual({
-      sm: {
-        touch: {
-          types: { link: design({ normal: "missing" }) },
-          tasks: { "blog-link": design({ selected: "missing" }) },
+    snapshot.push(diagnose(files));
+    snapshot.push(compileFiles(files).project?.combinations["breakpoint+pointer"]?.overrides);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    {
+      "sm": {
+        "touch": {
+          "tasks": {
+            "blog-link": {
+              "customAttributes": {
+                "design": {
+                  "selected": "missing",
+                },
+              },
+            },
+          },
+          "types": {
+            "link": {
+              "customAttributes": {
+                "design": {
+                  "normal": "missing",
+                },
+              },
+            },
+          },
         },
       },
-    });
+    },
+  ]
+`);
   });
 
   it("are named after declared dimensions, sorted and without repeats", () => {
@@ -74,25 +98,92 @@ describe("combination files", () => {
   });
 
   it("must be an object with version and overrides", () => {
-    expect(combination([])).toEqual([c("wrong-type", "$")]);
-    expect(combination({})).toEqual([
-      c("missing-key", "$.version"),
-      c("missing-key", "$.overrides"),
-    ]);
-    expect(combination({ ...file({}), extra: 1 })).toEqual([c("unknown-key", "$.extra")]);
-    expect(combination({ $schema: "x", ...file({}) })).toEqual([]);
+    const snapshot: unknown[] = [];
+    snapshot.push(combination([]));
+    snapshot.push(combination({}));
+    snapshot.push(combination({ ...file({}), extra: 1 }));
+    snapshot.push(combination({ $schema: "x", ...file({}) }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$.version",
+      },
+      {
+        "code": "missing-key",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$.overrides",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$.extra",
+      },
+    ],
+    [],
+  ]
+`);
   });
 
   it("nest one level per dimension, keyed by its values", () => {
-    expect(combination(file([]))).toEqual([c("wrong-type", "$.overrides")]);
-    expect(combination(file({ xs: {} }))).toEqual([c("unknown-dimension-value", "$.overrides.xs")]);
-    expect(combination(file({ sm: [] }))).toEqual([c("wrong-type", "$.overrides.sm")]);
-    expect(combination(file({ sm: { pen: {} } }))).toEqual([
-      c("unknown-dimension-value", "$.overrides.sm.pen"),
-    ]);
-    expect(combination(smTouch({ screens: {} }))).toEqual([
-      c("unknown-key", "$.overrides.sm.touch.screens"),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(combination(file([])));
+    snapshot.push(combination(file({ xs: {} })));
+    snapshot.push(combination(file({ sm: [] })));
+    snapshot.push(combination(file({ sm: { pen: {} } })));
+    snapshot.push(combination(smTouch({ screens: {} })));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$.overrides",
+      },
+    ],
+    [
+      {
+        "code": "unknown-dimension-value",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$.overrides.xs",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$.overrides.sm",
+      },
+    ],
+    [
+      {
+        "code": "unknown-dimension-value",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$.overrides.sm.pen",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$.overrides.sm.touch.screens",
+      },
+    ],
+  ]
+`);
   });
 
   it("apply only to tasks every dimension applies to", () => {
@@ -116,14 +207,26 @@ describe("combination states", () => {
   };
 
   it("start from the states the single-dimension overrides leave", () => {
-    expect(
+    const snapshot: unknown[] = [];
+    snapshot.push(
       combination(smTouch({ types: { link: design({ hovered: "missing" }) } }), noHoverOnTouch),
-    ).toEqual([
-      c("removed-state", "$.overrides.sm.touch.types.link.customAttributes.design.hovered"),
-    ]);
-    expect(
+    );
+    snapshot.push(
       combination(smTouch({ types: { link: { states: { add: ["hovered"] } } } }), noHoverOnTouch),
-    ).toEqual([]);
+    );
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "removed-state",
+        "file": "overrides/breakpoint+pointer.json",
+        "path": "$.overrides.sm.touch.types.link.customAttributes.design.hovered",
+      },
+    ],
+    [],
+  ]
+`);
   });
 
   it("start tasks from their own single-dimension overrides", () => {
@@ -152,6 +255,7 @@ describe("combination states", () => {
   });
 
   it("are used for verification contexts", () => {
+    const snapshot: unknown[] = [];
     const files = {
       ...project,
       "types.json": {
@@ -177,10 +281,21 @@ describe("combination states", () => {
         },
       ],
     });
-    expect(diagnose({ ...files, "verification/page.json": record("sm") })).toEqual([]);
-    expect(diagnose({ ...files, "verification/page.json": record("lg") })).toEqual([
-      { file: "verification/page.json", code: "removed-state", path: "$.records[0].context.state" },
-    ]);
+    snapshot.push(diagnose({ ...files, "verification/page.json": record("sm") }));
+    snapshot.push(diagnose({ ...files, "verification/page.json": record("lg") }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "removed-state",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.state",
+      },
+    ],
+  ]
+`);
   });
 });
 

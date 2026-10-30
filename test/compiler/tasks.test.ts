@@ -13,21 +13,68 @@ describe("task files", () => {
   });
 
   it("must be an object with version and task", () => {
-    expect(file([])).toEqual([k("wrong-type", "$")]);
-    expect(file({})).toEqual([k("missing-key", "$.version"), k("missing-key", "$.task")]);
-    expect(file({ ...taskFile({ id: "a", title: "A" }), extra: 1 })).toEqual([
-      k("unknown-key", "$.extra"),
-    ]);
-    expect(file({ version: 2, task: { id: "a", title: "A" } })).toEqual([
-      k("unsupported-version", "$.version"),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(file([]));
+    snapshot.push(file({}));
+    snapshot.push(file({ ...taskFile({ id: "a", title: "A" }), extra: 1 }));
+    snapshot.push(file({ version: 2, task: { id: "a", title: "A" } }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "tasks/a.json",
+        "path": "$",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "tasks/a.json",
+        "path": "$.version",
+      },
+      {
+        "code": "missing-key",
+        "file": "tasks/a.json",
+        "path": "$.task",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "tasks/a.json",
+        "path": "$.extra",
+      },
+    ],
+    [
+      {
+        "code": "unsupported-version",
+        "file": "tasks/a.json",
+        "path": "$.version",
+      },
+    ],
+  ]
+`);
   });
 
   it("may point editors at the JSON schema", () => {
-    expect(file({ $schema: "x", ...taskFile({ id: "a", title: "A" }) })).toEqual([]);
-    expect(file({ $schema: 1, ...taskFile({ id: "a", title: "A" }) })).toEqual([
-      k("wrong-type", "$.$schema"),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(file({ $schema: "x", ...taskFile({ id: "a", title: "A" }) }));
+    snapshot.push(file({ $schema: 1, ...taskFile({ id: "a", title: "A" }) }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "wrong-type",
+        "file": "tasks/a.json",
+        "path": "$.$schema",
+      },
+    ],
+  ]
+`);
   });
 
   it("hold the task as an object", () => {
@@ -50,8 +97,28 @@ describe("task files", () => {
 
 describe("task", () => {
   it("requires id and title", () => {
-    expect(task({ id: "a" })).toEqual([k("missing-key", "$.task.title")]);
-    expect(task({ title: "A" })).toEqual([k("missing-key", "$.task.id")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(task({ id: "a" }));
+    snapshot.push(task({ title: "A" }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "missing-key",
+        "file": "tasks/a.json",
+        "path": "$.task.title",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "tasks/a.json",
+        "path": "$.task.id",
+      },
+    ],
+  ]
+`);
   });
 
   it("rejects keys outside the core DSL", () => {
@@ -71,11 +138,52 @@ describe("task id", () => {
   const id = (value: unknown) => task({ id: value, title: "A" });
 
   it("must be a valid name", () => {
-    expect(id(1)).toEqual([k("wrong-type", "$.task.id")]);
-    expect(id("")).toEqual([k("empty-string", "$.task.id")]);
-    expect(id("  ")).toEqual([k("empty-string", "$.task.id")]);
-    expect(id("a ")).toEqual([k("surrounding-whitespace", "$.task.id")]);
-    expect(id("a\u0000")).toEqual([k("control-character", "$.task.id")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(id(1));
+    snapshot.push(id(""));
+    snapshot.push(id("  "));
+    snapshot.push(id("a "));
+    snapshot.push(id("a\u0000"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "tasks/a.json",
+        "path": "$.task.id",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "tasks/a.json",
+        "path": "$.task.id",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "tasks/a.json",
+        "path": "$.task.id",
+      },
+    ],
+    [
+      {
+        "code": "surrounding-whitespace",
+        "file": "tasks/a.json",
+        "path": "$.task.id",
+      },
+    ],
+    [
+      {
+        "code": "control-character",
+        "file": "tasks/a.json",
+        "path": "$.task.id",
+      },
+    ],
+  ]
+`);
   });
 
   it("must be unique within a file", () => {
@@ -105,10 +213,44 @@ describe("task title", () => {
   const title = (value: unknown) => task({ id: "a", title: value });
 
   it("must be a non-blank string without control characters", () => {
-    expect(title(1)).toEqual([k("wrong-type", "$.task.title")]);
-    expect(title("")).toEqual([k("empty-string", "$.task.title")]);
-    expect(title(" \t")).toEqual([k("empty-string", "$.task.title")]);
-    expect(title("A\u0007")).toEqual([k("control-character", "$.task.title")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(title(1));
+    snapshot.push(title(""));
+    snapshot.push(title(" \t"));
+    snapshot.push(title("A\u0007"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "tasks/a.json",
+        "path": "$.task.title",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "tasks/a.json",
+        "path": "$.task.title",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "tasks/a.json",
+        "path": "$.task.title",
+      },
+    ],
+    [
+      {
+        "code": "control-character",
+        "file": "tasks/a.json",
+        "path": "$.task.title",
+      },
+    ],
+  ]
+`);
   });
 
   it("may have surrounding whitespace", () => {

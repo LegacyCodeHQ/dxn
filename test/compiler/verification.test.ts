@@ -65,28 +65,136 @@ describe("verification files", () => {
   });
 
   it("must be an object with version and records", () => {
-    expect(file([])).toEqual([v("wrong-type", "$")]);
-    expect(file({})).toEqual([v("missing-key", "$.version"), v("missing-key", "$.records")]);
-    expect(file({ version: 1, records: [], extra: 1 })).toEqual([v("unknown-key", "$.extra")]);
-    expect(file({ version: 2, records: [] })).toEqual([v("unsupported-version", "$.version")]);
-    expect(file({ version: 1, records: {} })).toEqual([v("wrong-type", "$.records")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(file([]));
+    snapshot.push(file({}));
+    snapshot.push(file({ version: 1, records: [], extra: 1 }));
+    snapshot.push(file({ version: 2, records: [] }));
+    snapshot.push(file({ version: 1, records: {} }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "verification/page.json",
+        "path": "$",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.version",
+      },
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "verification/page.json",
+        "path": "$.extra",
+      },
+    ],
+    [
+      {
+        "code": "unsupported-version",
+        "file": "verification/page.json",
+        "path": "$.version",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "verification/page.json",
+        "path": "$.records",
+      },
+    ],
+  ]
+`);
   });
 
   it("may point editors at the JSON schema", () => {
-    expect(file({ $schema: "x", version: 1, records: [] })).toEqual([]);
-    expect(file({ $schema: 1, version: 1, records: [] })).toEqual([v("wrong-type", "$.$schema")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(file({ $schema: "x", version: 1, records: [] }));
+    snapshot.push(file({ $schema: 1, version: 1, records: [] }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "wrong-type",
+        "file": "verification/page.json",
+        "path": "$.$schema",
+      },
+    ],
+  ]
+`);
   });
 });
 
 describe("records", () => {
   it("must be objects with the required keys", () => {
-    expect(records(1)).toEqual([v("wrong-type", "$.records[0]")]);
-    expect(records({})).toEqual(
-      ["task", "context", "check", "result", "by", "at"].map((key) =>
-        v("missing-key", `$.records[0].${key}`),
-      ),
-    );
-    expect(r({ note: "x" })).toEqual([v("unknown-key", "$.records[0].note")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(records(1));
+    snapshot.push(records({}));
+    snapshot.push(r({ note: "x" }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "verification/page.json",
+        "path": "$.records[0]",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].task",
+      },
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].context",
+      },
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].check",
+      },
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].result",
+      },
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].by",
+      },
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].at",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].note",
+      },
+    ],
+  ]
+`);
   });
 
   it("are unique per task, context and check", () => {
@@ -98,8 +206,28 @@ describe("records", () => {
 
 describe("record task", () => {
   it("must be a valid name of an existing task", () => {
-    expect(r({ task: 1 })).toEqual([v("wrong-type", "$.records[0].task")]);
-    expect(r({ task: "nope" })).toEqual([v("unknown-task", "$.records[0].task")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(r({ task: 1 }));
+    snapshot.push(r({ task: "nope" }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "verification/page.json",
+        "path": "$.records[0].task",
+      },
+    ],
+    [
+      {
+        "code": "unknown-task",
+        "file": "verification/page.json",
+        "path": "$.records[0].task",
+      },
+    ],
+  ]
+`);
   });
 
   it("must be inside the file's root task", () => {
@@ -124,15 +252,34 @@ describe("record context", () => {
   });
 
   it("must name the task's state and every dimension that applies to it", () => {
-    expect(context({ pointer: "mouse" })).toEqual([v("missing-key", `${path}.state`)]);
-    expect(context({ state: "normal" })).toEqual([v("missing-key", `${path}.pointer`)]);
+    const snapshot: unknown[] = [];
+    snapshot.push(context({ pointer: "mouse" }));
+    snapshot.push(context({ state: "normal" }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.state",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.pointer",
+      },
+    ],
+  ]
+`);
   });
 
   it("must not name dimensions that do not apply to the task", () => {
-    expect(context({ state: "normal", pointer: "mouse", theme: "dark" })).toEqual([
-      v("unknown-key", `${path}.theme`),
-    ]);
-    expect(
+    const snapshot: unknown[] = [];
+    snapshot.push(context({ state: "normal", pointer: "mouse", theme: "dark" }));
+    snapshot.push(
       diagnose({
         ...project,
         "verification/footer-link.json": {
@@ -142,30 +289,84 @@ describe("record context", () => {
           ],
         },
       }),
-    ).toEqual([
+    );
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
       {
-        file: "verification/footer-link.json",
-        code: "unknown-key",
-        path: "$.records[0].context.pointer",
+        "code": "unknown-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.theme",
       },
-    ]);
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "verification/footer-link.json",
+        "path": "$.records[0].context.pointer",
+      },
+    ],
+  ]
+`);
   });
 
   it("must use declared dimension values", () => {
-    expect(context({ state: "normal", pointer: 1 })).toEqual([v("wrong-type", `${path}.pointer`)]);
-    expect(context({ state: "normal", pointer: "pen" })).toEqual([
-      v("unknown-dimension-value", `${path}.pointer`),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(context({ state: "normal", pointer: 1 }));
+    snapshot.push(context({ state: "normal", pointer: "pen" }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.pointer",
+      },
+    ],
+    [
+      {
+        "code": "unknown-dimension-value",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.pointer",
+      },
+    ],
+  ]
+`);
   });
 
   it("must use a state the task has in that context", () => {
-    expect(context({ state: 1, pointer: "mouse" })).toEqual([v("wrong-type", `${path}.state`)]);
-    expect(context({ state: "pressed", pointer: "mouse" })).toEqual([
-      v("unknown-state", `${path}.state`),
-    ]);
-    expect(context({ state: "hovered", pointer: "touch" })).toEqual([
-      v("removed-state", `${path}.state`),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(context({ state: 1, pointer: "mouse" }));
+    snapshot.push(context({ state: "pressed", pointer: "mouse" }));
+    snapshot.push(context({ state: "hovered", pointer: "touch" }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.state",
+      },
+    ],
+    [
+      {
+        "code": "unknown-state",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.state",
+      },
+    ],
+    [
+      {
+        "code": "removed-state",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.state",
+      },
+    ],
+  ]
+`);
   });
 
   it("include states added in that context", () => {
@@ -220,10 +421,22 @@ describe("record context defaults", () => {
     });
 
   it("fill in a dimension the context leaves out", () => {
-    expect(withDefault("mouse", record({ context: { state: "hovered" } }))).toEqual([]);
-    expect(withDefault("touch", record({ context: { state: "hovered" } }))).toEqual([
-      v("removed-state", "$.records[0].context.state"),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(withDefault("mouse", record({ context: { state: "hovered" } })));
+    snapshot.push(withDefault("touch", record({ context: { state: "hovered" } })));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "removed-state",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.state",
+      },
+    ],
+  ]
+`);
   });
 
   it("make a left-out dimension the same context as its default", () => {
@@ -239,8 +452,28 @@ describe("record context defaults", () => {
 
 describe("record check", () => {
   it("must be declared", () => {
-    expect(r({ check: 1 })).toEqual([v("wrong-type", "$.records[0].check")]);
-    expect(r({ check: "speed" })).toEqual([v("undeclared-check", "$.records[0].check")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(r({ check: 1 }));
+    snapshot.push(r({ check: "speed" }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "verification/page.json",
+        "path": "$.records[0].check",
+      },
+    ],
+    [
+      {
+        "code": "undeclared-check",
+        "file": "verification/page.json",
+        "path": "$.records[0].check",
+      },
+    ],
+  ]
+`);
   });
 
   it("must be one the task's type requires", () => {
@@ -250,27 +483,103 @@ describe("record check", () => {
 
 describe("record result, by, at and evidence", () => {
   it("result is passed or failed", () => {
-    expect(r({ result: "failed" })).toEqual([]);
-    expect(r({ result: 1 })).toEqual([v("wrong-type", "$.records[0].result")]);
-    expect(r({ result: "ok" })).toEqual([v("unknown-result", "$.records[0].result")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(r({ result: "failed" }));
+    snapshot.push(r({ result: 1 }));
+    snapshot.push(r({ result: "ok" }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "wrong-type",
+        "file": "verification/page.json",
+        "path": "$.records[0].result",
+      },
+    ],
+    [
+      {
+        "code": "unknown-result",
+        "file": "verification/page.json",
+        "path": "$.records[0].result",
+      },
+    ],
+  ]
+`);
   });
 
   it("by is a non-blank name", () => {
-    expect(r({ by: "ragunath@legacycode.com" })).toEqual([]);
-    expect(r({ by: " " })).toEqual([v("empty-string", "$.records[0].by")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(r({ by: "ragunath@legacycode.com" }));
+    snapshot.push(r({ by: " " }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "empty-string",
+        "file": "verification/page.json",
+        "path": "$.records[0].by",
+      },
+    ],
+  ]
+`);
   });
 
   it("at is an ISO 8601 date and time with a time zone", () => {
-    expect(r({ at: "2026-10-30T19:20:00.123+05:30" })).toEqual([]);
-    expect(r({ at: 1 })).toEqual([v("wrong-type", "$.records[0].at")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(r({ at: "2026-10-30T19:20:00.123+05:30" }));
+    snapshot.push(r({ at: 1 }));
     for (const value of [
       "yesterday",
       "2026-10-30",
       "2026-10-30T19:20:00",
       "2026-13-01T00:00:00Z",
     ]) {
-      expect(r({ at: value })).toEqual([v("invalid-timestamp", "$.records[0].at")]);
+      snapshot.push(r({ at: value }));
     }
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [],
+        [
+          {
+            "code": "wrong-type",
+            "file": "verification/page.json",
+            "path": "$.records[0].at",
+          },
+        ],
+        [
+          {
+            "code": "invalid-timestamp",
+            "file": "verification/page.json",
+            "path": "$.records[0].at",
+          },
+        ],
+        [
+          {
+            "code": "invalid-timestamp",
+            "file": "verification/page.json",
+            "path": "$.records[0].at",
+          },
+        ],
+        [
+          {
+            "code": "invalid-timestamp",
+            "file": "verification/page.json",
+            "path": "$.records[0].at",
+          },
+        ],
+        [
+          {
+            "code": "invalid-timestamp",
+            "file": "verification/page.json",
+            "path": "$.records[0].at",
+          },
+        ],
+      ]
+    `);
   });
 
   it("evidence is optional and non-blank", () => {

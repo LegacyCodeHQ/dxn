@@ -81,18 +81,68 @@ describe("views", () => {
   });
 
   it("works for a page, a task inside a component, and a task that does not vary", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(json(run("views", "article-page")).views).toHaveLength(6);
-    expect(json(run("views", "menu")).views).toEqual([
-      { breakpoint: "base", menu: "closed" },
-      { breakpoint: "base", menu: "open" },
-      { breakpoint: "sm", menu: "closed" },
-      { breakpoint: "sm", menu: "open" },
-    ]);
-    expect(json(run("views", "menu-panel")).views).toEqual([
-      { breakpoint: "base", menu: "open" },
-      { breakpoint: "sm", menu: "open" },
-    ]);
+    snapshot.push(json(run("views", "article-page")).views);
+    snapshot.push(json(run("views", "menu")).views);
+    snapshot.push(json(run("views", "menu-panel")).views);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "breakpoint": "base",
+        "menu": "closed",
+      },
+      {
+        "breakpoint": "base",
+        "menu": "open",
+      },
+      {
+        "breakpoint": "sm",
+        "menu": "closed",
+      },
+      {
+        "breakpoint": "sm",
+        "menu": "open",
+      },
+      {
+        "breakpoint": "lg",
+      },
+      {
+        "breakpoint": "xl",
+      },
+    ],
+    [
+      {
+        "breakpoint": "base",
+        "menu": "closed",
+      },
+      {
+        "breakpoint": "base",
+        "menu": "open",
+      },
+      {
+        "breakpoint": "sm",
+        "menu": "closed",
+      },
+      {
+        "breakpoint": "sm",
+        "menu": "open",
+      },
+    ],
+    [
+      {
+        "breakpoint": "base",
+        "menu": "open",
+      },
+      {
+        "breakpoint": "sm",
+        "menu": "open",
+      },
+    ],
+  ]
+`);
   });
 
   it("reports unknown tasks", () => {
@@ -142,17 +192,28 @@ describe("view", () => {
   });
 
   it("leaves out what the view does not have, and uses defaults", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     const closed = json(run("view", "toolbar", "breakpoint=sm", "menu=closed")).tree;
-    expect(closed.children[1].children.map((child: { id: string }) => child.id)).toEqual([
-      "menu-button",
-    ]);
+    snapshot.push(closed.children[1].children.map((child: { id: string }) => child.id));
     const desktop = json(run("view", "toolbar"));
-    expect(desktop.context).toEqual({ breakpoint: "xl" });
-    expect(desktop.tree.children.map((child: { id: string }) => child.id)).toEqual([
+    snapshot.push(desktop.context);
+    snapshot.push(desktop.tree.children.map((child: { id: string }) => child.id));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      "menu-button",
+    ],
+    {
+      "breakpoint": "xl",
+    },
+    [
       "wordmark",
       "toolbar-links",
-    ]);
+    ],
+  ]
+`);
   });
 
   it("expands included components in a page", () => {
@@ -161,45 +222,146 @@ describe("view", () => {
   });
 
   it("needs the state of each shared task in the view, and known values", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(run("view", "toolbar", "breakpoint=sm")).toMatchObject({
-      code: 1,
-      stderr: "task-tree: give menu=<closed|open> for this view\n",
-    });
-    expect(run("view", "toolbar", "breakpoint=md")).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: "md" is not a value of breakpoint\n',
-    });
-    expect(run("view", "toolbar", "menu=ajar", "breakpoint=sm")).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: "ajar" is not a state of menu\n',
-    });
-    expect(run("view", "toolbar", "theme=dark")).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: "theme" is not a dimension or shared task in this view\n',
-    });
+    snapshot.push(run("view", "toolbar", "breakpoint=sm"));
+    snapshot.push(run("view", "toolbar", "breakpoint=md"));
+    snapshot.push(run("view", "toolbar", "menu=ajar", "breakpoint=sm"));
+    snapshot.push(run("view", "toolbar", "theme=dark"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "code": 1,
+      "stderr": "task-tree: give menu=<closed|open> for this view
+  ",
+      "stdout": "",
+    },
+    {
+      "code": 1,
+      "stderr": "task-tree: "md" is not a value of breakpoint
+  ",
+      "stdout": "",
+    },
+    {
+      "code": 1,
+      "stderr": "task-tree: "ajar" is not a state of menu
+  ",
+      "stdout": "",
+    },
+    {
+      "code": 1,
+      "stderr": "task-tree: "theme" is not a dimension or shared task in this view
+  ",
+      "stdout": "",
+    },
+  ]
+`);
   });
 });
 
 describe("shared states in the other reading commands", () => {
   it("are part of a task's contexts", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(json(run("contexts", "menu-button")).contexts).toEqual([
-      { page: "article-page", context: { breakpoint: "base", menu: "closed" } },
-      { page: "article-page", context: { breakpoint: "base", menu: "open" } },
-      { page: "article-page", context: { breakpoint: "sm", menu: "closed" } },
-      { page: "article-page", context: { breakpoint: "sm", menu: "open" } },
-    ]);
-    expect(json(run("contexts", "menu-link")).contexts).toHaveLength(4);
+    snapshot.push(json(run("contexts", "menu-button")).contexts);
+    snapshot.push(json(run("contexts", "menu-link")).contexts);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "context": {
+          "breakpoint": "base",
+          "menu": "closed",
+        },
+        "page": "article-page",
+      },
+      {
+        "context": {
+          "breakpoint": "base",
+          "menu": "open",
+        },
+        "page": "article-page",
+      },
+      {
+        "context": {
+          "breakpoint": "sm",
+          "menu": "closed",
+        },
+        "page": "article-page",
+      },
+      {
+        "context": {
+          "breakpoint": "sm",
+          "menu": "open",
+        },
+        "page": "article-page",
+      },
+    ],
+    [
+      {
+        "context": {
+          "breakpoint": "base",
+          "menu": "open",
+          "state": "normal",
+        },
+        "page": "article-page",
+      },
+      {
+        "context": {
+          "breakpoint": "base",
+          "menu": "open",
+          "state": "hovered",
+        },
+        "page": "article-page",
+      },
+      {
+        "context": {
+          "breakpoint": "sm",
+          "menu": "open",
+          "state": "normal",
+        },
+        "page": "article-page",
+      },
+      {
+        "context": {
+          "breakpoint": "sm",
+          "menu": "open",
+          "state": "hovered",
+        },
+        "page": "article-page",
+      },
+    ],
+  ]
+`);
   });
 
   it("decide presence in query", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(json(run("query", "menu-link", "breakpoint=sm", "menu=closed"))).toMatchObject({
-      context: { breakpoint: "sm", menu: "closed" },
-      present: false,
-    });
-    expect(json(run("query", "menu-link", "breakpoint=sm", "menu=open")).present).toBe(true);
+    snapshot.push(json(run("query", "menu-link", "breakpoint=sm", "menu=closed")));
+    snapshot.push(json(run("query", "menu-link", "breakpoint=sm", "menu=open")).present);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "context": {
+        "breakpoint": "sm",
+        "menu": "closed",
+      },
+      "id": "menu-link",
+      "present": false,
+      "states": [
+        "normal",
+        "hovered",
+      ],
+      "title": "Menu link",
+      "type": "toolbar-link",
+    },
+    true,
+  ]
+`);
   });
 
   it("are matched in status", () => {

@@ -20,8 +20,9 @@ const page = taskFile({
 
 describe("dimension add and remove", () => {
   it("add a dimension file, with or without a default", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject({ "types.json": types, "tasks/page.json": page });
-    expect(
+    snapshot.push(
       run(
         "dimension",
         "add",
@@ -33,41 +34,75 @@ describe("dimension add and remove", () => {
         "--default",
         "lg",
       ).code,
-    ).toBe(0);
-    expect(read("dimensions/breakpoint.json")).toEqual({
-      version: 1,
-      values: ["base", "sm", "lg"],
-      default: "lg",
-      appliesTo: ["page"],
-    });
-    expect(
+    );
+    snapshot.push(read("dimensions/breakpoint.json"));
+    snapshot.push(
       run("dimension", "add", "pointer", "--values", "mouse,touch", "--applies-to", "a,b").code,
-    ).toBe(0);
-    expect(read("dimensions/pointer.json")).toEqual({
-      version: 1,
-      values: ["mouse", "touch"],
-      appliesTo: ["a", "b"],
-    });
+    );
+    snapshot.push(read("dimensions/pointer.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "appliesTo": [
+        "page",
+      ],
+      "default": "lg",
+      "values": [
+        "base",
+        "sm",
+        "lg",
+      ],
+      "version": 1,
+    },
+    0,
+    {
+      "appliesTo": [
+        "a",
+        "b",
+      ],
+      "values": [
+        "mouse",
+        "touch",
+      ],
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("refuse existing dimensions, invalid ones and usage errors", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject({ "types.json": types, "tasks/page.json": page });
     run("dimension", "add", "pointer", "--values", "mouse", "--applies-to", "page");
-    expect(
-      run("dimension", "add", "pointer", "--values", "x", "--applies-to", "page"),
-    ).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: dimension "pointer" already exists\n',
-    });
-    expect(
+    snapshot.push(run("dimension", "add", "pointer", "--values", "x", "--applies-to", "page"));
+    snapshot.push(
       run("dimension", "add", "theme", "--values", "dark", "--applies-to", "nope").stderr,
-    ).toContain("unknown-task");
-    expect(run("dimension", "add", "theme", "--applies-to", "page").code).toBe(2);
-    expect(run("dimension", "add", "theme", "--values", "dark").code).toBe(2);
-    expect(run("dimension").code).toBe(2);
+    );
+    snapshot.push(run("dimension", "add", "theme", "--applies-to", "page").code);
+    snapshot.push(run("dimension", "add", "theme", "--values", "dark").code);
+    snapshot.push(run("dimension").code);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "code": 1,
+      "stderr": "task-tree: dimension "pointer" already exists
+  ",
+      "stdout": "",
+    },
+    "<tmp>/.task-tree/dimensions/theme.json:4:17: unknown-task: task "nope" does not exist
+  ",
+    2,
+    2,
+    2,
+  ]
+`);
   });
 
   it("remove a dimension unless its overrides remain", () => {
+    const snapshot: unknown[] = [];
     const { run, exists } = cliProject({
       "types.json": types,
       "tasks/page.json": page,
@@ -75,13 +110,25 @@ describe("dimension add and remove", () => {
       "dimensions/theme.json": { version: 1, values: ["dark"], appliesTo: ["page"] },
       "overrides/theme.json": { version: 1, overrides: {} },
     });
-    expect(run("dimension", "remove", "pointer").code).toBe(0);
-    expect(exists("dimensions/pointer.json")).toBe(false);
-    expect(run("dimension", "remove", "theme").stderr).toContain("undeclared-dimension");
-    expect(run("dimension", "remove", "size")).toMatchObject({
-      code: 1,
-      stderr: "task-tree: dimension not found: size\n",
-    });
+    snapshot.push(run("dimension", "remove", "pointer").code);
+    snapshot.push(exists("dimensions/pointer.json"));
+    snapshot.push(run("dimension", "remove", "theme").stderr);
+    snapshot.push(run("dimension", "remove", "size"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    false,
+    "<tmp>/.task-tree/overrides/theme.json:1:1: undeclared-dimension: no dimensions/theme.json declares this dimension
+  ",
+    {
+      "code": 1,
+      "stderr": "task-tree: dimension not found: size
+  ",
+      "stdout": "",
+    },
+  ]
+`);
   });
 });
 
@@ -94,38 +141,84 @@ describe("dimension values, default and scope", () => {
     });
 
   it("add and remove values, set and clear the default", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = project();
-    expect(run("dimension", "add-value", "pointer", "pen").code).toBe(0);
-    expect(run("dimension", "remove-value", "pointer", "touch").code).toBe(0);
-    expect(run("dimension", "set-default", "pointer", "mouse").code).toBe(0);
-    expect(read("dimensions/pointer.json")).toEqual({
-      version: 1,
-      values: ["mouse", "pen"],
-      default: "mouse",
-      appliesTo: ["a"],
-    });
-    expect(run("dimension", "set-default", "pointer", "--none").code).toBe(0);
-    expect(read("dimensions/pointer.json")).toEqual({
-      version: 1,
-      values: ["mouse", "pen"],
-      appliesTo: ["a"],
-    });
-    expect(run("dimension", "set-default", "pointer", "nope").stderr).toContain(
-      "unknown-dimension-value",
-    );
-    expect(run("dimension", "set-default", "pointer").code).toBe(2);
+    snapshot.push(run("dimension", "add-value", "pointer", "pen").code);
+    snapshot.push(run("dimension", "remove-value", "pointer", "touch").code);
+    snapshot.push(run("dimension", "set-default", "pointer", "mouse").code);
+    snapshot.push(read("dimensions/pointer.json"));
+    snapshot.push(run("dimension", "set-default", "pointer", "--none").code);
+    snapshot.push(read("dimensions/pointer.json"));
+    snapshot.push(run("dimension", "set-default", "pointer", "nope").stderr);
+    snapshot.push(run("dimension", "set-default", "pointer").code);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    0,
+    0,
+    {
+      "appliesTo": [
+        "a",
+      ],
+      "default": "mouse",
+      "values": [
+        "mouse",
+        "pen",
+      ],
+      "version": 1,
+    },
+    0,
+    {
+      "appliesTo": [
+        "a",
+      ],
+      "values": [
+        "mouse",
+        "pen",
+      ],
+      "version": 1,
+    },
+    "<tmp>/.task-tree/dimensions/pointer.json:4:14: unknown-dimension-value: default "nope" is not one of the values
+  ",
+    2,
+  ]
+`);
   });
 
   it("apply to and unapply from tasks", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = project();
-    expect(run("dimension", "apply", "pointer", "b").code).toBe(0);
-    expect(run("dimension", "unapply", "pointer", "a").code).toBe(0);
-    expect(read("dimensions/pointer.json")).toMatchObject({ appliesTo: ["b"] });
-    expect(run("dimension", "unapply", "pointer", "a")).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: dimension "pointer" does not apply to "a"\n',
-    });
-    expect(run("dimension", "unapply", "pointer", "b").stderr).toContain("empty-applies-to");
+    snapshot.push(run("dimension", "apply", "pointer", "b").code);
+    snapshot.push(run("dimension", "unapply", "pointer", "a").code);
+    snapshot.push(read("dimensions/pointer.json"));
+    snapshot.push(run("dimension", "unapply", "pointer", "a"));
+    snapshot.push(run("dimension", "unapply", "pointer", "b").stderr);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    0,
+    {
+      "appliesTo": [
+        "b",
+      ],
+      "values": [
+        "mouse",
+        "touch",
+      ],
+      "version": 1,
+    },
+    {
+      "code": 1,
+      "stderr": "task-tree: dimension "pointer" does not apply to "a"
+  ",
+      "stdout": "",
+    },
+    "<tmp>/.task-tree/dimensions/pointer.json:4:16: empty-applies-to: a dimension must apply to at least one task
+  ",
+  ]
+`);
   });
 
   it("refuse to remove a value still in use", () => {
@@ -143,6 +236,7 @@ describe("dimension values, default and scope", () => {
 
 describe("dimension rename-value", () => {
   it("renames the value everywhere it is used", () => {
+    const snapshot: unknown[] = [];
     const record = {
       task: "a",
       context: { state: "normal", breakpoint: "0", pointer: "mouse" },
@@ -174,31 +268,88 @@ describe("dimension rename-value", () => {
       },
       "verification/page.json": { version: 1, records: [record] },
     });
-    expect(run("dimension", "rename-value", "breakpoint", "0", "base").code).toBe(0);
-    expect(read("dimensions/breakpoint.json")).toEqual({
-      version: 1,
-      values: ["base", "960"],
-      default: "base",
-      appliesTo: ["page"],
-    });
-    expect(read("overrides/breakpoint.json")).toEqual({
-      version: 1,
-      only: { b: ["base"] },
-      overrides: {
-        base: { tasks: { a: { customAttributes: { design: { normal: "missing" } } } } },
+    snapshot.push(run("dimension", "rename-value", "breakpoint", "0", "base").code);
+    snapshot.push(read("dimensions/breakpoint.json"));
+    snapshot.push(read("overrides/breakpoint.json"));
+    snapshot.push(read("overrides/breakpoint+pointer.json"));
+    snapshot.push(read("verification/page.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "appliesTo": [
+        "page",
+      ],
+      "default": "base",
+      "values": [
+        "base",
+        "960",
+      ],
+      "version": 1,
+    },
+    {
+      "only": {
+        "b": [
+          "base",
+        ],
       },
-    });
-    expect(read("overrides/breakpoint+pointer.json")).toEqual({
-      version: 1,
-      overrides: { base: { mouse: { types: { link: { states: { remove: ["hovered"] } } } } } },
-    });
-    expect(read("verification/page.json")).toEqual({
-      version: 1,
-      records: [{ ...record, context: { ...record.context, breakpoint: "base" } }],
-    });
+      "overrides": {
+        "base": {
+          "tasks": {
+            "a": {
+              "customAttributes": {
+                "design": {
+                  "normal": "missing",
+                },
+              },
+            },
+          },
+        },
+      },
+      "version": 1,
+    },
+    {
+      "overrides": {
+        "base": {
+          "mouse": {
+            "types": {
+              "link": {
+                "states": {
+                  "remove": [
+                    "hovered",
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      "version": 1,
+    },
+    {
+      "records": [
+        {
+          "at": "2026-10-30T19:20:00Z",
+          "by": "agent",
+          "check": "visual",
+          "context": {
+            "breakpoint": "base",
+            "pointer": "mouse",
+            "state": "normal",
+          },
+          "result": "passed",
+          "task": "a",
+        },
+      ],
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("renames the second dimension of a combination at its own level", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       "types.json": types,
       "tasks/page.json": page,
@@ -209,11 +360,32 @@ describe("dimension rename-value", () => {
         overrides: { sm: { touch: { types: { link: { states: { remove: ["hovered"] } } } } } },
       },
     });
-    expect(run("dimension", "rename-value", "pointer", "touch", "finger").code).toBe(0);
-    expect(read("overrides/breakpoint+pointer.json")).toEqual({
-      version: 1,
-      overrides: { sm: { finger: { types: { link: { states: { remove: ["hovered"] } } } } } },
-    });
+    snapshot.push(run("dimension", "rename-value", "pointer", "touch", "finger").code);
+    snapshot.push(read("overrides/breakpoint+pointer.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "overrides": {
+        "sm": {
+          "finger": {
+            "types": {
+              "link": {
+                "states": {
+                  "remove": [
+                    "hovered",
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("refuses an unknown value", () => {

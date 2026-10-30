@@ -53,27 +53,119 @@ const withOnly = (only: unknown, overrides: unknown = {}, extra: Files = {}) =>
 
 describe("only", () => {
   it("lists the values where a task exists", () => {
+    const snapshot: unknown[] = [];
     const files = {
       ...project,
       "overrides/breakpoint.json": { version: 1, only: desktopOnly, overrides: {} },
     };
-    expect(diagnose(files)).toEqual([]);
-    expect(compileFiles(files).project?.overrides.breakpoint?.only).toEqual(desktopOnly);
+    snapshot.push(diagnose(files));
+    snapshot.push(compileFiles(files).project?.overrides.breakpoint?.only);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    {
+      "links": [
+        "lg",
+        "xl",
+      ],
+      "menu-panel": [
+        "base",
+        "sm",
+      ],
+    },
+  ]
+`);
   });
 
   it("maps task ids to non-empty lists of the dimension's values", () => {
-    expect(withOnly([])).toEqual([o("wrong-type", "$.only")]);
-    expect(withOnly({ links: "lg" })).toEqual([o("wrong-type", "$.only.links")]);
-    expect(withOnly({ links: [] })).toEqual([o("empty-only", "$.only.links")]);
-    expect(withOnly({ links: [1] })).toEqual([o("wrong-type", "$.only.links[0]")]);
-    expect(withOnly({ links: [""] })).toEqual([o("empty-string", "$.only.links[0]")]);
-    expect(withOnly({ links: ["lg", "lg"] })).toEqual([o("duplicate-value", "$.only.links[1]")]);
-    expect(withOnly({ links: ["md"] })).toEqual([o("unknown-dimension-value", "$.only.links[0]")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(withOnly([]));
+    snapshot.push(withOnly({ links: "lg" }));
+    snapshot.push(withOnly({ links: [] }));
+    snapshot.push(withOnly({ links: [1] }));
+    snapshot.push(withOnly({ links: [""] }));
+    snapshot.push(withOnly({ links: ["lg", "lg"] }));
+    snapshot.push(withOnly({ links: ["md"] }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/breakpoint.json",
+        "path": "$.only",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/breakpoint.json",
+        "path": "$.only.links",
+      },
+    ],
+    [
+      {
+        "code": "empty-only",
+        "file": "overrides/breakpoint.json",
+        "path": "$.only.links",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/breakpoint.json",
+        "path": "$.only.links[0]",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "overrides/breakpoint.json",
+        "path": "$.only.links[0]",
+      },
+    ],
+    [
+      {
+        "code": "duplicate-value",
+        "file": "overrides/breakpoint.json",
+        "path": "$.only.links[1]",
+      },
+    ],
+    [
+      {
+        "code": "unknown-dimension-value",
+        "file": "overrides/breakpoint.json",
+        "path": "$.only.links[0]",
+      },
+    ],
+  ]
+`);
   });
 
   it("names existing tasks the dimension applies to", () => {
-    expect(withOnly({ nope: ["lg"] })).toEqual([o("unknown-task", "$.only.nope")]);
-    expect(withOnly({ footer: ["lg"] })).toEqual([o("task-out-of-scope", "$.only.footer")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(withOnly({ nope: ["lg"] }));
+    snapshot.push(withOnly({ footer: ["lg"] }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "unknown-task",
+        "file": "overrides/breakpoint.json",
+        "path": "$.only.nope",
+      },
+    ],
+    [
+      {
+        "code": "task-out-of-scope",
+        "file": "overrides/breakpoint.json",
+        "path": "$.only.footer",
+      },
+    ],
+  ]
+`);
   });
 
   it("is not allowed in combination files", () => {
@@ -129,37 +221,63 @@ describe("absent tasks", () => {
   });
   const verify = (records: unknown[], extra: Files = {}) =>
     withOnly(desktopOnly, {}, { ...extra, "verification/page.json": { version: 1, records } });
-  const v = at("verification/page.json");
+  const _v = at("verification/page.json");
 
   it("have no verification records where they are absent", () => {
-    expect(
+    const snapshot: unknown[] = [];
+    snapshot.push(
       verify([
         record("blog-link", { breakpoint: "lg" }),
         record("menu-link", { breakpoint: "sm" }),
       ]),
-    ).toEqual([]);
-    expect(
+    );
+    snapshot.push(
       verify([
         record("blog-link", { breakpoint: "base" }),
         record("menu-link", { breakpoint: "xl" }),
       ]),
-    ).toEqual([
-      v("absent-in-context", "$.records[0].context"),
-      v("absent-in-context", "$.records[1].context"),
-    ]);
+    );
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "absent-in-context",
+        "file": "verification/page.json",
+        "path": "$.records[0].context",
+      },
+      {
+        "code": "absent-in-context",
+        "file": "verification/page.json",
+        "path": "$.records[1].context",
+      },
+    ],
+  ]
+`);
   });
 
   it("combine the restrictions of several dimensions", () => {
+    const snapshot: unknown[] = [];
     const extra: Files = {
       "dimensions/pointer.json": { ...pointer, appliesTo: ["page"] },
       "overrides/pointer.json": { version: 1, only: { "menu-link": ["touch"] }, overrides: {} },
     };
-    expect(verify([record("menu-link", { breakpoint: "base", pointer: "touch" })], extra)).toEqual(
-      [],
-    );
-    expect(verify([record("menu-link", { breakpoint: "base", pointer: "mouse" })], extra)).toEqual([
-      v("absent-in-context", "$.records[0].context"),
-    ]);
+    snapshot.push(verify([record("menu-link", { breakpoint: "base", pointer: "touch" })], extra));
+    snapshot.push(verify([record("menu-link", { breakpoint: "base", pointer: "mouse" })], extra));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "absent-in-context",
+        "file": "verification/page.json",
+        "path": "$.records[0].context",
+      },
+    ],
+  ]
+`);
   });
 
   it("include tasks under an absent included component", () => {

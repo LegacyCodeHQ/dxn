@@ -11,22 +11,76 @@ const touch = (entry: unknown) => byValue({ touch: entry });
 
 describe("override files", () => {
   it("must be an object with version and overrides", () => {
-    expect(overrides([])).toEqual([o("wrong-type", "$")]);
-    expect(overrides({})).toEqual([o("missing-key", "$.version"), o("missing-key", "$.overrides")]);
-    expect(overrides({ version: 1, overrides: {}, extra: 1 })).toEqual([
-      o("unknown-key", "$.extra"),
-    ]);
-    expect(overrides({ version: 2, overrides: {} })).toEqual([
-      o("unsupported-version", "$.version"),
-    ]);
-    expect(byValue([])).toEqual([o("wrong-type", "$.overrides")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(overrides([]));
+    snapshot.push(overrides({}));
+    snapshot.push(overrides({ version: 1, overrides: {}, extra: 1 }));
+    snapshot.push(overrides({ version: 2, overrides: {} }));
+    snapshot.push(byValue([]));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/pointer.json",
+        "path": "$",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "overrides/pointer.json",
+        "path": "$.version",
+      },
+      {
+        "code": "missing-key",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "overrides/pointer.json",
+        "path": "$.extra",
+      },
+    ],
+    [
+      {
+        "code": "unsupported-version",
+        "file": "overrides/pointer.json",
+        "path": "$.version",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides",
+      },
+    ],
+  ]
+`);
   });
 
   it("may point editors at the JSON schema", () => {
-    expect(overrides({ $schema: "x", version: 1, overrides: {} })).toEqual([]);
-    expect(overrides({ $schema: 1, version: 1, overrides: {} })).toEqual([
-      o("wrong-type", "$.$schema"),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(overrides({ $schema: "x", version: 1, overrides: {} }));
+    snapshot.push(overrides({ $schema: 1, version: 1, overrides: {} }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/pointer.json",
+        "path": "$.$schema",
+      },
+    ],
+  ]
+`);
   });
 
   it("must be named after a declared dimension", () => {
@@ -50,10 +104,44 @@ describe("override files", () => {
   });
 
   it("target only types and tasks under a value", () => {
-    expect(touch([])).toEqual([o("wrong-type", "$.overrides.touch")]);
-    expect(touch({ screens: {} })).toEqual([o("unknown-key", "$.overrides.touch.screens")]);
-    expect(touch({ types: [] })).toEqual([o("wrong-type", "$.overrides.touch.types")]);
-    expect(touch({ tasks: [] })).toEqual([o("wrong-type", "$.overrides.touch.tasks")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(touch([]));
+    snapshot.push(touch({ screens: {} }));
+    snapshot.push(touch({ types: [] }));
+    snapshot.push(touch({ tasks: [] }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.screens",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.tasks",
+      },
+    ],
+  ]
+`);
   });
 });
 
@@ -62,11 +150,36 @@ describe("type overrides", () => {
   const base = "$.overrides.touch.types.link";
 
   it("must target a defined type with states and customAttributes only", () => {
-    expect(touch({ types: { button: {} } })).toEqual([
-      o("undefined-type", "$.overrides.touch.types.button"),
-    ]);
-    expect(link([])).toEqual([o("wrong-type", base)]);
-    expect(link({ title: "x" })).toEqual([o("unknown-key", `${base}.title`)]);
+    const snapshot: unknown[] = [];
+    snapshot.push(touch({ types: { button: {} } }));
+    snapshot.push(link([]));
+    snapshot.push(link({ title: "x" }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "undefined-type",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.button",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link.title",
+      },
+    ],
+  ]
+`);
   });
 
   it("remove and add states", () => {
@@ -74,27 +187,85 @@ describe("type overrides", () => {
   });
 
   it("change states with lists of valid names only", () => {
-    expect(link({ states: [] })).toEqual([o("wrong-type", `${base}.states`)]);
-    expect(link({ states: { rename: [] } })).toEqual([o("unknown-key", `${base}.states.rename`)]);
-    expect(link({ states: { remove: "hovered" } })).toEqual([
-      o("wrong-type", `${base}.states.remove`),
-    ]);
-    expect(link({ states: { add: [""] } })).toEqual([o("empty-string", `${base}.states.add[0]`)]);
-    expect(link({ states: { add: [" pressed"] } })).toEqual([
-      o("surrounding-whitespace", `${base}.states.add[0]`),
-    ]);
-    expect(link({ states: { add: ["p\u0002"] } })).toEqual([
-      o("control-character", `${base}.states.add[0]`),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(link({ states: [] }));
+    snapshot.push(link({ states: { rename: [] } }));
+    snapshot.push(link({ states: { remove: "hovered" } }));
+    snapshot.push(link({ states: { add: [""] } }));
+    snapshot.push(link({ states: { add: [" pressed"] } }));
+    snapshot.push(link({ states: { add: ["p\u0002"] } }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link.states",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link.states.rename",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link.states.remove",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link.states.add[0]",
+      },
+    ],
+    [
+      {
+        "code": "surrounding-whitespace",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link.states.add[0]",
+      },
+    ],
+    [
+      {
+        "code": "control-character",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link.states.add[0]",
+      },
+    ],
+  ]
+`);
   });
 
   it("remove only states the type has, once", () => {
-    expect(link({ states: { remove: ["pressed"] } })).toEqual([
-      o("unknown-state", `${base}.states.remove[0]`),
-    ]);
-    expect(link({ states: { remove: ["hovered", "hovered"] } })).toEqual([
-      o("duplicate-state", `${base}.states.remove[1]`),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(link({ states: { remove: ["pressed"] } }));
+    snapshot.push(link({ states: { remove: ["hovered", "hovered"] } }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "unknown-state",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link.states.remove[0]",
+      },
+    ],
+    [
+      {
+        "code": "duplicate-state",
+        "file": "overrides/pointer.json",
+        "path": "$.overrides.touch.types.link.states.remove[1]",
+      },
+    ],
+  ]
+`);
   });
 
   it("add only states the type does not have", () => {

@@ -9,38 +9,68 @@ const page = (children: unknown[] = []) => taskFile({ id: "page", title: "Page",
 
 describe("component add and remove", () => {
   it("add a component file and remove an unused one", () => {
+    const snapshot: unknown[] = [];
     const { run, read, exists } = cliProject({ "types.json": types });
-    expect(run("component", "add", "toolbar", "--title", "Toolbar").code).toBe(0);
-    expect(read("components/toolbar.json")).toEqual({
-      version: 1,
-      component: { id: "toolbar", title: "Toolbar" },
-    });
-    expect(run("component", "add", "toolbar", "--title", "Again")).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: component "toolbar" already exists\n',
-    });
-    expect(run("component", "remove", "toolbar").code).toBe(0);
-    expect(exists("components/toolbar.json")).toBe(false);
+    snapshot.push(run("component", "add", "toolbar", "--title", "Toolbar").code);
+    snapshot.push(read("components/toolbar.json"));
+    snapshot.push(run("component", "add", "toolbar", "--title", "Again"));
+    snapshot.push(run("component", "remove", "toolbar").code);
+    snapshot.push(exists("components/toolbar.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "component": {
+        "id": "toolbar",
+        "title": "Toolbar",
+      },
+      "version": 1,
+    },
+    {
+      "code": 1,
+      "stderr": "task-tree: component "toolbar" already exists
+  ",
+      "stdout": "",
+    },
+    0,
+    false,
+  ]
+`);
   });
 
   it("refuse to remove an included component and unknown ones", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject({
       "types.json": types,
       "components/toolbar.json": { version: 1, component: { id: "toolbar", title: "Toolbar" } },
       "tasks/page.json": page([{ include: "toolbar" }]),
     });
-    expect(run("component", "remove", "toolbar").stderr).toContain("unknown-component");
-    expect(run("component", "remove", "nope")).toMatchObject({
-      code: 1,
-      stderr: "task-tree: component not found: nope\n",
-    });
-    expect(run("component", "add", "x").code).toBe(2);
-    expect(run("component").code).toBe(2);
+    snapshot.push(run("component", "remove", "toolbar").stderr);
+    snapshot.push(run("component", "remove", "nope"));
+    snapshot.push(run("component", "add", "x").code);
+    snapshot.push(run("component").code);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    "<tmp>/.task-tree/tasks/page.json:8:20: unknown-component: no components/toolbar.json defines this component
+  ",
+    {
+      "code": 1,
+      "stderr": "task-tree: component not found: nope
+  ",
+      "stdout": "",
+    },
+    2,
+    2,
+  ]
+`);
   });
 });
 
 describe("component extract", () => {
   it("moves a subtree into a component and includes it in its place", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       "types.json": types,
       "tasks/page.json": page([
@@ -49,22 +79,52 @@ describe("component extract", () => {
       ]),
     });
     const result = run("component", "extract", "toolbar");
-    expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({
-      written: ["components/toolbar.json", "tasks/page.json"],
-      removed: [],
-    });
-    expect(read("components/toolbar.json")).toEqual({
-      version: 1,
-      component: {
-        id: "toolbar",
-        title: "Toolbar",
-        children: [{ id: "wordmark", title: "Wordmark" }],
+    snapshot.push(result.code);
+    snapshot.push(JSON.parse(result.stdout));
+    snapshot.push(read("components/toolbar.json"));
+    snapshot.push(read("tasks/page.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "removed": [],
+      "written": [
+        "components/toolbar.json",
+        "tasks/page.json",
+      ],
+    },
+    {
+      "component": {
+        "children": [
+          {
+            "id": "wordmark",
+            "title": "Wordmark",
+          },
+        ],
+        "id": "toolbar",
+        "title": "Toolbar",
       },
-    });
-    expect(read("tasks/page.json")).toEqual(
-      page([{ include: "toolbar" }, { id: "body", title: "Body" }]),
-    );
+      "version": 1,
+    },
+    {
+      "task": {
+        "children": [
+          {
+            "include": "toolbar",
+          },
+          {
+            "id": "body",
+            "title": "Body",
+          },
+        ],
+        "id": "page",
+        "title": "Page",
+      },
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("refuses a file's root task", () => {
@@ -78,20 +138,53 @@ describe("component extract", () => {
 
 describe("task include and uninclude", () => {
   it("add and remove an include under a task", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       "types.json": types,
       "components/toolbar.json": { version: 1, component: { id: "toolbar", title: "Toolbar" } },
       "tasks/page.json": page(),
     });
-    expect(run("task", "include", "page", "toolbar").code).toBe(0);
-    expect(read("tasks/page.json")).toEqual(page([{ include: "toolbar" }]));
-    expect(run("task", "include", "page", "toolbar").stderr).toContain("duplicate-include");
-    expect(run("task", "uninclude", "page", "toolbar").code).toBe(0);
-    expect(read("tasks/page.json")).toEqual(page([]));
-    expect(run("task", "uninclude", "page", "toolbar")).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: "page" does not include "toolbar"\n',
-    });
+    snapshot.push(run("task", "include", "page", "toolbar").code);
+    snapshot.push(read("tasks/page.json"));
+    snapshot.push(run("task", "include", "page", "toolbar").stderr);
+    snapshot.push(run("task", "uninclude", "page", "toolbar").code);
+    snapshot.push(read("tasks/page.json"));
+    snapshot.push(run("task", "uninclude", "page", "toolbar"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "task": {
+        "children": [
+          {
+            "include": "toolbar",
+          },
+        ],
+        "id": "page",
+        "title": "Page",
+      },
+      "version": 1,
+    },
+    "<tmp>/.task-tree/tasks/page.json:11:20: duplicate-include: "toolbar" is already part of "page"; its tasks would appear twice
+  ",
+    0,
+    {
+      "task": {
+        "children": [],
+        "id": "page",
+        "title": "Page",
+      },
+      "version": 1,
+    },
+    {
+      "code": 1,
+      "stderr": "task-tree: "page" does not include "toolbar"
+  ",
+      "stdout": "",
+    },
+  ]
+`);
   });
 
   it("refuse unknown components", () => {

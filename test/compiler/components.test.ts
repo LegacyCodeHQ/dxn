@@ -37,31 +37,104 @@ const component = (doc: unknown) => diagnose({ ...project, "components/toolbar.j
 
 describe("components", () => {
   it("compile and are returned beside the tasks that include them", () => {
+    const snapshot: unknown[] = [];
     const result = compileFiles(project);
-    expect(result.diagnostics).toEqual([]);
-    expect(result.project?.components.map(({ id }) => id)).toEqual(["toolbar"]);
-    expect(result.project?.tasks[0]?.children).toEqual([include("toolbar")]);
+    snapshot.push(result.diagnostics);
+    snapshot.push(result.project?.components.map(({ id }) => id));
+    snapshot.push(result.project?.tasks[0]?.children);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      "toolbar",
+    ],
+    [
+      {
+        "include": "toolbar",
+      },
+    ],
+  ]
+`);
   });
 
   it("must be an object with version and component", () => {
-    expect(component([])).toEqual([k("wrong-type", "$")]);
-    expect(component({})).toEqual([k("missing-key", "$.version"), k("missing-key", "$.component")]);
-    expect(component({ ...componentFile({ id: "toolbar", title: "T" }), extra: 1 })).toEqual([
-      k("unknown-key", "$.extra"),
-    ]);
-    expect(component({ version: 2, component: { id: "toolbar", title: "T" } })).toEqual([
-      k("unsupported-version", "$.version"),
-    ]);
-    expect(component({ $schema: 1, ...componentFile({ id: "toolbar", title: "T" }) })).toEqual([
-      k("wrong-type", "$.$schema"),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(component([]));
+    snapshot.push(component({}));
+    snapshot.push(component({ ...componentFile({ id: "toolbar", title: "T" }), extra: 1 }));
+    snapshot.push(component({ version: 2, component: { id: "toolbar", title: "T" } }));
+    snapshot.push(component({ $schema: 1, ...componentFile({ id: "toolbar", title: "T" }) }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "components/toolbar.json",
+        "path": "$",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "components/toolbar.json",
+        "path": "$.version",
+      },
+      {
+        "code": "missing-key",
+        "file": "components/toolbar.json",
+        "path": "$.component",
+      },
+    ],
+    [
+      {
+        "code": "unknown-key",
+        "file": "components/toolbar.json",
+        "path": "$.extra",
+      },
+    ],
+    [
+      {
+        "code": "unsupported-version",
+        "file": "components/toolbar.json",
+        "path": "$.version",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "components/toolbar.json",
+        "path": "$.$schema",
+      },
+    ],
+  ]
+`);
   });
 
   it("are checked like tasks", () => {
-    expect(component(componentFile([]))).toEqual([k("wrong-type", "$.component")]);
-    expect(
-      component(componentFile({ id: "toolbar", title: "T", children: [{ id: "x" }] })),
-    ).toEqual([k("missing-key", "$.component.children[0].title")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(component(componentFile([])));
+    snapshot.push(component(componentFile({ id: "toolbar", title: "T", children: [{ id: "x" }] })));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "components/toolbar.json",
+        "path": "$.component",
+      },
+    ],
+    [
+      {
+        "code": "missing-key",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].title",
+      },
+    ],
+  ]
+`);
   });
 
   it("must be named after their id", () => {
@@ -94,10 +167,28 @@ describe("components", () => {
   });
 
   it("report a folder that is a file and an unreadable file", () => {
-    expect(diagnose({ "types.json": project["types.json"], components: "" })).toEqual([
-      { file: "components", code: "not-a-directory", path: "$" },
-    ]);
-    expect(component(Buffer.from([0x5b, 0xff, 0x5d]))).toEqual([k("invalid-encoding", "$")]);
+    const snapshot: unknown[] = [];
+    snapshot.push(diagnose({ "types.json": project["types.json"], components: "" }));
+    snapshot.push(component(Buffer.from([0x5b, 0xff, 0x5d])));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "not-a-directory",
+        "file": "components",
+        "path": "$",
+      },
+    ],
+    [
+      {
+        "code": "invalid-encoding",
+        "file": "components/toolbar.json",
+        "path": "$",
+      },
+    ],
+  ]
+`);
   });
 
   it("stop before dimensions when a component file does not parse", () => {
@@ -113,12 +204,44 @@ describe("components", () => {
 
 describe("include", () => {
   it("names a component", () => {
-    expect(page([1])).toEqual([p("wrong-type", "$.task.children[0]")]);
-    expect(page([include("")])).toEqual([p("empty-string", "$.task.children[0].include")]);
-    expect(page([{ include: 1 }])).toEqual([p("wrong-type", "$.task.children[0].include")]);
-    expect(page([include("footer")])).toEqual([
-      p("unknown-component", "$.task.children[0].include"),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(page([1]));
+    snapshot.push(page([include("")]));
+    snapshot.push(page([{ include: 1 }]));
+    snapshot.push(page([include("footer")]));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "tasks/article-page.json",
+        "path": "$.task.children[0]",
+      },
+    ],
+    [
+      {
+        "code": "empty-string",
+        "file": "tasks/article-page.json",
+        "path": "$.task.children[0].include",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "tasks/article-page.json",
+        "path": "$.task.children[0].include",
+      },
+    ],
+    [
+      {
+        "code": "unknown-component",
+        "file": "tasks/article-page.json",
+        "path": "$.task.children[0].include",
+      },
+    ],
+  ]
+`);
   });
 
   it("does not name a task that is not a component", () => {
@@ -140,10 +263,9 @@ describe("include", () => {
   });
 
   it("does not bring the same component into a page twice", () => {
-    expect(page([include("toolbar"), include("toolbar")])).toEqual([
-      p("duplicate-include", "$.task.children[1].include"),
-    ]);
-    expect(
+    const snapshot: unknown[] = [];
+    snapshot.push(page([include("toolbar"), include("toolbar")]));
+    snapshot.push(
       page([include("header"), include("footer")], {
         "components/header.json": componentFile({
           id: "header",
@@ -156,14 +278,34 @@ describe("include", () => {
           children: [include("toolbar")],
         }),
       }),
-    ).toEqual([p("duplicate-include", "$.task.children[1].include")]);
+    );
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "duplicate-include",
+        "file": "tasks/article-page.json",
+        "path": "$.task.children[1].include",
+      },
+    ],
+    [
+      {
+        "code": "duplicate-include",
+        "file": "tasks/article-page.json",
+        "path": "$.task.children[1].include",
+      },
+    ],
+  ]
+`);
   });
 
   it("does not form a cycle", () => {
-    expect(
+    const snapshot: unknown[] = [];
+    snapshot.push(
       component(componentFile({ id: "toolbar", title: "Toolbar", children: [include("toolbar")] })),
-    ).toEqual([k("include-cycle", "$.component.children[0].include")]);
-    expect(
+    );
+    snapshot.push(
       diagnose({
         ...project,
         "components/menu.json": componentFile({
@@ -177,18 +319,31 @@ describe("include", () => {
           children: [include("menu")],
         }),
       }),
-    ).toEqual([
+    );
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
       {
-        file: "components/menu.json",
-        code: "include-cycle",
-        path: "$.component.children[0].include",
+        "code": "include-cycle",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].include",
+      },
+    ],
+    [
+      {
+        "code": "include-cycle",
+        "file": "components/menu.json",
+        "path": "$.component.children[0].include",
       },
       {
-        file: "components/toolbar.json",
-        code: "include-cycle",
-        path: "$.component.children[0].include",
+        "code": "include-cycle",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].include",
       },
-    ]);
+    ],
+  ]
+`);
   });
 });
 
@@ -209,6 +364,7 @@ describe("included components", () => {
   });
 
   it("are verified as part of the page", () => {
+    const snapshot: unknown[] = [];
     const record = (task: string) => ({
       version: 1,
       records: [
@@ -222,16 +378,27 @@ describe("included components", () => {
         },
       ],
     });
-    expect(
+    snapshot.push(
       diagnose({
         ...project,
         "dimensions/breakpoint.json": breakpoint,
         "verification/article-page.json": record("blog-link"),
       }),
-    ).toEqual([]);
-    expect(diagnose({ ...project, "verification/toolbar.json": record("blog-link") })).toEqual([
-      { file: "verification/toolbar.json", code: "unknown-root-task", path: "$" },
-    ]);
+    );
+    snapshot.push(diagnose({ ...project, "verification/toolbar.json": record("blog-link") }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [
+      {
+        "code": "unknown-root-task",
+        "file": "verification/toolbar.json",
+        "path": "$",
+      },
+    ],
+  ]
+`);
   });
 
   it("can be the target of a dimension directly", () => {

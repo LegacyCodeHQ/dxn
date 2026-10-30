@@ -50,11 +50,19 @@ describe("formatJson", () => {
 
   // Checked against Prettier 3: the trailing comma counts toward the width.
   it("counts the indentation, key and trailing comma toward the 80 columns", () => {
+    const snapshot: unknown[] = [];
     // Exactly 80 columns with the trailing comma: stays on one line.
     const fits = { values: ["a".repeat(29), "b".repeat(30)], next: 1 };
-    expect(formatJson(fits).split("\n")[1]).toHaveLength(80);
+    snapshot.push(formatJson(fits).split("\n")[1]);
     // One more character: expands.
     const over = { values: ["a".repeat(30), "b".repeat(30)], next: 1 };
-    expect(formatJson(over).split("\n")[1]).toBe('  "values": [');
+    snapshot.push(formatJson(over).split("\n")[1]);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    "  "values": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],",
+    "  "values": [",
+  ]
+`);
   });
 });

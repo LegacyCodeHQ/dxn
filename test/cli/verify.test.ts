@@ -49,24 +49,41 @@ const verify = (...extra: string[]) => [
 
 describe("verify", () => {
   it("records a result in the page's verification file", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
     const result = run(...verify("state=hovered", "pointer=mouse", "--evidence", "shots/a.png"));
-    expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({ written: ["verification/page.json"], removed: [] });
-    expect(read("verification/page.json")).toEqual({
-      version: 1,
-      records: [
+    snapshot.push(result.code);
+    snapshot.push(JSON.parse(result.stdout));
+    snapshot.push(read("verification/page.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    {
+      "removed": [],
+      "written": [
+        "verification/page.json",
+      ],
+    },
+    {
+      "records": [
         {
-          task: "blog-link",
-          context: { state: "hovered", pointer: "mouse" },
-          check: "visual",
-          result: "passed",
-          by: "agent",
-          at,
-          evidence: "shots/a.png",
+          "at": "2026-10-30T19:20:00Z",
+          "by": "agent",
+          "check": "visual",
+          "context": {
+            "pointer": "mouse",
+            "state": "hovered",
+          },
+          "evidence": "shots/a.png",
+          "result": "passed",
+          "task": "blog-link",
         },
       ],
-    });
+      "version": 1,
+    },
+  ]
+`);
   });
 
   it("replaces the record for the same task, context and check", () => {
@@ -119,13 +136,25 @@ describe("verify", () => {
   });
 
   it("refuses contexts the compiler rejects", () => {
+    const snapshot: unknown[] = [];
     const { run, exists } = cliProject(files);
-    expect(run(...verify("state=hovered", "pointer=touch")).stderr).toContain("removed-state");
-    expect(run(...verify("state=normal")).stderr).toContain("missing-key");
-    expect(exists("verification/page.json")).toBe(false);
+    snapshot.push(run(...verify("state=hovered", "pointer=touch")).stderr);
+    snapshot.push(run(...verify("state=normal")).stderr);
+    snapshot.push(exists("verification/page.json"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    "<tmp>/.task-tree/verification/page.json:7:18: removed-state: state "hovered" is removed in this context
+  ",
+    "<tmp>/.task-tree/verification/page.json:6:18: missing-key: missing required key "pointer"
+  ",
+    false,
+  ]
+`);
   });
 
   it("needs --page when several pages contain the task, and a page to be on", () => {
+    const snapshot: unknown[] = [];
     const { run, exists } = cliProject({
       ...files,
       "tasks/home.json": taskFile({
@@ -134,38 +163,63 @@ describe("verify", () => {
         children: [{ include: "toolbar" }],
       }),
     });
-    expect(run(...verify("state=normal", "pointer=mouse"))).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: "blog-link" is on several pages (home, page); choose one with --page\n',
-    });
-    expect(run(...verify("state=normal", "pointer=mouse", "--page", "home")).code).toBe(0);
-    expect(exists("verification/home.json")).toBe(true);
-    expect(run(...verify("state=normal", "pointer=mouse", "--page", "nope"))).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: "blog-link" is not on page "nope"\n',
-    });
+    snapshot.push(run(...verify("state=normal", "pointer=mouse")));
+    snapshot.push(run(...verify("state=normal", "pointer=mouse", "--page", "home")).code);
+    snapshot.push(exists("verification/home.json"));
+    snapshot.push(run(...verify("state=normal", "pointer=mouse", "--page", "nope")));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "code": 1,
+      "stderr": "task-tree: "blog-link" is on several pages (home, page); choose one with --page
+  ",
+      "stdout": "",
+    },
+    0,
+    true,
+    {
+      "code": 1,
+      "stderr": "task-tree: "blog-link" is not on page "nope"
+  ",
+      "stdout": "",
+    },
+  ]
+`);
   });
 
   it("reports tasks on no page and usage errors", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject({
       ...files,
       "tasks/page.json": taskFile({ id: "page", title: "Page" }),
     });
-    expect(run(...verify("state=normal"))).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: "blog-link" is not on any page\n',
-    });
-    expect(run("verify", "blog-link", "--check", "visual", "--by", "agent").code).toBe(2);
-    expect(run(...verify("pointer")).code).toBe(2);
+    snapshot.push(run(...verify("state=normal")));
+    snapshot.push(run("verify", "blog-link", "--check", "visual", "--by", "agent").code);
+    snapshot.push(run(...verify("pointer")).code);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "code": 1,
+      "stderr": "task-tree: "blog-link" is not on any page
+  ",
+      "stdout": "",
+    },
+    2,
+    2,
+  ]
+`);
   });
 });
 
 describe("unverify", () => {
   it("removes the matching record", () => {
+    const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
     run(...verify("state=normal", "pointer=mouse"));
     run(...verify("state=hovered", "pointer=mouse"));
-    expect(
+    snapshot.push(
       run(
         "unverify",
         "blog-link",
@@ -175,10 +229,27 @@ describe("unverify", () => {
         "pointer=mouse",
         "breakpoint=lg",
       ).code,
-    ).toBe(0);
-    expect(read("verification/page.json").records).toEqual([
-      expect.objectContaining({ context: { state: "hovered", pointer: "mouse" } }),
-    ]);
+    );
+    snapshot.push(read("verification/page.json").records);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    0,
+    [
+      {
+        "at": "2026-10-30T19:20:00Z",
+        "by": "agent",
+        "check": "visual",
+        "context": {
+          "pointer": "mouse",
+          "state": "hovered",
+        },
+        "result": "passed",
+        "task": "blog-link",
+      },
+    ],
+  ]
+`);
   });
 
   it("refuses when there is no such record", () => {

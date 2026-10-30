@@ -7,28 +7,92 @@ function errors(source: string) {
 
 describe("json parser", () => {
   it("parses every JSON value kind with source spans", () => {
+    const snapshot: unknown[] = [];
     const result = parseJson('{ "a": [1, -2.5e3, "x\\n\\u0041", true, false, null] }');
-    expect(result.diagnostics).toEqual([]);
-    expect(result.root).toMatchObject({
-      kind: "object",
-      span: { start: 0, end: 52 },
-      members: [
+    snapshot.push(result.diagnostics);
+    snapshot.push(result.root);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    {
+      "kind": "object",
+      "members": [
         {
-          key: { kind: "string", value: "a", span: { start: 2, end: 5 } },
-          value: {
-            kind: "array",
-            elements: [
-              { kind: "number", value: 1 },
-              { kind: "number", value: -2500 },
-              { kind: "string", value: "x\nA" },
-              { kind: "boolean", value: true },
-              { kind: "boolean", value: false },
-              { kind: "null" },
+          "key": {
+            "kind": "string",
+            "span": {
+              "end": 5,
+              "start": 2,
+            },
+            "value": "a",
+          },
+          "value": {
+            "elements": [
+              {
+                "kind": "number",
+                "span": {
+                  "end": 9,
+                  "start": 8,
+                },
+                "value": 1,
+              },
+              {
+                "kind": "number",
+                "span": {
+                  "end": 17,
+                  "start": 11,
+                },
+                "value": -2500,
+              },
+              {
+                "kind": "string",
+                "span": {
+                  "end": 30,
+                  "start": 19,
+                },
+                "value": "x
+  A",
+              },
+              {
+                "kind": "boolean",
+                "span": {
+                  "end": 36,
+                  "start": 32,
+                },
+                "value": true,
+              },
+              {
+                "kind": "boolean",
+                "span": {
+                  "end": 43,
+                  "start": 38,
+                },
+                "value": false,
+              },
+              {
+                "kind": "null",
+                "span": {
+                  "end": 49,
+                  "start": 45,
+                },
+              },
             ],
+            "kind": "array",
+            "span": {
+              "end": 50,
+              "start": 7,
+            },
           },
         },
       ],
-    });
+      "span": {
+        "end": 52,
+        "start": 0,
+      },
+    },
+  ]
+`);
   });
 
   it("reports an unexpected token with its line and column", () => {
@@ -40,8 +104,28 @@ describe("json parser", () => {
   });
 
   it("reports unexpected end of input", () => {
-    expect(errors("")).toEqual([{ code: "unexpected-end", line: 1, column: 1 }]);
-    expect(errors('{ "a": 1')).toEqual([{ code: "unexpected-end", line: 1, column: 9 }]);
+    const snapshot: unknown[] = [];
+    snapshot.push(errors(""));
+    snapshot.push(errors('{ "a": 1'));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "unexpected-end",
+        "column": 1,
+        "line": 1,
+      },
+    ],
+    [
+      {
+        "code": "unexpected-end",
+        "column": 9,
+        "line": 1,
+      },
+    ],
+  ]
+`);
   });
 
   it("reports an unterminated string at its opening quote", () => {
@@ -49,8 +133,28 @@ describe("json parser", () => {
   });
 
   it("reports an invalid escape", () => {
-    expect(errors('["\\x"]')).toEqual([{ code: "invalid-escape", line: 1, column: 3 }]);
-    expect(errors('["\\u12"]')).toEqual([{ code: "invalid-escape", line: 1, column: 3 }]);
+    const snapshot: unknown[] = [];
+    snapshot.push(errors('["\\x"]'));
+    snapshot.push(errors('["\\u12"]'));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "invalid-escape",
+        "column": 3,
+        "line": 1,
+      },
+    ],
+    [
+      {
+        "code": "invalid-escape",
+        "column": 3,
+        "line": 1,
+      },
+    ],
+  ]
+`);
   });
 
   it("reports a raw control character inside a string", () => {
@@ -58,8 +162,28 @@ describe("json parser", () => {
   });
 
   it("reports an invalid number", () => {
-    expect(errors("[-]")).toEqual([{ code: "invalid-number", line: 1, column: 2 }]);
-    expect(errors("[01]")).toEqual([{ code: "unexpected-token", line: 1, column: 3 }]);
+    const snapshot: unknown[] = [];
+    snapshot.push(errors("[-]"));
+    snapshot.push(errors("[01]"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "invalid-number",
+        "column": 2,
+        "line": 1,
+      },
+    ],
+    [
+      {
+        "code": "unexpected-token",
+        "column": 3,
+        "line": 1,
+      },
+    ],
+  ]
+`);
   });
 
   it("reports trailing content after the root value", () => {
@@ -67,11 +191,69 @@ describe("json parser", () => {
   });
 
   it("reports a duplicate key at the second occurrence and keeps parsing", () => {
+    const snapshot: unknown[] = [];
     const result = parseJson('{ "a": 1, "a": 2 }');
-    expect(result.root).toBeDefined();
-    expect(result.diagnostics).toMatchObject([
-      { code: "duplicate-key", path: "$.a", line: 1, column: 11 },
-    ]);
+    snapshot.push(result.root);
+    snapshot.push(result.diagnostics);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "kind": "object",
+      "members": [
+        {
+          "key": {
+            "kind": "string",
+            "span": {
+              "end": 5,
+              "start": 2,
+            },
+            "value": "a",
+          },
+          "value": {
+            "kind": "number",
+            "span": {
+              "end": 8,
+              "start": 7,
+            },
+            "value": 1,
+          },
+        },
+        {
+          "key": {
+            "kind": "string",
+            "span": {
+              "end": 13,
+              "start": 10,
+            },
+            "value": "a",
+          },
+          "value": {
+            "kind": "number",
+            "span": {
+              "end": 16,
+              "start": 15,
+            },
+            "value": 2,
+          },
+        },
+      ],
+      "span": {
+        "end": 18,
+        "start": 0,
+      },
+    },
+    [
+      {
+        "code": "duplicate-key",
+        "column": 11,
+        "line": 1,
+        "message": "duplicate key "a"",
+        "path": "$.a",
+      },
+    ],
+  ]
+`);
   });
 
   it("parses 512 levels of nesting", () => {
@@ -85,16 +267,57 @@ describe("json parser", () => {
   });
 
   it("reports a byte order mark and keeps parsing", () => {
+    const snapshot: unknown[] = [];
     const result = parseJson("\uFEFF{}");
-    expect(result.root).toMatchObject({ kind: "object", members: [] });
-    expect(errors("\uFEFF{}")).toEqual([{ code: "byte-order-mark", line: 1, column: 1 }]);
+    snapshot.push(result.root);
+    snapshot.push(errors("\uFEFF{}"));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "kind": "object",
+      "members": [],
+      "span": {
+        "end": 3,
+        "start": 1,
+      },
+    },
+    [
+      {
+        "code": "byte-order-mark",
+        "column": 1,
+        "line": 1,
+      },
+    ],
+  ]
+`);
   });
 
   it("reports unpaired surrogates in values and keys", () => {
-    expect(parseJson('["\\ud800"]').diagnostics).toMatchObject([
-      { code: "invalid-surrogate", path: "$[0]", line: 1, column: 2 },
-    ]);
-    expect(errors('{ "\\udc00": 1 }')).toEqual([{ code: "invalid-surrogate", line: 1, column: 3 }]);
+    const snapshot: unknown[] = [];
+    snapshot.push(parseJson('["\\ud800"]').diagnostics);
+    snapshot.push(errors('{ "\\udc00": 1 }'));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "invalid-surrogate",
+        "column": 2,
+        "line": 1,
+        "message": "string contains an unpaired surrogate",
+        "path": "$[0]",
+      },
+    ],
+    [
+      {
+        "code": "invalid-surrogate",
+        "column": 3,
+        "line": 1,
+      },
+    ],
+  ]
+`);
   });
 
   it("accepts surrogate pairs", () => {

@@ -52,7 +52,7 @@ const project = (overrides: Files = {}): Files => ({
   ...overrides,
 });
 
-const t = at("types.json");
+const _t = at("types.json");
 const k = at("components/toolbar.json");
 const panelPath = "$.component.children[0].children[1]";
 
@@ -62,7 +62,8 @@ describe("shared types", () => {
   });
 
   it("must be a boolean on a type with states", () => {
-    expect(
+    const snapshot: unknown[] = [];
+    snapshot.push(
       diagnose(
         project({
           "types.json": {
@@ -71,10 +72,32 @@ describe("shared types", () => {
           },
         }),
       ),
-    ).toContainEqual(t("wrong-type", "$.types.menu.shared"));
-    expect(diagnose({ "types.json": { version: 1, types: { menu: { shared: true } } } })).toEqual([
-      t("shared-without-states", "$.types.menu.shared"),
-    ]);
+    );
+    snapshot.push(diagnose({ "types.json": { version: 1, types: { menu: { shared: true } } } }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "types.json",
+        "path": "$.types.menu.shared",
+      },
+      {
+        "code": "ancestor-not-shared",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].children[1].onlyWhen.menu",
+      },
+    ],
+    [
+      {
+        "code": "shared-without-states",
+        "file": "types.json",
+        "path": "$.types.menu.shared",
+      },
+    ],
+  ]
+`);
   });
 });
 
@@ -83,24 +106,77 @@ describe("onlyWhen", () => {
     diagnose(project({ "components/toolbar.json": toolbar({ onlyWhen }) }));
 
   it("maps ancestors to non-empty lists of their states", () => {
-    expect(withPanel([])).toEqual([k("wrong-type", `${panelPath}.onlyWhen`)]);
-    expect(withPanel({ menu: "open" })).toEqual([k("wrong-type", `${panelPath}.onlyWhen.menu`)]);
-    expect(withPanel({ menu: [] })).toEqual([k("empty-only", `${panelPath}.onlyWhen.menu`)]);
-    expect(withPanel({ menu: ["open", "open"] })).toEqual([
-      k("duplicate-state", `${panelPath}.onlyWhen.menu[1]`),
-    ]);
-    expect(withPanel({ menu: ["ajar"] })).toEqual([
-      k("unknown-state", `${panelPath}.onlyWhen.menu[0]`),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(withPanel([]));
+    snapshot.push(withPanel({ menu: "open" }));
+    snapshot.push(withPanel({ menu: [] }));
+    snapshot.push(withPanel({ menu: ["open", "open"] }));
+    snapshot.push(withPanel({ menu: ["ajar"] }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "wrong-type",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].children[1].onlyWhen",
+      },
+    ],
+    [
+      {
+        "code": "wrong-type",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].children[1].onlyWhen.menu",
+      },
+    ],
+    [
+      {
+        "code": "empty-only",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].children[1].onlyWhen.menu",
+      },
+    ],
+    [
+      {
+        "code": "duplicate-state",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].children[1].onlyWhen.menu[1]",
+      },
+    ],
+    [
+      {
+        "code": "unknown-state",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].children[1].onlyWhen.menu[0]",
+      },
+    ],
+  ]
+`);
   });
 
   it("names an ancestor in the same file", () => {
-    expect(withPanel({ "menu-button": ["normal"] })).toEqual([
-      k("not-an-ancestor", `${panelPath}.onlyWhen.menu-button`),
-    ]);
-    expect(withPanel({ page: ["open"] })).toEqual([
-      k("not-an-ancestor", `${panelPath}.onlyWhen.page`),
-    ]);
+    const snapshot: unknown[] = [];
+    snapshot.push(withPanel({ "menu-button": ["normal"] }));
+    snapshot.push(withPanel({ page: ["open"] }));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "not-an-ancestor",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].children[1].onlyWhen.menu-button",
+      },
+    ],
+    [
+      {
+        "code": "not-an-ancestor",
+        "file": "components/toolbar.json",
+        "path": "$.component.children[0].children[1].onlyWhen.page",
+      },
+    ],
+  ]
+`);
   });
 
   it("names an ancestor whose type is shared", () => {
@@ -138,21 +214,47 @@ describe("verification under a shared ancestor", () => {
   const v = at("verification/page.json");
 
   it("names the ancestor's state in the context", () => {
-    expect(
+    const snapshot: unknown[] = [];
+    snapshot.push(
       verify(record("menu-button", { state: "normal", breakpoint: "sm", menu: "closed" })),
-    ).toEqual([]);
-    expect(
+    );
+    snapshot.push(
       verify(record("menu-link", { state: "hovered", breakpoint: "sm", menu: "open" })),
-    ).toEqual([]);
+    );
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [],
+    [],
+  ]
+`);
   });
 
   it("requires it, with one of the ancestor's states", () => {
-    expect(verify(record("menu-button", { state: "normal", breakpoint: "sm" }))).toEqual([
-      v("missing-key", "$.records[0].context.menu"),
-    ]);
-    expect(
+    const snapshot: unknown[] = [];
+    snapshot.push(verify(record("menu-button", { state: "normal", breakpoint: "sm" })));
+    snapshot.push(
       verify(record("menu-button", { state: "normal", breakpoint: "sm", menu: "ajar" })),
-    ).toEqual([v("unknown-state", "$.records[0].context.menu")]);
+    );
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      {
+        "code": "missing-key",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.menu",
+      },
+    ],
+    [
+      {
+        "code": "unknown-state",
+        "file": "verification/page.json",
+        "path": "$.records[0].context.menu",
+      },
+    ],
+  ]
+`);
   });
 
   it("has no record where onlyWhen leaves the task out", () => {

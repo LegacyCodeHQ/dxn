@@ -109,13 +109,54 @@ describe("query", () => {
   });
 
   it("fills in defaults and leaves dimensions without one unapplied", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(json(run("query", "blog-link", "pointer=mouse"))).toMatchObject({
-      context: { breakpoint: "lg", pointer: "mouse" },
-      states: ["normal", "hovered"],
-      customAttributes: { design: { normal: "available", hovered: "missing" } },
-    });
-    expect(json(run("query", "blog-link"))).toMatchObject({ context: { breakpoint: "lg" } });
+    snapshot.push(json(run("query", "blog-link", "pointer=mouse")));
+    snapshot.push(json(run("query", "blog-link")));
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "context": {
+        "breakpoint": "lg",
+        "pointer": "mouse",
+      },
+      "customAttributes": {
+        "design": {
+          "hovered": "missing",
+          "normal": "available",
+        },
+      },
+      "id": "blog-link",
+      "present": true,
+      "states": [
+        "normal",
+        "hovered",
+      ],
+      "title": "Blog link",
+      "type": "link",
+    },
+    {
+      "context": {
+        "breakpoint": "lg",
+      },
+      "customAttributes": {
+        "design": {
+          "hovered": "missing",
+          "normal": "available",
+        },
+      },
+      "id": "blog-link",
+      "present": true,
+      "states": [
+        "normal",
+        "hovered",
+      ],
+      "title": "Blog link",
+      "type": "link",
+    },
+  ]
+`);
   });
 
   it("says when a task does not exist in the context", () => {
@@ -124,35 +165,115 @@ describe("query", () => {
   });
 
   it("rejects dimensions the task does not have and unknown values", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(run("query", "blog-link", "theme=dark")).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: "theme" is not a dimension of blog-link\n',
-    });
-    expect(run("query", "blog-link", "pointer=pen")).toMatchObject({
-      code: 1,
-      stderr: 'task-tree: "pen" is not a value of pointer\n',
-    });
-    expect(run("query", "blog-link", "pointer").code).toBe(2);
+    snapshot.push(run("query", "blog-link", "theme=dark"));
+    snapshot.push(run("query", "blog-link", "pointer=pen"));
+    snapshot.push(run("query", "blog-link", "pointer").code);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "code": 1,
+      "stderr": "task-tree: "theme" is not a dimension of blog-link
+  ",
+      "stdout": "",
+    },
+    {
+      "code": 1,
+      "stderr": "task-tree: "pen" is not a value of pointer
+  ",
+      "stdout": "",
+    },
+    2,
+  ]
+`);
   });
 });
 
 describe("contexts", () => {
   it("lists every context a task exists in, per page", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    expect(json(run("contexts", "blog-link"))).toEqual({
-      task: "blog-link",
-      contexts: [
-        { page: "page", context: { state: "normal", breakpoint: "lg", pointer: "mouse" } },
-        { page: "page", context: { state: "hovered", breakpoint: "lg", pointer: "mouse" } },
-        { page: "page", context: { state: "normal", breakpoint: "lg", pointer: "touch" } },
+    snapshot.push(json(run("contexts", "blog-link")));
+    snapshot.push(json(run("contexts", "menu-link")).contexts);
+    snapshot.push(json(run("contexts", "links")).contexts);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "contexts": [
+        {
+          "context": {
+            "breakpoint": "lg",
+            "pointer": "mouse",
+            "state": "normal",
+          },
+          "page": "page",
+        },
+        {
+          "context": {
+            "breakpoint": "lg",
+            "pointer": "mouse",
+            "state": "hovered",
+          },
+          "page": "page",
+        },
+        {
+          "context": {
+            "breakpoint": "lg",
+            "pointer": "touch",
+            "state": "normal",
+          },
+          "page": "page",
+        },
       ],
-    });
-    expect(json(run("contexts", "menu-link")).contexts).toHaveLength(3);
-    expect(json(run("contexts", "links")).contexts).toEqual([
-      { page: "page", context: { breakpoint: "lg", pointer: "mouse" } },
-      { page: "page", context: { breakpoint: "lg", pointer: "touch" } },
-    ]);
+      "task": "blog-link",
+    },
+    [
+      {
+        "context": {
+          "breakpoint": "base",
+          "pointer": "mouse",
+          "state": "normal",
+        },
+        "page": "page",
+      },
+      {
+        "context": {
+          "breakpoint": "base",
+          "pointer": "mouse",
+          "state": "hovered",
+        },
+        "page": "page",
+      },
+      {
+        "context": {
+          "breakpoint": "base",
+          "pointer": "touch",
+          "state": "normal",
+        },
+        "page": "page",
+      },
+    ],
+    [
+      {
+        "context": {
+          "breakpoint": "lg",
+          "pointer": "mouse",
+        },
+        "page": "page",
+      },
+      {
+        "context": {
+          "breakpoint": "lg",
+          "pointer": "touch",
+        },
+        "page": "page",
+      },
+    ],
+  ]
+`);
   });
 
   it("reports unknown tasks", () => {
@@ -204,6 +325,7 @@ describe("status", () => {
 
 describe("tasks no page includes", () => {
   it("resolve within their own component and have no contexts", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject({
       ...files,
       "components/footer.json": {
@@ -215,29 +337,73 @@ describe("tasks no page includes", () => {
         },
       },
     });
-    expect(json(run("query", "footer-link"))).toMatchObject({
-      present: true,
-      states: ["normal", "hovered"],
-    });
-    expect(json(run("contexts", "footer-link")).contexts).toEqual([]);
+    snapshot.push(json(run("query", "footer-link")));
+    snapshot.push(json(run("contexts", "footer-link")).contexts);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    {
+      "customAttributes": {
+        "design": {
+          "hovered": "available",
+          "normal": "available",
+        },
+      },
+      "id": "footer-link",
+      "present": true,
+      "states": [
+        "normal",
+        "hovered",
+      ],
+      "title": "Footer link",
+      "type": "link",
+    },
+    [],
+  ]
+`);
   });
 });
 
 describe("tree", () => {
   it("prints the pages and components", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject({
       ...files,
       "components/footer.json": { version: 1, component: { id: "footer", title: "Footer" } },
     });
     const result = json(run("tree"));
-    expect(result.pages.map((page: { id: string }) => page.id)).toEqual(["page"]);
-    expect(result.components).toEqual([{ id: "footer", title: "Footer" }]);
+    snapshot.push(result.pages.map((page: { id: string }) => page.id));
+    snapshot.push(result.components);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    [
+      "page",
+    ],
+    [
+      {
+        "id": "footer",
+        "title": "Footer",
+      },
+    ],
+  ]
+`);
   });
 
   it("reports an invalid project", () => {
+    const snapshot: unknown[] = [];
     const { run } = cliProject({ "types.json": { version: 2 } });
-    expect(run("tree").stderr).toContain("unsupported-version");
-    expect(run("status").code).toBe(1);
-    expect(run("contexts", "x").code).toBe(1);
+    snapshot.push(run("tree").stderr);
+    snapshot.push(run("status").code);
+    snapshot.push(run("contexts", "x").code);
+
+    expect(snapshot).toMatchInlineSnapshot(`
+  [
+    "<tmp>/.task-tree/types.json:2:14: unsupported-version: unsupported version 2
+  ",
+    1,
+    1,
+  ]
+`);
   });
 });
