@@ -17,13 +17,19 @@
     "dimensions": {
       "description": "Dimensions by name, such as breakpoint or pointer.",
       "type": "object",
-      "additionalProperties": { "$ref": "#/$defs/dimension" }
+      "additionalProperties": {
+        "$ref": "#/$defs/dimension"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      }
     }
   },
   "$defs": {
-    "nonEmptyString": {
+    "name": {
+      "description": "Non-blank, without leading or trailing whitespace.",
       "type": "string",
-      "minLength": 1
+      "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
     },
     "dimension": {
       "type": "object",
@@ -35,14 +41,18 @@
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "$ref": "#/$defs/nonEmptyString" }
+          "items": {
+            "$ref": "#/$defs/name"
+          }
         },
         "appliesTo": {
           "description": "Ids of the tasks this dimension applies to; each task's subtree is included.",
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "$ref": "#/$defs/nonEmptyString" }
+          "items": {
+            "$ref": "#/$defs/name"
+          }
         }
       }
     }

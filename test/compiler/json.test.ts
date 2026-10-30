@@ -73,4 +73,14 @@ describe("json parser", () => {
       { code: "duplicate-key", path: "$.a", line: 1, column: 11 },
     ]);
   });
+
+  it("parses 512 levels of nesting", () => {
+    expect(errors("[".repeat(512) + "]".repeat(512))).toEqual([]);
+  });
+
+  it("reports nesting deeper than 512 levels instead of overflowing the stack", () => {
+    expect(errors("[".repeat(20000) + "]".repeat(20000))).toEqual([
+      { code: "too-deep", line: 1, column: 513 },
+    ]);
+  });
 });

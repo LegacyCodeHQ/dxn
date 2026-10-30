@@ -49,6 +49,7 @@ export function expectObject(
   return expectKind(diagnostics, node, path, "object") ? node : undefined;
 }
 
+// A string with at least one non-whitespace character, such as a title.
 export function expectNonEmptyString(
   diagnostics: Diagnostics,
   node: JsonNode,
@@ -57,8 +58,31 @@ export function expectNonEmptyString(
   if (!expectKind(diagnostics, node, path, "string")) {
     return false;
   }
-  if (node.value === "") {
-    report(diagnostics, "empty-string", "must not be empty", path, node);
+  if (node.value.trim() === "") {
+    report(diagnostics, "empty-string", "must not be empty or blank", path, node);
+    return false;
+  }
+  return true;
+}
+
+// A name (id, type, state, attribute, dimension or value): non-blank and
+// without surrounding whitespace, so "a" and "a " cannot both exist.
+export function expectName(
+  diagnostics: Diagnostics,
+  node: JsonNode,
+  path: string,
+): node is StringNode {
+  if (!expectNonEmptyString(diagnostics, node, path)) {
+    return false;
+  }
+  if (node.value.trim() !== node.value) {
+    report(
+      diagnostics,
+      "surrounding-whitespace",
+      "must not start or end with whitespace",
+      path,
+      node,
+    );
     return false;
   }
   return true;
@@ -111,7 +135,7 @@ export function stringElements(
   const elements: [StringNode, string][] = [];
   node.elements.forEach((element, index) => {
     const elementPath = `${path}[${index}]`;
-    if (!expectNonEmptyString(diagnostics, element, elementPath)) {
+    if (!expectName(diagnostics, element, elementPath)) {
       return;
     }
     if (seen.has(element.value)) {

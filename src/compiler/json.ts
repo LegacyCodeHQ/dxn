@@ -65,6 +65,10 @@ const escapes: Record<string, string> = {
   t: "\t",
 };
 
+// Deeper input is reported rather than parsed, so recursion here and in the
+// checkers cannot overflow the stack. 512 levels allows about 256 nested tasks.
+export const maxDepth = 512;
+
 const numberPattern = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
 
 // RFC 8259 JSON, parsed by hand so every node keeps its source span and
@@ -72,6 +76,7 @@ const numberPattern = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
 export function parseJson(source: string): ParseResult {
   const diagnostics = new Diagnostics(source);
   let pos = 0;
+  let depth = 0;
 
   function fail(code: string, message: string, offset: number): never {
     diagnostics.report(code, message, "$", offset);
@@ -116,7 +121,15 @@ export function parseJson(source: string): ParseResult {
     return unexpected();
   }
 
+  function enter(): void {
+    depth++;
+    if (depth > maxDepth) {
+      fail("too-deep", `nesting is deeper than ${maxDepth} levels`, pos);
+    }
+  }
+
   function parseObject(path: string): ObjectNode {
+    enter();
     const start = pos;
     pos++;
     const members: Member[] = [];
@@ -124,6 +137,7 @@ export function parseJson(source: string): ParseResult {
     skipWhitespace();
     if (source[pos] === "}") {
       pos++;
+      depth--;
       return { kind: "object", members, span: { start, end: pos } };
     }
     for (;;) {
@@ -151,6 +165,7 @@ export function parseJson(source: string): ParseResult {
       }
       if (source[pos] === "}") {
         pos++;
+        depth--;
         return { kind: "object", members, span: { start, end: pos } };
       }
       unexpected();
@@ -158,12 +173,14 @@ export function parseJson(source: string): ParseResult {
   }
 
   function parseArray(path: string): ArrayNode {
+    enter();
     const start = pos;
     pos++;
     const elements: JsonNode[] = [];
     skipWhitespace();
     if (source[pos] === "]") {
       pos++;
+      depth--;
       return { kind: "array", elements, span: { start, end: pos } };
     }
     for (;;) {
@@ -175,6 +192,7 @@ export function parseJson(source: string): ParseResult {
       }
       if (source[pos] === "]") {
         pos++;
+        depth--;
         return { kind: "array", elements, span: { start, end: pos } };
       }
       unexpected();

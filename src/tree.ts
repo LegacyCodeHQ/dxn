@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-
 // Custom attribute name -> state -> value.
 export type CustomAttributeValues = Record<string, Record<string, string>>;
 
@@ -25,10 +23,6 @@ export interface Tree {
   customAttributes?: Record<string, CustomAttributeDeclaration>;
   types?: Record<string, TypeDefinition>;
   tasks: Task[];
-}
-
-export function loadTree(path: string): Tree {
-  return JSON.parse(readFileSync(path, "utf8")) as Tree;
 }
 
 export function findTask(tasks: Task[], id: string): Task | undefined {

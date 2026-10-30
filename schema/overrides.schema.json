@@ -19,14 +19,17 @@
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "additionalProperties": { "$ref": "#/$defs/valueOverrides" }
+        "additionalProperties": {
+          "$ref": "#/$defs/valueOverrides"
+        }
       }
     }
   },
   "$defs": {
-    "nonEmptyString": {
+    "name": {
+      "description": "Non-blank, without leading or trailing whitespace.",
       "type": "string",
-      "minLength": 1
+      "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
     },
     "valueOverrides": {
       "description": "What changes for types and tasks when the dimension has this value.",
@@ -36,12 +39,16 @@
         "types": {
           "description": "Overrides by type name.",
           "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/override" }
+          "additionalProperties": {
+            "$ref": "#/$defs/override"
+          }
         },
         "tasks": {
           "description": "Overrides by task id; applied after the task's type override.",
           "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/override" }
+          "additionalProperties": {
+            "$ref": "#/$defs/override"
+          }
         }
       }
     },
@@ -54,8 +61,12 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "remove": { "$ref": "#/$defs/stateList" },
-            "add": { "$ref": "#/$defs/stateList" }
+            "remove": {
+              "$ref": "#/$defs/stateList"
+            },
+            "add": {
+              "$ref": "#/$defs/stateList"
+            }
           }
         },
         "customAttributes": {
@@ -63,7 +74,9 @@
           "type": "object",
           "additionalProperties": {
             "type": "object",
-            "additionalProperties": { "type": "string" }
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       }
@@ -71,7 +84,9 @@
     "stateList": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "$ref": "#/$defs/nonEmptyString" }
+      "items": {
+        "$ref": "#/$defs/name"
+      }
     }
   }
 }

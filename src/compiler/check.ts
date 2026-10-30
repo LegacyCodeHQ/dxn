@@ -4,6 +4,7 @@ import {
   checkSchema,
   checkVersion,
   expectKind,
+  expectName,
   expectNonEmptyString,
   expectObject,
   keys,
@@ -64,6 +65,7 @@ function checkDeclarations(
   }
   for (const { key, value } of declarations.members) {
     const declarationPath = childPath(path, key.value);
+    expectName(diagnostics, key, declarationPath);
     symbols.attributes.set(key.value, undefined);
     const declaration = expectObject(diagnostics, value, declarationPath);
     if (declaration === undefined) {
@@ -111,6 +113,7 @@ function checkTypes(
   const bodies: [string, Set<string>, JsonNode | undefined][] = [];
   for (const { key, value } of types.members) {
     const typePath = childPath(path, key.value);
+    expectName(diagnostics, key, typePath);
     const states = new Set<string>();
     symbols.types.set(key.value, states);
     const type = expectObject(diagnostics, value, typePath);
@@ -250,7 +253,7 @@ function checkTask(
 
   let taskId: string | undefined;
   const id = members.get("id");
-  if (id !== undefined && expectNonEmptyString(diagnostics, id, `${path}.id`)) {
+  if (id !== undefined && expectName(diagnostics, id, `${path}.id`)) {
     const first = symbols.ids.get(id.value);
     if (first !== undefined) {
       report(

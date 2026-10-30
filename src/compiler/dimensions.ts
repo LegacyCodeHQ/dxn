@@ -4,6 +4,7 @@ import {
   checkSchema,
   checkVersion,
   expectKind,
+  expectName,
   expectObject,
   keys,
   report,
@@ -35,6 +36,7 @@ export function checkDimensions(
       : expectObject(diagnostics, declarationsNode, "$.dimensions");
   for (const { key, value } of declarations?.members ?? []) {
     const path = childPath("$.dimensions", key.value);
+    expectName(diagnostics, key, path);
     const dimension = { values: undefined as Set<string> | undefined, scope: new Set<string>() };
     dimensions.set(key.value, dimension);
     const declaration = expectObject(diagnostics, value, path);

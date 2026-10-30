@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -117,6 +117,30 @@ describe("compileDirectory", () => {
     ]);
   });
 
+  it("reports a path that is a file, not a directory", () => {
+    const directory = mkdtempSync(join(tmpdir(), "task-tree-"));
+    directories.push(directory);
+    writeFileSync(join(directory, "tree.json"), JSON.stringify(tree));
+    expect(compileDirectory(join(directory, "tree.json")).diagnostics).toMatchObject([
+      { file: ".", code: "not-a-directory", path: "$", line: 1, column: 1 },
+    ]);
+  });
+
+  it("reports a known file that is a directory", () => {
+    const directory = mkdtempSync(join(tmpdir(), "task-tree-"));
+    directories.push(directory);
+    mkdirSync(join(directory, "tree.json"));
+    expect(compileDirectory(directory).diagnostics).toMatchObject([
+      { file: "tree.json", code: "not-a-file", path: "$" },
+    ]);
+    rmSync(join(directory, "tree.json"), { recursive: true });
+    writeFileSync(join(directory, "tree.json"), JSON.stringify(tree));
+    mkdirSync(join(directory, "dimensions.json"));
+    expect(compileDirectory(directory).diagnostics).toMatchObject([
+      { file: "dimensions.json", code: "not-a-file", path: "$" },
+    ]);
+  });
+
   it("tags tree.json diagnostics with their file", () => {
     expect(diagnose({ "tree.json": { ...tree, extra: 1 } })).toEqual([
       at("tree.json", "unknown-key", "$.extra"),
@@ -166,6 +190,16 @@ describe("dimensions.json", () => {
     ]);
   });
 
+  it("requires dimension names to be non-blank without surrounding whitespace", () => {
+    const declaration = { values: ["mouse"], appliesTo: ["page"] };
+    expect(withDimensions({ version: 1, dimensions: { "": declaration } })).toEqual([
+      d("empty-string", '$.dimensions[""]'),
+    ]);
+    expect(withDimensions({ version: 1, dimensions: { " pointer": declaration } })).toEqual([
+      d("surrounding-whitespace", '$.dimensions[" pointer"]'),
+    ]);
+  });
+
   it("declares each dimension as an object with values and appliesTo", () => {
     expect(dimension("x")).toEqual([d("wrong-type", "$.dimensions.pointer")]);
     expect(dimension({})).toEqual([
@@ -184,6 +218,10 @@ describe("dimensions.json", () => {
     expect(values([1])).toEqual([d("wrong-type", "$.dimensions.pointer.values[0]")]);
     expect(values([""])).toEqual([d("empty-string", "$.dimensions.pointer.values[0]")]);
     expect(values(["a", "a"])).toEqual([d("duplicate-value", "$.dimensions.pointer.values[1]")]);
+    expect(values(["  "])).toEqual([d("empty-string", "$.dimensions.pointer.values[0]")]);
+    expect(values(["sm "])).toEqual([
+      d("surrounding-whitespace", "$.dimensions.pointer.values[0]"),
+    ]);
   });
 
   it("requires appliesTo to name at least one existing task, once", () => {
@@ -267,6 +305,9 @@ describe("type overrides", () => {
       o("wrong-type", `${base}.states.remove`),
     ]);
     expect(link({ states: { add: [""] } })).toEqual([o("empty-string", `${base}.states.add[0]`)]);
+    expect(link({ states: { add: [" pressed"] } })).toEqual([
+      o("surrounding-whitespace", `${base}.states.add[0]`),
+    ]);
   });
 
   it("remove only states the type has, once", () => {

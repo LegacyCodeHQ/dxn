@@ -41,6 +41,16 @@ describe("compile", () => {
   });
 });
 
+describe("nesting", () => {
+  it("reports deeply nested tasks instead of crashing", () => {
+    // Built as text: JSON.stringify itself overflows the stack at this depth.
+    const depth = 5000;
+    const open = '{ "id": "t", "title": "T", "children": ['.repeat(depth);
+    const source = `{ "version": 1, "tasks": [${open}${"] }".repeat(depth)}] }`;
+    expect(compile(source).diagnostics.map(({ code }) => code)).toEqual(["too-deep"]);
+  });
+});
+
 describe("root", () => {
   it("accepts the smallest valid document", () => {
     expect(diagnose({ version: 1, tasks: [] })).toEqual([]);
@@ -134,6 +144,18 @@ describe("task id", () => {
     ]);
   });
 
+  it("must not be blank", () => {
+    expect(diagnose(withTask({ id: "  ", title: "A" }))).toEqual([
+      { code: "empty-string", path: "$.tasks[0].id" },
+    ]);
+  });
+
+  it("must not have surrounding whitespace", () => {
+    expect(diagnose(withTask({ id: "a ", title: "A" }))).toEqual([
+      { code: "surrounding-whitespace", path: "$.tasks[0].id" },
+    ]);
+  });
+
   it("must be unique across the whole tree", () => {
     expect(
       diagnose(withTask({ id: "a", title: "A", children: [{ id: "a", title: "Again" }] })),
@@ -152,6 +174,16 @@ describe("task title", () => {
     expect(diagnose(withTask({ id: "a", title: "" }))).toEqual([
       { code: "empty-string", path: "$.tasks[0].title" },
     ]);
+  });
+
+  it("must not be blank", () => {
+    expect(diagnose(withTask({ id: "a", title: " \t" }))).toEqual([
+      { code: "empty-string", path: "$.tasks[0].title" },
+    ]);
+  });
+
+  it("may have surrounding whitespace", () => {
+    expect(diagnose(withTask({ id: "a", title: " A " }))).toEqual([]);
   });
 });
 
@@ -190,6 +222,15 @@ describe("customAttributes declarations", () => {
 
   it("must be an object", () => {
     expect(declare([])).toEqual([{ code: "wrong-type", path: "$.customAttributes" }]);
+  });
+
+  it("require attribute names to be non-blank without surrounding whitespace", () => {
+    expect(declare({ "": { values: ["a"] } })).toEqual([
+      { code: "empty-string", path: '$.customAttributes[""]' },
+    ]);
+    expect(declare({ " design": { values: ["a"] } })).toEqual([
+      { code: "surrounding-whitespace", path: '$.customAttributes[" design"]' },
+    ]);
   });
 
   it("declare each attribute as an object", () => {
@@ -232,6 +273,9 @@ describe("customAttributes declarations", () => {
     expect(declare({ design: { values: ["a", "a"] } })).toEqual([
       { code: "duplicate-value", path: "$.customAttributes.design.values[1]" },
     ]);
+    expect(declare({ design: { values: ["a "] } })).toEqual([
+      { code: "surrounding-whitespace", path: "$.customAttributes.design.values[0]" },
+    ]);
   });
 });
 
@@ -242,6 +286,13 @@ describe("types", () => {
 
   it("must be an object", () => {
     expect(define([])).toEqual([{ code: "wrong-type", path: "$.types" }]);
+  });
+
+  it("require type names to be non-blank without surrounding whitespace", () => {
+    expect(define({ " ": {} })).toEqual([{ code: "empty-string", path: '$.types[" "]' }]);
+    expect(define({ "link ": {} })).toEqual([
+      { code: "surrounding-whitespace", path: '$.types["link "]' },
+    ]);
   });
 
   it("define each type as an object", () => {
@@ -273,6 +324,10 @@ describe("type states", () => {
     expect(states([""])).toEqual([{ code: "empty-string", path: "$.types.link.states[0]" }]);
     expect(states(["a", "a"])).toEqual([
       { code: "duplicate-state", path: "$.types.link.states[1]" },
+    ]);
+    expect(states([" "])).toEqual([{ code: "empty-string", path: "$.types.link.states[0]" }]);
+    expect(states([" normal"])).toEqual([
+      { code: "surrounding-whitespace", path: "$.types.link.states[0]" },
     ]);
   });
 });
