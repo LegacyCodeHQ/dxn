@@ -13,7 +13,7 @@ doesn't compile. Reading commands then refuse to answer, and editing
 commands refuse to write (exit 1).
 
 Compiling stops early in two cases: when `types.json` can't be read or
-parsed, and when a node or component file can't be parsed. Everything else
+parsed, and when a node or fragment file can't be parsed. Everything else
 depends on those files, so fix the reported problems and run `validate`
 again to see the rest.
 
@@ -24,7 +24,7 @@ contents follow the order of the sections.
 - [JSON syntax](#json-syntax)
 - [Shape and values](#shape-and-values)
 - [Types, state groups, attributes and checks](#types-state-groups-attributes-and-checks)
-- [Nodes, components and includes](#nodes-components-and-includes)
+- [Nodes, fragments and includes](#nodes-fragments-and-includes)
 - [Shared states and onlyWhen](#shared-states-and-onlywhen)
 - [Dimensions](#dimensions)
 - [Overrides and only](#overrides-and-only)
@@ -46,7 +46,7 @@ regular file. Rename or remove it.
 
 ### `not-a-directory`
 
-The project path, or one of `roots/`, `components/`, `dimensions/`,
+The project path, or one of `roots/`, `fragments/`, `dimensions/`,
 `overrides/` and `verification/`, is not a directory. Remove the file in its
 place.
 
@@ -90,8 +90,8 @@ file.
 
 ### `file-name-mismatch`
 
-A file's top node doesn't match its file name: the component `toolbar` must
-be in `components/toolbar.json`, and the root `article-page` in
+A file's top node doesn't match its file name: the fragment `toolbar` must
+be in `fragments/toolbar.json`, and the root `article-page` in
 `roots/article-page.json`. Rename the file or the node (`node rename` does
 both).
 
@@ -275,7 +275,7 @@ declare. Declare it with `check add`.
 
 A type requires the same check twice. Remove the repeat.
 
-## Nodes, components and includes
+## Nodes, fragments and includes
 
 ### `duplicate-id`
 
@@ -288,24 +288,24 @@ Rename one with `node rename`.
 A file's root is an include. A root must be a node. Put the include in its
 children.
 
-### `unknown-component`
+### `unknown-fragment`
 
-An include names a component that has no `components/<id>.json`.
+An include names a fragment that has no `fragments/<id>.json`.
 
 ### `include-cycle`
 
 An include leads back to the file it is in, directly or through other
-components. Remove one of the includes.
+fragments. Remove one of the includes.
 
 ### `duplicate-include`
 
-A root includes the same component twice, directly or through other
-components, so its nodes would appear twice. Remove one include, or make a
-second component.
+A root includes the same fragment twice, directly or through other
+fragments, so its nodes would appear twice. Remove one include, or make a
+second fragment.
 
 ### `node-outside-include`
 
-An include's `states` names a node that isn't in the included component.
+An include's `states` names a node that isn't in the included fragment.
 
 ### `unknown-state-group`
 
@@ -322,7 +322,7 @@ delete the entry (`node only ... --everywhere`, `node only-when ... --always`).
 ### `not-an-ancestor`
 
 `onlyWhen` names a node that isn't an ancestor of this node in the same file.
-A component's nodes can only depend on shared nodes inside the component.
+A fragment's nodes can only depend on shared nodes inside the fragment.
 
 ### `ancestor-not-shared`
 

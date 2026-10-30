@@ -3,17 +3,17 @@ import { at, cleanup, compileFiles, diagnose, type Files, rootFile } from "../su
 
 afterAll(cleanup);
 
-const componentFile = (component: unknown) => ({ version: 1, component });
+const fragmentFile = (fragment: unknown) => ({ version: 1, fragment });
 const include = (id: string) => ({ include: id });
 
-// The article page includes the toolbar component, which holds a link.
+// The article page includes the toolbar fragment, which holds a link.
 const project: Files = {
   "types.json": {
     version: 1,
     customChecks: { visual: {} },
     types: { "toolbar-link": { states: ["normal", "hovered"], checks: ["visual"] } },
   },
-  "components/toolbar.json": componentFile({
+  "fragments/toolbar.json": fragmentFile({
     id: "toolbar",
     title: "Toolbar",
     children: [{ id: "blog-link", title: "Blog link", type: "toolbar-link" }],
@@ -25,7 +25,7 @@ const project: Files = {
   }),
 };
 
-const k = at("components/toolbar.json");
+const k = at("fragments/toolbar.json");
 const p = at("roots/article-page.json");
 const page = (children: unknown[], extra: Files = {}) =>
   diagnose({
@@ -33,14 +33,14 @@ const page = (children: unknown[], extra: Files = {}) =>
     ...extra,
     "roots/article-page.json": rootFile({ id: "article-page", title: "Article page", children }),
   });
-const component = (doc: unknown) => diagnose({ ...project, "components/toolbar.json": doc });
+const fragment = (doc: unknown) => diagnose({ ...project, "fragments/toolbar.json": doc });
 
-describe("components", () => {
+describe("fragments", () => {
   it("compile and are returned beside the nodes that include them", () => {
     const snapshot: unknown[] = [];
     const result = compileFiles(project);
     snapshot.push(result.diagnostics);
-    snapshot.push(result.project?.components.map(({ id }) => id));
+    snapshot.push(result.project?.fragments.map(({ id }) => id));
     snapshot.push(result.project?.roots[0]?.children);
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -58,53 +58,53 @@ describe("components", () => {
 `);
   });
 
-  it("must be an object with version and component", () => {
+  it("must be an object with version and fragment", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(component([]));
-    snapshot.push(component({}));
-    snapshot.push(component({ ...componentFile({ id: "toolbar", title: "T" }), extra: 1 }));
-    snapshot.push(component({ version: 2, component: { id: "toolbar", title: "T" } }));
-    snapshot.push(component({ $schema: 1, ...componentFile({ id: "toolbar", title: "T" }) }));
+    snapshot.push(fragment([]));
+    snapshot.push(fragment({}));
+    snapshot.push(fragment({ ...fragmentFile({ id: "toolbar", title: "T" }), extra: 1 }));
+    snapshot.push(fragment({ version: 2, fragment: { id: "toolbar", title: "T" } }));
+    snapshot.push(fragment({ $schema: 1, ...fragmentFile({ id: "toolbar", title: "T" }) }));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     [
       {
         "code": "wrong-type",
-        "file": "components/toolbar.json",
+        "file": "fragments/toolbar.json",
         "path": "$",
       },
     ],
     [
       {
         "code": "missing-key",
-        "file": "components/toolbar.json",
+        "file": "fragments/toolbar.json",
         "path": "$.version",
       },
       {
         "code": "missing-key",
-        "file": "components/toolbar.json",
-        "path": "$.component",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment",
       },
     ],
     [
       {
         "code": "unknown-key",
-        "file": "components/toolbar.json",
+        "file": "fragments/toolbar.json",
         "path": "$.extra",
       },
     ],
     [
       {
         "code": "unsupported-version",
-        "file": "components/toolbar.json",
+        "file": "fragments/toolbar.json",
         "path": "$.version",
       },
     ],
     [
       {
         "code": "wrong-type",
-        "file": "components/toolbar.json",
+        "file": "fragments/toolbar.json",
         "path": "$.$schema",
       },
     ],
@@ -114,23 +114,23 @@ describe("components", () => {
 
   it("are checked like nodes", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(component(componentFile([])));
-    snapshot.push(component(componentFile({ id: "toolbar", title: "T", children: [{ id: "x" }] })));
+    snapshot.push(fragment(fragmentFile([])));
+    snapshot.push(fragment(fragmentFile({ id: "toolbar", title: "T", children: [{ id: "x" }] })));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     [
       {
         "code": "wrong-type",
-        "file": "components/toolbar.json",
-        "path": "$.component",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment",
       },
     ],
     [
       {
         "code": "missing-key",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].title",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].title",
       },
     ],
   ]
@@ -138,8 +138,8 @@ describe("components", () => {
   });
 
   it("must be named after their id", () => {
-    expect(component(componentFile({ id: "header", title: "Header" }))).toEqual([
-      k("file-name-mismatch", "$.component.id"),
+    expect(fragment(fragmentFile({ id: "header", title: "Header" }))).toEqual([
+      k("file-name-mismatch", "$.fragment.id"),
     ]);
   });
 
@@ -152,12 +152,12 @@ describe("components", () => {
     ).toEqual([{ file: "roots/toolbar.json", code: "duplicate-id", path: "$.root.id" }]);
   });
 
-  it("may include other components", () => {
+  it("may include other fragments", () => {
     expect(
       diagnose({
         ...project,
-        "components/wordmark.json": componentFile({ id: "wordmark", title: "Wordmark" }),
-        "components/toolbar.json": componentFile({
+        "fragments/wordmark.json": fragmentFile({ id: "wordmark", title: "Wordmark" }),
+        "fragments/toolbar.json": fragmentFile({
           id: "toolbar",
           title: "Toolbar",
           children: [include("wordmark")],
@@ -168,22 +168,22 @@ describe("components", () => {
 
   it("report a folder that is a file and an unreadable file", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(diagnose({ "types.json": project["types.json"], components: "" }));
-    snapshot.push(component(Buffer.from([0x5b, 0xff, 0x5d])));
+    snapshot.push(diagnose({ "types.json": project["types.json"], fragments: "" }));
+    snapshot.push(fragment(Buffer.from([0x5b, 0xff, 0x5d])));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     [
       {
         "code": "not-a-directory",
-        "file": "components",
+        "file": "fragments",
         "path": "$",
       },
     ],
     [
       {
         "code": "invalid-encoding",
-        "file": "components/toolbar.json",
+        "file": "fragments/toolbar.json",
         "path": "$",
       },
     ],
@@ -191,19 +191,19 @@ describe("components", () => {
 `);
   });
 
-  it("stop before dimensions when a component file does not parse", () => {
+  it("stop before dimensions when a fragment file does not parse", () => {
     expect(
       diagnose({
         ...project,
-        "components/toolbar.json": "{",
+        "fragments/toolbar.json": "{",
         "dimensions/breakpoint.json": { version: 1, values: ["sm"], appliesTo: ["blog-link"] },
       }),
-    ).toEqual([{ file: "components/toolbar.json", code: "unexpected-end", path: "$" }]);
+    ).toEqual([{ file: "fragments/toolbar.json", code: "unexpected-end", path: "$" }]);
   });
 });
 
 describe("include", () => {
-  it("names a component", () => {
+  it("names a fragment", () => {
     const snapshot: unknown[] = [];
     snapshot.push(page([1]));
     snapshot.push(page([include("")]));
@@ -235,7 +235,7 @@ describe("include", () => {
     ],
     [
       {
-        "code": "unknown-component",
+        "code": "unknown-fragment",
         "file": "roots/article-page.json",
         "path": "$.root.children[0].include",
       },
@@ -244,10 +244,10 @@ describe("include", () => {
 `);
   });
 
-  it("does not name a node that is not a component", () => {
+  it("does not name a node that is not a fragment", () => {
     expect(
       page([include("other")], { "roots/other.json": rootFile({ id: "other", title: "Other" }) }),
-    ).toEqual([p("unknown-component", "$.root.children[0].include")]);
+    ).toEqual([p("unknown-fragment", "$.root.children[0].include")]);
   });
 
   it("has no other keys", () => {
@@ -262,17 +262,17 @@ describe("include", () => {
     ).toEqual([p("include-at-root", "$.root")]);
   });
 
-  it("does not bring the same component into a page twice", () => {
+  it("does not bring the same fragment into a page twice", () => {
     const snapshot: unknown[] = [];
     snapshot.push(page([include("toolbar"), include("toolbar")]));
     snapshot.push(
       page([include("header"), include("footer")], {
-        "components/header.json": componentFile({
+        "fragments/header.json": fragmentFile({
           id: "header",
           title: "Header",
           children: [include("toolbar")],
         }),
-        "components/footer.json": componentFile({
+        "fragments/footer.json": fragmentFile({
           id: "footer",
           title: "Footer",
           children: [include("toolbar")],
@@ -303,17 +303,17 @@ describe("include", () => {
   it("does not form a cycle", () => {
     const snapshot: unknown[] = [];
     snapshot.push(
-      component(componentFile({ id: "toolbar", title: "Toolbar", children: [include("toolbar")] })),
+      fragment(fragmentFile({ id: "toolbar", title: "Toolbar", children: [include("toolbar")] })),
     );
     snapshot.push(
       diagnose({
         ...project,
-        "components/menu.json": componentFile({
+        "fragments/menu.json": fragmentFile({
           id: "menu",
           title: "Menu",
           children: [include("toolbar")],
         }),
-        "components/toolbar.json": componentFile({
+        "fragments/toolbar.json": fragmentFile({
           id: "toolbar",
           title: "Toolbar",
           children: [include("menu")],
@@ -326,20 +326,20 @@ describe("include", () => {
     [
       {
         "code": "include-cycle",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].include",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].include",
       },
     ],
     [
       {
         "code": "include-cycle",
-        "file": "components/menu.json",
-        "path": "$.component.children[0].include",
+        "file": "fragments/menu.json",
+        "path": "$.fragment.children[0].include",
       },
       {
         "code": "include-cycle",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].include",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].include",
       },
     ],
   ]
@@ -347,7 +347,7 @@ describe("include", () => {
   });
 });
 
-describe("included components", () => {
+describe("included fragments", () => {
   const breakpoint = { version: 1, values: ["sm", "lg"], appliesTo: ["article-page"] };
 
   it("are in the scope of dimensions that apply to the page", () => {

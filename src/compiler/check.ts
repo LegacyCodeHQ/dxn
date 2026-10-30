@@ -26,7 +26,7 @@ export function emptySymbols(): TreeSymbols {
     children: new Map(),
     parents: new Map(),
     nodeValues: new Map(),
-    components: new Set(),
+    fragments: new Set(),
     includes: [],
     includeStates: [],
     includeRestrictions: new Map(),
@@ -102,13 +102,13 @@ function checkCheckDeclarations(
   }
 }
 
-// Where a node is defined: its file, and the root or component of it.
+// Where a node is defined: its file, and the root or fragment of it.
 interface Where {
   file: string;
   root: string;
 }
 
-// roots/<id>.json (key "root") and components/<id>.json (key "component"):
+// roots/<id>.json (key "root") and fragments/<id>.json (key "fragment"):
 // one root, named after the file.
 export function checkRootFile(
   root: JsonNode,
@@ -116,7 +116,7 @@ export function checkRootFile(
   symbols: TreeSymbols,
   file: string,
   expectedId: string,
-  key: "root" | "component" = "root",
+  key: "root" | "fragment" = "root",
 ): void {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
@@ -137,7 +137,7 @@ export function checkRootFile(
     report(
       diagnostics,
       "include-at-root",
-      `a file's root ${key} cannot be an include; include components from its children`,
+      `a file's root ${key} cannot be an include; include fragments from its children`,
       path,
       node,
     );
@@ -149,14 +149,14 @@ export function checkRootFile(
     report(
       diagnostics,
       "file-name-mismatch",
-      `root ${key} ${JSON.stringify(id)} must be in ${key === "root" ? "roots" : "components"}/${id}.json`,
+      `root ${key} ${JSON.stringify(id)} must be in ${key === "root" ? "roots" : "fragments"}/${id}.json`,
       `${path}.id`,
       idNode,
     );
   }
 }
 
-// { "include": "<component>" }: recorded now, resolved once every file is read.
+// { "include": "<fragment>" }: recorded now, resolved once every file is read.
 function checkInclude(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
@@ -166,12 +166,12 @@ function checkInclude(
   parent: string | undefined,
 ): void {
   const members = keys(diagnostics, item, path, ["include", "states"], { required: ["include"] });
-  const component = members.get("include");
-  if (component === undefined || !expectName(diagnostics, component, `${path}.include`)) {
+  const fragment = members.get("include");
+  if (fragment === undefined || !expectName(diagnostics, fragment, `${path}.include`)) {
     return;
   }
   const include: IncludeRef = {
-    component,
+    fragment,
     path: `${path}.include`,
     diagnostics,
     parent,
@@ -179,7 +179,7 @@ function checkInclude(
   };
   symbols.includes.push(include);
 
-  // states: node -> group -> values, checked once the component is known.
+  // states: node -> group -> values, checked once the fragment is known.
   const states = members.get("states");
   const byNode =
     states === undefined ? undefined : expectObject(diagnostics, states, `${path}.states`);

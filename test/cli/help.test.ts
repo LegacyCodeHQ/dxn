@@ -81,7 +81,7 @@ describe("help", () => {
         status [<node-id>]  Report each required check as passed, failed or missing
 
       Explore
-        tree                Print the roots and components
+        tree                Print the roots and fragments
         show <node-id> [<context>...]
                             Show a node's states and values in one context
         contexts <node-id> [<filter>...]
@@ -101,8 +101,8 @@ describe("help", () => {
 
       Model
         node <subcommand>   Add, move, rename and remove nodes; say where they exist
-        component <subcommand>
-                            Add, extract and remove reusable components
+        fragment <subcommand>
+                            Add, extract and remove reusable fragments
         type <subcommand>   List and add types and states, and set their values
         state-group <subcommand>
                             List and declare groups of states that exclude each other

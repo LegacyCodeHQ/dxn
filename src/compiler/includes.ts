@@ -1,21 +1,21 @@
 import { report } from "./shape.js";
 import type { IncludeRef, TreeSymbols } from "./symbols.js";
 
-// Resolves includes once every root and component file has been read:
-// reports unknown components, cycles between components, and roots that
-// would bring the same component in twice; then links each valid include
+// Resolves includes once every root and fragment file has been read:
+// reports unknown fragments, cycles between fragments, and roots that
+// would bring the same fragment in twice; then links each valid include
 // into the tree, so dimensions, overrides and verification reach through it.
 export function resolveIncludes(tree: TreeSymbols, roots: string[]): void {
   const known = tree.includes.filter((include) => {
-    if (tree.components.has(include.component.value)) {
+    if (tree.fragments.has(include.fragment.value)) {
       return true;
     }
     report(
       include.diagnostics,
-      "unknown-component",
-      `no components/${include.component.value}.json defines this component`,
+      "unknown-fragment",
+      `no fragments/${include.fragment.value}.json defines this fragment`,
       include.path,
-      include.component,
+      include.fragment,
     );
     return false;
   });
@@ -25,9 +25,9 @@ export function resolveIncludes(tree: TreeSymbols, roots: string[]): void {
     report(
       include.diagnostics,
       "include-cycle",
-      `including ${JSON.stringify(include.component.value)} here leads back to ${JSON.stringify(include.root)}`,
+      `including ${JSON.stringify(include.fragment.value)} here leads back to ${JSON.stringify(include.root)}`,
       include.path,
-      include.component,
+      include.fragment,
     );
   }
   const usable = known.filter((include) => !cyclic.has(include));
@@ -47,20 +47,20 @@ export function resolveIncludes(tree: TreeSymbols, roots: string[]): void {
         visit(child, entry);
       }
       for (const include of byParent.get(id) ?? []) {
-        const component = include.component.value;
+        const fragment = include.fragment.value;
         const at = entry ?? include;
-        if (seen.has(component)) {
+        if (seen.has(fragment)) {
           report(
             at.diagnostics,
             "duplicate-include",
-            `${JSON.stringify(component)} is already part of ${JSON.stringify(root)}; its nodes would appear twice`,
+            `${JSON.stringify(fragment)} is already part of ${JSON.stringify(root)}; its nodes would appear twice`,
             at.path,
-            at.component,
+            at.fragment,
           );
           continue;
         }
-        seen.add(component);
-        visit(component, at);
+        seen.add(fragment);
+        visit(fragment, at);
       }
     };
     visit(root, undefined);
@@ -69,26 +69,26 @@ export function resolveIncludes(tree: TreeSymbols, roots: string[]): void {
   for (const [parent, includes] of byParent) {
     tree.children.set(parent, [
       ...(tree.children.get(parent) ?? []),
-      ...includes.map((include) => include.component.value),
+      ...includes.map((include) => include.fragment.value),
     ]);
   }
 
   checkIncludeStates(tree, new Set(usable));
 }
 
-// Checks each include's "states": a node in the included component, a group
+// Checks each include's "states": a node in the included fragment, a group
 // its type uses, and values of that group. Valid ones become restrictions.
 function checkIncludeStates(tree: TreeSymbols, usable: Set<IncludeRef>): void {
   for (const ref of tree.includeStates) {
     const { include } = ref;
     if (!usable.has(include) || include.parent === undefined) continue;
-    const component = include.component.value;
+    const fragment = include.fragment.value;
     const node = JSON.stringify(ref.node.value);
-    if (!within(tree, component, ref.node.value)) {
+    if (!within(tree, fragment, ref.node.value)) {
       report(
         include.diagnostics,
         "node-outside-include",
-        `node ${node} is not in the included component ${JSON.stringify(component)}`,
+        `node ${node} is not in the included fragment ${JSON.stringify(fragment)}`,
         ref.nodePath,
         ref.node,
       );
@@ -120,7 +120,7 @@ function checkIncludeStates(tree: TreeSymbols, usable: Set<IncludeRef>): void {
       }
       allowed.add(value.value);
     }
-    const key = `${include.parent}>${component}`;
+    const key = `${include.parent}>${fragment}`;
     const byNode = tree.includeRestrictions.get(key) ?? new Map<string, Map<string, Set<string>>>();
     const byGroup = byNode.get(ref.node.value) ?? new Map<string, Set<string>>();
     byGroup.set(ref.group.value, allowed);
@@ -129,7 +129,7 @@ function checkIncludeStates(tree: TreeSymbols, usable: Set<IncludeRef>): void {
   }
 }
 
-// Whether a node is in a component's subtree, through includes.
+// Whether a node is in a fragment's subtree, through includes.
 function within(tree: TreeSymbols, root: string, id: string, seen = new Set<string>()): boolean {
   if (root === id) return true;
   if (seen.has(root)) return false;
@@ -137,11 +137,11 @@ function within(tree: TreeSymbols, root: string, id: string, seen = new Set<stri
   return (tree.children.get(root) ?? []).some((child) => within(tree, child, id, seen));
 }
 
-// Whether the component an include brings in leads back to the component
+// Whether the fragment an include brings in leads back to the fragment
 // the include is written in.
 function onCycle(includes: IncludeRef[], start: IncludeRef): boolean {
   const seen = new Set<string>();
-  const pending = [start.component.value];
+  const pending = [start.fragment.value];
   while (pending.length > 0) {
     const current = pending.pop() as string;
     if (current === start.root) {
@@ -153,7 +153,7 @@ function onCycle(includes: IncludeRef[], start: IncludeRef): boolean {
     seen.add(current);
     for (const include of includes) {
       if (include.root === current) {
-        pending.push(include.component.value);
+        pending.push(include.fragment.value);
       }
     }
   }

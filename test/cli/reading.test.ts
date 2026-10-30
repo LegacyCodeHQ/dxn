@@ -324,13 +324,13 @@ describe("status", () => {
 });
 
 describe("nodes no root includes", () => {
-  it("resolve within their own component and have no contexts", () => {
+  it("resolve within their own fragment and have no contexts", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({
       ...files,
-      "components/footer.json": {
+      "fragments/footer.json": {
         version: 1,
-        component: {
+        fragment: {
           id: "footer",
           title: "Footer",
           children: [{ id: "footer-link", title: "Footer link", type: "link" }],
@@ -365,15 +365,15 @@ describe("nodes no root includes", () => {
 });
 
 describe("tree", () => {
-  it("prints the roots and components", () => {
+  it("prints the roots and fragments", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({
       ...files,
-      "components/footer.json": { version: 1, component: { id: "footer", title: "Footer" } },
+      "fragments/footer.json": { version: 1, fragment: { id: "footer", title: "Footer" } },
     });
     const result = json(run("tree"));
     snapshot.push(result.roots.map((root: { id: string }) => root.id));
-    snapshot.push(result.components);
+    snapshot.push(result.fragments);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [

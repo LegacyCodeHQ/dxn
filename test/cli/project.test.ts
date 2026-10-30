@@ -10,7 +10,7 @@ describe("finding the project", () => {
   it("uses the nearest .dimensions directory above the working directory", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({ ".dimensions/types.json": types });
-    const deep = join(root, "src", "components");
+    const deep = join(root, "src", "fragments");
     mkdirSync(deep, { recursive: true });
     const result = capture(["validate"], deep);
     snapshot.push(result.code);
@@ -84,7 +84,7 @@ describe("finding the project", () => {
         status [<node-id>]  Report each required check as passed, failed or missing
 
       Explore
-        tree                Print the roots and components
+        tree                Print the roots and fragments
         show <node-id> [<context>...]
                             Show a node's states and values in one context
         contexts <node-id> [<filter>...]
@@ -104,8 +104,8 @@ describe("finding the project", () => {
 
       Model
         node <subcommand>   Add, move, rename and remove nodes; say where they exist
-        component <subcommand>
-                            Add, extract and remove reusable components
+        fragment <subcommand>
+                            Add, extract and remove reusable fragments
         type <subcommand>   List and add types and states, and set their values
         state-group <subcommand>
                             List and declare groups of states that exclude each other

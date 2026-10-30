@@ -14,9 +14,9 @@ const files = {
       "toolbar-link": { states: ["normal", "hovered"] },
     },
   },
-  "components/toolbar.json": {
+  "fragments/toolbar.json": {
     version: 1,
-    component: {
+    fragment: {
       id: "toolbar",
       title: "Toolbar",
       children: [

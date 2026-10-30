@@ -18,9 +18,9 @@ const files = {
       menu: { states: ["closed", "open"], shared: true },
     },
   },
-  "components/toolbar.json": {
+  "fragments/toolbar.json": {
     version: 1,
-    component: {
+    fragment: {
       id: "toolbar",
       title: "Toolbar",
       children: [

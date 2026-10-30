@@ -541,7 +541,7 @@ function statesInContext(
   return { states, removed };
 }
 
-// Ids from the root down to the node, through included components.
+// Ids from the root down to the node, through included fragments.
 function lineage(
   tree: TreeSymbols,
   from: string,

@@ -7,21 +7,21 @@ afterAll(cleanup);
 const types = { version: 1 };
 const page = (children: unknown[] = []) => rootFile({ id: "page", title: "Page", children });
 
-describe("component add and remove", () => {
-  it("add a component file and remove an unused one", () => {
+describe("fragment add and remove", () => {
+  it("add a fragment file and remove an unused one", () => {
     const snapshot: unknown[] = [];
     const { run, read, exists } = cliProject({ "types.json": types });
-    snapshot.push(run("component", "add", "toolbar", "--title", "Toolbar").code);
-    snapshot.push(read("components/toolbar.json"));
-    snapshot.push(run("component", "add", "toolbar", "--title", "Again"));
-    snapshot.push(run("component", "remove", "toolbar").code);
-    snapshot.push(exists("components/toolbar.json"));
+    snapshot.push(run("fragment", "add", "toolbar", "--title", "Toolbar").code);
+    snapshot.push(read("fragments/toolbar.json"));
+    snapshot.push(run("fragment", "add", "toolbar", "--title", "Again"));
+    snapshot.push(run("fragment", "remove", "toolbar").code);
+    snapshot.push(exists("fragments/toolbar.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     0,
     {
-      "component": {
+      "fragment": {
         "id": "toolbar",
         "title": "Toolbar",
       },
@@ -29,7 +29,7 @@ describe("component add and remove", () => {
     },
     {
       "code": 1,
-      "stderr": "dimensions: component "toolbar" already exists
+      "stderr": "dimensions: fragment "toolbar" already exists
   ",
       "stdout": "",
     },
@@ -39,25 +39,25 @@ describe("component add and remove", () => {
 `);
   });
 
-  it("refuse to remove an included component and unknown ones", () => {
+  it("refuse to remove an included fragment and unknown ones", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({
       "types.json": types,
-      "components/toolbar.json": { version: 1, component: { id: "toolbar", title: "Toolbar" } },
+      "fragments/toolbar.json": { version: 1, fragment: { id: "toolbar", title: "Toolbar" } },
       "roots/page.json": page([{ include: "toolbar" }]),
     });
-    snapshot.push(run("component", "remove", "toolbar").stderr);
-    snapshot.push(run("component", "remove", "nope"));
-    snapshot.push(run("component", "add", "x").code);
-    snapshot.push(run("component").code);
+    snapshot.push(run("fragment", "remove", "toolbar").stderr);
+    snapshot.push(run("fragment", "remove", "nope"));
+    snapshot.push(run("fragment", "add", "x").code);
+    snapshot.push(run("fragment").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.dimensions/roots/page.json:8:20: unknown-component: no components/toolbar.json defines this component
+    "<tmp>/.dimensions/roots/page.json:8:20: unknown-fragment: no fragments/toolbar.json defines this fragment
   ",
     {
       "code": 1,
-      "stderr": "dimensions: component not found: nope
+      "stderr": "dimensions: fragment not found: nope
   ",
       "stdout": "",
     },
@@ -68,8 +68,8 @@ describe("component add and remove", () => {
   });
 });
 
-describe("component extract", () => {
-  it("moves a subtree into a component and includes it in its place", () => {
+describe("fragment extract", () => {
+  it("moves a subtree into a fragment and includes it in its place", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       "types.json": types,
@@ -78,10 +78,10 @@ describe("component extract", () => {
         { id: "body", title: "Body" },
       ]),
     });
-    const result = run("component", "extract", "toolbar");
+    const result = run("fragment", "extract", "toolbar");
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
-    snapshot.push(read("components/toolbar.json"));
+    snapshot.push(read("fragments/toolbar.json"));
     snapshot.push(read("roots/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -90,12 +90,12 @@ describe("component extract", () => {
         {
           "removed": [],
           "written": [
-            "components/toolbar.json",
+            "fragments/toolbar.json",
             "roots/page.json",
           ],
         },
         {
-          "component": {
+          "fragment": {
             "children": [
               {
                 "id": "wordmark",
@@ -129,7 +129,7 @@ describe("component extract", () => {
 
   it("refuses a file's root", () => {
     const { run } = cliProject({ "types.json": types, "roots/page.json": page() });
-    expect(run("component", "extract", "page")).toMatchObject({
+    expect(run("fragment", "extract", "page")).toMatchObject({
       code: 1,
       stderr:
         'dimensions: "page" is the top node of its file; only a node inside one can be extracted\n',
@@ -142,7 +142,7 @@ describe("node include and uninclude", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       "types.json": types,
-      "components/toolbar.json": { version: 1, component: { id: "toolbar", title: "Toolbar" } },
+      "fragments/toolbar.json": { version: 1, fragment: { id: "toolbar", title: "Toolbar" } },
       "roots/page.json": page(),
     });
     snapshot.push(run("node", "include", "page", "toolbar").code);
@@ -188,8 +188,8 @@ describe("node include and uninclude", () => {
     `);
   });
 
-  it("refuse unknown components", () => {
+  it("refuse unknown fragments", () => {
     const { run } = cliProject({ "types.json": types, "roots/page.json": page() });
-    expect(run("node", "include", "page", "nope").stderr).toContain("unknown-component");
+    expect(run("node", "include", "page", "nope").stderr).toContain("unknown-fragment");
   });
 });

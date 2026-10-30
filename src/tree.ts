@@ -48,10 +48,10 @@ export interface Transition {
   focus?: string;
 }
 
-// Brings a component's subtree in at this position.
+// Brings a fragment's subtree in at this position.
 export interface Include {
   include: string;
-  // Node in the component -> state group -> the only values it has here.
+  // Node in the fragment -> state group -> the only values it has here.
   states?: Record<string, Record<string, string[]>>;
 }
 
@@ -78,10 +78,10 @@ export interface RootFile {
   root: TreeNode;
 }
 
-// components/<id>.json
-export interface ComponentFile {
+// fragments/<id>.json
+export interface FragmentFile {
   version: number;
-  component: TreeNode;
+  fragment: TreeNode;
 }
 
 // dimensions/<name>.json
@@ -147,8 +147,8 @@ export interface VerificationFile {
 
 export interface Project {
   types: TypesFile;
-  // Reusable components, in file name order.
-  components: TreeNode[];
+  // Reusable fragments, in file name order.
+  fragments: TreeNode[];
   // Roots, in root file name order.
   roots: TreeNode[];
   // By dimension name.
@@ -161,7 +161,7 @@ export interface Project {
 }
 
 // Finds a node by id among the given trees. Includes are skipped: an
-// included node is found by searching the components as well.
+// included node is found by searching the fragments as well.
 export function findNode(nodes: Child[], id: string): TreeNode | undefined {
   for (const node of nodes) {
     if (isInclude(node)) {

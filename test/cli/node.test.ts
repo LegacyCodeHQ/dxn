@@ -106,21 +106,21 @@ describe("node add", () => {
     `);
   });
 
-  it("adds into components", () => {
+  it("adds into fragments", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project({
-      "components/toolbar.json": { version: 1, component: { id: "toolbar", title: "Toolbar" } },
+      "fragments/toolbar.json": { version: 1, fragment: { id: "toolbar", title: "Toolbar" } },
     });
     snapshot.push(
       run("node", "add", "wordmark", "--title", "Wordmark", "--parent", "toolbar").code,
     );
-    snapshot.push(read("components/toolbar.json"));
+    snapshot.push(read("fragments/toolbar.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     0,
     {
-      "component": {
+      "fragment": {
         "children": [
           {
             "id": "wordmark",
@@ -452,15 +452,15 @@ describe("node rename", () => {
 `);
   });
 
-  it("renames a component's file and the includes that use it", () => {
+  it("renames a fragment's file and the includes that use it", () => {
     const snapshot: unknown[] = [];
     const { run, read, exists } = project({
-      "components/toolbar.json": { version: 1, component: { id: "toolbar", title: "Toolbar" } },
+      "fragments/toolbar.json": { version: 1, fragment: { id: "toolbar", title: "Toolbar" } },
       "roots/page.json": page([{ include: "toolbar" }]),
     });
     snapshot.push(run("node", "rename", "toolbar", "header").code);
-    snapshot.push(exists("components/toolbar.json"));
-    snapshot.push(read("components/header.json"));
+    snapshot.push(exists("fragments/toolbar.json"));
+    snapshot.push(read("fragments/header.json"));
     snapshot.push(read("roots/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -468,7 +468,7 @@ describe("node rename", () => {
         0,
         false,
         {
-          "component": {
+          "fragment": {
             "id": "header",
             "title": "Toolbar",
           },

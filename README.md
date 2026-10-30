@@ -17,7 +17,7 @@ Everything is a CLI call that prints JSON, run inside a project (the nearest
 dimensions --help                  # every command
 dimensions help contexts           # one command's usage; no project needed
 dimensions validate                # does the project compile? errors: file:line:col: code: message
-dimensions tree                    # the roots and components
+dimensions tree                    # the roots and fragments
 dimensions dimension list          # what nodes vary over
 dimensions type list               # each type's states, checks and values
 dimensions check list              # declared checks and the types that require them

@@ -1,7 +1,7 @@
 import type { Diagnostics } from "./diagnostic.js";
 import type { StringNode } from "./json.js";
 
-// What types.json and the root and component files declare, used to check references from
+// What types.json and the root and fragment files declare, used to check references from
 // dimension and override files.
 export interface TreeSymbols {
   // Declared custom attribute name -> allowed values (undefined when the
@@ -21,7 +21,7 @@ export interface TreeSymbols {
   ids: Map<string, string>;
   // Node id -> its type name, for nodes that name one.
   nodeTypes: Map<string, string>;
-  // Node id -> ids of its children, including components it includes once
+  // Node id -> ids of its children, including fragments it includes once
   // includes are resolved.
   children: Map<string, string[]>;
   // Node id -> its parent within its own file (include edges excluded).
@@ -29,13 +29,13 @@ export interface TreeSymbols {
   // Node id -> the attribute/state pairs its own customAttributes set, as keys
   // from valueKey.
   nodeValues: Map<string, Set<string>>;
-  // Ids of the components in components/.
-  components: Set<string>;
-  // Every include node, resolved once all node and component files are read.
+  // Ids of the fragments in fragments/.
+  fragments: Set<string>;
+  // Every include node, resolved once all node and fragment files are read.
   includes: IncludeRef[];
   // "states" on includes, checked once includes are resolved.
   includeStates: IncludeStateRef[];
-  // "<parent>><component>" -> node -> group -> the values it has through
+  // "<parent>><fragment>" -> node -> group -> the values it has through
   // that include.
   includeRestrictions: Map<string, Map<string, Map<string, Set<string>>>>;
   // Types whose states their instances' subtrees vary with.
@@ -122,14 +122,14 @@ export interface OverrideEntry {
   removed: Map<string, Located>;
 }
 
-// An { "include": "<component>" } node.
+// An { "include": "<fragment>" } node.
 export interface IncludeRef {
-  component: StringNode;
+  fragment: StringNode;
   path: string;
   diagnostics: Diagnostics;
   // Id of the node the include is a child of, when that node is valid.
   parent: string | undefined;
-  // Id of the root or component of the file the include is in.
+  // Id of the root or fragment of the file the include is in.
   root: string;
 }
 

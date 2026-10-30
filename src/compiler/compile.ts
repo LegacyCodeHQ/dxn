@@ -2,8 +2,8 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type {
   CombinationOverridesFile,
-  ComponentFile,
   DimensionFile,
+  FragmentFile,
   OverridesFile,
   Project,
   RootFile,
@@ -48,7 +48,7 @@ interface ParsedFile {
 // Compiles a project directory:
 //
 //   types.json               required: custom attribute declarations and types
-//   components/<id>.json     one reusable component per file, named after its id
+//   fragments/<id>.json     one reusable fragment per file, named after its id
 //   roots/<id>.json          one root per file, named after its id
 //   dimensions/<name>.json   one dimension per file
 //   overrides/<name>.json    overrides for the dimension of the same name
@@ -79,12 +79,12 @@ export function compileDirectory(directory: string): DirectoryResult {
   const symbols = emptySymbols();
   checkTypesFile(types.root, types.diagnostics, symbols);
 
-  // Components first, so their ids come before any node that reuses one.
-  const components: ParsedFile[] = [];
+  // Fragments first, so their ids come before any node that reuses one.
+  const fragments: ParsedFile[] = [];
   const nodes: ParsedFile[] = [];
   let nodesComplete = true;
   for (const [folder, key, files] of [
-    ["components", "component", components],
+    ["fragments", "fragment", fragments],
     ["roots", "root", nodes],
   ] as const) {
     for (const name of listJson(directory, folder, problems)) {
@@ -100,8 +100,8 @@ export function compileDirectory(directory: string): DirectoryResult {
         continue;
       }
       files.push(file);
-      if (key === "component") {
-        symbols.components.add(name);
+      if (key === "fragment") {
+        symbols.fragments.add(name);
       }
       checkRootFile(file.root, file.diagnostics, symbols, file.file, name, key);
     }
@@ -289,7 +289,7 @@ export function compileDirectory(directory: string): DirectoryResult {
   return {
     project: {
       types: JSON.parse(types.source) as TypesFile,
-      components: components.map((file) => (JSON.parse(file.source) as ComponentFile).component),
+      fragments: fragments.map((file) => (JSON.parse(file.source) as FragmentFile).fragment),
       roots: nodes.map((file) => (JSON.parse(file.source) as RootFile).root),
       dimensions: Object.fromEntries(
         [...dimensions].map(([name, { parsed: file }]) => [

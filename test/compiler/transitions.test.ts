@@ -35,9 +35,9 @@ const project = (menu: Record<string, unknown> = {}, extra: Files = {}): Files =
     customChecks: { behavior: {} },
     types: { menu: { states: ["closed", "open"], shared: true, checks: ["behavior"] } },
   },
-  "components/toolbar.json": {
+  "fragments/toolbar.json": {
     version: 1,
-    component: {
+    fragment: {
       id: "toolbar",
       title: "Toolbar",
       children: [
@@ -84,8 +84,8 @@ const project = (menu: Record<string, unknown> = {}, extra: Files = {}): Files =
   ...extra,
 });
 
-const k = at("components/toolbar.json");
-const path = "$.component.children[2].transitions";
+const k = at("fragments/toolbar.json");
+const path = "$.fragment.children[2].transitions";
 const withTransition = (transition: Record<string, unknown>) =>
   diagnose(project({ transitions: [transition] }));
 const base = { id: "t", from: "open", to: "closed" };
@@ -123,39 +123,39 @@ describe("transitions", () => {
         [
           {
             "code": "wrong-type",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions",
           },
         ],
         [
           {
             "code": "missing-key",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].from",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].from",
           },
           {
             "code": "missing-key",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].to",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].to",
           },
           {
             "code": "missing-key",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].on",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].on",
           },
         ],
         [
           {
             "code": "unknown-key",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].extra",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].extra",
           },
         ],
         [
           {
             "code": "duplicate-id",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[1].id",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[1].id",
           },
         ],
       ]
@@ -175,43 +175,43 @@ describe("transitions", () => {
         [
           {
             "code": "unknown-state",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].from",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].from",
           },
         ],
         [
           {
             "code": "unknown-event",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].on",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].on",
           },
         ],
         [
           {
             "code": "missing-key",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].key",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].key",
           },
         ],
         [
           {
             "code": "missing-key",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].target",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].target",
           },
         ],
         [
           {
             "code": "missing-key",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].target",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].target",
           },
         ],
         [
           {
             "code": "missing-key",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].when",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].when",
           },
         ],
       ]
@@ -234,36 +234,36 @@ describe("transitions", () => {
         [
           {
             "code": "unknown-node",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].target",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].target",
           },
         ],
         [
           {
             "code": "unknown-node",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].outside",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].outside",
           },
         ],
         [
           {
             "code": "target-absent",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].target",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].target",
           },
         ],
         [
           {
             "code": "focus-absent",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].focus",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].focus",
           },
         ],
         [
           {
             "code": "focus-absent",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].focus",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].focus",
           },
         ],
       ]
@@ -279,15 +279,15 @@ describe("transitions", () => {
         [
           {
             "code": "undeclared-dimension",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].when.theme",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].when.theme",
           },
         ],
         [
           {
             "code": "unknown-dimension-value",
-            "file": "components/toolbar.json",
-            "path": "$.component.children[2].transitions[0].when.breakpoint[0]",
+            "file": "fragments/toolbar.json",
+            "path": "$.fragment.children[2].transitions[0].when.breakpoint[0]",
           },
         ],
       ]
@@ -308,8 +308,8 @@ describe("transitions", () => {
       [
         {
           "code": "duplicate-transition",
-          "file": "components/toolbar.json",
-          "path": "$.component.children[2].transitions[1]",
+          "file": "fragments/toolbar.json",
+          "path": "$.fragment.children[2].transitions[1]",
         },
       ]
     `);

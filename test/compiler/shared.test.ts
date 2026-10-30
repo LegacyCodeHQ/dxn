@@ -17,7 +17,7 @@ const types = {
 // exists only when the menu is open.
 const toolbar = (panel: Record<string, unknown> = {}, extra: unknown[] = []) => ({
   version: 1,
-  component: {
+  fragment: {
     id: "toolbar",
     title: "Toolbar",
     children: [
@@ -43,7 +43,7 @@ const toolbar = (panel: Record<string, unknown> = {}, extra: unknown[] = []) => 
 
 const project = (overrides: Files = {}): Files => ({
   "types.json": types,
-  "components/toolbar.json": toolbar(),
+  "fragments/toolbar.json": toolbar(),
   "roots/page.json": {
     version: 1,
     root: { id: "page", title: "Page", children: [{ include: "toolbar" }] },
@@ -53,8 +53,8 @@ const project = (overrides: Files = {}): Files => ({
 });
 
 const _t = at("types.json");
-const k = at("components/toolbar.json");
-const panelPath = "$.component.children[0].children[1]";
+const k = at("fragments/toolbar.json");
+const panelPath = "$.fragment.children[0].children[1]";
 
 describe("shared types", () => {
   it("let a node's subtree vary with its states", () => {
@@ -85,8 +85,8 @@ describe("shared types", () => {
       },
       {
         "code": "ancestor-not-shared",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].children[1].onlyWhen.menu",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].children[1].onlyWhen.menu",
       },
     ],
     [
@@ -103,7 +103,7 @@ describe("shared types", () => {
 
 describe("onlyWhen", () => {
   const withPanel = (onlyWhen: unknown) =>
-    diagnose(project({ "components/toolbar.json": toolbar({ onlyWhen }) }));
+    diagnose(project({ "fragments/toolbar.json": toolbar({ onlyWhen }) }));
 
   it("maps ancestors to non-empty lists of their states", () => {
     const snapshot: unknown[] = [];
@@ -118,36 +118,36 @@ describe("onlyWhen", () => {
     [
       {
         "code": "wrong-type",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].children[1].onlyWhen",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].children[1].onlyWhen",
       },
     ],
     [
       {
         "code": "wrong-type",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].children[1].onlyWhen.menu",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].children[1].onlyWhen.menu",
       },
     ],
     [
       {
         "code": "empty-only",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].children[1].onlyWhen.menu",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].children[1].onlyWhen.menu",
       },
     ],
     [
       {
         "code": "duplicate-state",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].children[1].onlyWhen.menu[1]",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].children[1].onlyWhen.menu[1]",
       },
     ],
     [
       {
         "code": "unknown-state",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].children[1].onlyWhen.menu[0]",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].children[1].onlyWhen.menu[0]",
       },
     ],
   ]
@@ -164,15 +164,15 @@ describe("onlyWhen", () => {
     [
       {
         "code": "not-an-ancestor",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].children[1].onlyWhen.menu-button",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].children[1].onlyWhen.menu-button",
       },
     ],
     [
       {
         "code": "not-an-ancestor",
-        "file": "components/toolbar.json",
-        "path": "$.component.children[0].children[1].onlyWhen.page",
+        "file": "fragments/toolbar.json",
+        "path": "$.fragment.children[0].children[1].onlyWhen.page",
       },
     ],
   ]

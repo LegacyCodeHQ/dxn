@@ -39,10 +39,10 @@ Subcommands:
                  [--key <key>] [--target <node>] [--outside <node>] [--when <dimension>=a,b] [--focus <node>]
                                      Add how a shared node's state changes
   transition remove <node-id> <id>   Remove a transition
-  include <parent-id> <component-id> Include a component under a node
-  include-states <parent-id> <component-id> <node-id> <group> (<value>... | --any)
+  include <parent-id> <fragment-id>  Include a fragment under a node
+  include-states <parent-id> <fragment-id> <node-id> <group> (<value>... | --any)
                                      Fix a node's state group values through that include
-  uninclude <parent-id> <component-id>
+  uninclude <parent-id> <fragment-id>
                                      Remove that include
   set <id> <attribute> <state>=<value>...
                                      Set the node's own custom attribute values
@@ -128,8 +128,8 @@ const rename = editCommand(usage, (workspace, args) => {
   located.item.id = next;
   workspace.touch(located.file);
   if (located.siblings === undefined) {
-    // A root or component file is named after its id.
-    const folder = located.key === "root" ? "roots" : "components";
+    // A root or fragment file is named after its id.
+    const folder = located.key === "root" ? "roots" : "fragments";
     workspace.move(located.file, `${folder}/${next}.json`);
     if (located.key === "root") {
       workspace.move(`verification/${id}.json`, `verification/${next}.json`);
@@ -171,29 +171,29 @@ const unset = editCommand(usage, (workspace, args) => {
 });
 
 const include = editCommand(usage, (workspace, args) => {
-  const [parentId, component] = parse(args, ["parent-id", "component-id"], {}).positionals as [
+  const [parentId, fragment] = parse(args, ["parent-id", "fragment-id"], {}).positionals as [
     string,
     string,
   ];
   const parent = requireNode(workspace, parentId);
   parent.item.children = [
     ...(Array.isArray(parent.item.children) ? parent.item.children : []),
-    { include: component },
+    { include: fragment },
   ];
   reorder(parent.item, nodeOrder);
   workspace.touch(parent.file);
 });
 
 const uninclude = editCommand(usage, (workspace, args) => {
-  const [parentId, component] = parse(args, ["parent-id", "component-id"], {}).positionals as [
+  const [parentId, fragment] = parse(args, ["parent-id", "fragment-id"], {}).positionals as [
     string,
     string,
   ];
   const parent = requireNode(workspace, parentId);
   const children = Array.isArray(parent.item.children) ? parent.item.children : [];
-  const index = children.findIndex((child) => isObject(child) && child.include === component);
+  const index = children.findIndex((child) => isObject(child) && child.include === fragment);
   if (index < 0) {
-    throw new Refusal(`"${parentId}" does not include "${component}"`);
+    throw new Refusal(`"${parentId}" does not include "${fragment}"`);
   }
   children.splice(index, 1);
   workspace.touch(parent.file);
@@ -229,11 +229,11 @@ const onlyWhen = editCommand(usage, (workspace, args) => {
 const includeStates = editCommand(usage, (workspace, args) => {
   const { values, positionals } = parse(
     args,
-    ["parent-id", "component-id", "node-id", "group"],
+    ["parent-id", "fragment-id", "node-id", "group"],
     { any: { type: "boolean" } },
     true,
   );
-  const [parentId, component, id, stateGroup, ...listed] = positionals as [
+  const [parentId, fragment, id, stateGroup, ...listed] = positionals as [
     string,
     string,
     string,
@@ -245,9 +245,9 @@ const includeStates = editCommand(usage, (workspace, args) => {
   }
   const parent = requireNode(workspace, parentId);
   const children = Array.isArray(parent.item.children) ? parent.item.children : [];
-  const include = children.find((child) => isObject(child) && child.include === component);
+  const include = children.find((child) => isObject(child) && child.include === fragment);
   if (!isObject(include)) {
-    throw new Refusal(`"${parentId}" does not include "${component}"`);
+    throw new Refusal(`"${parentId}" does not include "${fragment}"`);
   }
   const states = isObject(include.states) ? include.states : {};
   const byGroup = isObject(states[id]) ? (states[id] as Record<string, unknown>) : {};

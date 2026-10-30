@@ -94,7 +94,7 @@ describe("dimensions show", () => {
       Shows the node's states and custom attribute values in a context. Dimensions
       left out take their default; those without one are not applied. Each shared
       node above the node needs its state wherever it exists. Without --root, a
-      component's node is shown on its own, without any root's include states.
+      fragment's node is shown on its own, without any root's include states.
       ",
       ]
     `);
@@ -175,13 +175,13 @@ describe("dimensions show", () => {
 `);
   });
 
-  it("finds nodes inside components", () => {
+  it("finds nodes inside fragments", () => {
     const snapshot: unknown[] = [];
     const directory = writeProject({
       "types.json": types,
-      "components/toolbar.json": {
+      "fragments/toolbar.json": {
         version: 1,
-        component: { id: "toolbar", title: "Toolbar", children: [{ id: "c", title: "C" }] },
+        fragment: { id: "toolbar", title: "Toolbar", children: [{ id: "c", title: "C" }] },
       },
       "roots/a.json": rootFile({ id: "a", title: "A", children: [{ include: "toolbar" }] }),
     });

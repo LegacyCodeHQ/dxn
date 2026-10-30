@@ -247,7 +247,7 @@ const showUsage = `Usage: dimensions show <node-id> [<dimension>=<value>...] [<s
 Shows the node's states and custom attribute values in a context. Dimensions
 left out take their default; those without one are not applied. Each shared
 node above the node needs its state wherever it exists. Without --root, a
-component's node is shown on its own, without any root's include states.
+fragment's node is shown on its own, without any root's include states.
 `;
 
 export const show = readCommand(showUsage, (resolver, args, io) => {
@@ -309,7 +309,7 @@ const contextsUsage = `Usage: dimensions contexts <node-id> [<name>=<value>...] 
                           [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
 
 Lists every context the node exists in, in each root that contains it.
---subtree lists every part of the node's subtree instead, with the component
+--subtree lists every part of the node's subtree instead, with the fragment
 on its own unless --root names a root. <name>=<value> filters keep only the
 contexts with that dimension value, state or shared node state. --count
 prints counts instead of the contexts. --tree prints them as a merged tree:
@@ -620,5 +620,5 @@ const treeUsage = "Usage: dimensions tree\n";
 
 export const tree = readCommand(treeUsage, (resolver, args, io) => {
   parse(args, [], {});
-  print(io, { roots: resolver.project.roots, components: resolver.project.components });
+  print(io, { roots: resolver.project.roots, fragments: resolver.project.fragments });
 });

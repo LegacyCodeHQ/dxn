@@ -49,11 +49,11 @@ export class Resolver {
   // Node id -> its parent in the same file; roots have none.
   private readonly parents = new Map<string, string>();
   private readonly scopes = new Map<string, Set<string>>();
-  // "<parent>><component>" -> the include's "states".
+  // "<parent>><fragment>" -> the include's "states".
   private readonly includeStates = new Map<string, Record<string, Record<string, string[]>>>();
 
   constructor(readonly project: Project) {
-    for (const root of [...project.roots, ...project.components]) {
+    for (const root of [...project.roots, ...project.fragments]) {
       this.index(root);
     }
     for (const [name, dimension] of Object.entries(project.dimensions)) {

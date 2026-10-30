@@ -11,9 +11,9 @@ const files = {
     customChecks: { visual: {} },
     types: { link: { stateGroups: ["hover", "selection"], checks: ["visual"] } },
   },
-  "components/toolbar.json": {
+  "fragments/toolbar.json": {
     version: 1,
-    component: {
+    fragment: {
       id: "toolbar",
       title: "Toolbar",
       children: [{ id: "blog-link", title: "Blog link", type: "link" }],

@@ -10,9 +10,9 @@ const files = {
     customChecks: { behavior: {} },
     types: { menu: { states: ["closed", "open"], shared: true, checks: ["behavior"] } },
   },
-  "components/toolbar.json": {
+  "fragments/toolbar.json": {
     version: 1,
-    component: {
+    fragment: {
       id: "toolbar",
       title: "Toolbar",
       children: [
@@ -76,7 +76,7 @@ describe("node transition add and remove", () => {
         "toolbar",
       ),
     );
-    snapshot.push(read("components/toolbar.json"));
+    snapshot.push(read("fragments/toolbar.json"));
     snapshot.push(run("node", "transition", "remove", "menu", "outside").code);
     snapshot.push(run("transitions", "menu").stdout);
     expect(snapshot).toMatchInlineSnapshot(`
@@ -85,7 +85,7 @@ describe("node transition add and remove", () => {
         0,
         0,
         {
-          "component": {
+          "fragment": {
             "children": [
               {
                 "children": [
@@ -188,7 +188,7 @@ describe("node transition add and remove", () => {
     );
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "<tmp>/.dimensions/components/toolbar.json:17:23: target-absent: "menu-link" does not exist while "menu" is closed
+        "<tmp>/.dimensions/fragments/toolbar.json:17:23: target-absent: "menu-link" does not exist while "menu" is closed
       ",
         {
           "code": 1,

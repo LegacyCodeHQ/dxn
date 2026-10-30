@@ -29,7 +29,7 @@ plain-states type (`state=open`), or a shared node's state (`menu=open`).
 - Project: [init](#init), [validate](#validate), [status](#status)
 - Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions)
 - Record: [verify](#verify), [unverify](#unverify)
-- Model: [node](#node), [component](#component), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [override](#override)
+- Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [override](#override)
 
 ## Project
 
@@ -81,7 +81,7 @@ dimensions status toolbar
 Usage: dimensions tree
 ```
 
-Prints the roots and components as JSON, as they are written in the files.
+Prints the roots and fragments as JSON, as they are written in the files.
 
 ```bash
 dimensions tree
@@ -96,7 +96,7 @@ Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>
 Shows the node's states and custom attribute values in a context. Dimensions
 left out take their default; those without one are not applied. Each shared
 node above the node needs its state wherever it exists. Without --root, a
-component's node is shown on its own, without any root's include states.
+fragment's node is shown on its own, without any root's include states.
 ```
 
 Prints one node in one context as JSON: its states, its state groups, custom attribute values, and whether it is present. A context argument can be a dimension (`breakpoint=sm`) or a shared node's state (`menu=open`).
@@ -114,7 +114,7 @@ Usage: dimensions contexts <node-id> [<name>=<value>...] [--subtree] [--root <ro
                           [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
 
 Lists every context the node exists in, in each root that contains it.
---subtree lists every part of the node's subtree instead, with the component
+--subtree lists every part of the node's subtree instead, with the fragment
 on its own unless --root names a root. <name>=<value> filters keep only the
 contexts with that dimension value, state or shared node state. --count
 prints counts instead of the contexts. --tree prints them as a merged tree:
@@ -263,10 +263,10 @@ Subcommands:
                  [--key <key>] [--target <node>] [--outside <node>] [--when <dimension>=a,b] [--focus <node>]
                                      Add how a shared node's state changes
   transition remove <node-id> <id>   Remove a transition
-  include <parent-id> <component-id> Include a component under a node
-  include-states <parent-id> <component-id> <node-id> <group> (<value>... | --any)
+  include <parent-id> <fragment-id>  Include a fragment under a node
+  include-states <parent-id> <fragment-id> <node-id> <group> (<value>... | --any)
                                      Fix a node's state group values through that include
-  uninclude <parent-id> <component-id>
+  uninclude <parent-id> <fragment-id>
                                      Remove that include
   set <id> <attribute> <state>=<value>...
                                      Set the node's own custom attribute values
@@ -274,7 +274,7 @@ Subcommands:
                                      Clear some or all of those values
 ```
 
-Edits nodes in `roots/` and `components/`. Renames and removals update every reference: overrides, `only`, `appliesTo`, `onlyWhen`, transitions, include states and verification records. `node only` and `node only-when` say where a node exists: at some values of a dimension (stored as `only` in `overrides/<dimension>.json`), or in some states of a shared ancestor.
+Edits nodes in `roots/` and `fragments/`. Renames and removals update every reference: overrides, `only`, `appliesTo`, `onlyWhen`, transitions, include states and verification records. `node only` and `node only-when` say where a node exists: at some values of a dimension (stored as `only` in `overrides/<dimension>.json`), or in some states of a shared ancestor.
 
 ```bash
 dimensions node add article-page --title "Article page"
@@ -288,23 +288,23 @@ dimensions node only menu breakpoint base sm
 dimensions node only menu breakpoint --everywhere
 ```
 
-### component
+### fragment
 
 ```text
-Usage: dimensions component <subcommand>
+Usage: dimensions fragment <subcommand>
 
 Subcommands:
-  add <id> --title <title>           Add a reusable component in components/<id>.json
-  extract <node-id>                  Move a node's subtree into a component, included in its place
-  remove <id>                        Remove a component
+  add <id> --title <title>           Add a reusable fragment in fragments/<id>.json
+  extract <node-id>                  Move a node's subtree into a fragment, included in its place
+  remove <id>                        Remove a fragment
 ```
 
-Edits reusable components in `components/`.
+Edits reusable fragments in `fragments/`.
 
 ```bash
-dimensions component add toolbar --title Toolbar
-# toolbar was a child of article-page: move it to components/toolbar.json
-dimensions component extract toolbar
+dimensions fragment add toolbar --title Toolbar
+# toolbar was a child of article-page: move it to fragments/toolbar.json
+dimensions fragment extract toolbar
 ```
 
 ### type

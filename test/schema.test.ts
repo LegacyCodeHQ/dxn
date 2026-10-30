@@ -194,7 +194,7 @@ agree("root", (doc) => ({ "types.json": types, "roots/a.json": doc }), {
   ],
   crossReference: [
     ["file-name-mismatch", node({ id: "b", title: "B" })],
-    ["unknown-component", a({ children: [{ include: "footer" }] })],
+    ["unknown-fragment", a({ children: [{ include: "footer" }] })],
     ["not-an-ancestor", a({ children: [{ id: "b", title: "B", onlyWhen: { x: ["y"] } }] })],
     ["duplicate-id", a({ children: [{ id: "a", title: "Again" }] })],
     ["undefined-type", a({ type: "button" })],
@@ -204,17 +204,17 @@ agree("root", (doc) => ({ "types.json": types, "roots/a.json": doc }), {
   ],
 });
 
-const toolbar = { version: 1, component: { id: "toolbar", title: "Toolbar" } };
+const toolbar = { version: 1, fragment: { id: "toolbar", title: "Toolbar" } };
 
-agree("component", (doc) => ({ "types.json": types, "components/toolbar.json": doc }), {
+agree("fragment", (doc) => ({ "types.json": types, "fragments/toolbar.json": doc }), {
   valid: [
-    ["a component", toolbar],
+    ["a fragment", toolbar],
     ["a $schema reference", { $schema: "x", ...toolbar }],
     [
-      "a component with children",
+      "a fragment with children",
       {
         version: 1,
-        component: { id: "toolbar", title: "Toolbar", children: [{ id: "b", title: "B" }] },
+        fragment: { id: "toolbar", title: "Toolbar", children: [{ id: "b", title: "B" }] },
       },
     ],
   ],
@@ -224,17 +224,17 @@ agree("component", (doc) => ({ "types.json": types, "components/toolbar.json": d
     ["unknown-key", { ...toolbar, extra: 1 }],
     [
       "unknown-key",
-      { version: 1, root: { id: "toolbar", title: "T" }, component: toolbar.component },
+      { version: 1, root: { id: "toolbar", title: "T" }, fragment: toolbar.fragment },
     ],
-    ["wrong-type", { version: 1, component: [] }],
-    ["missing-key", { version: 1, component: { id: "toolbar" } }],
-    ["include-at-root", { version: 1, component: { include: "x" } }],
+    ["wrong-type", { version: 1, fragment: [] }],
+    ["missing-key", { version: 1, fragment: { id: "toolbar" } }],
+    ["include-at-root", { version: 1, fragment: { include: "x" } }],
   ],
   crossReference: [
-    ["file-name-mismatch", { version: 1, component: { id: "header", title: "Header" } }],
+    ["file-name-mismatch", { version: 1, fragment: { id: "header", title: "Header" } }],
     [
       "include-cycle",
-      { version: 1, component: { id: "toolbar", title: "T", children: [{ include: "toolbar" }] } },
+      { version: 1, fragment: { id: "toolbar", title: "T", children: [{ include: "toolbar" }] } },
     ],
   ],
 });

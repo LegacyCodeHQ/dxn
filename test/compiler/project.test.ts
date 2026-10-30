@@ -75,8 +75,8 @@ describe("compileDirectory", () => {
         [],
         {
           "combinations": {},
-          "components": [],
           "dimensions": {},
+          "fragments": [],
           "overrides": {},
           "roots": [],
           "types": {
@@ -168,7 +168,7 @@ describe("filesystem", () => {
   });
 
   it("reports a root, dimension or override folder that is a file", () => {
-    for (const folder of ["components", "roots", "dimensions", "overrides", "verification"]) {
+    for (const folder of ["fragments", "roots", "dimensions", "overrides", "verification"]) {
       const directory = writeProject({ "types.json": types });
       writeFileSync(join(directory, folder), "");
       expect(compileDirectory(directory).diagnostics).toMatchObject([

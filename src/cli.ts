@@ -1,8 +1,8 @@
 import { attribute } from "./commands/attribute.js";
 import { check } from "./commands/checks.js";
-import { component } from "./commands/component.js";
 import type { Command } from "./commands/context.js";
 import { dimension } from "./commands/dimension.js";
+import { fragment } from "./commands/fragment.js";
 import { init } from "./commands/init.js";
 import { node } from "./commands/node.js";
 import { override } from "./commands/override.js";
@@ -34,7 +34,7 @@ Project
   status [<node-id>]  Report each required check as passed, failed or missing
 
 Explore
-  tree                Print the roots and components
+  tree                Print the roots and fragments
   show <node-id> [<context>...]
                       Show a node's states and values in one context
   contexts <node-id> [<filter>...]
@@ -54,8 +54,8 @@ Record
 
 Model
   node <subcommand>   Add, move, rename and remove nodes; say where they exist
-  component <subcommand>
-                      Add, extract and remove reusable components
+  fragment <subcommand>
+                      Add, extract and remove reusable fragments
   type <subcommand>   List and add types and states, and set their values
   state-group <subcommand>
                       List and declare groups of states that exclude each other
@@ -97,7 +97,7 @@ const commands: Record<string, Command> = {
   attribute,
   "state-group": stateGroup,
   check,
-  component,
+  fragment,
   dimension,
   override,
   verify,

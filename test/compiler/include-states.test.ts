@@ -18,7 +18,7 @@ const types = {
 
 const toolbar = {
   version: 1,
-  component: {
+  fragment: {
     id: "toolbar",
     title: "Toolbar",
     children: [
@@ -30,7 +30,7 @@ const toolbar = {
 
 const project = (include: Record<string, unknown>, extra: Files = {}): Files => ({
   "types.json": types,
-  "components/toolbar.json": toolbar,
+  "fragments/toolbar.json": toolbar,
   "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
@@ -89,7 +89,7 @@ describe("states on an include", () => {
     `);
   });
 
-  it("name a node in the component, a group its type uses, and values of the group", () => {
+  it("name a node in the fragment, a group its type uses, and values of the group", () => {
     const snapshot: unknown[] = [];
     snapshot.push(diagnose(project({ states: { body: { selection: ["selected"] } } })));
     snapshot.push(diagnose(project({ states: { logo: { selection: ["selected"] } } })));

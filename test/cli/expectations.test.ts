@@ -11,9 +11,9 @@ const files = {
     stateGroups: { hover: ["rest", "hovered"], focus: ["blurred", "focused"] },
     types: { link: { stateGroups: ["hover", "focus"] } },
   },
-  "components/toolbar.json": {
+  "fragments/toolbar.json": {
     version: 1,
-    component: {
+    fragment: {
       id: "toolbar",
       title: "Toolbar",
       children: [{ id: "blog-link", title: "Blog link", type: "link" }],
@@ -147,7 +147,7 @@ describe("expectations checked by validate", () => {
     });
     expect(run("validate").stderr).toMatchInlineSnapshot(`
       "<tmp>/.dimensions/types.json:2:14: unsupported-version: unsupported version 2
-      <tmp>/.dimensions/components/toolbar.json:10:17: undefined-type: type "link" is not defined
+      <tmp>/.dimensions/fragments/toolbar.json:10:17: undefined-type: type "link" is not defined
       <tmp>/.dimensions/overrides/pointer.json:6:9: undefined-type: type "link" is not defined
       "
     `);

@@ -280,13 +280,13 @@ describe("absent nodes", () => {
 `);
   });
 
-  it("include nodes under an absent included component", () => {
+  it("include nodes under an absent included fragment", () => {
     expect(
       diagnose({
         ...project,
-        "components/menu.json": {
+        "fragments/menu.json": {
           version: 1,
-          component: {
+          fragment: {
             id: "menu",
             title: "Menu",
             children: [{ id: "menu-item", title: "Menu item", type: "toolbar-link" }],

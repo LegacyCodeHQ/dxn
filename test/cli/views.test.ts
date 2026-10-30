@@ -15,9 +15,9 @@ const files = {
       "toolbar-link": { states: ["normal", "hovered"], checks: ["visual"] },
     },
   },
-  "components/toolbar.json": {
+  "fragments/toolbar.json": {
     version: 1,
-    component: {
+    fragment: {
       id: "toolbar",
       title: "Toolbar",
       children: [
@@ -65,7 +65,7 @@ const files = {
 const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 
 describe("views", () => {
-  it("lists every distinct view of a component, with shared states only where they exist", () => {
+  it("lists every distinct view of a fragment, with shared states only where they exist", () => {
     const { run } = cliProject(files);
     expect(json(run("views", "toolbar"))).toEqual({
       node: "toolbar",
@@ -80,7 +80,7 @@ describe("views", () => {
     });
   });
 
-  it("works for a root, a node inside a component, and a node that does not vary", () => {
+  it("works for a root, a node inside a fragment, and a node that does not vary", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(json(run("views", "article-page")).views);
@@ -216,7 +216,7 @@ describe("view", () => {
 `);
   });
 
-  it("expands included components in a root", () => {
+  it("expands included fragments in a root", () => {
     const { run } = cliProject(files);
     expect(json(run("view", "article-page")).tree.children[0].id).toBe("toolbar");
   });
@@ -454,7 +454,7 @@ describe("show, like view", () => {
     ]);
   });
 
-  it("shows a component's node on its own unless --root names a root", () => {
+  it("shows a fragment's node on its own unless --root names a root", () => {
     const { run } = cliProject({
       ...files,
       "types.json": {

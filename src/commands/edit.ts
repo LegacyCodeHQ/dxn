@@ -154,16 +154,16 @@ export const typeOrder = ["states", "stateGroups", "shared", "checks", "customAt
 // Where a node is defined.
 export interface Located {
   file: string;
-  key: "root" | "component";
+  key: "root" | "fragment";
   item: Json;
   // The array the node is in, unless it is the file's root.
   siblings?: unknown[];
 }
 
-// Finds a node in the node and component files.
+// Finds a node in the node and fragment files.
 export function locate(workspace: Workspace, id: string): Located | undefined {
   for (const [folder, key] of [
-    ["components", "component"],
+    ["fragments", "fragment"],
     ["roots", "root"],
   ] as const) {
     for (const file of workspace.list(folder)) {
@@ -197,10 +197,10 @@ export function requireNode(workspace: Workspace, id: string): Located {
   return located;
 }
 
-// Every node in the root and component files, with its file.
+// Every node in the root and fragment files, with its file.
 export function* nodeNodes(workspace: Workspace): Generator<[string, Json]> {
   for (const [folder, key] of [
-    ["components", "component"],
+    ["fragments", "fragment"],
     ["roots", "root"],
   ] as const) {
     for (const file of workspace.list(folder)) {

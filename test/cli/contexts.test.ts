@@ -20,9 +20,9 @@ const files = {
       "menu-button": { stateGroups: ["hover", "focus"] },
     },
   },
-  "components/toolbar.json": {
+  "fragments/toolbar.json": {
     version: 1,
-    component: {
+    fragment: {
       id: "toolbar",
       title: "Toolbar",
       children: [
@@ -98,7 +98,7 @@ describe("contexts --subtree", () => {
     `);
   });
 
-  it("lists every part's combinations, the component on its own by default", () => {
+  it("lists every part's combinations, the fragment on its own by default", () => {
     const { run } = cliProject(files);
     const result = json(run("contexts", "toolbar", "--subtree"));
     expect(
@@ -285,7 +285,7 @@ describe("contexts --subtree", () => {
     `);
   });
 
-  it("shows the component as included in a root with --root", () => {
+  it("shows the fragment as included in a root with --root", () => {
     const { run } = cliProject(files);
     expect(
       json(run("contexts", "toolbar", "--subtree", "--root", "article-page", "--count")),

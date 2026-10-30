@@ -54,7 +54,7 @@ Every command that changes files prints the paths it wrote and removed,
 relative to the project directory:
 
 ```json
-{ "written": ["components/toolbar.json"], "removed": [] }
+{ "written": ["fragments/toolbar.json"], "removed": [] }
 ```
 
 With `--dry-run`, nothing is written. The output holds each file's new
@@ -63,7 +63,7 @@ content, plus the paths that would be removed:
 ```json
 {
   "dryRun": true,
-  "written": { "components/toolbar.json": "{\n  \"version\": 1,\n ..." },
+  "written": { "fragments/toolbar.json": "{\n  \"version\": 1,\n ..." },
   "removed": []
 }
 ```
@@ -89,10 +89,10 @@ is above 0.
 
 ```json
 { "roots": [ { "id": "article-page", "title": "Article page", "children": [ ... ] } ],
-  "components": [ { "id": "toolbar", "title": "Toolbar", "children": [ ... ] } ] }
+  "fragments": [ { "id": "toolbar", "title": "Toolbar", "children": [ ... ] } ] }
 ```
 
-The roots, exactly as written in `roots/` and `components/`.
+The roots, exactly as written in `roots/` and `fragments/`.
 
 ## dimension list
 
@@ -148,7 +148,7 @@ For `show blog-link pointer=touch --root article-page`:
 
 - `context` is the full context the answer is for, with defaults filled in,
   and the state of each shared node above the node. Without `--root`, a
-  component's node is shown on its own, so the article page's include would
+  fragment's node is shown on its own, so the article page's include would
   not fix `selection` to `selected`.
 - `present` is false when `only` or `onlyWhen` leaves the node out here. The
   states are still what the node would have.

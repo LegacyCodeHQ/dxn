@@ -20,7 +20,7 @@ export function sharedStates(resolver: Resolver, node: string): string[] {
 }
 
 // The contexts of a node, or of every part of its subtree, with the
-// component on its own unless a root is given.
+// fragment on its own unless a root is given.
 export function subtreeContexts(
   resolver: Resolver,
   id: string,

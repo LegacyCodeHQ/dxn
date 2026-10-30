@@ -11,7 +11,7 @@ has a wordmark, a blog link shown on wide screens, and a menu button that
 opens a panel with the same link on narrow screens.
 
 - [The project folder](#the-project-folder)
-- [Nodes, roots and components](#nodes-roots-and-components)
+- [Nodes, roots and fragments](#nodes-roots-and-fragments)
 - [Types and states](#types-and-states)
 - [State groups](#state-groups)
 - [Dimensions and contexts](#dimensions-and-contexts)
@@ -31,7 +31,7 @@ opens a panel with the same link on narrow screens.
 .dimensions/
   types.json                  state groups, attributes, checks and types
   roots/<root-id>.json        one root per file
-  components/<id>.json        one reusable component per file
+  fragments/<id>.json         one reusable fragment per file
   dimensions/<name>.json      one dimension per file
   overrides/<name>.json       presence and overrides for one dimension
   overrides/<a>+<b>.json      overrides for combinations of dimensions
@@ -49,7 +49,7 @@ or it doesn't. Every editing command compiles the result before it writes
 anything, so a command can't leave the project broken. See
 [diagnostics.md](diagnostics.md).
 
-## Nodes, roots and components
+## Nodes, roots and fragments
 
 A **node** is anything to be built and checked: a page, a toolbar, a link.
 It has an `id` (unique across the project), a `title`, and optionally a
@@ -59,13 +59,13 @@ node that only groups the blog link.
 A **root** is a node with no parent, in `roots/<id>.json`. It is the thing
 being delivered, such as a page, an endpoint or a job. It is also where
 contexts are counted from and where verification records are filed. A
-**component** is a reusable node tree in `components/<id>.json` that roots
-(or other components) **include**:
+**fragment** is a reusable node tree in `fragments/<id>.json` that roots
+(or other fragments) **include**:
 
 ```json
 {
   "version": 1,
-  "component": {
+  "fragment": {
     "id": "toolbar",
     "title": "Toolbar",
     "children": [
@@ -88,7 +88,7 @@ contexts are counted from and where verification records are filed. A
 }
 ```
 
-`dimensions tree` prints the roots and the components.
+`dimensions tree` prints the roots and the fragments.
 
 ## Types and states
 
@@ -274,7 +274,7 @@ transition can be verified like a context (`verify --transition`).
 
 ## Includes and include states
 
-`{ "include": "toolbar" }` puts the component's subtree in place. A root can
+`{ "include": "toolbar" }` puts the fragment's subtree in place. A root can
 fix some of an included node's state groups. On the article page the blog
 link is the current page's link, so it is always `selected`:
 
@@ -288,7 +288,7 @@ link is the current page's link, so it is always `selected`:
 }
 ```
 
-This narrows the root's contexts without changing the component. Set it with
+This narrows the root's contexts without changing the fragment. Set it with
 `dimensions node include-states article-page toolbar blog-link selection
 selected`.
 

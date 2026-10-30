@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "dimensions component",
-  "description": "Editor aid for components/<id>.json: a reusable node tree that roots bring in with { \"include\": \"<id>\" }. The dimensions compiler is the authority: it also checks that the component's id matches the file name, that ids are unique across the project, that included components exist without cycles, and that types, attributes, states and values exist, which this schema cannot express.",
+  "title": "dimensions fragment",
+  "description": "Editor aid for fragments/<id>.json: a reusable node tree that roots bring in with { \"include\": \"<id>\" }. The dimensions compiler is the authority: it also checks that the fragment's id matches the file name, that ids are unique across the project, that included fragments exist without cycles, and that types, attributes, states and values exist, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "component"],
+  "required": ["version", "fragment"],
   "properties": {
     "$schema": {
       "description": "Path or URL of this schema, for editors.",
@@ -14,8 +14,8 @@
       "description": "Format version.",
       "const": 1
     },
-    "component": {
-      "description": "The component's root; its id must match the file name.",
+    "fragment": {
+      "description": "The fragment's root; its id must match the file name.",
       "$ref": "#/$defs/node"
     }
   },
@@ -101,17 +101,17 @@
       }
     },
     "include": {
-      "description": "Brings a component's subtree in at this position.",
+      "description": "Brings a fragment's subtree in at this position.",
       "type": "object",
       "additionalProperties": false,
       "required": ["include"],
       "properties": {
         "include": {
-          "description": "Id of a component in components/.",
+          "description": "Id of a fragment in fragments/.",
           "$ref": "#/$defs/name"
         },
         "states": {
-          "description": "Node in the component -> state group -> the only values that node has through this include.",
+          "description": "Node in the fragment -> state group -> the only values that node has through this include.",
           "type": "object",
           "propertyNames": {
             "$ref": "#/$defs/name"
