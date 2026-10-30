@@ -24,7 +24,7 @@ const usage = `Usage: task-tree task <subcommand>
 
 Subcommands:
   add <id> --title <title> [--parent <id>] [--type <type>]
-                                     Add a task; without --parent, a page in tasks/<id>.json
+                                     Add a task; without --parent, a root in tasks/<id>.json
   set-title <id> <title>             Change a task's title
   set-type <id> <type> | --none      Change or clear a task's type
   move <id> --parent <id>            Move a task and its subtree under another task
@@ -125,7 +125,7 @@ const rename = editCommand(usage, (workspace, args) => {
   located.node.id = next;
   workspace.touch(located.file);
   if (located.siblings === undefined) {
-    // A page or component is named after its root task.
+    // A root or component is named after its root task.
     const folder = located.key === "task" ? "tasks" : "components";
     workspace.move(located.file, `${folder}/${next}.json`);
     if (located.key === "task") {

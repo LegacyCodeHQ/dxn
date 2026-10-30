@@ -8,7 +8,7 @@ export interface Entry {
 }
 
 // A level of the tree: a task, or a name (dimension, shared task, state
-// group, page) with the values that lead to the same subtree.
+// group, root) with the values that lead to the same subtree.
 export type StateNode =
   | { task: string; count: number; transitions?: Transition[]; children?: StateNode[] }
   | { name: string; values: string[]; count: number; children?: StateNode[] };
@@ -28,7 +28,7 @@ export function treeNames(entries: Entry[]): string[] {
 }
 
 // Builds the merged state tree: one level per name, ordered --by names first,
-// then tasks, then the page, dimensions, shared states and state groups.
+// then tasks, then the root, dimensions, shared states and state groups.
 // Sibling branches with identical subtrees share one node, and a dimension
 // level whose values all lead to the same subtree is dropped: it changes
 // nothing there. Shared states and state groups always stay, since they are
@@ -43,7 +43,7 @@ export function buildStateTree(
     (a, b) => firstSeen(projected, a) - firstSeen(projected, b),
   );
   const rank = (name: string) =>
-    name === "page"
+    name === "root"
       ? 0
       : resolver.project.dimensions[name] !== undefined
         ? 1

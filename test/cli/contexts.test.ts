@@ -70,7 +70,7 @@ const files = {
 const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 
 describe("contexts --subtree", () => {
-  it("leaves out a page's include states unless --page names the page", () => {
+  it("leaves out a root's include states unless --root names the root", () => {
     const { run } = cliProject({
       ...files,
       "tasks/article-page.json": taskFile({
@@ -80,11 +80,11 @@ describe("contexts --subtree", () => {
       }),
     });
     const snapshot: unknown[] = [];
-    for (const page of [[], ["--page", "article-page"]]) {
-      const result = json(run("contexts", "toolbar", "--subtree", "--count", ...page));
+    for (const root of [[], ["--root", "article-page"]]) {
+      const result = json(run("contexts", "toolbar", "--subtree", "--count", ...root));
       snapshot.push(result.counts["blog-link"]);
       const selected = json(
-        run("contexts", "toolbar", "--subtree", "selection=unselected", "--count", ...page),
+        run("contexts", "toolbar", "--subtree", "selection=unselected", "--count", ...root),
       );
       snapshot.push(selected.counts["blog-link"]);
     }
@@ -285,10 +285,10 @@ describe("contexts --subtree", () => {
     `);
   });
 
-  it("shows the component as included on a page with --page", () => {
+  it("shows the component as included in a root with --root", () => {
     const { run } = cliProject(files);
     expect(
-      json(run("contexts", "toolbar", "--subtree", "--page", "article-page", "--count")),
+      json(run("contexts", "toolbar", "--subtree", "--root", "article-page", "--count")),
     ).toMatchInlineSnapshot(`
       {
         "counts": {
@@ -301,7 +301,7 @@ describe("contexts --subtree", () => {
           "toolbar-links": 2,
           "wordmark": 16,
         },
-        "page": "article-page",
+        "root": "article-page",
         "task": "toolbar",
         "total": 76,
       }
@@ -424,7 +424,7 @@ describe("contexts filters", () => {
                 "hover": "hovered",
                 "selection": "selected",
               },
-              "page": "article-page",
+              "root": "article-page",
             },
             {
               "context": {
@@ -433,7 +433,7 @@ describe("contexts filters", () => {
                 "hover": "hovered",
                 "selection": "selected",
               },
-              "page": "article-page",
+              "root": "article-page",
             },
             {
               "context": {
@@ -442,7 +442,7 @@ describe("contexts filters", () => {
                 "hover": "hovered",
                 "selection": "selected",
               },
-              "page": "article-page",
+              "root": "article-page",
             },
             {
               "context": {
@@ -451,7 +451,7 @@ describe("contexts filters", () => {
                 "hover": "hovered",
                 "selection": "selected",
               },
-              "page": "article-page",
+              "root": "article-page",
             },
           ],
           "task": "blog-link",
@@ -490,7 +490,7 @@ describe("contexts filters", () => {
     snapshot.push(run("contexts", "toolbar", "--subtree", "hover=yes").stderr);
     snapshot.push(run("contexts", "toolbar", "--subtree", "menu=ajar").stderr);
     snapshot.push(run("contexts", "toolbar", "--subtree", "hover").code);
-    snapshot.push(run("contexts", "toolbar", "--subtree", "--page", "nope").stderr);
+    snapshot.push(run("contexts", "toolbar", "--subtree", "--root", "nope").stderr);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {
@@ -506,7 +506,7 @@ describe("contexts filters", () => {
         "task-tree: "ajar" is not a state of menu (closed, open)
       ",
         2,
-        "task-tree: "toolbar" is not on page "nope"
+        "task-tree: "toolbar" is not in root "nope"
       ",
       ]
     `);

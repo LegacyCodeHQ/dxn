@@ -192,7 +192,7 @@ describe("query", () => {
 });
 
 describe("contexts", () => {
-  it("lists every context a task exists in, per page", () => {
+  it("lists every context a task exists in, per root", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(json(run("contexts", "blog-link")));
@@ -209,7 +209,7 @@ describe("contexts", () => {
             "pointer": "mouse",
             "state": "normal",
           },
-          "page": "page",
+          "root": "page",
         },
         {
           "context": {
@@ -217,7 +217,7 @@ describe("contexts", () => {
             "pointer": "mouse",
             "state": "hovered",
           },
-          "page": "page",
+          "root": "page",
         },
         {
           "context": {
@@ -225,7 +225,7 @@ describe("contexts", () => {
             "pointer": "touch",
             "state": "normal",
           },
-          "page": "page",
+          "root": "page",
         },
       ],
       "task": "blog-link",
@@ -237,7 +237,7 @@ describe("contexts", () => {
           "pointer": "mouse",
           "state": "normal",
         },
-        "page": "page",
+        "root": "page",
       },
       {
         "context": {
@@ -245,7 +245,7 @@ describe("contexts", () => {
           "pointer": "mouse",
           "state": "hovered",
         },
-        "page": "page",
+        "root": "page",
       },
       {
         "context": {
@@ -253,7 +253,7 @@ describe("contexts", () => {
           "pointer": "touch",
           "state": "normal",
         },
-        "page": "page",
+        "root": "page",
       },
     ],
     [
@@ -262,14 +262,14 @@ describe("contexts", () => {
           "breakpoint": "lg",
           "pointer": "mouse",
         },
-        "page": "page",
+        "root": "page",
       },
       {
         "context": {
           "breakpoint": "lg",
           "pointer": "touch",
         },
-        "page": "page",
+        "root": "page",
       },
     ],
   ]
@@ -293,21 +293,21 @@ describe("status", () => {
       summary: { passed: 1, failed: 1, missing: 1 },
       items: [
         {
-          page: "page",
+          root: "page",
           task: "blog-link",
           context: { state: "normal", breakpoint: "lg", pointer: "mouse" },
           check: "visual",
           result: "passed",
         },
         {
-          page: "page",
+          root: "page",
           task: "blog-link",
           context: { state: "hovered", breakpoint: "lg", pointer: "mouse" },
           check: "visual",
           result: "missing",
         },
         {
-          page: "page",
+          root: "page",
           task: "blog-link",
           context: { state: "normal", breakpoint: "lg", pointer: "touch" },
           check: "visual",
@@ -323,7 +323,7 @@ describe("status", () => {
   });
 });
 
-describe("tasks no page includes", () => {
+describe("tasks no root includes", () => {
   it("resolve within their own component and have no contexts", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({
@@ -365,14 +365,14 @@ describe("tasks no page includes", () => {
 });
 
 describe("tree", () => {
-  it("prints the pages and components", () => {
+  it("prints the roots and components", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({
       ...files,
       "components/footer.json": { version: 1, component: { id: "footer", title: "Footer" } },
     });
     const result = json(run("tree"));
-    snapshot.push(result.pages.map((page: { id: string }) => page.id));
+    snapshot.push(result.roots.map((root: { id: string }) => root.id));
     snapshot.push(result.components);
 
     expect(snapshot).toMatchInlineSnapshot(`

@@ -80,7 +80,7 @@ describe("views", () => {
     });
   });
 
-  it("works for a page, a task inside a component, and a task that does not vary", () => {
+  it("works for a root, a task inside a component, and a task that does not vary", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(json(run("views", "article-page")).views);
@@ -216,7 +216,7 @@ describe("view", () => {
 `);
   });
 
-  it("expands included components in a page", () => {
+  it("expands included components in a root", () => {
     const { run } = cliProject(files);
     expect(json(run("view", "article-page")).tree.children[0].id).toBe("toolbar");
   });
@@ -320,28 +320,28 @@ describe("shared states in the other reading commands", () => {
           "breakpoint": "base",
           "menu": "closed",
         },
-        "page": "article-page",
+        "root": "article-page",
       },
       {
         "context": {
           "breakpoint": "base",
           "menu": "open",
         },
-        "page": "article-page",
+        "root": "article-page",
       },
       {
         "context": {
           "breakpoint": "sm",
           "menu": "closed",
         },
-        "page": "article-page",
+        "root": "article-page",
       },
       {
         "context": {
           "breakpoint": "sm",
           "menu": "open",
         },
-        "page": "article-page",
+        "root": "article-page",
       },
     ],
     [
@@ -351,7 +351,7 @@ describe("shared states in the other reading commands", () => {
           "menu": "open",
           "state": "normal",
         },
-        "page": "article-page",
+        "root": "article-page",
       },
       {
         "context": {
@@ -359,7 +359,7 @@ describe("shared states in the other reading commands", () => {
           "menu": "open",
           "state": "hovered",
         },
-        "page": "article-page",
+        "root": "article-page",
       },
       {
         "context": {
@@ -367,7 +367,7 @@ describe("shared states in the other reading commands", () => {
           "menu": "open",
           "state": "normal",
         },
-        "page": "article-page",
+        "root": "article-page",
       },
       {
         "context": {
@@ -375,7 +375,7 @@ describe("shared states in the other reading commands", () => {
           "menu": "open",
           "state": "hovered",
         },
-        "page": "article-page",
+        "root": "article-page",
       },
     ],
   ]

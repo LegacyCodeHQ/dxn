@@ -88,7 +88,7 @@ is above 0.
 ## tree
 
 ```json
-{ "pages": [ { "id": "article-page", "title": "Article page", "children": [ ... ] } ],
+{ "roots": [ { "id": "article-page", "title": "Article page", "children": [ ... ] } ],
   "components": [ { "id": "toolbar", "title": "Toolbar", "children": [ ... ] } ] }
 ```
 
@@ -136,14 +136,14 @@ The root tasks, exactly as written in `tasks/` and `components/`.
 
 ## contexts
 
-Without `--subtree`, one entry per context, with the page it is on:
+Without `--subtree`, one entry per context, with the root it is in:
 
 ```json
 {
   "task": "menu-button",
   "contexts": [
     {
-      "page": "article-page",
+      "root": "article-page",
       "context": {
         "hover": "rest",
         "focus": "blurred",
@@ -307,7 +307,7 @@ Each transition is written as it is in the file. See
   "summary": { "passed": 1, "failed": 0, "missing": 40 },
   "items": [
     {
-      "page": "article-page",
+      "root": "article-page",
       "task": "blog-link",
       "context": {
         "hover": "rest",
@@ -325,7 +325,7 @@ Each transition is written as it is in the file. See
 ```
 
 There is one item per required check, per context the task exists in, on
-each page, and one per required check per transition of a shared task.
+each root, and one per required check per transition of a shared task.
 `result` is `passed`, `failed` or `missing`. A transition's item has
 `transition` instead of `context`. To see who verified a context and when,
-read `verification/<page-id>.json`.
+read `verification/<root-id>.json`.

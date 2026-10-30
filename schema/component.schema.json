@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "task-tree component",
-  "description": "Editor aid for components/<id>.json: a reusable task tree that pages bring in with { \"include\": \"<id>\" }. The task-tree compiler is the authority: it also checks that the component's id matches the file name, that ids are unique across the project, that included components exist without cycles, and that types, attributes, states and values exist, which this schema cannot express.",
+  "description": "Editor aid for components/<id>.json: a reusable task tree that roots bring in with { \"include\": \"<id>\" }. The task-tree compiler is the authority: it also checks that the component's id matches the file name, that ids are unique across the project, that included components exist without cycles, and that types, attributes, states and values exist, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "component"],

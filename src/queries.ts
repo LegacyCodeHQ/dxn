@@ -20,15 +20,15 @@ export function sharedStates(resolver: Resolver, task: string): string[] {
 }
 
 // The contexts of a task, or of every part of its subtree, with the
-// component on its own unless a page is given.
+// component on its own unless a root is given.
 export function subtreeContexts(
   resolver: Resolver,
   id: string,
-  page: string | undefined,
+  root: string | undefined,
 ): { id: string; contexts: Context[] }[] {
   return resolver
     .subtree(id)
-    .map((task) => ({ id: task, contexts: resolver.contexts(task, page) }));
+    .map((task) => ({ id: task, contexts: resolver.contexts(task, root) }));
 }
 
 // A predicate for name=value filters. Names must appear in the contexts
@@ -40,7 +40,7 @@ export function contextFilter(
   resolver: Resolver,
   wanted: [string, string][],
   contexts: Context[],
-  page: string | undefined,
+  root: string | undefined,
 ): (context: Context) => boolean {
   const names = [...new Set(contexts.flatMap((context) => Object.keys(context)))].sort();
   for (const [name, value] of wanted) {
@@ -69,7 +69,7 @@ export function contextFilter(
   const inView = (name: string, context: Context) => {
     if (resolver.project.dimensions[name] !== undefined) return true;
     if (!resolver.isShared(name)) return false;
-    return resolver.resolve(name, context, resolver.lineage(name, page)).present;
+    return resolver.resolve(name, context, resolver.lineage(name, root)).present;
   };
   return (context) =>
     wanted.every(([name, value]) =>

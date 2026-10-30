@@ -287,8 +287,8 @@ describe("transitions in status and verify", () => {
               "context": {
                 "menu": "closed",
               },
-              "page": "article-page",
               "result": "missing",
+              "root": "article-page",
               "task": "menu",
             },
             {
@@ -296,21 +296,21 @@ describe("transitions in status and verify", () => {
               "context": {
                 "menu": "open",
               },
-              "page": "article-page",
               "result": "missing",
+              "root": "article-page",
               "task": "menu",
             },
             {
               "check": "behavior",
-              "page": "article-page",
               "result": "passed",
+              "root": "article-page",
               "task": "menu",
               "transition": "open",
             },
             {
               "check": "behavior",
-              "page": "article-page",
               "result": "missing",
+              "root": "article-page",
               "task": "menu",
               "transition": "close",
             },

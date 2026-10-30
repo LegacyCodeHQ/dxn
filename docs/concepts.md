@@ -11,7 +11,7 @@ has a wordmark, a blog link shown on wide screens, and a menu button that
 opens a panel with the same link on narrow screens.
 
 - [The project folder](#the-project-folder)
-- [Tasks, pages and components](#tasks-pages-and-components)
+- [Tasks, roots and components](#tasks-roots-and-components)
 - [Types and states](#types-and-states)
 - [State groups](#state-groups)
 - [Dimensions and contexts](#dimensions-and-contexts)
@@ -30,12 +30,12 @@ opens a panel with the same link on narrow screens.
 ```
 .task-tree/
   types.json                  state groups, attributes, checks and types
-  tasks/<page-id>.json        one page (a root task) per file
+  tasks/<root-id>.json        one root per file
   components/<id>.json        one reusable component per file
   dimensions/<name>.json      one dimension per file
   overrides/<name>.json       presence and overrides for one dimension
   overrides/<a>+<b>.json      overrides for combinations of dimensions
-  verification/<page-id>.json check results for tasks on that page
+  verification/<root-id>.json check results for tasks in that root
   expectations.json           counts the model must produce
 ```
 
@@ -49,15 +49,18 @@ or it doesn't. Every editing command compiles the result before it writes
 anything, so a command can't leave the project broken. See
 [diagnostics.md](diagnostics.md).
 
-## Tasks, pages and components
+## Tasks, roots and components
 
 A **task** is anything to be built and checked: a page, a toolbar, a link.
 It has an `id` (unique across the project), a `title`, and optionally a
 `type` and `children`. A task is not necessarily a UI component. "Links" is a
 task that only groups the blog link.
 
-A **page** is a root task in `tasks/<id>.json`. A **component** is a root task
-in `components/<id>.json` that pages (or other components) **include**:
+A **root** is a task with no parent, in `tasks/<id>.json`. It is the thing
+being delivered, such as a page, an endpoint or a job. It is also where
+contexts are counted from and where verification records are filed. A
+**component** is a reusable task tree in `components/<id>.json` that roots
+(or other components) **include**:
 
 ```json
 {
@@ -85,7 +88,7 @@ in `components/<id>.json` that pages (or other components) **include**:
 }
 ```
 
-`task-tree tree` prints the pages and the components.
+`task-tree tree` prints the roots and the components.
 
 ## Types and states
 
@@ -271,7 +274,7 @@ transition can be verified like a context (`verify --transition`).
 
 ## Includes and include states
 
-`{ "include": "toolbar" }` puts the component's subtree in place. A page can
+`{ "include": "toolbar" }` puts the component's subtree in place. A root can
 fix some of an included task's state groups. On the article page the blog
 link is the current page's link, so it is always `selected`:
 
@@ -285,7 +288,7 @@ link is the current page's link, so it is always `selected`:
 }
 ```
 
-This narrows the page's contexts without changing the component. Set it with
+This narrows the root's contexts without changing the component. Set it with
 `task-tree task include-states article-page toolbar blog-link selection
 selected`.
 
@@ -311,7 +314,7 @@ their tasks need (`"checks": ["visual"]`). Every typed task must then pass
 each required check in every context it exists in.
 
 A **verification record** says that a check passed or failed in one context,
-by whom and when. Records live in `verification/<page-id>.json`:
+by whom and when. Records live in `verification/<root-id>.json`:
 
 ```json
 {
@@ -343,7 +346,7 @@ error:
   "title": "Touch screens never show hover",
   "task": "toolbar",
   "subtree": true,
-  "page": "article-page",
+  "root": "article-page",
   "where": { "pointer": "touch", "hover": "hovered" },
   "count": 0
 }

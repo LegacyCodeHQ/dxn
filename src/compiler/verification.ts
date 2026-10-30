@@ -332,7 +332,7 @@ function checkContext(
   const inGroup = (group: string, value: string) =>
     group === "state" || tree.stateGroups.get(group)?.has(value) === true;
 
-  // Shared ancestors on the path from the page: their states are context keys.
+  // Shared ancestors on the path from the root: their states are context keys.
   const shared = ancestry.slice(0, -1).filter((id) => {
     const ancestorType = tree.taskTypes.get(id);
     return ancestorType !== undefined && tree.sharedTypes.has(ancestorType);
@@ -435,7 +435,7 @@ function checkContext(
     return undefined;
   }
   // "only" in any applicable dimension, on the task or a task above it on
-  // the path from the page, can leave it out of this context.
+  // the path from the root, can leave it out of this context.
   const absentIn = applicable.find((name) => {
     const value = values.get(name);
     const only = dimensions.get(name)?.symbol.only;
@@ -447,7 +447,7 @@ function checkContext(
       })
     );
   });
-  // An include on the path from the page may fix some of the task's groups.
+  // An include on the path from the root may fix some of the task's groups.
   for (let index = 0; index + 1 < ancestry.length; index++) {
     const restrictions = tree.includeRestrictions
       .get(`${ancestry[index]}>${ancestry[index + 1]}`)
@@ -541,7 +541,7 @@ function statesInContext(
   return { states, removed };
 }
 
-// Ids from the page down to the task, through included components.
+// Ids from the root down to the task, through included components.
 function lineage(
   tree: TreeSymbols,
   from: string,

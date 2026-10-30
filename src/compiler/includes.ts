@@ -2,10 +2,10 @@ import { report } from "./shape.js";
 import type { IncludeRef, TreeSymbols } from "./symbols.js";
 
 // Resolves include nodes once every task and component file has been read:
-// reports unknown components, cycles between components, and pages that
+// reports unknown components, cycles between components, and roots that
 // would bring the same component in twice; then links each valid include
 // into the tree, so dimensions, overrides and verification reach through it.
-export function resolveIncludes(tree: TreeSymbols, pages: string[]): void {
+export function resolveIncludes(tree: TreeSymbols, roots: string[]): void {
   const known = tree.includes.filter((include) => {
     if (tree.components.has(include.component.value)) {
       return true;
@@ -39,9 +39,9 @@ export function resolveIncludes(tree: TreeSymbols, pages: string[]): void {
     }
   }
 
-  for (const page of pages) {
+  for (const root of roots) {
     const seen = new Set<string>();
-    // entry: the include in the page's own file that brought this part in.
+    // entry: the include in the root's own file that brought this part in.
     const visit = (id: string, entry: IncludeRef | undefined): void => {
       for (const child of tree.children.get(id) ?? []) {
         visit(child, entry);
@@ -53,7 +53,7 @@ export function resolveIncludes(tree: TreeSymbols, pages: string[]): void {
           report(
             at.diagnostics,
             "duplicate-include",
-            `${JSON.stringify(component)} is already part of ${JSON.stringify(page)}; its tasks would appear twice`,
+            `${JSON.stringify(component)} is already part of ${JSON.stringify(root)}; its tasks would appear twice`,
             at.path,
             at.component,
           );
@@ -63,7 +63,7 @@ export function resolveIncludes(tree: TreeSymbols, pages: string[]): void {
         visit(component, at);
       }
     };
-    visit(page, undefined);
+    visit(root, undefined);
   }
 
   for (const [parent, includes] of byParent) {

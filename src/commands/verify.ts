@@ -6,24 +6,24 @@ import { editCommand, isObject, parse, Refusal, UsageError } from "./edit.js";
 
 const verifyUsage = `Usage: task-tree verify <task-id> --check <name> --result passed|failed --by <who>
                        [<group>=<value>...] [<dimension>=<value>...] [<shared-task>=<state>...]
-                       [--transition <id>] [--evidence <path>] [--at <time>] [--page <page-id>]
+                       [--transition <id>] [--evidence <path>] [--at <time>] [--root <root-id>]
 
 Records a check's result for a task in one context, replacing any earlier
 record for the same task, context and check. The context gives one value for
 each of the task's state groups (state=<state> for a plain states list) and
 the states of shared tasks above it; dimensions left out take their default.
 --transition records the result for one of the task's transitions instead.
---at defaults to now; --page is needed when several pages include the task.
+--at defaults to now; --root is needed when several roots include the task.
 `;
 
 const unverifyUsage = `Usage: task-tree unverify <task-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
-                         [<shared-task>=<state>...] [--transition <id>] [--page <page-id>]
+                         [<shared-task>=<state>...] [--transition <id>] [--root <root-id>]
 
 Removes the record for that task and check, in that context or for that
 transition.
 `;
 
-// The project as compiled from disk, for defaults and pages.
+// The project as compiled from disk, for defaults and roots.
 function resolver(workspace: Workspace): Resolver {
   const { project } = compileDirectory(workspace.project);
   if (project === undefined) {
@@ -45,24 +45,24 @@ function contextArgs(args: string[]): Context {
   return Object.fromEntries(entries);
 }
 
-function pageFor(resolver: Resolver, id: string, chosen: string | undefined): string {
+function rootFor(resolver: Resolver, id: string, chosen: string | undefined): string {
   if (resolver.task(id) === undefined) {
     throw new Refusal(`task not found: ${id}`);
   }
-  const pages = resolver.pages(id).sort();
+  const roots = resolver.roots(id).sort();
   if (chosen !== undefined) {
-    if (!pages.includes(chosen)) {
-      throw new Refusal(`"${id}" is not on page "${chosen}"`);
+    if (!roots.includes(chosen)) {
+      throw new Refusal(`"${id}" is not in root "${chosen}"`);
     }
     return chosen;
   }
-  if (pages.length === 0) {
-    throw new Refusal(`"${id}" is not on any page`);
+  if (roots.length === 0) {
+    throw new Refusal(`"${id}" is not in any root`);
   }
-  if (pages.length > 1) {
-    throw new Refusal(`"${id}" is on several pages (${pages.join(", ")}); choose one with --page`);
+  if (roots.length > 1) {
+    throw new Refusal(`"${id}" is in several roots (${roots.join(", ")}); choose one with --root`);
   }
-  return pages[0] as string;
+  return roots[0] as string;
 }
 
 // A record's identity: task, context with defaults filled in, and check.
@@ -74,8 +74,8 @@ function identity(resolver: Resolver, task: string, context: Context, check: str
   ]);
 }
 
-function records(workspace: Workspace, page: string, create: boolean): unknown[] | undefined {
-  const file = `verification/${page}.json`;
+function records(workspace: Workspace, root: string, create: boolean): unknown[] | undefined {
+  const file = `verification/${root}.json`;
   let document = workspace.read(file);
   if (document === undefined) {
     if (!create) return undefined;
@@ -116,7 +116,7 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
       by: { type: "string" },
       evidence: { type: "string" },
       at: { type: "string" },
-      page: { type: "string" },
+      root: { type: "string" },
       transition: { type: "string" },
     },
     true,
@@ -130,7 +130,7 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
   }
   const context = contextArgs(rest);
   const model = resolver(workspace);
-  const page = pageFor(model, id, values.page);
+  const root = rootFor(model, id, values.root);
   const record: Json = {
     task: id,
     ...(values.transition === undefined ? { context } : { transition: values.transition }),
@@ -140,7 +140,7 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
     at: values.at ?? new Date().toISOString(),
     ...(values.evidence === undefined ? {} : { evidence: values.evidence }),
   };
-  const list = records(workspace, page, true) as unknown[];
+  const list = records(workspace, root, true) as unknown[];
   const key =
     values.transition === undefined
       ? identity(model, id, context, values.check)
@@ -157,7 +157,7 @@ export const unverify: Command = editCommand(unverifyUsage, (workspace, args) =>
   const { values, positionals } = parse(
     args,
     ["task-id"],
-    { check: { type: "string" }, page: { type: "string" }, transition: { type: "string" } },
+    { check: { type: "string" }, root: { type: "string" }, transition: { type: "string" } },
     true,
   );
   const [id, ...rest] = positionals as [string, ...string[]];
@@ -166,8 +166,8 @@ export const unverify: Command = editCommand(unverifyUsage, (workspace, args) =>
   }
   const context = contextArgs(rest);
   const model = resolver(workspace);
-  const page = pageFor(model, id, values.page);
-  const list = records(workspace, page, false);
+  const root = rootFor(model, id, values.root);
+  const list = records(workspace, root, false);
   const key =
     values.transition === undefined
       ? identity(model, id, context, values.check)

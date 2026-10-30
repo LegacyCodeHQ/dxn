@@ -50,7 +50,7 @@ describe("task-tree cli", () => {
         views <task-id>     List every distinct view of a task's subtree: one diagram each
         view <task-id> [<context>...]
                             Print the tree present in one view
-        tree                Print the pages and components
+        tree                Print the roots and components
         verify <task-id> --check <c> --result passed|failed --by <who> [<context>...]
                             Record a check's result for a task in one context
         unverify <task-id> --check <c> [<context>...]
@@ -112,7 +112,7 @@ describe("task-tree cli", () => {
         views <task-id>     List every distinct view of a task's subtree: one diagram each
         view <task-id> [<context>...]
                             Print the tree present in one view
-        tree                Print the pages and components
+        tree                Print the roots and components
         verify <task-id> --check <c> --result passed|failed --by <who> [<context>...]
                             Record a check's result for a task in one context
         unverify <task-id> --check <c> [<context>...]
@@ -177,7 +177,7 @@ describe("task-tree cli", () => {
         views <task-id>     List every distinct view of a task's subtree: one diagram each
         view <task-id> [<context>...]
                             Print the tree present in one view
-        tree                Print the pages and components
+        tree                Print the roots and components
         verify <task-id> --check <c> --result passed|failed --by <who> [<context>...]
                             Record a check's result for a task in one context
         unverify <task-id> --check <c> [<context>...]

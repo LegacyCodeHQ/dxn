@@ -32,16 +32,16 @@ describe("per-include states in reading commands", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(run("contexts", "blog-link", "--tree").stdout);
-    snapshot.push(JSON.parse(run("view", "toolbar", "--page", "article-page").stdout).tree);
-    snapshot.push(JSON.parse(run("view", "toolbar", "--page", "home").stdout).tree);
+    snapshot.push(JSON.parse(run("view", "toolbar", "--root", "article-page").stdout).tree);
+    snapshot.push(JSON.parse(run("view", "toolbar", "--root", "home").stdout).tree);
     snapshot.push(JSON.parse(run("status", "blog-link").stdout).summary);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "blog-link (6 combinations)
-      ├── page=article-page
+      ├── root=article-page
       │   └── hover=rest, hovered
       │       └── selection=selected
-      └── page=home
+      └── root=home
           └── hover=rest, hovered
               └── selection=unselected, selected
       ",

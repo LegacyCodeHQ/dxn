@@ -17,7 +17,7 @@ Everything is a CLI call that prints JSON, run inside a project (the nearest
 task-tree --help                  # every command
 task-tree help contexts           # one command's usage; no project needed
 task-tree validate                # does the project compile? errors: file:line:col: code: message
-task-tree tree                    # the pages and components
+task-tree tree                    # the roots and components
 task-tree dimensions              # what tasks vary over
 task-tree axes toolbar            # what views and queries of a task accept
 task-tree contexts toolbar --subtree --tree   # every combination, merged, for reading

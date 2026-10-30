@@ -24,7 +24,7 @@ describe("help", () => {
         [
           0,
           "",
-          "Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--page <page-id>]",
+          "Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--root <root-id>]",
         ],
         [
           0,
@@ -90,7 +90,7 @@ describe("help", () => {
         views <task-id>     List every distinct view of a task's subtree: one diagram each
         view <task-id> [<context>...]
                             Print the tree present in one view
-        tree                Print the pages and components
+        tree                Print the roots and components
         verify <task-id> --check <c> --result passed|failed --by <who> [<context>...]
                             Record a check's result for a task in one context
         unverify <task-id> --check <c> [<context>...]
@@ -162,7 +162,7 @@ describe("usage text", () => {
           "the states of shared tasks above it; dimensions left out take their default.",
         ],
         [
-          "                         [<shared-task>=<state>...] [--transition <id>] [--page <page-id>]",
+          "                         [<shared-task>=<state>...] [--transition <id>] [--root <root-id>]",
         ],
         [
           "A state group is a named set of states that exclude each other, such as hover",

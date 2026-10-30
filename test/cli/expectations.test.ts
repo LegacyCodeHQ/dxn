@@ -47,7 +47,7 @@ describe("expectations checked by validate", () => {
           title: "Touch screens never show hover",
           task: "toolbar",
           subtree: true,
-          page: "article-page",
+          root: "article-page",
           where: { pointer: "touch", hover: "hovered" },
           count: 0,
         },
@@ -89,19 +89,19 @@ describe("expectations checked by validate", () => {
     `);
   });
 
-  it("report unknown tasks, pages, names and values where they are written", () => {
+  it("report unknown tasks, roots, names and values where they are written", () => {
     const { run } = cliProject({
       ...files,
       "expectations.json": expectations([
         { title: "Unknown task", task: "nope", count: 0 },
-        { title: "Unknown page", task: "blog-link", page: "home", count: 0 },
+        { title: "Unknown root", task: "blog-link", root: "home", count: 0 },
         { title: "Unknown name", task: "blog-link", where: { keyboard: "none" }, count: 0 },
         { title: "Unknown value", task: "blog-link", where: { pointer: "pen" }, count: 0 },
       ]),
     });
     expect(run("validate").stderr).toMatchInlineSnapshot(`
       "<tmp>/.task-tree/expectations.json:6:15: unknown-task: task "nope" does not exist
-      <tmp>/.task-tree/expectations.json:12:15: unknown-page: task "blog-link" is not on page "home"
+      <tmp>/.task-tree/expectations.json:12:15: task-outside-root: task "blog-link" is not in root "home"
       <tmp>/.task-tree/expectations.json:19:9: unknown-name: "keyboard" is not a dimension, state group or shared task here (focus, hover, pointer)
       <tmp>/.task-tree/expectations.json:27:20: unknown-value: "pen" is not a value of pointer (mouse, touch)
       "

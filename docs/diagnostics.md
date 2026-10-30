@@ -84,8 +84,8 @@ or remove the overrides file.
 
 ### `unknown-root-task`
 
-`verification/<name>.json` has no page `tasks/<name>.json`. Records are filed
-under the page they belong to. Move them to the right file, or remove the
+`verification/<name>.json` has no root `tasks/<name>.json`. Records are filed
+under the root they belong to. Move them to the right file, or remove the
 file.
 
 ### `file-name-mismatch`
@@ -299,7 +299,7 @@ components. Remove one of the includes.
 
 ### `duplicate-include`
 
-A page includes the same component twice, directly or through other
+A root includes the same component twice, directly or through other
 components, so its tasks would appear twice. Remove one include, or make a
 second component.
 
@@ -445,12 +445,12 @@ A record is about a task without a type, which has no checks.
 
 ### `task-outside-file`
 
-A record in `verification/<page>.json` is about a task that isn't on that
-page. Move it to the right page's file.
+A record in `verification/<root>.json` is about a task that isn't in that
+root. Move it to the right root's file.
 
 ### `excluded-state`
 
-A record names a state that an include excludes on this page, for example
+A record names a state that an include excludes in this root, for example
 `selection=unselected` for the article page's `blog-link`, which the include
 fixes to `selected`.
 
@@ -467,9 +467,9 @@ fixes to `selected`.
 
 `validate` checks `expectations.json` only once everything else compiles.
 
-### `unknown-page`
+### `task-outside-root`
 
-The expectation's `page` doesn't contain its task.
+The expectation's `root` doesn't contain its task.
 
 ### `unknown-name`
 

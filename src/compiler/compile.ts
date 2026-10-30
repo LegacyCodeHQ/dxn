@@ -24,7 +24,7 @@ import { checkTransitions } from "./transitions.js";
 import { checkVerificationFile, type DimensionInfo } from "./verification.js";
 
 export interface FileDiagnostic extends Diagnostic {
-  // Relative to the project directory, e.g. "tasks/article-page.json".
+  // Relative to the project directory, e.g. "tasks/article-root.json".
   file: string;
 }
 
@@ -49,7 +49,7 @@ interface ParsedFile {
 //
 //   types.json               required: custom attribute declarations and types
 //   components/<id>.json     one reusable component per file, named after its id
-//   tasks/<id>.json          one root task (a page) per file, named after its id
+//   tasks/<id>.json          one root task per file, named after its id
 //   dimensions/<name>.json   one dimension per file
 //   overrides/<name>.json    overrides for the dimension of the same name
 //   overrides/<a>+<b>.json   overrides for combinations of those dimensions' values

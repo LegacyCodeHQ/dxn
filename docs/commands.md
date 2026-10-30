@@ -67,7 +67,7 @@ task-tree validate
 Usage: task-tree tree
 ```
 
-Prints the pages and components as JSON, as they are written in the files.
+Prints the roots and components as JSON, as they are written in the files.
 
 ```bash
 task-tree tree
@@ -107,12 +107,12 @@ task-tree query menu-blog-link breakpoint=base menu=open
 ### contexts
 
 ```text
-Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--page <page-id>]
+Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--root <root-id>]
                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
 
-Lists every context the task exists in, on each page that contains it.
+Lists every context the task exists in, in each root that contains it.
 --subtree lists every part of the task's subtree instead, with the component
-on its own unless --page names a page. <name>=<value> filters keep only the
+on its own unless --root names a root. <name>=<value> filters keep only the
 contexts with that dimension value, state or shared task state. --count
 prints counts instead of the contexts. --tree prints them as a merged tree:
 sibling branches with identical subtrees share a line, and dimensions that
@@ -125,7 +125,7 @@ Lists the contexts a task exists in: each one gives a value per dimension, a val
 
 ```bash
 task-tree contexts blog-link --count
-task-tree contexts toolbar --subtree --page article-page pointer=touch hover=hovered --count
+task-tree contexts toolbar --subtree --root article-page pointer=touch hover=hovered --count
 task-tree contexts wordmark --tree
 task-tree contexts toolbar --subtree --tree --by breakpoint
 task-tree contexts menu --tree --transitions
@@ -134,7 +134,7 @@ task-tree contexts menu --tree --transitions
 ### axes
 
 ```text
-Usage: task-tree axes <task-id> [--page <page-id>]
+Usage: task-tree axes <task-id> [--root <root-id>]
 
 Lists what a view or query of the task accepts: the dimensions that apply in
 its subtree, with their values and defaults, and the shared tasks above or in
@@ -150,7 +150,7 @@ task-tree axes toolbar
 ### views
 
 ```text
-Usage: task-tree views <task-id> [--page <page-id>]
+Usage: task-tree views <task-id> [--root <root-id>]
 
 Lists every distinct view of the task's subtree: each combination of the
 dimensions that apply in it, and the states of shared tasks wherever those
@@ -167,7 +167,7 @@ task-tree views toolbar
 
 ```text
 Usage: task-tree view <task-id> [<dimension>=<value>...] [<shared-task>=<state>...]
-                     [--page <page-id>]
+                     [--root <root-id>]
 
 Prints the tree present in one view, with each task's states and values.
 Dimensions left out take their default; each shared task in the view needs
@@ -218,17 +218,17 @@ task-tree status toolbar
 ```text
 Usage: task-tree verify <task-id> --check <name> --result passed|failed --by <who>
                        [<group>=<value>...] [<dimension>=<value>...] [<shared-task>=<state>...]
-                       [--transition <id>] [--evidence <path>] [--at <time>] [--page <page-id>]
+                       [--transition <id>] [--evidence <path>] [--at <time>] [--root <root-id>]
 
 Records a check's result for a task in one context, replacing any earlier
 record for the same task, context and check. The context gives one value for
 each of the task's state groups (state=<state> for a plain states list) and
 the states of shared tasks above it; dimensions left out take their default.
 --transition records the result for one of the task's transitions instead.
---at defaults to now; --page is needed when several pages include the task.
+--at defaults to now; --root is needed when several roots include the task.
 ```
 
-Writes a record to `verification/<page-id>.json`. The task's type must require the check (`type require`), and the context must be one the task exists in.
+Writes a record to `verification/<root-id>.json`. The task's type must require the check (`type require`), and the context must be one the task exists in.
 
 ```bash
 task-tree verify blog-link --check visual --result passed --by pen.dev breakpoint=lg hover=hovered focus=blurred selection=selected
@@ -239,7 +239,7 @@ task-tree verify menu --check behavior --result passed --by agent --transition e
 
 ```text
 Usage: task-tree unverify <task-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
-                         [<shared-task>=<state>...] [--transition <id>] [--page <page-id>]
+                         [<shared-task>=<state>...] [--transition <id>] [--root <root-id>]
 
 Removes the record for that task and check, in that context or for that
 transition.
@@ -260,7 +260,7 @@ Usage: task-tree task <subcommand>
 
 Subcommands:
   add <id> --title <title> [--parent <id>] [--type <type>]
-                                     Add a task; without --parent, a page in tasks/<id>.json
+                                     Add a task; without --parent, a root in tasks/<id>.json
   set-title <id> <title>             Change a task's title
   set-type <id> <type> | --none      Change or clear a task's type
   move <id> --parent <id>            Move a task and its subtree under another task

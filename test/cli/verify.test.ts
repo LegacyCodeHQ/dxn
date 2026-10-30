@@ -153,7 +153,7 @@ describe("verify", () => {
 `);
   });
 
-  it("needs --page when several pages contain the task, and a page to be on", () => {
+  it("needs --root when several roots contain the task, and a root to be in", () => {
     const snapshot: unknown[] = [];
     const { run, exists } = cliProject({
       ...files,
@@ -164,15 +164,15 @@ describe("verify", () => {
       }),
     });
     snapshot.push(run(...verify("state=normal", "pointer=mouse")));
-    snapshot.push(run(...verify("state=normal", "pointer=mouse", "--page", "home")).code);
+    snapshot.push(run(...verify("state=normal", "pointer=mouse", "--root", "home")).code);
     snapshot.push(exists("verification/home.json"));
-    snapshot.push(run(...verify("state=normal", "pointer=mouse", "--page", "nope")));
+    snapshot.push(run(...verify("state=normal", "pointer=mouse", "--root", "nope")));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     {
       "code": 1,
-      "stderr": "task-tree: "blog-link" is on several pages (home, page); choose one with --page
+      "stderr": "task-tree: "blog-link" is in several roots (home, page); choose one with --root
   ",
       "stdout": "",
     },
@@ -180,7 +180,7 @@ describe("verify", () => {
     true,
     {
       "code": 1,
-      "stderr": "task-tree: "blog-link" is not on page "nope"
+      "stderr": "task-tree: "blog-link" is not in root "nope"
   ",
       "stdout": "",
     },
@@ -202,7 +202,7 @@ describe("verify", () => {
   [
     {
       "code": 1,
-      "stderr": "task-tree: "blog-link" is not on any page
+      "stderr": "task-tree: "blog-link" is not in any root
   ",
       "stdout": "",
     },

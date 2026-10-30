@@ -20,7 +20,7 @@ const file = "expectations.json";
 
 // expectations.json: what the model should say, checked by validate once the
 // project compiles. Each expectation selects contexts like `contexts` does
-// (a task, optionally its whole subtree, on a page, filtered with where) and
+// (a task, optionally its whole subtree, in a root, filtered with where) and
 // states how many there must be.
 export function checkExpectations(project: string, resolver: Resolver): FileDiagnostic[] {
   const read = readSource(join(project, file));
@@ -70,7 +70,7 @@ function checkFile(
       diagnostics,
       expectation,
       path,
-      ["title", "task", "subtree", "page", "where", "count"],
+      ["title", "task", "subtree", "root", "where", "count"],
       { required: ["title", "task", "count"] },
     );
     let valid = true;
@@ -99,20 +99,20 @@ function checkFile(
     if (subtree !== undefined && !expectKind(diagnostics, subtree, `${path}.subtree`, "boolean"))
       valid = false;
 
-    const pageNode = fields.get("page");
-    let page: string | undefined;
-    if (pageNode !== undefined && expectName(diagnostics, pageNode, `${path}.page`)) {
-      if (id !== undefined && !resolver.pages(id).includes(pageNode.value)) {
+    const rootNode = fields.get("root");
+    let root: string | undefined;
+    if (rootNode !== undefined && expectName(diagnostics, rootNode, `${path}.root`)) {
+      if (id !== undefined && !resolver.roots(id).includes(rootNode.value)) {
         report(
           diagnostics,
-          "unknown-page",
-          `task ${JSON.stringify(id)} is not on page ${JSON.stringify(pageNode.value)}`,
-          `${path}.page`,
-          pageNode,
+          "task-outside-root",
+          `task ${JSON.stringify(id)} is not in root ${JSON.stringify(rootNode.value)}`,
+          `${path}.root`,
+          rootNode,
         );
         valid = false;
       }
-      page = pageNode.value;
+      root = rootNode.value;
     }
 
     const where: [string, string][] = [];
@@ -147,13 +147,13 @@ function checkFile(
     if (!valid || id === undefined || expected === undefined || count === undefined) return;
     const contexts =
       subtree?.kind === "boolean" && subtree.value
-        ? subtreeContexts(resolver, id, page).flatMap((part) => part.contexts)
-        : page === undefined
-          ? resolver.pages(id).flatMap((onPage) => resolver.contexts(id, onPage))
-          : resolver.contexts(id, page);
+        ? subtreeContexts(resolver, id, root).flatMap((part) => part.contexts)
+        : root === undefined
+          ? resolver.roots(id).flatMap((inRoot) => resolver.contexts(id, inRoot))
+          : resolver.contexts(id, root);
     let keep: (context: (typeof contexts)[number]) => boolean;
     try {
-      keep = contextFilter(resolver, where, contexts, page);
+      keep = contextFilter(resolver, where, contexts, root);
     } catch (error) {
       if (!(error instanceof QueryError)) throw error;
       const [name] = where.find(([candidate, value]) =>

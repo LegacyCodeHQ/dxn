@@ -47,9 +47,9 @@ function requireTaskId(resolver: Resolver, id: string): void {
   }
 }
 
-function requirePage(resolver: Resolver, id: string, page: string | undefined): void {
-  if (page !== undefined && !resolver.pages(id).includes(page)) {
-    throw new Refusal(`"${id}" is not on page "${page}"`);
+function requireRoot(resolver: Resolver, id: string, root: string | undefined): void {
+  if (root !== undefined && !resolver.roots(id).includes(root)) {
+    throw new Refusal(`"${id}" is not in root "${root}"`);
   }
 }
 
@@ -106,7 +106,7 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
   });
 });
 
-const axesUsage = `Usage: task-tree axes <task-id> [--page <page-id>]
+const axesUsage = `Usage: task-tree axes <task-id> [--root <root-id>]
 
 Lists what a view or query of the task accepts: the dimensions that apply in
 its subtree, with their values and defaults, and the shared tasks above or in
@@ -114,11 +114,11 @@ it, with their states and the dimension values where each exists.
 `;
 
 export const axes = readCommand(axesUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["task-id"], { page: { type: "string" } });
+  const { values, positionals } = parse(args, ["task-id"], { root: { type: "string" } });
   const [id] = positionals as [string];
   requireTaskId(resolver, id);
-  requirePage(resolver, id, values.page);
-  const found = resolver.axes(id, values.page);
+  requireRoot(resolver, id, values.root);
+  const found = resolver.axes(id, values.root);
   print(io, {
     task: id,
     dimensions: found.dimensions.map((name) => {
@@ -130,7 +130,7 @@ export const axes = readCommand(axesUsage, (resolver, args, io) => {
       };
     }),
     shared: found.shared.map((task) => {
-      const existsWhen = existsWhenFor(resolver, id, task, values.page);
+      const existsWhen = existsWhenFor(resolver, id, task, values.root);
       return {
         task,
         states: sharedStates(resolver, task),
@@ -146,7 +146,7 @@ function existsWhenFor(
   resolver: Resolver,
   id: string,
   task: string,
-  page: string | undefined,
+  root: string | undefined,
 ): Record<string, string[]> {
   const names = resolver.dimensions(task);
   let contexts: TaskContext[] = [{}];
@@ -156,7 +156,7 @@ function existsWhenFor(
       values.map((value) => ({ ...context, [name]: value })),
     );
   }
-  const lineage = resolver.lineageWithin(id, task, page);
+  const lineage = resolver.lineageWithin(id, task, root);
   const present = contexts.filter((context) => resolver.resolve(task, context, lineage).present);
   const existsWhen: Record<string, string[]> = {};
   for (const name of names) {
@@ -177,8 +177,8 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
   const [id, ...rest] = parse(args, ["task-id"], {}, true).positionals as [string, ...string[]];
   requireTaskId(resolver, id);
   const task = resolver.task(id) as NonNullable<ReturnType<Resolver["task"]>>;
-  const [page] = resolver.pages(id);
-  const lineage = resolver.lineage(id, page);
+  const [root] = resolver.roots(id);
+  const lineage = resolver.lineage(id, root);
   const shared = resolver.sharedAncestors(lineage);
   const given = contextValues(
     resolver,
@@ -213,12 +213,12 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
   });
 });
 
-const contextsUsage = `Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--page <page-id>]
+const contextsUsage = `Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--root <root-id>]
                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
 
-Lists every context the task exists in, on each page that contains it.
+Lists every context the task exists in, in each root that contains it.
 --subtree lists every part of the task's subtree instead, with the component
-on its own unless --page names a page. <name>=<value> filters keep only the
+on its own unless --root names a root. <name>=<value> filters keep only the
 contexts with that dimension value, state or shared task state. --count
 prints counts instead of the contexts. --tree prints them as a merged tree:
 sibling branches with identical subtrees share a line, and dimensions that
@@ -239,7 +239,7 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
       only: { type: "string" },
       json: { type: "boolean" },
       transitions: { type: "boolean" },
-      page: { type: "string" },
+      root: { type: "string" },
     },
     true,
   );
@@ -277,18 +277,18 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
   };
   const [id, ...filterArgs] = positionals as [string, ...string[]];
   requireTaskId(resolver, id);
-  requirePage(resolver, id, values.page);
+  requireRoot(resolver, id, values.root);
 
   if (values.subtree === true) {
-    const tasks = subtreeContexts(resolver, id, values.page);
+    const tasks = subtreeContexts(resolver, id, values.root);
     const keep = filter(
       resolver,
       filterArgs,
       tasks.flatMap((task) => task.contexts),
-      values.page,
+      values.root,
     );
     const kept = tasks.map((task) => ({ id: task.id, contexts: task.contexts.filter(keep) }));
-    const page = values.page === undefined ? {} : { page: values.page };
+    const root = values.root === undefined ? {} : { root: values.root };
     if (values.tree === true) {
       showTree(
         kept.flatMap((task) => task.contexts.map((context) => ({ task: task.id, context }))),
@@ -298,34 +298,34 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     if (values.count === true) {
       print(io, {
         task: id,
-        ...page,
+        ...root,
         counts: Object.fromEntries(kept.map((task) => [task.id, task.contexts.length])),
         total: kept.reduce((sum, task) => sum + task.contexts.length, 0),
       });
     } else {
-      print(io, { task: id, ...page, tasks: kept.filter((task) => task.contexts.length > 0) });
+      print(io, { task: id, ...root, tasks: kept.filter((task) => task.contexts.length > 0) });
     }
     return;
   }
 
-  const pages = values.page === undefined ? resolver.pages(id) : [values.page];
-  const all = pages.flatMap((page) =>
-    resolver.contexts(id, page).map((context) => ({ page, context })),
+  const roots = values.root === undefined ? resolver.roots(id) : [values.root];
+  const all = roots.flatMap((root) =>
+    resolver.contexts(id, root).map((context) => ({ root, context })),
   );
   const keep = filter(
     resolver,
     filterArgs,
     all.map(({ context }) => context),
-    values.page,
+    values.root,
   );
   const kept = all.filter(({ context }) => keep(context));
   if (values.tree === true) {
-    // The page is a level of its own only when the task is on several.
-    const several = new Set(kept.map(({ page }) => page)).size > 1;
+    // The root is a level of its own only when the task is on several.
+    const several = new Set(kept.map(({ root }) => root)).size > 1;
     showTree(
-      kept.map(({ page, context }) => ({
+      kept.map(({ root, context }) => ({
         task: id,
-        context: several ? { page, ...context } : context,
+        context: several ? { root, ...context } : context,
       })),
     );
     return;
@@ -341,7 +341,7 @@ function filter(
   resolver: Resolver,
   args: string[],
   contexts: TaskContext[],
-  page: string | undefined,
+  root: string | undefined,
 ): (context: TaskContext) => boolean {
   const wanted: [string, string][] = args.map((arg) => {
     const at = arg.indexOf("=");
@@ -351,14 +351,14 @@ function filter(
     return [arg.slice(0, at), arg.slice(at + 1)];
   });
   try {
-    return contextFilter(resolver, wanted, contexts, page);
+    return contextFilter(resolver, wanted, contexts, root);
   } catch (error) {
     if (error instanceof QueryError) throw new Refusal(error.message);
     throw error;
   }
 }
 
-const viewsUsage = `Usage: task-tree views <task-id> [--page <page-id>]
+const viewsUsage = `Usage: task-tree views <task-id> [--root <root-id>]
 
 Lists every distinct view of the task's subtree: each combination of the
 dimensions that apply in it, and the states of shared tasks wherever those
@@ -366,15 +366,15 @@ tasks are present. Each view is one diagram to draw.
 `;
 
 export const views = readCommand(viewsUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["task-id"], { page: { type: "string" } });
+  const { values, positionals } = parse(args, ["task-id"], { root: { type: "string" } });
   const [id] = positionals as [string];
   requireTaskId(resolver, id);
-  requirePage(resolver, id, values.page);
-  print(io, { task: id, views: resolver.views(id, values.page) });
+  requireRoot(resolver, id, values.root);
+  print(io, { task: id, views: resolver.views(id, values.root) });
 });
 
 const viewUsage = `Usage: task-tree view <task-id> [<dimension>=<value>...] [<shared-task>=<state>...]
-                     [--page <page-id>]
+                     [--root <root-id>]
 
 Prints the tree present in one view, with each task's states and values.
 Dimensions left out take their default; each shared task in the view needs
@@ -382,11 +382,11 @@ its state.
 `;
 
 export const view = readCommand(viewUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["task-id"], { page: { type: "string" } }, true);
+  const { values, positionals } = parse(args, ["task-id"], { root: { type: "string" } }, true);
   const [id, ...rest] = positionals as [string, ...string[]];
   requireTaskId(resolver, id);
-  requirePage(resolver, id, values.page);
-  const axes = resolver.axes(id, values.page);
+  requireRoot(resolver, id, values.root);
+  const axes = resolver.axes(id, values.root);
   const given = contextValues(
     resolver,
     rest,
@@ -403,7 +403,7 @@ export const view = readCommand(viewUsage, (resolver, args, io) => {
     const present = resolver.resolve(
       task,
       { ...context, ...given },
-      resolver.lineageWithin(id, task, values.page),
+      resolver.lineageWithin(id, task, values.root),
     ).present;
     if (!present) {
       if (given[task] !== undefined) {
@@ -420,7 +420,7 @@ export const view = readCommand(viewUsage, (resolver, args, io) => {
     }
     context[task] = given[task];
   }
-  const tree = resolver.view(id, context, values.page);
+  const tree = resolver.view(id, context, values.root);
   if (tree === undefined) {
     throw new Refusal(`"${id}" does not exist when ${describe(context)}`);
   }
@@ -456,14 +456,14 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
   if (only !== undefined) requireTaskId(resolver, only);
   const { project } = resolver;
   const items: ({
-    page: string;
+    root: string;
     task: string;
     check: string;
     result: string;
   } & ({ context: TaskContext } | { transition: string }))[] = [];
-  for (const page of project.tasks) {
+  for (const root of project.tasks) {
     const results = new Map<string, string>();
-    for (const record of project.verification[page.id]?.records ?? []) {
+    for (const record of project.verification[root.id]?.records ?? []) {
       const key =
         record.transition !== undefined
           ? `transition:${record.transition}`
@@ -473,15 +473,15 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
             });
       results.set(JSON.stringify([record.task, key, record.check]), record.result);
     }
-    for (const id of only === undefined ? tasksIn(resolver, page.id) : [only]) {
+    for (const id of only === undefined ? tasksIn(resolver, root.id) : [only]) {
       const type = resolver.task(id)?.type;
       const checks = type === undefined ? [] : (project.types.types?.[type]?.checks ?? []);
-      if (checks.length === 0 || !resolver.pages(id).includes(page.id)) continue;
-      for (const context of resolver.contexts(id, page.id)) {
+      if (checks.length === 0 || !resolver.roots(id).includes(root.id)) continue;
+      for (const context of resolver.contexts(id, root.id)) {
         for (const check of checks) {
           const key = JSON.stringify([id, contextKey(context), check]);
           items.push({
-            page: page.id,
+            root: root.id,
             task: id,
             context,
             check,
@@ -493,7 +493,7 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
         for (const check of checks) {
           const key = JSON.stringify([id, `transition:${transition.id}`, check]);
           items.push({
-            page: page.id,
+            root: root.id,
             task: id,
             transition: transition.id,
             check,
@@ -510,8 +510,8 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
   });
 });
 
-// Every task id in a page's tree, through includes, in tree order.
-function tasksIn(resolver: Resolver, page: string): string[] {
+// Every task id in a root's tree, through includes, in tree order.
+function tasksIn(resolver: Resolver, root: string): string[] {
   const ids: string[] = [];
   const visit = (id: string) => {
     if (ids.includes(id)) return;
@@ -520,7 +520,7 @@ function tasksIn(resolver: Resolver, page: string): string[] {
       visit("include" in child ? child.include : child.id);
     }
   };
-  visit(page);
+  visit(root);
   return ids;
 }
 
@@ -528,5 +528,5 @@ const treeUsage = "Usage: task-tree tree\n";
 
 export const tree = readCommand(treeUsage, (resolver, args, io) => {
   parse(args, [], {});
-  print(io, { pages: resolver.project.tasks, components: resolver.project.components });
+  print(io, { roots: resolver.project.tasks, components: resolver.project.components });
 });
