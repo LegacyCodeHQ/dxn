@@ -502,9 +502,8 @@ describe("contexts --tree", () => {
     const { run } = cliProject(files);
     expect(run("contexts", "wordmark", "--tree").stdout).toMatchInlineSnapshot(`
       "wordmark (16 combinations)
-      └── breakpoint=base, sm, lg, xl
-          └── hover=unhovered, hovered
-              └── focus=unfocused, focused
+      └── hover=unhovered, hovered
+          └── focus=unfocused, focused
       "
     `);
   });

@@ -3,8 +3,9 @@ import type { Io } from "../io.js";
 import { printDiagnostics, requireProject } from "../project.js";
 import { choices, contextFilter, QueryError, sharedStates, subtreeContexts } from "../queries.js";
 import { contextKey, Resolver, type Context as TaskContext } from "../resolve.js";
+import { buildStateTree, drawStateTree, type Entry, treeNames } from "../state-tree.js";
 import type { Command, Context } from "./context.js";
-import { parse, Refusal, UsageError } from "./edit.js";
+import { list, parse, Refusal, UsageError } from "./edit.js";
 
 // Compiles the project and hands a Resolver to the command.
 function readCommand(
@@ -212,16 +213,17 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
   });
 });
 
-const contextsUsage = `Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--count | --tree]
-                         [--page <page-id>]
+const contextsUsage = `Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--page <page-id>]
+                         [--count | --tree [--by a,b] [--only a,b] [--json]]
 
 Lists every context the task exists in, on each page that contains it.
 --subtree lists every part of the task's subtree instead, with the component
 on its own unless --page names a page. <name>=<value> filters keep only the
 contexts with that dimension value, state or shared task state. --count
-prints counts instead of the contexts. --tree prints them as a text tree,
-dimensions first, then shared states, then the task's own states, merging
-sibling branches that are identical.
+prints counts instead of the contexts. --tree prints them as a merged tree:
+sibling branches with identical subtrees share a line, and dimensions that
+change nothing are left out. --by a,b puts those levels first, --only a,b
+keeps only those levels, and --json prints the tree as JSON for tools.
 `;
 
 export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
@@ -232,6 +234,9 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
       subtree: { type: "boolean" },
       count: { type: "boolean" },
       tree: { type: "boolean" },
+      by: { type: "string" },
+      only: { type: "string" },
+      json: { type: "boolean" },
       page: { type: "string" },
     },
     true,
@@ -239,6 +244,31 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
   if (values.count === true && values.tree === true) {
     throw new UsageError("give --count or --tree, not both");
   }
+  if (
+    values.tree !== true &&
+    (values.by !== undefined || values.only !== undefined || values.json === true)
+  ) {
+    throw new UsageError("--by, --only and --json need --tree");
+  }
+  // Draws the entries as a merged state tree, as text or JSON.
+  const showTree = (entries: Entry[]) => {
+    const names = treeNames(entries);
+    const levels = (option: string | undefined) => {
+      const listed = option === undefined ? undefined : (list(option) ?? []);
+      for (const name of listed ?? []) {
+        if (!names.includes(name)) {
+          throw new Refusal(`"${name}" is not a level here (${choices(names)})`);
+        }
+      }
+      return listed;
+    };
+    const nodes = buildStateTree(resolver, entries, {
+      by: levels(values.by),
+      only: levels(values.only),
+    });
+    if (values.json === true) print(io, { task: id, tree: nodes });
+    else io.stdout(drawStateTree(nodes));
+  };
   const [id, ...filterArgs] = positionals as [string, ...string[]];
   requireTaskId(resolver, id);
   requirePage(resolver, id, values.page);
@@ -254,11 +284,8 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     const kept = tasks.map((task) => ({ id: task.id, contexts: task.contexts.filter(keep) }));
     const page = values.page === undefined ? {} : { page: values.page };
     if (values.tree === true) {
-      io.stdout(
-        kept
-          .filter((task) => task.contexts.length > 0)
-          .map((task) => drawTree(resolver, task.id, task.contexts))
-          .join(""),
+      showTree(
+        kept.flatMap((task) => task.contexts.map((context) => ({ task: task.id, context }))),
       );
       return;
     }
@@ -289,12 +316,11 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
   if (values.tree === true) {
     // The page is a level of its own only when the task is on several.
     const several = new Set(kept.map(({ page }) => page)).size > 1;
-    io.stdout(
-      drawTree(
-        resolver,
-        id,
-        kept.map(({ page, context }) => (several ? { page, ...context } : context)),
-      ),
+    showTree(
+      kept.map(({ page, context }) => ({
+        task: id,
+        context: several ? { page, ...context } : context,
+      })),
     );
     return;
   }
@@ -303,64 +329,6 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     values.count === true ? { task: id, count: kept.length } : { task: id, contexts: kept },
   );
 });
-
-// Draws a task's contexts as a text tree: one level per key, dimensions
-// first, then shared states, then the task's own states; sibling branches
-// with identical subtrees are merged into one line.
-function drawTree(resolver: Resolver, id: string, contexts: TaskContext[]): string {
-  const seen = [...new Set(contexts.flatMap((context) => Object.keys(context)))];
-  const rank = (key: string) =>
-    key === "page"
-      ? 0
-      : resolver.project.dimensions[key] !== undefined
-        ? 1
-        : resolver.isShared(key)
-          ? 2
-          : 3;
-  const order = [...seen].sort((a, b) => {
-    const byRank = rank(a) - rank(b);
-    if (byRank !== 0) return byRank;
-    return rank(a) === 1 ? (a < b ? -1 : a > b ? 1 : 0) : seen.indexOf(a) - seen.indexOf(b);
-  });
-
-  interface Branch {
-    label: string;
-    children: Branch[];
-  }
-  const build = (group: TaskContext[], keys: string[]): Branch[] => {
-    const [key, ...rest] = keys;
-    if (key === undefined) return [];
-    const values = [...new Set(group.map((context) => context[key] ?? "-"))];
-    const merged: { values: string[]; children: Branch[] }[] = [];
-    for (const value of values) {
-      const children = build(
-        group.filter((context) => (context[key] ?? "-") === value),
-        rest,
-      );
-      // Siblings whose subtrees are identical share one line.
-      const twin = merged.find(
-        (other) => JSON.stringify(other.children) === JSON.stringify(children),
-      );
-      if (twin === undefined) merged.push({ values: [value], children });
-      else twin.values.push(value);
-    }
-    return merged.map((branch) => ({
-      label: `${key}=${branch.values.join(", ")}`,
-      children: branch.children,
-    }));
-  };
-
-  const lines = [`${id} (${contexts.length} combination${contexts.length === 1 ? "" : "s"})`];
-  const draw = (branches: Branch[], prefix: string) => {
-    branches.forEach((branch, index) => {
-      const last = index === branches.length - 1;
-      lines.push(`${prefix}${last ? "└── " : "├── "}${branch.label}`);
-      draw(branch.children, `${prefix}${last ? "    " : "│   "}`);
-    });
-  };
-  draw(build(contexts, order), "");
-  return `${lines.join("\n")}\n`;
-}
 
 // A predicate for <name>=<value> command-line filters.
 function filter(
