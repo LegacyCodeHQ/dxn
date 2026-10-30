@@ -4,6 +4,7 @@ import { component } from "./commands/component.js";
 import type { Command } from "./commands/context.js";
 import { dimension } from "./commands/dimension.js";
 import { init } from "./commands/init.js";
+import { only, override } from "./commands/override.js";
 import { task } from "./commands/task.js";
 import { type } from "./commands/type.js";
 import { validate } from "./commands/validate.js";
@@ -29,6 +30,10 @@ Commands:
                       Add, extract and remove reusable components
   dimension <subcommand>
                       Add dimensions, their values, default and scope
+  only <dimension> <task-id> <value>...
+                      Say at which values of a dimension a task exists
+  override <subcommand>
+                      Change states and values for a dimension value or combination
 
 Options:
   --dir <directory>   Use this project directory instead of the nearest .task-tree
@@ -47,6 +52,8 @@ const commands: Record<string, Command> = {
   check,
   component,
   dimension,
+  only,
+  override,
 };
 
 export function run(argv: string[], io: Io): number {
