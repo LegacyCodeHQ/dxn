@@ -290,7 +290,44 @@ function checkContext(
   );
   const hasStates = base.size > 0 || states.size > 0 || removed.size > 0;
 
-  const allowed = hasStates ? [...applicable, "state"] : applicable;
+  // Shared ancestors on the path from the page: their states are context keys.
+  const shared = ancestry.slice(0, -1).filter((id) => {
+    const ancestorType = tree.taskTypes.get(id);
+    return ancestorType !== undefined && tree.sharedTypes.has(ancestorType);
+  });
+  for (const ancestor of shared) {
+    const entry = given.get(ancestor);
+    if (entry === undefined) continue;
+    const valuePath = childPath(path, ancestor);
+    if (!expectKind(diagnostics, entry.value, valuePath, "string")) {
+      valid = false;
+      continue;
+    }
+    const ancestorType = tree.taskTypes.get(ancestor) as string;
+    const ancestorStates = statesInContext(
+      tree.types.get(ancestorType) ?? new Set<string>(),
+      dimensions,
+      combinations,
+      applicable,
+      values,
+      ancestorType,
+      ancestor,
+    ).states;
+    if (!ancestorStates.has(entry.value.value)) {
+      report(
+        diagnostics,
+        "unknown-state",
+        `${JSON.stringify(entry.value.value)} is not a state of ${JSON.stringify(ancestor)} here`,
+        valuePath,
+        entry.value,
+      );
+      valid = false;
+      continue;
+    }
+    values.set(ancestor, entry.value.value);
+  }
+
+  const allowed = [...applicable, ...(hasStates ? ["state"] : []), ...shared];
   for (const { key } of context.members) {
     if (!allowed.includes(key.value)) {
       report(
@@ -362,6 +399,22 @@ function checkContext(
       })
     );
   });
+  const leftOut = ancestry.find((id) =>
+    [...(tree.onlyWhen.get(id) ?? [])].some(([ancestor, states]) => {
+      const value = values.get(ancestor);
+      return value !== undefined && !states.has(value);
+    }),
+  );
+  if (absentIn === undefined && leftOut !== undefined) {
+    report(
+      diagnostics,
+      "absent-in-context",
+      `the task does not exist here: onlyWhen on ${JSON.stringify(leftOut)} leaves it out`,
+      path,
+      context,
+    );
+    return undefined;
+  }
   if (absentIn !== undefined) {
     report(
       diagnostics,

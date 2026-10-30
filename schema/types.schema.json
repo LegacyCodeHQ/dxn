@@ -80,6 +80,10 @@
             "$ref": "#/$defs/name"
           }
         },
+        "shared": {
+          "description": "Whether the subtree of each instance varies with the instance's state, so children can depend on it with onlyWhen.",
+          "type": "boolean"
+        },
         "checks": {
           "description": "Declared checks every instance of this type must pass, in every context.",
           "type": "array",

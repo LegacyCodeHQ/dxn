@@ -25,6 +25,9 @@ export function emptySymbols(): TreeSymbols {
     taskValues: new Map(),
     components: new Set(),
     includes: [],
+    sharedTypes: new Set(),
+    onlyWhen: new Map(),
+    onlyWhenRefs: [],
     checks: new Set(),
     typeChecks: new Map(),
   };
@@ -231,7 +234,12 @@ function checkTypes(
     if (type === undefined) {
       continue;
     }
-    const members = keys(diagnostics, type, typePath, ["states", "checks", "customAttributes"]);
+    const members = keys(diagnostics, type, typePath, [
+      "states",
+      "shared",
+      "checks",
+      "customAttributes",
+    ]);
     const checkList = members.get("checks");
     if (
       checkList !== undefined &&
@@ -270,6 +278,20 @@ function checkTypes(
         "duplicate-state",
       )) {
         states.add(state);
+      }
+    }
+    const shared = members.get("shared");
+    if (shared !== undefined && expectKind(diagnostics, shared, `${typePath}.shared`, "boolean")) {
+      if (shared.value && states.size === 0) {
+        report(
+          diagnostics,
+          "shared-without-states",
+          "a shared type needs states for its instances' subtrees to vary with",
+          `${typePath}.shared`,
+          shared,
+        );
+      } else if (shared.value) {
+        symbols.sharedTypes.add(key.value);
       }
     }
     bodies.push([typePath, states, members.get("customAttributes")]);
@@ -399,7 +421,7 @@ function checkTask(
     diagnostics,
     task,
     path,
-    ["id", "title", "type", "children", "customAttributes"],
+    ["id", "title", "type", "onlyWhen", "children", "customAttributes"],
     { required: ["id", "title"] },
   );
 
@@ -470,6 +492,11 @@ function checkTask(
     }
   }
 
+  const onlyWhen = members.get("onlyWhen");
+  if (onlyWhen !== undefined) {
+    checkOnlyWhenShape(diagnostics, symbols, onlyWhen, `${path}.onlyWhen`, taskId);
+  }
+
   const children = members.get("children");
   const childIds =
     children === undefined
@@ -482,4 +509,81 @@ function checkTask(
     }
   }
   return taskId;
+}
+
+// onlyWhen: ancestor id -> non-empty list of its states. The ancestors are
+// checked by resolveOnlyWhen once the whole file is read.
+function checkOnlyWhenShape(
+  diagnostics: Diagnostics,
+  symbols: TreeSymbols,
+  node: JsonNode,
+  path: string,
+  task: string | undefined,
+): void {
+  const object = expectObject(diagnostics, node, path);
+  for (const { key, value } of object?.members ?? []) {
+    const entryPath = childPath(path, key.value);
+    if (!expectKind(diagnostics, value, entryPath, "array")) {
+      continue;
+    }
+    if (value.elements.length === 0) {
+      report(diagnostics, "empty-only", "list at least one state", entryPath, value);
+      continue;
+    }
+    const states = stringElements(diagnostics, value, entryPath, "duplicate-state");
+    if (task !== undefined) {
+      symbols.onlyWhenRefs.push({ task, ancestor: key, path: entryPath, states, diagnostics });
+    }
+  }
+}
+
+// Checks that each onlyWhen names an ancestor in the same file whose type is
+// shared, and states of that type.
+export function resolveOnlyWhen(symbols: TreeSymbols): void {
+  for (const ref of symbols.onlyWhenRefs) {
+    const name = JSON.stringify(ref.ancestor.value);
+    let ancestor = symbols.parents.get(ref.task);
+    while (ancestor !== undefined && ancestor !== ref.ancestor.value) {
+      ancestor = symbols.parents.get(ancestor);
+    }
+    if (ancestor === undefined) {
+      report(
+        ref.diagnostics,
+        "not-an-ancestor",
+        `${name} is not an ancestor of this task in its file`,
+        ref.path,
+        ref.ancestor,
+      );
+      continue;
+    }
+    const type = symbols.taskTypes.get(ancestor);
+    if (type === undefined || !symbols.sharedTypes.has(type)) {
+      report(
+        ref.diagnostics,
+        "ancestor-not-shared",
+        `${name} needs a shared type for its subtree to depend on its state`,
+        ref.path,
+        ref.ancestor,
+      );
+      continue;
+    }
+    const states = symbols.types.get(type) ?? new Set<string>();
+    const allowed = new Set<string>();
+    for (const [state, statePath] of ref.states) {
+      if (!states.has(state.value)) {
+        report(
+          ref.diagnostics,
+          "unknown-state",
+          `${JSON.stringify(state.value)} is not a state of ${name}`,
+          statePath,
+          state,
+        );
+        continue;
+      }
+      allowed.add(state.value);
+    }
+    const byAncestor = symbols.onlyWhen.get(ref.task) ?? new Map<string, Set<string>>();
+    byAncestor.set(ancestor, allowed);
+    symbols.onlyWhen.set(ref.task, byAncestor);
+  }
 }

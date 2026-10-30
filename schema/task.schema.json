@@ -59,6 +59,21 @@
           "description": "Name of a type in the top-level types.",
           "type": "string"
         },
+        "onlyWhen": {
+          "description": "Shared ancestor id -> the states in which this task and its subtree exist.",
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/name"
+            }
+          }
+        },
         "children": {
           "type": "array",
           "items": {

@@ -10,7 +10,7 @@ import type {
   TypesFile,
   VerificationFile,
 } from "../tree.js";
-import { checkTaskFile, checkTypesFile, emptySymbols } from "./check.js";
+import { checkTaskFile, checkTypesFile, emptySymbols, resolveOnlyWhen } from "./check.js";
 import { checkConflicts } from "./conflicts.js";
 import { type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { checkDimensionFile } from "./dimensions.js";
@@ -106,6 +106,7 @@ export function compileDirectory(directory: string): DirectoryResult {
     }
   }
   if (tasksComplete) {
+    resolveOnlyWhen(symbols);
     resolveIncludes(
       symbols,
       tasks.map((file) => file.file.slice("tasks/".length, -".json".length)),
@@ -126,6 +127,16 @@ export function compileDirectory(directory: string): DirectoryResult {
           path,
           "invalid-file-name",
           `${JSON.stringify(name)} is not a valid dimension name; names cannot contain "+"`,
+        ),
+      );
+      continue;
+    }
+    if ([...symbols.taskTypes].some(([id, type]) => id === name && symbols.sharedTypes.has(type))) {
+      problems.push(
+        fileDiagnostic(
+          path,
+          "reserved-name",
+          `a dimension cannot be named after the shared task "${name}": contexts use its id for its state`,
         ),
       );
       continue;

@@ -9,6 +9,8 @@ export interface CustomAttributeDeclaration {
 
 export interface TypeDefinition {
   states?: string[];
+  // Whether instances' subtrees vary with the instance's state.
+  shared?: boolean;
   // Declared checks every instance must pass, in every context.
   checks?: string[];
   customAttributes?: CustomAttributeValues;
@@ -18,6 +20,8 @@ export interface Task {
   id: string;
   title: string;
   type?: string;
+  // Shared ancestor id -> the states in which this task exists.
+  onlyWhen?: Record<string, string[]>;
   children?: TaskNode[];
   customAttributes?: CustomAttributeValues;
 }

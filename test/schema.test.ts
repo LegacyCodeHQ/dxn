@@ -88,6 +88,7 @@ agree("types", (doc) => ({ "types.json": doc }), {
     ["surrounding-whitespace", withDeclaration({ values: [" a"] })],
     ["control-character", withDeclaration({ values: ["a\u0001"] })],
     ["duplicate-value", withDeclaration({ values: ["a", "a"] })],
+    ["wrong-type", withType({ states: ["a"], shared: "yes" })],
     ["wrong-type", { ...types, customChecks: [] }],
     ["wrong-type", { ...types, customChecks: { visual: true } }],
     ["unknown-key", { ...types, customChecks: { visual: { kind: 1 } } }],
@@ -113,6 +114,7 @@ agree("types", (doc) => ({ "types.json": doc }), {
     ["wrong-type", withType({ states: ["normal"], customAttributes: { design: { normal: 1 } } })],
   ],
   crossReference: [
+    ["shared-without-states", withType({ shared: true })],
     ["undeclared-check", withType({ checks: ["visual"] })],
     ["undeclared-attribute", withType({ states: ["normal"], customAttributes: { size: {} } })],
     [
@@ -168,12 +170,15 @@ agree("task", (doc) => ({ "types.json": types, "tasks/a.json": doc }), {
     ["empty-string", a({ children: [{ include: "" }] })],
     ["include-at-root", task({ include: "x" })],
     ["attributes-without-type", a({ customAttributes: {} })],
+    ["wrong-type", a({ onlyWhen: [] })],
+    ["empty-only", a({ onlyWhen: { a: [] } })],
     ["wrong-type", a({ type: "link", customAttributes: [] })],
     ["wrong-type", a({ type: "link", customAttributes: { design: { normal: 1 } } })],
   ],
   crossReference: [
     ["file-name-mismatch", task({ id: "b", title: "B" })],
     ["unknown-component", a({ children: [{ include: "footer" }] })],
+    ["not-an-ancestor", a({ children: [{ id: "b", title: "B", onlyWhen: { x: ["y"] } }] })],
     ["duplicate-id", a({ children: [{ id: "a", title: "Again" }] })],
     ["undefined-type", a({ type: "button" })],
     ["undeclared-attribute", a({ type: "link", customAttributes: { size: {} } })],
