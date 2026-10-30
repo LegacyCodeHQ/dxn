@@ -9,6 +9,7 @@ import { contexts, query, status, tree } from "./commands/reading.js";
 import { task } from "./commands/task.js";
 import { type } from "./commands/type.js";
 import { validate } from "./commands/validate.js";
+import { unverify, verify } from "./commands/verify.js";
 import type { Io } from "./io.js";
 import { parseGlobal } from "./project.js";
 import { version } from "./version.js";
@@ -25,6 +26,10 @@ Commands:
   contexts <task-id>  List every context a task exists in
   status [<task-id>]  Report each required check as passed, failed or missing
   tree                Print the pages and components
+  verify <task-id> --check <c> --result passed|failed --by <who> [<context>...]
+                      Record a check's result for a task in one context
+  unverify <task-id> --check <c> [<context>...]
+                      Remove that record
   task <subcommand>   Add, move, rename and remove tasks, and set their values
   type <subcommand>   Add types and states, and set their values
   attribute <subcommand>
@@ -61,6 +66,8 @@ const commands: Record<string, Command> = {
   dimension,
   only,
   override,
+  verify,
+  unverify,
 };
 
 export function run(argv: string[], io: Io): number {
