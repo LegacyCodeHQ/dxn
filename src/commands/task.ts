@@ -29,6 +29,9 @@ Subcommands:
   move <id> --parent <id>            Move a task and its subtree under another task
   rename <id> <new-id>               Rename a task and every reference to it
   remove <id>                        Remove a task and its subtree
+  include <parent-id> <component-id> Include a component under a task
+  uninclude <parent-id> <component-id>
+                                     Remove that include
   set <id> <attribute> <state>=<value>...
                                      Set the task's own custom attribute values
   unset <id> <attribute> [<state>...]
@@ -155,7 +158,38 @@ const unset = editCommand(usage, (workspace, args) => {
   workspace.touch(located.file);
 });
 
+const include = editCommand(usage, (workspace, args) => {
+  const [parentId, component] = parse(args, ["parent-id", "component-id"], {}).positionals as [
+    string,
+    string,
+  ];
+  const parent = requireTask(workspace, parentId);
+  parent.node.children = [
+    ...(Array.isArray(parent.node.children) ? parent.node.children : []),
+    { include: component },
+  ];
+  reorder(parent.node, taskOrder);
+  workspace.touch(parent.file);
+});
+
+const uninclude = editCommand(usage, (workspace, args) => {
+  const [parentId, component] = parse(args, ["parent-id", "component-id"], {}).positionals as [
+    string,
+    string,
+  ];
+  const parent = requireTask(workspace, parentId);
+  const children = Array.isArray(parent.node.children) ? parent.node.children : [];
+  const index = children.findIndex((child) => isObject(child) && child.include === component);
+  if (index < 0) {
+    throw new Refusal(`"${parentId}" does not include "${component}"`);
+  }
+  children.splice(index, 1);
+  workspace.touch(parent.file);
+});
+
 export const task: Command = group(usage, {
+  include,
+  uninclude,
   add,
   "set-title": setTitle,
   "set-type": setType,

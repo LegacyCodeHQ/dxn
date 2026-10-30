@@ -1,4 +1,6 @@
 import { attribute } from "./commands/attribute.js";
+import { check } from "./commands/checks.js";
+import { component } from "./commands/component.js";
 import type { Command } from "./commands/context.js";
 import { init } from "./commands/init.js";
 import { task } from "./commands/task.js";
@@ -21,6 +23,9 @@ Commands:
   type <subcommand>   Add types and states, and set their values
   attribute <subcommand>
                       Declare custom attributes and their values
+  check <subcommand>  Declare checks that types can require
+  component <subcommand>
+                      Add, extract and remove reusable components
 
 Options:
   --dir <directory>   Use this project directory instead of the nearest .task-tree
@@ -29,7 +34,16 @@ Options:
   -V, --version       Print version information as JSON
 `;
 
-const commands: Record<string, Command> = { init, validate, query, task, type, attribute };
+const commands: Record<string, Command> = {
+  init,
+  validate,
+  query,
+  task,
+  type,
+  attribute,
+  check,
+  component,
+};
 
 export function run(argv: string[], io: Io): number {
   const cwd = io.cwd ?? process.cwd();

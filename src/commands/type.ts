@@ -29,6 +29,8 @@ Subcommands:
                                      Set the type's custom attribute values
   unset <type> <attribute> [<state>...]
                                      Clear some or all of those values
+  require <type> <check>             Make every instance of the type need a check
+  unrequire <type> <check>           Stop requiring a check
   rename <name> <new-name>           Rename a type and every use of it
   remove <name>                      Remove a type
 `;
@@ -131,7 +133,25 @@ const remove = edit((workspace, args) => {
   delete typeMap(workspace)[name];
 });
 
+const requireCheck = edit((workspace, args) => {
+  const [name, check] = parse(args, ["type", "check"], {}).positionals as [string, string];
+  const type = requireType(workspace, name);
+  type.checks = [...(Array.isArray(type.checks) ? type.checks : []), check];
+  reorder(type, typeOrder);
+});
+
+const unrequireCheck = edit((workspace, args) => {
+  const [name, check] = parse(args, ["type", "check"], {}).positionals as [string, string];
+  const type = requireType(workspace, name);
+  if (!Array.isArray(type.checks) || !type.checks.includes(check)) {
+    throw new Refusal(`type "${name}" does not require "${check}"`);
+  }
+  type.checks = type.checks.filter((existing) => existing !== check);
+});
+
 export const type: Command = group(usage, {
+  require: requireCheck,
+  unrequire: unrequireCheck,
   add,
   "add-state": addState,
   "remove-state": removeState,
