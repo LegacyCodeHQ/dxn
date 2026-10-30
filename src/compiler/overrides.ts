@@ -46,17 +46,22 @@ const fromBase: Start = {
   task: (_, typeStates) => typeStates,
 };
 
-// overrides/<dimension>.json: overrides by dimension value, then by type or task.
-// Returns the valid state changes, for checking verification contexts.
+// overrides/<dimension>.json: where tasks exist ("only"), then overrides by
+// dimension value, then by type or task. Returns the valid state changes and
+// "only" restrictions, for checking combinations and verification contexts.
 export function checkOverridesFile(
   root: JsonNode,
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   dimension: DimensionSymbol & { name: string },
   source: OverrideSource,
-): OverrideStates {
+): { states: OverrideStates; only: Map<string, Set<string>> } {
   const changes: OverrideStates = new Map();
-  const byValue = checkFileShape(root, diagnostics);
+  const { byValue, only: onlyNode } = checkFileShape(root, diagnostics, true);
+  const only =
+    onlyNode === undefined
+      ? new Map<string, Set<string>>()
+      : checkOnly(diagnostics, tree, dimension, onlyNode);
   for (const entry of byValue?.members ?? []) {
     const valuePath = childPath("$.overrides", entry.key.value);
     if (!isValue(diagnostics, dimension, entry.key, valuePath)) {
@@ -71,11 +76,90 @@ export function checkOverridesFile(
         entry.value,
         valuePath,
         fromBase,
+        (id) => isAbsent(tree, only, id, entry.key.value),
         newEntry(diagnostics, source, [[dimension.name, entry.key.value]]),
       ),
     );
   }
-  return changes;
+  return { states: changes, only };
+}
+
+// "only": task id -> the values where the task (and its subtree) exists.
+function checkOnly(
+  diagnostics: Diagnostics,
+  tree: TreeSymbols,
+  dimension: DimensionSymbol,
+  node: JsonNode,
+): Map<string, Set<string>> {
+  const only = new Map<string, Set<string>>();
+  const object = expectObject(diagnostics, node, "$.only");
+  for (const { key, value } of object?.members ?? []) {
+    const path = childPath("$.only", key.value);
+    const id = JSON.stringify(key.value);
+    if (!tree.ids.has(key.value)) {
+      report(diagnostics, "unknown-task", `task ${id} does not exist`, path, key);
+      continue;
+    }
+    if (!dimension.scope.has(key.value)) {
+      if (dimension.scopeComplete) {
+        report(
+          diagnostics,
+          "task-out-of-scope",
+          `task ${id} is not in this dimension's appliesTo`,
+          path,
+          key,
+        );
+      }
+      continue;
+    }
+    if (!expectKind(diagnostics, value, path, "array")) {
+      continue;
+    }
+    if (value.elements.length === 0) {
+      report(
+        diagnostics,
+        "empty-only",
+        "list at least one value where the task exists",
+        path,
+        value,
+      );
+      continue;
+    }
+    const values = new Set<string>();
+    for (const [element, elementPath] of stringElements(
+      diagnostics,
+      value,
+      path,
+      "duplicate-value",
+    )) {
+      if (isValue(diagnostics, dimension, element, elementPath)) {
+        values.add(element.value);
+      }
+    }
+    only.set(key.value, values);
+  }
+  return only;
+}
+
+// Whether "only" leaves a task out at a value: it, or an ancestor in its own
+// file, is restricted to other values.
+export function isAbsent(
+  tree: TreeSymbols,
+  only: Map<string, Set<string>> | undefined,
+  id: string,
+  value: string,
+): boolean {
+  for (
+    let current: string | undefined = id;
+    current !== undefined;
+    current = tree.parents.get(current)
+  ) {
+    const values = only?.get(current);
+    if (values !== undefined && !values.has(value)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // overrides/<a>+<b>.json: overrides nested one level per dimension, in file
@@ -126,6 +210,10 @@ export function checkCombinationFile(
           node,
           path,
           start,
+          (id) =>
+            parts.some((part, index) =>
+              isAbsent(tree, part.symbol.only, id, values[index] as string),
+            ),
           newEntry(diagnostics, source, pairs),
         ),
       );
@@ -141,7 +229,7 @@ export function checkCombinationFile(
     }
   };
 
-  const byValue = checkFileShape(root, diagnostics);
+  const { byValue } = checkFileShape(root, diagnostics, false);
   if (byValue !== undefined) {
     level(byValue, "$.overrides", []);
   }
@@ -174,18 +262,27 @@ function apply(start: StateSet, changes: (StateChanges | undefined)[]): StateSet
   return result;
 }
 
-function checkFileShape(root: JsonNode, diagnostics: Diagnostics) {
+// Only single-dimension files may say where tasks exist.
+function checkFileShape(root: JsonNode, diagnostics: Diagnostics, allowOnly: boolean) {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
-    return undefined;
+    return {};
   }
-  const members = keys(diagnostics, document, "$", ["$schema", "version", "overrides"], {
-    required: ["version", "overrides"],
-  });
+  const members = keys(
+    diagnostics,
+    document,
+    "$",
+    ["$schema", "version", ...(allowOnly ? ["only"] : []), "overrides"],
+    { required: ["version", "overrides"] },
+  );
   checkSchema(diagnostics, members.get("$schema"));
   checkVersion(diagnostics, members.get("version"));
   const overrides = members.get("overrides");
-  return overrides === undefined ? undefined : expectObject(diagnostics, overrides, "$.overrides");
+  return {
+    byValue:
+      overrides === undefined ? undefined : expectObject(diagnostics, overrides, "$.overrides"),
+    only: members.get("only"),
+  };
 }
 
 function isValue(
@@ -237,6 +334,7 @@ function checkValueOverrides(
   node: JsonNode,
   path: string,
   start: Start,
+  absent: (id: string) => boolean,
   entryFor: (kind: OverrideEntry["kind"], target: string) => OverrideEntry,
 ): ValueStates {
   const changes: ValueStates = { types: new Map(), tasks: new Map() };
@@ -294,6 +392,16 @@ function checkValueOverrides(
         diagnostics,
         "task-out-of-scope",
         `task ${id} is not in this dimension's appliesTo`,
+        taskPath,
+        key,
+      );
+      continue;
+    }
+    if (absent(key.value)) {
+      report(
+        diagnostics,
+        "absent-in-context",
+        `task ${id} does not exist here: "only" leaves it out`,
         taskPath,
         key,
       );

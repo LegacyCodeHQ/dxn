@@ -21,6 +21,7 @@ export function emptySymbols(): TreeSymbols {
     ids: new Map(),
     taskTypes: new Map(),
     children: new Map(),
+    parents: new Map(),
     taskValues: new Map(),
     components: new Set(),
     includes: [],
@@ -476,6 +477,9 @@ function checkTask(
       : checkTaskList(diagnostics, symbols, children, `${path}.children`, where, taskId);
   if (taskId !== undefined) {
     symbols.children.set(taskId, childIds);
+    for (const child of childIds) {
+      symbols.parents.set(child, taskId);
+    }
   }
   return taskId;
 }

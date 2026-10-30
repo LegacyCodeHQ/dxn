@@ -67,6 +67,8 @@ export interface Override {
 // overrides/<dimension>.json: dimension value -> overrides of types and tasks.
 export interface OverridesFile {
   version: number;
+  // Task id -> the values where the task and its subtree exist.
+  only?: Record<string, string[]>;
   overrides: Record<string, { types?: Record<string, Override>; tasks?: Record<string, Override> }>;
 }
 

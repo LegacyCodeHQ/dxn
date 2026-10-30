@@ -13,8 +13,11 @@ export interface TreeSymbols {
   ids: Map<string, string>;
   // Task id -> its type name, for tasks that name one.
   taskTypes: Map<string, string>;
-  // Task id -> ids of its children.
+  // Task id -> ids of its children, including components it includes once
+  // includes are resolved.
   children: Map<string, string[]>;
+  // Task id -> its parent within its own file (include edges excluded).
+  parents: Map<string, string>;
   // Task id -> the attribute/state pairs its own customAttributes set, as keys
   // from valueKey.
   taskValues: Map<string, Set<string>>;
@@ -34,6 +37,8 @@ export interface DimensionSymbol {
   values: Set<string> | undefined;
   // The value a context means when it leaves this dimension out.
   default?: string;
+  // Task id -> the values where it exists, from the dimension's override file.
+  only?: Map<string, Set<string>>;
   scope: Set<string>;
   scopeComplete: boolean;
 }

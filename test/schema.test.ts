@@ -266,6 +266,7 @@ agree(
       ["no overrides", overrides({})],
       ["the website pointer overrides", readJson("../examples/website/overrides/pointer.json")],
       ["a $schema reference", { $schema: "x", ...overrides({}) }],
+      ["where tasks exist", { ...overrides({}), only: { "blog-link": ["touch"] } }],
       [
         "type and task overrides",
         touch({
@@ -299,9 +300,16 @@ agree(
       ["wrong-type", link({ customAttributes: [] })],
       ["wrong-type", link({ customAttributes: { design: "x" } })],
       ["wrong-type", link({ customAttributes: { design: { normal: 1 } } })],
+      ["wrong-type", { ...overrides({}), only: [] }],
+      ["wrong-type", { ...overrides({}), only: { "blog-link": "touch" } }],
+      ["empty-only", { ...overrides({}), only: { "blog-link": [] } }],
+      ["duplicate-value", { ...overrides({}), only: { "blog-link": ["touch", "touch"] } }],
+      ["empty-string", { ...overrides({}), only: { "blog-link": [""] } }],
     ],
     crossReference: [
       ["unknown-dimension-value", overrides({ pen: {} })],
+      ["unknown-task", { ...overrides({}), only: { nope: ["touch"] } }],
+      ["unknown-dimension-value", { ...overrides({}), only: { "blog-link": ["pen"] } }],
       ["undefined-type", touch({ types: { button: {} } })],
       ["unknown-task", taskOverride("nope", {})],
       ["task-out-of-scope", taskOverride("footer-link", {})],

@@ -183,13 +183,15 @@ export function compileDirectory(directory: string): DirectoryResult {
     }
     parsed.push(file);
     if (file.root !== undefined) {
-      dimension.overrides = checkOverridesFile(
+      const checked = checkOverridesFile(
         file.root,
         file.diagnostics,
         symbols,
         { ...dimension.symbol, name },
         { file: path, entries },
       );
+      dimension.overrides = checked.states;
+      dimension.symbol.only = checked.only;
     }
     overrides.push([name, file]);
   }

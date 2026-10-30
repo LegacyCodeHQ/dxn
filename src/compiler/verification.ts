@@ -54,7 +54,16 @@ export function checkVerificationFile(
   const seen = new Set<string>();
   records.elements.forEach((element, index) => {
     const path = `$.records[${index}]`;
-    const key = checkRecord(diagnostics, tree, dimensions, combinations, inFile, element, path);
+    const key = checkRecord(
+      diagnostics,
+      tree,
+      dimensions,
+      combinations,
+      inFile,
+      rootId,
+      element,
+      path,
+    );
     if (key === undefined) {
       return;
     }
@@ -78,6 +87,7 @@ function checkRecord(
   dimensions: Map<string, DimensionInfo>,
   combinations: CombinationStates[],
   inFile: Set<string>,
+  rootId: string,
   node: JsonNode,
   path: string,
 ): string | undefined {
@@ -105,6 +115,7 @@ function checkRecord(
         combinations,
         taskId,
         type,
+        lineage(tree, rootId, taskId) ?? [taskId],
         object,
         `${path}.context`,
       );
@@ -226,6 +237,7 @@ function checkContext(
   combinations: CombinationStates[],
   taskId: string,
   type: string,
+  ancestry: string[],
   context: ObjectNode,
   path: string,
 ): string | undefined {
@@ -337,6 +349,29 @@ function checkContext(
   if (!valid) {
     return undefined;
   }
+  // "only" in any applicable dimension, on the task or a task above it on
+  // the path from the page, can leave it out of this context.
+  const absentIn = applicable.find((name) => {
+    const value = values.get(name);
+    const only = dimensions.get(name)?.symbol.only;
+    return (
+      value !== undefined &&
+      ancestry.some((id) => {
+        const allowed = only?.get(id);
+        return allowed !== undefined && !allowed.has(value);
+      })
+    );
+  });
+  if (absentIn !== undefined) {
+    report(
+      diagnostics,
+      "absent-in-context",
+      `the task does not exist when ${absentIn}=${values.get(absentIn)}: "only" leaves it out`,
+      path,
+      context,
+    );
+    return undefined;
+  }
   return JSON.stringify([...values].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
@@ -383,6 +418,29 @@ function statesInContext(
     }
   }
   return { states, removed };
+}
+
+// Ids from the page down to the task, through included components.
+function lineage(
+  tree: TreeSymbols,
+  from: string,
+  to: string,
+  seen = new Set<string>(),
+): string[] | undefined {
+  if (from === to) {
+    return [to];
+  }
+  if (seen.has(from)) {
+    return undefined;
+  }
+  seen.add(from);
+  for (const child of tree.children.get(from) ?? []) {
+    const rest = lineage(tree, child, to, seen);
+    if (rest !== undefined) {
+      return [from, ...rest];
+    }
+  }
+  return undefined;
 }
 
 function subtree(tree: TreeSymbols, id: string, into = new Set<string>()): Set<string> {
