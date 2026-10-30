@@ -47,6 +47,8 @@ export class Resolver {
   private readonly tasks = new Map<string, Task>();
   private readonly children = new Map<string, string[]>();
   private readonly scopes = new Map<string, Set<string>>();
+  // "<parent>><component>" -> the include's "states".
+  private readonly includeStates = new Map<string, Record<string, Record<string, string[]>>>();
 
   constructor(readonly project: Project) {
     for (const root of [...project.tasks, ...project.components]) {
@@ -230,6 +232,16 @@ export class Resolver {
         }
       }
     }
+    // Includes on the path from the page may fix some of the task's groups.
+    for (let index = 0; index + 1 < lineage.length; index++) {
+      const fixed = this.includeStates.get(`${lineage[index]}>${lineage[index + 1]}`)?.[id];
+      for (const [group, allowed] of Object.entries(fixed ?? {})) {
+        const declared = typeGroups[group] ?? [];
+        for (const state of declared) {
+          if (!allowed.includes(state)) states.delete(state);
+        }
+      }
+    }
     const groups: Record<string, string[]> = {};
     for (const group of Object.keys(typeGroups)) {
       const declared = this.project.types.stateGroups?.[group];
@@ -327,6 +339,11 @@ export class Resolver {
       node.id,
       (node.children ?? []).map((child: TaskNode) => (isInclude(child) ? child.include : child.id)),
     );
+    for (const child of node.children ?? []) {
+      if (isInclude(child) && child.states !== undefined) {
+        this.includeStates.set(`${node.id}>${child.include}`, child.states);
+      }
+    }
     for (const child of node.children ?? []) {
       if (!isInclude(child)) this.index(child);
     }

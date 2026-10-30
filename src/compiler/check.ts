@@ -12,7 +12,7 @@ import {
   stringElements,
   uniqueStrings,
 } from "./shape.js";
-import { type StateSet, type TreeSymbols, valueKey } from "./symbols.js";
+import { type IncludeRef, type StateSet, type TreeSymbols, valueKey } from "./symbols.js";
 
 export function emptySymbols(): TreeSymbols {
   return {
@@ -28,6 +28,8 @@ export function emptySymbols(): TreeSymbols {
     taskValues: new Map(),
     components: new Set(),
     includes: [],
+    includeStates: [],
+    includeRestrictions: new Map(),
     sharedTypes: new Set(),
     onlyWhen: new Map(),
     onlyWhenRefs: [],
@@ -161,17 +163,43 @@ function checkInclude(
   where: Where,
   parent: string | undefined,
 ): void {
-  const component = keys(diagnostics, node, path, ["include"], { required: ["include"] }).get(
-    "include",
-  );
-  if (component !== undefined && expectName(diagnostics, component, `${path}.include`)) {
-    symbols.includes.push({
-      component,
-      path: `${path}.include`,
-      diagnostics,
-      parent,
-      root: where.root,
-    });
+  const members = keys(diagnostics, node, path, ["include", "states"], { required: ["include"] });
+  const component = members.get("include");
+  if (component === undefined || !expectName(diagnostics, component, `${path}.include`)) {
+    return;
+  }
+  const include: IncludeRef = {
+    component,
+    path: `${path}.include`,
+    diagnostics,
+    parent,
+    root: where.root,
+  };
+  symbols.includes.push(include);
+
+  // states: task -> group -> values, checked once the component is known.
+  const states = members.get("states");
+  const byTask =
+    states === undefined ? undefined : expectObject(diagnostics, states, `${path}.states`);
+  for (const { key: task, value } of byTask?.members ?? []) {
+    const taskPath = childPath(`${path}.states`, task.value);
+    const byGroup = expectObject(diagnostics, value, taskPath);
+    for (const { key: group, value: list } of byGroup?.members ?? []) {
+      const groupPath = childPath(taskPath, group.value);
+      if (!expectKind(diagnostics, list, groupPath, "array")) continue;
+      if (list.elements.length === 0) {
+        report(diagnostics, "empty-values", "list at least one value", groupPath, list);
+        continue;
+      }
+      symbols.includeStates.push({
+        include,
+        task,
+        taskPath,
+        group,
+        groupPath,
+        values: stringElements(diagnostics, list, groupPath, "duplicate-value"),
+      });
+    }
   }
 }
 

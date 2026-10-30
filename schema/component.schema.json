@@ -102,6 +102,27 @@
         "include": {
           "description": "Id of a component in components/.",
           "$ref": "#/$defs/name"
+        },
+        "states": {
+          "description": "Task in the component -> state group -> the only values that task has through this include.",
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "$ref": "#/$defs/name"
+            },
+            "additionalProperties": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/name"
+              }
+            }
+          }
         }
       }
     }

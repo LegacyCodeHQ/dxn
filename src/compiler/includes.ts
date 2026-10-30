@@ -72,6 +72,69 @@ export function resolveIncludes(tree: TreeSymbols, pages: string[]): void {
       ...includes.map((include) => include.component.value),
     ]);
   }
+
+  checkIncludeStates(tree, new Set(usable));
+}
+
+// Checks each include's "states": a task in the included component, a group
+// its type uses, and values of that group. Valid ones become restrictions.
+function checkIncludeStates(tree: TreeSymbols, usable: Set<IncludeRef>): void {
+  for (const ref of tree.includeStates) {
+    const { include } = ref;
+    if (!usable.has(include) || include.parent === undefined) continue;
+    const component = include.component.value;
+    const task = JSON.stringify(ref.task.value);
+    if (!within(tree, component, ref.task.value)) {
+      report(
+        include.diagnostics,
+        "task-outside-include",
+        `task ${task} is not in the included component ${JSON.stringify(component)}`,
+        ref.taskPath,
+        ref.task,
+      );
+      continue;
+    }
+    const type = tree.taskTypes.get(ref.task.value);
+    const values = type === undefined ? undefined : tree.typeGroups.get(type)?.get(ref.group.value);
+    if (values === undefined) {
+      report(
+        include.diagnostics,
+        "unknown-state-group",
+        `task ${task} has no state group ${JSON.stringify(ref.group.value)}`,
+        ref.groupPath,
+        ref.group,
+      );
+      continue;
+    }
+    const allowed = new Set<string>();
+    for (const [value, valuePath] of ref.values) {
+      if (!values.has(value.value)) {
+        report(
+          include.diagnostics,
+          "unknown-state",
+          `${JSON.stringify(value.value)} is not in task ${task}'s ${JSON.stringify(ref.group.value)} group`,
+          valuePath,
+          value,
+        );
+        continue;
+      }
+      allowed.add(value.value);
+    }
+    const key = `${include.parent}>${component}`;
+    const byTask = tree.includeRestrictions.get(key) ?? new Map<string, Map<string, Set<string>>>();
+    const byGroup = byTask.get(ref.task.value) ?? new Map<string, Set<string>>();
+    byGroup.set(ref.group.value, allowed);
+    byTask.set(ref.task.value, byGroup);
+    tree.includeRestrictions.set(key, byTask);
+  }
+}
+
+// Whether a task is in a component's subtree, through includes.
+function within(tree: TreeSymbols, root: string, id: string, seen = new Set<string>()): boolean {
+  if (root === id) return true;
+  if (seen.has(root)) return false;
+  seen.add(root);
+  return (tree.children.get(root) ?? []).some((child) => within(tree, child, id, seen));
 }
 
 // Whether the component an include brings in leads back to the component

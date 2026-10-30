@@ -33,6 +33,11 @@ export interface TreeSymbols {
   components: Set<string>;
   // Every include node, resolved once all task and component files are read.
   includes: IncludeRef[];
+  // "states" on include nodes, checked once includes are resolved.
+  includeStates: IncludeStateRef[];
+  // "<parent>><component>" -> task -> group -> the values it has through
+  // that include.
+  includeRestrictions: Map<string, Map<string, Map<string, Set<string>>>>;
   // Types whose states their instances' subtrees vary with.
   sharedTypes: Set<string>;
   // Task id -> shared ancestor id -> the states in which the task exists.
@@ -131,4 +136,14 @@ export interface OnlyWhenRef {
   path: string;
   states: [StringNode, string][];
   diagnostics: Diagnostics;
+}
+
+// One task's group values in an include's "states".
+export interface IncludeStateRef {
+  include: IncludeRef;
+  task: StringNode;
+  taskPath: string;
+  group: StringNode;
+  groupPath: string;
+  values: [StringNode, string][];
 }

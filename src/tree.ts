@@ -31,6 +31,8 @@ export interface Task {
 // Brings a component's subtree in at this position.
 export interface Include {
   include: string;
+  // Task in the component -> state group -> the only values it has here.
+  states?: Record<string, Record<string, string[]>>;
 }
 
 export type TaskNode = Task | Include;

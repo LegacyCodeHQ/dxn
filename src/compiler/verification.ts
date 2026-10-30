@@ -415,6 +415,26 @@ function checkContext(
       })
     );
   });
+  // An include on the path from the page may fix some of the task's groups.
+  for (let index = 0; index + 1 < ancestry.length; index++) {
+    const restrictions = tree.includeRestrictions
+      .get(`${ancestry[index]}>${ancestry[index + 1]}`)
+      ?.get(taskId);
+    for (const [group, allowed] of restrictions ?? []) {
+      const value = values.get(group);
+      const entry = given.get(group);
+      if (value !== undefined && entry !== undefined && !allowed.has(value)) {
+        report(
+          diagnostics,
+          "excluded-state",
+          `${JSON.stringify(value)} is excluded here: the include of ${JSON.stringify(ancestry[index + 1])} allows ${[...allowed].join(", ")}`,
+          childPath(path, group),
+          entry.value,
+        );
+        return undefined;
+      }
+    }
+  }
   const leftOut = ancestry.find((id) =>
     [...(tree.onlyWhen.get(id) ?? [])].some(([ancestor, states]) => {
       const value = values.get(ancestor);

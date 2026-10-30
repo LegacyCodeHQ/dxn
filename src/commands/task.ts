@@ -32,6 +32,8 @@ Subcommands:
   only-when <id> <ancestor-id> (<state>... | --always)
                                      Make a task exist only in some states of a shared ancestor
   include <parent-id> <component-id> Include a component under a task
+  include-states <parent-id> <component-id> <task-id> <group> (<value>... | --any)
+                                     Fix a task's state group values through that include
   uninclude <parent-id> <component-id>
                                      Remove that include
   set <id> <attribute> <state>=<value>...
@@ -216,7 +218,45 @@ const onlyWhen = editCommand(usage, (workspace, args) => {
   workspace.touch(located.file);
 });
 
+const includeStates = editCommand(usage, (workspace, args) => {
+  const { values, positionals } = parse(
+    args,
+    ["parent-id", "component-id", "task-id", "group"],
+    { any: { type: "boolean" } },
+    true,
+  );
+  const [parentId, component, id, stateGroup, ...listed] = positionals as [
+    string,
+    string,
+    string,
+    string,
+    ...string[],
+  ];
+  if ((listed.length === 0) === (values.any !== true)) {
+    throw new UsageError("give the values the task has through this include, or --any");
+  }
+  const parent = requireTask(workspace, parentId);
+  const children = Array.isArray(parent.node.children) ? parent.node.children : [];
+  const include = children.find((child) => isObject(child) && child.include === component);
+  if (!isObject(include)) {
+    throw new Refusal(`"${parentId}" does not include "${component}"`);
+  }
+  const states = isObject(include.states) ? include.states : {};
+  const byGroup = isObject(states[id]) ? (states[id] as Record<string, unknown>) : {};
+  if (values.any === true) {
+    delete byGroup[stateGroup];
+  } else {
+    byGroup[stateGroup] = listed;
+  }
+  if (Object.keys(byGroup).length === 0) delete states[id];
+  else states[id] = byGroup;
+  if (Object.keys(states).length === 0) delete include.states;
+  else include.states = states;
+  workspace.touch(parent.file);
+});
+
 export const task: Command = group(usage, {
+  "include-states": includeStates,
   "only-when": onlyWhen,
   include,
   uninclude,
