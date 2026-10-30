@@ -10,8 +10,9 @@ const verifyUsage = `Usage: dimensions verify <node-id> --check <name> --result 
 
 Records a check's result for a node in one context, replacing any earlier
 record for the same node, context and check. The context gives one value for
-each of the node's state groups (state=<state> for a plain states list) and
-the states of shared nodes above it; dimensions left out take their default.
+each of the node's state groups (state=<state> for a plain states list, or
+<node-id>=<state> for a shared node, as contexts names it) and the states of
+shared nodes above it; dimensions left out take their default.
 --transition records the result for one of the node's transitions instead.
 --at defaults to now; --root is needed when several roots include the node.
 `;

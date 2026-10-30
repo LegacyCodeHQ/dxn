@@ -321,16 +321,18 @@ function checkContext(
     nodeId,
   );
   // Each of the type's state groups is a context key; a plain states list is
-  // one group, "state".
+  // one group, "state". A shared node's state is named by its id instead, as
+  // its descendants and contexts name it.
   const typeGroups = tree.typeGroups.get(type) ?? new Map<string, Set<string>>();
+  const own = tree.sharedTypes.has(type) ? nodeId : "state";
   const groupNames =
-    typeGroups.size > 0
+    typeGroups.size > 0 && own === "state"
       ? [...typeGroups.keys()]
       : states.size > 0 || removed.size > 0
-        ? ["state"]
+        ? [own]
         : [];
   const inGroup = (group: string, value: string) =>
-    group === "state" || tree.stateGroups.get(group)?.has(value) === true;
+    group === own || tree.stateGroups.get(group)?.has(value) === true;
 
   // Shared ancestors on the path from the root: their states are context keys.
   const shared = ancestry.slice(0, -1).filter((id) => {
@@ -421,7 +423,7 @@ function checkContext(
       report(
         diagnostics,
         "unknown-state",
-        group === "state"
+        group === own
           ? `${name} is not a state of this node here`
           : `${name} is not in this node's ${JSON.stringify(group)} group here`,
         statePath,

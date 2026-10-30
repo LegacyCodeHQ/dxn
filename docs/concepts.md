@@ -339,10 +339,12 @@ by whom and when. Records live in `verification/<root-id>.json`:
 ```
 
 A record's context gives a value for each of the node's state groups (`state`
-for a plain states list) and for each dimension that applies to it. A
-dimension it leaves out means that dimension's default, so the record above is
-for a mouse and a keyboard. The context must exist. A record can also name a `transition` instead of a
-context. `dimensions verify` writes records and `unverify` removes them.
+for a plain states list, or the node's id for a shared node, as in
+`menu=open`) and for each dimension that applies to it. A dimension it leaves
+out means that dimension's default, so the record above is for a mouse and a
+keyboard. The context must exist. A record can also name a `transition`
+instead of a context. `dimensions verify` writes records and `unverify`
+removes them.
 `dimensions status` reports every required check as passed, failed or
 missing.
 

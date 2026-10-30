@@ -482,3 +482,26 @@ describe("show, like view", () => {
     ]);
   });
 });
+
+describe("records for a shared node", () => {
+  it("name its own state by its id, as contexts and status do", () => {
+    const { run } = cliProject({
+      ...files,
+      "types.json": {
+        version: 1,
+        checks: { behavior: {} },
+        types: {
+          menu: { states: ["closed", "open"], shared: true, checks: ["behavior"] },
+          "toolbar-link": { states: ["normal", "hovered"] },
+        },
+      },
+    });
+    const verify = (...context: string[]) =>
+      run("verify", "menu", "--check", "behavior", "--result", "passed", "--by", "p", ...context);
+    const snapshot: unknown[] = [];
+    snapshot.push(verify("breakpoint=base", "state=closed").code);
+    snapshot.push(verify("breakpoint=base", "menu=closed").code);
+    snapshot.push(json(run("status", "menu")).summary);
+    expect(snapshot).toEqual([1, 0, { passed: 1, failed: 0, missing: 3 }]);
+  });
+});

@@ -163,8 +163,8 @@ describe("usage text", () => {
       [
         [
           "                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]",
-          "each of the node's state groups (state=<state> for a plain states list) and",
-          "the states of shared nodes above it; dimensions left out take their default.",
+          "each of the node's state groups (state=<state> for a plain states list, or",
+          "<node-id>=<state> for a shared node, as contexts names it) and the states of",
         ],
         [
           "                          [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]",
