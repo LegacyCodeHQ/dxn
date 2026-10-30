@@ -22,7 +22,9 @@ import {
 const usage = `Usage: task-tree type <subcommand>
 
 Subcommands:
-  add <name> [--states a,b,c]        Add a type
+  add <name> [--states a,b,c] [--shared]
+                                     Add a type; --shared lets instances' subtrees vary with its state
+  share <name> / unshare <name>      Make a type shared, or stop sharing it
   add-state <type> <state>           Add a state to a type
   remove-state <type> <state>        Remove a state from a type
   set <type> <attribute> <state>=<value>...
@@ -61,15 +63,34 @@ function edit(run: (workspace: Workspace, args: string[]) => void): Command {
 }
 
 const add = edit((workspace, args) => {
-  const { values, positionals } = parse(args, ["name"], { states: { type: "string" } });
+  const { values, positionals } = parse(args, ["name"], {
+    states: { type: "string" },
+    shared: { type: "boolean" },
+  });
   const [name] = positionals as [string];
   const types = typeMap(workspace);
   if (name in types) {
     throw new Refusal(`type "${name}" already exists`);
   }
   const states = list(values.states);
-  types[name] = states === undefined ? {} : { states };
+  types[name] = {
+    ...(states === undefined ? {} : { states }),
+    ...(values.shared === true ? { shared: true } : {}),
+  };
 });
+
+function sharing(shared: boolean): Command {
+  return edit((workspace, args) => {
+    const [name] = parse(args, ["name"], {}).positionals as [string];
+    const type = requireType(workspace, name);
+    if (shared) {
+      type.shared = true;
+      reorder(type, typeOrder);
+    } else {
+      delete type.shared;
+    }
+  });
+}
 
 const addState = edit((workspace, args) => {
   const [name, state] = parse(args, ["type", "state"], {}).positionals as [string, string];
@@ -150,6 +171,8 @@ const unrequireCheck = edit((workspace, args) => {
 });
 
 export const type: Command = group(usage, {
+  share: sharing(true),
+  unshare: sharing(false),
   require: requireCheck,
   unrequire: unrequireCheck,
   add,

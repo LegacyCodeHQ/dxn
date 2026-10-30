@@ -29,6 +29,8 @@ Subcommands:
   move <id> --parent <id>            Move a task and its subtree under another task
   rename <id> <new-id>               Rename a task and every reference to it
   remove <id>                        Remove a task and its subtree
+  only-when <id> <ancestor-id> (<state>... | --always)
+                                     Make a task exist only in some states of a shared ancestor
   include <parent-id> <component-id> Include a component under a task
   uninclude <parent-id> <component-id>
                                      Remove that include
@@ -187,7 +189,35 @@ const uninclude = editCommand(usage, (workspace, args) => {
   workspace.touch(parent.file);
 });
 
+const onlyWhen = editCommand(usage, (workspace, args) => {
+  const { values, positionals } = parse(
+    args,
+    ["id", "ancestor-id"],
+    { always: { type: "boolean" } },
+    true,
+  );
+  const [id, ancestor, ...states] = positionals as [string, string, ...string[]];
+  if ((states.length === 0) === (values.always !== true)) {
+    throw new UsageError("give the states the task exists in, or --always");
+  }
+  const located = requireTask(workspace, id);
+  const conditions = isObject(located.node.onlyWhen) ? located.node.onlyWhen : {};
+  if (values.always === true) {
+    delete conditions[ancestor];
+  } else {
+    conditions[ancestor] = states;
+  }
+  if (Object.keys(conditions).length === 0) {
+    delete located.node.onlyWhen;
+  } else {
+    located.node.onlyWhen = conditions;
+    reorder(located.node, taskOrder);
+  }
+  workspace.touch(located.file);
+});
+
 export const task: Command = group(usage, {
+  "only-when": onlyWhen,
   include,
   uninclude,
   add,
