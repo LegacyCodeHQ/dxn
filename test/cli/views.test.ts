@@ -505,3 +505,30 @@ describe("records for a shared node", () => {
     expect(snapshot).toEqual([1, 0, { passed: 1, failed: 0, missing: 3 }]);
   });
 });
+
+describe("a shared type that uses a state group", () => {
+  it("has that group's values as its states everywhere", () => {
+    const { run } = cliProject({
+      ...files,
+      "types.json": {
+        version: 1,
+        stateGroups: { openness: ["closed", "open"] },
+        types: {
+          menu: { stateGroups: ["openness"], shared: true },
+          "toolbar-link": { states: ["normal", "hovered"] },
+        },
+      },
+    });
+    expect([
+      json(run("axes", "toolbar")).shared,
+      json(run("contexts", "menu-link", "menu=open", "--count")).count,
+      run("view", "toolbar", "breakpoint=sm").stderr,
+      json(run("view", "toolbar", "breakpoint=sm", "menu=open")).context,
+    ]).toEqual([
+      [{ node: "menu", states: ["closed", "open"], existsWhen: { breakpoint: ["base", "sm"] } }],
+      4,
+      "dimensions: give menu=<closed|open> for this view\n",
+      { breakpoint: "sm", menu: "open" },
+    ]);
+  });
+});

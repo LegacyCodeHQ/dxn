@@ -14,9 +14,11 @@ export function choices(names: string[]): string {
   return names.length === 0 ? "none" : names.join(", ");
 }
 
+// A shared node's states: its type's plain states, or the values of the one
+// state group it uses.
 export function sharedStates(resolver: Resolver, node: string): string[] {
   const type = resolver.node(node)?.type as string;
-  return resolver.project.types.types?.[type]?.states ?? [];
+  return Object.values(resolver.groupsOf(type)).flat();
 }
 
 // The contexts of a node, or of every part of its subtree, with the

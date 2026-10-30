@@ -504,9 +504,7 @@ export const view = readCommand(viewUsage, (resolver, args, io) => {
       continue;
     }
     if (given[node] === undefined) {
-      const type = resolver.node(node)?.type as string;
-      const states = resolver.project.types.types?.[type]?.states ?? [];
-      throw new Refusal(`give ${node}=<${states.join("|")}> for this view`);
+      throw new Refusal(`give ${node}=<${sharedStates(resolver, node).join("|")}> for this view`);
     }
     context[node] = given[node];
   }
