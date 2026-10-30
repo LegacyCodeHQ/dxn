@@ -94,9 +94,11 @@ export class Resolver {
     return lineage.slice(0, -1).filter((id) => this.isShared(id));
   }
 
-  // Every context the task exists in on a page: each combination of its
-  // dimensions' values and its shared ancestors' states, times its own states.
-  contexts(id: string, page: string): Context[] {
+  // Every context the task exists in on a page (or, without one, within its
+  // own file): each combination of its dimensions' values and its shared
+  // ancestors' states, times its own states. A shared task's own state is
+  // named by its id, as its descendants name it.
+  contexts(id: string, page?: string): Context[] {
     const task = this.tasks.get(id);
     if (task === undefined) return [];
     const lineage = this.lineage(id, page);
@@ -118,7 +120,10 @@ export class Resolver {
     return contexts.flatMap((context) => {
       const resolved = this.resolve(id, context, lineage);
       if (!resolved.present) return [];
-      if (task.type === undefined || !this.hasStates(task.type) || this.isShared(id)) {
+      if (this.isShared(id)) {
+        return resolved.states.map((state) => ({ ...context, [id]: state }));
+      }
+      if (task.type === undefined || !this.hasStates(task.type)) {
         return [context];
       }
       // One value per group: the matrix of the type's groups.
@@ -334,7 +339,7 @@ export class Resolver {
   }
 
   // The task and everything under it, through includes, in tree order.
-  private subtree(id: string): string[] {
+  subtree(id: string): string[] {
     const ids: string[] = [];
     const visit = (current: string) => {
       if (ids.includes(current)) return;

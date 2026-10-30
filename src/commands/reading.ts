@@ -220,21 +220,106 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
   });
 });
 
-const contextsUsage = `Usage: task-tree contexts <task-id>
+const contextsUsage = `Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--count]
+                         [--page <page-id>]
 
 Lists every context the task exists in, on each page that contains it.
+--subtree lists every part of the task's subtree instead, with the component
+on its own unless --page names a page. <name>=<value> filters keep only the
+contexts with that dimension value, state or shared task state. --count
+prints counts instead of the contexts.
 `;
 
 export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
-  const [id] = parse(args, ["task-id"], {}).positionals as [string];
+  const { values, positionals } = parse(
+    args,
+    ["task-id"],
+    {
+      subtree: { type: "boolean" },
+      count: { type: "boolean" },
+      page: { type: "string" },
+    },
+    true,
+  );
+  const [id, ...filterArgs] = positionals as [string, ...string[]];
   requireTaskId(resolver, id);
-  print(io, {
-    task: id,
-    contexts: resolver
-      .pages(id)
-      .flatMap((page) => resolver.contexts(id, page).map((context) => ({ page, context }))),
-  });
+  requirePage(resolver, id, values.page);
+
+  if (values.subtree === true) {
+    const tasks = resolver
+      .subtree(id)
+      .map((task) => ({ id: task, contexts: resolver.contexts(task, values.page) }));
+    const keep = filter(
+      resolver,
+      filterArgs,
+      tasks.flatMap((task) => task.contexts),
+    );
+    const kept = tasks.map((task) => ({ id: task.id, contexts: task.contexts.filter(keep) }));
+    const page = values.page === undefined ? {} : { page: values.page };
+    if (values.count === true) {
+      print(io, {
+        task: id,
+        ...page,
+        counts: Object.fromEntries(kept.map((task) => [task.id, task.contexts.length])),
+        total: kept.reduce((sum, task) => sum + task.contexts.length, 0),
+      });
+    } else {
+      print(io, { task: id, ...page, tasks: kept.filter((task) => task.contexts.length > 0) });
+    }
+    return;
+  }
+
+  const pages = values.page === undefined ? resolver.pages(id) : [values.page];
+  const all = pages.flatMap((page) =>
+    resolver.contexts(id, page).map((context) => ({ page, context })),
+  );
+  const keep = filter(
+    resolver,
+    filterArgs,
+    all.map(({ context }) => context),
+  );
+  const kept = all.filter(({ context }) => keep(context));
+  print(
+    io,
+    values.count === true ? { task: id, count: kept.length } : { task: id, contexts: kept },
+  );
 });
+
+// A predicate for <name>=<value> filters. Names must appear in the contexts
+// (dimensions, state groups, shared tasks); values must be declared for them.
+function filter(
+  resolver: Resolver,
+  args: string[],
+  contexts: TaskContext[],
+): (context: TaskContext) => boolean {
+  const names = [...new Set(contexts.flatMap((context) => Object.keys(context)))].sort();
+  const wanted: [string, string][] = args.map((arg) => {
+    const at = arg.indexOf("=");
+    if (at <= 0 || at === arg.length - 1) {
+      throw new UsageError(`expected <name>=<value>, got ${JSON.stringify(arg)}`);
+    }
+    const [name, value] = [arg.slice(0, at), arg.slice(at + 1)];
+    if (!names.includes(name)) {
+      throw new Refusal(
+        `"${name}" is not a dimension, state group or shared task here (${choices(names)})`,
+      );
+    }
+    const dimension = resolver.project.dimensions[name];
+    const group = resolver.project.types.stateGroups?.[name];
+    const allowed =
+      dimension?.values ??
+      group ??
+      (resolver.isShared(name)
+        ? sharedStates(resolver, name)
+        : [...new Set(contexts.map((context) => context[name]).filter((v) => v !== undefined))]);
+    if (!allowed.includes(value)) {
+      const kind = resolver.isShared(name) ? "a state" : "a value";
+      throw new Refusal(`"${value}" is not ${kind} of ${name} (${choices(allowed as string[])})`);
+    }
+    return [name, value];
+  });
+  return (context) => wanted.every(([name, value]) => context[name] === value);
+}
 
 const viewsUsage = `Usage: task-tree views <task-id> [--page <page-id>]
 
