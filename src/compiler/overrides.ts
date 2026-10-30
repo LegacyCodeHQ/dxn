@@ -10,13 +10,23 @@ import {
   report,
   stringElements,
 } from "./shape.js";
-import type {
-  DimensionSymbol,
-  OverrideStates,
-  StateChanges,
-  StateSet,
-  TreeSymbols,
+import {
+  type DimensionSymbol,
+  type OverrideEntry,
+  type OverrideStates,
+  type StateChanges,
+  type StateSet,
+  type TreeSymbols,
+  valueKey,
 } from "./symbols.js";
+
+// Where the file being checked sits, and where to collect its valid
+// overrides for the conflict check.
+export interface OverrideSource {
+  dimension: string;
+  file: string;
+  entries: OverrideEntry[];
+}
 
 // overrides/<dimension>.json: overrides by dimension value, then by type or task.
 // Returns the valid state changes, for checking verification contexts.
@@ -25,6 +35,7 @@ export function checkOverridesFile(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   dimension: DimensionSymbol,
+  source: OverrideSource,
 ): OverrideStates {
   const changes: OverrideStates = new Map();
   const document = expectObject(diagnostics, root, "$");
@@ -56,7 +67,21 @@ export function checkOverridesFile(
     }
     changes.set(
       entry.key.value,
-      checkValueOverrides(diagnostics, tree, dimension, entry.value, valuePath),
+      checkValueOverrides(diagnostics, tree, dimension, entry.value, valuePath, (kind, target) => {
+        const created: OverrideEntry = {
+          dimension: source.dimension,
+          file: source.file,
+          value: entry.key.value,
+          diagnostics,
+          kind,
+          target,
+          values: new Map(),
+          added: new Map(),
+          removed: new Map(),
+        };
+        source.entries.push(created);
+        return created;
+      }),
     );
   }
   return changes;
@@ -70,6 +95,7 @@ function checkValueOverrides(
   dimension: DimensionSymbol,
   node: JsonNode,
   path: string,
+  newEntry: (kind: OverrideEntry["kind"], target: string) => OverrideEntry,
 ): { types: Map<string, StateChanges>; tasks: Map<string, StateChanges> } {
   const changes = {
     types: new Map<string, StateChanges>(),
@@ -98,10 +124,14 @@ function checkValueOverrides(
       );
       continue;
     }
-    const result = checkOverride(diagnostics, tree, value, typePath, {
-      states,
-      removed: new Set(),
-    });
+    const result = checkOverride(
+      diagnostics,
+      tree,
+      value,
+      typePath,
+      { states, removed: new Set() },
+      newEntry("types", key.value),
+    );
     typeStates.set(key.value, result.states);
     changes.types.set(key.value, result.changes);
   }
@@ -150,6 +180,7 @@ function checkValueOverrides(
         value,
         taskPath,
         typeStates.get(type) ?? { states, removed: new Set() },
+        newEntry("tasks", key.value),
       ).changes,
     );
   }
@@ -164,6 +195,7 @@ function checkOverride(
   node: JsonNode,
   path: string,
   start: StateSet,
+  entry: OverrideEntry,
 ): { states: StateSet; changes: StateChanges } {
   const result: StateSet = { states: new Set(start.states), removed: new Set(start.removed) };
   const changes: StateChanges = { add: new Set(), remove: new Set() };
@@ -204,6 +236,7 @@ function checkOverride(
         result.states.delete(state.value);
         result.removed.add(state.value);
         changes.remove.add(state.value);
+        entry.removed.set(state.value, { node: state, path: statePath });
       }
     }
     for (const [state, statePath] of listElements(diagnostics, lists.get("add"), path, "add")) {
@@ -227,13 +260,26 @@ function checkOverride(
         result.states.add(state.value);
         result.removed.delete(state.value);
         changes.add.add(state.value);
+        entry.added.set(state.value, { node: state, path: statePath });
       }
     }
   }
 
   const attributes = members.get("customAttributes");
   if (attributes !== undefined) {
-    checkAttributeValues(diagnostics, tree, attributes, `${path}.customAttributes`, result);
+    checkAttributeValues(
+      diagnostics,
+      tree,
+      attributes,
+      `${path}.customAttributes`,
+      result,
+      (attribute, state, value, valuePath) =>
+        entry.values.set(valueKey(attribute, state), {
+          value: value.value,
+          node: value,
+          path: valuePath,
+        }),
+    );
   }
   return { states: result, changes };
 }

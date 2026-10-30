@@ -9,13 +9,14 @@ import type {
   VerificationFile,
 } from "../tree.js";
 import { checkTaskFile, checkTypesFile, emptySymbols } from "./check.js";
+import { checkConflicts } from "./conflicts.js";
 import { type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { checkDimensionFile } from "./dimensions.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { checkOverridesFile } from "./overrides.js";
 import { readSource } from "./read.js";
 import { isName } from "./shape.js";
-import type { DimensionSymbol } from "./symbols.js";
+import type { DimensionSymbol, OverrideEntry } from "./symbols.js";
 import { checkVerificationFile, type DimensionInfo } from "./verification.js";
 
 export interface FileDiagnostic extends Diagnostic {
@@ -139,6 +140,7 @@ export function compileDirectory(directory: string): DirectoryResult {
   }
 
   const overrides: [string, ParsedFile][] = [];
+  const entries: OverrideEntry[] = [];
   for (const name of listJson(directory, "overrides", problems)) {
     const path = `overrides/${name}.json`;
     const dimension = dimensions.get(name);
@@ -164,10 +166,13 @@ export function compileDirectory(directory: string): DirectoryResult {
         file.diagnostics,
         symbols,
         dimension.symbol,
+        { dimension: name, file: path, entries },
       );
     }
     overrides.push([name, file]);
   }
+
+  checkConflicts(entries, symbols, dimensions);
 
   const rootIds = new Set(tasks.map((file) => file.file.slice("tasks/".length, -".json".length)));
   const verification: [string, ParsedFile][] = [];

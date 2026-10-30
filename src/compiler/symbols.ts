@@ -1,3 +1,6 @@
+import type { Diagnostics } from "./diagnostic.js";
+import type { StringNode } from "./json.js";
+
 // What types.json and the task files declare, used to check references from
 // dimension and override files.
 export interface TreeSymbols {
@@ -12,6 +15,9 @@ export interface TreeSymbols {
   taskTypes: Map<string, string>;
   // Task id -> ids of its children.
   children: Map<string, string[]>;
+  // Task id -> the attribute/state pairs its own customAttributes set, as keys
+  // from valueKey.
+  taskValues: Map<string, Set<string>>;
   // Declared check names, and the checks each type requires.
   checks: Set<string>;
   typeChecks: Map<string, Set<string>>;
@@ -43,3 +49,27 @@ export type OverrideStates = Map<
   string,
   { types: Map<string, StateChanges>; tasks: Map<string, StateChanges> }
 >;
+
+export function valueKey(attribute: string, state: string): string {
+  return JSON.stringify([attribute, state]);
+}
+
+interface Located {
+  node: StringNode;
+  path: string;
+}
+
+// One valid override of a type or task for one dimension value, with where
+// each of its changes is, for reporting conflicts between dimensions.
+export interface OverrideEntry {
+  dimension: string;
+  value: string;
+  file: string;
+  diagnostics: Diagnostics;
+  kind: "types" | "tasks";
+  target: string;
+  // By valueKey(attribute, state).
+  values: Map<string, Located & { value: string }>;
+  added: Map<string, Located>;
+  removed: Map<string, Located>;
+}

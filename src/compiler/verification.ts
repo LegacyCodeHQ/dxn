@@ -318,8 +318,10 @@ function checkContext(
   return JSON.stringify([...values].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
-// Applies each dimension's type then task state changes, in dimension name
-// order. (Provisional: precedence between dimensions is not decided yet.)
+// Applies every dimension's type state changes, then every dimension's task
+// state changes: an instance's own changes beat type changes from any
+// dimension. Conflicts between dimensions are errors, so order within each
+// pass does not matter.
 function statesInContext(
   base: Set<string>,
   dimensions: Map<string, DimensionInfo>,
@@ -330,18 +332,21 @@ function statesInContext(
 ): { states: Set<string>; removed: Set<string> } {
   const states = new Set(base);
   const removed = new Set<string>();
-  for (const name of applicable) {
+  const overrides = applicable.map((name) => {
     const value = values.get(name);
-    const overrides = value === undefined ? undefined : dimensions.get(name)?.overrides?.get(value);
-    for (const changes of [overrides?.types.get(type), overrides?.tasks.get(taskId)]) {
-      for (const state of changes?.remove ?? []) {
-        states.delete(state);
-        removed.add(state);
-      }
-      for (const state of changes?.add ?? []) {
-        states.add(state);
-        removed.delete(state);
-      }
+    return value === undefined ? undefined : dimensions.get(name)?.overrides?.get(value);
+  });
+  for (const changes of [
+    ...overrides.map((override) => override?.types.get(type)),
+    ...overrides.map((override) => override?.tasks.get(taskId)),
+  ]) {
+    for (const state of changes?.remove ?? []) {
+      states.delete(state);
+      removed.add(state);
+    }
+    for (const state of changes?.add ?? []) {
+      states.add(state);
+      removed.delete(state);
     }
   }
   return { states, removed };

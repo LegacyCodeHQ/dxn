@@ -1,5 +1,5 @@
 import { childPath, type Diagnostics } from "./diagnostic.js";
-import type { JsonNode } from "./json.js";
+import type { JsonNode, StringNode } from "./json.js";
 import {
   checkSchema,
   checkVersion,
@@ -12,7 +12,7 @@ import {
   stringElements,
   uniqueStrings,
 } from "./shape.js";
-import type { StateSet, TreeSymbols } from "./symbols.js";
+import { type StateSet, type TreeSymbols, valueKey } from "./symbols.js";
 
 export function emptySymbols(): TreeSymbols {
   return {
@@ -21,6 +21,7 @@ export function emptySymbols(): TreeSymbols {
     ids: new Map(),
     taskTypes: new Map(),
     children: new Map(),
+    taskValues: new Map(),
     checks: new Set(),
     typeChecks: new Map(),
   };
@@ -238,12 +239,14 @@ function checkTypes(
   }
 }
 
+// Checks a customAttributes block. accept is called for each valid value.
 export function checkAttributeValues(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
   node: JsonNode,
   path: string,
   { states, removed }: StateSet,
+  accept?: (attribute: string, state: string, value: StringNode, path: string) => void,
 ): void {
   const attributes = expectObject(diagnostics, node, path);
   if (attributes === undefined) {
@@ -299,7 +302,9 @@ export function checkAttributeValues(
           statePath,
           entry.value,
         );
+        continue;
       }
+      accept?.(key.value, entry.key.value, entry.value, statePath);
     }
   }
 }
@@ -396,10 +401,18 @@ function checkTask(
         key ?? attributes,
       );
     } else if (states !== undefined) {
-      checkAttributeValues(diagnostics, symbols, attributes, `${path}.customAttributes`, {
-        states,
-        removed: new Set(),
-      });
+      const own = new Set<string>();
+      checkAttributeValues(
+        diagnostics,
+        symbols,
+        attributes,
+        `${path}.customAttributes`,
+        { states, removed: new Set() },
+        (attribute, state) => own.add(valueKey(attribute, state)),
+      );
+      if (taskId !== undefined) {
+        symbols.taskValues.set(taskId, own);
+      }
     }
   }
 

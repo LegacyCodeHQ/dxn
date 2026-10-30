@@ -185,6 +185,32 @@ describe("record context", () => {
   });
 });
 
+describe("record context across dimensions", () => {
+  it("let a task's state change beat type state changes from other dimensions", () => {
+    // breakpoint sorts first: applying dimensions in name order would let
+    // pointer's type removal undo blog-link's own re-add at sm.
+    expect(
+      diagnose({
+        ...project,
+        "dimensions/breakpoint.json": { version: 1, values: ["sm"], appliesTo: ["page"] },
+        "overrides/breakpoint.json": {
+          version: 1,
+          overrides: {
+            sm: {
+              types: { link: { states: { remove: ["hovered"] } } },
+              tasks: { "blog-link": { states: { add: ["hovered"] } } },
+            },
+          },
+        },
+        "verification/page.json": {
+          version: 1,
+          records: [record({ context: { state: "hovered", breakpoint: "sm", pointer: "touch" } })],
+        },
+      }),
+    ).toEqual([]);
+  });
+});
+
 describe("record check", () => {
   it("must be declared", () => {
     expect(r({ check: 1 })).toEqual([v("wrong-type", "$.records[0].check")]);
