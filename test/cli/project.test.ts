@@ -79,6 +79,7 @@ describe("finding the project", () => {
       Usage: task-tree <command> [options]
 
       Commands:
+        help [<command>]    Show this overview, or a command's usage
         init                Create a .task-tree project in the working directory
         validate            Compile the project and report every error
         query <task-id> [<dimension>=<value>...]
@@ -112,6 +113,11 @@ describe("finding the project", () => {
                             Say at which values of a dimension a task exists
         override <subcommand>
                             Change states and values for a dimension value or combination
+
+      Run "task-tree help <command>" (or "task-tree <command> --help") for a command's
+      options. The docs/ folder of the task-tree package explains the concepts
+      (concepts.md), every command (commands.md), every diagnostic code
+      (diagnostics.md) and the JSON output (output.md).
 
       Options:
         --dir <directory>   Use this project directory instead of the nearest .task-tree

@@ -2,7 +2,7 @@ import { parseArgs } from "node:util";
 import type { Io } from "../io.js";
 import { requireProject } from "../project.js";
 import { type Json, UnreadableFile, Workspace } from "../workspace.js";
-import type { Command, Context } from "./context.js";
+import { type Command, type Context, command } from "./context.js";
 
 // A usage error: the command line itself is wrong (exit 2).
 export class UsageError extends Error {}
@@ -16,7 +16,7 @@ export function editCommand(
   usage: string,
   edit: (workspace: Workspace, args: string[]) => void,
 ): Command {
-  return (args, { io, cwd, dir, dryRun }) => {
+  return command(usage, (args, { io, cwd, dir, dryRun }) => {
     const project = requireProject(io, cwd, dir);
     if (project === undefined) {
       return 1;
@@ -28,12 +28,12 @@ export function editCommand(
       return report(io, usage, error);
     }
     return workspace.commit(io, dryRun);
-  };
+  });
 }
 
 // Dispatches "<group> <subcommand> ..." to the subcommand.
 export function group(usage: string, subcommands: Record<string, Command>): Command {
-  return (args, context: Context) => {
+  return command(usage, (args, context: Context) => {
     const [name, ...rest] = args;
     const subcommand = name === undefined ? undefined : subcommands[name];
     if (subcommand === undefined) {
@@ -41,7 +41,7 @@ export function group(usage: string, subcommands: Record<string, Command>): Comm
       return 2;
     }
     return subcommand(rest, context);
-  };
+  });
 }
 
 function report(io: Io, usage: string, error: unknown): number {

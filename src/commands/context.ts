@@ -9,4 +9,9 @@ export interface Context {
   dryRun: boolean;
 }
 
-export type Command = (args: string[], context: Context) => number;
+// A command, with the usage text --help and "help <command>" print.
+export type Command = ((args: string[], context: Context) => number) & { usage: string };
+
+export function command(usage: string, run: (args: string[], context: Context) => number): Command {
+  return Object.assign(run, { usage });
+}

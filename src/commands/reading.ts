@@ -4,7 +4,7 @@ import { printDiagnostics, requireProject } from "../project.js";
 import { choices, contextFilter, QueryError, sharedStates, subtreeContexts } from "../queries.js";
 import { contextKey, Resolver, type Context as TaskContext } from "../resolve.js";
 import { buildStateTree, drawStateTree, type Entry, treeNames } from "../state-tree.js";
-import type { Command, Context } from "./context.js";
+import { type Command, type Context, command } from "./context.js";
 import { list, parse, Refusal, UsageError } from "./edit.js";
 
 // Compiles the project and hands a Resolver to the command.
@@ -12,7 +12,7 @@ function readCommand(
   usage: string,
   read: (resolver: Resolver, args: string[], io: Io) => void,
 ): Command {
-  return (args, { io, cwd, dir }: Context) => {
+  return command(usage, (args, { io, cwd, dir }: Context) => {
     const project = requireProject(io, cwd, dir);
     if (project === undefined) return 1;
     const { project: model, diagnostics } = compileDirectory(project);
@@ -34,7 +34,7 @@ function readCommand(
       }
       throw error;
     }
-  };
+  });
 }
 
 function print(io: Io, value: unknown): void {

@@ -30,6 +30,7 @@ export type { Io } from "./io.js";
 const usage = `Usage: task-tree <command> [options]
 
 Commands:
+  help [<command>]    Show this overview, or a command's usage
   init                Create a .task-tree project in the working directory
   validate            Compile the project and report every error
   query <task-id> [<dimension>=<value>...]
@@ -63,6 +64,11 @@ Commands:
                       Say at which values of a dimension a task exists
   override <subcommand>
                       Change states and values for a dimension value or combination
+
+Run "task-tree help <command>" (or "task-tree <command> --help") for a command's
+options. The docs/ folder of the task-tree package explains the concepts
+(concepts.md), every command (commands.md), every diagnostic code
+(diagnostics.md) and the JSON output (output.md).
 
 Options:
   --dir <directory>   Use this project directory instead of the nearest .task-tree
@@ -112,10 +118,30 @@ export function run(argv: string[], io: Io): number {
     io.stdout(`${JSON.stringify({ version })}\n`);
     return 0;
   }
+  if (first === "help") {
+    // help <command> [<subcommand>]: the command's usage; help alone: this.
+    const [name] = rest.filter((arg) => arg !== "--help" && arg !== "-h");
+    if (name === undefined) {
+      io.stdout(usage);
+      return 0;
+    }
+    const target = commands[name];
+    if (target === undefined) {
+      io.stderr(`task-tree: unknown command: ${name}\n\n${usage}`);
+      return 2;
+    }
+    io.stdout(target.usage);
+    return 0;
+  }
   const command = commands[first];
   if (command === undefined) {
     io.stderr(`task-tree: unknown command: ${first}\n\n${usage}`);
     return 2;
+  }
+  // --help anywhere after a command prints its usage; no project needed.
+  if (rest.includes("--help") || rest.includes("-h")) {
+    io.stdout(command.usage);
+    return 0;
   }
   return command(rest, { io, cwd, dir: global.dir, dryRun: global.dryRun });
 }
