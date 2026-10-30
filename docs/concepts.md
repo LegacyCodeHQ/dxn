@@ -141,8 +141,8 @@ or does, such as screen width or input device. Each dimension has its own file:
 - `values` are the dimension's values, in order.
 - `appliesTo` lists nodes. The dimension applies to each one and to its whole
   subtree, wherever it is included.
-- `default` is the value a query means when it leaves the dimension out.
-  Without a default, a query that leaves the dimension out doesn't apply it.
+- `default` is the value `show`, `view` and `verify` use when you leave the
+  dimension out. Without a default, leaving it out doesn't apply it.
 
 The toolbar has three dimensions: `breakpoint` (base, sm, lg, xl), `pointer`
 (mouse, touch) and `keyboard` (keyboard, no-keyboard).
@@ -337,7 +337,7 @@ missing.
 
 ## Expectations
 
-`expectations.json` states how many contexts a query must find. `validate`
+`expectations.json` states how many contexts a filter must find. `validate`
 checks them once the project compiles, so a modeling mistake shows up as an
 error:
 

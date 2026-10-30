@@ -484,5 +484,5 @@ node that applies to the node.
 
 The model has a different number of contexts than the expectation says. The
 message gives both numbers. Either the model is wrong (fix the types,
-dimensions or overrides) or the expectation is. Run the same query with
+dimensions or overrides) or the expectation is. Run the same filter with
 `dimensions contexts <node> ... --count` to compare.

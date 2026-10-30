@@ -131,7 +131,8 @@ describe("component extract", () => {
     const { run } = cliProject({ "types.json": types, "roots/page.json": page() });
     expect(run("component", "extract", "page")).toMatchObject({
       code: 1,
-      stderr: 'dimensions: "page" is a file\'s root; only a node inside one can be extracted\n',
+      stderr:
+        'dimensions: "page" is the top node of its file; only a node inside one can be extracted\n',
     });
   });
 });

@@ -174,7 +174,7 @@ its subtree, with their values and defaults, and the shared nodes above or in
 it, with their states and the dimension values where each exists.
 ```
 
-Prints what a view or query of a node accepts, as JSON: the dimensions that apply in its subtree, and the shared nodes with their states and where they exist. Read this first to learn which `<name>=<value>` arguments make sense.
+Prints what view and show accept for a node, as JSON: the dimensions that apply in its subtree, and the shared nodes with their states and where they exist. Read this first to learn which `<name>=<value>` arguments make sense.
 
 ```bash
 dimensions axes toolbar

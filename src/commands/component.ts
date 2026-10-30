@@ -26,7 +26,9 @@ const extract = editCommand(usage, (workspace, args) => {
   const [id] = parse(args, ["node-id"], {}).positionals as [string];
   const located = requireNode(workspace, id);
   if (located.siblings === undefined) {
-    throw new Refusal(`"${id}" is a file's root; only a node inside one can be extracted`);
+    throw new Refusal(
+      `"${id}" is the top node of its file; only a node inside one can be extracted`,
+    );
   }
   const file = `components/${id}.json`;
   if (workspace.exists(file)) {

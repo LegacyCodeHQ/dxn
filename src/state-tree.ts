@@ -58,12 +58,12 @@ export function buildStateTree(
       if (byRank !== 0) return byRank;
       return rank(a) === 1 ? (a < b ? -1 : a > b ? 1 : 0) : seen.indexOf(a) - seen.indexOf(b);
     });
-  const order = [...by, TASK, ...rest];
+  const order = [...by, NODE, ...rest];
 
   const build = (group: Entry[], levels: string[]): StateNode[] => {
     const [level, ...below] = levels;
     if (level === undefined) return [];
-    if (level === TASK) {
+    if (level === NODE) {
       const nodes = [...new Set(group.map(({ node }) => node))];
       return nodes.map((node) => {
         const own = group.filter((entry) => entry.node === node);
@@ -186,7 +186,7 @@ export function describeTransition(transition: Transition): string {
   return `${transition.from} → ${transition.to}: ${event}${focus}  [${transition.id}]`;
 }
 
-const TASK = "\u0000task";
+const NODE = "\u0000node";
 
 function withChildren<T extends StateNode>(item: T, children: StateNode[]): T {
   return children.length === 0 ? item : { ...item, children };

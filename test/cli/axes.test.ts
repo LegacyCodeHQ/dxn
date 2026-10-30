@@ -103,7 +103,7 @@ describe("dimensions", () => {
 });
 
 describe("axes", () => {
-  it("lists what a view or query of a node accepts", () => {
+  it("lists what view and show accept for a node", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(JSON.parse(run("axes", "toolbar").stdout));
