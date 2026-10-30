@@ -17,16 +17,34 @@ import {
   type StateChanges,
   type StateSet,
   type TreeSymbols,
+  type ValueStates,
   valueKey,
 } from "./symbols.js";
 
 // Where the file being checked sits, and where to collect its valid
 // overrides for the conflict check.
 export interface OverrideSource {
-  dimension: string;
   file: string;
   entries: OverrideEntry[];
 }
+
+// A dimension of a combination file, with its single-dimension overrides.
+export interface CombinationPart {
+  name: string;
+  symbol: DimensionSymbol;
+  overrides?: OverrideStates;
+}
+
+// The states a type or task override starts from in one context.
+interface Start {
+  type: (name: string, base: Set<string>) => StateSet;
+  task: (id: string, typeStates: StateSet) => StateSet;
+}
+
+const fromBase: Start = {
+  type: (_, base) => ({ states: base, removed: new Set() }),
+  task: (_, typeStates) => typeStates,
+};
 
 // overrides/<dimension>.json: overrides by dimension value, then by type or task.
 // Returns the valid state changes, for checking verification contexts.
@@ -34,73 +52,194 @@ export function checkOverridesFile(
   root: JsonNode,
   diagnostics: Diagnostics,
   tree: TreeSymbols,
-  dimension: DimensionSymbol,
+  dimension: DimensionSymbol & { name: string },
   source: OverrideSource,
 ): OverrideStates {
   const changes: OverrideStates = new Map();
+  const byValue = checkFileShape(root, diagnostics);
+  for (const entry of byValue?.members ?? []) {
+    const valuePath = childPath("$.overrides", entry.key.value);
+    if (!isValue(diagnostics, dimension, entry.key, valuePath)) {
+      continue;
+    }
+    changes.set(
+      entry.key.value,
+      checkValueOverrides(
+        diagnostics,
+        tree,
+        dimension,
+        entry.value,
+        valuePath,
+        fromBase,
+        newEntry(diagnostics, source, [[dimension.name, entry.key.value]]),
+      ),
+    );
+  }
+  return changes;
+}
+
+// overrides/<a>+<b>.json: overrides nested one level per dimension, in file
+// name order. Each starts from the states the single-dimension overrides leave
+// for its values. Returns state changes keyed by JSON.stringify(values).
+export function checkCombinationFile(
+  root: JsonNode,
+  diagnostics: Diagnostics,
+  tree: TreeSymbols,
+  parts: CombinationPart[],
+  source: OverrideSource,
+): Map<string, ValueStates> {
+  const changes = new Map<string, ValueStates>();
+  const scope = {
+    scope: new Set(
+      [...(parts[0]?.symbol.scope ?? [])].filter((id) =>
+        parts.every((part) => part.symbol.scope.has(id)),
+      ),
+    ),
+    scopeComplete: parts.every((part) => part.symbol.scopeComplete),
+  };
+
+  const level = (node: JsonNode, path: string, values: string[]): void => {
+    if (values.length === parts.length) {
+      const singles = parts.map((part, index) => part.overrides?.get(values[index] as string));
+      const start: Start = {
+        type: (name, base) =>
+          apply(
+            { states: base, removed: new Set() },
+            singles.map((s) => s?.types.get(name)),
+          ),
+        task: (id, typeStates) =>
+          apply(
+            typeStates,
+            singles.map((s) => s?.tasks.get(id)),
+          ),
+      };
+      const pairs = parts.map((part, index): [string, string] => [
+        part.name,
+        values[index] as string,
+      ]);
+      changes.set(
+        JSON.stringify(values),
+        checkValueOverrides(
+          diagnostics,
+          tree,
+          scope,
+          node,
+          path,
+          start,
+          newEntry(diagnostics, source, pairs),
+        ),
+      );
+      return;
+    }
+    const part = parts[values.length] as CombinationPart;
+    const byValue = expectObject(diagnostics, node, path);
+    for (const entry of byValue?.members ?? []) {
+      const valuePath = childPath(path, entry.key.value);
+      if (isValue(diagnostics, part.symbol, entry.key, valuePath)) {
+        level(entry.value, valuePath, [...values, entry.key.value]);
+      }
+    }
+  };
+
+  const byValue = checkFileShape(root, diagnostics);
+  if (byValue !== undefined) {
+    level(byValue, "$.overrides", []);
+  }
+  return changes;
+}
+
+// Applies state changes from several dimensions. A state one adds and another
+// removes is contested: it is left out of both sets.
+function apply(start: StateSet, changes: (StateChanges | undefined)[]): StateSet {
+  const added = new Set(changes.flatMap((change) => [...(change?.add ?? [])]));
+  const removedNow = new Set(changes.flatMap((change) => [...(change?.remove ?? [])]));
+  const contested = new Set([...added].filter((state) => removedNow.has(state)));
+  const result: StateSet = {
+    states: new Set(start.states),
+    removed: new Set(start.removed),
+    contested: new Set([...(start.contested ?? []), ...contested]),
+  };
+  for (const state of removedNow) {
+    result.states.delete(state);
+    if (!contested.has(state)) result.removed.add(state);
+  }
+  for (const state of added) {
+    if (contested.has(state)) {
+      result.removed.delete(state);
+      continue;
+    }
+    result.states.add(state);
+    result.removed.delete(state);
+  }
+  return result;
+}
+
+function checkFileShape(root: JsonNode, diagnostics: Diagnostics) {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
-    return changes;
+    return undefined;
   }
   const members = keys(diagnostics, document, "$", ["$schema", "version", "overrides"], {
     required: ["version", "overrides"],
   });
   checkSchema(diagnostics, members.get("$schema"));
   checkVersion(diagnostics, members.get("version"));
-
-  const overridesNode = members.get("overrides");
-  const byValue =
-    overridesNode === undefined
-      ? undefined
-      : expectObject(diagnostics, overridesNode, "$.overrides");
-  for (const entry of byValue?.members ?? []) {
-    const valuePath = childPath("$.overrides", entry.key.value);
-    if (dimension.values !== undefined && !dimension.values.has(entry.key.value)) {
-      report(
-        diagnostics,
-        "unknown-dimension-value",
-        `${JSON.stringify(entry.key.value)} is not a value of this dimension`,
-        valuePath,
-        entry.key,
-      );
-      continue;
-    }
-    changes.set(
-      entry.key.value,
-      checkValueOverrides(diagnostics, tree, dimension, entry.value, valuePath, (kind, target) => {
-        const created: OverrideEntry = {
-          dimension: source.dimension,
-          file: source.file,
-          value: entry.key.value,
-          diagnostics,
-          kind,
-          target,
-          values: new Map(),
-          added: new Map(),
-          removed: new Map(),
-        };
-        source.entries.push(created);
-        return created;
-      }),
-    );
-  }
-  return changes;
+  const overrides = members.get("overrides");
+  return overrides === undefined ? undefined : expectObject(diagnostics, overrides, "$.overrides");
 }
 
-// Overrides for one dimension value: type overrides first, so task overrides
-// start from the states their type has in this context.
+function isValue(
+  diagnostics: Diagnostics,
+  dimension: DimensionSymbol,
+  key: { value: string; span: { start: number } },
+  path: string,
+): boolean {
+  if (dimension.values !== undefined && !dimension.values.has(key.value)) {
+    report(
+      diagnostics,
+      "unknown-dimension-value",
+      `${JSON.stringify(key.value)} is not a value of this dimension`,
+      path,
+      key,
+    );
+    return false;
+  }
+  return true;
+}
+
+function newEntry(
+  diagnostics: Diagnostics,
+  source: OverrideSource,
+  dimensions: [string, string][],
+): (kind: OverrideEntry["kind"], target: string) => OverrideEntry {
+  return (kind, target) => {
+    const created: OverrideEntry = {
+      dimensions,
+      file: source.file,
+      diagnostics,
+      kind,
+      target,
+      values: new Map(),
+      added: new Map(),
+      removed: new Map(),
+    };
+    source.entries.push(created);
+    return created;
+  };
+}
+
+// Overrides for one context: type overrides first, so task overrides start
+// from the states their type has there.
 function checkValueOverrides(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
-  dimension: DimensionSymbol,
+  dimension: { scope: Set<string>; scopeComplete: boolean },
   node: JsonNode,
   path: string,
-  newEntry: (kind: OverrideEntry["kind"], target: string) => OverrideEntry,
-): { types: Map<string, StateChanges>; tasks: Map<string, StateChanges> } {
-  const changes = {
-    types: new Map<string, StateChanges>(),
-    tasks: new Map<string, StateChanges>(),
-  };
+  start: Start,
+  entryFor: (kind: OverrideEntry["kind"], target: string) => OverrideEntry,
+): ValueStates {
+  const changes: ValueStates = { types: new Map(), tasks: new Map() };
   const targets = expectObject(diagnostics, node, path);
   if (targets === undefined) {
     return changes;
@@ -129,8 +268,8 @@ function checkValueOverrides(
       tree,
       value,
       typePath,
-      { states, removed: new Set() },
-      newEntry("types", key.value),
+      start.type(key.value, states),
+      entryFor("types", key.value),
     );
     typeStates.set(key.value, result.states);
     changes.types.set(key.value, result.changes);
@@ -179,8 +318,8 @@ function checkValueOverrides(
         tree,
         value,
         taskPath,
-        typeStates.get(type) ?? { states, removed: new Set() },
-        newEntry("tasks", key.value),
+        start.task(key.value, typeStates.get(type) ?? start.type(type, states)),
+        entryFor("tasks", key.value),
       ).changes,
     );
   }
@@ -216,7 +355,9 @@ function checkOverride(
       path,
       "remove",
     )) {
-      if (start.removed.has(state.value)) {
+      if (start.contested?.has(state.value)) {
+        // Settling a state the single-dimension overrides disagree on.
+      } else if (start.removed.has(state.value)) {
         report(
           diagnostics,
           "removed-state",
@@ -224,6 +365,7 @@ function checkOverride(
           statePath,
           state,
         );
+        continue;
       } else if (!start.states.has(state.value)) {
         report(
           diagnostics,
@@ -232,15 +374,17 @@ function checkOverride(
           statePath,
           state,
         );
-      } else {
-        result.states.delete(state.value);
-        result.removed.add(state.value);
-        changes.remove.add(state.value);
-        entry.removed.set(state.value, { node: state, path: statePath });
+        continue;
       }
+      result.states.delete(state.value);
+      result.removed.add(state.value);
+      changes.remove.add(state.value);
+      entry.removed.set(state.value, { node: state, path: statePath });
     }
     for (const [state, statePath] of listElements(diagnostics, lists.get("add"), path, "add")) {
-      if (result.states.has(state.value)) {
+      if (start.contested?.has(state.value) && !changes.remove.has(state.value)) {
+        // Settling a state the single-dimension overrides disagree on.
+      } else if (result.states.has(state.value)) {
         report(
           diagnostics,
           "duplicate-state",
@@ -248,6 +392,7 @@ function checkOverride(
           statePath,
           state,
         );
+        continue;
       } else if (result.removed.has(state.value) && !start.removed.has(state.value)) {
         report(
           diagnostics,
@@ -256,12 +401,12 @@ function checkOverride(
           statePath,
           state,
         );
-      } else {
-        result.states.add(state.value);
-        result.removed.delete(state.value);
-        changes.add.add(state.value);
-        entry.added.set(state.value, { node: state, path: statePath });
+        continue;
       }
+      result.states.add(state.value);
+      result.removed.delete(state.value);
+      changes.add.add(state.value);
+      entry.added.set(state.value, { node: state, path: statePath });
     }
   }
 

@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type {
+  CombinationOverridesFile,
   DimensionFile,
   OverridesFile,
   Project,
@@ -13,10 +14,10 @@ import { checkConflicts } from "./conflicts.js";
 import { type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { checkDimensionFile } from "./dimensions.js";
 import { type JsonNode, parseJson } from "./json.js";
-import { checkOverridesFile } from "./overrides.js";
+import { checkCombinationFile, checkOverridesFile } from "./overrides.js";
 import { readSource } from "./read.js";
 import { isName } from "./shape.js";
-import type { DimensionSymbol, OverrideEntry } from "./symbols.js";
+import type { CombinationStates, DimensionSymbol, OverrideEntry } from "./symbols.js";
 import { checkVerificationFile, type DimensionInfo } from "./verification.js";
 
 export interface FileDiagnostic extends Diagnostic {
@@ -47,6 +48,7 @@ interface ParsedFile {
 //   tasks/<id>.json          one root task per file, named after its id
 //   dimensions/<name>.json   one dimension per file
 //   overrides/<name>.json    overrides for the dimension of the same name
+//   overrides/<a>+<b>.json   overrides for combinations of those dimensions' values
 //   verification/<id>.json   verification records for the root task <id>
 //
 // Anything else in the directory is ignored.
@@ -99,12 +101,12 @@ export function compileDirectory(directory: string): DirectoryResult {
   const dimensions = new Map<string, DimensionEntry>();
   for (const name of listJson(directory, "dimensions", problems)) {
     const path = `dimensions/${name}.json`;
-    if (!isName(name)) {
+    if (!isName(name) || name.includes("+")) {
       problems.push(
         fileDiagnostic(
           path,
           "invalid-file-name",
-          `${JSON.stringify(name)} is not a valid dimension name`,
+          `${JSON.stringify(name)} is not a valid dimension name; names cannot contain "+"`,
         ),
       );
       continue;
@@ -141,7 +143,8 @@ export function compileDirectory(directory: string): DirectoryResult {
 
   const overrides: [string, ParsedFile][] = [];
   const entries: OverrideEntry[] = [];
-  for (const name of listJson(directory, "overrides", problems)) {
+  const overrideNames = listJson(directory, "overrides", problems);
+  for (const name of overrideNames.filter((name) => !name.includes("+"))) {
     const path = `overrides/${name}.json`;
     const dimension = dimensions.get(name);
     if (dimension === undefined) {
@@ -165,11 +168,43 @@ export function compileDirectory(directory: string): DirectoryResult {
         file.root,
         file.diagnostics,
         symbols,
-        dimension.symbol,
-        { dimension: name, file: path, entries },
+        { ...dimension.symbol, name },
+        { file: path, entries },
       );
     }
     overrides.push([name, file]);
+  }
+
+  const combinations: [string, ParsedFile][] = [];
+  const combinationStates: CombinationStates[] = [];
+  for (const name of overrideNames.filter((name) => name.includes("+"))) {
+    const path = `overrides/${name}.json`;
+    const names = name.split("+");
+    const problem = combinationNameProblem(names, dimensions);
+    if (problem !== undefined) {
+      problems.push(fileDiagnostic(path, problem.code, problem.message));
+      continue;
+    }
+    const file = readJson(directory, path);
+    if (file === undefined || "code" in file) {
+      if (file !== undefined) problems.push(file);
+      continue;
+    }
+    parsed.push(file);
+    if (file.root !== undefined) {
+      const parts = names.map((part) => {
+        const dimension = dimensions.get(part) as DimensionEntry;
+        return { name: part, symbol: dimension.symbol, overrides: dimension.overrides };
+      });
+      combinationStates.push({
+        dimensions: names,
+        changes: checkCombinationFile(file.root, file.diagnostics, symbols, parts, {
+          file: path,
+          entries,
+        }),
+      });
+    }
+    combinations.push([name, file]);
   }
 
   checkConflicts(entries, symbols, dimensions);
@@ -191,7 +226,14 @@ export function compileDirectory(directory: string): DirectoryResult {
     }
     parsed.push(file);
     if (file.root !== undefined) {
-      checkVerificationFile(file.root, file.diagnostics, symbols, dimensions, name);
+      checkVerificationFile(
+        file.root,
+        file.diagnostics,
+        symbols,
+        dimensions,
+        combinationStates,
+        name,
+      );
     }
     verification.push([name, file]);
   }
@@ -213,12 +255,45 @@ export function compileDirectory(directory: string): DirectoryResult {
       overrides: Object.fromEntries(
         overrides.map(([name, file]) => [name, JSON.parse(file.source) as OverridesFile]),
       ),
+      combinations: Object.fromEntries(
+        combinations.map(([name, file]) => [
+          name,
+          JSON.parse(file.source) as CombinationOverridesFile,
+        ]),
+      ),
       verification: Object.fromEntries(
         verification.map(([name, file]) => [name, JSON.parse(file.source) as VerificationFile]),
       ),
     },
     diagnostics: [],
   };
+}
+
+// Why a combination file name like "breakpoint+pointer" is invalid, if it is.
+function combinationNameProblem(
+  names: string[],
+  dimensions: Map<string, unknown>,
+): { code: string; message: string } | undefined {
+  if (!names.every(isName)) {
+    return { code: "invalid-file-name", message: "each dimension name must be a valid name" };
+  }
+  if (new Set(names).size !== names.length) {
+    return { code: "duplicate-dimension", message: "a dimension is listed more than once" };
+  }
+  if (names.some((name, index) => index > 0 && (names[index - 1] as string) > name)) {
+    return {
+      code: "unsorted-dimensions",
+      message: `dimensions must be in alphabetical order: ${[...names].sort().join("+")}`,
+    };
+  }
+  const undeclared = names.find((name) => !dimensions.has(name));
+  if (undeclared !== undefined) {
+    return {
+      code: "undeclared-dimension",
+      message: `no dimensions/${undeclared}.json declares this dimension`,
+    };
+  }
+  return undefined;
 }
 
 // Names (without .json) of the JSON files directly inside a folder, sorted.

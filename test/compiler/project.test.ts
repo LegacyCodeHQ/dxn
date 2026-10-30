@@ -40,6 +40,7 @@ describe("compileDirectory", () => {
       tasks: [],
       dimensions: {},
       overrides: {},
+      combinations: {},
       verification: {},
     });
   });

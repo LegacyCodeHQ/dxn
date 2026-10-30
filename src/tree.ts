@@ -51,6 +51,25 @@ export interface OverridesFile {
   overrides: Record<string, { types?: Record<string, Override>; tasks?: Record<string, Override> }>;
 }
 
+// The overrides for one context.
+export interface ValueOverrides {
+  types?: Record<string, Override>;
+  tasks?: Record<string, Override>;
+}
+
+// Values of the next dimension -> deeper levels, then ValueOverrides once
+// every dimension has a value.
+export interface NestedOverrides {
+  [value: string]: NestedOverrides | ValueOverrides;
+}
+
+// overrides/<a>+<b>.json: overrides for combinations of dimension values,
+// nested in the order the file name lists the dimensions.
+export interface CombinationOverridesFile {
+  version: number;
+  overrides: NestedOverrides;
+}
+
 export interface VerificationRecord {
   task: string;
   // The state (when the task has states) and a value for every dimension that
@@ -77,6 +96,8 @@ export interface Project {
   // By dimension name.
   dimensions: Record<string, DimensionFile>;
   overrides: Record<string, OverridesFile>;
+  // By file name, e.g. "breakpoint+pointer".
+  combinations: Record<string, CombinationOverridesFile>;
   // By root task id.
   verification: Record<string, VerificationFile>;
 }

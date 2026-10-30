@@ -32,10 +32,13 @@ export interface DimensionSymbol {
   scopeComplete: boolean;
 }
 
-// States in effect, and the states an override removed.
+// States in effect, and the states an override removed. contested holds states
+// that single-dimension overrides both add and remove in this context: a
+// combination override may settle them either way.
 export interface StateSet {
   states: Set<string>;
   removed: Set<string>;
+  contested?: Set<string>;
 }
 
 // States an override adds and removes, as applied.
@@ -44,11 +47,21 @@ export interface StateChanges {
   remove: Set<string>;
 }
 
-// Dimension value -> state changes for types (by name) and tasks (by id).
-export type OverrideStates = Map<
-  string,
-  { types: Map<string, StateChanges>; tasks: Map<string, StateChanges> }
->;
+// State changes for types (by name) and tasks (by id) in one context.
+export interface ValueStates {
+  types: Map<string, StateChanges>;
+  tasks: Map<string, StateChanges>;
+}
+
+// Dimension value -> state changes.
+export type OverrideStates = Map<string, ValueStates>;
+
+// A combination override file's dimensions, and its state changes keyed by
+// JSON.stringify of the values in the same order.
+export interface CombinationStates {
+  dimensions: string[];
+  changes: Map<string, ValueStates>;
+}
 
 export function valueKey(attribute: string, state: string): string {
   return JSON.stringify([attribute, state]);
@@ -62,8 +75,9 @@ interface Located {
 // One valid override of a type or task for one dimension value, with where
 // each of its changes is, for reporting conflicts between dimensions.
 export interface OverrideEntry {
-  dimension: string;
-  value: string;
+  // [dimension, value] pairs, sorted by dimension: one for a single-dimension
+  // override, several for a combination.
+  dimensions: [string, string][];
   file: string;
   diagnostics: Diagnostics;
   kind: "types" | "tasks";

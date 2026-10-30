@@ -10,7 +10,13 @@ import {
   keys,
   report,
 } from "./shape.js";
-import type { DimensionSymbol, OverrideStates, TreeSymbols } from "./symbols.js";
+import type {
+  CombinationStates,
+  DimensionSymbol,
+  OverrideStates,
+  StateChanges,
+  TreeSymbols,
+} from "./symbols.js";
 
 export interface DimensionInfo {
   symbol: DimensionSymbol;
@@ -27,6 +33,7 @@ export function checkVerificationFile(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   dimensions: Map<string, DimensionInfo>,
+  combinations: CombinationStates[],
   rootId: string,
 ): void {
   const document = expectObject(diagnostics, root, "$");
@@ -47,7 +54,7 @@ export function checkVerificationFile(
   const seen = new Set<string>();
   records.elements.forEach((element, index) => {
     const path = `$.records[${index}]`;
-    const key = checkRecord(diagnostics, tree, dimensions, inFile, element, path);
+    const key = checkRecord(diagnostics, tree, dimensions, combinations, inFile, element, path);
     if (key === undefined) {
       return;
     }
@@ -69,6 +76,7 @@ function checkRecord(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   dimensions: Map<string, DimensionInfo>,
+  combinations: CombinationStates[],
   inFile: Set<string>,
   node: JsonNode,
   path: string,
@@ -94,6 +102,7 @@ function checkRecord(
         diagnostics,
         tree,
         dimensions,
+        combinations,
         taskId,
         type,
         object,
@@ -214,6 +223,7 @@ function checkContext(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   dimensions: Map<string, DimensionInfo>,
+  combinations: CombinationStates[],
   taskId: string,
   type: string,
   context: ObjectNode,
@@ -253,7 +263,15 @@ function checkContext(
     }
     values.set(name, entry.value.value);
   }
-  const { states, removed } = statesInContext(base, dimensions, applicable, values, type, taskId);
+  const { states, removed } = statesInContext(
+    base,
+    dimensions,
+    combinations,
+    applicable,
+    values,
+    type,
+    taskId,
+  );
   const hasStates = base.size > 0 || states.size > 0 || removed.size > 0;
 
   const allowed = hasStates ? [...applicable, "state"] : applicable;
@@ -318,28 +336,39 @@ function checkContext(
   return JSON.stringify([...values].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
-// Applies every dimension's type state changes, then every dimension's task
-// state changes: an instance's own changes beat type changes from any
-// dimension. Conflicts between dimensions are errors, so order within each
-// pass does not matter.
+// Applies state changes in precedence order: single-dimension type overrides,
+// type combinations, then the same for task overrides, so an instance's own
+// changes beat type changes and combinations beat single dimensions.
+// Conflicts within a level are errors, so order within a level does not matter.
 function statesInContext(
   base: Set<string>,
   dimensions: Map<string, DimensionInfo>,
+  combinations: CombinationStates[],
   applicable: string[],
   values: Map<string, string>,
   type: string,
   taskId: string,
 ): { states: Set<string>; removed: Set<string> } {
-  const states = new Set(base);
-  const removed = new Set<string>();
-  const overrides = applicable.map((name) => {
+  const singles = applicable.map((name) => {
     const value = values.get(name);
     return value === undefined ? undefined : dimensions.get(name)?.overrides?.get(value);
   });
-  for (const changes of [
-    ...overrides.map((override) => override?.types.get(type)),
-    ...overrides.map((override) => override?.tasks.get(taskId)),
-  ]) {
+  const combined = combinations
+    .filter(({ dimensions: names }) => names.every((name) => applicable.includes(name)))
+    .sort((a, b) => a.dimensions.length - b.dimensions.length)
+    .map(({ dimensions: names, changes }) => {
+      const combo = names.map((name) => values.get(name));
+      return combo.includes(undefined) ? undefined : changes.get(JSON.stringify(combo));
+    });
+  const states = new Set(base);
+  const removed = new Set<string>();
+  const levels: (StateChanges | undefined)[] = [
+    ...singles.map((override) => override?.types.get(type)),
+    ...combined.map((override) => override?.types.get(type)),
+    ...singles.map((override) => override?.tasks.get(taskId)),
+    ...combined.map((override) => override?.tasks.get(taskId)),
+  ];
+  for (const changes of levels) {
     for (const state of changes?.remove ?? []) {
       states.delete(state);
       removed.add(state);

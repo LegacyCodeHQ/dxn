@@ -275,6 +275,48 @@ agree(
   },
 );
 
+const smTouch = (body: unknown) => ({ version: 1, overrides: { sm: { touch: body } } });
+const comboLink = (entry: unknown) => smTouch({ types: { link: entry } });
+
+agree(
+  "combination",
+  (doc) => ({
+    ...tree,
+    "dimensions/breakpoint.json": { version: 1, values: ["sm", "lg"], appliesTo: ["page"] },
+    "dimensions/pointer.json": pointer,
+    "overrides/breakpoint+pointer.json": doc,
+  }),
+  {
+    valid: [
+      ["no overrides", { version: 1, overrides: {} }],
+      ["a $schema reference", { $schema: "x", version: 1, overrides: {} }],
+      [
+        "type and task overrides for a combination",
+        smTouch({
+          types: { link: { states: { remove: ["hovered"] } } },
+          tasks: { "blog-link": { customAttributes: { design: { normal: "missing" } } } },
+        }),
+      ],
+    ],
+    structural: [
+      ["wrong-type", []],
+      ["missing-key", { version: 1 }],
+      ["unknown-key", { version: 1, overrides: {}, extra: 1 }],
+      ["wrong-type", { $schema: 1, version: 1, overrides: {} }],
+      ["unsupported-version", { version: 2, overrides: {} }],
+      ["wrong-type", { version: 1, overrides: [] }],
+      ["wrong-type", comboLink({ states: [] })],
+      ["wrong-type", comboLink({ customAttributes: { design: { normal: 1 } } })],
+    ],
+    // The schema cannot tell nesting depth from the file name.
+    crossReference: [
+      ["unknown-dimension-value", { version: 1, overrides: { xs: {} } }],
+      ["unknown-key", smTouch({ screens: {} })],
+      ["undefined-type", smTouch({ types: { button: {} } })],
+    ],
+  },
+);
+
 const checked: Files = {
   ...tree,
   "types.json": {
