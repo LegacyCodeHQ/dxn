@@ -10,10 +10,12 @@ import {
   typesFile,
   typesOrder,
 } from "./edit.js";
+import { checkList } from "./reading.js";
 
 const usage = `Usage: dimensions check <subcommand>
 
 Subcommands:
+  list                               List every check and the types that require it
   add <name>                         Declare a check, such as visual or behavior
   remove <name>                      Remove a check
 `;
@@ -47,4 +49,4 @@ const remove = editCommand(usage, (workspace, args) => {
   workspace.touch("types.json");
 });
 
-export const check: Command = group(usage, { add, remove });
+export const check: Command = group(usage, { list: checkList, add, remove });

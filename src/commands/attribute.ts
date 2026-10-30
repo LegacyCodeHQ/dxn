@@ -12,10 +12,12 @@ import {
   typesOrder,
   UsageError,
 } from "./edit.js";
+import { attributeList } from "./reading.js";
 
 const usage = `Usage: dimensions attribute <subcommand>
 
 Subcommands:
+  list                               List every custom attribute and its values
   add <name> --values a,b            Declare a custom attribute and its values
   add-value <name> <value>           Add a value to an attribute
   remove-value <name> <value>        Remove a value from an attribute
@@ -81,6 +83,7 @@ const remove = edit((workspace, args) => {
 });
 
 export const attribute: Command = group(usage, {
+  list: attributeList,
   add,
   "add-value": addValue,
   "remove-value": removeValue,

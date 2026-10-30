@@ -308,6 +308,7 @@ dimensions component extract toolbar
 Usage: dimensions type <subcommand>
 
 Subcommands:
+  list                               List every type, its states, checks and values
   add <name> [--states a,b,c | --groups g,h] [--shared]
                                      Add a type with plain states or state groups;
                                      --shared lets instances' subtrees vary with its state
@@ -327,9 +328,10 @@ Subcommands:
   remove <name>                      Remove a type
 ```
 
-Edits `types` in `types.json`.
+Edits `types` in `types.json`; `type list` prints them.
 
 ```bash
+dimensions type list
 dimensions type add toolbar-link --groups hover,focus,selection
 dimensions type add menu --states closed,open --shared
 dimensions type use-group menu-link selection --values selected
@@ -347,6 +349,7 @@ groups, which vary independently. Types use groups with "type add --groups" or
 "type use-group".
 
 Subcommands:
+  list                               List every state group, its values and the types using it
   add <name> --values a,b            Declare a state group
   add-value <name> <value>           Add a value
   remove-value <name> <value>        Remove a value
@@ -354,9 +357,10 @@ Subcommands:
   remove <name>                      Remove a state group
 ```
 
-Edits `stateGroups` in `types.json`.
+Edits `stateGroups` in `types.json`; `state-group list` prints them with the types that use them.
 
 ```bash
+dimensions state-group list
 dimensions state-group add hover --values rest,hovered
 dimensions state-group rename-value focus blurred idle
 ```
@@ -367,15 +371,17 @@ dimensions state-group rename-value focus blurred idle
 Usage: dimensions attribute <subcommand>
 
 Subcommands:
+  list                               List every custom attribute and its values
   add <name> --values a,b            Declare a custom attribute and its values
   add-value <name> <value>           Add a value to an attribute
   remove-value <name> <value>        Remove a value from an attribute
   remove <name>                      Remove an attribute
 ```
 
-Edits `customAttributes` in `types.json`. Values are set on types (`type set`), nodes (`node set`) and overrides (`override set`).
+Edits `customAttributes` in `types.json`; `attribute list` prints them. Values are set on types (`type set`), nodes (`node set`) and overrides (`override set`).
 
 ```bash
+dimensions attribute list
 dimensions attribute add design --values missing,ready
 dimensions type set toolbar-link design rest=ready hovered=missing
 ```
@@ -386,13 +392,15 @@ dimensions type set toolbar-link design rest=ready hovered=missing
 Usage: dimensions check <subcommand>
 
 Subcommands:
+  list                               List every check and the types that require it
   add <name>                         Declare a check, such as visual or behavior
   remove <name>                      Remove a check
 ```
 
-Edits `customChecks` in `types.json`. Types require checks with `type require`.
+Edits `customChecks` in `types.json`; `check list` prints them with the types that require them. Types require checks with `type require`.
 
 ```bash
+dimensions check list
 dimensions check add visual
 ```
 

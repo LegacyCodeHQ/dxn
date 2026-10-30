@@ -19,10 +19,12 @@ import {
   UsageError,
   unsetValues,
 } from "./edit.js";
+import { typeList } from "./reading.js";
 
 const usage = `Usage: dimensions type <subcommand>
 
 Subcommands:
+  list                               List every type, its states, checks and values
   add <name> [--states a,b,c | --groups g,h] [--shared]
                                      Add a type with plain states or state groups;
                                      --shared lets instances' subtrees vary with its state
@@ -245,6 +247,7 @@ const unrequireCheck = edit((workspace, args) => {
 });
 
 export const type: Command = group(usage, {
+  list: typeList,
   "use-group": useGroup,
   "drop-group": dropGroup,
   share: sharing(true),

@@ -15,6 +15,7 @@ import {
   typesOrder,
   UsageError,
 } from "./edit.js";
+import { stateGroupList } from "./reading.js";
 
 const usage = `Usage: dimensions state-group <subcommand>
 
@@ -24,6 +25,7 @@ groups, which vary independently. Types use groups with "type add --groups" or
 "type use-group".
 
 Subcommands:
+  list                               List every state group, its values and the types using it
   add <name> --values a,b            Declare a state group
   add-value <name> <value>           Add a value
   remove-value <name> <value>        Remove a value
@@ -177,6 +179,7 @@ const renameValue = edit((workspace, args) => {
 });
 
 export const stateGroup: Command = group(usage, {
+  list: stateGroupList,
   "rename-value": renameValue,
   add,
   "add-value": addValue,

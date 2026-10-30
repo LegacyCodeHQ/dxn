@@ -92,6 +92,80 @@ const dimensionsUsage = `Usage: dimensions dimension list
 Lists every dimension: its values, default, and the nodes it applies to.
 `;
 
+const byName = <T>(entries: [string, T][]): [string, T][] =>
+  entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+
+export const typeList = readCommand("Usage: dimensions type list\n", (resolver, args, io) => {
+  parse(args, [], {});
+  const declared = resolver.project.types.types ?? {};
+  print(io, {
+    types: byName(Object.entries(declared)).map(([name, type]) => ({
+      name,
+      ...(type.stateGroups === undefined
+        ? type.states === undefined
+          ? {}
+          : { states: type.states }
+        : { stateGroups: resolver.groupsOf(name) }),
+      ...(type.shared === true ? { shared: true } : {}),
+      ...(type.checks === undefined ? {} : { checks: type.checks }),
+      ...(type.customAttributes === undefined ? {} : { customAttributes: type.customAttributes }),
+    })),
+  });
+});
+
+// The types that use a state group, or require a check, by name.
+function typesWhere(resolver: Resolver, uses: (type: string) => boolean): string[] {
+  return Object.keys(resolver.project.types.types ?? {})
+    .filter(uses)
+    .sort();
+}
+
+export const stateGroupList = readCommand(
+  "Usage: dimensions state-group list\n",
+  (resolver, args, io) => {
+    parse(args, [], {});
+    print(io, {
+      stateGroups: byName(Object.entries(resolver.project.types.stateGroups ?? {})).map(
+        ([name, values]) => ({
+          name,
+          values,
+          usedBy: typesWhere(resolver, (type) => {
+            const used = resolver.project.types.types?.[type]?.stateGroups;
+            return Array.isArray(used) ? used.includes(name) : used?.[name] !== undefined;
+          }),
+        }),
+      ),
+    });
+  },
+);
+
+export const checkList = readCommand("Usage: dimensions check list\n", (resolver, args, io) => {
+  parse(args, [], {});
+  print(io, {
+    checks: Object.keys(resolver.project.types.customChecks ?? {})
+      .sort()
+      .map((name) => ({
+        name,
+        requiredBy: typesWhere(
+          resolver,
+          (type) => resolver.project.types.types?.[type]?.checks?.includes(name) === true,
+        ),
+      })),
+  });
+});
+
+export const attributeList = readCommand(
+  "Usage: dimensions attribute list\n",
+  (resolver, args, io) => {
+    parse(args, [], {});
+    print(io, {
+      attributes: byName(Object.entries(resolver.project.types.customAttributes ?? {})).map(
+        ([name, { values }]) => ({ name, values }),
+      ),
+    });
+  },
+);
+
 export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
   parse(args, [], {});
   print(io, {

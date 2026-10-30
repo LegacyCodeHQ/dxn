@@ -56,12 +56,12 @@ Model
   node <subcommand>   Add, move, rename and remove nodes; say where they exist
   component <subcommand>
                       Add, extract and remove reusable components
-  type <subcommand>   Add types and states, and set their values
+  type <subcommand>   List and add types and states, and set their values
   state-group <subcommand>
-                      Declare groups of states that exclude each other, such as hover
+                      List and declare groups of states that exclude each other
   attribute <subcommand>
-                      Declare custom attributes and their values
-  check <subcommand>  Declare checks that types can require
+                      List and declare custom attributes and their values
+  check <subcommand>  List and declare checks that types can require
   dimension <subcommand>
                       List and add dimensions, their values, default and scope
   override <subcommand>

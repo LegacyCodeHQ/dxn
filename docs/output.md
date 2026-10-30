@@ -111,6 +111,24 @@ The roots, exactly as written in `roots/` and `components/`.
 
 `default` is left out when the dimension has none.
 
+## type list, state-group list, check list, attribute list
+
+What `types.json` declares, sorted by name:
+
+```json
+{ "types": [
+    { "name": "menu", "states": ["closed", "open"], "shared": true, "checks": ["behavior"] },
+    { "name": "toolbar-link", "stateGroups": { "hover": ["rest", "hovered"], "focus": ["blurred", "focused"] },
+      "checks": ["visual"], "customAttributes": { "design": { "rest": "ready" } } } ] }
+{ "stateGroups": [ { "name": "hover", "values": ["rest", "hovered"], "usedBy": ["menu-button", "toolbar-link"] } ] }
+{ "checks": [ { "name": "visual", "requiredBy": ["toolbar-link"] } ] }
+{ "attributes": [ { "name": "design", "values": ["missing", "ready"] } ] }
+```
+
+A type has `states` (a plain list) or `stateGroups` (each group with the
+values the type uses), and `shared`, `checks` and `customAttributes` only when
+it has them. Each list is `[]` when nothing is declared.
+
 ## show
 
 ```json
