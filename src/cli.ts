@@ -1,4 +1,8 @@
+import { attribute } from "./commands/attribute.js";
+import type { Command } from "./commands/context.js";
 import { init } from "./commands/init.js";
+import { task } from "./commands/task.js";
+import { type } from "./commands/type.js";
 import { validate } from "./commands/validate.js";
 import type { Io } from "./io.js";
 import { parseGlobal } from "./project.js";
@@ -13,17 +17,19 @@ Commands:
   init                Create a .task-tree project in the working directory
   validate            Compile the project and report every error
   query <task-id>     Show a task and the states it has
+  task <subcommand>   Add, move, rename and remove tasks, and set their values
+  type <subcommand>   Add types and states, and set their values
+  attribute <subcommand>
+                      Declare custom attributes and their values
 
 Options:
   --dir <directory>   Use this project directory instead of the nearest .task-tree
+  --dry-run           Print the files a command would write, without writing them
   -h, --help          Show this help
   -V, --version       Print version information as JSON
 `;
 
-const commands: Record<
-  string,
-  (args: string[], io: Io, cwd: string, dir: string | undefined) => number
-> = { init, validate, query };
+const commands: Record<string, Command> = { init, validate, query, task, type, attribute };
 
 export function run(argv: string[], io: Io): number {
   const cwd = io.cwd ?? process.cwd();
@@ -46,5 +52,5 @@ export function run(argv: string[], io: Io): number {
     io.stderr(`task-tree: unknown command: ${first}\n\n${usage}`);
     return 2;
   }
-  return command(rest, io, cwd, global.dir);
+  return command(rest, { io, cwd, dir: global.dir, dryRun: global.dryRun });
 }

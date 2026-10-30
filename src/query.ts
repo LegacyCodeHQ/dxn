@@ -1,11 +1,11 @@
+import type { Context } from "./commands/context.js";
 import { compileDirectory } from "./compiler/compile.js";
-import type { Io } from "./io.js";
 import { printDiagnostics, requireProject } from "./project.js";
 import { findTask } from "./tree.js";
 
 export const queryUsage = "Usage: task-tree query <task-id> [--dir <directory>]\n";
 
-export function query(args: string[], io: Io, cwd: string, dir: string | undefined): number {
+export function query(args: string[], { io, cwd, dir }: Context): number {
   const [id, ...rest] = args;
   if (id === undefined || rest.length > 0) {
     io.stderr(queryUsage);

@@ -9,14 +9,21 @@ export const projectFolder = ".task-tree";
 export interface Global {
   // The project directory from --dir, resolved against the working directory.
   dir?: string;
+  // From --dry-run: print what would be written instead of writing it.
+  dryRun: boolean;
   args: string[];
 }
 
 export function parseGlobal(argv: string[], cwd: string): Global | { error: string } {
   const args: string[] = [];
   let dir: string | undefined;
+  let dryRun = false;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i] as string;
+    if (arg === "--dry-run") {
+      dryRun = true;
+      continue;
+    }
     if (arg !== "--dir") {
       args.push(arg);
       continue;
@@ -28,7 +35,7 @@ export function parseGlobal(argv: string[], cwd: string): Global | { error: stri
     dir = resolve(cwd, value);
     i++;
   }
-  return dir === undefined ? { args } : { dir, args };
+  return dir === undefined ? { dryRun, args } : { dir, dryRun, args };
 }
 
 // The project: --dir, or the nearest .task-tree directory from cwd upward.

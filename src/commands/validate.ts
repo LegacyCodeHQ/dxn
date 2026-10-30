@@ -1,11 +1,11 @@
 import { compileDirectory } from "../compiler/compile.js";
-import type { Io } from "../io.js";
 import { printDiagnostics, requireProject } from "../project.js";
+import type { Context } from "./context.js";
 
 export const validateUsage = "Usage: task-tree validate [--dir <directory>]\n";
 
 // Compiles the project and reports every diagnostic.
-export function validate(args: string[], io: Io, cwd: string, dir: string | undefined): number {
+export function validate(args: string[], { io, cwd, dir }: Context): number {
   if (args.length > 0) {
     io.stderr(validateUsage);
     return 2;

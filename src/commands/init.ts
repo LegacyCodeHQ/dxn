@@ -1,12 +1,12 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Io } from "../io.js";
 import { projectFolder } from "../project.js";
+import type { Context } from "./context.js";
 
 export const initUsage = "Usage: task-tree init [--dir <directory>]\n";
 
 // Creates the project: .task-tree/ in the working directory, or --dir.
-export function init(args: string[], io: Io, cwd: string, dir: string | undefined): number {
+export function init(args: string[], { io, cwd, dir }: Context): number {
   if (args.length > 0) {
     io.stderr(initUsage);
     return 2;
