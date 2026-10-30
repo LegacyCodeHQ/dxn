@@ -114,17 +114,17 @@ describe("type add-state and remove-state", () => {
     snapshot.push(run("type", "add-state", "button", "x"));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    "<tmp>/.task-tree/types.json:13:11: unknown-state: "normal" is not a state of this type
-  ",
-    {
-      "code": 1,
-      "stderr": "task-tree: type not found: button
-  ",
-      "stdout": "",
-    },
-  ]
-`);
+      [
+        "<tmp>/.task-tree/types.json:12:11: unknown-state: "normal" is not a state of this type
+      ",
+        {
+          "code": 1,
+          "stderr": "task-tree: type not found: button
+      ",
+          "stdout": "",
+        },
+      ]
+    `);
   });
 });
 

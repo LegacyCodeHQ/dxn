@@ -171,7 +171,13 @@ const removeState = edit((workspace, args) => {
   const [name, state] = parse(args, ["type", "state"], {}).positionals as [string, string];
   const type = requireType(workspace, name);
   if (Array.isArray(type.states)) {
-    type.states = type.states.filter((existing) => existing !== state);
+    const remaining = type.states.filter((existing) => existing !== state);
+    // Without states the type can take state groups instead.
+    if (remaining.length === 0) {
+      delete type.states;
+    } else {
+      type.states = remaining;
+    }
   }
 });
 

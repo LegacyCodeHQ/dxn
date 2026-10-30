@@ -327,6 +327,35 @@ describe("state group commands", () => {
     `);
   });
 
+  it("convert a type from plain states to groups", () => {
+    const snapshot: unknown[] = [];
+    const { run, read } = cliProject({
+      "types.json": {
+        version: 1,
+        stateGroups: { interaction: ["normal", "focused"] },
+        types: { wordmark: { states: ["normal", "focused"] } },
+      },
+    });
+    snapshot.push(run("type", "remove-state", "wordmark", "normal").code);
+    snapshot.push(run("type", "remove-state", "wordmark", "focused").code);
+    snapshot.push(run("type", "use-group", "wordmark", "interaction").code);
+    snapshot.push(read("types.json").types);
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        0,
+        0,
+        0,
+        {
+          "wordmark": {
+            "stateGroups": [
+              "interaction",
+            ],
+          },
+        },
+      ]
+    `);
+  });
+
   it("refuse what the compiler rejects and unknown names", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({ "types.json": { version: 1 } });
