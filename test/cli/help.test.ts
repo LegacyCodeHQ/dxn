@@ -142,3 +142,34 @@ describe("help", () => {
     }
   });
 });
+
+describe("usage text", () => {
+  it("names contexts by state group, as records and queries do", () => {
+    const snapshot: unknown[] = [];
+    for (const name of ["verify", "unverify"]) {
+      snapshot.push(
+        help(name, "--help")
+          .stdout.split("\n")
+          .filter((line) => line.includes("state")),
+      );
+    }
+    snapshot.push(help("state-group", "--help").stdout.split("\n").slice(2, 5));
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "                       [<group>=<value>...] [<dimension>=<value>...] [<shared-task>=<state>...]",
+          "each of the task's state groups (state=<state> for a plain states list) and",
+          "the states of shared tasks above it; dimensions left out take their default.",
+        ],
+        [
+          "                         [<shared-task>=<state>...] [--transition <id>] [--page <page-id>]",
+        ],
+        [
+          "A state group is a named set of states that exclude each other, such as hover",
+          "(rest, hovered) or selection (unselected, selected). A type can use several",
+          "groups, which vary independently. Types use groups with "type add --groups" or",
+        ],
+      ]
+    `);
+  });
+});

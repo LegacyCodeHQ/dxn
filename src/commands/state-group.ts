@@ -18,9 +18,10 @@ import {
 
 const usage = `Usage: task-tree state-group <subcommand>
 
-A state group is a named set of independent states, such as interaction
-(normal, hovered, focused) or selection (unselected, selected). Types use
-groups with "type add --groups" or "type use-group".
+A state group is a named set of states that exclude each other, such as hover
+(rest, hovered) or selection (unselected, selected). A type can use several
+groups, which vary independently. Types use groups with "type add --groups" or
+"type use-group".
 
 Subcommands:
   add <name> --values a,b            Declare a state group

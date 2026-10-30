@@ -5,19 +5,22 @@ import type { Command } from "./context.js";
 import { editCommand, isObject, parse, Refusal, UsageError } from "./edit.js";
 
 const verifyUsage = `Usage: task-tree verify <task-id> --check <name> --result passed|failed --by <who>
-                       [state=<state>] [<dimension>=<value>...]
-                       [--evidence <path>] [--at <time>] [--page <page-id>]
+                       [<group>=<value>...] [<dimension>=<value>...] [<shared-task>=<state>...]
+                       [--transition <id>] [--evidence <path>] [--at <time>] [--page <page-id>]
 
 Records a check's result for a task in one context, replacing any earlier
-record for the same task, context and check. Dimensions left out take their
-default; --at defaults to now; --page is needed when several pages include
-the task.
+record for the same task, context and check. The context gives one value for
+each of the task's state groups (state=<state> for a plain states list) and
+the states of shared tasks above it; dimensions left out take their default.
+--transition records the result for one of the task's transitions instead.
+--at defaults to now; --page is needed when several pages include the task.
 `;
 
-const unverifyUsage = `Usage: task-tree unverify <task-id> --check <name> [state=<state>] [<dimension>=<value>...]
-                         [--page <page-id>]
+const unverifyUsage = `Usage: task-tree unverify <task-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
+                         [<shared-task>=<state>...] [--transition <id>] [--page <page-id>]
 
-Removes the record for that task, context and check.
+Removes the record for that task and check, in that context or for that
+transition.
 `;
 
 // The project as compiled from disk, for defaults and pages.
@@ -34,9 +37,7 @@ function contextArgs(args: string[]): Context {
   const entries = args.map((arg) => {
     const at = arg.indexOf("=");
     if (at <= 0 || at === arg.length - 1) {
-      throw new UsageError(
-        `expected <dimension>=<value> or state=<state>, got ${JSON.stringify(arg)}`,
-      );
+      throw new UsageError(`expected <name>=<value>, got ${JSON.stringify(arg)}`);
     }
     return [arg.slice(0, at), arg.slice(at + 1)] as [string, string];
   });
