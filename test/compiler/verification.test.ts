@@ -211,6 +211,32 @@ describe("record context across dimensions", () => {
   });
 });
 
+describe("record context defaults", () => {
+  const withDefault = (value: string, ...entries: unknown[]) =>
+    diagnose({
+      ...project,
+      "dimensions/pointer.json": { ...pointer, default: value },
+      "verification/page.json": { version: 1, records: entries },
+    });
+
+  it("fill in a dimension the context leaves out", () => {
+    expect(withDefault("mouse", record({ context: { state: "hovered" } }))).toEqual([]);
+    expect(withDefault("touch", record({ context: { state: "hovered" } }))).toEqual([
+      v("removed-state", "$.records[0].context.state"),
+    ]);
+  });
+
+  it("make a left-out dimension the same context as its default", () => {
+    expect(
+      withDefault(
+        "mouse",
+        record({ context: { state: "hovered" } }),
+        record({ context: { state: "hovered", pointer: "mouse" } }),
+      ),
+    ).toEqual([v("duplicate-record", "$.records[1]")]);
+  });
+});
+
 describe("record check", () => {
   it("must be declared", () => {
     expect(r({ check: 1 })).toEqual([v("wrong-type", "$.records[0].check")]);

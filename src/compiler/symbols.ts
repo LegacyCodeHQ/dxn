@@ -32,6 +32,8 @@ export interface TreeSymbols {
 // had invalid entries, so scope errors would only be follow-on noise.
 export interface DimensionSymbol {
   values: Set<string> | undefined;
+  // The value a context means when it leaves this dimension out.
+  default?: string;
   scope: Set<string>;
   scopeComplete: boolean;
 }

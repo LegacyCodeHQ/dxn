@@ -242,6 +242,10 @@ function checkContext(
   for (const name of applicable) {
     const entry = given.get(name);
     if (entry === undefined) {
+      const fallback = dimensions.get(name)?.symbol.default;
+      if (fallback !== undefined) {
+        values.set(name, fallback);
+      }
       continue;
     }
     const valuePath = childPath(path, name);
@@ -288,7 +292,7 @@ function checkContext(
     }
   }
   for (const name of allowed) {
-    if (!given.has(name)) {
+    if (!given.has(name) && !values.has(name)) {
       report(
         diagnostics,
         "missing-key",

@@ -4,6 +4,7 @@ import {
   checkSchema,
   checkVersion,
   expectKind,
+  expectName,
   expectObject,
   keys,
   report,
@@ -27,9 +28,15 @@ export function checkDimensionFile(
   if (document === undefined) {
     return dimension;
   }
-  const fields = keys(diagnostics, document, "$", ["$schema", "version", "values", "appliesTo"], {
-    required: ["version", "values", "appliesTo"],
-  });
+  const fields = keys(
+    diagnostics,
+    document,
+    "$",
+    ["$schema", "version", "values", "default", "appliesTo"],
+    {
+      required: ["version", "values", "appliesTo"],
+    },
+  );
   checkSchema(diagnostics, fields.get("$schema"));
   checkVersion(diagnostics, fields.get("version"));
 
@@ -45,6 +52,21 @@ export function checkDimensionFile(
       );
     } else {
       dimension.values = uniqueStrings(diagnostics, values, "$.values", "duplicate-value");
+    }
+  }
+
+  const fallback = fields.get("default");
+  if (fallback !== undefined && expectName(diagnostics, fallback, "$.default")) {
+    if (dimension.values !== undefined && !dimension.values.has(fallback.value)) {
+      report(
+        diagnostics,
+        "unknown-dimension-value",
+        `default ${JSON.stringify(fallback.value)} is not one of the values`,
+        "$.default",
+        fallback,
+      );
+    } else {
+      dimension.default = fallback.value;
     }
   }
 

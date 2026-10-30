@@ -83,3 +83,15 @@ describe("dimension appliesTo", () => {
     expect(appliesTo(["page", "page"])).toEqual([d("duplicate-task", "$.appliesTo[1]")]);
   });
 });
+
+describe("dimension default", () => {
+  it("may name one of the values", () => {
+    expect(field("default", "touch")).toEqual([]);
+  });
+
+  it("must be a valid name among the values", () => {
+    expect(field("default", 1)).toEqual([d("wrong-type", "$.default")]);
+    expect(field("default", "")).toEqual([d("empty-string", "$.default")]);
+    expect(field("default", "pen")).toEqual([d("unknown-dimension-value", "$.default")]);
+  });
+});

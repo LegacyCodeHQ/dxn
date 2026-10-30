@@ -54,6 +54,8 @@ export interface ComponentFile {
 export interface DimensionFile {
   version: number;
   values: string[];
+  // The value a context means when it leaves this dimension out.
+  default?: string;
   appliesTo: string[];
 }
 

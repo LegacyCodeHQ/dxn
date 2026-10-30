@@ -223,6 +223,7 @@ agree("dimension", (doc) => ({ ...tree, "dimensions/pointer.json": doc }), {
   valid: [
     ["a dimension over existing tasks", pointer],
     ["a $schema reference", { $schema: "x", ...pointer }],
+    ["a default value", { ...pointer, default: "mouse" }],
   ],
   structural: [
     ["wrong-type", []],
@@ -243,8 +244,13 @@ agree("dimension", (doc) => ({ ...tree, "dimensions/pointer.json": doc }), {
     ["wrong-type", dimension({ appliesTo: [1] })],
     ["empty-string", dimension({ appliesTo: [""] })],
     ["duplicate-task", dimension({ appliesTo: ["page", "page"] })],
+    ["wrong-type", dimension({ default: 1 })],
+    ["empty-string", dimension({ default: "" })],
   ],
-  crossReference: [["unknown-task", dimension({ appliesTo: ["nope"] })]],
+  crossReference: [
+    ["unknown-task", dimension({ appliesTo: ["nope"] })],
+    ["unknown-dimension-value", dimension({ default: "pen" })],
+  ],
 });
 
 const overrides = (value: unknown) => ({ version: 1, overrides: value });

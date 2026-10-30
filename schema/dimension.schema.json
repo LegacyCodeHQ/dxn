@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "task-tree dimension",
-  "description": "Editor aid for dimensions/<name>.json; the file name is the dimension's name. The task-tree compiler is the authority: it also checks that appliesTo names existing tasks, which this schema cannot express.",
+  "description": "Editor aid for dimensions/<name>.json; the file name is the dimension's name. The task-tree compiler is the authority: it also checks that the default is one of the values and that appliesTo names existing tasks, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "values", "appliesTo"],
@@ -22,6 +22,10 @@
       "items": {
         "$ref": "#/$defs/name"
       }
+    },
+    "default": {
+      "description": "One of the values: the value a context means when it leaves this dimension out.",
+      "$ref": "#/$defs/name"
     },
     "appliesTo": {
       "description": "Ids of the tasks this dimension applies to; each task's subtree is included.",
