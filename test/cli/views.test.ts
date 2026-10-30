@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -44,7 +44,7 @@ const files = {
       ],
     },
   },
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [{ include: "toolbar" }],
@@ -68,7 +68,7 @@ describe("views", () => {
   it("lists every distinct view of a component, with shared states only where they exist", () => {
     const { run } = cliProject(files);
     expect(json(run("views", "toolbar"))).toEqual({
-      task: "toolbar",
+      node: "toolbar",
       views: [
         { breakpoint: "base", menu: "closed" },
         { breakpoint: "base", menu: "open" },
@@ -80,7 +80,7 @@ describe("views", () => {
     });
   });
 
-  it("works for a root, a task inside a component, and a task that does not vary", () => {
+  it("works for a root, a node inside a component, and a node that does not vary", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(json(run("views", "article-page")).views);
@@ -145,11 +145,11 @@ describe("views", () => {
 `);
   });
 
-  it("reports unknown tasks", () => {
+  it("reports unknown nodes", () => {
     const { run } = cliProject(files);
     expect(run("views", "nope")).toMatchObject({
       code: 1,
-      stderr: "task-tree: task not found: nope\n",
+      stderr: "task-tree: node not found: nope\n",
     });
   });
 });
@@ -158,7 +158,7 @@ describe("view", () => {
   it("prints the tree present in one view, with states and shared states", () => {
     const { run } = cliProject(files);
     expect(json(run("view", "toolbar", "breakpoint=sm", "menu=open"))).toEqual({
-      task: "toolbar",
+      node: "toolbar",
       context: { breakpoint: "sm", menu: "open" },
       tree: {
         id: "toolbar",
@@ -221,7 +221,7 @@ describe("view", () => {
     expect(json(run("view", "article-page")).tree.children[0].id).toBe("toolbar");
   });
 
-  it("needs the state of each shared task in the view, and known values", () => {
+  it("needs the state of each shared node in the view, and known values", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(run("view", "toolbar", "breakpoint=sm"));
@@ -251,7 +251,7 @@ describe("view", () => {
         },
         {
           "code": 1,
-          "stderr": "task-tree: "theme" is not a dimension or shared task in this view (breakpoint, menu)
+          "stderr": "task-tree: "theme" is not a dimension or shared node in this view (breakpoint, menu)
       ",
           "stdout": "",
         },
@@ -261,7 +261,7 @@ describe("view", () => {
 });
 
 describe("view configurations that cannot exist", () => {
-  it("reject a shared task's state where that task does not exist", () => {
+  it("reject a shared node's state where that node does not exist", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(run("view", "toolbar", "breakpoint=lg", "menu=open"));
@@ -279,7 +279,7 @@ describe("view configurations that cannot exist", () => {
     `);
   });
 
-  it("reject viewing a task where it does not exist", () => {
+  it("reject viewing a node where it does not exist", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(run("view", "menu", "breakpoint=lg"));
@@ -306,7 +306,7 @@ describe("view configurations that cannot exist", () => {
 });
 
 describe("shared states in the other reading commands", () => {
-  it("are part of a task's contexts", () => {
+  it("are part of a node's contexts", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(json(run("contexts", "menu-button")).contexts);
@@ -416,7 +416,7 @@ describe("shared states in the other reading commands", () => {
         version: 1,
         records: [
           {
-            task: "menu-link",
+            node: "menu-link",
             context: { state: "normal", breakpoint: "sm", menu: "open" },
             check: "visual",
             result: "passed",

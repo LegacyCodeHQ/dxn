@@ -22,8 +22,8 @@ Subcommands:
   rename-value <name> <old> <new>    Rename a value everywhere it is used
   set-default <name> <value> | --none
                                      Set or clear the default value
-  apply <name> <task-id>             Apply the dimension to a task's subtree
-  unapply <name> <task-id>           Stop applying it to that task
+  apply <name> <node-id>             Apply the dimension to a node's subtree
+  unapply <name> <node-id>           Stop applying it to that node
   remove <name>                      Remove the dimension
 `;
 
@@ -110,12 +110,12 @@ const setDefaultCommand: Command = editCommand(usage, (workspace, args) => {
   workspace.touch(`dimensions/${name}.json`);
 });
 
-const apply = edit(["task-id"], {}, (_, dimension, [id]) => {
+const apply = edit(["node-id"], {}, (_, dimension, [id]) => {
   dimension.appliesTo = [...strings(dimension.appliesTo), id as string];
 });
 
 const unapply = editCommand(usage, (workspace, args) => {
-  const [name, id] = parse(args, ["name", "task-id"], {}).positionals as [string, string];
+  const [name, id] = parse(args, ["name", "node-id"], {}).positionals as [string, string];
   const dimension = requireDimension(workspace, name);
   const appliesTo = strings(dimension.appliesTo);
   if (!appliesTo.includes(id)) {
@@ -147,8 +147,8 @@ const renameValue = editCommand(usage, (workspace, args) => {
     if (depth < 0 || overrides === undefined) continue;
     renameAtDepth(overrides.overrides, depth, from, to);
     if (dimensions.length === 1 && isObject(overrides.only)) {
-      for (const [task, only] of Object.entries(overrides.only)) {
-        overrides.only[task] = strings(only).map((value) => (value === from ? to : value));
+      for (const [node, only] of Object.entries(overrides.only)) {
+        overrides.only[node] = strings(only).map((value) => (value === from ? to : value));
       }
     }
     workspace.touch(file);
@@ -184,13 +184,13 @@ export const dimension: Command = group(usage, {
 });
 
 // Renames a value key at one nesting level of an overrides map.
-function renameAtDepth(node: unknown, depth: number, from: string, to: string): void {
-  if (!isObject(node)) return;
+function renameAtDepth(item: unknown, depth: number, from: string, to: string): void {
+  if (!isObject(item)) return;
   if (depth === 0) {
-    renameKey(node, from, to);
+    renameKey(item, from, to);
     return;
   }
-  for (const child of Object.values(node)) {
+  for (const child of Object.values(item)) {
     renameAtDepth(child, depth - 1, from, to);
   }
 }

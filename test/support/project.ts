@@ -49,12 +49,12 @@ export const types = {
   types: { link: { states: ["normal", "hovered", "selected"] } },
 };
 
-export const taskFile = (task: unknown) => ({ version: 1, task });
+export const rootFile = (root: unknown) => ({ version: 1, root });
 
-// A small project: two root task files, one of them outside the pointer scope.
+// A small project: two root files, one of them outside the pointer scope.
 export const tree: Files = {
   "types.json": types,
-  "tasks/page.json": taskFile({
+  "roots/page.json": rootFile({
     id: "page",
     title: "Page",
     children: [
@@ -68,7 +68,7 @@ export const tree: Files = {
       },
     ],
   }),
-  "tasks/footer-link.json": taskFile({ id: "footer-link", title: "Footer link", type: "link" }),
+  "roots/footer-link.json": rootFile({ id: "footer-link", title: "Footer link", type: "link" }),
 };
 
 export const pointer = { version: 1, values: ["mouse", "touch"], appliesTo: ["page"] };

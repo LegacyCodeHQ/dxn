@@ -66,7 +66,7 @@ const escapes: Record<string, string> = {
 };
 
 // Deeper input is reported rather than parsed, so recursion here and in the
-// checkers cannot overflow the stack. 512 levels allows about 256 nested tasks.
+// checkers cannot overflow the stack. 512 levels allows about 256 nested nodes.
 export const maxDepth = 512;
 
 const unpairedSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
@@ -113,11 +113,11 @@ export function parseJson(source: string): ParseResult {
     if (char === "[") return parseArray(path);
     if (char === '"') return checkSurrogates(parseString(), path);
     if (char === "-" || (char !== undefined && char >= "0" && char <= "9")) return parseNumber();
-    for (const [word, node] of literals) {
+    for (const [word, item] of literals) {
       if (source.startsWith(word, pos)) {
         const start = pos;
         pos += word.length;
-        return { ...node, span: { start, end: pos } } as JsonNode;
+        return { ...item, span: { start, end: pos } } as JsonNode;
       }
     }
     return unexpected();
@@ -243,16 +243,16 @@ export function parseJson(source: string): ParseResult {
   }
 
   // Escapes such as "\\ud800" can decode to a lone surrogate, which is not text.
-  function checkSurrogates(node: StringNode, path: string): StringNode {
-    if (unpairedSurrogate.test(node.value)) {
+  function checkSurrogates(item: StringNode, path: string): StringNode {
+    if (unpairedSurrogate.test(item.value)) {
       diagnostics.report(
         "invalid-surrogate",
         "string contains an unpaired surrogate",
         path,
-        node.span.start,
+        item.span.start,
       );
     }
-    return node;
+    return item;
   }
 
   function parseNumber(): NumberNode {

@@ -7,7 +7,7 @@ import {
   cleanup,
   compileFiles,
   diagnose,
-  taskFile,
+  rootFile,
   tree,
   types,
   writeProject,
@@ -25,43 +25,43 @@ describe("compileDirectory", () => {
       fileURLToPath(new URL("../../examples/website", import.meta.url)),
     );
     snapshot.push(result.diagnostics);
-    snapshot.push(result.project?.tasks.map(({ id }) => id));
+    snapshot.push(result.project?.roots.map(({ id }) => id));
     snapshot.push(Object.keys(result.project?.dimensions ?? {}));
     snapshot.push(result.project?.overrides.pointer?.overrides.touch?.types?.link?.states);
     snapshot.push(result.project?.verification["article-page"]?.records);
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    [],
-    [
-      "article-page",
-    ],
-    [
-      "breakpoint",
-      "pointer",
-    ],
-    {
-      "remove": [
-        "hovered",
-      ],
-    },
-    [
-      {
-        "at": "2026-10-30T19:20:00Z",
-        "by": "agent",
-        "check": "visual",
-        "context": {
-          "breakpoint": "lg",
-          "pointer": "mouse",
-          "state": "hovered",
+      [
+        [],
+        [
+          "article-page",
+        ],
+        [
+          "breakpoint",
+          "pointer",
+        ],
+        {
+          "remove": [
+            "hovered",
+          ],
         },
-        "evidence": "screenshots/blog-link-hovered-lg-mouse.png",
-        "result": "passed",
-        "task": "blog-link",
-      },
-    ],
-  ]
-`);
+        [
+          {
+            "at": "2026-10-30T19:20:00Z",
+            "by": "agent",
+            "check": "visual",
+            "context": {
+              "breakpoint": "lg",
+              "pointer": "mouse",
+              "state": "hovered",
+            },
+            "evidence": "screenshots/blog-link-hovered-lg-mouse.png",
+            "node": "blog-link",
+            "result": "passed",
+          },
+        ],
+      ]
+    `);
   });
 
   it("accepts a project with only types.json", () => {
@@ -71,43 +71,43 @@ describe("compileDirectory", () => {
     snapshot.push(result.project);
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    [],
-    {
-      "combinations": {},
-      "components": [],
-      "dimensions": {},
-      "overrides": {},
-      "tasks": [],
-      "types": {
-        "customAttributes": {
-          "design": {
-            "values": [
-              "available",
-              "missing",
-            ],
+      [
+        [],
+        {
+          "combinations": {},
+          "components": [],
+          "dimensions": {},
+          "overrides": {},
+          "roots": [],
+          "types": {
+            "customAttributes": {
+              "design": {
+                "values": [
+                  "available",
+                  "missing",
+                ],
+              },
+            },
+            "types": {
+              "link": {
+                "states": [
+                  "normal",
+                  "hovered",
+                  "selected",
+                ],
+              },
+            },
+            "version": 1,
           },
+          "verification": {},
         },
-        "types": {
-          "link": {
-            "states": [
-              "normal",
-              "hovered",
-              "selected",
-            ],
-          },
-        },
-        "version": 1,
-      },
-      "verification": {},
-    },
-  ]
-`);
+      ]
+    `);
   });
 
   it("requires types.json", () => {
     const snapshot: unknown[] = [];
-    const result = compileFiles({ "tasks/a.json": taskFile({ id: "a", title: "A" }) });
+    const result = compileFiles({ "roots/a.json": rootFile({ id: "a", title: "A" }) });
     snapshot.push(result.project);
     snapshot.push(result.diagnostics);
 
@@ -134,15 +134,15 @@ describe("compileDirectory", () => {
         ...tree,
         "README.md": "# notes",
         "tree.json": {},
-        "tasks/notes.txt": "x",
+        "roots/notes.txt": "x",
         "notes/a.json": {},
       }),
     ).toEqual([]);
   });
 
-  it("ignores folders inside the task, dimension and override folders", () => {
+  it("ignores folders inside the root, dimension and override folders", () => {
     const directory = writeProject(tree);
-    mkdirSync(join(directory, "tasks", "nested.json"));
+    mkdirSync(join(directory, "roots", "nested.json"));
     expect(compileDirectory(directory).diagnostics).toEqual([]);
   });
 
@@ -167,8 +167,8 @@ describe("filesystem", () => {
     ]);
   });
 
-  it("reports a task, dimension or override folder that is a file", () => {
-    for (const folder of ["components", "tasks", "dimensions", "overrides", "verification"]) {
+  it("reports a root, dimension or override folder that is a file", () => {
+    for (const folder of ["components", "roots", "dimensions", "overrides", "verification"]) {
       const directory = writeProject({ "types.json": types });
       writeFileSync(join(directory, folder), "");
       expect(compileDirectory(directory).diagnostics).toMatchObject([
@@ -192,14 +192,14 @@ describe("cascades", () => {
     ]);
   });
 
-  it("stop before dimensions and overrides when a task file does not parse", () => {
+  it("stop before dimensions and overrides when a node file does not parse", () => {
     expect(
       diagnose({
         ...tree,
-        "tasks/page.json": "{",
+        "roots/page.json": "{",
         "dimensions/pointer.json": { version: 1, values: ["touch"], appliesTo: ["page"] },
       }),
-    ).toEqual([{ file: "tasks/page.json", code: "unexpected-end", path: "$" }]);
+    ).toEqual([{ file: "roots/page.json", code: "unexpected-end", path: "$" }]);
   });
 });
 
@@ -305,9 +305,9 @@ describe("encoding", () => {
     ]);
   });
 
-  it("reports invalid UTF-8 in a task file", () => {
-    expect(diagnose({ ...tree, "tasks/page.json": bytes("[", [0xff], "]") })).toEqual([
-      { file: "tasks/page.json", code: "invalid-encoding", path: "$" },
+  it("reports invalid UTF-8 in a node file", () => {
+    expect(diagnose({ ...tree, "roots/page.json": bytes("[", [0xff], "]") })).toEqual([
+      { file: "roots/page.json", code: "invalid-encoding", path: "$" },
     ]);
   });
 });

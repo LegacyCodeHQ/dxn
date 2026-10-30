@@ -24,10 +24,10 @@ export interface DimensionInfo {
   overrides?: OverrideStates;
 }
 
-const recordKeys = ["task", "context", "transition", "check", "result", "by", "at", "evidence"];
+const recordKeys = ["node", "context", "transition", "check", "result", "by", "at", "evidence"];
 const results = new Set(["passed", "failed"]);
 
-// verification/<root-id>.json: one record per task, exact context and check.
+// verification/<root-id>.json: one record per node, exact context and check.
 export function checkVerificationFile(
   root: JsonNode,
   diagnostics: Diagnostics,
@@ -71,7 +71,7 @@ export function checkVerificationFile(
       report(
         diagnostics,
         "duplicate-record",
-        "another record has the same task, context and check",
+        "another record has the same node, context and check",
         path,
         element,
       );
@@ -80,7 +80,7 @@ export function checkVerificationFile(
   });
 }
 
-// Returns the record's identity (task, context, check) when all three are valid.
+// Returns the record's identity (node, context, check) when all three are valid.
 function checkRecord(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
@@ -88,17 +88,17 @@ function checkRecord(
   combinations: CombinationStates[],
   inFile: Set<string>,
   rootId: string,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
 ): string | undefined {
-  const record = expectObject(diagnostics, node, path);
+  const record = expectObject(diagnostics, item, path);
   if (record === undefined) {
     return undefined;
   }
   const fields = keys(diagnostics, record, path, recordKeys, {
-    required: ["task", "check", "result", "by", "at"],
+    required: ["node", "check", "result", "by", "at"],
   });
-  // A record is about a context, or about one of the task's transitions.
+  // A record is about a context, or about one of the node's transitions.
   const transitionNode = fields.get("transition");
   if (transitionNode !== undefined && fields.has("context")) {
     report(
@@ -114,21 +114,21 @@ function checkRecord(
     report(diagnostics, "missing-key", 'missing required key "context"', `${path}.context`, record);
   }
 
-  const type = checkRecordTask(diagnostics, tree, inFile, fields.get("task"), `${path}.task`);
-  const task = fields.get("task");
-  const taskId = type === undefined || task?.kind !== "string" ? undefined : task.value;
+  const type = checkRecordNode(diagnostics, tree, inFile, fields.get("node"), `${path}.node`);
+  const node = fields.get("node");
+  const nodeId = type === undefined || node?.kind !== "string" ? undefined : node.value;
 
   let context: string | undefined;
   if (
     transitionNode !== undefined &&
     expectName(diagnostics, transitionNode, `${path}.transition`) &&
-    taskId !== undefined
+    nodeId !== undefined
   ) {
-    if (!tree.transitions.get(taskId)?.has(transitionNode.value)) {
+    if (!tree.transitions.get(nodeId)?.has(transitionNode.value)) {
       report(
         diagnostics,
         "unknown-transition",
-        `task ${JSON.stringify(taskId)} has no transition ${JSON.stringify(transitionNode.value)}`,
+        `node ${JSON.stringify(nodeId)} has no transition ${JSON.stringify(transitionNode.value)}`,
         `${path}.transition`,
         transitionNode,
       );
@@ -139,15 +139,15 @@ function checkRecord(
   const contextNode = fields.get("context");
   if (contextNode !== undefined) {
     const object = expectObject(diagnostics, contextNode, `${path}.context`);
-    if (object !== undefined && taskId !== undefined && type !== undefined) {
+    if (object !== undefined && nodeId !== undefined && type !== undefined) {
       context = checkContext(
         diagnostics,
         tree,
         dimensions,
         combinations,
-        taskId,
+        nodeId,
         type,
-        lineage(tree, rootId, taskId) ?? [taskId],
+        lineage(tree, rootId, nodeId) ?? [nodeId],
         object,
         `${path}.context`,
       );
@@ -214,67 +214,67 @@ function checkRecord(
     expectNonEmptyString(diagnostics, evidence, `${path}.evidence`);
   }
 
-  if (taskId === undefined || context === undefined || checkName === undefined) {
+  if (nodeId === undefined || context === undefined || checkName === undefined) {
     return undefined;
   }
-  return JSON.stringify([taskId, context, checkName]);
+  return JSON.stringify([nodeId, context, checkName]);
 }
 
-// Returns the task's type when the task can carry records here.
-function checkRecordTask(
+// Returns the node's type when the node can carry records here.
+function checkRecordNode(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   inFile: Set<string>,
-  node: JsonNode | undefined,
+  item: JsonNode | undefined,
   path: string,
 ): string | undefined {
-  if (node === undefined || !expectName(diagnostics, node, path)) {
+  if (item === undefined || !expectName(diagnostics, item, path)) {
     return undefined;
   }
-  const id = JSON.stringify(node.value);
-  if (!tree.ids.has(node.value)) {
-    report(diagnostics, "unknown-task", `task ${id} does not exist`, path, node);
+  const id = JSON.stringify(item.value);
+  if (!tree.ids.has(item.value)) {
+    report(diagnostics, "unknown-node", `node ${id} does not exist`, path, item);
     return undefined;
   }
-  if (!inFile.has(node.value)) {
+  if (!inFile.has(item.value)) {
     report(
       diagnostics,
-      "task-outside-file",
-      `task ${id} is not part of this file's root task`,
+      "node-outside-file",
+      `node ${id} is not part of this file's root`,
       path,
-      node,
+      item,
     );
     return undefined;
   }
-  const type = tree.taskTypes.get(node.value);
+  const type = tree.nodeTypes.get(item.value);
   if (type === undefined) {
     report(
       diagnostics,
       "verification-without-type",
-      `task ${id} has no type, so it has no checks`,
+      `node ${id} has no type, so it has no checks`,
       path,
-      node,
+      item,
     );
     return undefined;
   }
   return type;
 }
 
-// Checks that the context names exactly the task's dimensions (plus state when
-// the task has states) with valid values. Returns a canonical form of it.
+// Checks that the context names exactly the node's dimensions (plus state when
+// the node has states) with valid values. Returns a canonical form of it.
 function checkContext(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   dimensions: Map<string, DimensionInfo>,
   combinations: CombinationStates[],
-  taskId: string,
+  nodeId: string,
   type: string,
   ancestry: string[],
   context: ObjectNode,
   path: string,
 ): string | undefined {
   const applicable = [...dimensions]
-    .filter(([, { symbol }]) => symbol.scope.has(taskId))
+    .filter(([, { symbol }]) => symbol.scope.has(nodeId))
     .map(([name]) => name)
     .sort();
   const base = tree.types.get(type) ?? new Set<string>();
@@ -318,7 +318,7 @@ function checkContext(
     applicable,
     values,
     type,
-    taskId,
+    nodeId,
   );
   // Each of the type's state groups is a context key; a plain states list is
   // one group, "state".
@@ -334,7 +334,7 @@ function checkContext(
 
   // Shared ancestors on the path from the root: their states are context keys.
   const shared = ancestry.slice(0, -1).filter((id) => {
-    const ancestorType = tree.taskTypes.get(id);
+    const ancestorType = tree.nodeTypes.get(id);
     return ancestorType !== undefined && tree.sharedTypes.has(ancestorType);
   });
   for (const ancestor of shared) {
@@ -345,7 +345,7 @@ function checkContext(
       valid = false;
       continue;
     }
-    const ancestorType = tree.taskTypes.get(ancestor) as string;
+    const ancestorType = tree.nodeTypes.get(ancestor) as string;
     const ancestorStates = statesInContext(
       tree.types.get(ancestorType) ?? new Set<string>(),
       dimensions,
@@ -375,7 +375,7 @@ function checkContext(
       report(
         diagnostics,
         "unknown-key",
-        `${JSON.stringify(key.value)} is not a dimension of this task`,
+        `${JSON.stringify(key.value)} is not a dimension of this node`,
         childPath(path, key.value),
         key,
       );
@@ -422,8 +422,8 @@ function checkContext(
         diagnostics,
         "unknown-state",
         group === "state"
-          ? `${name} is not a state of this task here`
-          : `${name} is not in this task's ${JSON.stringify(group)} group here`,
+          ? `${name} is not a state of this node here`
+          : `${name} is not in this node's ${JSON.stringify(group)} group here`,
         statePath,
         entry.value,
       );
@@ -434,7 +434,7 @@ function checkContext(
   if (!valid) {
     return undefined;
   }
-  // "only" in any applicable dimension, on the task or a task above it on
+  // "only" in any applicable dimension, on the node or a node above it on
   // the path from the root, can leave it out of this context.
   const absentIn = applicable.find((name) => {
     const value = values.get(name);
@@ -447,11 +447,11 @@ function checkContext(
       })
     );
   });
-  // An include on the path from the root may fix some of the task's groups.
+  // An include on the path from the root may fix some of the node's groups.
   for (let index = 0; index + 1 < ancestry.length; index++) {
     const restrictions = tree.includeRestrictions
       .get(`${ancestry[index]}>${ancestry[index + 1]}`)
-      ?.get(taskId);
+      ?.get(nodeId);
     for (const [group, allowed] of restrictions ?? []) {
       const value = values.get(group);
       const entry = given.get(group);
@@ -477,7 +477,7 @@ function checkContext(
     report(
       diagnostics,
       "absent-in-context",
-      `the task does not exist here: onlyWhen on ${JSON.stringify(leftOut)} leaves it out`,
+      `the node does not exist here: onlyWhen on ${JSON.stringify(leftOut)} leaves it out`,
       path,
       context,
     );
@@ -487,7 +487,7 @@ function checkContext(
     report(
       diagnostics,
       "absent-in-context",
-      `the task does not exist when ${absentIn}=${values.get(absentIn)}: "only" leaves it out`,
+      `the node does not exist when ${absentIn}=${values.get(absentIn)}: "only" leaves it out`,
       path,
       context,
     );
@@ -497,7 +497,7 @@ function checkContext(
 }
 
 // Applies state changes in precedence order: single-dimension type overrides,
-// type combinations, then the same for task overrides, so an instance's own
+// type combinations, then the same for node overrides, so an instance's own
 // changes beat type changes and combinations beat single dimensions.
 // Conflicts within a level are errors, so order within a level does not matter.
 function statesInContext(
@@ -507,7 +507,7 @@ function statesInContext(
   applicable: string[],
   values: Map<string, string>,
   type: string,
-  taskId: string,
+  nodeId: string,
 ): { states: Set<string>; removed: Set<string> } {
   const singles = applicable.map((name) => {
     const value = values.get(name);
@@ -525,8 +525,8 @@ function statesInContext(
   const levels: (StateChanges | undefined)[] = [
     ...singles.map((override) => override?.types.get(type)),
     ...combined.map((override) => override?.types.get(type)),
-    ...singles.map((override) => override?.tasks.get(taskId)),
-    ...combined.map((override) => override?.tasks.get(taskId)),
+    ...singles.map((override) => override?.nodes.get(nodeId)),
+    ...combined.map((override) => override?.nodes.get(nodeId)),
   ];
   for (const changes of levels) {
     for (const state of changes?.remove ?? []) {
@@ -541,7 +541,7 @@ function statesInContext(
   return { states, removed };
 }
 
-// Ids from the root down to the task, through included components.
+// Ids from the root down to the node, through included components.
 function lineage(
   tree: TreeSymbols,
   from: string,

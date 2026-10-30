@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { at, cleanup, compileFiles, diagnose, type Files, taskFile } from "../support/project.js";
+import { at, cleanup, compileFiles, diagnose, type Files, rootFile } from "../support/project.js";
 
 afterAll(cleanup);
 
@@ -18,7 +18,7 @@ const project: Files = {
     title: "Toolbar",
     children: [{ id: "blog-link", title: "Blog link", type: "toolbar-link" }],
   }),
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [include("toolbar")],
@@ -26,22 +26,22 @@ const project: Files = {
 };
 
 const k = at("components/toolbar.json");
-const p = at("tasks/article-page.json");
+const p = at("roots/article-page.json");
 const page = (children: unknown[], extra: Files = {}) =>
   diagnose({
     ...project,
     ...extra,
-    "tasks/article-page.json": taskFile({ id: "article-page", title: "Article page", children }),
+    "roots/article-page.json": rootFile({ id: "article-page", title: "Article page", children }),
   });
 const component = (doc: unknown) => diagnose({ ...project, "components/toolbar.json": doc });
 
 describe("components", () => {
-  it("compile and are returned beside the tasks that include them", () => {
+  it("compile and are returned beside the nodes that include them", () => {
     const snapshot: unknown[] = [];
     const result = compileFiles(project);
     snapshot.push(result.diagnostics);
     snapshot.push(result.project?.components.map(({ id }) => id));
-    snapshot.push(result.project?.tasks[0]?.children);
+    snapshot.push(result.project?.roots[0]?.children);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -112,7 +112,7 @@ describe("components", () => {
 `);
   });
 
-  it("are checked like tasks", () => {
+  it("are checked like nodes", () => {
     const snapshot: unknown[] = [];
     snapshot.push(component(componentFile([])));
     snapshot.push(component(componentFile({ id: "toolbar", title: "T", children: [{ id: "x" }] })));
@@ -143,13 +143,13 @@ describe("components", () => {
     ]);
   });
 
-  it("share ids with tasks", () => {
+  it("share ids with nodes", () => {
     expect(
       diagnose({
         ...project,
-        "tasks/toolbar.json": taskFile({ id: "toolbar", title: "Toolbar" }),
+        "roots/toolbar.json": rootFile({ id: "toolbar", title: "Toolbar" }),
       }),
-    ).toEqual([{ file: "tasks/toolbar.json", code: "duplicate-id", path: "$.task.id" }]);
+    ).toEqual([{ file: "roots/toolbar.json", code: "duplicate-id", path: "$.root.id" }]);
   });
 
   it("may include other components", () => {
@@ -215,51 +215,51 @@ describe("include", () => {
     [
       {
         "code": "wrong-type",
-        "file": "tasks/article-page.json",
-        "path": "$.task.children[0]",
+        "file": "roots/article-page.json",
+        "path": "$.root.children[0]",
       },
     ],
     [
       {
         "code": "empty-string",
-        "file": "tasks/article-page.json",
-        "path": "$.task.children[0].include",
+        "file": "roots/article-page.json",
+        "path": "$.root.children[0].include",
       },
     ],
     [
       {
         "code": "wrong-type",
-        "file": "tasks/article-page.json",
-        "path": "$.task.children[0].include",
+        "file": "roots/article-page.json",
+        "path": "$.root.children[0].include",
       },
     ],
     [
       {
         "code": "unknown-component",
-        "file": "tasks/article-page.json",
-        "path": "$.task.children[0].include",
+        "file": "roots/article-page.json",
+        "path": "$.root.children[0].include",
       },
     ],
   ]
 `);
   });
 
-  it("does not name a task that is not a component", () => {
+  it("does not name a node that is not a component", () => {
     expect(
-      page([include("other")], { "tasks/other.json": taskFile({ id: "other", title: "Other" }) }),
-    ).toEqual([p("unknown-component", "$.task.children[0].include")]);
+      page([include("other")], { "roots/other.json": rootFile({ id: "other", title: "Other" }) }),
+    ).toEqual([p("unknown-component", "$.root.children[0].include")]);
   });
 
   it("has no other keys", () => {
     expect(page([{ include: "toolbar", title: "Toolbar" }])).toEqual([
-      p("unknown-key", "$.task.children[0].title"),
+      p("unknown-key", "$.root.children[0].title"),
     ]);
   });
 
-  it("is not a file's root task", () => {
+  it("is not a file's root", () => {
     expect(
-      diagnose({ ...project, "tasks/article-page.json": taskFile(include("toolbar")) }),
-    ).toEqual([p("include-at-root", "$.task")]);
+      diagnose({ ...project, "roots/article-page.json": rootFile(include("toolbar")) }),
+    ).toEqual([p("include-at-root", "$.root")]);
   });
 
   it("does not bring the same component into a page twice", () => {
@@ -285,15 +285,15 @@ describe("include", () => {
     [
       {
         "code": "duplicate-include",
-        "file": "tasks/article-page.json",
-        "path": "$.task.children[1].include",
+        "file": "roots/article-page.json",
+        "path": "$.root.children[1].include",
       },
     ],
     [
       {
         "code": "duplicate-include",
-        "file": "tasks/article-page.json",
-        "path": "$.task.children[1].include",
+        "file": "roots/article-page.json",
+        "path": "$.root.children[1].include",
       },
     ],
   ]
@@ -357,7 +357,7 @@ describe("included components", () => {
         "dimensions/breakpoint.json": breakpoint,
         "overrides/breakpoint.json": {
           version: 1,
-          overrides: { sm: { tasks: { "blog-link": { states: { remove: ["hovered"] } } } } },
+          overrides: { sm: { nodes: { "blog-link": { states: { remove: ["hovered"] } } } } },
         },
       }),
     ).toEqual([]);
@@ -365,11 +365,11 @@ describe("included components", () => {
 
   it("are verified as part of the page", () => {
     const snapshot: unknown[] = [];
-    const record = (task: string) => ({
+    const record = (node: string) => ({
       version: 1,
       records: [
         {
-          task,
+          node,
           context: { state: "hovered", breakpoint: "lg" },
           check: "visual",
           result: "passed",
@@ -392,7 +392,7 @@ describe("included components", () => {
     [],
     [
       {
-        "code": "unknown-root-task",
+        "code": "unknown-root",
         "file": "verification/toolbar.json",
         "path": "$",
       },

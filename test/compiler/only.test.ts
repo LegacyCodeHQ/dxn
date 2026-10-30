@@ -6,7 +6,7 @@ import {
   diagnose,
   type Files,
   pointer,
-  taskFile,
+  rootFile,
 } from "../support/project.js";
 
 afterAll(cleanup);
@@ -18,7 +18,7 @@ const project: Files = {
     customChecks: { visual: {} },
     types: { "toolbar-link": { states: ["normal", "hovered"], checks: ["visual"] } },
   },
-  "tasks/page.json": taskFile({
+  "roots/page.json": rootFile({
     id: "page",
     title: "Page",
     children: [
@@ -34,7 +34,7 @@ const project: Files = {
       },
     ],
   }),
-  "tasks/footer.json": taskFile({ id: "footer", title: "Footer" }),
+  "roots/footer.json": rootFile({ id: "footer", title: "Footer" }),
   "dimensions/breakpoint.json": {
     version: 1,
     values: ["base", "sm", "lg", "xl"],
@@ -52,7 +52,7 @@ const withOnly = (only: unknown, overrides: unknown = {}, extra: Files = {}) =>
   });
 
 describe("only", () => {
-  it("lists the values where a task exists", () => {
+  it("lists the values where a node exists", () => {
     const snapshot: unknown[] = [];
     const files = {
       ...project,
@@ -78,7 +78,7 @@ describe("only", () => {
 `);
   });
 
-  it("maps task ids to non-empty lists of the dimension's values", () => {
+  it("maps node ids to non-empty lists of the dimension's values", () => {
     const snapshot: unknown[] = [];
     snapshot.push(withOnly([]));
     snapshot.push(withOnly({ links: "lg" }));
@@ -143,7 +143,7 @@ describe("only", () => {
 `);
   });
 
-  it("names existing tasks the dimension applies to", () => {
+  it("names existing nodes the dimension applies to", () => {
     const snapshot: unknown[] = [];
     snapshot.push(withOnly({ nope: ["lg"] }));
     snapshot.push(withOnly({ footer: ["lg"] }));
@@ -152,14 +152,14 @@ describe("only", () => {
   [
     [
       {
-        "code": "unknown-task",
+        "code": "unknown-node",
         "file": "overrides/breakpoint.json",
         "path": "$.only.nope",
       },
     ],
     [
       {
-        "code": "task-out-of-scope",
+        "code": "node-out-of-scope",
         "file": "overrides/breakpoint.json",
         "path": "$.only.footer",
       },
@@ -179,14 +179,14 @@ describe("only", () => {
   });
 });
 
-describe("absent tasks", () => {
+describe("absent nodes", () => {
   it("cannot be overridden where they are absent, including under an absent parent", () => {
     expect(
       withOnly(desktopOnly, {
-        base: { tasks: { "blog-link": { states: { remove: ["hovered"] } } } },
-        lg: { tasks: { "blog-link": { states: { remove: ["hovered"] } } } },
+        base: { nodes: { "blog-link": { states: { remove: ["hovered"] } } } },
+        lg: { nodes: { "blog-link": { states: { remove: ["hovered"] } } } },
       }),
-    ).toEqual([o("absent-in-context", "$.overrides.base.tasks.blog-link")]);
+    ).toEqual([o("absent-in-context", "$.overrides.base.nodes.blog-link")]);
   });
 
   it("cannot be overridden by a combination where one of its dimensions excludes them", () => {
@@ -198,7 +198,7 @@ describe("absent tasks", () => {
         "overrides/breakpoint+pointer.json": {
           version: 1,
           overrides: {
-            base: { touch: { tasks: { "blog-link": { states: { remove: ["hovered"] } } } } },
+            base: { touch: { nodes: { "blog-link": { states: { remove: ["hovered"] } } } } },
           },
         },
       }),
@@ -206,13 +206,13 @@ describe("absent tasks", () => {
       {
         file: "overrides/breakpoint+pointer.json",
         code: "absent-in-context",
-        path: "$.overrides.base.touch.tasks.blog-link",
+        path: "$.overrides.base.touch.nodes.blog-link",
       },
     ]);
   });
 
-  const record = (task: string, context: Record<string, string>) => ({
-    task,
+  const record = (node: string, context: Record<string, string>) => ({
+    node,
     context: { state: "normal", ...context },
     check: "visual",
     result: "passed",
@@ -280,7 +280,7 @@ describe("absent tasks", () => {
 `);
   });
 
-  it("include tasks under an absent included component", () => {
+  it("include nodes under an absent included component", () => {
     expect(
       diagnose({
         ...project,
@@ -292,7 +292,7 @@ describe("absent tasks", () => {
             children: [{ id: "menu-item", title: "Menu item", type: "toolbar-link" }],
           },
         },
-        "tasks/page.json": taskFile({ id: "page", title: "Page", children: [{ include: "menu" }] }),
+        "roots/page.json": rootFile({ id: "page", title: "Page", children: [{ include: "menu" }] }),
         "overrides/breakpoint.json": { version: 1, only: { menu: ["base"] }, overrides: {} },
         "verification/page.json": {
           version: 1,

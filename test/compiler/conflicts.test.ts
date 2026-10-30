@@ -5,7 +5,7 @@ import {
   diagnose,
   type Files,
   pointer,
-  taskFile,
+  rootFile,
   tree,
 } from "../support/project.js";
 
@@ -49,25 +49,25 @@ describe("conflicting overrides", () => {
     ).toEqual([conflict("types.link.customAttributes.design.normal")]);
   });
 
-  it("report two dimensions setting a task's value differently", () => {
+  it("report two dimensions setting a node's value differently", () => {
     expect(
       conflicts(
-        { tasks: { "blog-link": design({ normal: "missing" }) } },
-        { tasks: { "blog-link": design({ normal: "available" }) } },
+        { nodes: { "blog-link": design({ normal: "missing" }) } },
+        { nodes: { "blog-link": design({ normal: "available" }) } },
       ),
-    ).toEqual([conflict("tasks.blog-link.customAttributes.design.normal")]);
+    ).toEqual([conflict("nodes.blog-link.customAttributes.design.normal")]);
   });
 
-  it("report one dimension removing a task's state that another adds", () => {
+  it("report one dimension removing a node's state that another adds", () => {
     expect(
       conflicts(
-        { tasks: { "blog-link": { states: { remove: ["hovered"] } } } },
+        { nodes: { "blog-link": { states: { remove: ["hovered"] } } } },
         {
           types: { link: { states: { remove: ["hovered"] } } },
-          tasks: { "blog-link": { states: { add: ["hovered"] } } },
+          nodes: { "blog-link": { states: { add: ["hovered"] } } },
         },
       ),
-    ).toEqual([conflict("tasks.blog-link.states.add[0]")]);
+    ).toEqual([conflict("nodes.blog-link.states.add[0]")]);
   });
 
   it("explain which override it conflicts with and where they meet", () => {
@@ -128,7 +128,7 @@ describe("conflicting overrides", () => {
     expect(
       conflicts(
         { types: { link: design({ normal: "missing" }) } },
-        { tasks: { "blog-link": design({ normal: "available" }) } },
+        { nodes: { "blog-link": design({ normal: "available" }) } },
       ),
     ).toEqual([]);
   });
@@ -139,10 +139,10 @@ describe("conflicting overrides", () => {
       { types: { link: design({ normal: "available" }) } },
     ] as const;
     const snapshot: unknown[] = [];
-    // blog-link sets the value itself in its task file...
+    // blog-link sets the value itself in its node file...
     snapshot.push(
       conflicts(...typeConflict, {
-        "tasks/page.json": taskFile({
+        "roots/page.json": rootFile({
           id: "page",
           title: "Page",
           children: [
@@ -160,7 +160,7 @@ describe("conflicting overrides", () => {
     snapshot.push(
       conflicts(typeConflict[0], {
         ...typeConflict[1],
-        tasks: { "blog-link": design({ normal: "missing" }) },
+        nodes: { "blog-link": design({ normal: "missing" }) },
       }),
     );
     expect(snapshot).toMatchInlineSnapshot(`

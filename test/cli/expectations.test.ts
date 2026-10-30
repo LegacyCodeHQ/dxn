@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -19,7 +19,7 @@ const files = {
       children: [{ id: "blog-link", title: "Blog link", type: "link" }],
     },
   },
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [{ include: "toolbar" }],
@@ -45,14 +45,14 @@ describe("expectations checked by validate", () => {
       "expectations.json": expectations([
         {
           title: "Touch screens never show hover",
-          task: "toolbar",
+          node: "toolbar",
           subtree: true,
           root: "article-page",
           where: { pointer: "touch", hover: "hovered" },
           count: 0,
         },
-        { title: "A mouse can hover", task: "blog-link", where: { pointer: "mouse" }, count: 4 },
-        { title: "Every combination", task: "toolbar", subtree: true, count: 8 },
+        { title: "A mouse can hover", node: "blog-link", where: { pointer: "mouse" }, count: 4 },
+        { title: "Every combination", node: "toolbar", subtree: true, count: 8 },
       ]),
     });
     expect(run("validate")).toMatchInlineSnapshot(`
@@ -72,7 +72,7 @@ describe("expectations checked by validate", () => {
       "expectations.json": expectations([
         {
           title: "Touch screens never show hover",
-          task: "blog-link",
+          node: "blog-link",
           where: { pointer: "touch", hover: "hovered" },
           count: 0,
         },
@@ -89,20 +89,20 @@ describe("expectations checked by validate", () => {
     `);
   });
 
-  it("report unknown tasks, roots, names and values where they are written", () => {
+  it("report unknown nodes, roots, names and values where they are written", () => {
     const { run } = cliProject({
       ...files,
       "expectations.json": expectations([
-        { title: "Unknown task", task: "nope", count: 0 },
-        { title: "Unknown root", task: "blog-link", root: "home", count: 0 },
-        { title: "Unknown name", task: "blog-link", where: { keyboard: "none" }, count: 0 },
-        { title: "Unknown value", task: "blog-link", where: { pointer: "pen" }, count: 0 },
+        { title: "Unknown node", node: "nope", count: 0 },
+        { title: "Unknown root", node: "blog-link", root: "home", count: 0 },
+        { title: "Unknown name", node: "blog-link", where: { keyboard: "none" }, count: 0 },
+        { title: "Unknown value", node: "blog-link", where: { pointer: "pen" }, count: 0 },
       ]),
     });
     expect(run("validate").stderr).toMatchInlineSnapshot(`
-      "<tmp>/.task-tree/expectations.json:6:15: unknown-task: task "nope" does not exist
-      <tmp>/.task-tree/expectations.json:12:15: task-outside-root: task "blog-link" is not in root "home"
-      <tmp>/.task-tree/expectations.json:19:9: unknown-name: "keyboard" is not a dimension, state group or shared task here (focus, hover, pointer)
+      "<tmp>/.task-tree/expectations.json:6:15: unknown-node: node "nope" does not exist
+      <tmp>/.task-tree/expectations.json:12:15: node-outside-root: node "blog-link" is not in root "home"
+      <tmp>/.task-tree/expectations.json:19:9: unknown-name: "keyboard" is not a dimension, state group or shared node here (focus, hover, pointer)
       <tmp>/.task-tree/expectations.json:27:20: unknown-value: "pen" is not a value of pointer (mouse, touch)
       "
     `);
@@ -114,9 +114,9 @@ describe("expectations checked by validate", () => {
       cliProject({ ...files, "expectations.json": doc }).run("validate").stderr;
     snapshot.push(shape([]));
     snapshot.push(shape({ version: 1 }));
-    snapshot.push(shape(expectations([{ task: "blog-link" }])));
+    snapshot.push(shape(expectations([{ node: "blog-link" }])));
     snapshot.push(
-      shape(expectations([{ title: "", task: "blog-link", count: -1, extra: 1, where: [] }])),
+      shape(expectations([{ title: "", node: "blog-link", count: -1, extra: 1, where: [] }])),
     );
     snapshot.push(shape("{"));
     expect(snapshot).toMatchInlineSnapshot(`
@@ -143,7 +143,7 @@ describe("expectations checked by validate", () => {
     const { run } = cliProject({
       ...files,
       "types.json": { version: 2 },
-      "expectations.json": expectations([{ title: "x", task: "nope", count: 0 }]),
+      "expectations.json": expectations([{ title: "x", node: "nope", count: 0 }]),
     });
     expect(run("validate").stderr).toMatchInlineSnapshot(`
       "<tmp>/.task-tree/types.json:2:14: unsupported-version: unsupported version 2

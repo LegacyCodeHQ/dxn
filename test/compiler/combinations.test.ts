@@ -32,13 +32,13 @@ const combination = (doc: unknown, extra: Files = {}) =>
   diagnose({ ...project, ...extra, "overrides/breakpoint+pointer.json": doc });
 
 describe("combination files", () => {
-  it("override types and tasks for a combination of values", () => {
+  it("override types and nodes for a combination of values", () => {
     const snapshot: unknown[] = [];
     const files = {
       ...project,
       "overrides/breakpoint+pointer.json": smTouch({
         types: { link: design({ normal: "missing" }) },
-        tasks: { "blog-link": design({ selected: "missing" }) },
+        nodes: { "blog-link": design({ selected: "missing" }) },
       }),
     };
     snapshot.push(diagnose(files));
@@ -50,7 +50,7 @@ describe("combination files", () => {
     {
       "sm": {
         "touch": {
-          "tasks": {
+          "nodes": {
             "blog-link": {
               "customAttributes": {
                 "design": {
@@ -186,16 +186,16 @@ describe("combination files", () => {
 `);
   });
 
-  it("apply only to tasks every dimension applies to", () => {
+  it("apply only to nodes every dimension applies to", () => {
     expect(
-      combination(smTouch({ tasks: { "footer-link": {} } }), {
+      combination(smTouch({ nodes: { "footer-link": {} } }), {
         "dimensions/breakpoint.json": {
           version: 1,
           values: ["sm", "lg"],
           appliesTo: ["page", "footer-link"],
         },
       }),
-    ).toEqual([c("task-out-of-scope", "$.overrides.sm.touch.tasks.footer-link")]);
+    ).toEqual([c("node-out-of-scope", "$.overrides.sm.touch.nodes.footer-link")]);
   });
 });
 
@@ -229,25 +229,25 @@ describe("combination states", () => {
 `);
   });
 
-  it("start tasks from their own single-dimension overrides", () => {
+  it("start nodes from their own single-dimension overrides", () => {
     expect(
-      combination(smTouch({ tasks: { "blog-link": design({ selected: "missing" }) } }), {
+      combination(smTouch({ nodes: { "blog-link": design({ selected: "missing" }) } }), {
         "overrides/pointer.json": file({
-          touch: { tasks: { "blog-link": { states: { remove: ["selected"] } } } },
+          touch: { nodes: { "blog-link": { states: { remove: ["selected"] } } } },
         }),
       }),
     ).toEqual([
-      c("removed-state", "$.overrides.sm.touch.tasks.blog-link.customAttributes.design.selected"),
+      c("removed-state", "$.overrides.sm.touch.nodes.blog-link.customAttributes.design.selected"),
     ]);
   });
 
-  it("start tasks from states their own single-dimension overrides restore", () => {
+  it("start nodes from states their own single-dimension overrides restore", () => {
     expect(
-      combination(smTouch({ tasks: { "blog-link": design({ hovered: "missing" }) } }), {
+      combination(smTouch({ nodes: { "blog-link": design({ hovered: "missing" }) } }), {
         "overrides/pointer.json": file({
           touch: {
             types: { link: { states: { remove: ["hovered"] } } },
-            tasks: { "blog-link": { states: { add: ["hovered"] } } },
+            nodes: { "blog-link": { states: { add: ["hovered"] } } },
           },
         }),
       }),
@@ -272,7 +272,7 @@ describe("combination states", () => {
       version: 1,
       records: [
         {
-          task: "blog-link",
+          node: "blog-link",
           context: { state: "hovered", breakpoint, pointer: "touch", theme: "light" },
           check: "visual",
           result: "passed",
@@ -312,14 +312,14 @@ describe("combinations and conflicts", () => {
     ).toEqual([]);
   });
 
-  it("resolve a task conflict with a task combination override", () => {
+  it("resolve a node conflict with a node combination override", () => {
     expect(
-      combination(smTouch({ tasks: { "blog-link": design({ normal: "missing" }) } }), {
+      combination(smTouch({ nodes: { "blog-link": design({ normal: "missing" }) } }), {
         "overrides/breakpoint.json": file({
-          sm: { tasks: { "blog-link": design({ normal: "missing" }) } },
+          sm: { nodes: { "blog-link": design({ normal: "missing" }) } },
         }),
         "overrides/pointer.json": file({
-          touch: { tasks: { "blog-link": design({ normal: "available" }) } },
+          touch: { nodes: { "blog-link": design({ normal: "available" }) } },
         }),
       }),
     ).toEqual([]);
@@ -328,18 +328,18 @@ describe("combinations and conflicts", () => {
   it("resolve a contested state by adding or removing it", () => {
     const contested = {
       "overrides/breakpoint.json": file({
-        sm: { tasks: { "blog-link": { states: { remove: ["hovered"] } } } },
+        sm: { nodes: { "blog-link": { states: { remove: ["hovered"] } } } },
       }),
       "overrides/pointer.json": file({
         touch: {
           types: { link: { states: { remove: ["hovered"] } } },
-          tasks: { "blog-link": { states: { add: ["hovered"] } } },
+          nodes: { "blog-link": { states: { add: ["hovered"] } } },
         },
       }),
     };
     for (const change of [{ add: ["hovered"] }, { remove: ["hovered"] }]) {
       expect(
-        combination(smTouch({ tasks: { "blog-link": { states: change } } }), contested),
+        combination(smTouch({ nodes: { "blog-link": { states: change } } }), contested),
       ).toEqual([]);
     }
   });

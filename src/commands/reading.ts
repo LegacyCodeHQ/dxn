@@ -2,7 +2,7 @@ import { compileDirectory } from "../compiler/compile.js";
 import type { Io } from "../io.js";
 import { printDiagnostics, requireProject } from "../project.js";
 import { choices, contextFilter, QueryError, sharedStates, subtreeContexts } from "../queries.js";
-import { contextKey, Resolver, type Context as TaskContext } from "../resolve.js";
+import { contextKey, type Context as NodeContext, Resolver } from "../resolve.js";
 import { buildStateTree, drawStateTree, type Entry, treeNames } from "../state-tree.js";
 import { type Command, type Context, command } from "./context.js";
 import { list, parse, Refusal, UsageError } from "./edit.js";
@@ -41,9 +41,9 @@ function print(io: Io, value: unknown): void {
   io.stdout(`${JSON.stringify(value, null, 2)}\n`);
 }
 
-function requireTaskId(resolver: Resolver, id: string): void {
-  if (resolver.task(id) === undefined) {
-    throw new Refusal(`task not found: ${id}`);
+function requireNodeId(resolver: Resolver, id: string): void {
+  if (resolver.node(id) === undefined) {
+    throw new Refusal(`node not found: ${id}`);
   }
 }
 
@@ -53,7 +53,7 @@ function requireRoot(resolver: Resolver, id: string, root: string | undefined): 
   }
 }
 
-// <name>=<value> arguments for dimensions and shared tasks, checked against
+// <name>=<value> arguments for dimensions and shared nodes, checked against
 // the ones allowed here. unknown names what an unexpected name is not.
 function contextValues(
   resolver: Resolver,
@@ -61,8 +61,8 @@ function contextValues(
   dimensions: string[],
   shared: string[],
   unknown: (name: string, choices: string) => string,
-): TaskContext {
-  const context: TaskContext = {};
+): NodeContext {
+  const context: NodeContext = {};
   for (const arg of args) {
     const at = arg.indexOf("=");
     if (at <= 0 || at === arg.length - 1) {
@@ -89,7 +89,7 @@ function contextValues(
 
 const dimensionsUsage = `Usage: task-tree dimensions
 
-Lists every dimension: its values, default, and the tasks it applies to.
+Lists every dimension: its values, default, and the nodes it applies to.
 `;
 
 export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
@@ -106,21 +106,21 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
   });
 });
 
-const axesUsage = `Usage: task-tree axes <task-id> [--root <root-id>]
+const axesUsage = `Usage: task-tree axes <node-id> [--root <root-id>]
 
-Lists what a view or query of the task accepts: the dimensions that apply in
-its subtree, with their values and defaults, and the shared tasks above or in
+Lists what a view or query of the node accepts: the dimensions that apply in
+its subtree, with their values and defaults, and the shared nodes above or in
 it, with their states and the dimension values where each exists.
 `;
 
 export const axes = readCommand(axesUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["task-id"], { root: { type: "string" } });
+  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } });
   const [id] = positionals as [string];
-  requireTaskId(resolver, id);
+  requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
   const found = resolver.axes(id, values.root);
   print(io, {
-    task: id,
+    node: id,
     dimensions: found.dimensions.map((name) => {
       const dimension = resolver.project.dimensions[name];
       return {
@@ -129,35 +129,35 @@ export const axes = readCommand(axesUsage, (resolver, args, io) => {
         ...(dimension?.default === undefined ? {} : { default: dimension.default }),
       };
     }),
-    shared: found.shared.map((task) => {
-      const existsWhen = existsWhenFor(resolver, id, task, values.root);
+    shared: found.shared.map((node) => {
+      const existsWhen = existsWhenFor(resolver, id, node, values.root);
       return {
-        task,
-        states: sharedStates(resolver, task),
+        node,
+        states: sharedStates(resolver, node),
         ...(Object.keys(existsWhen).length === 0 ? {} : { existsWhen }),
       };
     }),
   });
 });
 
-// The values of each of a shared task's dimensions at which it exists in some
+// The values of each of a shared node's dimensions at which it exists in some
 // context, leaving out dimensions it exists at in full.
 function existsWhenFor(
   resolver: Resolver,
   id: string,
-  task: string,
+  node: string,
   root: string | undefined,
 ): Record<string, string[]> {
-  const names = resolver.dimensions(task);
-  let contexts: TaskContext[] = [{}];
+  const names = resolver.dimensions(node);
+  let contexts: NodeContext[] = [{}];
   for (const name of names) {
     const values = resolver.project.dimensions[name]?.values ?? [];
     contexts = contexts.flatMap((context) =>
       values.map((value) => ({ ...context, [name]: value })),
     );
   }
-  const lineage = resolver.lineageWithin(id, task, root);
-  const present = contexts.filter((context) => resolver.resolve(task, context, lineage).present);
+  const lineage = resolver.lineageWithin(id, node, root);
+  const present = contexts.filter((context) => resolver.resolve(node, context, lineage).present);
   const existsWhen: Record<string, string[]> = {};
   for (const name of names) {
     const all = resolver.project.dimensions[name]?.values ?? [];
@@ -167,16 +167,16 @@ function existsWhenFor(
   return existsWhen;
 }
 
-const queryUsage = `Usage: task-tree query <task-id> [<dimension>=<value>...] [<shared-task>=<state>...]
+const queryUsage = `Usage: task-tree query <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 
-Shows the task's states and custom attribute values in a context. Dimensions
+Shows the node's states and custom attribute values in a context. Dimensions
 left out take their default; those without one are not applied.
 `;
 
 export const query = readCommand(queryUsage, (resolver, args, io) => {
-  const [id, ...rest] = parse(args, ["task-id"], {}, true).positionals as [string, ...string[]];
-  requireTaskId(resolver, id);
-  const task = resolver.task(id) as NonNullable<ReturnType<Resolver["task"]>>;
+  const [id, ...rest] = parse(args, ["node-id"], {}, true).positionals as [string, ...string[]];
+  requireNodeId(resolver, id);
+  const node = resolver.node(id) as NonNullable<ReturnType<Resolver["node"]>>;
   const [root] = resolver.roots(id);
   const lineage = resolver.lineage(id, root);
   const shared = resolver.sharedAncestors(lineage);
@@ -197,14 +197,14 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
   };
   const resolved = resolver.resolve(id, context, lineage);
   print(io, {
-    id: task.id,
-    title: task.title,
-    ...(task.type === undefined ? {} : { type: task.type }),
+    id: node.id,
+    title: node.title,
+    ...(node.type === undefined ? {} : { type: node.type }),
     ...(Object.keys(context).length === 0 ? {} : { context }),
     present: resolved.present,
     states: resolved.states,
-    ...(task.type !== undefined &&
-    resolver.project.types.types?.[task.type]?.stateGroups !== undefined
+    ...(node.type !== undefined &&
+    resolver.project.types.types?.[node.type]?.stateGroups !== undefined
       ? { stateGroups: resolved.groups }
       : {}),
     ...(Object.keys(resolved.customAttributes).length === 0
@@ -213,13 +213,13 @@ export const query = readCommand(queryUsage, (resolver, args, io) => {
   });
 });
 
-const contextsUsage = `Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--root <root-id>]
+const contextsUsage = `Usage: task-tree contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]
                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
 
-Lists every context the task exists in, in each root that contains it.
---subtree lists every part of the task's subtree instead, with the component
+Lists every context the node exists in, in each root that contains it.
+--subtree lists every part of the node's subtree instead, with the component
 on its own unless --root names a root. <name>=<value> filters keep only the
-contexts with that dimension value, state or shared task state. --count
+contexts with that dimension value, state or shared node state. --count
 prints counts instead of the contexts. --tree prints them as a merged tree:
 sibling branches with identical subtrees share a line, and dimensions that
 change nothing are left out. --by a,b puts those levels first, --only a,b
@@ -230,7 +230,7 @@ it, and --json prints the tree as JSON for tools.
 export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
   const { values, positionals } = parse(
     args,
-    ["task-id"],
+    ["node-id"],
     {
       subtree: { type: "boolean" },
       count: { type: "boolean" },
@@ -267,43 +267,43 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
       }
       return listed;
     };
-    const nodes = buildStateTree(resolver, entries, {
+    const items = buildStateTree(resolver, entries, {
       by: levels(values.by),
       only: levels(values.only),
       transitions: values.transitions === true,
     });
-    if (values.json === true) print(io, { task: id, tree: nodes });
-    else io.stdout(drawStateTree(nodes));
+    if (values.json === true) print(io, { node: id, tree: items });
+    else io.stdout(drawStateTree(items));
   };
   const [id, ...filterArgs] = positionals as [string, ...string[]];
-  requireTaskId(resolver, id);
+  requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
 
   if (values.subtree === true) {
-    const tasks = subtreeContexts(resolver, id, values.root);
+    const nodes = subtreeContexts(resolver, id, values.root);
     const keep = filter(
       resolver,
       filterArgs,
-      tasks.flatMap((task) => task.contexts),
+      nodes.flatMap((node) => node.contexts),
       values.root,
     );
-    const kept = tasks.map((task) => ({ id: task.id, contexts: task.contexts.filter(keep) }));
+    const kept = nodes.map((node) => ({ id: node.id, contexts: node.contexts.filter(keep) }));
     const root = values.root === undefined ? {} : { root: values.root };
     if (values.tree === true) {
       showTree(
-        kept.flatMap((task) => task.contexts.map((context) => ({ task: task.id, context }))),
+        kept.flatMap((node) => node.contexts.map((context) => ({ node: node.id, context }))),
       );
       return;
     }
     if (values.count === true) {
       print(io, {
-        task: id,
+        node: id,
         ...root,
-        counts: Object.fromEntries(kept.map((task) => [task.id, task.contexts.length])),
-        total: kept.reduce((sum, task) => sum + task.contexts.length, 0),
+        counts: Object.fromEntries(kept.map((node) => [node.id, node.contexts.length])),
+        total: kept.reduce((sum, node) => sum + node.contexts.length, 0),
       });
     } else {
-      print(io, { task: id, ...root, tasks: kept.filter((task) => task.contexts.length > 0) });
+      print(io, { node: id, ...root, nodes: kept.filter((node) => node.contexts.length > 0) });
     }
     return;
   }
@@ -320,11 +320,11 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
   );
   const kept = all.filter(({ context }) => keep(context));
   if (values.tree === true) {
-    // The root is a level of its own only when the task is on several.
+    // The root is a level of its own only when the node is on several.
     const several = new Set(kept.map(({ root }) => root)).size > 1;
     showTree(
       kept.map(({ root, context }) => ({
-        task: id,
+        node: id,
         context: several ? { root, ...context } : context,
       })),
     );
@@ -332,7 +332,7 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
   }
   print(
     io,
-    values.count === true ? { task: id, count: kept.length } : { task: id, contexts: kept },
+    values.count === true ? { node: id, count: kept.length } : { node: id, contexts: kept },
   );
 });
 
@@ -340,9 +340,9 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
 function filter(
   resolver: Resolver,
   args: string[],
-  contexts: TaskContext[],
+  contexts: NodeContext[],
   root: string | undefined,
-): (context: TaskContext) => boolean {
+): (context: NodeContext) => boolean {
   const wanted: [string, string][] = args.map((arg) => {
     const at = arg.indexOf("=");
     if (at <= 0 || at === arg.length - 1) {
@@ -358,33 +358,33 @@ function filter(
   }
 }
 
-const viewsUsage = `Usage: task-tree views <task-id> [--root <root-id>]
+const viewsUsage = `Usage: task-tree views <node-id> [--root <root-id>]
 
-Lists every distinct view of the task's subtree: each combination of the
-dimensions that apply in it, and the states of shared tasks wherever those
-tasks are present. Each view is one diagram to draw.
+Lists every distinct view of the node's subtree: each combination of the
+dimensions that apply in it, and the states of shared nodes wherever those
+nodes are present. Each view is one diagram to draw.
 `;
 
 export const views = readCommand(viewsUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["task-id"], { root: { type: "string" } });
+  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } });
   const [id] = positionals as [string];
-  requireTaskId(resolver, id);
+  requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
-  print(io, { task: id, views: resolver.views(id, values.root) });
+  print(io, { node: id, views: resolver.views(id, values.root) });
 });
 
-const viewUsage = `Usage: task-tree view <task-id> [<dimension>=<value>...] [<shared-task>=<state>...]
+const viewUsage = `Usage: task-tree view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
                      [--root <root-id>]
 
-Prints the tree present in one view, with each task's states and values.
-Dimensions left out take their default; each shared task in the view needs
+Prints the tree present in one view, with each node's states and values.
+Dimensions left out take their default; each shared node in the view needs
 its state.
 `;
 
 export const view = readCommand(viewUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["task-id"], { root: { type: "string" } }, true);
+  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } }, true);
   const [id, ...rest] = positionals as [string, ...string[]];
-  requireTaskId(resolver, id);
+  requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
   const axes = resolver.axes(id, values.root);
   const given = contextValues(
@@ -392,76 +392,76 @@ export const view = readCommand(viewUsage, (resolver, args, io) => {
     rest,
     axes.dimensions,
     axes.shared,
-    (name, allowed) => `"${name}" is not a dimension or shared task in this view (${allowed})`,
+    (name, allowed) => `"${name}" is not a dimension or shared node in this view (${allowed})`,
   );
-  const context: TaskContext = {};
+  const context: NodeContext = {};
   for (const name of axes.dimensions) {
     const value = given[name] ?? resolver.project.dimensions[name]?.default;
     if (value !== undefined) context[name] = value;
   }
-  for (const task of axes.shared) {
+  for (const node of axes.shared) {
     const present = resolver.resolve(
-      task,
+      node,
       { ...context, ...given },
-      resolver.lineageWithin(id, task, values.root),
+      resolver.lineageWithin(id, node, values.root),
     ).present;
     if (!present) {
-      if (given[task] !== undefined) {
+      if (given[node] !== undefined) {
         throw new Refusal(
-          `"${task}" does not exist when ${describe(context)}; leave out ${task}=${given[task]}`,
+          `"${node}" does not exist when ${describe(context)}; leave out ${node}=${given[node]}`,
         );
       }
       continue;
     }
-    if (given[task] === undefined) {
-      const type = resolver.task(task)?.type as string;
+    if (given[node] === undefined) {
+      const type = resolver.node(node)?.type as string;
       const states = resolver.project.types.types?.[type]?.states ?? [];
-      throw new Refusal(`give ${task}=<${states.join("|")}> for this view`);
+      throw new Refusal(`give ${node}=<${states.join("|")}> for this view`);
     }
-    context[task] = given[task];
+    context[node] = given[node];
   }
   const tree = resolver.view(id, context, values.root);
   if (tree === undefined) {
     throw new Refusal(`"${id}" does not exist when ${describe(context)}`);
   }
-  print(io, { task: id, context, tree });
+  print(io, { node: id, context, tree });
 });
 
-function describe(context: TaskContext): string {
+function describe(context: NodeContext): string {
   return Object.entries(context)
     .map(([name, value]) => `${name}=${value}`)
     .join(" and ");
 }
 
-const transitionsUsage = `Usage: task-tree transitions <task-id>
+const transitionsUsage = `Usage: task-tree transitions <node-id>
 
-Lists how a shared task's state changes: each transition's states, DOM event,
+Lists how a shared node's state changes: each transition's states, DOM event,
 target and where focus ends up.
 `;
 
 export const transitions = readCommand(transitionsUsage, (resolver, args, io) => {
-  const [id] = parse(args, ["task-id"], {}).positionals as [string];
-  requireTaskId(resolver, id);
-  print(io, { task: id, transitions: resolver.task(id)?.transitions ?? [] });
+  const [id] = parse(args, ["node-id"], {}).positionals as [string];
+  requireNodeId(resolver, id);
+  print(io, { node: id, transitions: resolver.node(id)?.transitions ?? [] });
 });
 
-const statusUsage = `Usage: task-tree status [<task-id>]
+const statusUsage = `Usage: task-tree status [<node-id>]
 
-Reports every check each typed task requires, in every context it exists in,
+Reports every check each typed node requires, in every context it exists in,
 as passed, failed or missing.
 `;
 
 export const status = readCommand(statusUsage, (resolver, args, io) => {
   const [only] = parse(args, [], {}, true).positionals;
-  if (only !== undefined) requireTaskId(resolver, only);
+  if (only !== undefined) requireNodeId(resolver, only);
   const { project } = resolver;
   const items: ({
     root: string;
-    task: string;
+    node: string;
     check: string;
     result: string;
-  } & ({ context: TaskContext } | { transition: string }))[] = [];
-  for (const root of project.tasks) {
+  } & ({ context: NodeContext } | { transition: string }))[] = [];
+  for (const root of project.roots) {
     const results = new Map<string, string>();
     for (const record of project.verification[root.id]?.records ?? []) {
       const key =
@@ -469,12 +469,12 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
           ? `transition:${record.transition}`
           : contextKey({
               ...record.context,
-              ...resolver.withDefaults(record.task, record.context ?? {}),
+              ...resolver.withDefaults(record.node, record.context ?? {}),
             });
-      results.set(JSON.stringify([record.task, key, record.check]), record.result);
+      results.set(JSON.stringify([record.node, key, record.check]), record.result);
     }
-    for (const id of only === undefined ? tasksIn(resolver, root.id) : [only]) {
-      const type = resolver.task(id)?.type;
+    for (const id of only === undefined ? nodesIn(resolver, root.id) : [only]) {
+      const type = resolver.node(id)?.type;
       const checks = type === undefined ? [] : (project.types.types?.[type]?.checks ?? []);
       if (checks.length === 0 || !resolver.roots(id).includes(root.id)) continue;
       for (const context of resolver.contexts(id, root.id)) {
@@ -482,19 +482,19 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
           const key = JSON.stringify([id, contextKey(context), check]);
           items.push({
             root: root.id,
-            task: id,
+            node: id,
             context,
             check,
             result: results.get(key) ?? "missing",
           });
         }
       }
-      for (const transition of resolver.task(id)?.transitions ?? []) {
+      for (const transition of resolver.node(id)?.transitions ?? []) {
         for (const check of checks) {
           const key = JSON.stringify([id, `transition:${transition.id}`, check]);
           items.push({
             root: root.id,
-            task: id,
+            node: id,
             transition: transition.id,
             check,
             result: results.get(key) ?? "missing",
@@ -510,13 +510,13 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
   });
 });
 
-// Every task id in a root's tree, through includes, in tree order.
-function tasksIn(resolver: Resolver, root: string): string[] {
+// Every node id in a root's tree, through includes, in tree order.
+function nodesIn(resolver: Resolver, root: string): string[] {
   const ids: string[] = [];
   const visit = (id: string) => {
     if (ids.includes(id)) return;
     ids.push(id);
-    for (const child of resolver.task(id)?.children ?? []) {
+    for (const child of resolver.node(id)?.children ?? []) {
       visit("include" in child ? child.include : child.id);
     }
   };
@@ -528,5 +528,5 @@ const treeUsage = "Usage: task-tree tree\n";
 
 export const tree = readCommand(treeUsage, (resolver, args, io) => {
   parse(args, [], {});
-  print(io, { roots: resolver.project.tasks, components: resolver.project.components });
+  print(io, { roots: resolver.project.roots, components: resolver.project.components });
 });

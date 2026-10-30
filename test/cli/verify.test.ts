@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -18,7 +18,7 @@ const files = {
       children: [{ id: "blog-link", title: "Blog link", type: "link" }],
     },
   },
-  "tasks/page.json": taskFile({ id: "page", title: "Page", children: [{ include: "toolbar" }] }),
+  "roots/page.json": rootFile({ id: "page", title: "Page", children: [{ include: "toolbar" }] }),
   "dimensions/breakpoint.json": {
     version: 1,
     values: ["base", "lg"],
@@ -57,36 +57,36 @@ describe("verify", () => {
     snapshot.push(read("verification/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    0,
-    {
-      "removed": [],
-      "written": [
-        "verification/page.json",
-      ],
-    },
-    {
-      "records": [
+      [
+        0,
         {
-          "at": "2026-10-30T19:20:00Z",
-          "by": "agent",
-          "check": "visual",
-          "context": {
-            "pointer": "mouse",
-            "state": "hovered",
-          },
-          "evidence": "shots/a.png",
-          "result": "passed",
-          "task": "blog-link",
+          "removed": [],
+          "written": [
+            "verification/page.json",
+          ],
         },
-      ],
-      "version": 1,
-    },
-  ]
-`);
+        {
+          "records": [
+            {
+              "at": "2026-10-30T19:20:00Z",
+              "by": "agent",
+              "check": "visual",
+              "context": {
+                "pointer": "mouse",
+                "state": "hovered",
+              },
+              "evidence": "shots/a.png",
+              "node": "blog-link",
+              "result": "passed",
+            },
+          ],
+          "version": 1,
+        },
+      ]
+    `);
   });
 
-  it("replaces the record for the same task, context and check", () => {
+  it("replaces the record for the same node, context and check", () => {
     const { run, read } = cliProject(files);
     run(...verify("state=normal", "pointer=mouse"));
     run(
@@ -106,7 +106,7 @@ describe("verify", () => {
     );
     expect(read("verification/page.json").records).toEqual([
       {
-        task: "blog-link",
+        node: "blog-link",
         context: { state: "normal", breakpoint: "lg", pointer: "mouse" },
         check: "visual",
         result: "failed",
@@ -153,11 +153,11 @@ describe("verify", () => {
 `);
   });
 
-  it("needs --root when several roots contain the task, and a root to be in", () => {
+  it("needs --root when several roots contain the node, and a root to be in", () => {
     const snapshot: unknown[] = [];
     const { run, exists } = cliProject({
       ...files,
-      "tasks/home.json": taskFile({
+      "roots/home.json": rootFile({
         id: "home",
         title: "Home",
         children: [{ include: "toolbar" }],
@@ -188,11 +188,11 @@ describe("verify", () => {
 `);
   });
 
-  it("reports tasks on no page and usage errors", () => {
+  it("reports nodes on no page and usage errors", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({
       ...files,
-      "tasks/page.json": taskFile({ id: "page", title: "Page" }),
+      "roots/page.json": rootFile({ id: "page", title: "Page" }),
     });
     snapshot.push(run(...verify("state=normal")));
     snapshot.push(run("verify", "blog-link", "--check", "visual", "--by", "agent").code);
@@ -233,23 +233,23 @@ describe("unverify", () => {
     snapshot.push(read("verification/page.json").records);
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    0,
-    [
-      {
-        "at": "2026-10-30T19:20:00Z",
-        "by": "agent",
-        "check": "visual",
-        "context": {
-          "pointer": "mouse",
-          "state": "hovered",
-        },
-        "result": "passed",
-        "task": "blog-link",
-      },
-    ],
-  ]
-`);
+      [
+        0,
+        [
+          {
+            "at": "2026-10-30T19:20:00Z",
+            "by": "agent",
+            "check": "visual",
+            "context": {
+              "pointer": "mouse",
+              "state": "hovered",
+            },
+            "node": "blog-link",
+            "result": "passed",
+          },
+        ],
+      ]
+    `);
   });
 
   it("refuses when there is no such record", () => {

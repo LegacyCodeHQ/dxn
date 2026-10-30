@@ -24,12 +24,12 @@ describe("help", () => {
         [
           0,
           "",
-          "Usage: task-tree contexts <task-id> [<name>=<value>...] [--subtree] [--root <root-id>]",
+          "Usage: task-tree contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]",
         ],
         [
           0,
           "",
-          "Usage: task-tree verify <task-id> --check <name> --result passed|failed --by <who>",
+          "Usage: task-tree verify <node-id> --check <name> --result passed|failed --by <who>",
         ],
         [
           0,
@@ -42,13 +42,13 @@ describe("help", () => {
 
   it("prints a command group's usage for the group and its subcommands", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(help("task", "--help").stdout.split("\n")[0]);
-    snapshot.push(help("task", "add", "--help").stdout.split("\n")[0]);
+    snapshot.push(help("node", "--help").stdout.split("\n")[0]);
+    snapshot.push(help("node", "add", "--help").stdout.split("\n")[0]);
     snapshot.push(help("dimension", "add", "-h").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "Usage: task-tree task <subcommand>",
-        "Usage: task-tree task <subcommand>",
+        "Usage: task-tree node <subcommand>",
+        "Usage: task-tree node <subcommand>",
         0,
       ]
     `);
@@ -56,7 +56,7 @@ describe("help", () => {
 
   it("prints the same usage with help <command>", () => {
     expect(help("help", "contexts").stdout).toBe(help("contexts", "--help").stdout);
-    expect(help("help", "task", "add").stdout).toBe(help("task", "--help").stdout);
+    expect(help("help", "node", "add").stdout).toBe(help("node", "--help").stdout);
   });
 
   it("prints the overview with help alone, pointing to the docs", () => {
@@ -79,23 +79,23 @@ describe("help", () => {
         help [<command>]    Show this overview, or a command's usage
         init                Create a .task-tree project in the working directory
         validate            Compile the project and report every error
-        query <task-id> [<dimension>=<value>...]
-                            Show a task's states and values in a context
-        contexts <task-id>  List every context a task exists in
-        status [<task-id>]  Report each required check as passed, failed or missing
-        transitions <task-id>
-                            List how a shared task's state changes
+        query <node-id> [<dimension>=<value>...]
+                            Show a node's states and values in a context
+        contexts <node-id>  List every context a node exists in
+        status [<node-id>]  Report each required check as passed, failed or missing
+        transitions <node-id>
+                            List how a shared node's state changes
         dimensions          List every dimension, its values, default and scope
-        axes <task-id>      List what a view or query of a task accepts
-        views <task-id>     List every distinct view of a task's subtree: one diagram each
-        view <task-id> [<context>...]
+        axes <node-id>      List what a view or query of a node accepts
+        views <node-id>     List every distinct view of a node's subtree: one diagram each
+        view <node-id> [<context>...]
                             Print the tree present in one view
         tree                Print the roots and components
-        verify <task-id> --check <c> --result passed|failed --by <who> [<context>...]
-                            Record a check's result for a task in one context
-        unverify <task-id> --check <c> [<context>...]
+        verify <node-id> --check <c> --result passed|failed --by <who> [<context>...]
+                            Record a check's result for a node in one context
+        unverify <node-id> --check <c> [<context>...]
                             Remove that record
-        task <subcommand>   Add, move, rename and remove tasks, and set their values
+        node <subcommand>   Add, move, rename and remove nodes, and set their values
         type <subcommand>   Add types and states, and set their values
         state-group <subcommand>
                             Declare groups of independent states, such as interaction
@@ -106,8 +106,8 @@ describe("help", () => {
                             Add, extract and remove reusable components
         dimension <subcommand>
                             Add dimensions, their values, default and scope
-        only <dimension> <task-id> <value>...
-                            Say at which values of a dimension a task exists
+        only <dimension> <node-id> <value>...
+                            Say at which values of a dimension a node exists
         override <subcommand>
                             Change states and values for a dimension value or combination
 
@@ -157,12 +157,12 @@ describe("usage text", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
-          "                       [<group>=<value>...] [<dimension>=<value>...] [<shared-task>=<state>...]",
-          "each of the task's state groups (state=<state> for a plain states list) and",
-          "the states of shared tasks above it; dimensions left out take their default.",
+          "                       [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]",
+          "each of the node's state groups (state=<state> for a plain states list) and",
+          "the states of shared nodes above it; dimensions left out take their default.",
         ],
         [
-          "                         [<shared-task>=<state>...] [--transition <id>] [--root <root-id>]",
+          "                         [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]",
         ],
         [
           "A state group is a named set of states that exclude each other, such as hover",

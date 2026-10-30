@@ -1,7 +1,7 @@
 import { report } from "./shape.js";
 import type { IncludeRef, TreeSymbols } from "./symbols.js";
 
-// Resolves include nodes once every task and component file has been read:
+// Resolves includes once every root and component file has been read:
 // reports unknown components, cycles between components, and roots that
 // would bring the same component in twice; then links each valid include
 // into the tree, so dimensions, overrides and verification reach through it.
@@ -53,7 +53,7 @@ export function resolveIncludes(tree: TreeSymbols, roots: string[]): void {
           report(
             at.diagnostics,
             "duplicate-include",
-            `${JSON.stringify(component)} is already part of ${JSON.stringify(root)}; its tasks would appear twice`,
+            `${JSON.stringify(component)} is already part of ${JSON.stringify(root)}; its nodes would appear twice`,
             at.path,
             at.component,
           );
@@ -76,31 +76,31 @@ export function resolveIncludes(tree: TreeSymbols, roots: string[]): void {
   checkIncludeStates(tree, new Set(usable));
 }
 
-// Checks each include's "states": a task in the included component, a group
+// Checks each include's "states": a node in the included component, a group
 // its type uses, and values of that group. Valid ones become restrictions.
 function checkIncludeStates(tree: TreeSymbols, usable: Set<IncludeRef>): void {
   for (const ref of tree.includeStates) {
     const { include } = ref;
     if (!usable.has(include) || include.parent === undefined) continue;
     const component = include.component.value;
-    const task = JSON.stringify(ref.task.value);
-    if (!within(tree, component, ref.task.value)) {
+    const node = JSON.stringify(ref.node.value);
+    if (!within(tree, component, ref.node.value)) {
       report(
         include.diagnostics,
-        "task-outside-include",
-        `task ${task} is not in the included component ${JSON.stringify(component)}`,
-        ref.taskPath,
-        ref.task,
+        "node-outside-include",
+        `node ${node} is not in the included component ${JSON.stringify(component)}`,
+        ref.nodePath,
+        ref.node,
       );
       continue;
     }
-    const type = tree.taskTypes.get(ref.task.value);
+    const type = tree.nodeTypes.get(ref.node.value);
     const values = type === undefined ? undefined : tree.typeGroups.get(type)?.get(ref.group.value);
     if (values === undefined) {
       report(
         include.diagnostics,
         "unknown-state-group",
-        `task ${task} has no state group ${JSON.stringify(ref.group.value)}`,
+        `node ${node} has no state group ${JSON.stringify(ref.group.value)}`,
         ref.groupPath,
         ref.group,
       );
@@ -112,7 +112,7 @@ function checkIncludeStates(tree: TreeSymbols, usable: Set<IncludeRef>): void {
         report(
           include.diagnostics,
           "unknown-state",
-          `${JSON.stringify(value.value)} is not in task ${task}'s ${JSON.stringify(ref.group.value)} group`,
+          `${JSON.stringify(value.value)} is not in node ${node}'s ${JSON.stringify(ref.group.value)} group`,
           valuePath,
           value,
         );
@@ -121,15 +121,15 @@ function checkIncludeStates(tree: TreeSymbols, usable: Set<IncludeRef>): void {
       allowed.add(value.value);
     }
     const key = `${include.parent}>${component}`;
-    const byTask = tree.includeRestrictions.get(key) ?? new Map<string, Map<string, Set<string>>>();
-    const byGroup = byTask.get(ref.task.value) ?? new Map<string, Set<string>>();
+    const byNode = tree.includeRestrictions.get(key) ?? new Map<string, Map<string, Set<string>>>();
+    const byGroup = byNode.get(ref.node.value) ?? new Map<string, Set<string>>();
     byGroup.set(ref.group.value, allowed);
-    byTask.set(ref.task.value, byGroup);
-    tree.includeRestrictions.set(key, byTask);
+    byNode.set(ref.node.value, byGroup);
+    tree.includeRestrictions.set(key, byNode);
   }
 }
 
-// Whether a task is in a component's subtree, through includes.
+// Whether a node is in a component's subtree, through includes.
 function within(tree: TreeSymbols, root: string, id: string, seen = new Set<string>()): boolean {
   if (root === id) return true;
   if (seen.has(root)) return false;

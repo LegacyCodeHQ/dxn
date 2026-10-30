@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, diagnose, type Files, taskFile } from "../support/project.js";
+import { cleanup, diagnose, type Files, rootFile } from "../support/project.js";
 
 afterAll(cleanup);
 
@@ -198,7 +198,7 @@ const project = (extra: Files = {}): Files => ({
       },
     },
   },
-  "tasks/page.json": taskFile({
+  "roots/page.json": rootFile({
     id: "page",
     title: "Page",
     children: [{ id: "blog-link", title: "Blog link", type: "link" }],
@@ -245,7 +245,7 @@ describe("grouped states elsewhere", () => {
 
   it("are named one value per group in verification contexts", () => {
     const record = (context: Record<string, string>) => ({
-      task: "blog-link",
+      node: "blog-link",
       context,
       check: "visual",
       result: "passed",

@@ -3,7 +3,7 @@
   "version": 1,
   "records": [
     {
-      "task": "blog-link",
+      "node": "blog-link",
       "context": {
         "state": "hovered",
         "breakpoint": "lg",

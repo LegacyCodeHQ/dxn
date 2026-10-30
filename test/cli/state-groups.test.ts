@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -17,7 +17,7 @@ const files = {
       wordmark: { stateGroups: { interaction: ["normal", "focused"] }, checks: ["visual"] },
     },
   },
-  "tasks/page.json": taskFile({
+  "roots/page.json": rootFile({
     id: "page",
     title: "Page",
     children: [
@@ -223,8 +223,8 @@ describe("state groups in reading commands", () => {
                 "pointer": "mouse",
                 "selection": "selected",
               },
+              "node": "blog-link",
               "result": "passed",
-              "task": "blog-link",
             },
           ],
           "version": 1,
@@ -359,7 +359,7 @@ describe("state group commands", () => {
   it("rename a value everywhere the types using the group refer to it", () => {
     const snapshot: unknown[] = [];
     const record = {
-      task: "blog-link",
+      node: "blog-link",
       context: { hover: "unhovered", selection: "selected", pointer: "mouse" },
       check: "visual",
       result: "passed",
@@ -383,7 +383,7 @@ describe("state group commands", () => {
           other: { states: ["unhovered"] },
         },
       },
-      "tasks/page.json": taskFile({
+      "roots/page.json": rootFile({
         id: "page",
         title: "Page",
         children: [
@@ -403,7 +403,7 @@ describe("state group commands", () => {
         overrides: {
           touch: {
             types: { link: { customAttributes: { design: { unhovered: "missing" } } } },
-            tasks: { other: { states: { remove: ["unhovered"] } } },
+            nodes: { other: { states: { remove: ["unhovered"] } } },
           },
         },
       },
@@ -411,7 +411,7 @@ describe("state group commands", () => {
     });
     snapshot.push(run("state-group", "rename-value", "hover", "unhovered", "rest").code);
     snapshot.push(read("types.json"));
-    snapshot.push(read("tasks/page.json"));
+    snapshot.push(read("roots/page.json"));
     snapshot.push(read("overrides/pointer.json"));
     snapshot.push(read("verification/page.json").records);
     snapshot.push(run("state-group", "rename-value", "hover", "pressed", "x").stderr);
@@ -471,7 +471,7 @@ describe("state group commands", () => {
           "version": 1,
         },
         {
-          "task": {
+          "root": {
             "children": [
               {
                 "customAttributes": {
@@ -502,7 +502,7 @@ describe("state group commands", () => {
         {
           "overrides": {
             "touch": {
-              "tasks": {
+              "nodes": {
                 "other": {
                   "states": {
                     "remove": [
@@ -534,8 +534,8 @@ describe("state group commands", () => {
               "pointer": "mouse",
               "selection": "selected",
             },
+            "node": "blog-link",
             "result": "passed",
-            "task": "blog-link",
           },
         ],
         "task-tree: state group "hover" has no value "pressed"

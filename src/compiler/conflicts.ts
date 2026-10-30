@@ -28,9 +28,9 @@ export function checkConflicts(
       const inScope = (id: string) =>
         shared.every(([name]) => dimensions.get(name)?.symbol.scope.has(id) === true);
       const affected =
-        first.kind === "tasks"
+        first.kind === "nodes"
           ? [first.target].filter(inScope)
-          : [...tree.taskTypes]
+          : [...tree.nodeTypes]
               .filter(([id, type]) => type === first.target && inScope(id))
               .map(([id]) => id);
       if (affected.length === 0) {
@@ -52,7 +52,7 @@ export function checkConflicts(
         );
       // For type overrides: whether some affected instance leaves this to the types.
       const unsettled = (settles: (id: string) => boolean) =>
-        first.kind === "tasks" || affected.some((id) => !settles(id));
+        first.kind === "nodes" || affected.some((id) => !settles(id));
       const against = (what: string) =>
         `conflicts with ${describe(first.dimensions)}, which ${what} (${first.file}); ` +
         `both apply when ${describe(shared)}`;
@@ -63,9 +63,9 @@ export function checkConflicts(
           continue;
         }
         const settles = (id: string) =>
-          tree.taskValues.get(id)?.has(key) === true ||
+          tree.nodeValues.get(id)?.has(key) === true ||
           covering.some(
-            (entry) => entry.kind === "tasks" && entry.target === id && entry.values.has(key),
+            (entry) => entry.kind === "nodes" && entry.target === id && entry.values.has(key),
           );
         if (!stronger((entry) => entry.values.has(key)) && unsettled(settles)) {
           report(
@@ -73,15 +73,15 @@ export function checkConflicts(
             "conflicting-override",
             against(`sets ${JSON.stringify(mine.value)}`),
             other.path,
-            other.node,
+            other.item,
           );
         }
       }
 
-      // Only task overrides can disagree about a state: each file checks type
+      // Only node overrides can disagree about a state: each file checks type
       // overrides against the type's base states, so one type override cannot
       // remove a state another adds.
-      if (first.kind !== "tasks") {
+      if (first.kind !== "nodes") {
         continue;
       }
       for (const [changes, opposite, verb] of [
@@ -97,7 +97,7 @@ export function checkConflicts(
               "conflicting-override",
               against(`${verb} state ${JSON.stringify(state)}`),
               located.path,
-              located.node,
+              located.item,
             );
           }
         }

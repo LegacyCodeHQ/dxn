@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { capture } from "./support/cli.js";
-import { cleanup, taskFile, types, writeProject } from "./support/project.js";
+import { cleanup, rootFile, types, writeProject } from "./support/project.js";
 
 afterAll(cleanup);
 
@@ -41,7 +41,7 @@ describe("task-tree query", () => {
 `);
   });
 
-  it("reports no states for a task without a type", () => {
+  it("reports no states for a node without a type", () => {
     const snapshot: unknown[] = [];
     const result = capture(["query", "--dir", website, "logo-mark"]);
     snapshot.push(result.code);
@@ -60,7 +60,7 @@ describe("task-tree query", () => {
 `);
   });
 
-  it("fails with exit code 1 when the task does not exist", () => {
+  it("fails with exit code 1 when the node does not exist", () => {
     const snapshot: unknown[] = [];
     const result = capture(["query", "--dir", website, "missing-link"]);
     snapshot.push(result.code);
@@ -70,7 +70,7 @@ describe("task-tree query", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "task-tree: task not found: missing-link
+    "task-tree: node not found: missing-link
   ",
     "",
   ]
@@ -86,11 +86,11 @@ describe("task-tree query", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     2,
-    "task-tree: missing task-id
+    "task-tree: missing node-id
 
-  Usage: task-tree query <task-id> [<dimension>=<value>...] [<shared-task>=<state>...]
+  Usage: task-tree query <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 
-  Shows the task's states and custom attribute values in a context. Dimensions
+  Shows the node's states and custom attribute values in a context. Dimensions
   left out take their default; those without one are not applied.
   ",
   ]
@@ -101,7 +101,7 @@ describe("task-tree query", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({
       ".task-tree/types.json": types,
-      ".task-tree/tasks/a.json": taskFile({ id: "a", title: "A" }),
+      ".task-tree/roots/a.json": rootFile({ id: "a", title: "A" }),
     });
     const result = capture(["query", "a"], root);
     snapshot.push(result.code);
@@ -155,7 +155,7 @@ describe("task-tree query", () => {
     const snapshot: unknown[] = [];
     const directory = writeProject({
       "types.json": types,
-      "tasks/x.json": '{"version":1,"task":{"id":"x","title":"X","type":"nope"}}',
+      "roots/x.json": '{"version":1,"root":{"id":"x","title":"X","type":"nope"}}',
     });
     const result = capture(["query", "--dir", directory, "x"]);
     snapshot.push(result.code);
@@ -165,14 +165,14 @@ describe("task-tree query", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "<tmp>/tasks/x.json:1:50: undefined-type: type "nope" is not defined
+    "<tmp>/roots/x.json:1:50: undefined-type: type "nope" is not defined
   ",
     "",
   ]
 `);
   });
 
-  it("finds tasks inside components", () => {
+  it("finds nodes inside components", () => {
     const snapshot: unknown[] = [];
     const directory = writeProject({
       "types.json": types,
@@ -180,7 +180,7 @@ describe("task-tree query", () => {
         version: 1,
         component: { id: "toolbar", title: "Toolbar", children: [{ id: "c", title: "C" }] },
       },
-      "tasks/a.json": taskFile({ id: "a", title: "A", children: [{ include: "toolbar" }] }),
+      "roots/a.json": rootFile({ id: "a", title: "A", children: [{ include: "toolbar" }] }),
     });
     const result = capture(["query", "--dir", directory, "c"]);
     snapshot.push(result.code);
@@ -199,12 +199,12 @@ describe("task-tree query", () => {
 `);
   });
 
-  it("finds tasks in any task file", () => {
+  it("finds nodes in any node file", () => {
     const snapshot: unknown[] = [];
     const directory = writeProject({
       "types.json": types,
-      "tasks/a.json": taskFile({ id: "a", title: "A" }),
-      "tasks/b.json": taskFile({ id: "b", title: "B", children: [{ id: "c", title: "C" }] }),
+      "roots/a.json": rootFile({ id: "a", title: "A" }),
+      "roots/b.json": rootFile({ id: "b", title: "B", children: [{ id: "c", title: "C" }] }),
     });
     const result = capture(["query", "--dir", directory, "c"]);
     snapshot.push(result.code);

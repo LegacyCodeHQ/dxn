@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "task-tree verification",
-  "description": "Editor aid for verification/<root-id>.json; the file name is the root task whose subtree the records cover. The task-tree compiler is the authority: it also checks that tasks exist in this root task, that each context names exactly the task's dimensions and a state it has there, that checks are declared and required by the task's type, that timestamps are real dates, and that records are unique, which this schema cannot express.",
+  "description": "Editor aid for verification/<root-id>.json; the file name is the root whose subtree the records cover. The task-tree compiler is the authority: it also checks that nodes exist in this root, that each context names exactly the node's dimensions and a state it has there, that checks are declared and required by the node's type, that timestamps are real dates, and that records are unique, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "records"],
@@ -15,7 +15,7 @@
       "const": 1
     },
     "records": {
-      "description": "At most one record per task, context and check; a re-check replaces the record.",
+      "description": "At most one record per node, context and check; a re-check replaces the record.",
       "type": "array",
       "items": {
         "$ref": "#/$defs/record"
@@ -36,25 +36,25 @@
     "record": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["task", "check", "result", "by", "at"],
+      "required": ["node", "check", "result", "by", "at"],
       "properties": {
-        "task": {
-          "description": "Id of a typed task in this file's root task.",
+        "node": {
+          "description": "Id of a typed node in this file's root.",
           "$ref": "#/$defs/name"
         },
         "context": {
-          "description": "The task's state, when it has states, and a value for every dimension that applies to it.",
+          "description": "The node's state, when it has states, and a value for every dimension that applies to it.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
           }
         },
         "transition": {
-          "description": "Instead of a context: the id of one of the task's transitions.",
+          "description": "Instead of a context: the id of one of the node's transitions.",
           "$ref": "#/$defs/name"
         },
         "check": {
-          "description": "A check the task's type requires.",
+          "description": "A check the node's type requires.",
           "$ref": "#/$defs/name"
         },
         "result": {

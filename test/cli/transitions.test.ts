@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -33,18 +33,18 @@ const files = {
       ],
     },
   },
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [{ include: "toolbar" }],
   }),
 };
 
-describe("task transition add and remove", () => {
-  it("add transitions to a shared task and remove them", () => {
+describe("node transition add and remove", () => {
+  it("add transitions to a shared node and remove them", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    const add = (...args: string[]) => run("task", "transition", "add", "menu", ...args).code;
+    const add = (...args: string[]) => run("node", "transition", "add", "menu", ...args).code;
     snapshot.push(
       add("open", "--from", "closed", "--to", "open", "--on", "click", "--target", "menu-button"),
     );
@@ -77,7 +77,7 @@ describe("task transition add and remove", () => {
       ),
     );
     snapshot.push(read("components/toolbar.json"));
-    snapshot.push(run("task", "transition", "remove", "menu", "outside").code);
+    snapshot.push(run("node", "transition", "remove", "menu", "outside").code);
     snapshot.push(run("transitions", "menu").stdout);
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -145,7 +145,7 @@ describe("task transition add and remove", () => {
         },
         0,
         "{
-        "task": "menu",
+        "node": "menu",
         "transitions": [
           {
             "id": "open",
@@ -172,7 +172,7 @@ describe("task transition add and remove", () => {
   it("refuse what the compiler rejects, duplicates and unknown ones", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    const add = (...args: string[]) => run("task", "transition", "add", "menu", ...args);
+    const add = (...args: string[]) => run("node", "transition", "add", "menu", ...args);
     snapshot.push(
       add("open", "--from", "closed", "--to", "open", "--on", "click", "--target", "menu-link")
         .stderr,
@@ -181,7 +181,7 @@ describe("task transition add and remove", () => {
     snapshot.push(
       add("open", "--from", "open", "--to", "closed", "--on", "click", "--target", "menu-button"),
     );
-    snapshot.push(run("task", "transition", "remove", "menu", "nope"));
+    snapshot.push(run("node", "transition", "remove", "menu", "nope"));
     snapshot.push(add("x", "--to", "open", "--on", "click").code);
     snapshot.push(
       add("x", "--from", "closed", "--to", "open", "--on", "resize", "--when", "breakpoint").code,
@@ -192,13 +192,13 @@ describe("task transition add and remove", () => {
       ",
         {
           "code": 1,
-          "stderr": "task-tree: task "menu" already has a transition "open"
+          "stderr": "task-tree: node "menu" already has a transition "open"
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "task-tree: task "menu" has no transition "nope"
+          "stderr": "task-tree: node "menu" has no transition "nope"
       ",
           "stdout": "",
         },
@@ -214,7 +214,7 @@ describe("transitions in status and verify", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
     run(
-      "task",
+      "node",
       "transition",
       "add",
       "menu",
@@ -229,7 +229,7 @@ describe("transitions in status and verify", () => {
       "menu-button",
     );
     run(
-      "task",
+      "node",
       "transition",
       "add",
       "menu",
@@ -273,8 +273,8 @@ describe("transitions in status and verify", () => {
               "at": "2026-10-30T19:20:00Z",
               "by": "agent",
               "check": "behavior",
+              "node": "menu",
               "result": "passed",
-              "task": "menu",
               "transition": "open",
             },
           ],
@@ -287,31 +287,31 @@ describe("transitions in status and verify", () => {
               "context": {
                 "menu": "closed",
               },
+              "node": "menu",
               "result": "missing",
               "root": "article-page",
-              "task": "menu",
             },
             {
               "check": "behavior",
               "context": {
                 "menu": "open",
               },
+              "node": "menu",
               "result": "missing",
               "root": "article-page",
-              "task": "menu",
             },
             {
               "check": "behavior",
+              "node": "menu",
               "result": "passed",
               "root": "article-page",
-              "task": "menu",
               "transition": "open",
             },
             {
               "check": "behavior",
+              "node": "menu",
               "result": "missing",
               "root": "article-page",
-              "task": "menu",
               "transition": "close",
             },
           ],
@@ -321,7 +321,7 @@ describe("transitions in status and verify", () => {
             "passed": 1,
           },
         },
-        "<tmp>/.task-tree/verification/article-page.json:14:21: unknown-transition: task "menu" has no transition "nope"
+        "<tmp>/.task-tree/verification/article-page.json:14:21: unknown-transition: node "menu" has no transition "nope"
       ",
         2,
         0,
@@ -338,7 +338,7 @@ describe("transitions in status and verify", () => {
 describe("contexts --tree --transitions", () => {
   const withTransitions = () => {
     const project = cliProject(files);
-    const add = (...args: string[]) => project.run("task", "transition", "add", "menu", ...args);
+    const add = (...args: string[]) => project.run("node", "transition", "add", "menu", ...args);
     add("open", "--from", "closed", "--to", "open", "--on", "click", "--target", "menu-button");
     add(
       "escape",
@@ -395,7 +395,7 @@ describe("contexts --tree --transitions", () => {
       JSON.parse(run("contexts", "menu", "--tree", "--json", "--transitions").stdout),
     ).toMatchInlineSnapshot(`
       {
-        "task": "menu",
+        "node": "menu",
         "tree": [
           {
             "children": [
@@ -409,7 +409,7 @@ describe("contexts --tree --transitions", () => {
               },
             ],
             "count": 2,
-            "task": "menu",
+            "node": "menu",
             "transitions": [
               {
                 "from": "closed",

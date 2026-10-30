@@ -5,6 +5,8 @@ import {
   group,
   isObject,
   type Located,
+  nodeNodes,
+  nodeOrder,
   ordered,
   overrideTargets,
   pairs,
@@ -12,37 +14,35 @@ import {
   Refusal,
   renameKey,
   reorder,
-  requireTask,
+  requireNode,
   setValues,
-  taskNodes,
-  taskOrder,
   UsageError,
   unsetValues,
 } from "./edit.js";
 
-const usage = `Usage: task-tree task <subcommand>
+const usage = `Usage: task-tree node <subcommand>
 
 Subcommands:
   add <id> --title <title> [--parent <id>] [--type <type>]
-                                     Add a task; without --parent, a root in tasks/<id>.json
-  set-title <id> <title>             Change a task's title
-  set-type <id> <type> | --none      Change or clear a task's type
-  move <id> --parent <id>            Move a task and its subtree under another task
-  rename <id> <new-id>               Rename a task and every reference to it
-  remove <id>                        Remove a task and its subtree
+                                     Add a node; without --parent, a root in roots/<id>.json
+  set-title <id> <title>             Change a node's title
+  set-type <id> <type> | --none      Change or clear a node's type
+  move <id> --parent <id>            Move a node and its subtree under another node
+  rename <id> <new-id>               Rename a node and every reference to it
+  remove <id>                        Remove a node and its subtree
   only-when <id> <ancestor-id> (<state>... | --always)
-                                     Make a task exist only in some states of a shared ancestor
-  transition add <task-id> <id> --from <state> --to <state> --on click|keydown|pointerdown|resize
-                 [--key <key>] [--target <task>] [--outside <task>] [--when <dimension>=a,b] [--focus <task>]
-                                     Add how a shared task's state changes
-  transition remove <task-id> <id>   Remove a transition
-  include <parent-id> <component-id> Include a component under a task
-  include-states <parent-id> <component-id> <task-id> <group> (<value>... | --any)
-                                     Fix a task's state group values through that include
+                                     Make a node exist only in some states of a shared ancestor
+  transition add <node-id> <id> --from <state> --to <state> --on click|keydown|pointerdown|resize
+                 [--key <key>] [--target <node>] [--outside <node>] [--when <dimension>=a,b] [--focus <node>]
+                                     Add how a shared node's state changes
+  transition remove <node-id> <id>   Remove a transition
+  include <parent-id> <component-id> Include a component under a node
+  include-states <parent-id> <component-id> <node-id> <group> (<value>... | --any)
+                                     Fix a node's state group values through that include
   uninclude <parent-id> <component-id>
                                      Remove that include
   set <id> <attribute> <state>=<value>...
-                                     Set the task's own custom attribute values
+                                     Set the node's own custom attribute values
   unset <id> <attribute> [<state>...]
                                      Clear some or all of those values
 `;
@@ -57,29 +57,29 @@ const add = editCommand(usage, (workspace, args) => {
   if (values.title === undefined) {
     throw new UsageError("--title is required");
   }
-  const task: Record<string, unknown> = { id, title: values.title };
-  if (values.type !== undefined) task.type = values.type;
+  const node: Record<string, unknown> = { id, title: values.title };
+  if (values.type !== undefined) node.type = values.type;
   if (values.parent === undefined) {
-    const file = `tasks/${id}.json`;
+    const file = `roots/${id}.json`;
     if (workspace.exists(file)) {
-      throw new Refusal(`task "${id}" already exists`);
+      throw new Refusal(`node "${id}" already exists`);
     }
-    workspace.write(file, { version: 1, task });
+    workspace.write(file, { version: 1, root: node });
     return;
   }
-  const parent = requireTask(workspace, values.parent);
-  parent.node.children = [
-    ...(Array.isArray(parent.node.children) ? parent.node.children : []),
-    task,
+  const parent = requireNode(workspace, values.parent);
+  parent.item.children = [
+    ...(Array.isArray(parent.item.children) ? parent.item.children : []),
+    node,
   ];
-  reorder(parent.node, taskOrder);
+  reorder(parent.item, nodeOrder);
   workspace.touch(parent.file);
 });
 
 const setTitle = editCommand(usage, (workspace, args) => {
   const [id, title] = parse(args, ["id", "title"], {}).positionals as [string, string];
-  const located = requireTask(workspace, id);
-  located.node.title = title;
+  const located = requireNode(workspace, id);
+  located.item.title = title;
   workspace.touch(located.file);
 });
 
@@ -89,12 +89,12 @@ const setType = editCommand(usage, (workspace, args) => {
   if ((type === undefined) === (values.none !== true) || extra.length > 0) {
     throw new UsageError("give a type or --none");
   }
-  const located = requireTask(workspace, id);
+  const located = requireNode(workspace, id);
   if (type === undefined) {
-    delete located.node.type;
+    delete located.item.type;
   } else {
-    located.node.type = type;
-    reorder(located.node, taskOrder);
+    located.item.type = type;
+    reorder(located.item, nodeOrder);
   }
   workspace.touch(located.file);
 });
@@ -105,43 +105,43 @@ const move = editCommand(usage, (workspace, args) => {
   if (values.parent === undefined) {
     throw new UsageError("--parent is required");
   }
-  const moving = requireTask(workspace, id);
-  const parent = requireTask(workspace, values.parent);
-  if (contains(moving.node, values.parent)) {
+  const moving = requireNode(workspace, id);
+  const parent = requireNode(workspace, values.parent);
+  if (contains(moving.item, values.parent)) {
     throw new Refusal(`cannot move "${id}" into its own subtree`);
   }
   detach(workspace, moving);
-  parent.node.children = [
-    ...(Array.isArray(parent.node.children) ? parent.node.children : []),
-    moving.node,
+  parent.item.children = [
+    ...(Array.isArray(parent.item.children) ? parent.item.children : []),
+    moving.item,
   ];
-  reorder(parent.node, taskOrder);
+  reorder(parent.item, nodeOrder);
   workspace.touch(parent.file);
 });
 
 const rename = editCommand(usage, (workspace, args) => {
   const [id, next] = parse(args, ["id", "new-id"], {}).positionals as [string, string];
-  const located = requireTask(workspace, id);
-  located.node.id = next;
+  const located = requireNode(workspace, id);
+  located.item.id = next;
   workspace.touch(located.file);
   if (located.siblings === undefined) {
-    // A root or component is named after its root task.
-    const folder = located.key === "task" ? "tasks" : "components";
+    // A root or component file is named after its id.
+    const folder = located.key === "root" ? "roots" : "components";
     workspace.move(located.file, `${folder}/${next}.json`);
-    if (located.key === "task") {
+    if (located.key === "root") {
       workspace.move(`verification/${id}.json`, `verification/${next}.json`);
     } else {
-      for (const [file, node] of taskNodes(workspace)) {
-        renameIncludes(workspace, file, node, id, next);
+      for (const [file, item] of nodeNodes(workspace)) {
+        renameIncludes(workspace, file, item, id, next);
       }
     }
   }
-  renameTaskReferences(workspace, id, next);
+  renameNodeReferences(workspace, id, next);
 });
 
 const remove = editCommand(usage, (workspace, args) => {
   const [id] = parse(args, ["id"], {}).positionals as [string];
-  detach(workspace, requireTask(workspace, id));
+  detach(workspace, requireNode(workspace, id));
 });
 
 const set = editCommand(usage, (workspace, args) => {
@@ -150,9 +150,9 @@ const set = editCommand(usage, (workspace, args) => {
     string,
     ...string[],
   ];
-  const located = requireTask(workspace, id);
-  setValues(located.node, attribute, pairs(rest));
-  reorder(located.node, taskOrder);
+  const located = requireNode(workspace, id);
+  setValues(located.item, attribute, pairs(rest));
+  reorder(located.item, nodeOrder);
   workspace.touch(located.file);
 });
 
@@ -162,8 +162,8 @@ const unset = editCommand(usage, (workspace, args) => {
     string,
     ...string[],
   ];
-  const located = requireTask(workspace, id);
-  unsetValues(located.node, attribute, states);
+  const located = requireNode(workspace, id);
+  unsetValues(located.item, attribute, states);
   workspace.touch(located.file);
 });
 
@@ -172,12 +172,12 @@ const include = editCommand(usage, (workspace, args) => {
     string,
     string,
   ];
-  const parent = requireTask(workspace, parentId);
-  parent.node.children = [
-    ...(Array.isArray(parent.node.children) ? parent.node.children : []),
+  const parent = requireNode(workspace, parentId);
+  parent.item.children = [
+    ...(Array.isArray(parent.item.children) ? parent.item.children : []),
     { include: component },
   ];
-  reorder(parent.node, taskOrder);
+  reorder(parent.item, nodeOrder);
   workspace.touch(parent.file);
 });
 
@@ -186,8 +186,8 @@ const uninclude = editCommand(usage, (workspace, args) => {
     string,
     string,
   ];
-  const parent = requireTask(workspace, parentId);
-  const children = Array.isArray(parent.node.children) ? parent.node.children : [];
+  const parent = requireNode(workspace, parentId);
+  const children = Array.isArray(parent.item.children) ? parent.item.children : [];
   const index = children.findIndex((child) => isObject(child) && child.include === component);
   if (index < 0) {
     throw new Refusal(`"${parentId}" does not include "${component}"`);
@@ -205,20 +205,20 @@ const onlyWhen = editCommand(usage, (workspace, args) => {
   );
   const [id, ancestor, ...states] = positionals as [string, string, ...string[]];
   if ((states.length === 0) === (values.always !== true)) {
-    throw new UsageError("give the states the task exists in, or --always");
+    throw new UsageError("give the states the node exists in, or --always");
   }
-  const located = requireTask(workspace, id);
-  const conditions = isObject(located.node.onlyWhen) ? located.node.onlyWhen : {};
+  const located = requireNode(workspace, id);
+  const conditions = isObject(located.item.onlyWhen) ? located.item.onlyWhen : {};
   if (values.always === true) {
     delete conditions[ancestor];
   } else {
     conditions[ancestor] = states;
   }
   if (Object.keys(conditions).length === 0) {
-    delete located.node.onlyWhen;
+    delete located.item.onlyWhen;
   } else {
-    located.node.onlyWhen = conditions;
-    reorder(located.node, taskOrder);
+    located.item.onlyWhen = conditions;
+    reorder(located.item, nodeOrder);
   }
   workspace.touch(located.file);
 });
@@ -226,7 +226,7 @@ const onlyWhen = editCommand(usage, (workspace, args) => {
 const includeStates = editCommand(usage, (workspace, args) => {
   const { values, positionals } = parse(
     args,
-    ["parent-id", "component-id", "task-id", "group"],
+    ["parent-id", "component-id", "node-id", "group"],
     { any: { type: "boolean" } },
     true,
   );
@@ -238,10 +238,10 @@ const includeStates = editCommand(usage, (workspace, args) => {
     ...string[],
   ];
   if ((listed.length === 0) === (values.any !== true)) {
-    throw new UsageError("give the values the task has through this include, or --any");
+    throw new UsageError("give the values the node has through this include, or --any");
   }
-  const parent = requireTask(workspace, parentId);
-  const children = Array.isArray(parent.node.children) ? parent.node.children : [];
+  const parent = requireNode(workspace, parentId);
+  const children = Array.isArray(parent.item.children) ? parent.item.children : [];
   const include = children.find((child) => isObject(child) && child.include === component);
   if (!isObject(include)) {
     throw new Refusal(`"${parentId}" does not include "${component}"`);
@@ -263,7 +263,7 @@ const includeStates = editCommand(usage, (workspace, args) => {
 const transitionOrder = ["id", "from", "to", "on", "key", "target", "outside", "when", "focus"];
 
 const addTransition = editCommand(usage, (workspace, args) => {
-  const { values, positionals } = parse(args, ["task-id", "id"], {
+  const { values, positionals } = parse(args, ["node-id", "id"], {
     from: { type: "string" },
     to: { type: "string" },
     on: { type: "string" },
@@ -273,7 +273,7 @@ const addTransition = editCommand(usage, (workspace, args) => {
     when: { type: "string", multiple: true },
     focus: { type: "string" },
   });
-  const [taskId, id] = positionals as [string, string];
+  const [nodeId, id] = positionals as [string, string];
   if (values.from === undefined || values.to === undefined || values.on === undefined) {
     throw new UsageError("--from, --to and --on are required");
   }
@@ -285,10 +285,10 @@ const addTransition = editCommand(usage, (workspace, args) => {
     }
     when[entry.slice(0, at)] = entry.slice(at + 1).split(",");
   }
-  const located = requireTask(workspace, taskId);
-  const list = Array.isArray(located.node.transitions) ? located.node.transitions : [];
+  const located = requireNode(workspace, nodeId);
+  const list = Array.isArray(located.item.transitions) ? located.item.transitions : [];
   if (list.some((transition) => isObject(transition) && transition.id === id)) {
-    throw new Refusal(`task "${taskId}" already has a transition "${id}"`);
+    throw new Refusal(`node "${nodeId}" already has a transition "${id}"`);
   }
   const transition: Record<string, unknown> = {
     id,
@@ -304,25 +304,25 @@ const addTransition = editCommand(usage, (workspace, args) => {
   for (const key of Object.keys(transition)) {
     if (transition[key] === undefined) delete transition[key];
   }
-  located.node.transitions = [...list, ordered(transition, transitionOrder)];
-  reorder(located.node, taskOrder);
+  located.item.transitions = [...list, ordered(transition, transitionOrder)];
+  reorder(located.item, nodeOrder);
   workspace.touch(located.file);
 });
 
 const removeTransition = editCommand(usage, (workspace, args) => {
-  const [taskId, id] = parse(args, ["task-id", "id"], {}).positionals as [string, string];
-  const located = requireTask(workspace, taskId);
-  const list = Array.isArray(located.node.transitions) ? located.node.transitions : [];
+  const [nodeId, id] = parse(args, ["node-id", "id"], {}).positionals as [string, string];
+  const located = requireNode(workspace, nodeId);
+  const list = Array.isArray(located.item.transitions) ? located.item.transitions : [];
   const index = list.findIndex((transition) => isObject(transition) && transition.id === id);
   if (index < 0) {
-    throw new Refusal(`task "${taskId}" has no transition "${id}"`);
+    throw new Refusal(`node "${nodeId}" has no transition "${id}"`);
   }
   list.splice(index, 1);
-  if (list.length === 0) delete located.node.transitions;
+  if (list.length === 0) delete located.item.transitions;
   workspace.touch(located.file);
 });
 
-export const task: Command = group(usage, {
+export const node: Command = group(usage, {
   transition: group(usage, { add: addTransition, remove: removeTransition }),
   "include-states": includeStates,
   "only-when": onlyWhen,
@@ -338,34 +338,34 @@ export const task: Command = group(usage, {
   unset,
 });
 
-// Takes a task out of its file: from its parent's children, or the whole
-// file when it is the root task.
+// Takes a node out of its file: from its parent's children, or the whole
+// file when it is the root.
 function detach(workspace: Workspace, located: Located): void {
   if (located.siblings === undefined) {
     workspace.remove(located.file);
     return;
   }
-  located.siblings.splice(located.siblings.indexOf(located.node), 1);
+  located.siblings.splice(located.siblings.indexOf(located.item), 1);
   workspace.touch(located.file);
 }
 
-function contains(node: Record<string, unknown>, id: string): boolean {
-  if (node.id === id) return true;
+function contains(item: Record<string, unknown>, id: string): boolean {
+  if (item.id === id) return true;
   return (
-    Array.isArray(node.children) &&
-    node.children.some((child) => isObject(child) && contains(child, id))
+    Array.isArray(item.children) &&
+    item.children.some((child) => isObject(child) && contains(child, id))
   );
 }
 
 function renameIncludes(
   workspace: Workspace,
   file: string,
-  node: Record<string, unknown>,
+  item: Record<string, unknown>,
   from: string,
   to: string,
 ): void {
-  if (!Array.isArray(node.children)) return;
-  for (const child of node.children) {
+  if (!Array.isArray(item.children)) return;
+  for (const child of item.children) {
     if (isObject(child) && child.include === from) {
       child.include = to;
       workspace.touch(file);
@@ -373,8 +373,8 @@ function renameIncludes(
   }
 }
 
-// appliesTo, only, override task keys and verification records.
-function renameTaskReferences(workspace: Workspace, from: string, to: string): void {
+// appliesTo, only, override node keys and verification records.
+function renameNodeReferences(workspace: Workspace, from: string, to: string): void {
   for (const file of workspace.list("dimensions")) {
     const dimension = workspace.read(file);
     if (Array.isArray(dimension?.appliesTo) && dimension.appliesTo.includes(from)) {
@@ -391,7 +391,7 @@ function renameTaskReferences(workspace: Workspace, from: string, to: string): v
       changed = true;
     }
     overrideTargets(overrides.overrides, (kind, targets) => {
-      if (kind === "tasks" && from in targets) {
+      if (kind === "nodes" && from in targets) {
         renameKey(targets, from, to);
         changed = true;
       }
@@ -402,8 +402,8 @@ function renameTaskReferences(workspace: Workspace, from: string, to: string): v
     const verification = workspace.read(file);
     if (!Array.isArray(verification?.records)) continue;
     for (const record of verification.records) {
-      if (isObject(record) && record.task === from) {
-        record.task = to;
+      if (isObject(record) && record.node === from) {
+        record.node = to;
         workspace.touch(file);
       }
     }

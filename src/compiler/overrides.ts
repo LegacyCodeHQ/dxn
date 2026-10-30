@@ -35,19 +35,19 @@ export interface CombinationPart {
   overrides?: OverrideStates;
 }
 
-// The states a type or task override starts from in one context.
+// The states a type or node override starts from in one context.
 interface Start {
   type: (name: string, base: Set<string>) => StateSet;
-  task: (id: string, typeStates: StateSet) => StateSet;
+  node: (id: string, typeStates: StateSet) => StateSet;
 }
 
 const fromBase: Start = {
   type: (_, base) => ({ states: base, removed: new Set() }),
-  task: (_, typeStates) => typeStates,
+  node: (_, typeStates) => typeStates,
 };
 
-// overrides/<dimension>.json: where tasks exist ("only"), then overrides by
-// dimension value, then by type or task. Returns the valid state changes and
+// overrides/<dimension>.json: where nodes exist ("only"), then overrides by
+// dimension value, then by type or node. Returns the valid state changes and
 // "only" restrictions, for checking combinations and verification contexts.
 export function checkOverridesFile(
   root: JsonNode,
@@ -84,28 +84,28 @@ export function checkOverridesFile(
   return { states: changes, only };
 }
 
-// "only": task id -> the values where the task (and its subtree) exists.
+// "only": node id -> the values where the node (and its subtree) exists.
 function checkOnly(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   dimension: DimensionSymbol,
-  node: JsonNode,
+  item: JsonNode,
 ): Map<string, Set<string>> {
   const only = new Map<string, Set<string>>();
-  const object = expectObject(diagnostics, node, "$.only");
+  const object = expectObject(diagnostics, item, "$.only");
   for (const { key, value } of object?.members ?? []) {
     const path = childPath("$.only", key.value);
     const id = JSON.stringify(key.value);
     if (!tree.ids.has(key.value)) {
-      report(diagnostics, "unknown-task", `task ${id} does not exist`, path, key);
+      report(diagnostics, "unknown-node", `node ${id} does not exist`, path, key);
       continue;
     }
     if (!dimension.scope.has(key.value)) {
       if (dimension.scopeComplete) {
         report(
           diagnostics,
-          "task-out-of-scope",
-          `task ${id} is not in this dimension's appliesTo`,
+          "node-out-of-scope",
+          `node ${id} is not in this dimension's appliesTo`,
           path,
           key,
         );
@@ -119,7 +119,7 @@ function checkOnly(
       report(
         diagnostics,
         "empty-only",
-        "list at least one value where the task exists",
+        "list at least one value where the node exists",
         path,
         value,
       );
@@ -141,7 +141,7 @@ function checkOnly(
   return only;
 }
 
-// Whether "only" leaves a task out at a value: it, or an ancestor in its own
+// Whether "only" leaves a node out at a value: it, or an ancestor in its own
 // file, is restricted to other values.
 export function isAbsent(
   tree: TreeSymbols,
@@ -182,7 +182,7 @@ export function checkCombinationFile(
     scopeComplete: parts.every((part) => part.symbol.scopeComplete),
   };
 
-  const level = (node: JsonNode, path: string, values: string[]): void => {
+  const level = (item: JsonNode, path: string, values: string[]): void => {
     if (values.length === parts.length) {
       const singles = parts.map((part, index) => part.overrides?.get(values[index] as string));
       const start: Start = {
@@ -191,10 +191,10 @@ export function checkCombinationFile(
             { states: base, removed: new Set() },
             singles.map((s) => s?.types.get(name)),
           ),
-        task: (id, typeStates) =>
+        node: (id, typeStates) =>
           apply(
             typeStates,
-            singles.map((s) => s?.tasks.get(id)),
+            singles.map((s) => s?.nodes.get(id)),
           ),
       };
       const pairs = parts.map((part, index): [string, string] => [
@@ -207,7 +207,7 @@ export function checkCombinationFile(
           diagnostics,
           tree,
           scope,
-          node,
+          item,
           path,
           start,
           (id) =>
@@ -220,7 +220,7 @@ export function checkCombinationFile(
       return;
     }
     const part = parts[values.length] as CombinationPart;
-    const byValue = expectObject(diagnostics, node, path);
+    const byValue = expectObject(diagnostics, item, path);
     for (const entry of byValue?.members ?? []) {
       const valuePath = childPath(path, entry.key.value);
       if (isValue(diagnostics, part.symbol, entry.key, valuePath)) {
@@ -262,7 +262,7 @@ function apply(start: StateSet, changes: (StateChanges | undefined)[]): StateSet
   return result;
 }
 
-// Only single-dimension files may say where tasks exist.
+// Only single-dimension files may say where nodes exist.
 function checkFileShape(root: JsonNode, diagnostics: Diagnostics, allowOnly: boolean) {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
@@ -325,24 +325,24 @@ function newEntry(
   };
 }
 
-// Overrides for one context: type overrides first, so task overrides start
+// Overrides for one context: type overrides first, so node overrides start
 // from the states their type has there.
 function checkValueOverrides(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
   dimension: { scope: Set<string>; scopeComplete: boolean },
-  node: JsonNode,
+  item: JsonNode,
   path: string,
   start: Start,
   absent: (id: string) => boolean,
   entryFor: (kind: OverrideEntry["kind"], target: string) => OverrideEntry,
 ): ValueStates {
-  const changes: ValueStates = { types: new Map(), tasks: new Map() };
-  const targets = expectObject(diagnostics, node, path);
+  const changes: ValueStates = { types: new Map(), nodes: new Map() };
+  const targets = expectObject(diagnostics, item, path);
   if (targets === undefined) {
     return changes;
   }
-  const members = keys(diagnostics, targets, path, ["types", "tasks"]);
+  const members = keys(diagnostics, targets, path, ["types", "nodes"]);
 
   const typeStates = new Map<string, StateSet>();
   const typesNode = members.get("types");
@@ -374,26 +374,26 @@ function checkValueOverrides(
     changes.types.set(key.value, result.changes);
   }
 
-  const tasksNode = members.get("tasks");
-  const tasks =
-    tasksNode === undefined ? undefined : expectObject(diagnostics, tasksNode, `${path}.tasks`);
-  for (const { key, value } of tasks?.members ?? []) {
-    const taskPath = childPath(`${path}.tasks`, key.value);
+  const nodesNode = members.get("nodes");
+  const nodes =
+    nodesNode === undefined ? undefined : expectObject(diagnostics, nodesNode, `${path}.nodes`);
+  for (const { key, value } of nodes?.members ?? []) {
+    const nodePath = childPath(`${path}.nodes`, key.value);
     const id = JSON.stringify(key.value);
     if (!tree.ids.has(key.value)) {
-      report(diagnostics, "unknown-task", `task ${id} does not exist`, taskPath, key);
+      report(diagnostics, "unknown-node", `node ${id} does not exist`, nodePath, key);
       continue;
     }
     if (!dimension.scope.has(key.value)) {
       if (!dimension.scopeComplete) {
-        // appliesTo already has an error; this task may be meant to be in scope.
+        // appliesTo already has an error; this node may be meant to be in scope.
         continue;
       }
       report(
         diagnostics,
-        "task-out-of-scope",
-        `task ${id} is not in this dimension's appliesTo`,
-        taskPath,
+        "node-out-of-scope",
+        `node ${id} is not in this dimension's appliesTo`,
+        nodePath,
         key,
       );
       continue;
@@ -402,33 +402,33 @@ function checkValueOverrides(
       report(
         diagnostics,
         "absent-in-context",
-        `task ${id} does not exist here: "only" leaves it out`,
-        taskPath,
+        `node ${id} does not exist here: "only" leaves it out`,
+        nodePath,
         key,
       );
       continue;
     }
-    const type = tree.taskTypes.get(key.value);
+    const type = tree.nodeTypes.get(key.value);
     const states = type === undefined ? undefined : tree.types.get(type);
     if (type === undefined || states === undefined) {
       report(
         diagnostics,
         "override-without-type",
-        `task ${id} has no type to override`,
-        taskPath,
+        `node ${id} has no type to override`,
+        nodePath,
         key,
       );
       continue;
     }
-    changes.tasks.set(
+    changes.nodes.set(
       key.value,
       checkOverride(
         diagnostics,
         tree,
         value,
-        taskPath,
-        start.task(key.value, typeStates.get(type) ?? start.type(type, states)),
-        entryFor("tasks", key.value),
+        nodePath,
+        start.node(key.value, typeStates.get(type) ?? start.type(type, states)),
+        entryFor("nodes", key.value),
         tree.addable.get(type),
       ).changes,
     );
@@ -441,7 +441,7 @@ function checkValueOverrides(
 function checkOverride(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
   start: StateSet,
   entry: OverrideEntry,
@@ -450,7 +450,7 @@ function checkOverride(
 ): { states: StateSet; changes: StateChanges } {
   const result: StateSet = { states: new Set(start.states), removed: new Set(start.removed) };
   const changes: StateChanges = { add: new Set(), remove: new Set() };
-  const override = expectObject(diagnostics, node, path);
+  const override = expectObject(diagnostics, item, path);
   if (override === undefined) {
     return { states: result, changes };
   }
@@ -491,7 +491,7 @@ function checkOverride(
       result.states.delete(state.value);
       result.removed.add(state.value);
       changes.remove.add(state.value);
-      entry.removed.set(state.value, { node: state, path: statePath });
+      entry.removed.set(state.value, { item: state, path: statePath });
     }
     for (const [state, statePath] of listElements(diagnostics, lists.get("add"), path, "add")) {
       if (addable !== undefined && !addable.has(state.value)) {
@@ -528,7 +528,7 @@ function checkOverride(
       result.states.add(state.value);
       result.removed.delete(state.value);
       changes.add.add(state.value);
-      entry.added.set(state.value, { node: state, path: statePath });
+      entry.added.set(state.value, { item: state, path: statePath });
     }
   }
 
@@ -543,7 +543,7 @@ function checkOverride(
       (attribute, state, value, valuePath) =>
         entry.values.set(valueKey(attribute, state), {
           value: value.value,
-          node: value,
+          item: value,
           path: valuePath,
         }),
     );
@@ -553,13 +553,13 @@ function checkOverride(
 
 function listElements(
   diagnostics: Diagnostics,
-  node: JsonNode | undefined,
+  item: JsonNode | undefined,
   path: string,
   name: "add" | "remove",
 ) {
   const listPath = `${path}.states.${name}`;
-  if (node === undefined || !expectKind(diagnostics, node, listPath, "array")) {
+  if (item === undefined || !expectKind(diagnostics, item, listPath, "array")) {
     return [];
   }
-  return stringElements(diagnostics, node, listPath, "duplicate-state");
+  return stringElements(diagnostics, item, listPath, "duplicate-state");
 }

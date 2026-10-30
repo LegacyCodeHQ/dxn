@@ -1,56 +1,56 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { at, cleanup, compileFiles, diagnose, taskFile, types } from "../support/project.js";
+import { at, cleanup, compileFiles, diagnose, rootFile, types } from "../support/project.js";
 
 afterAll(cleanup);
 
-const k = at("tasks/a.json");
-const file = (doc: unknown) => diagnose({ "types.json": types, "tasks/a.json": doc });
-const task = (value: unknown) => file(taskFile(value));
+const k = at("roots/a.json");
+const file = (doc: unknown) => diagnose({ "types.json": types, "roots/a.json": doc });
+const node = (value: unknown) => file(rootFile(value));
 
-describe("task files", () => {
-  it("accept one root task named after the file", () => {
-    expect(task({ id: "a", title: "A" })).toEqual([]);
+describe("node files", () => {
+  it("accept one root named after the file", () => {
+    expect(node({ id: "a", title: "A" })).toEqual([]);
   });
 
-  it("must be an object with version and task", () => {
+  it("must be an object with version and node", () => {
     const snapshot: unknown[] = [];
     snapshot.push(file([]));
     snapshot.push(file({}));
-    snapshot.push(file({ ...taskFile({ id: "a", title: "A" }), extra: 1 }));
-    snapshot.push(file({ version: 2, task: { id: "a", title: "A" } }));
+    snapshot.push(file({ ...rootFile({ id: "a", title: "A" }), extra: 1 }));
+    snapshot.push(file({ version: 2, root: { id: "a", title: "A" } }));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     [
       {
         "code": "wrong-type",
-        "file": "tasks/a.json",
+        "file": "roots/a.json",
         "path": "$",
       },
     ],
     [
       {
         "code": "missing-key",
-        "file": "tasks/a.json",
+        "file": "roots/a.json",
         "path": "$.version",
       },
       {
         "code": "missing-key",
-        "file": "tasks/a.json",
-        "path": "$.task",
+        "file": "roots/a.json",
+        "path": "$.root",
       },
     ],
     [
       {
         "code": "unknown-key",
-        "file": "tasks/a.json",
+        "file": "roots/a.json",
         "path": "$.extra",
       },
     ],
     [
       {
         "code": "unsupported-version",
-        "file": "tasks/a.json",
+        "file": "roots/a.json",
         "path": "$.version",
       },
     ],
@@ -60,8 +60,8 @@ describe("task files", () => {
 
   it("may point editors at the JSON schema", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(file({ $schema: "x", ...taskFile({ id: "a", title: "A" }) }));
-    snapshot.push(file({ $schema: 1, ...taskFile({ id: "a", title: "A" }) }));
+    snapshot.push(file({ $schema: "x", ...rootFile({ id: "a", title: "A" }) }));
+    snapshot.push(file({ $schema: 1, ...rootFile({ id: "a", title: "A" }) }));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -69,7 +69,7 @@ describe("task files", () => {
     [
       {
         "code": "wrong-type",
-        "file": "tasks/a.json",
+        "file": "roots/a.json",
         "path": "$.$schema",
       },
     ],
@@ -77,44 +77,44 @@ describe("task files", () => {
 `);
   });
 
-  it("hold the task as an object", () => {
-    expect(task([])).toEqual([k("wrong-type", "$.task")]);
+  it("hold the node as an object", () => {
+    expect(node([])).toEqual([k("wrong-type", "$.root")]);
   });
 
-  it("must be named after the root task's id", () => {
-    expect(task({ id: "b", title: "B" })).toEqual([k("file-name-mismatch", "$.task.id")]);
+  it("must be named after the root's id", () => {
+    expect(node({ id: "b", title: "B" })).toEqual([k("file-name-mismatch", "$.root.id")]);
   });
 
   it("are returned in file name order", () => {
     const result = compileFiles({
       "types.json": types,
-      "tasks/b.json": taskFile({ id: "b", title: "B" }),
-      "tasks/a.json": taskFile({ id: "a", title: "A" }),
+      "roots/b.json": rootFile({ id: "b", title: "B" }),
+      "roots/a.json": rootFile({ id: "a", title: "A" }),
     });
-    expect(result.project?.tasks.map(({ id }) => id)).toEqual(["a", "b"]);
+    expect(result.project?.roots.map(({ id }) => id)).toEqual(["a", "b"]);
   });
 });
 
-describe("task", () => {
+describe("node", () => {
   it("requires id and title", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(task({ id: "a" }));
-    snapshot.push(task({ title: "A" }));
+    snapshot.push(node({ id: "a" }));
+    snapshot.push(node({ title: "A" }));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     [
       {
         "code": "missing-key",
-        "file": "tasks/a.json",
-        "path": "$.task.title",
+        "file": "roots/a.json",
+        "path": "$.root.title",
       },
     ],
     [
       {
         "code": "missing-key",
-        "file": "tasks/a.json",
-        "path": "$.task.id",
+        "file": "roots/a.json",
+        "path": "$.root.id",
       },
     ],
   ]
@@ -122,20 +122,20 @@ describe("task", () => {
   });
 
   it("rejects keys outside the core DSL", () => {
-    expect(task({ id: "a", title: "A", design: {} })).toEqual([k("unknown-key", "$.task.design")]);
+    expect(node({ id: "a", title: "A", design: {} })).toEqual([k("unknown-key", "$.root.design")]);
   });
 
-  it("reports deeply nested tasks instead of crashing", () => {
+  it("reports deeply nested nodes instead of crashing", () => {
     // Built as text: JSON.stringify itself overflows the stack at this depth.
     const depth = 5000;
     const open = '{ "id": "t", "title": "T", "children": ['.repeat(depth);
-    const source = `{ "version": 1, "task": ${open}${"] }".repeat(depth)} }`;
-    expect(diagnose({ "types.json": types, "tasks/a.json": source })).toEqual([k("too-deep", "$")]);
+    const source = `{ "version": 1, "root": ${open}${"] }".repeat(depth)} }`;
+    expect(diagnose({ "types.json": types, "roots/a.json": source })).toEqual([k("too-deep", "$")]);
   });
 });
 
-describe("task id", () => {
-  const id = (value: unknown) => task({ id: value, title: "A" });
+describe("node id", () => {
+  const id = (value: unknown) => node({ id: value, title: "A" });
 
   it("must be a valid name", () => {
     const snapshot: unknown[] = [];
@@ -150,36 +150,36 @@ describe("task id", () => {
     [
       {
         "code": "wrong-type",
-        "file": "tasks/a.json",
-        "path": "$.task.id",
+        "file": "roots/a.json",
+        "path": "$.root.id",
       },
     ],
     [
       {
         "code": "empty-string",
-        "file": "tasks/a.json",
-        "path": "$.task.id",
+        "file": "roots/a.json",
+        "path": "$.root.id",
       },
     ],
     [
       {
         "code": "empty-string",
-        "file": "tasks/a.json",
-        "path": "$.task.id",
+        "file": "roots/a.json",
+        "path": "$.root.id",
       },
     ],
     [
       {
         "code": "surrounding-whitespace",
-        "file": "tasks/a.json",
-        "path": "$.task.id",
+        "file": "roots/a.json",
+        "path": "$.root.id",
       },
     ],
     [
       {
         "code": "control-character",
-        "file": "tasks/a.json",
-        "path": "$.task.id",
+        "file": "roots/a.json",
+        "path": "$.root.id",
       },
     ],
   ]
@@ -187,30 +187,30 @@ describe("task id", () => {
   });
 
   it("must be unique within a file", () => {
-    expect(task({ id: "a", title: "A", children: [{ id: "a", title: "Again" }] })).toEqual([
-      k("duplicate-id", "$.task.children[0].id"),
+    expect(node({ id: "a", title: "A", children: [{ id: "a", title: "Again" }] })).toEqual([
+      k("duplicate-id", "$.root.children[0].id"),
     ]);
   });
 
   it("must be unique across files, naming where it was first used", () => {
     const result = compileFiles({
       "types.json": types,
-      "tasks/a.json": taskFile({ id: "a", title: "A", children: [{ id: "x", title: "X" }] }),
-      "tasks/b.json": taskFile({ id: "b", title: "B", children: [{ id: "x", title: "X" }] }),
+      "roots/a.json": rootFile({ id: "a", title: "A", children: [{ id: "x", title: "X" }] }),
+      "roots/b.json": rootFile({ id: "b", title: "B", children: [{ id: "x", title: "X" }] }),
     });
     expect(result.diagnostics).toMatchObject([
       {
-        file: "tasks/b.json",
+        file: "roots/b.json",
         code: "duplicate-id",
-        path: "$.task.children[0].id",
-        message: 'task id "x" is already used at tasks/a.json $.task.children[0]',
+        path: "$.root.children[0].id",
+        message: 'node id "x" is already used at roots/a.json $.root.children[0]',
       },
     ]);
   });
 });
 
-describe("task title", () => {
-  const title = (value: unknown) => task({ id: "a", title: value });
+describe("node title", () => {
+  const title = (value: unknown) => node({ id: "a", title: value });
 
   it("must be a non-blank string without control characters", () => {
     const snapshot: unknown[] = [];
@@ -224,29 +224,29 @@ describe("task title", () => {
     [
       {
         "code": "wrong-type",
-        "file": "tasks/a.json",
-        "path": "$.task.title",
+        "file": "roots/a.json",
+        "path": "$.root.title",
       },
     ],
     [
       {
         "code": "empty-string",
-        "file": "tasks/a.json",
-        "path": "$.task.title",
+        "file": "roots/a.json",
+        "path": "$.root.title",
       },
     ],
     [
       {
         "code": "empty-string",
-        "file": "tasks/a.json",
-        "path": "$.task.title",
+        "file": "roots/a.json",
+        "path": "$.root.title",
       },
     ],
     [
       {
         "code": "control-character",
-        "file": "tasks/a.json",
-        "path": "$.task.title",
+        "file": "roots/a.json",
+        "path": "$.root.title",
       },
     ],
   ]
@@ -258,43 +258,43 @@ describe("task title", () => {
   });
 });
 
-describe("task type", () => {
+describe("node type", () => {
   it("must be a string", () => {
-    expect(task({ id: "a", title: "A", type: 1 })).toEqual([k("wrong-type", "$.task.type")]);
+    expect(node({ id: "a", title: "A", type: 1 })).toEqual([k("wrong-type", "$.root.type")]);
   });
 
   it("must name a type in types.json", () => {
-    expect(task({ id: "a", title: "A", type: "button" })).toEqual([
-      k("undefined-type", "$.task.type"),
+    expect(node({ id: "a", title: "A", type: "button" })).toEqual([
+      k("undefined-type", "$.root.type"),
     ]);
   });
 });
 
-describe("task children", () => {
+describe("node children", () => {
   it("must be an array", () => {
-    expect(task({ id: "a", title: "A", children: {} })).toEqual([
-      k("wrong-type", "$.task.children"),
+    expect(node({ id: "a", title: "A", children: {} })).toEqual([
+      k("wrong-type", "$.root.children"),
     ]);
   });
 
-  it("are checked as tasks", () => {
-    expect(task({ id: "a", title: "A", children: [{ id: "b" }] })).toEqual([
-      k("missing-key", "$.task.children[0].title"),
+  it("are checked as nodes", () => {
+    expect(node({ id: "a", title: "A", children: [{ id: "b" }] })).toEqual([
+      k("missing-key", "$.root.children[0].title"),
     ]);
   });
 });
 
-describe("task customAttributes", () => {
+describe("node customAttributes", () => {
   const withAttributes = (customAttributes: unknown, type: unknown = "link") =>
-    task({ id: "a", title: "A", type, customAttributes });
-  const path = "$.task.customAttributes";
+    node({ id: "a", title: "A", type, customAttributes });
+  const path = "$.root.customAttributes";
 
   it("override the type's values", () => {
     expect(withAttributes({ design: { selected: "available" } })).toEqual([]);
   });
 
-  it("require the task to have a type", () => {
-    expect(task({ id: "a", title: "A", customAttributes: { design: {} } })).toEqual([
+  it("require the node to have a type", () => {
+    expect(node({ id: "a", title: "A", customAttributes: { design: {} } })).toEqual([
       k("attributes-without-type", path),
     ]);
   });
@@ -311,7 +311,7 @@ describe("task customAttributes", () => {
 
   it("are not checked against an undefined type", () => {
     expect(withAttributes({ design: { pressed: "available" } }, "button")).toEqual([
-      k("undefined-type", "$.task.type"),
+      k("undefined-type", "$.root.type"),
     ]);
   });
 });

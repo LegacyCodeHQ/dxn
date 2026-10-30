@@ -132,7 +132,7 @@ export function renameKey(object: Json, from: string, to: string): void {
   Object.assign(object, Object.fromEntries(entries));
 }
 
-export const taskOrder = [
+export const nodeOrder = [
   "id",
   "title",
   "type",
@@ -151,25 +151,25 @@ export const typesOrder = [
 ];
 export const typeOrder = ["states", "stateGroups", "shared", "checks", "customAttributes"];
 
-// Where a task is defined.
+// Where a node is defined.
 export interface Located {
   file: string;
-  key: "task" | "component";
-  node: Json;
-  // The array the task is in, unless it is the file's root task.
+  key: "root" | "component";
+  item: Json;
+  // The array the node is in, unless it is the file's root.
   siblings?: unknown[];
 }
 
-// Finds a task in the task and component files.
+// Finds a node in the node and component files.
 export function locate(workspace: Workspace, id: string): Located | undefined {
   for (const [folder, key] of [
     ["components", "component"],
-    ["tasks", "task"],
+    ["roots", "root"],
   ] as const) {
     for (const file of workspace.list(folder)) {
       const root = workspace.read(file)?.[key];
       if (!isObject(root)) continue;
-      if (root.id === id) return { file, key, node: root };
+      if (root.id === id) return { file, key, item: root };
       const found = find(root, id);
       if (found !== undefined) return { file, key, ...found };
     }
@@ -177,31 +177,31 @@ export function locate(workspace: Workspace, id: string): Located | undefined {
   return undefined;
 }
 
-function find(node: Json, id: string): { node: Json; siblings: unknown[] } | undefined {
-  const children = node.children;
+function find(item: Json, id: string): { item: Json; siblings: unknown[] } | undefined {
+  const children = item.children;
   if (!Array.isArray(children)) return undefined;
   for (const child of children) {
     if (!isObject(child)) continue;
-    if (child.id === id) return { node: child, siblings: children };
+    if (child.id === id) return { item: child, siblings: children };
     const found = find(child, id);
     if (found !== undefined) return found;
   }
   return undefined;
 }
 
-export function requireTask(workspace: Workspace, id: string): Located {
+export function requireNode(workspace: Workspace, id: string): Located {
   const located = locate(workspace, id);
   if (located === undefined) {
-    throw new Refusal(`task not found: ${id}`);
+    throw new Refusal(`node not found: ${id}`);
   }
   return located;
 }
 
-// Every task node in the task and component files, with its file.
-export function* taskNodes(workspace: Workspace): Generator<[string, Json]> {
+// Every node in the root and component files, with its file.
+export function* nodeNodes(workspace: Workspace): Generator<[string, Json]> {
   for (const [folder, key] of [
     ["components", "component"],
-    ["tasks", "task"],
+    ["roots", "root"],
   ] as const) {
     for (const file of workspace.list(folder)) {
       const root = workspace.read(file)?.[key];
@@ -210,24 +210,24 @@ export function* taskNodes(workspace: Workspace): Generator<[string, Json]> {
   }
 }
 
-function* walk(file: string, node: Json): Generator<[string, Json]> {
-  yield [file, node];
-  if (Array.isArray(node.children)) {
-    for (const child of node.children) {
+function* walk(file: string, item: Json): Generator<[string, Json]> {
+  yield [file, item];
+  if (Array.isArray(item.children)) {
+    for (const child of item.children) {
       if (isObject(child)) yield* walk(file, child);
     }
   }
 }
 
-// Calls visit on every { types, tasks } target map in an override file,
+// Calls visit on every { types, nodes } target map in an override file,
 // at any nesting depth.
 export function overrideTargets(
   overrides: unknown,
-  visit: (kind: "types" | "tasks", targets: Json) => void,
+  visit: (kind: "types" | "nodes", targets: Json) => void,
 ): void {
   if (!isObject(overrides)) return;
   for (const [key, value] of Object.entries(overrides)) {
-    if ((key === "types" || key === "tasks") && isObject(value)) {
+    if ((key === "types" || key === "nodes") && isObject(value)) {
       visit(key, value);
     } else {
       overrideTargets(value, visit);
@@ -248,18 +248,18 @@ export function setOrdered(workspace: Workspace, path: string, value: Json, orde
   workspace.write(path, ordered(value, order));
 }
 
-// Sets attribute values on a type or task node.
-export function setValues(node: Json, attribute: string, values: [string, string][]): void {
-  const attributes = isObject(node.customAttributes) ? node.customAttributes : {};
+// Sets attribute values on a type or a node.
+export function setValues(item: Json, attribute: string, values: [string, string][]): void {
+  const attributes = isObject(item.customAttributes) ? item.customAttributes : {};
   const byState = isObject(attributes[attribute]) ? attributes[attribute] : {};
   for (const [state, value] of values) byState[state] = value;
   attributes[attribute] = byState;
-  node.customAttributes = attributes;
+  item.customAttributes = attributes;
 }
 
 // Clears some states of an attribute, or all of it; drops empty containers.
-export function unsetValues(node: Json, attribute: string, states: string[]): void {
-  const attributes = node.customAttributes;
+export function unsetValues(item: Json, attribute: string, states: string[]): void {
+  const attributes = item.customAttributes;
   if (!isObject(attributes)) return;
   const byState = attributes[attribute];
   if (states.length === 0 || !isObject(byState)) {
@@ -268,5 +268,5 @@ export function unsetValues(node: Json, attribute: string, states: string[]): vo
     for (const state of states) delete byState[state];
     if (Object.keys(byState).length === 0) delete attributes[attribute];
   }
-  if (Object.keys(attributes).length === 0) delete node.customAttributes;
+  if (Object.keys(attributes).length === 0) delete item.customAttributes;
 }

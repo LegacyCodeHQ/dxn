@@ -44,9 +44,9 @@ const toolbar = (panel: Record<string, unknown> = {}, extra: unknown[] = []) => 
 const project = (overrides: Files = {}): Files => ({
   "types.json": types,
   "components/toolbar.json": toolbar(),
-  "tasks/page.json": {
+  "roots/page.json": {
     version: 1,
-    task: { id: "page", title: "Page", children: [{ include: "toolbar" }] },
+    root: { id: "page", title: "Page", children: [{ include: "toolbar" }] },
   },
   "dimensions/breakpoint.json": { version: 1, values: ["sm", "lg"], appliesTo: ["toolbar"] },
   ...overrides,
@@ -57,7 +57,7 @@ const k = at("components/toolbar.json");
 const panelPath = "$.component.children[0].children[1]";
 
 describe("shared types", () => {
-  it("let a task's subtree vary with its states", () => {
+  it("let a node's subtree vary with its states", () => {
     expect(diagnose(project())).toEqual([]);
   });
 
@@ -185,13 +185,13 @@ describe("onlyWhen", () => {
     ]);
   });
 
-  it("is a key the schema and the compiler know on tasks", () => {
+  it("is a key the schema and the compiler know on nodes", () => {
     expect(withPanel({ menu: ["open"] })).toEqual([]);
   });
 });
 
 describe("dimension names", () => {
-  it("cannot be the id of a shared task", () => {
+  it("cannot be the id of a shared node", () => {
     expect(
       diagnose(
         project({ "dimensions/menu.json": { version: 1, values: ["x"], appliesTo: ["toolbar"] } }),
@@ -201,8 +201,8 @@ describe("dimension names", () => {
 });
 
 describe("verification under a shared ancestor", () => {
-  const record = (task: string, context: Record<string, string>) => ({
-    task,
+  const record = (node: string, context: Record<string, string>) => ({
+    node,
     context,
     check: "visual",
     result: "passed",
@@ -257,7 +257,7 @@ describe("verification under a shared ancestor", () => {
 `);
   });
 
-  it("has no record where onlyWhen leaves the task out", () => {
+  it("has no record where onlyWhen leaves the node out", () => {
     expect(
       verify(record("menu-link", { state: "normal", breakpoint: "sm", menu: "closed" })),
     ).toEqual([v("absent-in-context", "$.records[0].context")]);

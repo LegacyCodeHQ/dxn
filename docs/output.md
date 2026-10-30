@@ -10,7 +10,7 @@ error messages. Reading commands indent their JSON. Editing commands, `init`,
 | Code | Meaning                                                                                                                                                           |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `0`  | Success. `--help` and `help` also exit 0.                                                                                                                         |
-| `1`  | The command line is fine, but the project doesn't allow it: no project, the project has errors, an unknown task, a filter that doesn't apply, or an edit refused. |
+| `1`  | The command line is fine, but the project doesn't allow it: no project, the project has errors, an unknown node, a filter that doesn't apply, or an edit refused. |
 | `2`  | The command line is wrong: an unknown command or subcommand, a missing argument, an unknown option. The usage follows the message.                                |
 
 ## Errors
@@ -19,15 +19,15 @@ Errors go to stderr. Nothing is printed on stdout, except by `validate`,
 which always prints its summary. There are three forms:
 
 ```text
-task-tree: task not found: nope
+task-tree: node not found: nope
 ```
 
 A refusal (exit 1) is one line.
 
 ```text
-task-tree: missing task-id
+task-tree: missing node-id
 
-Usage: task-tree query <task-id> [<dimension>=<value>...] [<shared-task>=<state>...]
+Usage: task-tree query <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 ...
 ```
 
@@ -35,7 +35,7 @@ A usage error (exit 2) is followed by the command's usage. An unknown
 subcommand prints only the group's usage.
 
 ```text
-/path/.task-tree/tasks/x.json:6:13: undefined-type: type "nope" is not defined
+/path/.task-tree/roots/x.json:6:13: undefined-type: type "nope" is not defined
 ```
 
 Diagnostics are one per line (exit 1). A reading command prints them when the
@@ -44,9 +44,9 @@ would break the project, which leaves the files unchanged. The codes are in
 [diagnostics.md](diagnostics.md).
 
 A **context** in the output below is an object with one key per dimension,
-state group (or `state`) and shared task, each with its value, for example
+state group (or `state`) and shared node, each with its value, for example
 `{"hover": "rest", "focus": "blurred", "breakpoint": "base", "keyboard": "keyboard", "pointer": "mouse", "menu": "closed"}`.
-State groups come first, then dimensions, then shared tasks.
+State groups come first, then dimensions, then shared nodes.
 
 ## Editing commands
 
@@ -92,7 +92,7 @@ is above 0.
   "components": [ { "id": "toolbar", "title": "Toolbar", "children": [ ... ] } ] }
 ```
 
-The root tasks, exactly as written in `tasks/` and `components/`.
+The roots, exactly as written in `roots/` and `components/`.
 
 ## dimensions
 
@@ -127,11 +127,11 @@ The root tasks, exactly as written in `tasks/` and `components/`.
 ```
 
 - `context` is the full context the answer is for, with defaults filled in.
-- `present` is false when `only` or `onlyWhen` leaves the task out here. The
-  states are still what the task would have.
+- `present` is false when `only` or `onlyWhen` leaves the node out here. The
+  states are still what the node would have.
 - `states` lists every state in effect. `stateGroups` lists them by group, and
   a plain states list appears as the group `state`.
-- `type`, `stateGroups` and `customAttributes` are left out when the task has
+- `type`, `stateGroups` and `customAttributes` are left out when the node has
   none. `states` is then `[]`.
 
 ## contexts
@@ -140,7 +140,7 @@ Without `--subtree`, one entry per context, with the root it is in:
 
 ```json
 {
-  "task": "menu-button",
+  "node": "menu-button",
   "contexts": [
     {
       "root": "article-page",
@@ -157,12 +157,12 @@ Without `--subtree`, one entry per context, with the root it is in:
 }
 ```
 
-With `--subtree`, one entry per task in the subtree, in tree order:
+With `--subtree`, one entry per node in the subtree, in tree order:
 
 ```json
 {
-  "task": "toolbar",
-  "tasks": [
+  "node": "toolbar",
+  "nodes": [
     {
       "id": "wordmark",
       "contexts": [
@@ -182,13 +182,13 @@ With `--subtree`, one entry per task in the subtree, in tree order:
 With `--count`:
 
 ```json
-{ "task": "blog-link", "count": 18 }
-{ "task": "toolbar", "counts": { "toolbar": 16, "wordmark": 36, "blog-link": 18 }, "total": 156 }
+{ "node": "blog-link", "count": 18 }
+{ "node": "toolbar", "counts": { "toolbar": 16, "wordmark": 36, "blog-link": 18 }, "total": 156 }
 ```
 
-The first form is for one task, and the second for `--subtree`.
+The first form is for one node, and the second for `--subtree`.
 
-With `--tree`, the output is text: one block per task with its number of
+With `--tree`, the output is text: one block per node with its number of
 combinations, then the levels:
 
 ```text
@@ -205,17 +205,17 @@ wordmark (36 combinations)
 ```
 
 Values on one line (`hover=rest, hovered`) share the same subtree. A level
-that changes nothing for the task is left out. `--transitions` adds a
-`transitions` branch under each shared task.
+that changes nothing for the node is left out. `--transitions` adds a
+`transitions` branch under each shared node.
 
 With `--tree --json`, the same tree as data:
 
 ```json
 {
-  "task": "menu",
+  "node": "menu",
   "tree": [
     {
-      "task": "menu",
+      "node": "menu",
       "count": 16,
       "transitions": [
         { "id": "open", "from": "closed", "to": "open", "on": "click", "target": "menu-button" }
@@ -235,40 +235,40 @@ With `--tree --json`, the same tree as data:
 
 A level's `count` covers all of its `values` together. `children` is left out
 at the last level, and `transitions` is there only with `--transitions` on a
-shared task.
+shared node.
 
 ## axes
 
 ```json
 {
-  "task": "toolbar",
+  "node": "toolbar",
   "dimensions": [{ "name": "breakpoint", "values": ["base", "sm", "lg", "xl"], "default": "xl" }],
   "shared": [
-    { "task": "menu", "states": ["closed", "open"], "existsWhen": { "breakpoint": ["base", "sm"] } }
+    { "node": "menu", "states": ["closed", "open"], "existsWhen": { "breakpoint": ["base", "sm"] } }
   ]
 }
 ```
 
-`existsWhen` gives, for each dimension that limits the shared task, the values
+`existsWhen` gives, for each dimension that limits the shared node, the values
 where it exists. It is left out when no dimension limits it. `shared` is `[]`
-when there are no shared tasks.
+when there are no shared nodes.
 
 ## views
 
 ```json
 {
-  "task": "toolbar",
+  "node": "toolbar",
   "views": [{ "breakpoint": "base", "keyboard": "keyboard", "pointer": "mouse", "menu": "closed" }]
 }
 ```
 
 Each view is a context without state group values: a value for each
-dimension, plus a state for each shared task that is present in it.
+dimension, plus a state for each shared node that is present in it.
 
 ## view
 
 ```json
-{ "task": "toolbar",
+{ "node": "toolbar",
   "context": { "breakpoint": "base", "keyboard": "keyboard", "pointer": "mouse", "menu": "open" },
   "tree": { "id": "toolbar", "title": "Toolbar", "children": [
     { "id": "wordmark", "title": "Wordmark", "type": "wordmark",
@@ -276,14 +276,14 @@ dimension, plus a state for each shared task that is present in it.
     { "id": "menu", "title": "Menu", "type": "menu", "state": "open", "children": [ ... ] } ] } }
 ```
 
-Only the tasks present in the view appear. A shared task has its `state`.
-Other typed tasks have `stateGroups` (or `states`) and `customAttributes`.
+Only the nodes present in the view appear. A shared node has its `state`.
+Other typed nodes have `stateGroups` (or `states`) and `customAttributes`.
 
 ## transitions
 
 ```json
 {
-  "task": "menu",
+  "node": "menu",
   "transitions": [
     {
       "id": "escape",
@@ -308,7 +308,7 @@ Each transition is written as it is in the file. See
   "items": [
     {
       "root": "article-page",
-      "task": "blog-link",
+      "node": "blog-link",
       "context": {
         "hover": "rest",
         "focus": "blurred",
@@ -324,8 +324,8 @@ Each transition is written as it is in the file. See
 }
 ```
 
-There is one item per required check, per context the task exists in, on
-each root, and one per required check per transition of a shared task.
+There is one item per required check, per context the node exists in, on
+each root, and one per required check per transition of a shared node.
 `result` is `passed`, `failed` or `missing`. A transition's item has
 `transition` instead of `context`. To see who verified a context and when,
 read `verification/<root-id>.json`.

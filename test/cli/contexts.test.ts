@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -49,7 +49,7 @@ const files = {
       ],
     },
   },
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [{ include: "toolbar" }],
@@ -73,7 +73,7 @@ describe("contexts --subtree", () => {
   it("leaves out a root's include states unless --root names the root", () => {
     const { run } = cliProject({
       ...files,
-      "tasks/article-page.json": taskFile({
+      "roots/article-page.json": rootFile({
         id: "article-page",
         title: "Article page",
         children: [{ include: "toolbar", states: { "blog-link": { selection: ["selected"] } } }],
@@ -102,7 +102,7 @@ describe("contexts --subtree", () => {
     const { run } = cliProject(files);
     const result = json(run("contexts", "toolbar", "--subtree"));
     expect(
-      result.tasks.map(({ id, contexts }: { id: string; contexts: unknown[] }) => [
+      result.nodes.map(({ id, contexts }: { id: string; contexts: unknown[] }) => [
         id,
         contexts.length,
       ]),
@@ -148,8 +148,8 @@ describe("contexts --subtree", () => {
     const { run } = cliProject(files);
     expect(json(run("contexts", "menu-panel", "--subtree"))).toMatchInlineSnapshot(`
       {
-        "task": "menu-panel",
-        "tasks": [
+        "node": "menu-panel",
+        "nodes": [
           {
             "contexts": [
               {
@@ -301,8 +301,8 @@ describe("contexts --subtree", () => {
           "toolbar-links": 2,
           "wordmark": 16,
         },
+        "node": "toolbar",
         "root": "article-page",
-        "task": "toolbar",
         "total": 76,
       }
     `);
@@ -332,7 +332,7 @@ describe("contexts filters", () => {
             "toolbar-links": 0,
             "wordmark": 4,
           },
-          "task": "toolbar",
+          "node": "toolbar",
           "total": 24,
         },
         {
@@ -346,12 +346,12 @@ describe("contexts filters", () => {
             "toolbar-links": 0,
             "wordmark": 4,
           },
-          "task": "toolbar",
+          "node": "toolbar",
           "total": 16,
         },
         {
-          "task": "toolbar",
-          "tasks": [
+          "node": "toolbar",
+          "nodes": [
             {
               "contexts": [
                 {
@@ -454,13 +454,13 @@ describe("contexts filters", () => {
               "root": "article-page",
             },
           ],
-          "task": "blog-link",
+          "node": "blog-link",
         },
       ]
     `);
   });
 
-  it("keep parts a shared state does not apply to, where that shared task exists", () => {
+  it("keep parts a shared state does not apply to, where that shared node exists", () => {
     const { run } = cliProject(files);
     expect(
       json(run("contexts", "toolbar", "--subtree", "breakpoint=sm", "menu=open", "--count")),
@@ -476,7 +476,7 @@ describe("contexts filters", () => {
           "toolbar-links": 0,
           "wordmark": 4,
         },
-        "task": "toolbar",
+        "node": "toolbar",
         "total": 19,
       }
     `);
@@ -495,7 +495,7 @@ describe("contexts filters", () => {
       [
         {
           "code": 1,
-          "stderr": "task-tree: "theme" is not a dimension, state group or shared task here (breakpoint, focus, hover, menu, selection)
+          "stderr": "task-tree: "theme" is not a dimension, state group or shared node here (breakpoint, focus, hover, menu, selection)
       ",
           "stdout": "",
         },
@@ -514,19 +514,19 @@ describe("contexts filters", () => {
 });
 
 describe("contexts --count", () => {
-  it("counts a single task's combinations", () => {
+  it("counts a single node's combinations", () => {
     const { run } = cliProject(files);
     expect(json(run("contexts", "wordmark", "--count"))).toMatchInlineSnapshot(`
       {
         "count": 16,
-        "task": "wordmark",
+        "node": "wordmark",
       }
     `);
   });
 });
 
 describe("contexts --tree", () => {
-  it("prints one task's contexts as a tree, merging identical branches", () => {
+  it("prints one node's contexts as a tree, merging identical branches", () => {
     const { run } = cliProject(files);
     expect(run("contexts", "wordmark", "--tree").stdout).toMatchInlineSnapshot(`
       "wordmark (16 combinations)

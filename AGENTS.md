@@ -1,7 +1,7 @@
 # Agent Instructions
 
 `task-tree` is a Node.js command-line tool written in TypeScript. It records a tree
-of tasks, the dimensions each task varies over, and what has been specified,
+of nodes, the dimensions each node varies over, and what has been specified,
 built and verified for every applicable combination. Data is stored as JSON.
 
 ## Workflow

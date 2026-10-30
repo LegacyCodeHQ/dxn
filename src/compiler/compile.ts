@@ -6,11 +6,11 @@ import type {
   DimensionFile,
   OverridesFile,
   Project,
-  TaskFile,
+  RootFile,
   TypesFile,
   VerificationFile,
 } from "../tree.js";
-import { checkTaskFile, checkTypesFile, emptySymbols, resolveOnlyWhen } from "./check.js";
+import { checkRootFile, checkTypesFile, emptySymbols, resolveOnlyWhen } from "./check.js";
 import { checkConflicts } from "./conflicts.js";
 import { type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { checkDimensionFile } from "./dimensions.js";
@@ -24,7 +24,7 @@ import { checkTransitions } from "./transitions.js";
 import { checkVerificationFile, type DimensionInfo } from "./verification.js";
 
 export interface FileDiagnostic extends Diagnostic {
-  // Relative to the project directory, e.g. "tasks/article-root.json".
+  // Relative to the project directory, e.g. "roots/article-root.json".
   file: string;
 }
 
@@ -49,11 +49,11 @@ interface ParsedFile {
 //
 //   types.json               required: custom attribute declarations and types
 //   components/<id>.json     one reusable component per file, named after its id
-//   tasks/<id>.json          one root task per file, named after its id
+//   roots/<id>.json          one root per file, named after its id
 //   dimensions/<name>.json   one dimension per file
 //   overrides/<name>.json    overrides for the dimension of the same name
 //   overrides/<a>+<b>.json   overrides for combinations of those dimensions' values
-//   verification/<id>.json   verification records for the root task <id>
+//   verification/<id>.json   verification records for the root <id>
 //
 // Anything else in the directory is ignored.
 export function compileDirectory(directory: string): DirectoryResult {
@@ -73,48 +73,48 @@ export function compileDirectory(directory: string): DirectoryResult {
   }
   parsed.push(types);
   if (types.root === undefined) {
-    // Without types, every task's type would be reported as undefined.
+    // Without types, every node's type would be reported as undefined.
     return result();
   }
   const symbols = emptySymbols();
   checkTypesFile(types.root, types.diagnostics, symbols);
 
-  // Components first, so their ids come before any task that reuses one.
+  // Components first, so their ids come before any node that reuses one.
   const components: ParsedFile[] = [];
-  const tasks: ParsedFile[] = [];
-  let tasksComplete = true;
+  const nodes: ParsedFile[] = [];
+  let nodesComplete = true;
   for (const [folder, key, files] of [
     ["components", "component", components],
-    ["tasks", "task", tasks],
+    ["roots", "root", nodes],
   ] as const) {
     for (const name of listJson(directory, folder, problems)) {
       const file = readJson(directory, `${folder}/${name}.json`);
       if (file === undefined || "code" in file) {
-        tasksComplete = false;
+        nodesComplete = false;
         if (file !== undefined) problems.push(file);
         continue;
       }
       parsed.push(file);
       if (file.root === undefined) {
-        tasksComplete = false;
+        nodesComplete = false;
         continue;
       }
       files.push(file);
       if (key === "component") {
         symbols.components.add(name);
       }
-      checkTaskFile(file.root, file.diagnostics, symbols, file.file, name, key);
+      checkRootFile(file.root, file.diagnostics, symbols, file.file, name, key);
     }
   }
-  if (tasksComplete) {
+  if (nodesComplete) {
     resolveOnlyWhen(symbols);
     resolveIncludes(
       symbols,
-      tasks.map((file) => file.file.slice("tasks/".length, -".json".length)),
+      nodes.map((file) => file.file.slice("roots/".length, -".json".length)),
     );
   }
-  if (!tasksComplete) {
-    // Dimension and override files would report every task in the unreadable
+  if (!nodesComplete) {
+    // Dimension and override files would report every node in the unreadable
     // file as unknown.
     return result();
   }
@@ -132,12 +132,12 @@ export function compileDirectory(directory: string): DirectoryResult {
       );
       continue;
     }
-    if ([...symbols.taskTypes].some(([id, type]) => id === name && symbols.sharedTypes.has(type))) {
+    if ([...symbols.nodeTypes].some(([id, type]) => id === name && symbols.sharedTypes.has(type))) {
       problems.push(
         fileDiagnostic(
           path,
           "reserved-name",
-          `a dimension cannot be named after the shared task "${name}": contexts use its id for its state`,
+          `a dimension cannot be named after the shared node "${name}": contexts use its id for its state`,
         ),
       );
       continue;
@@ -157,7 +157,7 @@ export function compileDirectory(directory: string): DirectoryResult {
         fileDiagnostic(
           path,
           "reserved-name",
-          'a dimension cannot be named "state": verification contexts use it for task states',
+          'a dimension cannot be named "state": verification contexts use it for node states',
         ),
       );
       continue;
@@ -253,13 +253,13 @@ export function compileDirectory(directory: string): DirectoryResult {
   checkConflicts(entries, symbols, dimensions);
   checkTransitions(symbols, dimensions);
 
-  const rootIds = new Set(tasks.map((file) => file.file.slice("tasks/".length, -".json".length)));
+  const rootIds = new Set(nodes.map((file) => file.file.slice("roots/".length, -".json".length)));
   const verification: [string, ParsedFile][] = [];
   for (const name of listJson(directory, "verification", problems)) {
     const path = `verification/${name}.json`;
     if (!rootIds.has(name) || !symbols.ids.has(name)) {
       problems.push(
-        fileDiagnostic(path, "unknown-root-task", `no tasks/${name}.json defines this root task`),
+        fileDiagnostic(path, "unknown-root", `no roots/${name}.json defines this root`),
       );
       continue;
     }
@@ -290,7 +290,7 @@ export function compileDirectory(directory: string): DirectoryResult {
     project: {
       types: JSON.parse(types.source) as TypesFile,
       components: components.map((file) => (JSON.parse(file.source) as ComponentFile).component),
-      tasks: tasks.map((file) => (JSON.parse(file.source) as TaskFile).task),
+      roots: nodes.map((file) => (JSON.parse(file.source) as RootFile).root),
       dimensions: Object.fromEntries(
         [...dimensions].map(([name, { parsed: file }]) => [
           name,

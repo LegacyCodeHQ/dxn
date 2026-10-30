@@ -28,7 +28,7 @@ const project: Files = {
 };
 
 const record = (fields: Record<string, unknown> = {}) => ({
-  task: "blog-link",
+  node: "blog-link",
   context: { state: "hovered", pointer: "mouse" },
   check: "visual",
   result: "passed",
@@ -44,11 +44,11 @@ const records = (...entries: unknown[]) => file({ version: 1, records: entries }
 const r = (fields: Record<string, unknown>) => records(record(fields));
 
 describe("verification files", () => {
-  it("accept records for tasks in the file's root task", () => {
+  it("accept records for nodes in the file's root", () => {
     expect(records(record(), record({ check: "behavior", evidence: "shots/a.png" }))).toEqual([]);
   });
 
-  it("are returned by root task", () => {
+  it("are returned by root", () => {
     const result = compileFiles({
       ...project,
       "verification/page.json": { version: 1, records: [record()] },
@@ -56,10 +56,10 @@ describe("verification files", () => {
     expect(result.project?.verification.page?.records).toEqual([record()]);
   });
 
-  it("must be named after a root task", () => {
+  it("must be named after a root", () => {
     for (const name of ["nope", "toolbar"]) {
       expect(file({ version: 1, records: [] }, name)).toEqual([
-        { file: `verification/${name}.json`, code: "unknown-root-task", path: "$" },
+        { file: `verification/${name}.json`, code: "unknown-root", path: "$" },
       ]);
     }
   });
@@ -158,7 +158,7 @@ describe("records", () => {
           {
             "code": "missing-key",
             "file": "verification/page.json",
-            "path": "$.records[0].task",
+            "path": "$.records[0].node",
           },
           {
             "code": "missing-key",
@@ -197,18 +197,18 @@ describe("records", () => {
     `);
   });
 
-  it("are unique per task, context and check", () => {
+  it("are unique per node, context and check", () => {
     expect(records(record(), record({ context: { pointer: "mouse", state: "hovered" } }))).toEqual([
       v("duplicate-record", "$.records[1]"),
     ]);
   });
 });
 
-describe("record task", () => {
-  it("must be a valid name of an existing task", () => {
+describe("record node", () => {
+  it("must be a valid name of an existing node", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(r({ task: 1 }));
-    snapshot.push(r({ task: "nope" }));
+    snapshot.push(r({ node: 1 }));
+    snapshot.push(r({ node: "nope" }));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -216,29 +216,29 @@ describe("record task", () => {
       {
         "code": "wrong-type",
         "file": "verification/page.json",
-        "path": "$.records[0].task",
+        "path": "$.records[0].node",
       },
     ],
     [
       {
-        "code": "unknown-task",
+        "code": "unknown-node",
         "file": "verification/page.json",
-        "path": "$.records[0].task",
+        "path": "$.records[0].node",
       },
     ],
   ]
 `);
   });
 
-  it("must be inside the file's root task", () => {
-    expect(r({ task: "footer-link", context: { state: "normal" } })).toEqual([
-      v("task-outside-file", "$.records[0].task"),
+  it("must be inside the file's root", () => {
+    expect(r({ node: "footer-link", context: { state: "normal" } })).toEqual([
+      v("node-outside-file", "$.records[0].node"),
     ]);
   });
 
   it("must have a type that requires checks", () => {
-    expect(r({ task: "logo", context: { pointer: "mouse" } })).toEqual([
-      v("verification-without-type", "$.records[0].task"),
+    expect(r({ node: "logo", context: { pointer: "mouse" } })).toEqual([
+      v("verification-without-type", "$.records[0].node"),
     ]);
   });
 });
@@ -251,7 +251,7 @@ describe("record context", () => {
     expect(context([])).toEqual([v("wrong-type", path)]);
   });
 
-  it("must name the task's state and every dimension that applies to it", () => {
+  it("must name the node's state and every dimension that applies to it", () => {
     const snapshot: unknown[] = [];
     snapshot.push(context({ pointer: "mouse" }));
     snapshot.push(context({ state: "normal" }));
@@ -276,7 +276,7 @@ describe("record context", () => {
 `);
   });
 
-  it("must not name dimensions that do not apply to the task", () => {
+  it("must not name dimensions that do not apply to the node", () => {
     const snapshot: unknown[] = [];
     snapshot.push(context({ state: "normal", pointer: "mouse", theme: "dark" }));
     snapshot.push(
@@ -285,7 +285,7 @@ describe("record context", () => {
         "verification/footer-link.json": {
           version: 1,
           records: [
-            record({ task: "footer-link", context: { state: "normal", pointer: "mouse" } }),
+            record({ node: "footer-link", context: { state: "normal", pointer: "mouse" } }),
           ],
         },
       }),
@@ -336,7 +336,7 @@ describe("record context", () => {
 `);
   });
 
-  it("must use a state the task has in that context", () => {
+  it("must use a state the node has in that context", () => {
     const snapshot: unknown[] = [];
     snapshot.push(context({ state: 1, pointer: "mouse" }));
     snapshot.push(context({ state: "pressed", pointer: "mouse" }));
@@ -375,7 +375,7 @@ describe("record context", () => {
         ...project,
         "overrides/pointer.json": {
           version: 1,
-          overrides: { touch: { tasks: { "blog-link": { states: { add: ["pressed"] } } } } },
+          overrides: { touch: { nodes: { "blog-link": { states: { add: ["pressed"] } } } } },
         },
         "verification/page.json": {
           version: 1,
@@ -387,7 +387,7 @@ describe("record context", () => {
 });
 
 describe("record context across dimensions", () => {
-  it("let a task's state change beat type state changes from other dimensions", () => {
+  it("let a node's state change beat type state changes from other dimensions", () => {
     // breakpoint sorts first: applying dimensions in name order would let
     // pointer's type removal undo blog-link's own re-add at sm.
     expect(
@@ -399,7 +399,7 @@ describe("record context across dimensions", () => {
           overrides: {
             sm: {
               types: { link: { states: { remove: ["hovered"] } } },
-              tasks: { "blog-link": { states: { add: ["hovered"] } } },
+              nodes: { "blog-link": { states: { add: ["hovered"] } } },
             },
           },
         },
@@ -476,7 +476,7 @@ describe("record check", () => {
 `);
   });
 
-  it("must be one the task's type requires", () => {
+  it("must be one the node's type requires", () => {
     expect(r({ check: "a11y" })).toEqual([v("check-not-required", "$.records[0].check")]);
   });
 });

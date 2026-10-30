@@ -18,19 +18,19 @@ export interface TypeDefinition {
   customAttributes?: CustomAttributeValues;
 }
 
-export interface Task {
+export interface TreeNode {
   id: string;
   title: string;
   type?: string;
-  // Shared ancestor id -> the states in which this task exists.
+  // Shared ancestor id -> the states in which this node exists.
   onlyWhen?: Record<string, string[]>;
-  // How this shared task's state changes.
+  // How this shared node's state changes.
   transitions?: Transition[];
-  children?: TaskNode[];
+  children?: Child[];
   customAttributes?: CustomAttributeValues;
 }
 
-// A change of a shared task's state on a DOM event.
+// A change of a shared node's state on a DOM event.
 export interface Transition {
   id: string;
   from: string;
@@ -38,9 +38,9 @@ export interface Transition {
   on: "click" | "keydown" | "pointerdown" | "resize";
   // keydown: the key, as KeyboardEvent.key names it.
   key?: string;
-  // click and pointerdown: the task the event happens on.
+  // click and pointerdown: the node the event happens on.
   target?: string;
-  // pointerdown: the task the event happens outside of.
+  // pointerdown: the node the event happens outside of.
   outside?: string;
   // resize: the dimension values it changes to.
   when?: Record<string, string[]>;
@@ -51,14 +51,14 @@ export interface Transition {
 // Brings a component's subtree in at this position.
 export interface Include {
   include: string;
-  // Task in the component -> state group -> the only values it has here.
+  // Node in the component -> state group -> the only values it has here.
   states?: Record<string, Record<string, string[]>>;
 }
 
-export type TaskNode = Task | Include;
+export type Child = TreeNode | Include;
 
-export function isInclude(node: TaskNode): node is Include {
-  return "include" in node;
+export function isInclude(item: Child): item is Include {
+  return "include" in item;
 }
 
 // types.json
@@ -72,16 +72,16 @@ export interface TypesFile {
   types?: Record<string, TypeDefinition>;
 }
 
-// tasks/<id>.json
-export interface TaskFile {
+// roots/<id>.json
+export interface RootFile {
   version: number;
-  task: Task;
+  root: TreeNode;
 }
 
 // components/<id>.json
 export interface ComponentFile {
   version: number;
-  component: Task;
+  component: TreeNode;
 }
 
 // dimensions/<name>.json
@@ -98,18 +98,18 @@ export interface Override {
   customAttributes?: CustomAttributeValues;
 }
 
-// overrides/<dimension>.json: dimension value -> overrides of types and tasks.
+// overrides/<dimension>.json: dimension value -> overrides of types and nodes.
 export interface OverridesFile {
   version: number;
-  // Task id -> the values where the task and its subtree exist.
+  // Node id -> the values where the node and its subtree exist.
   only?: Record<string, string[]>;
-  overrides: Record<string, { types?: Record<string, Override>; tasks?: Record<string, Override> }>;
+  overrides: Record<string, { types?: Record<string, Override>; nodes?: Record<string, Override> }>;
 }
 
 // The overrides for one context.
 export interface ValueOverrides {
   types?: Record<string, Override>;
-  tasks?: Record<string, Override>;
+  nodes?: Record<string, Override>;
 }
 
 // Values of the next dimension -> deeper levels, then ValueOverrides once
@@ -126,9 +126,9 @@ export interface CombinationOverridesFile {
 }
 
 export interface VerificationRecord {
-  task: string;
-  // The state (when the task has states) and a value for every dimension that
-  // applies to the task; or, instead, one of the task's transitions.
+  node: string;
+  // The state (when the node has states) and a value for every dimension that
+  // applies to the node; or, instead, one of the node's transitions.
   context?: Record<string, string>;
   transition?: string;
   check: string;
@@ -139,7 +139,7 @@ export interface VerificationRecord {
   evidence?: string;
 }
 
-// verification/<root-id>.json: records for tasks in that root task's subtree.
+// verification/<root-id>.json: records for nodes in that root's subtree.
 export interface VerificationFile {
   version: number;
   records: VerificationRecord[];
@@ -148,29 +148,29 @@ export interface VerificationFile {
 export interface Project {
   types: TypesFile;
   // Reusable components, in file name order.
-  components: Task[];
-  // Root tasks, in task file name order.
-  tasks: Task[];
+  components: TreeNode[];
+  // Roots, in root file name order.
+  roots: TreeNode[];
   // By dimension name.
   dimensions: Record<string, DimensionFile>;
   overrides: Record<string, OverridesFile>;
   // By file name, e.g. "breakpoint+pointer".
   combinations: Record<string, CombinationOverridesFile>;
-  // By root task id.
+  // By root id.
   verification: Record<string, VerificationFile>;
 }
 
-// Finds a task by id among the given trees. Include nodes are skipped: an
-// included task is found by searching the components as well.
-export function findTask(tasks: TaskNode[], id: string): Task | undefined {
-  for (const task of tasks) {
-    if (isInclude(task)) {
+// Finds a node by id among the given trees. Includes are skipped: an
+// included node is found by searching the components as well.
+export function findNode(nodes: Child[], id: string): TreeNode | undefined {
+  for (const node of nodes) {
+    if (isInclude(node)) {
       continue;
     }
-    if (task.id === id) {
-      return task;
+    if (node.id === id) {
+      return node;
     }
-    const found = findTask(task.children ?? [], id);
+    const found = findNode(node.children ?? [], id);
     if (found !== undefined) {
       return found;
     }

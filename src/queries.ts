@@ -14,12 +14,12 @@ export function choices(names: string[]): string {
   return names.length === 0 ? "none" : names.join(", ");
 }
 
-export function sharedStates(resolver: Resolver, task: string): string[] {
-  const type = resolver.task(task)?.type as string;
+export function sharedStates(resolver: Resolver, node: string): string[] {
+  const type = resolver.node(node)?.type as string;
   return resolver.project.types.types?.[type]?.states ?? [];
 }
 
-// The contexts of a task, or of every part of its subtree, with the
+// The contexts of a node, or of every part of its subtree, with the
 // component on its own unless a root is given.
 export function subtreeContexts(
   resolver: Resolver,
@@ -28,13 +28,13 @@ export function subtreeContexts(
 ): { id: string; contexts: Context[] }[] {
   return resolver
     .subtree(id)
-    .map((task) => ({ id: task, contexts: resolver.contexts(task, root) }));
+    .map((node) => ({ id: node, contexts: resolver.contexts(node, root) }));
 }
 
 // A predicate for name=value filters. Names must appear in the contexts
-// (dimensions, state groups, shared tasks); values must be declared for them.
-// Dimensions and shared tasks pick a view, so a part they do not apply to is
-// in that view too, as long as a shared task exists there to have that state.
+// (dimensions, state groups, shared nodes); values must be declared for them.
+// Dimensions and shared nodes pick a view, so a part they do not apply to is
+// in that view too, as long as a shared node exists there to have that state.
 // State groups pick states: a part without the group is left out.
 export function contextFilter(
   resolver: Resolver,
@@ -47,7 +47,7 @@ export function contextFilter(
     if (!names.includes(name)) {
       throw new QueryError(
         "name",
-        `"${name}" is not a dimension, state group or shared task here (${choices(names)})`,
+        `"${name}" is not a dimension, state group or shared node here (${choices(names)})`,
       );
     }
     const dimension = resolver.project.dimensions[name];

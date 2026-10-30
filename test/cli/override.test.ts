@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -10,7 +10,7 @@ const files = {
     customAttributes: { design: { values: ["available", "missing"] } },
     types: { link: { states: ["normal", "hovered", "selected"] } },
   },
-  "tasks/page.json": taskFile({
+  "roots/page.json": rootFile({
     id: "page",
     title: "Page",
     children: [
@@ -31,7 +31,7 @@ const files = {
 };
 
 describe("only", () => {
-  it("says where a task exists, creating the override file", () => {
+  it("says where a node exists, creating the override file", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
     snapshot.push(run("only", "breakpoint", "links", "lg", "xl").code);
@@ -99,7 +99,7 @@ describe("override states", () => {
     );
     snapshot.push(read("overrides/pointer.json"));
     snapshot.push(
-      run("override", "states", "pointer=touch", "--task", "blog-link", "--add", "hovered").code,
+      run("override", "states", "pointer=touch", "--node", "blog-link", "--add", "hovered").code,
     );
     snapshot.push(read("overrides/pointer.json"));
 
@@ -126,7 +126,7 @@ describe("override states", () => {
     {
       "overrides": {
         "touch": {
-          "tasks": {
+          "nodes": {
             "blog-link": {
               "states": {
                 "add": [
@@ -207,7 +207,7 @@ describe("override states", () => {
         "pointer=touch",
         "--type",
         "link",
-        "--task",
+        "--node",
         "blog-link",
         "--add",
         "x",
@@ -240,12 +240,12 @@ describe("override set and unset", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
     snapshot.push(
-      run("override", "set", "breakpoint=sm", "--task", "blog-link", "design", "normal=missing")
+      run("override", "set", "breakpoint=sm", "--node", "blog-link", "design", "normal=missing")
         .code,
     );
     snapshot.push(read("overrides/breakpoint.json"));
     snapshot.push(
-      run("override", "unset", "breakpoint=sm", "--task", "blog-link", "design", "normal").code,
+      run("override", "unset", "breakpoint=sm", "--node", "blog-link", "design", "normal").code,
     );
     snapshot.push(read("overrides/breakpoint.json"));
 
@@ -255,7 +255,7 @@ describe("override set and unset", () => {
     {
       "overrides": {
         "sm": {
-          "tasks": {
+          "nodes": {
             "blog-link": {
               "customAttributes": {
                 "design": {

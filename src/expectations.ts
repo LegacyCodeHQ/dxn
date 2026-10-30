@@ -20,7 +20,7 @@ const file = "expectations.json";
 
 // expectations.json: what the model should say, checked by validate once the
 // project compiles. Each expectation selects contexts like `contexts` does
-// (a task, optionally its whole subtree, in a root, filtered with where) and
+// (a node, optionally its whole subtree, in a root, filtered with where) and
 // states how many there must be.
 export function checkExpectations(project: string, resolver: Resolver): FileDiagnostic[] {
   const read = readSource(join(project, file));
@@ -62,16 +62,16 @@ function checkFile(
   const list = members.get("expectations");
   if (list === undefined || !expectKind(diagnostics, list, "$.expectations", "array")) return;
 
-  list.elements.forEach((node, index) => {
+  list.elements.forEach((item, index) => {
     const path = `$.expectations[${index}]`;
-    const expectation = expectObject(diagnostics, node, path);
+    const expectation = expectObject(diagnostics, item, path);
     if (expectation === undefined) return;
     const fields = keys(
       diagnostics,
       expectation,
       path,
-      ["title", "task", "subtree", "root", "where", "count"],
-      { required: ["title", "task", "count"] },
+      ["title", "node", "subtree", "root", "where", "count"],
+      { required: ["title", "node", "count"] },
     );
     let valid = true;
 
@@ -79,19 +79,19 @@ function checkFile(
     if (title !== undefined && !expectNonEmptyString(diagnostics, title, `${path}.title`))
       valid = false;
 
-    const task = fields.get("task");
+    const node = fields.get("node");
     let id: string | undefined;
-    if (task !== undefined && expectName(diagnostics, task, `${path}.task`)) {
-      if (resolver.task(task.value) === undefined) {
+    if (node !== undefined && expectName(diagnostics, node, `${path}.node`)) {
+      if (resolver.node(node.value) === undefined) {
         report(
           diagnostics,
-          "unknown-task",
-          `task ${JSON.stringify(task.value)} does not exist`,
-          `${path}.task`,
-          task,
+          "unknown-node",
+          `node ${JSON.stringify(node.value)} does not exist`,
+          `${path}.node`,
+          node,
         );
       } else {
-        id = task.value;
+        id = node.value;
       }
     }
 
@@ -105,8 +105,8 @@ function checkFile(
       if (id !== undefined && !resolver.roots(id).includes(rootNode.value)) {
         report(
           diagnostics,
-          "task-outside-root",
-          `task ${JSON.stringify(id)} is not in root ${JSON.stringify(rootNode.value)}`,
+          "node-outside-root",
+          `node ${JSON.stringify(id)} is not in root ${JSON.stringify(rootNode.value)}`,
           `${path}.root`,
           rootNode,
         );

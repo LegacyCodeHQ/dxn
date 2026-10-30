@@ -14,7 +14,7 @@ const events: Record<string, string> = {
 
 const fields = ["id", "from", "to", "on", "key", "target", "outside", "when", "focus"];
 
-// Checks every task's transitions: how its shared state changes. Runs once
+// Checks every node's transitions: how its shared state changes. Runs once
 // dimensions and their "only" restrictions are known, so it can tell whether
 // a target exists in the state the transition starts from and whether the
 // focus target exists where it ends.
@@ -23,25 +23,25 @@ export function checkTransitions(
   dimensions: Map<string, { symbol: DimensionSymbol }>,
 ): void {
   for (const ref of tree.transitionRefs) {
-    checkTaskTransitions(tree, dimensions, ref);
+    checkNodeTransitions(tree, dimensions, ref);
   }
 }
 
-function checkTaskTransitions(
+function checkNodeTransitions(
   tree: TreeSymbols,
   dimensions: Map<string, { symbol: DimensionSymbol }>,
   ref: TransitionRef,
 ): void {
   const { diagnostics } = ref;
-  if (!expectKind(diagnostics, ref.node, ref.path, "array")) return;
-  const type = tree.taskTypes.get(ref.task);
+  if (!expectKind(diagnostics, ref.item, ref.path, "array")) return;
+  const type = tree.nodeTypes.get(ref.node);
   if (type === undefined || !tree.sharedTypes.has(type)) {
     report(
       diagnostics,
       "transitions-without-shared-state",
-      `task ${JSON.stringify(ref.task)} needs a shared type for transitions to change its state`,
+      `node ${JSON.stringify(ref.node)} needs a shared type for transitions to change its state`,
       ref.path,
-      ref.node,
+      ref.item,
     );
     return;
   }
@@ -49,7 +49,7 @@ function checkTaskTransitions(
   const ids = new Set<string>();
   const seen = new Set<string>();
 
-  ref.node.elements.forEach((element, index) => {
+  ref.item.elements.forEach((element, index) => {
     const path = `${ref.path}[${index}]`;
     const transition = expectObject(diagnostics, element, path);
     if (transition === undefined) return;
@@ -57,9 +57,9 @@ function checkTaskTransitions(
       required: ["id", "from", "to", "on"],
     });
     const name = (key: string): StringNode | undefined => {
-      const node = members.get(key);
-      return node !== undefined && expectName(diagnostics, node, `${path}.${key}`)
-        ? node
+      const item = members.get(key);
+      return item !== undefined && expectName(diagnostics, item, `${path}.${key}`)
+        ? item
         : undefined;
     };
     let valid = true;
@@ -80,18 +80,18 @@ function checkTaskTransitions(
     }
 
     const state = (key: "from" | "to") => {
-      const node = name(key);
-      if (node !== undefined && !states.has(node.value)) {
+      const item = name(key);
+      if (item !== undefined && !states.has(item.value)) {
         report(
           diagnostics,
           "unknown-state",
-          `${JSON.stringify(node.value)} is not a state of ${JSON.stringify(ref.task)}`,
+          `${JSON.stringify(item.value)} is not a state of ${JSON.stringify(ref.node)}`,
           `${path}.${key}`,
-          node,
+          item,
         );
         return undefined;
       }
-      return node;
+      return item;
     };
     const from = state("from");
     const to = state("to");
@@ -126,23 +126,23 @@ function checkTaskTransitions(
     }
 
     const key = name("key");
-    const task = (field: "target" | "outside" | "focus") => {
-      const node = name(field);
-      if (node !== undefined && !tree.ids.has(node.value)) {
+    const node = (field: "target" | "outside" | "focus") => {
+      const item = name(field);
+      if (item !== undefined && !tree.ids.has(item.value)) {
         report(
           diagnostics,
-          "unknown-task",
-          `task ${JSON.stringify(node.value)} does not exist`,
+          "unknown-node",
+          `node ${JSON.stringify(item.value)} does not exist`,
           `${path}.${field}`,
-          node,
+          item,
         );
         return undefined;
       }
-      return node;
+      return item;
     };
-    const target = task("target");
-    const outside = task("outside");
-    const focus = task("focus");
+    const target = node("target");
+    const outside = node("outside");
+    const focus = node("focus");
 
     // when: dimension -> the values it changes to.
     const when = new Map<string, string[]>();
@@ -192,20 +192,20 @@ function checkTaskTransitions(
     if (
       target !== undefined &&
       from !== undefined &&
-      !existsInState(tree, target.value, ref.task, from.value)
+      !existsInState(tree, target.value, ref.node, from.value)
     ) {
       report(
         diagnostics,
         "target-absent",
-        `${JSON.stringify(target.value)} does not exist while ${JSON.stringify(ref.task)} is ${from.value}`,
+        `${JSON.stringify(target.value)} does not exist while ${JSON.stringify(ref.node)} is ${from.value}`,
         `${path}.target`,
         target,
       );
       valid = false;
     }
     if (focus !== undefined && to !== undefined) {
-      const missing = !existsInState(tree, focus.value, ref.task, to.value)
-        ? `while ${JSON.stringify(ref.task)} is ${to.value}`
+      const missing = !existsInState(tree, focus.value, ref.node, to.value)
+        ? `while ${JSON.stringify(ref.node)} is ${to.value}`
         : [...when].flatMap(([dimension, values]) =>
             values
               .filter((value) =>
@@ -246,14 +246,14 @@ function checkTaskTransitions(
     }
     seen.add(identity);
     if (id !== undefined) {
-      const known = tree.transitions.get(ref.task) ?? new Set<string>();
+      const known = tree.transitions.get(ref.node) ?? new Set<string>();
       known.add(id.value);
-      tree.transitions.set(ref.task, known);
+      tree.transitions.set(ref.node, known);
     }
   });
 }
 
-// Whether a task exists while a shared ancestor is in a state: neither it nor
+// Whether a node exists while a shared ancestor is in a state: neither it nor
 // an ancestor in its file has an onlyWhen leaving that state out.
 function existsInState(tree: TreeSymbols, id: string, shared: string, state: string): boolean {
   for (

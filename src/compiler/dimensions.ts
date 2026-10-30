@@ -13,7 +13,7 @@ import {
 } from "./shape.js";
 import type { DimensionSymbol, TreeSymbols } from "./symbols.js";
 
-// dimensions/<name>.json: the dimension's values and the tasks it applies to.
+// dimensions/<name>.json: the dimension's values and the nodes it applies to.
 export function checkDimensionFile(
   root: JsonNode,
   diagnostics: Diagnostics,
@@ -77,7 +77,7 @@ export function checkDimensionFile(
       report(
         diagnostics,
         "empty-applies-to",
-        "a dimension must apply to at least one task",
+        "a dimension must apply to at least one node",
         "$.appliesTo",
         appliesTo,
       );
@@ -86,13 +86,13 @@ export function checkDimensionFile(
       diagnostics,
       appliesTo,
       "$.appliesTo",
-      "duplicate-task",
+      "duplicate-node",
     )) {
       if (!tree.ids.has(id.value)) {
         report(
           diagnostics,
-          "unknown-task",
-          `task ${JSON.stringify(id.value)} does not exist`,
+          "unknown-node",
+          `node ${JSON.stringify(id.value)} does not exist`,
           idPath,
           id,
         );
@@ -103,7 +103,7 @@ export function checkDimensionFile(
     // A duplicate entry does not shrink the scope; any other problem does.
     dimension.scopeComplete = diagnostics.items
       .slice(before)
-      .every(({ code }) => code === "duplicate-task");
+      .every(({ code }) => code === "duplicate-node");
   }
   return dimension;
 }

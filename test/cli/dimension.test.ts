@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -9,7 +9,7 @@ const types = {
   customChecks: { visual: {} },
   types: { link: { states: ["normal", "hovered"], checks: ["visual"] } },
 };
-const page = taskFile({
+const page = rootFile({
   id: "page",
   title: "Page",
   children: [
@@ -21,7 +21,7 @@ const page = taskFile({
 describe("dimension add and remove", () => {
   it("add a dimension file, with or without a default", () => {
     const snapshot: unknown[] = [];
-    const { run, read } = cliProject({ "types.json": types, "tasks/page.json": page });
+    const { run, read } = cliProject({ "types.json": types, "roots/page.json": page });
     snapshot.push(
       run(
         "dimension",
@@ -74,7 +74,7 @@ describe("dimension add and remove", () => {
 
   it("refuse existing dimensions, invalid ones and usage errors", () => {
     const snapshot: unknown[] = [];
-    const { run } = cliProject({ "types.json": types, "tasks/page.json": page });
+    const { run } = cliProject({ "types.json": types, "roots/page.json": page });
     run("dimension", "add", "pointer", "--values", "mouse", "--applies-to", "page");
     snapshot.push(run("dimension", "add", "pointer", "--values", "x", "--applies-to", "page"));
     snapshot.push(
@@ -92,7 +92,7 @@ describe("dimension add and remove", () => {
   ",
       "stdout": "",
     },
-    "<tmp>/.task-tree/dimensions/theme.json:4:17: unknown-task: task "nope" does not exist
+    "<tmp>/.task-tree/dimensions/theme.json:4:17: unknown-node: node "nope" does not exist
   ",
     2,
     2,
@@ -105,7 +105,7 @@ describe("dimension add and remove", () => {
     const snapshot: unknown[] = [];
     const { run, exists } = cliProject({
       "types.json": types,
-      "tasks/page.json": page,
+      "roots/page.json": page,
       "dimensions/pointer.json": { version: 1, values: ["mouse"], appliesTo: ["page"] },
       "dimensions/theme.json": { version: 1, values: ["dark"], appliesTo: ["page"] },
       "overrides/theme.json": { version: 1, overrides: {} },
@@ -136,7 +136,7 @@ describe("dimension values, default and scope", () => {
   const project = () =>
     cliProject({
       "types.json": types,
-      "tasks/page.json": page,
+      "roots/page.json": page,
       "dimensions/pointer.json": { version: 1, values: ["mouse", "touch"], appliesTo: ["a"] },
     });
 
@@ -186,7 +186,7 @@ describe("dimension values, default and scope", () => {
 `);
   });
 
-  it("apply to and unapply from tasks", () => {
+  it("apply to and unapply from nodes", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project();
     snapshot.push(run("dimension", "apply", "pointer", "b").code);
@@ -215,7 +215,7 @@ describe("dimension values, default and scope", () => {
   ",
       "stdout": "",
     },
-    "<tmp>/.task-tree/dimensions/pointer.json:4:16: empty-applies-to: a dimension must apply to at least one task
+    "<tmp>/.task-tree/dimensions/pointer.json:4:16: empty-applies-to: a dimension must apply to at least one node
   ",
   ]
 `);
@@ -224,7 +224,7 @@ describe("dimension values, default and scope", () => {
   it("refuse to remove a value still in use", () => {
     const { run } = cliProject({
       "types.json": types,
-      "tasks/page.json": page,
+      "roots/page.json": page,
       "dimensions/pointer.json": { version: 1, values: ["mouse", "touch"], appliesTo: ["a"] },
       "overrides/pointer.json": { version: 1, overrides: { touch: {} } },
     });
@@ -238,7 +238,7 @@ describe("dimension rename-value", () => {
   it("renames the value everywhere it is used", () => {
     const snapshot: unknown[] = [];
     const record = {
-      task: "a",
+      node: "a",
       context: { state: "normal", breakpoint: "0", pointer: "mouse" },
       check: "visual",
       result: "passed",
@@ -247,7 +247,7 @@ describe("dimension rename-value", () => {
     };
     const { run, read } = cliProject({
       "types.json": { ...types, customAttributes: { design: { values: ["missing"] } } },
-      "tasks/page.json": page,
+      "roots/page.json": page,
       "dimensions/breakpoint.json": {
         version: 1,
         values: ["0", "960"],
@@ -259,7 +259,7 @@ describe("dimension rename-value", () => {
         version: 1,
         only: { b: ["0"] },
         overrides: {
-          "0": { tasks: { a: { customAttributes: { design: { normal: "missing" } } } } },
+          "0": { nodes: { a: { customAttributes: { design: { normal: "missing" } } } } },
         },
       },
       "overrides/breakpoint+pointer.json": {
@@ -275,84 +275,84 @@ describe("dimension rename-value", () => {
     snapshot.push(read("verification/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    0,
-    {
-      "appliesTo": [
-        "page",
-      ],
-      "default": "base",
-      "values": [
-        "base",
-        "960",
-      ],
-      "version": 1,
-    },
-    {
-      "only": {
-        "b": [
-          "base",
-        ],
-      },
-      "overrides": {
-        "base": {
-          "tasks": {
-            "a": {
-              "customAttributes": {
-                "design": {
-                  "normal": "missing",
-                },
-              },
-            },
-          },
-        },
-      },
-      "version": 1,
-    },
-    {
-      "overrides": {
-        "base": {
-          "mouse": {
-            "types": {
-              "link": {
-                "states": {
-                  "remove": [
-                    "hovered",
-                  ],
-                },
-              },
-            },
-          },
-        },
-      },
-      "version": 1,
-    },
-    {
-      "records": [
+      [
+        0,
         {
-          "at": "2026-10-30T19:20:00Z",
-          "by": "agent",
-          "check": "visual",
-          "context": {
-            "breakpoint": "base",
-            "pointer": "mouse",
-            "state": "normal",
-          },
-          "result": "passed",
-          "task": "a",
+          "appliesTo": [
+            "page",
+          ],
+          "default": "base",
+          "values": [
+            "base",
+            "960",
+          ],
+          "version": 1,
         },
-      ],
-      "version": 1,
-    },
-  ]
-`);
+        {
+          "only": {
+            "b": [
+              "base",
+            ],
+          },
+          "overrides": {
+            "base": {
+              "nodes": {
+                "a": {
+                  "customAttributes": {
+                    "design": {
+                      "normal": "missing",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "version": 1,
+        },
+        {
+          "overrides": {
+            "base": {
+              "mouse": {
+                "types": {
+                  "link": {
+                    "states": {
+                      "remove": [
+                        "hovered",
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "version": 1,
+        },
+        {
+          "records": [
+            {
+              "at": "2026-10-30T19:20:00Z",
+              "by": "agent",
+              "check": "visual",
+              "context": {
+                "breakpoint": "base",
+                "pointer": "mouse",
+                "state": "normal",
+              },
+              "node": "a",
+              "result": "passed",
+            },
+          ],
+          "version": 1,
+        },
+      ]
+    `);
   });
 
   it("renames the second dimension of a combination at its own level", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       "types.json": types,
-      "tasks/page.json": page,
+      "roots/page.json": page,
       "dimensions/breakpoint.json": { version: 1, values: ["sm"], appliesTo: ["page"] },
       "dimensions/pointer.json": { version: 1, values: ["mouse", "touch"], appliesTo: ["page"] },
       "overrides/breakpoint+pointer.json": {
@@ -391,7 +391,7 @@ describe("dimension rename-value", () => {
   it("refuses an unknown value", () => {
     const { run } = cliProject({
       "types.json": types,
-      "tasks/page.json": page,
+      "roots/page.json": page,
       "dimensions/pointer.json": { version: 1, values: ["mouse"], appliesTo: ["page"] },
     });
     expect(run("dimension", "rename-value", "pointer", "pen", "stylus")).toMatchObject({

@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -43,7 +43,7 @@ const files = {
       ],
     },
   },
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [{ include: "toolbar" }, { id: "body", title: "Body" }],
@@ -103,7 +103,7 @@ describe("dimensions", () => {
 });
 
 describe("axes", () => {
-  it("lists what a view or query of a task accepts", () => {
+  it("lists what a view or query of a node accepts", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(JSON.parse(run("axes", "toolbar").stdout));
@@ -125,6 +125,7 @@ describe("axes", () => {
               ],
             },
           ],
+          "node": "toolbar",
           "shared": [
             {
               "existsWhen": {
@@ -133,14 +134,13 @@ describe("axes", () => {
                   "sm",
                 ],
               },
+              "node": "menu",
               "states": [
                 "closed",
                 "open",
               ],
-              "task": "menu",
             },
           ],
-          "task": "toolbar",
         },
         {
           "dimensions": [
@@ -162,6 +162,7 @@ describe("axes", () => {
               ],
             },
           ],
+          "node": "article-page",
           "shared": [
             {
               "existsWhen": {
@@ -170,14 +171,13 @@ describe("axes", () => {
                   "sm",
                 ],
               },
+              "node": "menu",
               "states": [
                 "closed",
                 "open",
               ],
-              "task": "menu",
             },
           ],
-          "task": "article-page",
         },
         {
           "dimensions": [
@@ -192,6 +192,7 @@ describe("axes", () => {
               ],
             },
           ],
+          "node": "menu-link",
           "shared": [
             {
               "existsWhen": {
@@ -200,14 +201,13 @@ describe("axes", () => {
                   "sm",
                 ],
               },
+              "node": "menu",
               "states": [
                 "closed",
                 "open",
               ],
-              "task": "menu",
             },
           ],
-          "task": "menu-link",
         },
         {
           "dimensions": [
@@ -222,14 +222,14 @@ describe("axes", () => {
               ],
             },
           ],
+          "node": "wordmark",
           "shared": [],
-          "task": "wordmark",
         },
       ]
     `);
   });
 
-  it("reports unknown tasks and usage errors", () => {
+  it("reports unknown nodes and usage errors", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(run("axes", "nope"));
@@ -238,7 +238,7 @@ describe("axes", () => {
       [
         {
           "code": 1,
-          "stderr": "task-tree: task not found: nope
+          "stderr": "task-tree: node not found: nope
       ",
           "stdout": "",
         },
@@ -262,7 +262,7 @@ describe("errors for wrong names and values", () => {
       ",
         "task-tree: "ajar" is not a state of menu (closed, open)
       ",
-        "task-tree: "theme" is not a dimension or shared task in this view (breakpoint, menu)
+        "task-tree: "theme" is not a dimension or shared node in this view (breakpoint, menu)
       ",
         "task-tree: "theme" is not a dimension of blog-link (breakpoint)
       ",

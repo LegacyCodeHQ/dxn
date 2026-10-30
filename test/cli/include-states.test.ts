@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -19,12 +19,12 @@ const files = {
       children: [{ id: "blog-link", title: "Blog link", type: "link" }],
     },
   },
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [{ include: "toolbar", states: { "blog-link": { selection: ["selected"] } } }],
   }),
-  "tasks/home.json": taskFile({ id: "home", title: "Home", children: [{ include: "toolbar" }] }),
+  "roots/home.json": rootFile({ id: "home", title: "Home", children: [{ include: "toolbar" }] }),
 };
 
 describe("per-include states in reading commands", () => {
@@ -96,32 +96,32 @@ describe("per-include states in reading commands", () => {
   });
 });
 
-describe("task include-states", () => {
+describe("node include-states", () => {
   it("sets and clears an include's states", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       ...files,
-      "tasks/article-page.json": taskFile({
+      "roots/article-page.json": rootFile({
         id: "article-page",
         title: "Article page",
         children: [{ include: "toolbar" }],
       }),
     });
     snapshot.push(
-      run("task", "include-states", "article-page", "toolbar", "blog-link", "selection", "selected")
+      run("node", "include-states", "article-page", "toolbar", "blog-link", "selection", "selected")
         .code,
     );
-    snapshot.push(read("tasks/article-page.json"));
+    snapshot.push(read("roots/article-page.json"));
     snapshot.push(
-      run("task", "include-states", "article-page", "toolbar", "blog-link", "selection", "--any")
+      run("node", "include-states", "article-page", "toolbar", "blog-link", "selection", "--any")
         .code,
     );
-    snapshot.push(read("tasks/article-page.json"));
+    snapshot.push(read("roots/article-page.json"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         0,
         {
-          "task": {
+          "root": {
             "children": [
               {
                 "include": "toolbar",
@@ -141,7 +141,7 @@ describe("task include-states", () => {
         },
         0,
         {
-          "task": {
+          "root": {
             "children": [
               {
                 "include": "toolbar",
@@ -160,16 +160,16 @@ describe("task include-states", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(
-      run("task", "include-states", "article-page", "toolbar", "blog-link", "selection", "current")
+      run("node", "include-states", "article-page", "toolbar", "blog-link", "selection", "current")
         .stderr,
     );
     snapshot.push(
-      run("task", "include-states", "home", "footer", "blog-link", "selection", "selected"),
+      run("node", "include-states", "home", "footer", "blog-link", "selection", "selected"),
     );
-    snapshot.push(run("task", "include-states", "home", "toolbar", "blog-link", "selection").code);
+    snapshot.push(run("node", "include-states", "home", "toolbar", "blog-link", "selection").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "<tmp>/.task-tree/tasks/article-page.json:11:27: unknown-state: "current" is not in task "blog-link"'s "selection" group
+        "<tmp>/.task-tree/roots/article-page.json:11:27: unknown-state: "current" is not in node "blog-link"'s "selection" group
       ",
         {
           "code": 1,

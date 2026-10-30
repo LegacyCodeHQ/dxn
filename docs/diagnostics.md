@@ -13,7 +13,7 @@ doesn't compile. Reading commands then refuse to answer, and editing
 commands refuse to write (exit 1).
 
 Compiling stops early in two cases: when `types.json` can't be read or
-parsed, and when a task or component file can't be parsed. Everything else
+parsed, and when a node or component file can't be parsed. Everything else
 depends on those files, so fix the reported problems and run `validate`
 again to see the rest.
 
@@ -24,7 +24,7 @@ contents follow the order of the sections.
 - [JSON syntax](#json-syntax)
 - [Shape and values](#shape-and-values)
 - [Types, state groups, attributes and checks](#types-state-groups-attributes-and-checks)
-- [Tasks, components and includes](#tasks-components-and-includes)
+- [Nodes, components and includes](#nodes-components-and-includes)
 - [Shared states and onlyWhen](#shared-states-and-onlywhen)
 - [Dimensions](#dimensions)
 - [Overrides and only](#overrides-and-only)
@@ -46,7 +46,7 @@ regular file. Rename or remove it.
 
 ### `not-a-directory`
 
-The project path, or one of `tasks/`, `components/`, `dimensions/`,
+The project path, or one of `roots/`, `components/`, `dimensions/`,
 `overrides/` and `verification/`, is not a directory. Remove the file in its
 place.
 
@@ -82,17 +82,17 @@ its overrides in that order.
 dimension that has no `dimensions/<name>.json`. Add the dimension, or rename
 or remove the overrides file.
 
-### `unknown-root-task`
+### `unknown-root`
 
-`verification/<name>.json` has no root `tasks/<name>.json`. Records are filed
+`verification/<name>.json` has no root `roots/<name>.json`. Records are filed
 under the root they belong to. Move them to the right file, or remove the
 file.
 
 ### `file-name-mismatch`
 
-A root task's id doesn't match its file name: the task `toolbar` must be in
-`components/toolbar.json`, and the page `article-page` in
-`tasks/article-page.json`. Rename the file or the task (`task rename` does
+A file's top node doesn't match its file name: the component `toolbar` must
+be in `components/toolbar.json`, and the root `article-page` in
+`roots/article-page.json`. Rename the file or the node (`node rename` does
 both).
 
 ## JSON syntax
@@ -157,13 +157,13 @@ These apply to every file and follow its schema in `schema/`.
 
 ### `missing-key`
 
-A required key is missing, for example a task without `title`, or a
+A required key is missing, for example a node without `title`, or a
 verification record without `context` or `transition`.
 
 ### `unknown-key`
 
 A key that isn't allowed here, often a typo. In a verification record's
-context, it is a name that is neither a dimension of the task nor one of its
+context, it is a name that is neither a dimension of the node nor one of its
 state groups or shared ancestors.
 
 ### `wrong-type`
@@ -197,7 +197,7 @@ A list of values names the same value twice. Remove the repeat.
 
 ### `undefined-type`
 
-A task, override or transition names a type that `types.json` doesn't
+A node, override or transition names a type that `types.json` doesn't
 define. Add it with `type add`, or fix the name.
 
 ### `states-and-groups`
@@ -229,7 +229,7 @@ say which group it belongs to. Rename the value in one group
 
 A name is taken. A state group can't be called `state`, which is the key for
 a plain states list. A dimension can't be called `state`, or have the name of
-a state group or a shared task, because contexts use those names as keys.
+a state group or a shared node, because contexts use those names as keys.
 Rename it.
 
 ### `shared-without-states`
@@ -239,7 +239,7 @@ vary with. Give it states, or remove `shared`.
 
 ### `shared-with-several-groups`
 
-A shared type uses more than one state group. A shared task's state is named
+A shared type uses more than one state group. A shared node's state is named
 by its id (`menu=open`), so it can only have one. Use one group or a plain
 states list.
 
@@ -259,12 +259,12 @@ A custom attribute that `customAttributes` doesn't declare. Declare it with
 
 A custom attribute value that the attribute doesn't declare. Add it with
 `attribute add-value`, or use a declared value. In an expectation's `where`,
-it is a value that the dimension, state group or shared task doesn't have.
+it is a value that the dimension, state group or shared node doesn't have.
 
 ### `attributes-without-type`
 
-A task sets `customAttributes` but has no type, so it has no states to set
-them for. Give the task a type, or set the values on a type.
+A node sets `customAttributes` but has no type, so it has no states to set
+them for. Give the node a type, or set the values on a type.
 
 ### `undeclared-check`
 
@@ -275,17 +275,17 @@ declare. Declare it with `check add`.
 
 A type requires the same check twice. Remove the repeat.
 
-## Tasks, components and includes
+## Nodes, components and includes
 
 ### `duplicate-id`
 
-Two tasks share an id (ids are unique across the whole project), or a task
+Two nodes share an id (ids are unique across the whole project), or a node
 has two transitions with the same id. The message points to the first use.
-Rename one with `task rename`.
+Rename one with `node rename`.
 
 ### `include-at-root`
 
-A file's root is an include. A root must be a task. Put the include in its
+A file's root is an include. A root must be a node. Put the include in its
 children.
 
 ### `unknown-component`
@@ -300,29 +300,29 @@ components. Remove one of the includes.
 ### `duplicate-include`
 
 A root includes the same component twice, directly or through other
-components, so its tasks would appear twice. Remove one include, or make a
+components, so its nodes would appear twice. Remove one include, or make a
 second component.
 
-### `task-outside-include`
+### `node-outside-include`
 
-An include's `states` names a task that isn't in the included component.
+An include's `states` names a node that isn't in the included component.
 
 ### `unknown-state-group`
 
-An include's `states` names a state group the task doesn't use.
+An include's `states` names a state group the node doesn't use.
 
 ### `empty-only`
 
-An `only` entry or an `onlyWhen` list is empty, so the task would never
+An `only` entry or an `onlyWhen` list is empty, so the node would never
 exist. List at least one value. To remove a restriction,
-delete the entry (`only ... --everywhere`, `task only-when ... --always`).
+delete the entry (`only ... --everywhere`, `node only-when ... --always`).
 
 ## Shared states and onlyWhen
 
 ### `not-an-ancestor`
 
-`onlyWhen` names a task that isn't an ancestor of this task in the same file.
-A component's tasks can only depend on shared tasks inside the component.
+`onlyWhen` names a node that isn't an ancestor of this node in the same file.
+A component's nodes can only depend on shared nodes inside the component.
 
 ### `ancestor-not-shared`
 
@@ -339,30 +339,30 @@ with `dimension add-value`, or fix it.
 
 ### `empty-applies-to`
 
-`appliesTo` is empty. A dimension must apply to at least one task.
+`appliesTo` is empty. A dimension must apply to at least one node.
 
-### `unknown-task`
+### `unknown-node`
 
-A task id that doesn't exist: in `appliesTo`, an override, `only`, a
+A node id that doesn't exist: in `appliesTo`, an override, `only`, a
 transition, a verification record or an expectation. Check the spelling.
-After `task rename`, references are updated automatically.
+After `node rename`, references are updated automatically.
 
-### `duplicate-task`
+### `duplicate-node`
 
-`appliesTo` lists the same task twice. Remove the repeat.
+`appliesTo` lists the same node twice. Remove the repeat.
 
 ## Overrides and only
 
-### `task-out-of-scope`
+### `node-out-of-scope`
 
-An override or `only` entry targets a task that the dimension doesn't apply
-to. Apply the dimension to the task or an ancestor (`dimension apply`), or
+An override or `only` entry targets a node that the dimension doesn't apply
+to. Apply the dimension to the node or an ancestor (`dimension apply`), or
 remove the entry.
 
 ### `override-without-type`
 
-A task override changes states or values for a task that has no type. Give
-the task a type.
+A node override changes states or values for a node that has no type. Give
+the node a type.
 
 ### `conflicting-state`
 
@@ -379,15 +379,15 @@ state.
 
 Two overrides with the same precedence disagree in a context where both
 apply. For example, `breakpoint=sm` and `pointer=touch` both set a value for
-the same task and state. The message names both. Add a combination override
+the same node and state. The message names both. Add a combination override
 (`override set breakpoint=sm,pointer=touch ...`) that settles the
 combination, or make the two agree. See the precedence list in
 [concepts.md](concepts.md#overrides).
 
 ### `absent-in-context`
 
-An override or a verification record is about a task in a context where the
-task doesn't exist, because `only` or `onlyWhen` leaves it out. The message says
+An override or a verification record is about a node in a context where the
+node doesn't exist, because `only` or `onlyWhen` leaves it out. The message says
 which. For example, `toolbar-links` exists only at `lg` and `xl`, so an
 override at `breakpoint=sm` for `blog-link` is an error.
 
@@ -395,8 +395,8 @@ override at `breakpoint=sm` for `blog-link` is an error.
 
 ### `transitions-without-shared-state`
 
-A task has transitions, but its type isn't shared. Transitions change a
-shared task's state, so mark the type shared (`type share`).
+A node has transitions, but its type isn't shared. Transitions change a
+shared node's state, so mark the type shared (`type share`).
 
 ### `unknown-event`
 
@@ -405,13 +405,13 @@ shared task's state, so mark the type shared (`type share`).
 
 ### `target-absent`
 
-The transition's `target` (or `outside`) doesn't exist while the shared task
+The transition's `target` (or `outside`) doesn't exist while the shared node
 is in the `from` state. For example, a click on `menu-blog-link` can't open
 the menu, because the link only exists while the menu is open.
 
 ### `focus-absent`
 
-The task named in `focus` doesn't exist after the transition (in the `to`
+The node named in `focus` doesn't exist after the transition (in the `to`
 state, or at the `when` values of a resize), so it can't take focus.
 
 ### `duplicate-transition`
@@ -423,7 +423,7 @@ Two transitions have the same `from` state, event and target (or key, or
 
 ### `duplicate-record`
 
-Two records have the same task, context (or transition) and check. `verify`
+Two records have the same node, context (or transition) and check. `verify`
 replaces records instead of adding them, so keep the newer one.
 
 ### `context-and-transition`
@@ -432,20 +432,20 @@ A record has both `context` and `transition`. It is about one or the other.
 
 ### `unknown-transition`
 
-A record names a transition that the task doesn't have.
+A record names a transition that the node doesn't have.
 
 ### `check-not-required`
 
-A record names a check that the task's type doesn't require. Require it
+A record names a check that the node's type doesn't require. Require it
 (`type require`), or remove the record.
 
 ### `verification-without-type`
 
-A record is about a task without a type, which has no checks.
+A record is about a node without a type, which has no checks.
 
-### `task-outside-file`
+### `node-outside-file`
 
-A record in `verification/<root>.json` is about a task that isn't in that
+A record in `verification/<root>.json` is about a node that isn't in that
 root. Move it to the right root's file.
 
 ### `excluded-state`
@@ -467,14 +467,14 @@ fixes to `selected`.
 
 `validate` checks `expectations.json` only once everything else compiles.
 
-### `task-outside-root`
+### `node-outside-root`
 
-The expectation's `root` doesn't contain its task.
+The expectation's `root` doesn't contain its node.
 
 ### `unknown-name`
 
 A key in `where` is neither a dimension, a state group, `state`, nor a shared
-task that applies to the task.
+node that applies to the node.
 
 ### `invalid-count`
 
@@ -485,4 +485,4 @@ task that applies to the task.
 The model has a different number of contexts than the expectation says. The
 message gives both numbers. Either the model is wrong (fix the types,
 dimensions or overrides) or the expectation is. Run the same query with
-`task-tree contexts <task> ... --count` to compare.
+`task-tree contexts <node> ... --count` to compare.

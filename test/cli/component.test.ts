@@ -1,11 +1,11 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
 
 const types = { version: 1 };
-const page = (children: unknown[] = []) => taskFile({ id: "page", title: "Page", children });
+const page = (children: unknown[] = []) => rootFile({ id: "page", title: "Page", children });
 
 describe("component add and remove", () => {
   it("add a component file and remove an unused one", () => {
@@ -44,7 +44,7 @@ describe("component add and remove", () => {
     const { run } = cliProject({
       "types.json": types,
       "components/toolbar.json": { version: 1, component: { id: "toolbar", title: "Toolbar" } },
-      "tasks/page.json": page([{ include: "toolbar" }]),
+      "roots/page.json": page([{ include: "toolbar" }]),
     });
     snapshot.push(run("component", "remove", "toolbar").stderr);
     snapshot.push(run("component", "remove", "nope"));
@@ -53,7 +53,7 @@ describe("component add and remove", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.task-tree/tasks/page.json:8:20: unknown-component: no components/toolbar.json defines this component
+    "<tmp>/.task-tree/roots/page.json:8:20: unknown-component: no components/toolbar.json defines this component
   ",
     {
       "code": 1,
@@ -73,7 +73,7 @@ describe("component extract", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       "types.json": types,
-      "tasks/page.json": page([
+      "roots/page.json": page([
         { id: "toolbar", title: "Toolbar", children: [{ id: "wordmark", title: "Wordmark" }] },
         { id: "body", title: "Body" },
       ]),
@@ -82,113 +82,113 @@ describe("component extract", () => {
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
     snapshot.push(read("components/toolbar.json"));
-    snapshot.push(read("tasks/page.json"));
+    snapshot.push(read("roots/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    0,
-    {
-      "removed": [],
-      "written": [
-        "components/toolbar.json",
-        "tasks/page.json",
-      ],
-    },
-    {
-      "component": {
-        "children": [
-          {
-            "id": "wordmark",
-            "title": "Wordmark",
+      [
+        0,
+        {
+          "removed": [],
+          "written": [
+            "components/toolbar.json",
+            "roots/page.json",
+          ],
+        },
+        {
+          "component": {
+            "children": [
+              {
+                "id": "wordmark",
+                "title": "Wordmark",
+              },
+            ],
+            "id": "toolbar",
+            "title": "Toolbar",
           },
-        ],
-        "id": "toolbar",
-        "title": "Toolbar",
-      },
-      "version": 1,
-    },
-    {
-      "task": {
-        "children": [
-          {
-            "include": "toolbar",
+          "version": 1,
+        },
+        {
+          "root": {
+            "children": [
+              {
+                "include": "toolbar",
+              },
+              {
+                "id": "body",
+                "title": "Body",
+              },
+            ],
+            "id": "page",
+            "title": "Page",
           },
-          {
-            "id": "body",
-            "title": "Body",
-          },
-        ],
-        "id": "page",
-        "title": "Page",
-      },
-      "version": 1,
-    },
-  ]
-`);
+          "version": 1,
+        },
+      ]
+    `);
   });
 
-  it("refuses a file's root task", () => {
-    const { run } = cliProject({ "types.json": types, "tasks/page.json": page() });
+  it("refuses a file's root", () => {
+    const { run } = cliProject({ "types.json": types, "roots/page.json": page() });
     expect(run("component", "extract", "page")).toMatchObject({
       code: 1,
-      stderr: 'task-tree: "page" is a file\'s root task; only a task inside one can be extracted\n',
+      stderr: 'task-tree: "page" is a file\'s root; only a node inside one can be extracted\n',
     });
   });
 });
 
-describe("task include and uninclude", () => {
-  it("add and remove an include under a task", () => {
+describe("node include and uninclude", () => {
+  it("add and remove an include under a node", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       "types.json": types,
       "components/toolbar.json": { version: 1, component: { id: "toolbar", title: "Toolbar" } },
-      "tasks/page.json": page(),
+      "roots/page.json": page(),
     });
-    snapshot.push(run("task", "include", "page", "toolbar").code);
-    snapshot.push(read("tasks/page.json"));
-    snapshot.push(run("task", "include", "page", "toolbar").stderr);
-    snapshot.push(run("task", "uninclude", "page", "toolbar").code);
-    snapshot.push(read("tasks/page.json"));
-    snapshot.push(run("task", "uninclude", "page", "toolbar"));
+    snapshot.push(run("node", "include", "page", "toolbar").code);
+    snapshot.push(read("roots/page.json"));
+    snapshot.push(run("node", "include", "page", "toolbar").stderr);
+    snapshot.push(run("node", "uninclude", "page", "toolbar").code);
+    snapshot.push(read("roots/page.json"));
+    snapshot.push(run("node", "uninclude", "page", "toolbar"));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    0,
-    {
-      "task": {
-        "children": [
-          {
-            "include": "toolbar",
+      [
+        0,
+        {
+          "root": {
+            "children": [
+              {
+                "include": "toolbar",
+              },
+            ],
+            "id": "page",
+            "title": "Page",
           },
-        ],
-        "id": "page",
-        "title": "Page",
-      },
-      "version": 1,
-    },
-    "<tmp>/.task-tree/tasks/page.json:11:20: duplicate-include: "toolbar" is already part of "page"; its tasks would appear twice
-  ",
-    0,
-    {
-      "task": {
-        "children": [],
-        "id": "page",
-        "title": "Page",
-      },
-      "version": 1,
-    },
-    {
-      "code": 1,
-      "stderr": "task-tree: "page" does not include "toolbar"
-  ",
-      "stdout": "",
-    },
-  ]
-`);
+          "version": 1,
+        },
+        "<tmp>/.task-tree/roots/page.json:11:20: duplicate-include: "toolbar" is already part of "page"; its nodes would appear twice
+      ",
+        0,
+        {
+          "root": {
+            "children": [],
+            "id": "page",
+            "title": "Page",
+          },
+          "version": 1,
+        },
+        {
+          "code": 1,
+          "stderr": "task-tree: "page" does not include "toolbar"
+      ",
+          "stdout": "",
+        },
+      ]
+    `);
   });
 
   it("refuse unknown components", () => {
-    const { run } = cliProject({ "types.json": types, "tasks/page.json": page() });
-    expect(run("task", "include", "page", "nope").stderr).toContain("unknown-component");
+    const { run } = cliProject({ "types.json": types, "roots/page.json": page() });
+    expect(run("node", "include", "page", "nope").stderr).toContain("unknown-component");
   });
 });

@@ -1,19 +1,19 @@
 import {
+  type Child,
   type CombinationOverridesFile,
   isInclude,
   type NestedOverrides,
   type Override,
   type Project,
-  type Task,
-  type TaskNode,
+  type TreeNode,
   type ValueOverrides,
 } from "./tree.js";
 
-// A context: dimension name -> value, shared task id -> its state, plus
-// "state" for the task's own state.
+// A context: dimension name -> value, shared node id -> its state, plus
+// "state" for the node's own state.
 export type Context = Record<string, string>;
 
-// What a task is in one context, after every override and restriction.
+// What a node is in one context, after every override and restriction.
 export interface Resolved {
   present: boolean;
   // Every state in effect, across the type's groups.
@@ -24,36 +24,36 @@ export interface Resolved {
   customAttributes: Record<string, Record<string, string>>;
 }
 
-// A view of a task: the tree present in one context.
+// A view of a node: the tree present in one context.
 export interface ViewNode {
   id: string;
   title: string;
   type?: string;
-  // A shared task's state in this view.
+  // A shared node's state in this view.
   state?: string;
-  // A task's own states here: a plain list, or per state group.
+  // A node's own states here: a plain list, or per state group.
   states?: string[];
   stateGroups?: Record<string, string[]>;
   customAttributes?: Record<string, Record<string, string>>;
   children?: ViewNode[];
 }
 
-// Answers questions about a compiled project: where tasks are, which
+// Answers questions about a compiled project: where nodes are, which
 // dimensions and shared states apply to them, and what they resolve to in a
 // context. Precedence, weakest first: type base, type overrides for single
 // dimensions, type combinations (fewer dimensions first), the instance's own
 // values, then instance overrides in the same order.
 export class Resolver {
-  private readonly tasks = new Map<string, Task>();
+  private readonly nodes = new Map<string, TreeNode>();
   private readonly children = new Map<string, string[]>();
-  // Task id -> its parent in the same file; roots have none.
+  // Node id -> its parent in the same file; roots have none.
   private readonly parents = new Map<string, string>();
   private readonly scopes = new Map<string, Set<string>>();
   // "<parent>><component>" -> the include's "states".
   private readonly includeStates = new Map<string, Record<string, Record<string, string[]>>>();
 
   constructor(readonly project: Project) {
-    for (const root of [...project.tasks, ...project.components]) {
+    for (const root of [...project.roots, ...project.components]) {
       this.index(root);
     }
     for (const [name, dimension] of Object.entries(project.dimensions)) {
@@ -63,11 +63,11 @@ export class Resolver {
     }
   }
 
-  task(id: string): Task | undefined {
-    return this.tasks.get(id);
+  node(id: string): TreeNode | undefined {
+    return this.nodes.get(id);
   }
 
-  // Dimensions that apply to a task, by name.
+  // Dimensions that apply to a node, by name.
   dimensions(id: string): string[] {
     return [...this.scopes]
       .filter(([, scope]) => scope.has(id))
@@ -76,35 +76,35 @@ export class Resolver {
   }
 
   isShared(id: string): boolean {
-    const type = this.tasks.get(id)?.type;
+    const type = this.nodes.get(id)?.type;
     return type !== undefined && this.project.types.types?.[type]?.shared === true;
   }
 
-  // Roots whose tree, through includes, contains the task.
+  // Roots whose tree, through includes, contains the node.
   roots(id: string): string[] {
-    return this.project.tasks
+    return this.project.roots
       .map((root) => root.id)
       .filter((root) => this.path(root, id) !== undefined);
   }
 
-  // The ids from a root (or, without one, the task's own file root) down to
-  // the task.
+  // The ids from a root (or, without one, the node's own file root) down to
+  // the node.
   lineage(id: string, root?: string): string[] {
     return (root === undefined ? undefined : this.path(root, id)) ?? this.ancestry(id);
   }
 
-  // Shared tasks above the task on its lineage.
+  // Shared nodes above the node on its lineage.
   sharedAncestors(lineage: string[]): string[] {
     return lineage.slice(0, -1).filter((id) => this.isShared(id));
   }
 
-  // Every context the task exists in within a root (or, without one, within its
+  // Every context the node exists in within a root (or, without one, within its
   // own file): each combination of its dimensions' values and its shared
-  // ancestors' states, times its own states. A shared task's own state is
+  // ancestors' states, times its own states. A shared node's own state is
   // named by its id, as its descendants name it.
   contexts(id: string, root?: string): Context[] {
-    const task = this.tasks.get(id);
-    if (task === undefined) return [];
+    const node = this.nodes.get(id);
+    if (node === undefined) return [];
     const lineage = this.lineage(id, root);
     let contexts: Context[] = [{}];
     for (const name of this.dimensions(id)) {
@@ -127,7 +127,7 @@ export class Resolver {
       if (this.isShared(id)) {
         return resolved.states.map((state) => ({ ...context, [id]: state }));
       }
-      if (task.type === undefined || !this.hasStates(task.type)) {
+      if (node.type === undefined || !this.hasStates(node.type)) {
         return [context];
       }
       // One value per group: the matrix of the type's groups.
@@ -141,8 +141,8 @@ export class Resolver {
     });
   }
 
-  // Every distinct view of a task's subtree: its dimensions' values, and the
-  // states of shared tasks wherever those tasks are present.
+  // Every distinct view of a node's subtree: its dimensions' values, and the
+  // states of shared nodes wherever those nodes are present.
   views(id: string, root?: string): Context[] {
     const { dimensions: names, shared } = this.axes(id, root);
     let views: Context[] = [{}];
@@ -150,38 +150,38 @@ export class Resolver {
       const values = this.project.dimensions[name]?.values ?? [];
       views = views.flatMap((view) => values.map((value) => ({ ...view, [name]: value })));
     }
-    for (const task of shared) {
-      const taskLineage = this.lineageWithin(id, task, root);
+    for (const node of shared) {
+      const nodeLineage = this.lineageWithin(id, node, root);
       views = views.flatMap((view) => {
-        const resolved = this.resolve(task, view, taskLineage);
+        const resolved = this.resolve(node, view, nodeLineage);
         return resolved.present
-          ? resolved.states.map((state) => ({ ...view, [task]: state }))
+          ? resolved.states.map((state) => ({ ...view, [node]: state }))
           : [view];
       });
     }
-    // Only the views in which the task itself exists.
+    // Only the views in which the node itself exists.
     return views.filter((view) => this.resolve(id, view, this.lineage(id, root)).present);
   }
 
-  // The dimensions that apply anywhere in a task's subtree, and the shared
-  // tasks above it or in it, in tree order.
+  // The dimensions that apply anywhere in a node's subtree, and the shared
+  // nodes above it or in it, in tree order.
   axes(id: string, root?: string): { dimensions: string[]; shared: string[] } {
     const subtree = this.subtree(id);
     return {
       dimensions: [...this.scopes]
-        .filter(([, scope]) => subtree.some((node) => scope.has(node)))
+        .filter(([, scope]) => subtree.some((item) => scope.has(item)))
         .map(([name]) => name)
         .sort(),
       shared: [
         ...this.sharedAncestors(this.lineage(id, root)),
-        ...subtree.filter((node) => this.isShared(node)),
+        ...subtree.filter((item) => this.isShared(item)),
       ],
     };
   }
 
-  // The lineage of a task inside a view of another task.
-  lineageWithin(id: string, task: string, root?: string): string[] {
-    return [...this.lineage(id, root).slice(0, -1), ...(this.path(id, task) ?? [task])];
+  // The lineage of a node inside a view of another node.
+  lineageWithin(id: string, node: string, root?: string): string[] {
+    return [...this.lineage(id, root).slice(0, -1), ...(this.path(id, node) ?? [node])];
   }
 
   // The tree present in a view.
@@ -190,11 +190,11 @@ export class Resolver {
     return this.render(id, context, lineage);
   }
 
-  // The task in a context. Dimensions missing from the context take their
+  // The node in a context. Dimensions missing from the context take their
   // default; ones without a default are not applied. lineage decides "only"
-  // and onlyWhen; it defaults to the path within the task's own file.
+  // and onlyWhen; it defaults to the path within the node's own file.
   resolve(id: string, given: Context, lineage: string[] = this.ancestry(id)): Resolved {
-    const task = this.tasks.get(id) as Task;
+    const node = this.nodes.get(id) as TreeNode;
     const context = this.withDefaults(id, given);
     const full = { ...given, ...context };
     const present =
@@ -205,15 +205,15 @@ export class Resolver {
           return allowed !== undefined && !allowed.includes(value);
         });
       }) &&
-      !lineage.some((node) =>
-        Object.entries(this.tasks.get(node)?.onlyWhen ?? {}).some(
+      !lineage.some((item) =>
+        Object.entries(this.nodes.get(item)?.onlyWhen ?? {}).some(
           ([ancestor, states]) => full[ancestor] !== undefined && !states.includes(full[ancestor]),
         ),
       );
 
-    const type = task.type === undefined ? undefined : this.project.types.types?.[task.type];
-    const levels = this.levels(id, task.type, context);
-    const typeGroups = task.type === undefined ? {} : this.groupsOf(task.type);
+    const type = node.type === undefined ? undefined : this.project.types.types?.[node.type];
+    const levels = this.levels(id, node.type, context);
+    const typeGroups = node.type === undefined ? {} : this.groupsOf(node.type);
     const states = new Set(Object.values(typeGroups).flat());
     for (const override of levels) {
       for (const state of override?.states?.remove ?? []) states.delete(state);
@@ -223,7 +223,7 @@ export class Resolver {
     const layers = [
       type?.customAttributes,
       ...levels.slice(0, levels.length / 2).map((level) => level?.customAttributes),
-      task.customAttributes,
+      node.customAttributes,
       ...levels.slice(levels.length / 2).map((level) => level?.customAttributes),
     ];
     for (const layer of layers) {
@@ -234,7 +234,7 @@ export class Resolver {
         }
       }
     }
-    // Includes on the path from the root may fix some of the task's groups.
+    // Includes on the path from the root may fix some of the node's groups.
     for (let index = 0; index + 1 < lineage.length; index++) {
       const fixed = this.includeStates.get(`${lineage[index]}>${lineage[index + 1]}`)?.[id];
       for (const [group, allowed] of Object.entries(fixed ?? {})) {
@@ -273,7 +273,7 @@ export class Resolver {
     return { ...used };
   }
 
-  // The task's dimensions from the context, with defaults filled in.
+  // The node's dimensions from the context, with defaults filled in.
   withDefaults(id: string, given: Context): Context {
     const context: Context = {};
     for (const name of this.dimensions(id)) {
@@ -284,28 +284,28 @@ export class Resolver {
   }
 
   private render(id: string, context: Context, lineage: string[]): ViewNode | undefined {
-    const task = this.tasks.get(id) as Task;
+    const node = this.nodes.get(id) as TreeNode;
     const resolved = this.resolve(id, context, lineage);
     if (!resolved.present) return undefined;
-    const node: ViewNode = { id: task.id, title: task.title };
-    if (task.type !== undefined) node.type = task.type;
+    const item: ViewNode = { id: node.id, title: node.title };
+    if (node.type !== undefined) item.type = node.type;
     if (this.isShared(id)) {
-      node.state = context[id] as string;
-    } else if (task.type !== undefined && this.hasStates(task.type)) {
-      if (this.project.types.types?.[task.type]?.stateGroups === undefined) {
-        node.states = resolved.states;
+      item.state = context[id] as string;
+    } else if (node.type !== undefined && this.hasStates(node.type)) {
+      if (this.project.types.types?.[node.type]?.stateGroups === undefined) {
+        item.states = resolved.states;
       } else {
-        node.stateGroups = resolved.groups;
+        item.stateGroups = resolved.groups;
       }
     }
     if (Object.keys(resolved.customAttributes).length > 0) {
-      node.customAttributes = resolved.customAttributes;
+      item.customAttributes = resolved.customAttributes;
     }
     const children = (this.children.get(id) ?? [])
       .map((child) => this.render(child, context, [...lineage, child]))
       .filter((child): child is ViewNode => child !== undefined);
-    if (children.length > 0) node.children = children;
-    return node;
+    if (children.length > 0) item.children = children;
+    return item;
   }
 
   // Whether the type has states, so contexts include one.
@@ -313,7 +313,7 @@ export class Resolver {
     return Object.keys(this.groupsOf(type)).length > 0;
   }
 
-  // Type overrides then task overrides: singles, then combinations by size.
+  // Type overrides then node overrides: singles, then combinations by size.
   private levels(id: string, type: string | undefined, context: Context): (Override | undefined)[] {
     const singles = Object.entries(context).map(
       ([name, value]) => this.project.overrides[name]?.overrides[value],
@@ -331,24 +331,24 @@ export class Resolver {
     const all = [...singles, ...combinations];
     return [
       ...all.map((override) => (type === undefined ? undefined : override?.types?.[type])),
-      ...all.map((override) => override?.tasks?.[id]),
+      ...all.map((override) => override?.nodes?.[id]),
     ];
   }
 
-  private index(node: Task): void {
-    this.tasks.set(node.id, node);
+  private index(item: TreeNode): void {
+    this.nodes.set(item.id, item);
     this.children.set(
-      node.id,
-      (node.children ?? []).map((child: TaskNode) => (isInclude(child) ? child.include : child.id)),
+      item.id,
+      (item.children ?? []).map((child: Child) => (isInclude(child) ? child.include : child.id)),
     );
-    for (const child of node.children ?? []) {
+    for (const child of item.children ?? []) {
       if (isInclude(child) && child.states !== undefined) {
-        this.includeStates.set(`${node.id}>${child.include}`, child.states);
+        this.includeStates.set(`${item.id}>${child.include}`, child.states);
       }
     }
-    for (const child of node.children ?? []) {
+    for (const child of item.children ?? []) {
       if (!isInclude(child)) {
-        this.parents.set(child.id, node.id);
+        this.parents.set(child.id, item.id);
         this.index(child);
       }
     }
@@ -360,7 +360,7 @@ export class Resolver {
     for (const child of this.children.get(id) ?? []) this.collect(child, into);
   }
 
-  // The task and everything under it, through includes, in tree order.
+  // The node and everything under it, through includes, in tree order.
   subtree(id: string): string[] {
     const ids: string[] = [];
     const visit = (current: string) => {
@@ -383,7 +383,7 @@ export class Resolver {
     return undefined;
   }
 
-  // The task and its ancestors within its own file.
+  // The node and its ancestors within its own file.
   private ancestry(id: string): string[] {
     const lineage = [id];
     for (
@@ -398,11 +398,11 @@ export class Resolver {
 }
 
 function nested(file: CombinationOverridesFile, values: string[]): ValueOverrides | undefined {
-  let node: NestedOverrides | ValueOverrides | undefined = file.overrides;
+  let item: NestedOverrides | ValueOverrides | undefined = file.overrides;
   for (const value of values) {
-    node = (node as NestedOverrides | undefined)?.[value];
+    item = (item as NestedOverrides | undefined)?.[value];
   }
-  return node as ValueOverrides | undefined;
+  return item as ValueOverrides | undefined;
 }
 
 // A canonical key for a context, for matching records.

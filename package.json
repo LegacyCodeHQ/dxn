@@ -1,7 +1,7 @@
 {
   "name": "@legacycodehq/task-tree",
   "version": "0.0.0",
-  "description": "Track what has been specified, built and verified for a tree of tasks across dimensions.",
+  "description": "Track what has been specified, built and verified for a tree of nodes across dimensions.",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",

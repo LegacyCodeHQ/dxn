@@ -17,53 +17,53 @@ export function report(
   code: string,
   message: string,
   path: string,
-  node: { span: { start: number } },
+  item: { span: { start: number } },
 ): void {
-  diagnostics.report(code, message, path, node.span.start);
+  diagnostics.report(code, message, path, item.span.start);
 }
 
 export function expectKind<K extends JsonNode["kind"]>(
   diagnostics: Diagnostics,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
   kind: K,
-): node is Extract<JsonNode, { kind: K }> {
-  if (node.kind === kind) {
+): item is Extract<JsonNode, { kind: K }> {
+  if (item.kind === kind) {
     return true;
   }
   report(
     diagnostics,
     "wrong-type",
-    `expected ${describe[kind]}, found ${describe[node.kind]}`,
+    `expected ${describe[kind]}, found ${describe[item.kind]}`,
     path,
-    node,
+    item,
   );
   return false;
 }
 
 export function expectObject(
   diagnostics: Diagnostics,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
 ): ObjectNode | undefined {
-  return expectKind(diagnostics, node, path, "object") ? node : undefined;
+  return expectKind(diagnostics, item, path, "object") ? item : undefined;
 }
 
 // A string with at least one non-whitespace character, such as a title.
 export function expectNonEmptyString(
   diagnostics: Diagnostics,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
-): node is StringNode {
-  if (!expectKind(diagnostics, node, path, "string")) {
+): item is StringNode {
+  if (!expectKind(diagnostics, item, path, "string")) {
     return false;
   }
-  if (node.value.trim() === "") {
-    report(diagnostics, "empty-string", "must not be empty or blank", path, node);
+  if (item.value.trim() === "") {
+    report(diagnostics, "empty-string", "must not be empty or blank", path, item);
     return false;
   }
-  if (hasControlCharacter(node.value)) {
-    report(diagnostics, "control-character", "must not contain control characters", path, node);
+  if (hasControlCharacter(item.value)) {
+    report(diagnostics, "control-character", "must not contain control characters", path, item);
     return false;
   }
   return true;
@@ -89,19 +89,19 @@ export function isName(text: string): boolean {
 // without surrounding whitespace, so "a" and "a " cannot both exist.
 export function expectName(
   diagnostics: Diagnostics,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
-): node is StringNode {
-  if (!expectNonEmptyString(diagnostics, node, path)) {
+): item is StringNode {
+  if (!expectNonEmptyString(diagnostics, item, path)) {
     return false;
   }
-  if (node.value.trim() !== node.value) {
+  if (item.value.trim() !== item.value) {
     report(
       diagnostics,
       "surrounding-whitespace",
       "must not start or end with whitespace",
       path,
-      node,
+      item,
     );
     return false;
   }
@@ -111,13 +111,13 @@ export function expectName(
 // Reports unknown and missing keys, and returns the members by key.
 export function keys(
   diagnostics: Diagnostics,
-  node: ObjectNode,
+  item: ObjectNode,
   path: string,
   allowed: string[],
   options: { required?: string[] } = {},
 ): Map<string, JsonNode> {
   const members = new Map<string, JsonNode>();
-  for (const { key, value } of node.members) {
+  for (const { key, value } of item.members) {
     if (allowed.includes(key.value)) {
       members.set(key.value, value);
     } else {
@@ -137,7 +137,7 @@ export function keys(
         "missing-key",
         `missing required key ${JSON.stringify(name)}`,
         childPath(path, name),
-        node,
+        item,
       );
     }
   }
@@ -147,13 +147,13 @@ export function keys(
 // Non-empty, unique string elements with their paths; reports the rest.
 export function stringElements(
   diagnostics: Diagnostics,
-  node: ArrayNode,
+  item: ArrayNode,
   path: string,
   duplicateCode: string,
 ): [StringNode, string][] {
   const seen = new Set<string>();
   const elements: [StringNode, string][] = [];
-  node.elements.forEach((element, index) => {
+  item.elements.forEach((element, index) => {
     const elementPath = `${path}[${index}]`;
     if (!expectName(diagnostics, element, elementPath)) {
       return;
@@ -176,12 +176,12 @@ export function stringElements(
 
 export function uniqueStrings(
   diagnostics: Diagnostics,
-  node: ArrayNode,
+  item: ArrayNode,
   path: string,
   duplicateCode: string,
 ): Set<string> {
   return new Set(
-    stringElements(diagnostics, node, path, duplicateCode).map(([element]) => element.value),
+    stringElements(diagnostics, item, path, duplicateCode).map(([element]) => element.value),
   );
 }
 

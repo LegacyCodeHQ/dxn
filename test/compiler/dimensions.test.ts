@@ -8,7 +8,7 @@ const dimension = (doc: unknown) => diagnose({ ...tree, "dimensions/pointer.json
 const field = (key: string, value: unknown) => dimension({ ...pointer, [key]: value });
 
 describe("dimension files", () => {
-  it("accept values and the tasks they apply to", () => {
+  it("accept values and the nodes they apply to", () => {
     expect(dimension(pointer)).toEqual([]);
   });
 
@@ -91,7 +91,7 @@ describe("dimension files", () => {
     }
   });
 
-  it("must not be named state, which contexts use for task states", () => {
+  it("must not be named state, which contexts use for node states", () => {
     expect(diagnose({ ...tree, "dimensions/state.json": pointer })).toEqual([
       { file: "dimensions/state.json", code: "reserved-name", path: "$" },
     ]);
@@ -190,11 +190,11 @@ describe("dimension values", () => {
 describe("dimension appliesTo", () => {
   const appliesTo = (value: unknown) => field("appliesTo", value);
 
-  it("may name tasks from any task file", () => {
+  it("may name nodes from any node file", () => {
     expect(appliesTo(["page", "footer-link"])).toEqual([]);
   });
 
-  it("must be an array naming at least one task", () => {
+  it("must be an array naming at least one node", () => {
     const snapshot: unknown[] = [];
     snapshot.push(appliesTo("page"));
     snapshot.push(appliesTo([]));
@@ -227,7 +227,7 @@ describe("dimension appliesTo", () => {
 `);
   });
 
-  it("must name existing tasks, once each", () => {
+  it("must name existing nodes, once each", () => {
     const snapshot: unknown[] = [];
     snapshot.push(appliesTo(["nope"]));
     snapshot.push(appliesTo(["page", "page"]));
@@ -236,14 +236,14 @@ describe("dimension appliesTo", () => {
   [
     [
       {
-        "code": "unknown-task",
+        "code": "unknown-node",
         "file": "dimensions/pointer.json",
         "path": "$.appliesTo[0]",
       },
     ],
     [
       {
-        "code": "duplicate-task",
+        "code": "duplicate-node",
         "file": "dimensions/pointer.json",
         "path": "$.appliesTo[1]",
       },

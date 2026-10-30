@@ -20,8 +20,8 @@ describe("types.json", () => {
     expect(typesFile({})).toEqual([t("missing-key", "$.version")]);
   });
 
-  it("rejects unknown keys, including tasks", () => {
-    expect(typesFile({ version: 1, tasks: [] })).toEqual([t("unknown-key", "$.tasks")]);
+  it("rejects unknown keys, including nodes", () => {
+    expect(typesFile({ version: 1, nodes: [] })).toEqual([t("unknown-key", "$.nodes")]);
   });
 
   it("reports the position and message of a diagnostic", () => {

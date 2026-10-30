@@ -103,12 +103,12 @@ describe("override files", () => {
     expect(byValue({ pen: {} })).toEqual([o("unknown-dimension-value", "$.overrides.pen")]);
   });
 
-  it("target only types and tasks under a value", () => {
+  it("target only types and nodes under a value", () => {
     const snapshot: unknown[] = [];
     snapshot.push(touch([]));
     snapshot.push(touch({ screens: {} }));
     snapshot.push(touch({ types: [] }));
-    snapshot.push(touch({ tasks: [] }));
+    snapshot.push(touch({ nodes: [] }));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -137,7 +137,7 @@ describe("override files", () => {
       {
         "code": "wrong-type",
         "file": "overrides/pointer.json",
-        "path": "$.overrides.touch.tasks",
+        "path": "$.overrides.touch.nodes",
       },
     ],
   ]
@@ -311,22 +311,22 @@ describe("type overrides", () => {
   });
 });
 
-describe("task overrides", () => {
-  const base = "$.overrides.touch.tasks";
+describe("node overrides", () => {
+  const base = "$.overrides.touch.nodes";
 
-  it("override a typed task within the dimension's scope", () => {
+  it("override a typed node within the dimension's scope", () => {
     expect(
-      touch({ tasks: { "blog-link": { customAttributes: { design: { normal: "missing" } } } } }),
+      touch({ nodes: { "blog-link": { customAttributes: { design: { normal: "missing" } } } } }),
     ).toEqual([]);
   });
 
-  it("must target an existing task", () => {
-    expect(touch({ tasks: { nope: {} } })).toEqual([o("unknown-task", `${base}.nope`)]);
+  it("must target an existing node", () => {
+    expect(touch({ nodes: { nope: {} } })).toEqual([o("unknown-node", `${base}.nope`)]);
   });
 
-  it("must target a task the dimension applies to", () => {
-    expect(touch({ tasks: { "footer-link": {} } })).toEqual([
-      o("task-out-of-scope", `${base}.footer-link`),
+  it("must target a node the dimension applies to", () => {
+    expect(touch({ nodes: { "footer-link": {} } })).toEqual([
+      o("node-out-of-scope", `${base}.footer-link`),
     ]);
   });
 
@@ -337,21 +337,21 @@ describe("task overrides", () => {
         "dimensions/pointer.json": { ...pointer, appliesTo: ["nope"] },
         "overrides/pointer.json": {
           version: 1,
-          overrides: { touch: { tasks: { "blog-link": {} } } },
+          overrides: { touch: { nodes: { "blog-link": {} } } },
         },
       }),
-    ).toEqual([{ file: "dimensions/pointer.json", code: "unknown-task", path: "$.appliesTo[0]" }]);
+    ).toEqual([{ file: "dimensions/pointer.json", code: "unknown-node", path: "$.appliesTo[0]" }]);
   });
 
-  it("require the task to have a type", () => {
-    expect(touch({ tasks: { logo: {} } })).toEqual([o("override-without-type", `${base}.logo`)]);
+  it("require the node to have a type", () => {
+    expect(touch({ nodes: { logo: {} } })).toEqual([o("override-without-type", `${base}.logo`)]);
   });
 
   it("start from the type's states after the type's override for the same value", () => {
     expect(
       touch({
         types: { link: { states: { remove: ["hovered"] } } },
-        tasks: {
+        nodes: {
           "blog-link": {
             states: { remove: ["hovered"] },
             customAttributes: { design: { hovered: "missing" } },

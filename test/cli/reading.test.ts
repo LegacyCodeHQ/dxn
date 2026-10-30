@@ -1,11 +1,11 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
 
-const record = (task: string, context: Record<string, string>, result: string) => ({
-  task,
+const record = (node: string, context: Record<string, string>, result: string) => ({
+  node,
   context,
   check: "visual",
   result,
@@ -29,7 +29,7 @@ const files = {
       },
     },
   },
-  "tasks/page.json": taskFile({
+  "roots/page.json": rootFile({
     id: "page",
     title: "Page",
     children: [
@@ -159,12 +159,12 @@ describe("query", () => {
 `);
   });
 
-  it("says when a task does not exist in the context", () => {
+  it("says when a node does not exist in the context", () => {
     const { run } = cliProject(files);
     expect(json(run("query", "menu-link", "breakpoint=lg"))).toMatchObject({ present: false });
   });
 
-  it("rejects dimensions the task does not have and unknown values", () => {
+  it("rejects dimensions the node does not have and unknown values", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(run("query", "blog-link", "theme=dark"));
@@ -192,7 +192,7 @@ describe("query", () => {
 });
 
 describe("contexts", () => {
-  it("lists every context a task exists in, per root", () => {
+  it("lists every context a node exists in, per root", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(json(run("contexts", "blog-link")));
@@ -228,7 +228,7 @@ describe("contexts", () => {
           "root": "page",
         },
       ],
-      "task": "blog-link",
+      "node": "blog-link",
     },
     [
       {
@@ -276,11 +276,11 @@ describe("contexts", () => {
 `);
   });
 
-  it("reports unknown tasks", () => {
+  it("reports unknown nodes", () => {
     const { run } = cliProject(files);
     expect(run("contexts", "nope")).toMatchObject({
       code: 1,
-      stderr: "task-tree: task not found: nope\n",
+      stderr: "task-tree: node not found: nope\n",
     });
   });
 });
@@ -294,21 +294,21 @@ describe("status", () => {
       items: [
         {
           root: "page",
-          task: "blog-link",
+          node: "blog-link",
           context: { state: "normal", breakpoint: "lg", pointer: "mouse" },
           check: "visual",
           result: "passed",
         },
         {
           root: "page",
-          task: "blog-link",
+          node: "blog-link",
           context: { state: "hovered", breakpoint: "lg", pointer: "mouse" },
           check: "visual",
           result: "missing",
         },
         {
           root: "page",
-          task: "blog-link",
+          node: "blog-link",
           context: { state: "normal", breakpoint: "lg", pointer: "touch" },
           check: "visual",
           result: "failed",
@@ -317,13 +317,13 @@ describe("status", () => {
     });
   });
 
-  it("covers every typed task with checks when no task is given", () => {
+  it("covers every typed node with checks when no node is given", () => {
     const { run } = cliProject(files);
     expect(json(run("status")).summary).toEqual({ passed: 1, failed: 1, missing: 4 });
   });
 });
 
-describe("tasks no root includes", () => {
+describe("nodes no root includes", () => {
   it("resolve within their own component and have no contexts", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({

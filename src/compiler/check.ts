@@ -22,10 +22,10 @@ export function emptySymbols(): TreeSymbols {
     typeGroups: new Map(),
     addable: new Map(),
     ids: new Map(),
-    taskTypes: new Map(),
+    nodeTypes: new Map(),
     children: new Map(),
     parents: new Map(),
-    taskValues: new Map(),
+    nodeValues: new Map(),
     components: new Set(),
     includes: [],
     includeStates: [],
@@ -87,10 +87,10 @@ export function checkTypesFile(
 function checkCheckDeclarations(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
 ): void {
-  const declarations = expectObject(diagnostics, node, path);
+  const declarations = expectObject(diagnostics, item, path);
   for (const { key, value } of declarations?.members ?? []) {
     const checkPath = childPath(path, key.value);
     expectName(diagnostics, key, checkPath);
@@ -102,21 +102,21 @@ function checkCheckDeclarations(
   }
 }
 
-// Where a task is defined: its file, and the root task or component of it.
+// Where a node is defined: its file, and the root or component of it.
 interface Where {
   file: string;
   root: string;
 }
 
-// tasks/<id>.json (key "task") and components/<id>.json (key "component"):
-// one root task, named after the file.
-export function checkTaskFile(
+// roots/<id>.json (key "root") and components/<id>.json (key "component"):
+// one root, named after the file.
+export function checkRootFile(
   root: JsonNode,
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
   file: string,
   expectedId: string,
-  key: "task" | "component" = "task",
+  key: "root" | "component" = "root",
 ): void {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
@@ -128,28 +128,28 @@ export function checkTaskFile(
   checkSchema(diagnostics, members.get("$schema"));
   checkVersion(diagnostics, members.get("version"));
 
-  const task = members.get(key);
-  if (task === undefined) {
+  const node = members.get(key);
+  if (node === undefined) {
     return;
   }
   const path = `$.${key}`;
-  if (task.kind === "object" && task.members.some((member) => member.key.value === "include")) {
+  if (node.kind === "object" && node.members.some((member) => member.key.value === "include")) {
     report(
       diagnostics,
       "include-at-root",
       `a file's root ${key} cannot be an include; include components from its children`,
       path,
-      task,
+      node,
     );
     return;
   }
-  const id = checkTask(diagnostics, symbols, task, path, { file, root: expectedId });
-  if (id !== undefined && id !== expectedId && task.kind === "object") {
-    const idNode = task.members.find((member) => member.key.value === "id")?.value ?? task;
+  const id = checkNode(diagnostics, symbols, node, path, { file, root: expectedId });
+  if (id !== undefined && id !== expectedId && node.kind === "object") {
+    const idNode = node.members.find((member) => member.key.value === "id")?.value ?? node;
     report(
       diagnostics,
       "file-name-mismatch",
-      `root ${key} ${JSON.stringify(id)} must be in ${key === "task" ? "tasks" : "components"}/${id}.json`,
+      `root ${key} ${JSON.stringify(id)} must be in ${key === "root" ? "roots" : "components"}/${id}.json`,
       `${path}.id`,
       idNode,
     );
@@ -160,12 +160,12 @@ export function checkTaskFile(
 function checkInclude(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: ObjectNode,
+  item: ObjectNode,
   path: string,
   where: Where,
   parent: string | undefined,
 ): void {
-  const members = keys(diagnostics, node, path, ["include", "states"], { required: ["include"] });
+  const members = keys(diagnostics, item, path, ["include", "states"], { required: ["include"] });
   const component = members.get("include");
   if (component === undefined || !expectName(diagnostics, component, `${path}.include`)) {
     return;
@@ -179,15 +179,15 @@ function checkInclude(
   };
   symbols.includes.push(include);
 
-  // states: task -> group -> values, checked once the component is known.
+  // states: node -> group -> values, checked once the component is known.
   const states = members.get("states");
-  const byTask =
+  const byNode =
     states === undefined ? undefined : expectObject(diagnostics, states, `${path}.states`);
-  for (const { key: task, value } of byTask?.members ?? []) {
-    const taskPath = childPath(`${path}.states`, task.value);
-    const byGroup = expectObject(diagnostics, value, taskPath);
+  for (const { key: node, value } of byNode?.members ?? []) {
+    const nodePath = childPath(`${path}.states`, node.value);
+    const byGroup = expectObject(diagnostics, value, nodePath);
     for (const { key: group, value: list } of byGroup?.members ?? []) {
-      const groupPath = childPath(taskPath, group.value);
+      const groupPath = childPath(nodePath, group.value);
       if (!expectKind(diagnostics, list, groupPath, "array")) continue;
       if (list.elements.length === 0) {
         report(diagnostics, "empty-values", "list at least one value", groupPath, list);
@@ -195,8 +195,8 @@ function checkInclude(
       }
       symbols.includeStates.push({
         include,
-        task,
-        taskPath,
+        node,
+        nodePath,
         group,
         groupPath,
         values: stringElements(diagnostics, list, groupPath, "duplicate-value"),
@@ -208,10 +208,10 @@ function checkInclude(
 function checkDeclarations(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
 ): void {
-  const declarations = expectObject(diagnostics, node, path);
+  const declarations = expectObject(diagnostics, item, path);
   if (declarations === undefined) {
     return;
   }
@@ -253,14 +253,14 @@ function checkDeclarations(
 function checkTypes(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
 ): void {
-  const types = expectObject(diagnostics, node, path);
+  const types = expectObject(diagnostics, item, path);
   if (types === undefined) {
     return;
   }
-  // Record every type before checking any attribute values, so tasks can
+  // Record every type before checking any attribute values, so nodes can
   // refer to a type whichever order the file lists them in.
   const bodies: [string, Set<string>, JsonNode | undefined][] = [];
   for (const { key, value } of types.members) {
@@ -356,7 +356,7 @@ function checkTypes(
         report(
           diagnostics,
           "shared-with-several-groups",
-          "a shared type's state is named by its task id, so it can use only one state group",
+          "a shared type's state is named by its node id, so it can use only one state group",
           `${typePath}.shared`,
           shared,
         );
@@ -380,12 +380,12 @@ function checkTypes(
 export function checkAttributeValues(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
   { states, removed }: StateSet,
   accept?: (attribute: string, state: string, value: StringNode, path: string) => void,
 ): void {
-  const attributes = expectObject(diagnostics, node, path);
+  const attributes = expectObject(diagnostics, item, path);
   if (attributes === undefined) {
     return;
   }
@@ -446,19 +446,19 @@ export function checkAttributeValues(
   }
 }
 
-function checkTaskList(
+function checkNodeList(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
   where: Where,
   parent: string | undefined,
 ): string[] {
-  if (!expectKind(diagnostics, node, path, "array")) {
+  if (!expectKind(diagnostics, item, path, "array")) {
     return [];
   }
   const ids: string[] = [];
-  node.elements.forEach((element, index) => {
+  item.elements.forEach((element, index) => {
     const elementPath = `${path}[${index}]`;
     if (
       element.kind === "object" &&
@@ -467,7 +467,7 @@ function checkTaskList(
       checkInclude(diagnostics, symbols, element, elementPath, where, parent);
       return;
     }
-    const id = checkTask(diagnostics, symbols, element, elementPath, where);
+    const id = checkNode(diagnostics, symbols, element, elementPath, where);
     if (id !== undefined) {
       ids.push(id);
     }
@@ -475,27 +475,27 @@ function checkTaskList(
   return ids;
 }
 
-// Returns the task's id when it is valid and unique.
-function checkTask(
+// Returns the node's id when it is valid and unique.
+function checkNode(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
   where: Where,
 ): string | undefined {
-  const task = expectObject(diagnostics, node, path);
-  if (task === undefined) {
+  const node = expectObject(diagnostics, item, path);
+  if (node === undefined) {
     return undefined;
   }
   const members = keys(
     diagnostics,
-    task,
+    node,
     path,
     ["id", "title", "type", "onlyWhen", "transitions", "children", "customAttributes"],
     { required: ["id", "title"] },
   );
 
-  let taskId: string | undefined;
+  let nodeId: string | undefined;
   const id = members.get("id");
   if (id !== undefined && expectName(diagnostics, id, `${path}.id`)) {
     const first = symbols.ids.get(id.value);
@@ -503,13 +503,13 @@ function checkTask(
       report(
         diagnostics,
         "duplicate-id",
-        `task id ${JSON.stringify(id.value)} is already used at ${first}`,
+        `node id ${JSON.stringify(id.value)} is already used at ${first}`,
         `${path}.id`,
         id,
       );
     } else {
       symbols.ids.set(id.value, `${where.file} ${path}`);
-      taskId = id.value;
+      nodeId = id.value;
     }
   }
 
@@ -530,19 +530,19 @@ function checkTask(
         `${path}.type`,
         type,
       );
-    } else if (taskId !== undefined) {
-      symbols.taskTypes.set(taskId, type.value);
+    } else if (nodeId !== undefined) {
+      symbols.nodeTypes.set(nodeId, type.value);
     }
   }
 
   const attributes = members.get("customAttributes");
   if (attributes !== undefined) {
     if (type === undefined) {
-      const key = task.members.find((member) => member.key.value === "customAttributes")?.key;
+      const key = node.members.find((member) => member.key.value === "customAttributes")?.key;
       report(
         diagnostics,
         "attributes-without-type",
-        "customAttributes on a task require the task to have a type",
+        "customAttributes on a node require the node to have a type",
         `${path}.customAttributes`,
         key ?? attributes,
       );
@@ -556,17 +556,17 @@ function checkTask(
         { states, removed: new Set() },
         (attribute, state) => own.add(valueKey(attribute, state)),
       );
-      if (taskId !== undefined) {
-        symbols.taskValues.set(taskId, own);
+      if (nodeId !== undefined) {
+        symbols.nodeValues.set(nodeId, own);
       }
     }
   }
 
   const transitions = members.get("transitions");
-  if (transitions !== undefined && taskId !== undefined) {
+  if (transitions !== undefined && nodeId !== undefined) {
     symbols.transitionRefs.push({
-      task: taskId,
-      node: transitions,
+      node: nodeId,
+      item: transitions,
       path: `${path}.transitions`,
       diagnostics,
     });
@@ -574,21 +574,21 @@ function checkTask(
 
   const onlyWhen = members.get("onlyWhen");
   if (onlyWhen !== undefined) {
-    checkOnlyWhenShape(diagnostics, symbols, onlyWhen, `${path}.onlyWhen`, taskId);
+    checkOnlyWhenShape(diagnostics, symbols, onlyWhen, `${path}.onlyWhen`, nodeId);
   }
 
   const children = members.get("children");
   const childIds =
     children === undefined
       ? []
-      : checkTaskList(diagnostics, symbols, children, `${path}.children`, where, taskId);
-  if (taskId !== undefined) {
-    symbols.children.set(taskId, childIds);
+      : checkNodeList(diagnostics, symbols, children, `${path}.children`, where, nodeId);
+  if (nodeId !== undefined) {
+    symbols.children.set(nodeId, childIds);
     for (const child of childIds) {
-      symbols.parents.set(child, taskId);
+      symbols.parents.set(child, nodeId);
     }
   }
-  return taskId;
+  return nodeId;
 }
 
 // onlyWhen: ancestor id -> non-empty list of its states. The ancestors are
@@ -596,11 +596,11 @@ function checkTask(
 function checkOnlyWhenShape(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
-  task: string | undefined,
+  node: string | undefined,
 ): void {
-  const object = expectObject(diagnostics, node, path);
+  const object = expectObject(diagnostics, item, path);
   for (const { key, value } of object?.members ?? []) {
     const entryPath = childPath(path, key.value);
     if (!expectKind(diagnostics, value, entryPath, "array")) {
@@ -611,8 +611,8 @@ function checkOnlyWhenShape(
       continue;
     }
     const states = stringElements(diagnostics, value, entryPath, "duplicate-state");
-    if (task !== undefined) {
-      symbols.onlyWhenRefs.push({ task, ancestor: key, path: entryPath, states, diagnostics });
+    if (node !== undefined) {
+      symbols.onlyWhenRefs.push({ node, ancestor: key, path: entryPath, states, diagnostics });
     }
   }
 }
@@ -622,7 +622,7 @@ function checkOnlyWhenShape(
 export function resolveOnlyWhen(symbols: TreeSymbols): void {
   for (const ref of symbols.onlyWhenRefs) {
     const name = JSON.stringify(ref.ancestor.value);
-    let ancestor = symbols.parents.get(ref.task);
+    let ancestor = symbols.parents.get(ref.node);
     while (ancestor !== undefined && ancestor !== ref.ancestor.value) {
       ancestor = symbols.parents.get(ancestor);
     }
@@ -630,13 +630,13 @@ export function resolveOnlyWhen(symbols: TreeSymbols): void {
       report(
         ref.diagnostics,
         "not-an-ancestor",
-        `${name} is not an ancestor of this task in its file`,
+        `${name} is not an ancestor of this node in its file`,
         ref.path,
         ref.ancestor,
       );
       continue;
     }
-    const type = symbols.taskTypes.get(ancestor);
+    const type = symbols.nodeTypes.get(ancestor);
     if (type === undefined || !symbols.sharedTypes.has(type)) {
       report(
         ref.diagnostics,
@@ -662,9 +662,9 @@ export function resolveOnlyWhen(symbols: TreeSymbols): void {
       }
       allowed.add(state.value);
     }
-    const byAncestor = symbols.onlyWhen.get(ref.task) ?? new Map<string, Set<string>>();
+    const byAncestor = symbols.onlyWhen.get(ref.node) ?? new Map<string, Set<string>>();
     byAncestor.set(ancestor, allowed);
-    symbols.onlyWhen.set(ref.task, byAncestor);
+    symbols.onlyWhen.set(ref.node, byAncestor);
   }
 }
 
@@ -672,10 +672,10 @@ export function resolveOnlyWhen(symbols: TreeSymbols): void {
 function checkStateGroupDeclarations(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
 ): void {
-  const declarations = expectObject(diagnostics, node, path);
+  const declarations = expectObject(diagnostics, item, path);
   for (const { key, value } of declarations?.members ?? []) {
     const groupPath = childPath(path, key.value);
     if (!expectName(diagnostics, key, groupPath)) {
@@ -716,7 +716,7 @@ function checkStateGroupDeclarations(
 function checkTypeGroups(
   diagnostics: Diagnostics,
   symbols: TreeSymbols,
-  node: JsonNode,
+  item: JsonNode,
   path: string,
   groups: Map<string, Set<string>>,
 ): void {
@@ -755,10 +755,10 @@ function checkTypeGroups(
     return symbols.stateGroups.get(name.value);
   };
 
-  if (node.kind === "array") {
+  if (item.kind === "array") {
     for (const [name, namePath] of stringElements(
       diagnostics,
-      node,
+      item,
       path,
       "duplicate-state-group",
     )) {
@@ -767,17 +767,17 @@ function checkTypeGroups(
     }
     return;
   }
-  if (node.kind !== "object") {
+  if (item.kind !== "object") {
     report(
       diagnostics,
       "wrong-type",
       "expected a list of state groups, or an object of groups and their values",
       path,
-      node,
+      item,
     );
     return;
   }
-  for (const { key, value } of node.members) {
+  for (const { key, value } of item.members) {
     const groupPath = childPath(path, key.value);
     const all = declared(key, groupPath);
     if (!expectKind(diagnostics, value, groupPath, "array")) {

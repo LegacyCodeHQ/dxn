@@ -4,22 +4,22 @@ import type { Json, Workspace } from "../workspace.js";
 import type { Command } from "./context.js";
 import { editCommand, isObject, parse, Refusal, UsageError } from "./edit.js";
 
-const verifyUsage = `Usage: task-tree verify <task-id> --check <name> --result passed|failed --by <who>
-                       [<group>=<value>...] [<dimension>=<value>...] [<shared-task>=<state>...]
+const verifyUsage = `Usage: task-tree verify <node-id> --check <name> --result passed|failed --by <who>
+                       [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
                        [--transition <id>] [--evidence <path>] [--at <time>] [--root <root-id>]
 
-Records a check's result for a task in one context, replacing any earlier
-record for the same task, context and check. The context gives one value for
-each of the task's state groups (state=<state> for a plain states list) and
-the states of shared tasks above it; dimensions left out take their default.
---transition records the result for one of the task's transitions instead.
---at defaults to now; --root is needed when several roots include the task.
+Records a check's result for a node in one context, replacing any earlier
+record for the same node, context and check. The context gives one value for
+each of the node's state groups (state=<state> for a plain states list) and
+the states of shared nodes above it; dimensions left out take their default.
+--transition records the result for one of the node's transitions instead.
+--at defaults to now; --root is needed when several roots include the node.
 `;
 
-const unverifyUsage = `Usage: task-tree unverify <task-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
-                         [<shared-task>=<state>...] [--transition <id>] [--root <root-id>]
+const unverifyUsage = `Usage: task-tree unverify <node-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
+                         [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]
 
-Removes the record for that task and check, in that context or for that
+Removes the record for that node and check, in that context or for that
 transition.
 `;
 
@@ -46,8 +46,8 @@ function contextArgs(args: string[]): Context {
 }
 
 function rootFor(resolver: Resolver, id: string, chosen: string | undefined): string {
-  if (resolver.task(id) === undefined) {
-    throw new Refusal(`task not found: ${id}`);
+  if (resolver.node(id) === undefined) {
+    throw new Refusal(`node not found: ${id}`);
   }
   const roots = resolver.roots(id).sort();
   if (chosen !== undefined) {
@@ -65,11 +65,11 @@ function rootFor(resolver: Resolver, id: string, chosen: string | undefined): st
   return roots[0] as string;
 }
 
-// A record's identity: task, context with defaults filled in, and check.
-function identity(resolver: Resolver, task: string, context: Context, check: string): string {
+// A record's identity: node, context with defaults filled in, and check.
+function identity(resolver: Resolver, node: string, context: Context, check: string): string {
   return JSON.stringify([
-    task,
-    contextKey({ ...context, ...resolver.withDefaults(task, context) }),
+    node,
+    contextKey({ ...context, ...resolver.withDefaults(node, context) }),
     check,
   ]);
 }
@@ -87,21 +87,21 @@ function records(workspace: Workspace, root: string, create: boolean): unknown[]
   return document.records as unknown[];
 }
 
-function transitionIdentity(task: string, transition: string, check: string): string {
-  return JSON.stringify([task, `transition:${transition}`, check]);
+function transitionIdentity(node: string, transition: string, check: string): string {
+  return JSON.stringify([node, `transition:${transition}`, check]);
 }
 
 function matches(resolver: Resolver, key: string) {
   return (record: unknown) => {
-    if (!isObject(record) || typeof record.task !== "string" || typeof record.check !== "string") {
+    if (!isObject(record) || typeof record.node !== "string" || typeof record.check !== "string") {
       return false;
     }
     if (typeof record.transition === "string") {
-      return transitionIdentity(record.task, record.transition, record.check) === key;
+      return transitionIdentity(record.node, record.transition, record.check) === key;
     }
     return (
       isObject(record.context) &&
-      identity(resolver, record.task, record.context as Context, record.check) === key
+      identity(resolver, record.node, record.context as Context, record.check) === key
     );
   };
 }
@@ -109,7 +109,7 @@ function matches(resolver: Resolver, key: string) {
 export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
   const { values, positionals } = parse(
     args,
-    ["task-id"],
+    ["node-id"],
     {
       check: { type: "string" },
       result: { type: "string" },
@@ -132,7 +132,7 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
   const model = resolver(workspace);
   const root = rootFor(model, id, values.root);
   const record: Json = {
-    task: id,
+    node: id,
     ...(values.transition === undefined ? { context } : { transition: values.transition }),
     check: values.check,
     result: values.result,
@@ -156,7 +156,7 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
 export const unverify: Command = editCommand(unverifyUsage, (workspace, args) => {
   const { values, positionals } = parse(
     args,
-    ["task-id"],
+    ["node-id"],
     { check: { type: "string" }, root: { type: "string" }, transition: { type: "string" } },
     true,
   );

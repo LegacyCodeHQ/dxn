@@ -1,6 +1,6 @@
 # Concepts
 
-task-tree models work as a tree of **tasks**, says which **states** each task
+task-tree models work as a tree of **nodes**, says which **states** each node
 can be in and under which **dimensions** (breakpoint, pointer, …), and records
 whether each resulting combination has been checked. Everything lives in JSON
 files in a `.task-tree/` folder. The CLI edits them safely and answers
@@ -11,7 +11,7 @@ has a wordmark, a blog link shown on wide screens, and a menu button that
 opens a panel with the same link on narrow screens.
 
 - [The project folder](#the-project-folder)
-- [Tasks, roots and components](#tasks-roots-and-components)
+- [Nodes, roots and components](#nodes-roots-and-components)
 - [Types and states](#types-and-states)
 - [State groups](#state-groups)
 - [Dimensions and contexts](#dimensions-and-contexts)
@@ -30,12 +30,12 @@ opens a panel with the same link on narrow screens.
 ```
 .task-tree/
   types.json                  state groups, attributes, checks and types
-  tasks/<root-id>.json        one root per file
+  roots/<root-id>.json        one root per file
   components/<id>.json        one reusable component per file
   dimensions/<name>.json      one dimension per file
   overrides/<name>.json       presence and overrides for one dimension
   overrides/<a>+<b>.json      overrides for combinations of dimensions
-  verification/<root-id>.json check results for tasks in that root
+  verification/<root-id>.json check results for nodes in that root
   expectations.json           counts the model must produce
 ```
 
@@ -49,17 +49,17 @@ or it doesn't. Every editing command compiles the result before it writes
 anything, so a command can't leave the project broken. See
 [diagnostics.md](diagnostics.md).
 
-## Tasks, roots and components
+## Nodes, roots and components
 
-A **task** is anything to be built and checked: a page, a toolbar, a link.
+A **node** is anything to be built and checked: a page, a toolbar, a link.
 It has an `id` (unique across the project), a `title`, and optionally a
-`type` and `children`. A task is not necessarily a UI component. "Links" is a
-task that only groups the blog link.
+`type` and `children`. A node is not necessarily a UI component. "Links" is a
+node that only groups the blog link.
 
-A **root** is a task with no parent, in `tasks/<id>.json`. It is the thing
+A **root** is a node with no parent, in `roots/<id>.json`. It is the thing
 being delivered, such as a page, an endpoint or a job. It is also where
 contexts are counted from and where verification records are filed. A
-**component** is a reusable task tree in `components/<id>.json` that roots
+**component** is a reusable node tree in `components/<id>.json` that roots
 (or other components) **include**:
 
 ```json
@@ -84,7 +84,7 @@ contexts are counted from and where verification records are filed. A
 ```json
 {
   "version": 1,
-  "task": { "id": "article-page", "title": "Article page", "children": [{ "include": "toolbar" }] }
+  "root": { "id": "article-page", "title": "Article page", "children": [{ "include": "toolbar" }] }
 }
 ```
 
@@ -92,17 +92,17 @@ contexts are counted from and where verification records are filed. A
 
 ## Types and states
 
-A **type** says which states its tasks have. It is declared once in
-`types.json`, and every task with that type gets them. A type's states are
+A **type** says which states its nodes have. It is declared once in
+`types.json`, and every node with that type gets them. A type's states are
 either a plain list:
 
 ```json
 "menu": { "states": ["closed", "open"], "shared": true }
 ```
 
-or a set of state groups (next section). A task without a type has no states.
+or a set of state groups (next section). A node without a type has no states.
 
-`task-tree query blog-link` shows a task's states in one context.
+`task-tree query blog-link` shows a node's states in one context.
 
 ## State groups
 
@@ -129,7 +129,7 @@ value name, and `state` is reserved (it is the key for a plain states list).
 
 ## Dimensions and contexts
 
-A **dimension** is something outside the task that changes what it looks like
+A **dimension** is something outside the node that changes what it looks like
 or does, such as screen width or input device. Each dimension has its own file:
 
 ```json
@@ -139,7 +139,7 @@ or does, such as screen width or input device. Each dimension has its own file:
 ```
 
 - `values` are the dimension's values, in order.
-- `appliesTo` lists tasks. The dimension applies to each one and to its whole
+- `appliesTo` lists nodes. The dimension applies to each one and to its whole
   subtree, wherever it is included.
 - `default` is the value a query means when it leaves the dimension out.
   Without a default, a query that leaves the dimension out doesn't apply it.
@@ -147,17 +147,17 @@ or does, such as screen width or input device. Each dimension has its own file:
 The toolbar has three dimensions: `breakpoint` (base, sm, lg, xl), `pointer`
 (mouse, touch) and `keyboard` (keyboard, no-keyboard).
 
-A **context** is one value for every dimension that applies to a task, one
+A **context** is one value for every dimension that applies to a node, one
 value for each of its state groups (or its one plain state), and the state of
-every shared task above it. `task-tree contexts blog-link` lists all of
+every shared node above it. `task-tree contexts blog-link` lists all of
 them, `--count` counts them, and `--tree` draws them as a merged tree.
 `task-tree dimensions` lists every dimension.
 
 ## Presence: only
 
-Some tasks exist only at some values of a dimension. The blog link is only on
+Some nodes exist only at some values of a dimension. The blog link is only on
 wide screens, and the menu only on narrow ones. `only` in
-`overrides/<dimension>.json` says so, for the task and its whole subtree:
+`overrides/<dimension>.json` says so, for the node and its whole subtree:
 
 ```json
 // overrides/breakpoint.json
@@ -166,13 +166,13 @@ wide screens, and the menu only on narrow ones. `only` in
   "overrides": {} }
 ```
 
-A task left out of `only` exists at every value. `query` reports
-`"present": false` where a task doesn't exist, and `contexts` skips those
+A node left out of `only` exists at every value. `query` reports
+`"present": false` where a node doesn't exist, and `contexts` skips those
 contexts. Set it with `task-tree only breakpoint menu base sm`.
 
 ## Overrides
 
-An **override** changes a type's or a task's states (or custom attribute
+An **override** changes a type's or a node's states (or custom attribute
 values) at one value of a dimension. On a touch screen nothing can be
 hovered:
 
@@ -184,8 +184,8 @@ hovered:
     "wordmark":     { "states": { "remove": ["hovered"] } } } } } }
 ```
 
-`types` overrides every task of that type, and `tasks` overrides one task by
-id. Either one can `add` states as well as `remove` them. A task can only be
+`types` overrides every node of that type, and `nodes` overrides one node by
+id. Either one can `add` states as well as `remove` them. A node can only be
 overridden by a dimension that applies to it.
 
 A **combination override** applies only where several dimensions take given
@@ -194,7 +194,7 @@ alphabetical order, nested in that order:
 
 ```json
 // overrides/breakpoint+pointer.json
-{ "version": 1, "overrides": { "sm": { "touch": { "tasks": { "…": {} } } } } }
+{ "version": 1, "overrides": { "sm": { "touch": { "nodes": { "…": {} } } } } }
 ```
 
 **Precedence**, weakest first:
@@ -202,9 +202,9 @@ alphabetical order, nested in that order:
 1. the type's own states and values
 2. type overrides for one dimension
 3. type overrides for combinations, fewer dimensions first
-4. the task's own values
-5. task overrides for one dimension
-6. task overrides for combinations, fewer dimensions first
+4. the node's own values
+5. node overrides for one dimension
+6. node overrides for combinations, fewer dimensions first
 
 Two overrides at the same level that disagree in a context they share are a
 `conflicting-override` error. To settle it, add a combination override for
@@ -216,7 +216,7 @@ toolbar-link --remove hovered`. For a combination, write
 
 ## Shared states and onlyWhen
 
-Some states change what exists below a task, not just how the task looks.
+Some states change what exists below a node, not just how the node looks.
 When the menu is open, its panel exists, and when it is closed, it doesn't. A
 type marked `"shared": true` says that its instances' state shapes their
 subtree. Descendants then say in which of those states they exist with
@@ -240,13 +240,13 @@ subtree. Descendants then say in which of those states they exist with
 ```
 
 A shared type uses plain states or a single state group, and the state is
-named by the task's id (`menu=open`). The ancestor in `onlyWhen` must be in
-the same file. Every context of a task below `menu` includes the menu's
+named by the node's id (`menu=open`). The ancestor in `onlyWhen` must be in
+the same file. Every context of a node below `menu` includes the menu's
 state, so filters like `contexts toolbar --subtree menu=open` work.
 
 ## Transitions
 
-A shared task can list how its state changes, as DOM events:
+A shared node can list how its state changes, as DOM events:
 
 ```json
 "transitions": [
@@ -261,9 +261,9 @@ A shared task can list how its state changes, as DOM events:
 
 | `on`          | needs                                   |
 | ------------- | --------------------------------------- |
-| `click`       | `target`: the task clicked              |
+| `click`       | `target`: the node clicked              |
 | `keydown`     | `key`, as `KeyboardEvent.key` names it  |
-| `pointerdown` | `target`, or `outside`: a task          |
+| `pointerdown` | `target`, or `outside`: a node          |
 | `resize`      | `when`: the dimension values it reaches |
 
 `focus` (optional) is where keyboard focus ends up. The compiler checks that
@@ -275,7 +275,7 @@ transition can be verified like a context (`verify --transition`).
 ## Includes and include states
 
 `{ "include": "toolbar" }` puts the component's subtree in place. A root can
-fix some of an included task's state groups. On the article page the blog
+fix some of an included node's state groups. On the article page the blog
 link is the current page's link, so it is always `selected`:
 
 ```json
@@ -289,7 +289,7 @@ link is the current page's link, so it is always `selected`:
 ```
 
 This narrows the root's contexts without changing the component. Set it with
-`task-tree task include-states article-page toolbar blog-link selection
+`task-tree node include-states article-page toolbar blog-link selection
 selected`.
 
 ## Custom attributes
@@ -303,14 +303,14 @@ example, a `design` attribute says whether each state has a design yet:
   "customAttributes": { "design": { "rest": "ready", "hovered": "missing" } } } }
 ```
 
-A task with a type can set its own values, and overrides can change them per
+A node with a type can set its own values, and overrides can change them per
 dimension value. `query` shows the resolved values.
 
 ## Checks and verification
 
 A **check** is a kind of verification, such as `visual` or `behavior`. Checks
 are declared in `types.json` under `customChecks`, and types say which ones
-their tasks need (`"checks": ["visual"]`). Every typed task must then pass
+their nodes need (`"checks": ["visual"]`). Every typed node must then pass
 each required check in every context it exists in.
 
 A **verification record** says that a check passed or failed in one context,
@@ -318,7 +318,7 @@ by whom and when. Records live in `verification/<root-id>.json`:
 
 ```json
 {
-  "task": "blog-link",
+  "node": "blog-link",
   "check": "visual",
   "result": "passed",
   "by": "pen.dev",
@@ -327,7 +327,7 @@ by whom and when. Records live in `verification/<root-id>.json`:
 }
 ```
 
-A record's context gives a value for each of the task's state groups (`state`
+A record's context gives a value for each of the node's state groups (`state`
 for a plain states list) and for each dimension that applies to it. A
 dimension it leaves out means that dimension's default, so the record above is
 for a mouse and a keyboard. The context must exist. A record can also name a `transition` instead of a
@@ -344,7 +344,7 @@ error:
 ```json
 {
   "title": "Touch screens never show hover",
-  "task": "toolbar",
+  "node": "toolbar",
   "subtree": true,
   "root": "article-page",
   "where": { "pointer": "touch", "hover": "hovered" },
@@ -353,14 +353,14 @@ error:
 ```
 
 `where` filters work like `contexts` filters: dimension values, state group
-values and shared task states.
+values and shared node states.
 
 ## Views and axes
 
-A **view** is one picture of a task's subtree: one value for each dimension
-that applies in it, plus a state for each shared task present. Inside a view,
-leaf tasks still list their states. `task-tree views toolbar` lists every
+A **view** is one picture of a node's subtree: one value for each dimension
+that applies in it, plus a state for each shared node present. Inside a view,
+leaf nodes still list their states. `task-tree views toolbar` lists every
 distinct view (one diagram each), and `task-tree view toolbar breakpoint=base
 menu=open` prints the tree in one of them. `task-tree axes toolbar` lists
 what a view accepts: the dimensions with values and defaults, and the shared
-tasks with their states and where they exist.
+nodes with their states and where they exist.

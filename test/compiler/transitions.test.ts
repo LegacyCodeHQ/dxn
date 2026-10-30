@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { at, cleanup, diagnose, type Files, taskFile } from "../support/project.js";
+import { at, cleanup, diagnose, type Files, rootFile } from "../support/project.js";
 
 afterAll(cleanup);
 
@@ -66,7 +66,7 @@ const project = (menu: Record<string, unknown> = {}, extra: Files = {}): Files =
       ],
     },
   },
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [{ include: "toolbar" }],
@@ -95,7 +95,7 @@ describe("transitions", () => {
     expect(diagnose(project())).toEqual([]);
   });
 
-  it("only go on tasks with a shared type", () => {
+  it("only go on nodes with a shared type", () => {
     expect(
       diagnose(project({ type: undefined, transitions })).filter(
         (diagnostic) => diagnostic.code === "transitions-without-shared-state",
@@ -162,7 +162,7 @@ describe("transitions", () => {
     `);
   });
 
-  it("use the task's states, known DOM events and what each event needs", () => {
+  it("use the node's states, known DOM events and what each event needs", () => {
     const snapshot: unknown[] = [];
     snapshot.push(withTransition({ ...base, from: "ajar", on: "click", target: "menu-button" }));
     snapshot.push(withTransition({ ...base, on: "hover", target: "menu-button" }));
@@ -218,7 +218,7 @@ describe("transitions", () => {
     `);
   });
 
-  it("name tasks that exist where the transition needs them", () => {
+  it("name nodes that exist where the transition needs them", () => {
     const snapshot: unknown[] = [];
     snapshot.push(withTransition({ ...base, on: "click", target: "nope" }));
     snapshot.push(withTransition({ ...base, on: "pointerdown", outside: "nope" }));
@@ -233,14 +233,14 @@ describe("transitions", () => {
       [
         [
           {
-            "code": "unknown-task",
+            "code": "unknown-node",
             "file": "components/toolbar.json",
             "path": "$.component.children[2].transitions[0].target",
           },
         ],
         [
           {
-            "code": "unknown-task",
+            "code": "unknown-node",
             "file": "components/toolbar.json",
             "path": "$.component.children[2].transitions[0].outside",
           },
@@ -318,7 +318,7 @@ describe("transitions", () => {
 
 describe("verifying transitions", () => {
   const record = (fields: Record<string, unknown>) => ({
-    task: "menu",
+    node: "menu",
     check: "behavior",
     result: "passed",
     by: "agent",

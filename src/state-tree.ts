@@ -1,24 +1,24 @@
 import type { Context, Resolver } from "./resolve.js";
 import type { Transition } from "./tree.js";
 
-// A task's contexts, one entry per context.
+// A node's contexts, one entry per context.
 export interface Entry {
-  task: string;
+  node: string;
   context: Context;
 }
 
-// A level of the tree: a task, or a name (dimension, shared task, state
+// A level of the tree: a node, or a name (dimension, shared node, state
 // group, root) with the values that lead to the same subtree.
 export type StateNode =
-  | { task: string; count: number; transitions?: Transition[]; children?: StateNode[] }
+  | { node: string; count: number; transitions?: Transition[]; children?: StateNode[] }
   | { name: string; values: string[]; count: number; children?: StateNode[] };
 
 export interface TreeOptions {
-  // Names to put first, above the tasks.
+  // Names to put first, above the nodes.
   by?: string[];
   // The only names to show; others are merged away.
   only?: string[];
-  // Whether task nodes list their transitions.
+  // Whether nodes list their transitions.
   transitions?: boolean;
 }
 
@@ -28,7 +28,7 @@ export function treeNames(entries: Entry[]): string[] {
 }
 
 // Builds the merged state tree: one level per name, ordered --by names first,
-// then tasks, then the root, dimensions, shared states and state groups.
+// then nodes, then the root, dimensions, shared states and state groups.
 // Sibling branches with identical subtrees share one node, and a dimension
 // level whose values all lead to the same subtree is dropped: it changes
 // nothing there. Shared states and state groups always stay, since they are
@@ -64,12 +64,12 @@ export function buildStateTree(
     const [level, ...below] = levels;
     if (level === undefined) return [];
     if (level === TASK) {
-      const tasks = [...new Set(group.map(({ task }) => task))];
-      return tasks.map((task) => {
-        const own = group.filter((entry) => entry.task === task);
-        const transitions = options.transitions ? (resolver.task(task)?.transitions ?? []) : [];
+      const nodes = [...new Set(group.map(({ node }) => node))];
+      return nodes.map((node) => {
+        const own = group.filter((entry) => entry.node === node);
+        const transitions = options.transitions ? (resolver.node(node)?.transitions ?? []) : [];
         return withChildren(
-          { task, count: own.length, ...(transitions.length === 0 ? {} : { transitions }) },
+          { node, count: own.length, ...(transitions.length === 0 ? {} : { transitions }) },
           build(own, below),
         );
       });
@@ -83,7 +83,7 @@ export function buildStateTree(
         group.flatMap(({ context }) => (context[level] === undefined ? [] : [context[level]])),
       ),
     ];
-    // Above the tasks, a task without this level exists at every value of it.
+    // Above the nodes, a node without this level exists at every value of it.
     const everywhere = group.filter(({ context }) => context[level] === undefined);
     const merged: { values: string[]; group: Entry[]; children: StateNode[] }[] = [];
     for (const value of values) {
@@ -124,23 +124,23 @@ export function buildStateTree(
 }
 
 // Draws the tree as text: top-level nodes as headings, the rest indented.
-export function drawStateTree(nodes: StateNode[]): string {
+export function drawStateTree(items: StateNode[]): string {
   const lines: string[] = [];
-  const label = (node: StateNode) =>
-    "task" in node
-      ? `${node.task} (${node.count} combination${node.count === 1 ? "" : "s"})`
-      : `${node.name}=${node.values.join(", ")}`;
-  // A task's children, then its transitions as a branch of their own.
-  const below = (node: StateNode): Line[] => [
-    ...(node.children ?? []).map((child) => ({
+  const label = (item: StateNode) =>
+    "node" in item
+      ? `${item.node} (${item.count} combination${item.count === 1 ? "" : "s"})`
+      : `${item.name}=${item.values.join(", ")}`;
+  // A node's children, then its transitions as a branch of their own.
+  const below = (item: StateNode): Line[] => [
+    ...(item.children ?? []).map((child) => ({
       text: label(child),
       children: below(child),
     })),
-    ...("task" in node && node.transitions !== undefined
+    ...("node" in item && item.transitions !== undefined
       ? [
           {
             text: "transitions",
-            children: node.transitions.map((transition) => ({
+            children: item.transitions.map((transition) => ({
               text: describeTransition(transition),
               children: [],
             })),
@@ -155,9 +155,9 @@ export function drawStateTree(nodes: StateNode[]): string {
       draw(line.children, `${prefix}${last ? "    " : "│   "}`);
     });
   };
-  for (const node of nodes) {
-    lines.push(label(node));
-    draw(below(node), "");
+  for (const item of items) {
+    lines.push(label(item));
+    draw(below(item), "");
   }
   return `${lines.join("\n")}\n`;
 }
@@ -188,19 +188,19 @@ export function describeTransition(transition: Transition): string {
 
 const TASK = "\u0000task";
 
-function withChildren<T extends StateNode>(node: T, children: StateNode[]): T {
-  return children.length === 0 ? node : { ...node, children };
+function withChildren<T extends StateNode>(item: T, children: StateNode[]): T {
+  return children.length === 0 ? item : { ...item, children };
 }
 
 // Keeps only the named levels, merging entries that become identical.
 function project(entries: Entry[], only: string[] | undefined): Entry[] {
   if (only === undefined) return entries;
   const kept = new Map<string, Entry>();
-  for (const { task, context } of entries) {
+  for (const { node, context } of entries) {
     const narrowed = Object.fromEntries(
       Object.entries(context).filter(([name]) => only.includes(name)),
     );
-    kept.set(JSON.stringify([task, narrowed]), { task, context: narrowed });
+    kept.set(JSON.stringify([node, narrowed]), { node, context: narrowed });
   }
   return [...kept.values()];
 }

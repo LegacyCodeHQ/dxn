@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, taskFile } from "../support/project.js";
+import { cleanup, rootFile } from "../support/project.js";
 import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
@@ -46,7 +46,7 @@ const files = {
       ],
     },
   },
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [{ include: "toolbar" }],
@@ -314,7 +314,7 @@ describe("--json", () => {
       JSON.parse(tree("blog-link", "--tree", "--json", "--only", "pointer,hover")),
     ).toMatchInlineSnapshot(`
       {
-        "task": "blog-link",
+        "node": "blog-link",
         "tree": [
           {
             "children": [
@@ -353,7 +353,7 @@ describe("--json", () => {
               },
             ],
             "count": 3,
-            "task": "blog-link",
+            "node": "blog-link",
           },
         ],
       }

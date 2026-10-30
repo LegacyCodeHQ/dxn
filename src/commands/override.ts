@@ -20,17 +20,17 @@ const overrideUsage = `Usage: task-tree override <subcommand>
 combination, e.g. breakpoint=sm,pointer=touch.
 
 Subcommands:
-  states <context> (--type <t> | --task <id>) [--add <state>]... [--remove <state>]...
+  states <context> (--type <t> | --node <id>) [--add <state>]... [--remove <state>]...
                                      Add or remove states in that context
-  set <context> (--type <t> | --task <id>) <attribute> <state>=<value>...
+  set <context> (--type <t> | --node <id>) <attribute> <state>=<value>...
                                      Set custom attribute values in that context
-  unset <context> (--type <t> | --task <id>) [<attribute> [<state>...]]
+  unset <context> (--type <t> | --node <id>) [<attribute> [<state>...]]
                                      Clear some values, an attribute, or the whole override
 `;
 
-const onlyUsage = `Usage: task-tree only <dimension> <task-id> (<value>... | --everywhere)
+const onlyUsage = `Usage: task-tree only <dimension> <node-id> (<value>... | --everywhere)
 
-Says where a task and its subtree exist: only at the given values of the
+Says where a node and its subtree exist: only at the given values of the
 dimension, or everywhere again with --everywhere.
 `;
 
@@ -67,7 +67,7 @@ function overridesFile(workspace: Workspace, file: string): Json {
   return created;
 }
 
-// The override for a type or task in a context, created when asked to.
+// The override for a type or node in a context, created when asked to.
 function target(
   workspace: Workspace,
   args: string[],
@@ -78,49 +78,49 @@ function target(
     ["context"],
     {
       type: { type: "string" },
-      task: { type: "string" },
+      node: { type: "string" },
       add: { type: "string", multiple: true },
       remove: { type: "string", multiple: true },
     } as const,
     true,
   );
   const [context, ...rest] = positionals as [string, ...string[]];
-  if ((values.type === undefined) === (values.task === undefined)) {
-    throw new UsageError("give exactly one of --type and --task");
+  if ((values.type === undefined) === (values.node === undefined)) {
+    throw new UsageError("give exactly one of --type and --node");
   }
   const { file, path, label } = locateContext(context);
-  const kind = values.type === undefined ? "tasks" : "types";
-  const name = (values.type ?? values.task) as string;
-  const describe = `${values.type === undefined ? "task" : "type"} ${name} at ${label}`;
+  const kind = values.type === undefined ? "nodes" : "types";
+  const name = (values.type ?? values.node) as string;
+  const describe = `${values.type === undefined ? "node" : "type"} ${name} at ${label}`;
   const document = create ? overridesFile(workspace, file) : workspace.read(file);
   if (document === undefined) {
     return { override: undefined, chain: [], file, describe, rest };
   }
   const chain: Json[] = [document];
-  let node: Json = document;
+  let item: Json = document;
   for (const key of ["overrides", ...path, kind, name]) {
-    let next = node[key];
+    let next = item[key];
     if (!isObject(next)) {
       if (!create) return { override: undefined, chain, file, describe, rest };
       next = {};
-      node[key] = next;
+      item[key] = next;
     }
-    node = next as Json;
-    chain.push(node);
+    item = next as Json;
+    chain.push(item);
   }
   reorder(document, overridesOrder);
-  return { override: node, chain, file, describe, rest };
+  return { override: item, chain, file, describe, rest };
 }
 
 // Removes empty objects from the end of the chain upward, keeping the file
 // and its overrides map.
 function prune(chain: Json[]): void {
   for (let index = chain.length - 1; index >= 2; index--) {
-    const node = chain[index] as Json;
+    const item = chain[index] as Json;
     const parent = chain[index - 1] as Json;
-    if (Object.keys(node).length > 0) return;
+    if (Object.keys(item).length > 0) return;
     for (const [key, value] of Object.entries(parent)) {
-      if (value === node) delete parent[key];
+      if (value === item) delete parent[key];
     }
   }
 }
@@ -131,7 +131,7 @@ const states = editCommand(overrideUsage, (workspace, args) => {
     ["context"],
     {
       type: { type: "string" },
-      task: { type: "string" },
+      node: { type: "string" },
       add: { type: "string", multiple: true },
       remove: { type: "string", multiple: true },
     } as const,
@@ -194,21 +194,21 @@ export const override: Command = group(overrideUsage, { states, set, unset });
 export const only: Command = editCommand(onlyUsage, (workspace, args) => {
   const { values, positionals } = parse(
     args,
-    ["dimension", "task-id"],
+    ["dimension", "node-id"],
     { everywhere: { type: "boolean" } },
     true,
   );
-  const [dimension, task, ...listed] = positionals as [string, string, ...string[]];
+  const [dimension, node, ...listed] = positionals as [string, string, ...string[]];
   if ((listed.length === 0) === (values.everywhere !== true)) {
-    throw new UsageError("give the values where the task exists, or --everywhere");
+    throw new UsageError("give the values where the node exists, or --everywhere");
   }
   const file = `overrides/${dimension}.json`;
   const document = overridesFile(workspace, file);
   const restrictions = isObject(document.only) ? document.only : {};
   if (values.everywhere === true) {
-    delete restrictions[task];
+    delete restrictions[node];
   } else {
-    restrictions[task] = listed;
+    restrictions[node] = listed;
   }
   if (Object.keys(restrictions).length === 0) {
     delete document.only;

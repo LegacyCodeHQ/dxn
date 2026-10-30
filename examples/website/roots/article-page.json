@@ -1,7 +1,7 @@
 {
-  "$schema": "../../../schema/task.schema.json",
+  "$schema": "../../../schema/root.schema.json",
   "version": 1,
-  "task": {
+  "root": {
     "id": "article-page",
     "title": "Article page",
     "children": [

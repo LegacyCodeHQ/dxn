@@ -30,7 +30,7 @@
       }
     },
     "customAttributes": {
-      "description": "Declares the custom attributes that types and tasks may use, and their allowed values.",
+      "description": "Declares the custom attributes that types and nodes may use, and their allowed values.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/declaration"
@@ -51,7 +51,7 @@
       }
     },
     "types": {
-      "description": "Reusable task types, by name.",
+      "description": "Reusable node types, by name.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/type"

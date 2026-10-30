@@ -4,6 +4,7 @@ import { component } from "./commands/component.js";
 import type { Command } from "./commands/context.js";
 import { dimension } from "./commands/dimension.js";
 import { init } from "./commands/init.js";
+import { node } from "./commands/node.js";
 import { only, override } from "./commands/override.js";
 import {
   axes,
@@ -17,7 +18,6 @@ import {
   views,
 } from "./commands/reading.js";
 import { stateGroup } from "./commands/state-group.js";
-import { task } from "./commands/task.js";
 import { type } from "./commands/type.js";
 import { validate } from "./commands/validate.js";
 import { unverify, verify } from "./commands/verify.js";
@@ -33,23 +33,23 @@ Commands:
   help [<command>]    Show this overview, or a command's usage
   init                Create a .task-tree project in the working directory
   validate            Compile the project and report every error
-  query <task-id> [<dimension>=<value>...]
-                      Show a task's states and values in a context
-  contexts <task-id>  List every context a task exists in
-  status [<task-id>]  Report each required check as passed, failed or missing
-  transitions <task-id>
-                      List how a shared task's state changes
+  query <node-id> [<dimension>=<value>...]
+                      Show a node's states and values in a context
+  contexts <node-id>  List every context a node exists in
+  status [<node-id>]  Report each required check as passed, failed or missing
+  transitions <node-id>
+                      List how a shared node's state changes
   dimensions          List every dimension, its values, default and scope
-  axes <task-id>      List what a view or query of a task accepts
-  views <task-id>     List every distinct view of a task's subtree: one diagram each
-  view <task-id> [<context>...]
+  axes <node-id>      List what a view or query of a node accepts
+  views <node-id>     List every distinct view of a node's subtree: one diagram each
+  view <node-id> [<context>...]
                       Print the tree present in one view
   tree                Print the roots and components
-  verify <task-id> --check <c> --result passed|failed --by <who> [<context>...]
-                      Record a check's result for a task in one context
-  unverify <task-id> --check <c> [<context>...]
+  verify <node-id> --check <c> --result passed|failed --by <who> [<context>...]
+                      Record a check's result for a node in one context
+  unverify <node-id> --check <c> [<context>...]
                       Remove that record
-  task <subcommand>   Add, move, rename and remove tasks, and set their values
+  node <subcommand>   Add, move, rename and remove nodes, and set their values
   type <subcommand>   Add types and states, and set their values
   state-group <subcommand>
                       Declare groups of independent states, such as interaction
@@ -60,8 +60,8 @@ Commands:
                       Add, extract and remove reusable components
   dimension <subcommand>
                       Add dimensions, their values, default and scope
-  only <dimension> <task-id> <value>...
-                      Say at which values of a dimension a task exists
+  only <dimension> <node-id> <value>...
+                      Say at which values of a dimension a node exists
   override <subcommand>
                       Change states and values for a dimension value or combination
 
@@ -89,7 +89,7 @@ const commands: Record<string, Command> = {
   view,
   dimensions,
   axes,
-  task,
+  node,
   type,
   attribute,
   "state-group": stateGroup,

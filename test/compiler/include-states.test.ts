@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanup, diagnose, type Files, taskFile } from "../support/project.js";
+import { cleanup, diagnose, type Files, rootFile } from "../support/project.js";
 
 afterAll(cleanup);
 
@@ -31,7 +31,7 @@ const toolbar = {
 const project = (include: Record<string, unknown>, extra: Files = {}): Files => ({
   "types.json": types,
   "components/toolbar.json": toolbar,
-  "tasks/article-page.json": taskFile({
+  "roots/article-page.json": rootFile({
     id: "article-page",
     title: "Article page",
     children: [
@@ -43,11 +43,11 @@ const project = (include: Record<string, unknown>, extra: Files = {}): Files => 
 });
 
 describe("states on an include", () => {
-  it("fix a task's group values on the including page", () => {
+  it("fix a node's group values on the including page", () => {
     expect(diagnose(project({ states: { "blog-link": { selection: ["selected"] } } }))).toEqual([]);
   });
 
-  it("have the shape task -> group -> non-empty list of values", () => {
+  it("have the shape node -> group -> non-empty list of values", () => {
     const snapshot: unknown[] = [];
     snapshot.push(diagnose(project({ states: [] })));
     snapshot.push(diagnose(project({ states: { "blog-link": [] } })));
@@ -60,36 +60,36 @@ describe("states on an include", () => {
         [
           {
             "code": "wrong-type",
-            "file": "tasks/article-page.json",
-            "path": "$.task.children[0].states",
+            "file": "roots/article-page.json",
+            "path": "$.root.children[0].states",
           },
         ],
         [
           {
             "code": "wrong-type",
-            "file": "tasks/article-page.json",
-            "path": "$.task.children[0].states.blog-link",
+            "file": "roots/article-page.json",
+            "path": "$.root.children[0].states.blog-link",
           },
         ],
         [
           {
             "code": "empty-values",
-            "file": "tasks/article-page.json",
-            "path": "$.task.children[0].states.blog-link.selection",
+            "file": "roots/article-page.json",
+            "path": "$.root.children[0].states.blog-link.selection",
           },
         ],
         [
           {
             "code": "duplicate-value",
-            "file": "tasks/article-page.json",
-            "path": "$.task.children[0].states.blog-link.selection[1]",
+            "file": "roots/article-page.json",
+            "path": "$.root.children[0].states.blog-link.selection[1]",
           },
         ],
       ]
     `);
   });
 
-  it("name a task in the component, a group its type uses, and values of the group", () => {
+  it("name a node in the component, a group its type uses, and values of the group", () => {
     const snapshot: unknown[] = [];
     snapshot.push(diagnose(project({ states: { body: { selection: ["selected"] } } })));
     snapshot.push(diagnose(project({ states: { logo: { selection: ["selected"] } } })));
@@ -98,23 +98,23 @@ describe("states on an include", () => {
       [
         [
           {
-            "code": "task-outside-include",
-            "file": "tasks/article-page.json",
-            "path": "$.task.children[0].states.body",
+            "code": "node-outside-include",
+            "file": "roots/article-page.json",
+            "path": "$.root.children[0].states.body",
           },
         ],
         [
           {
             "code": "unknown-state-group",
-            "file": "tasks/article-page.json",
-            "path": "$.task.children[0].states.logo.selection",
+            "file": "roots/article-page.json",
+            "path": "$.root.children[0].states.logo.selection",
           },
         ],
         [
           {
             "code": "unknown-state",
-            "file": "tasks/article-page.json",
-            "path": "$.task.children[0].states.blog-link.selection[0]",
+            "file": "roots/article-page.json",
+            "path": "$.root.children[0].states.blog-link.selection[0]",
           },
         ],
       ]
@@ -123,7 +123,7 @@ describe("states on an include", () => {
 
   it("exclude other values from verification on that page", () => {
     const record = (selection: string) => ({
-      task: "blog-link",
+      node: "blog-link",
       context: { hover: "rest", selection },
       check: "visual",
       result: "passed",

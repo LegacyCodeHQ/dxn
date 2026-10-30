@@ -5,12 +5,12 @@ import {
   group,
   isObject,
   list,
+  nodeNodes,
   overrideTargets,
   parse,
   Refusal,
   renameKey,
   reorder,
-  taskNodes,
   typesFile,
   typesOrder,
   UsageError,
@@ -86,8 +86,8 @@ const remove = edit((workspace, args) => {
 });
 
 // Renames a value in the group and wherever a type using the group refers to
-// it: the type's subset and values, its tasks' values and onlyWhen lists,
-// overrides of the type and its tasks, and verification contexts.
+// it: the type's subset and values, its nodes' values and onlyWhen lists,
+// overrides of the type and its nodes, and verification contexts.
 const renameValue = edit((workspace, args) => {
   const [name, from, to] = parse(args, ["name", "old", "new"], {}).positionals as [
     string,
@@ -121,19 +121,19 @@ const renameValue = edit((workspace, args) => {
     }
   }
 
-  const tasksUsing = new Set<string>();
-  for (const [file, node] of taskNodes(workspace)) {
-    if (typeof node.type === "string" && using.has(node.type)) {
-      tasksUsing.add(node.id as string);
-      renameStates(node);
+  const nodesUsing = new Set<string>();
+  for (const [file, item] of nodeNodes(workspace)) {
+    if (typeof item.type === "string" && using.has(item.type)) {
+      nodesUsing.add(item.id as string);
+      renameStates(item);
       workspace.touch(file);
     }
   }
-  for (const [file, node] of taskNodes(workspace)) {
-    const conditions = node.onlyWhen;
+  for (const [file, item] of nodeNodes(workspace)) {
+    const conditions = item.onlyWhen;
     if (!isObject(conditions)) continue;
     for (const [ancestor, states] of Object.entries(conditions)) {
-      if (tasksUsing.has(ancestor)) {
+      if (nodesUsing.has(ancestor)) {
         conditions[ancestor] = swap(states);
         workspace.touch(file);
       }
@@ -144,7 +144,7 @@ const renameValue = edit((workspace, args) => {
     const overrides = workspace.read(file);
     overrideTargets(overrides?.overrides, (kind, targets) => {
       for (const [target, override] of Object.entries(targets)) {
-        const affected = kind === "types" ? using.has(target) : tasksUsing.has(target);
+        const affected = kind === "types" ? using.has(target) : nodesUsing.has(target);
         if (!affected || !isObject(override)) continue;
         if (isObject(override.states)) {
           override.states.add = swap(override.states.add);
@@ -165,7 +165,7 @@ const renameValue = edit((workspace, args) => {
     for (const record of verification.records) {
       if (
         isObject(record) &&
-        tasksUsing.has(record.task as string) &&
+        nodesUsing.has(record.node as string) &&
         isObject(record.context) &&
         record.context[name] === from
       ) {

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { capture } from "../support/cli.js";
-import { cleanup, type Files, taskFile, writeProject } from "../support/project.js";
+import { cleanup, type Files, rootFile, writeProject } from "../support/project.js";
 
 afterAll(cleanup);
 
@@ -170,10 +170,10 @@ describe("type set and unset", () => {
 });
 
 describe("type rename", () => {
-  it("updates the tasks and overrides that use it", () => {
+  it("updates the nodes and overrides that use it", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project({
-      "tasks/page.json": taskFile({
+      "roots/page.json": rootFile({
         id: "page",
         title: "Page",
         children: [{ id: "a", title: "A", type: "link" }],
@@ -187,52 +187,52 @@ describe("type rename", () => {
     run("type", "add", "link", "--states", "normal,hovered");
     snapshot.push(run("type", "rename", "link", "toolbar-link").code);
     snapshot.push(types(read));
-    snapshot.push(read("tasks/page.json"));
+    snapshot.push(read("roots/page.json"));
     snapshot.push(read("overrides/pointer.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    0,
-    {
-      "toolbar-link": {
-        "states": [
-          "normal",
-          "hovered",
-        ],
-      },
-    },
-    {
-      "task": {
-        "children": [
-          {
-            "id": "a",
-            "title": "A",
-            "type": "toolbar-link",
+      [
+        0,
+        {
+          "toolbar-link": {
+            "states": [
+              "normal",
+              "hovered",
+            ],
           },
-        ],
-        "id": "page",
-        "title": "Page",
-      },
-      "version": 1,
-    },
-    {
-      "overrides": {
-        "touch": {
-          "types": {
-            "toolbar-link": {
-              "states": {
-                "remove": [
-                  "hovered",
-                ],
+        },
+        {
+          "root": {
+            "children": [
+              {
+                "id": "a",
+                "title": "A",
+                "type": "toolbar-link",
+              },
+            ],
+            "id": "page",
+            "title": "Page",
+          },
+          "version": 1,
+        },
+        {
+          "overrides": {
+            "touch": {
+              "types": {
+                "toolbar-link": {
+                  "states": {
+                    "remove": [
+                      "hovered",
+                    ],
+                  },
+                },
               },
             },
           },
+          "version": 1,
         },
-      },
-      "version": 1,
-    },
-  ]
-`);
+      ]
+    `);
   });
 });
 
@@ -240,7 +240,7 @@ describe("type remove", () => {
   it("removes an unused type and refuses one in use", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project({
-      "tasks/page.json": taskFile({
+      "roots/page.json": rootFile({
         id: "page",
         title: "Page",
         children: [{ id: "a", title: "A", type: "link" }],
@@ -255,7 +255,7 @@ describe("type remove", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     0,
-    "<tmp>/.task-tree/tasks/page.json:10:17: undefined-type: type "link" is not defined
+    "<tmp>/.task-tree/roots/page.json:10:17: undefined-type: type "link" is not defined
   ",
     {
       "link": {},

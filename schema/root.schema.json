@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "task-tree task",
-  "description": "Editor aid for tasks/<id>.json. The task-tree compiler is the authority: it also checks that the root task's id matches the file name, that ids are unique across the project, that included components exist without cycles or repeats, and that types, attributes, states and values exist, which this schema cannot express.",
+  "title": "task-tree root",
+  "description": "Editor aid for roots/<id>.json. The task-tree compiler is the authority: it also checks that the root's id matches the file name, that ids are unique across the project, that included components exist without cycles or repeats, and that types, attributes, states and values exist, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "task"],
+  "required": ["version", "root"],
   "properties": {
     "$schema": {
       "description": "Path or URL of this schema, for editors.",
@@ -14,9 +14,9 @@
       "description": "Format version.",
       "const": 1
     },
-    "task": {
-      "description": "The root task of this file; its id must match the file name.",
-      "$ref": "#/$defs/task"
+    "root": {
+      "description": "The root of this file: a node with no parent. Its id must match the file name.",
+      "$ref": "#/$defs/node"
     }
   },
   "$defs": {
@@ -40,7 +40,7 @@
         }
       }
     },
-    "task": {
+    "node": {
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "title"],
@@ -60,7 +60,7 @@
           "type": "string"
         },
         "onlyWhen": {
-          "description": "Shared ancestor id -> the states in which this task and its subtree exist.",
+          "description": "Shared ancestor id -> the states in which this node and its subtree exist.",
           "type": "object",
           "propertyNames": {
             "$ref": "#/$defs/name"
@@ -75,7 +75,7 @@
           }
         },
         "transitions": {
-          "description": "How this shared task's state changes.",
+          "description": "How this shared node's state changes.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/transition"
@@ -86,7 +86,7 @@
           "items": {
             "anyOf": [
               {
-                "$ref": "#/$defs/task"
+                "$ref": "#/$defs/node"
               },
               {
                 "$ref": "#/$defs/include"
@@ -111,7 +111,7 @@
           "$ref": "#/$defs/name"
         },
         "states": {
-          "description": "Task in the component -> state group -> the only values that task has through this include.",
+          "description": "Node in the component -> state group -> the only values that node has through this include.",
           "type": "object",
           "propertyNames": {
             "$ref": "#/$defs/name"
@@ -134,7 +134,7 @@
       }
     },
     "transition": {
-      "description": "A change of a shared task's state on a DOM event.",
+      "description": "A change of a shared node's state on a DOM event.",
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "from", "to", "on"],
@@ -156,11 +156,11 @@
           "$ref": "#/$defs/name"
         },
         "target": {
-          "description": "click and pointerdown: the task the event happens on.",
+          "description": "click and pointerdown: the node the event happens on.",
           "$ref": "#/$defs/name"
         },
         "outside": {
-          "description": "pointerdown: the task the event happens outside of.",
+          "description": "pointerdown: the node the event happens outside of.",
           "$ref": "#/$defs/name"
         },
         "when": {
