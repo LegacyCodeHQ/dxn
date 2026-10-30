@@ -146,55 +146,55 @@ describe("records", () => {
     snapshot.push(r({ note: "x" }));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    [
-      {
-        "code": "wrong-type",
-        "file": "verification/page.json",
-        "path": "$.records[0]",
-      },
-    ],
-    [
-      {
-        "code": "missing-key",
-        "file": "verification/page.json",
-        "path": "$.records[0].task",
-      },
-      {
-        "code": "missing-key",
-        "file": "verification/page.json",
-        "path": "$.records[0].context",
-      },
-      {
-        "code": "missing-key",
-        "file": "verification/page.json",
-        "path": "$.records[0].check",
-      },
-      {
-        "code": "missing-key",
-        "file": "verification/page.json",
-        "path": "$.records[0].result",
-      },
-      {
-        "code": "missing-key",
-        "file": "verification/page.json",
-        "path": "$.records[0].by",
-      },
-      {
-        "code": "missing-key",
-        "file": "verification/page.json",
-        "path": "$.records[0].at",
-      },
-    ],
-    [
-      {
-        "code": "unknown-key",
-        "file": "verification/page.json",
-        "path": "$.records[0].note",
-      },
-    ],
-  ]
-`);
+      [
+        [
+          {
+            "code": "wrong-type",
+            "file": "verification/page.json",
+            "path": "$.records[0]",
+          },
+        ],
+        [
+          {
+            "code": "missing-key",
+            "file": "verification/page.json",
+            "path": "$.records[0].task",
+          },
+          {
+            "code": "missing-key",
+            "file": "verification/page.json",
+            "path": "$.records[0].check",
+          },
+          {
+            "code": "missing-key",
+            "file": "verification/page.json",
+            "path": "$.records[0].result",
+          },
+          {
+            "code": "missing-key",
+            "file": "verification/page.json",
+            "path": "$.records[0].by",
+          },
+          {
+            "code": "missing-key",
+            "file": "verification/page.json",
+            "path": "$.records[0].at",
+          },
+          {
+            "code": "missing-key",
+            "file": "verification/page.json",
+            "path": "$.records[0].context",
+          },
+        ],
+        [
+          {
+            "code": "unknown-key",
+            "file": "verification/page.json",
+            "path": "$.records[0].note",
+          },
+        ],
+      ]
+    `);
   });
 
   it("are unique per task, context and check", () => {

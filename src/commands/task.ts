@@ -5,6 +5,7 @@ import {
   group,
   isObject,
   type Located,
+  ordered,
   overrideTargets,
   pairs,
   parse,
@@ -31,6 +32,10 @@ Subcommands:
   remove <id>                        Remove a task and its subtree
   only-when <id> <ancestor-id> (<state>... | --always)
                                      Make a task exist only in some states of a shared ancestor
+  transition add <task-id> <id> --from <state> --to <state> --on click|keydown|pointerdown|resize
+                 [--key <key>] [--target <task>] [--outside <task>] [--when <dimension>=a,b] [--focus <task>]
+                                     Add how a shared task's state changes
+  transition remove <task-id> <id>   Remove a transition
   include <parent-id> <component-id> Include a component under a task
   include-states <parent-id> <component-id> <task-id> <group> (<value>... | --any)
                                      Fix a task's state group values through that include
@@ -255,7 +260,70 @@ const includeStates = editCommand(usage, (workspace, args) => {
   workspace.touch(parent.file);
 });
 
+const transitionOrder = ["id", "from", "to", "on", "key", "target", "outside", "when", "focus"];
+
+const addTransition = editCommand(usage, (workspace, args) => {
+  const { values, positionals } = parse(args, ["task-id", "id"], {
+    from: { type: "string" },
+    to: { type: "string" },
+    on: { type: "string" },
+    key: { type: "string" },
+    target: { type: "string" },
+    outside: { type: "string" },
+    when: { type: "string", multiple: true },
+    focus: { type: "string" },
+  });
+  const [taskId, id] = positionals as [string, string];
+  if (values.from === undefined || values.to === undefined || values.on === undefined) {
+    throw new UsageError("--from, --to and --on are required");
+  }
+  const when: Record<string, string[]> = {};
+  for (const entry of values.when ?? []) {
+    const at = entry.indexOf("=");
+    if (at <= 0 || at === entry.length - 1) {
+      throw new UsageError(`expected --when <dimension>=a,b, got ${JSON.stringify(entry)}`);
+    }
+    when[entry.slice(0, at)] = entry.slice(at + 1).split(",");
+  }
+  const located = requireTask(workspace, taskId);
+  const list = Array.isArray(located.node.transitions) ? located.node.transitions : [];
+  if (list.some((transition) => isObject(transition) && transition.id === id)) {
+    throw new Refusal(`task "${taskId}" already has a transition "${id}"`);
+  }
+  const transition: Record<string, unknown> = {
+    id,
+    from: values.from,
+    to: values.to,
+    on: values.on,
+    key: values.key,
+    target: values.target,
+    outside: values.outside,
+    ...(Object.keys(when).length === 0 ? {} : { when }),
+    focus: values.focus,
+  };
+  for (const key of Object.keys(transition)) {
+    if (transition[key] === undefined) delete transition[key];
+  }
+  located.node.transitions = [...list, ordered(transition, transitionOrder)];
+  reorder(located.node, taskOrder);
+  workspace.touch(located.file);
+});
+
+const removeTransition = editCommand(usage, (workspace, args) => {
+  const [taskId, id] = parse(args, ["task-id", "id"], {}).positionals as [string, string];
+  const located = requireTask(workspace, taskId);
+  const list = Array.isArray(located.node.transitions) ? located.node.transitions : [];
+  const index = list.findIndex((transition) => isObject(transition) && transition.id === id);
+  if (index < 0) {
+    throw new Refusal(`task "${taskId}" has no transition "${id}"`);
+  }
+  list.splice(index, 1);
+  if (list.length === 0) delete located.node.transitions;
+  workspace.touch(located.file);
+});
+
 export const task: Command = group(usage, {
+  transition: group(usage, { add: addTransition, remove: removeTransition }),
   "include-states": includeStates,
   "only-when": onlyWhen,
   include,

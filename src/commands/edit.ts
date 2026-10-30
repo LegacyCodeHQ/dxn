@@ -132,7 +132,15 @@ export function renameKey(object: Json, from: string, to: string): void {
   Object.assign(object, Object.fromEntries(entries));
 }
 
-export const taskOrder = ["id", "title", "type", "onlyWhen", "children", "customAttributes"];
+export const taskOrder = [
+  "id",
+  "title",
+  "type",
+  "onlyWhen",
+  "transitions",
+  "children",
+  "customAttributes",
+];
 export const typesOrder = [
   "$schema",
   "version",

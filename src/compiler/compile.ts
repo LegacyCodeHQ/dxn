@@ -20,6 +20,7 @@ import { checkCombinationFile, checkOverridesFile } from "./overrides.js";
 import { readSource } from "./read.js";
 import { isName } from "./shape.js";
 import type { CombinationStates, DimensionSymbol, OverrideEntry } from "./symbols.js";
+import { checkTransitions } from "./transitions.js";
 import { checkVerificationFile, type DimensionInfo } from "./verification.js";
 
 export interface FileDiagnostic extends Diagnostic {
@@ -250,6 +251,7 @@ export function compileDirectory(directory: string): DirectoryResult {
   }
 
   checkConflicts(entries, symbols, dimensions);
+  checkTransitions(symbols, dimensions);
 
   const rootIds = new Set(tasks.map((file) => file.file.slice("tasks/".length, -".json".length)));
   const verification: [string, ParsedFile][] = [];

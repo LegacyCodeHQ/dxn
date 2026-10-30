@@ -74,6 +74,13 @@
             }
           }
         },
+        "transitions": {
+          "description": "How this shared task's state changes.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/transition"
+          }
+        },
         "children": {
           "type": "array",
           "items": {
@@ -123,6 +130,57 @@
               }
             }
           }
+        }
+      }
+    },
+    "transition": {
+      "description": "A change of a shared task's state on a DOM event.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "from", "to", "on"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/name"
+        },
+        "from": {
+          "$ref": "#/$defs/name"
+        },
+        "to": {
+          "$ref": "#/$defs/name"
+        },
+        "on": {
+          "enum": ["click", "keydown", "pointerdown", "resize"]
+        },
+        "key": {
+          "description": "keydown: the key, as KeyboardEvent.key names it.",
+          "$ref": "#/$defs/name"
+        },
+        "target": {
+          "description": "click and pointerdown: the task the event happens on.",
+          "$ref": "#/$defs/name"
+        },
+        "outside": {
+          "description": "pointerdown: the task the event happens outside of.",
+          "$ref": "#/$defs/name"
+        },
+        "when": {
+          "description": "resize: dimension -> the values it changes to.",
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/name"
+            }
+          }
+        },
+        "focus": {
+          "description": "Where keyboard focus ends up.",
+          "$ref": "#/$defs/name"
         }
       }
     }

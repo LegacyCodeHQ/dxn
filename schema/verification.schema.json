@@ -36,7 +36,7 @@
     "record": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["task", "context", "check", "result", "by", "at"],
+      "required": ["task", "check", "result", "by", "at"],
       "properties": {
         "task": {
           "description": "Id of a typed task in this file's root task.",
@@ -48,6 +48,10 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "transition": {
+          "description": "Instead of a context: the id of one of the task's transitions.",
+          "$ref": "#/$defs/name"
         },
         "check": {
           "description": "A check the task's type requires.",

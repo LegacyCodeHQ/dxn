@@ -44,6 +44,10 @@ export interface TreeSymbols {
   onlyWhen: Map<string, Map<string, Set<string>>>;
   // onlyWhen entries, resolved once every task's ancestors are known.
   onlyWhenRefs: OnlyWhenRef[];
+  // "transitions" on tasks, checked once dimensions and overrides are known.
+  transitionRefs: TransitionRef[];
+  // Task id -> the ids of its valid transitions.
+  transitions: Map<string, Set<string>>;
   // Declared check names, and the checks each type requires.
   checks: Set<string>;
   typeChecks: Map<string, Set<string>>;
@@ -146,4 +150,12 @@ export interface IncludeStateRef {
   group: StringNode;
   groupPath: string;
   values: [StringNode, string][];
+}
+
+// A task's "transitions" list, with where it is.
+export interface TransitionRef {
+  task: string;
+  node: import("./json.js").JsonNode;
+  path: string;
+  diagnostics: Diagnostics;
 }

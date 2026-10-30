@@ -42,6 +42,8 @@ describe("task-tree cli", () => {
                             Show a task's states and values in a context
         contexts <task-id>  List every context a task exists in
         status [<task-id>]  Report each required check as passed, failed or missing
+        transitions <task-id>
+                            List how a shared task's state changes
         dimensions          List every dimension, its values, default and scope
         axes <task-id>      List what a view or query of a task accepts
         views <task-id>     List every distinct view of a task's subtree: one diagram each
@@ -96,6 +98,8 @@ describe("task-tree cli", () => {
                             Show a task's states and values in a context
         contexts <task-id>  List every context a task exists in
         status [<task-id>]  Report each required check as passed, failed or missing
+        transitions <task-id>
+                            List how a shared task's state changes
         dimensions          List every dimension, its values, default and scope
         axes <task-id>      List what a view or query of a task accepts
         views <task-id>     List every distinct view of a task's subtree: one diagram each
@@ -153,6 +157,8 @@ describe("task-tree cli", () => {
                             Show a task's states and values in a context
         contexts <task-id>  List every context a task exists in
         status [<task-id>]  Report each required check as passed, failed or missing
+        transitions <task-id>
+                            List how a shared task's state changes
         dimensions          List every dimension, its values, default and scope
         axes <task-id>      List what a view or query of a task accepts
         views <task-id>     List every distinct view of a task's subtree: one diagram each

@@ -24,7 +24,7 @@ export interface DimensionInfo {
   overrides?: OverrideStates;
 }
 
-const recordKeys = ["task", "context", "check", "result", "by", "at", "evidence"];
+const recordKeys = ["task", "context", "transition", "check", "result", "by", "at", "evidence"];
 const results = new Set(["passed", "failed"]);
 
 // verification/<root-id>.json: one record per task, exact context and check.
@@ -96,15 +96,47 @@ function checkRecord(
     return undefined;
   }
   const fields = keys(diagnostics, record, path, recordKeys, {
-    required: recordKeys.filter((key) => key !== "evidence"),
+    required: ["task", "check", "result", "by", "at"],
   });
+  // A record is about a context, or about one of the task's transitions.
+  const transitionNode = fields.get("transition");
+  if (transitionNode !== undefined && fields.has("context")) {
+    report(
+      diagnostics,
+      "context-and-transition",
+      "a record is about a context or a transition, not both",
+      path,
+      record,
+    );
+    return undefined;
+  }
+  if (transitionNode === undefined && !fields.has("context")) {
+    report(diagnostics, "missing-key", 'missing required key "context"', `${path}.context`, record);
+  }
 
   const type = checkRecordTask(diagnostics, tree, inFile, fields.get("task"), `${path}.task`);
   const task = fields.get("task");
   const taskId = type === undefined || task?.kind !== "string" ? undefined : task.value;
 
-  const contextNode = fields.get("context");
   let context: string | undefined;
+  if (
+    transitionNode !== undefined &&
+    expectName(diagnostics, transitionNode, `${path}.transition`) &&
+    taskId !== undefined
+  ) {
+    if (!tree.transitions.get(taskId)?.has(transitionNode.value)) {
+      report(
+        diagnostics,
+        "unknown-transition",
+        `task ${JSON.stringify(taskId)} has no transition ${JSON.stringify(transitionNode.value)}`,
+        `${path}.transition`,
+        transitionNode,
+      );
+    } else {
+      context = `transition:${transitionNode.value}`;
+    }
+  }
+  const contextNode = fields.get("context");
   if (contextNode !== undefined) {
     const object = expectObject(diagnostics, contextNode, `${path}.context`);
     if (object !== undefined && taskId !== undefined && type !== undefined) {

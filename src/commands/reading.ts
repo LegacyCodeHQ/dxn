@@ -427,6 +427,18 @@ function describe(context: TaskContext): string {
     .join(" and ");
 }
 
+const transitionsUsage = `Usage: task-tree transitions <task-id>
+
+Lists how a shared task's state changes: each transition's states, DOM event,
+target and where focus ends up.
+`;
+
+export const transitions = readCommand(transitionsUsage, (resolver, args, io) => {
+  const [id] = parse(args, ["task-id"], {}).positionals as [string];
+  requireTaskId(resolver, id);
+  print(io, { task: id, transitions: resolver.task(id)?.transitions ?? [] });
+});
+
 const statusUsage = `Usage: task-tree status [<task-id>]
 
 Reports every check each typed task requires, in every context it exists in,
@@ -437,20 +449,22 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
   const [only] = parse(args, [], {}, true).positionals;
   if (only !== undefined) requireTaskId(resolver, only);
   const { project } = resolver;
-  const items: {
+  const items: ({
     page: string;
     task: string;
-    context: TaskContext;
     check: string;
     result: string;
-  }[] = [];
+  } & ({ context: TaskContext } | { transition: string }))[] = [];
   for (const page of project.tasks) {
     const results = new Map<string, string>();
     for (const record of project.verification[page.id]?.records ?? []) {
-      const key = contextKey({
-        ...record.context,
-        ...resolver.withDefaults(record.task, record.context),
-      });
+      const key =
+        record.transition !== undefined
+          ? `transition:${record.transition}`
+          : contextKey({
+              ...record.context,
+              ...resolver.withDefaults(record.task, record.context ?? {}),
+            });
       results.set(JSON.stringify([record.task, key, record.check]), record.result);
     }
     for (const id of only === undefined ? tasksIn(resolver, page.id) : [only]) {
@@ -464,6 +478,18 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
             page: page.id,
             task: id,
             context,
+            check,
+            result: results.get(key) ?? "missing",
+          });
+        }
+      }
+      for (const transition of resolver.task(id)?.transitions ?? []) {
+        for (const check of checks) {
+          const key = JSON.stringify([id, `transition:${transition.id}`, check]);
+          items.push({
+            page: page.id,
+            task: id,
+            transition: transition.id,
             check,
             result: results.get(key) ?? "missing",
           });

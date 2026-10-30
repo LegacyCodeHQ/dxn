@@ -24,8 +24,28 @@ export interface Task {
   type?: string;
   // Shared ancestor id -> the states in which this task exists.
   onlyWhen?: Record<string, string[]>;
+  // How this shared task's state changes.
+  transitions?: Transition[];
   children?: TaskNode[];
   customAttributes?: CustomAttributeValues;
+}
+
+// A change of a shared task's state on a DOM event.
+export interface Transition {
+  id: string;
+  from: string;
+  to: string;
+  on: "click" | "keydown" | "pointerdown" | "resize";
+  // keydown: the key, as KeyboardEvent.key names it.
+  key?: string;
+  // click and pointerdown: the task the event happens on.
+  target?: string;
+  // pointerdown: the task the event happens outside of.
+  outside?: string;
+  // resize: the dimension values it changes to.
+  when?: Record<string, string[]>;
+  // Where keyboard focus ends up.
+  focus?: string;
 }
 
 // Brings a component's subtree in at this position.
@@ -108,8 +128,9 @@ export interface CombinationOverridesFile {
 export interface VerificationRecord {
   task: string;
   // The state (when the task has states) and a value for every dimension that
-  // applies to the task.
-  context: Record<string, string>;
+  // applies to the task; or, instead, one of the task's transitions.
+  context?: Record<string, string>;
+  transition?: string;
   check: string;
   result: "passed" | "failed";
   by: string;

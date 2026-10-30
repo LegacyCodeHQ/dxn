@@ -86,13 +86,23 @@ function records(workspace: Workspace, page: string, create: boolean): unknown[]
   return document.records as unknown[];
 }
 
+function transitionIdentity(task: string, transition: string, check: string): string {
+  return JSON.stringify([task, `transition:${transition}`, check]);
+}
+
 function matches(resolver: Resolver, key: string) {
-  return (record: unknown) =>
-    isObject(record) &&
-    typeof record.task === "string" &&
-    typeof record.check === "string" &&
-    isObject(record.context) &&
-    identity(resolver, record.task, record.context as Context, record.check) === key;
+  return (record: unknown) => {
+    if (!isObject(record) || typeof record.task !== "string" || typeof record.check !== "string") {
+      return false;
+    }
+    if (typeof record.transition === "string") {
+      return transitionIdentity(record.task, record.transition, record.check) === key;
+    }
+    return (
+      isObject(record.context) &&
+      identity(resolver, record.task, record.context as Context, record.check) === key
+    );
+  };
 }
 
 export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
@@ -106,6 +116,7 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
       evidence: { type: "string" },
       at: { type: "string" },
       page: { type: "string" },
+      transition: { type: "string" },
     },
     true,
   );
@@ -113,12 +124,15 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
   if (values.check === undefined || values.result === undefined || values.by === undefined) {
     throw new UsageError("--check, --result and --by are required");
   }
+  if (values.transition !== undefined && rest.length > 0) {
+    throw new UsageError("a record is about a transition or a context, not both");
+  }
   const context = contextArgs(rest);
   const model = resolver(workspace);
   const page = pageFor(model, id, values.page);
   const record: Json = {
     task: id,
-    context,
+    ...(values.transition === undefined ? { context } : { transition: values.transition }),
     check: values.check,
     result: values.result,
     by: values.by,
@@ -126,7 +140,11 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
     ...(values.evidence === undefined ? {} : { evidence: values.evidence }),
   };
   const list = records(workspace, page, true) as unknown[];
-  const index = list.findIndex(matches(model, identity(model, id, context, values.check)));
+  const key =
+    values.transition === undefined
+      ? identity(model, id, context, values.check)
+      : transitionIdentity(id, values.transition, values.check);
+  const index = list.findIndex(matches(model, key));
   if (index >= 0) {
     list[index] = record;
   } else {
@@ -138,7 +156,7 @@ export const unverify: Command = editCommand(unverifyUsage, (workspace, args) =>
   const { values, positionals } = parse(
     args,
     ["task-id"],
-    { check: { type: "string" }, page: { type: "string" } },
+    { check: { type: "string" }, page: { type: "string" }, transition: { type: "string" } },
     true,
   );
   const [id, ...rest] = positionals as [string, ...string[]];
@@ -149,9 +167,17 @@ export const unverify: Command = editCommand(unverifyUsage, (workspace, args) =>
   const model = resolver(workspace);
   const page = pageFor(model, id, values.page);
   const list = records(workspace, page, false);
-  const index = list?.findIndex(matches(model, identity(model, id, context, values.check))) ?? -1;
+  const key =
+    values.transition === undefined
+      ? identity(model, id, context, values.check)
+      : transitionIdentity(id, values.transition, values.check);
+  const index = list?.findIndex(matches(model, key)) ?? -1;
   if (list === undefined || index < 0) {
-    throw new Refusal(`no ${values.check} record for ${id} in ${JSON.stringify(context)}`);
+    const about =
+      values.transition === undefined
+        ? `in ${JSON.stringify(context)}`
+        : `for transition ${JSON.stringify(values.transition)}`;
+    throw new Refusal(`no ${values.check} record for ${id} ${about}`);
   }
   list.splice(index, 1);
 });

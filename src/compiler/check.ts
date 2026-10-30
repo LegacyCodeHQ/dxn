@@ -31,6 +31,8 @@ export function emptySymbols(): TreeSymbols {
     includeStates: [],
     includeRestrictions: new Map(),
     sharedTypes: new Set(),
+    transitionRefs: [],
+    transitions: new Map(),
     onlyWhen: new Map(),
     onlyWhenRefs: [],
     checks: new Set(),
@@ -489,7 +491,7 @@ function checkTask(
     diagnostics,
     task,
     path,
-    ["id", "title", "type", "onlyWhen", "children", "customAttributes"],
+    ["id", "title", "type", "onlyWhen", "transitions", "children", "customAttributes"],
     { required: ["id", "title"] },
   );
 
@@ -558,6 +560,16 @@ function checkTask(
         symbols.taskValues.set(taskId, own);
       }
     }
+  }
+
+  const transitions = members.get("transitions");
+  if (transitions !== undefined && taskId !== undefined) {
+    symbols.transitionRefs.push({
+      task: taskId,
+      node: transitions,
+      path: `${path}.transitions`,
+      diagnostics,
+    });
   }
 
   const onlyWhen = members.get("onlyWhen");
