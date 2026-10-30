@@ -6,7 +6,7 @@ const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url),
   version: string;
 };
 
-describe("task-tree cli", () => {
+describe("dimensions cli", () => {
   it("prints the package version as JSON with --version", () => {
     const snapshot: unknown[] = [];
     const result = capture(["--version"]);
@@ -33,10 +33,10 @@ describe("task-tree cli", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         0,
-        "Usage: task-tree <command> [options]
+        "Usage: dimensions <command> [options]
 
       Project
-        init                Create a .task-tree project in the working directory
+        init                Create a .dimensions project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -76,13 +76,13 @@ describe("task-tree cli", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      Run "task-tree help <command>" (or "task-tree <command> --help") for a command's
-      options. The docs/ folder of the task-tree package explains the concepts
+      Run "dimensions help <command>" (or "dimensions <command> --help") for a command's
+      options. The docs/ folder of the dimensions package explains the concepts
       (concepts.md), every command (commands.md), every diagnostic code
       (diagnostics.md) and the JSON output (output.md).
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .task-tree
+        --dir <directory>   Use this project directory instead of the nearest .dimensions
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON
@@ -100,10 +100,10 @@ describe("task-tree cli", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         0,
-        "Usage: task-tree <command> [options]
+        "Usage: dimensions <command> [options]
 
       Project
-        init                Create a .task-tree project in the working directory
+        init                Create a .dimensions project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -143,13 +143,13 @@ describe("task-tree cli", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      Run "task-tree help <command>" (or "task-tree <command> --help") for a command's
-      options. The docs/ folder of the task-tree package explains the concepts
+      Run "dimensions help <command>" (or "dimensions <command> --help") for a command's
+      options. The docs/ folder of the dimensions package explains the concepts
       (concepts.md), every command (commands.md), every diagnostic code
       (diagnostics.md) and the JSON output (output.md).
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .task-tree
+        --dir <directory>   Use this project directory instead of the nearest .dimensions
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON
@@ -168,12 +168,12 @@ describe("task-tree cli", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         2,
-        "task-tree: unknown command: frobnicate
+        "dimensions: unknown command: frobnicate
 
-      Usage: task-tree <command> [options]
+      Usage: dimensions <command> [options]
 
       Project
-        init                Create a .task-tree project in the working directory
+        init                Create a .dimensions project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -213,13 +213,13 @@ describe("task-tree cli", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      Run "task-tree help <command>" (or "task-tree <command> --help") for a command's
-      options. The docs/ folder of the task-tree package explains the concepts
+      Run "dimensions help <command>" (or "dimensions <command> --help") for a command's
+      options. The docs/ folder of the dimensions package explains the concepts
       (concepts.md), every command (commands.md), every diagnostic code
       (diagnostics.md) and the JSON output (output.md).
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .task-tree
+        --dir <directory>   Use this project directory instead of the nearest .dimensions
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON

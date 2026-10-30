@@ -19,15 +19,15 @@ Errors go to stderr. Nothing is printed on stdout, except by `validate`,
 which always prints its summary. There are three forms:
 
 ```text
-task-tree: node not found: nope
+dimensions: node not found: nope
 ```
 
 A refusal (exit 1) is one line.
 
 ```text
-task-tree: missing node-id
+dimensions: missing node-id
 
-Usage: task-tree show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 ...
 ```
 
@@ -35,7 +35,7 @@ A usage error (exit 2) is followed by the command's usage. An unknown
 subcommand prints only the group's usage.
 
 ```text
-/path/.task-tree/roots/x.json:6:13: undefined-type: type "nope" is not defined
+/path/.dimensions/roots/x.json:6:13: undefined-type: type "nope" is not defined
 ```
 
 Diagnostics are one per line (exit 1). A reading command prints them when the
@@ -73,7 +73,7 @@ content, plus the paths that would be removed:
 ## validate
 
 ```json
-{ "project": "/path/.task-tree", "errors": 0 }
+{ "project": "/path/.dimensions", "errors": 0 }
 ```
 
 `errors` counts the diagnostics printed on stderr. The exit code is 1 when it

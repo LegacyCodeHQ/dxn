@@ -16,7 +16,7 @@ import {
   UsageError,
 } from "./edit.js";
 
-const usage = `Usage: task-tree state-group <subcommand>
+const usage = `Usage: dimensions state-group <subcommand>
 
 A state group is a named set of states that exclude each other, such as hover
 (rest, hovered) or selection (unselected, selected). A type can use several

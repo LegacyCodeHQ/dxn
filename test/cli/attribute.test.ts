@@ -7,12 +7,12 @@ import { cleanup, writeProject } from "../support/project.js";
 afterAll(cleanup);
 
 function project() {
-  const root = writeProject({ ".task-tree/types.json": { version: 1 } });
+  const root = writeProject({ ".dimensions/types.json": { version: 1 } });
   return {
     run: (...argv: string[]) => capture(argv, root),
     attributes: () =>
       (
-        JSON.parse(readFileSync(join(root, ".task-tree", "types.json"), "utf8")) as {
+        JSON.parse(readFileSync(join(root, ".dimensions", "types.json"), "utf8")) as {
           customAttributes?: unknown;
         }
       ).customAttributes,
@@ -79,9 +79,9 @@ describe("attribute commands", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.task-tree/types.json:13:21: unknown-value: "missing" is not a declared value of "design"
+    "<tmp>/.dimensions/types.json:13:21: unknown-value: "missing" is not a declared value of "design"
   ",
-    "<tmp>/.task-tree/types.json:8:9: undeclared-attribute: custom attribute "design" is not declared
+    "<tmp>/.dimensions/types.json:8:9: undeclared-attribute: custom attribute "design" is not declared
   ",
   ]
 `);
@@ -100,13 +100,13 @@ describe("attribute commands", () => {
   [
     {
       "code": 1,
-      "stderr": "task-tree: attribute "design" already exists
+      "stderr": "dimensions: attribute "design" already exists
   ",
       "stdout": "",
     },
     {
       "code": 1,
-      "stderr": "task-tree: attribute not found: size
+      "stderr": "dimensions: attribute not found: size
   ",
       "stdout": "",
     },

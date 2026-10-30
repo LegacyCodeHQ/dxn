@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "task-tree overrides",
-  "description": "Editor aid for overrides/<dimension>.json; the file name is the dimension it overrides for. The task-tree compiler is the authority: it also checks that values, types, nodes, states and attribute values exist and are in scope, which this schema cannot express.",
+  "title": "dimensions overrides",
+  "description": "Editor aid for overrides/<dimension>.json; the file name is the dimension it overrides for. The dimensions compiler is the authority: it also checks that values, types, nodes, states and attribute values exist and are in scope, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "overrides"],

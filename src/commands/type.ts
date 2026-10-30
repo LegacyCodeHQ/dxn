@@ -20,7 +20,7 @@ import {
   unsetValues,
 } from "./edit.js";
 
-const usage = `Usage: task-tree type <subcommand>
+const usage = `Usage: dimensions type <subcommand>
 
 Subcommands:
   add <name> [--states a,b,c | --groups g,h] [--shared]

@@ -24,17 +24,17 @@ describe("help", () => {
         [
           0,
           "",
-          "Usage: task-tree contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]",
+          "Usage: dimensions contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]",
         ],
         [
           0,
           "",
-          "Usage: task-tree verify <node-id> --check <name> --result passed|failed --by <who>",
+          "Usage: dimensions verify <node-id> --check <name> --result passed|failed --by <who>",
         ],
         [
           0,
           "",
-          "Usage: task-tree init [--dir <directory>]",
+          "Usage: dimensions init [--dir <directory>]",
         ],
       ]
     `);
@@ -47,8 +47,8 @@ describe("help", () => {
     snapshot.push(help("dimension", "add", "-h").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "Usage: task-tree node <subcommand>",
-        "Usage: task-tree node <subcommand>",
+        "Usage: dimensions node <subcommand>",
+        "Usage: dimensions node <subcommand>",
         0,
       ]
     `);
@@ -63,7 +63,7 @@ describe("help", () => {
     const result = help("help");
     expect(result.code).toBe(0);
     expect(result.stdout).toBe(help("--help").stdout);
-    expect(result.stdout).toContain("task-tree help <command>");
+    expect(result.stdout).toContain("dimensions help <command>");
     expect(result.stdout).toContain("docs/");
   });
 
@@ -71,12 +71,12 @@ describe("help", () => {
     expect(help("help", "nope")).toMatchInlineSnapshot(`
       {
         "code": 2,
-        "stderr": "task-tree: unknown command: nope
+        "stderr": "dimensions: unknown command: nope
 
-      Usage: task-tree <command> [options]
+      Usage: dimensions <command> [options]
 
       Project
-        init                Create a .task-tree project in the working directory
+        init                Create a .dimensions project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -116,13 +116,13 @@ describe("help", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      Run "task-tree help <command>" (or "task-tree <command> --help") for a command's
-      options. The docs/ folder of the task-tree package explains the concepts
+      Run "dimensions help <command>" (or "dimensions <command> --help") for a command's
+      options. The docs/ folder of the dimensions package explains the concepts
       (concepts.md), every command (commands.md), every diagnostic code
       (diagnostics.md) and the JSON output (output.md).
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .task-tree
+        --dir <directory>   Use this project directory instead of the nearest .dimensions
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON
@@ -139,7 +139,7 @@ describe("help", () => {
     );
     for (const command of commands) {
       const result = help(command, "--help");
-      expect([command, result.code, result.stdout.startsWith("Usage: task-tree")]).toEqual([
+      expect([command, result.code, result.stdout.startsWith("Usage: dimensions")]).toEqual([
         command,
         0,
         true,
@@ -162,12 +162,12 @@ describe("usage text", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
-          "                       [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]",
+          "                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]",
           "each of the node's state groups (state=<state> for a plain states list) and",
           "the states of shared nodes above it; dimensions left out take their default.",
         ],
         [
-          "                         [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]",
+          "                          [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]",
         ],
         [
           "A state group is a named set of states that exclude each other, such as hover",

@@ -144,9 +144,9 @@ describe("verify", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.task-tree/verification/page.json:7:18: removed-state: state "hovered" is removed in this context
+    "<tmp>/.dimensions/verification/page.json:7:18: removed-state: state "hovered" is removed in this context
   ",
-    "<tmp>/.task-tree/verification/page.json:6:18: missing-key: missing required key "pointer"
+    "<tmp>/.dimensions/verification/page.json:6:18: missing-key: missing required key "pointer"
   ",
     false,
   ]
@@ -172,7 +172,7 @@ describe("verify", () => {
   [
     {
       "code": 1,
-      "stderr": "task-tree: "blog-link" is in several roots (home, page); choose one with --root
+      "stderr": "dimensions: "blog-link" is in several roots (home, page); choose one with --root
   ",
       "stdout": "",
     },
@@ -180,7 +180,7 @@ describe("verify", () => {
     true,
     {
       "code": 1,
-      "stderr": "task-tree: "blog-link" is not in root "nope"
+      "stderr": "dimensions: "blog-link" is not in root "nope"
   ",
       "stdout": "",
     },
@@ -202,7 +202,7 @@ describe("verify", () => {
   [
     {
       "code": 1,
-      "stderr": "task-tree: "blog-link" is not in any root
+      "stderr": "dimensions: "blog-link" is not in any root
   ",
       "stdout": "",
     },
@@ -258,7 +258,8 @@ describe("unverify", () => {
       run("unverify", "blog-link", "--check", "visual", "state=normal", "pointer=mouse"),
     ).toMatchObject({
       code: 1,
-      stderr: 'task-tree: no visual record for blog-link in {"state":"normal","pointer":"mouse"}\n',
+      stderr:
+        'dimensions: no visual record for blog-link in {"state":"normal","pointer":"mouse"}\n',
     });
   });
 });

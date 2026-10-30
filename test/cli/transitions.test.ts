@@ -188,17 +188,17 @@ describe("node transition add and remove", () => {
     );
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "<tmp>/.task-tree/components/toolbar.json:17:23: target-absent: "menu-link" does not exist while "menu" is closed
+        "<tmp>/.dimensions/components/toolbar.json:17:23: target-absent: "menu-link" does not exist while "menu" is closed
       ",
         {
           "code": 1,
-          "stderr": "task-tree: node "menu" already has a transition "open"
+          "stderr": "dimensions: node "menu" already has a transition "open"
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "task-tree: node "menu" has no transition "nope"
+          "stderr": "dimensions: node "menu" has no transition "nope"
       ",
           "stdout": "",
         },
@@ -321,7 +321,7 @@ describe("transitions in status and verify", () => {
             "passed": 1,
           },
         },
-        "<tmp>/.task-tree/verification/article-page.json:14:21: unknown-transition: node "menu" has no transition "nope"
+        "<tmp>/.dimensions/verification/article-page.json:14:21: unknown-transition: node "menu" has no transition "nope"
       ",
         2,
         0,

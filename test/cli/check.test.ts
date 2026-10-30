@@ -68,23 +68,23 @@ describe("check commands", () => {
   [
     {
       "code": 1,
-      "stderr": "task-tree: check "visual" already exists
+      "stderr": "dimensions: check "visual" already exists
   ",
       "stdout": "",
     },
     {
       "code": 1,
-      "stderr": "task-tree: check not found: speed
+      "stderr": "dimensions: check not found: speed
   ",
       "stdout": "",
     },
-    "<tmp>/.task-tree/types.json:8:18: undeclared-check: check "speed" is not declared
+    "<tmp>/.dimensions/types.json:8:18: undeclared-check: check "speed" is not declared
   ",
-    "<tmp>/.task-tree/types.json:6:18: undeclared-check: check "visual" is not declared
+    "<tmp>/.dimensions/types.json:6:18: undeclared-check: check "visual" is not declared
   ",
     {
       "code": 1,
-      "stderr": "task-tree: type "link" does not require "speed"
+      "stderr": "dimensions: type "link" does not require "speed"
   ",
       "stdout": "",
     },

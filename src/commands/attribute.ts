@@ -13,7 +13,7 @@ import {
   UsageError,
 } from "./edit.js";
 
-const usage = `Usage: task-tree attribute <subcommand>
+const usage = `Usage: dimensions attribute <subcommand>
 
 Subcommands:
   add <name> --values a,b            Declare a custom attribute and its values

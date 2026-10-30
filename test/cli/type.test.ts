@@ -15,13 +15,13 @@ function project(files: Files = {}) {
           customAttributes: { design: { values: ["available", "missing"] } },
         },
         ...files,
-      }).map(([name, content]) => [`.task-tree/${name}`, content]),
+      }).map(([name, content]) => [`.dimensions/${name}`, content]),
     ),
   );
   return {
     run: (...argv: string[]) => capture(argv, root),
     read: (name: string) =>
-      JSON.parse(readFileSync(join(root, ".task-tree", name), "utf8")) as Record<string, unknown>,
+      JSON.parse(readFileSync(join(root, ".dimensions", name), "utf8")) as Record<string, unknown>,
   };
 }
 
@@ -65,7 +65,7 @@ describe("type add", () => {
   [
     {
       "code": 1,
-      "stderr": "task-tree: type "link" already exists
+      "stderr": "dimensions: type "link" already exists
   ",
       "stdout": "",
     },
@@ -115,11 +115,11 @@ describe("type add-state and remove-state", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "<tmp>/.task-tree/types.json:12:11: unknown-state: "normal" is not a state of this type
+        "<tmp>/.dimensions/types.json:12:11: unknown-state: "normal" is not a state of this type
       ",
         {
           "code": 1,
-          "stderr": "task-tree: type not found: button
+          "stderr": "dimensions: type not found: button
       ",
           "stdout": "",
         },
@@ -255,7 +255,7 @@ describe("type remove", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     0,
-    "<tmp>/.task-tree/roots/page.json:10:17: undefined-type: type "link" is not defined
+    "<tmp>/.dimensions/roots/page.json:10:17: undefined-type: type "link" is not defined
   ",
     {
       "link": {},

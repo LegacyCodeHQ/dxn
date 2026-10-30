@@ -14,7 +14,7 @@ import {
   unsetValues,
 } from "./edit.js";
 
-const overrideUsage = `Usage: task-tree override <subcommand>
+const overrideUsage = `Usage: dimensions override <subcommand>
 
 <context> is <dimension>=<value>, or several joined by commas for a
 combination, e.g. breakpoint=sm,pointer=touch.
@@ -28,7 +28,7 @@ Subcommands:
                                      Clear some values, an attribute, or the whole override
 `;
 
-const onlyUsage = `Usage: task-tree node only <node-id> <dimension> (<value>... | --everywhere)
+const onlyUsage = `Usage: dimensions node only <node-id> <dimension> (<value>... | --everywhere)
 
 Says where a node and its subtree exist: only at the given values of the
 dimension, or everywhere again with --everywhere.

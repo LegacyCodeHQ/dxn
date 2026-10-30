@@ -59,7 +59,7 @@ describe("expectations checked by validate", () => {
       {
         "code": 0,
         "stderr": "",
-        "stdout": "{"project":"<tmp>/.task-tree","errors":0}
+        "stdout": "{"project":"<tmp>/.dimensions","errors":0}
       ",
       }
     `);
@@ -81,9 +81,9 @@ describe("expectations checked by validate", () => {
     expect(run("validate")).toMatchInlineSnapshot(`
       {
         "code": 1,
-        "stderr": "<tmp>/.task-tree/expectations.json:11:16: expectation-failed: Touch screens never show hover: expected 0 contexts, found 2
+        "stderr": "<tmp>/.dimensions/expectations.json:11:16: expectation-failed: Touch screens never show hover: expected 0 contexts, found 2
       ",
-        "stdout": "{"project":"<tmp>/.task-tree","errors":1}
+        "stdout": "{"project":"<tmp>/.dimensions","errors":1}
       ",
       }
     `);
@@ -100,10 +100,10 @@ describe("expectations checked by validate", () => {
       ]),
     });
     expect(run("validate").stderr).toMatchInlineSnapshot(`
-      "<tmp>/.task-tree/expectations.json:6:15: unknown-node: node "nope" does not exist
-      <tmp>/.task-tree/expectations.json:12:15: node-outside-root: node "blog-link" is not in root "home"
-      <tmp>/.task-tree/expectations.json:19:9: unknown-name: "keyboard" is not a dimension, state group or shared node here (focus, hover, pointer)
-      <tmp>/.task-tree/expectations.json:27:20: unknown-value: "pen" is not a value of pointer (mouse, touch)
+      "<tmp>/.dimensions/expectations.json:6:15: unknown-node: node "nope" does not exist
+      <tmp>/.dimensions/expectations.json:12:15: node-outside-root: node "blog-link" is not in root "home"
+      <tmp>/.dimensions/expectations.json:19:9: unknown-name: "keyboard" is not a dimension, state group or shared node here (focus, hover, pointer)
+      <tmp>/.dimensions/expectations.json:27:20: unknown-value: "pen" is not a value of pointer (mouse, touch)
       "
     `);
   });
@@ -121,19 +121,19 @@ describe("expectations checked by validate", () => {
     snapshot.push(shape("{"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "<tmp>/.task-tree/expectations.json:1:1: wrong-type: expected an object, found an array
+        "<tmp>/.dimensions/expectations.json:1:1: wrong-type: expected an object, found an array
       ",
-        "<tmp>/.task-tree/expectations.json:1:1: missing-key: missing required key "expectations"
+        "<tmp>/.dimensions/expectations.json:1:1: missing-key: missing required key "expectations"
       ",
-        "<tmp>/.task-tree/expectations.json:4:5: missing-key: missing required key "title"
-      <tmp>/.task-tree/expectations.json:4:5: missing-key: missing required key "count"
+        "<tmp>/.dimensions/expectations.json:4:5: missing-key: missing required key "title"
+      <tmp>/.dimensions/expectations.json:4:5: missing-key: missing required key "count"
       ",
-        "<tmp>/.task-tree/expectations.json:8:7: unknown-key: unknown key "extra"
-      <tmp>/.task-tree/expectations.json:5:16: empty-string: must not be empty or blank
-      <tmp>/.task-tree/expectations.json:9:16: wrong-type: expected an object, found an array
-      <tmp>/.task-tree/expectations.json:7:16: invalid-count: count must be a whole number, 0 or more
+        "<tmp>/.dimensions/expectations.json:8:7: unknown-key: unknown key "extra"
+      <tmp>/.dimensions/expectations.json:5:16: empty-string: must not be empty or blank
+      <tmp>/.dimensions/expectations.json:9:16: wrong-type: expected an object, found an array
+      <tmp>/.dimensions/expectations.json:7:16: invalid-count: count must be a whole number, 0 or more
       ",
-        "<tmp>/.task-tree/expectations.json:1:2: unexpected-end: unexpected end of input
+        "<tmp>/.dimensions/expectations.json:1:2: unexpected-end: unexpected end of input
       ",
       ]
     `);
@@ -146,9 +146,9 @@ describe("expectations checked by validate", () => {
       "expectations.json": expectations([{ title: "x", node: "nope", count: 0 }]),
     });
     expect(run("validate").stderr).toMatchInlineSnapshot(`
-      "<tmp>/.task-tree/types.json:2:14: unsupported-version: unsupported version 2
-      <tmp>/.task-tree/components/toolbar.json:10:17: undefined-type: type "link" is not defined
-      <tmp>/.task-tree/overrides/pointer.json:6:9: undefined-type: type "link" is not defined
+      "<tmp>/.dimensions/types.json:2:14: unsupported-version: unsupported version 2
+      <tmp>/.dimensions/components/toolbar.json:10:17: undefined-type: type "link" is not defined
+      <tmp>/.dimensions/overrides/pointer.json:6:9: undefined-type: type "link" is not defined
       "
     `);
   });

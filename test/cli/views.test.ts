@@ -149,7 +149,7 @@ describe("views", () => {
     const { run } = cliProject(files);
     expect(run("views", "nope")).toMatchObject({
       code: 1,
-      stderr: "task-tree: node not found: nope\n",
+      stderr: "dimensions: node not found: nope\n",
     });
   });
 });
@@ -233,25 +233,25 @@ describe("view", () => {
       [
         {
           "code": 1,
-          "stderr": "task-tree: give menu=<closed|open> for this view
+          "stderr": "dimensions: give menu=<closed|open> for this view
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "task-tree: "md" is not a value of breakpoint (base, sm, lg, xl)
+          "stderr": "dimensions: "md" is not a value of breakpoint (base, sm, lg, xl)
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "task-tree: "ajar" is not a state of menu (closed, open)
+          "stderr": "dimensions: "ajar" is not a state of menu (closed, open)
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "task-tree: "theme" is not a dimension or shared node in this view (breakpoint, menu)
+          "stderr": "dimensions: "theme" is not a dimension or shared node in this view (breakpoint, menu)
       ",
           "stdout": "",
         },
@@ -270,7 +270,7 @@ describe("view configurations that cannot exist", () => {
       [
         {
           "code": 1,
-          "stderr": "task-tree: "menu" does not exist when breakpoint=lg; leave out menu=open
+          "stderr": "dimensions: "menu" does not exist when breakpoint=lg; leave out menu=open
       ",
           "stdout": "",
         },
@@ -289,13 +289,13 @@ describe("view configurations that cannot exist", () => {
       [
         {
           "code": 1,
-          "stderr": "task-tree: "menu" does not exist when breakpoint=lg
+          "stderr": "dimensions: "menu" does not exist when breakpoint=lg
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "task-tree: "menu-panel" does not exist when breakpoint=sm and menu=closed
+          "stderr": "dimensions: "menu-panel" does not exist when breakpoint=sm and menu=closed
       ",
           "stdout": "",
         },

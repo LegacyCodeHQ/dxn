@@ -7,7 +7,7 @@ afterAll(cleanup);
 
 const website = fileURLToPath(new URL("../examples/website", import.meta.url));
 
-describe("task-tree show", () => {
+describe("dimensions show", () => {
   it("reports the states blog-link gets from its type", () => {
     const snapshot: unknown[] = [];
     const result = capture(["show", "--dir", website, "blog-link"]);
@@ -70,7 +70,7 @@ describe("task-tree show", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "task-tree: node not found: missing-link
+    "dimensions: node not found: missing-link
   ",
     "",
   ]
@@ -86,9 +86,9 @@ describe("task-tree show", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     2,
-    "task-tree: missing node-id
+    "dimensions: missing node-id
 
-  Usage: task-tree show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+  Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 
   Shows the node's states and custom attribute values in a context. Dimensions
   left out take their default; those without one are not applied.
@@ -100,8 +100,8 @@ describe("task-tree show", () => {
   it("finds the project from the working directory", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({
-      ".task-tree/types.json": types,
-      ".task-tree/roots/a.json": rootFile({ id: "a", title: "A" }),
+      ".dimensions/types.json": types,
+      ".dimensions/roots/a.json": rootFile({ id: "a", title: "A" }),
     });
     const result = capture(["show", "a"], root);
     snapshot.push(result.code);
@@ -129,7 +129,7 @@ describe("task-tree show", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "task-tree: no .task-tree directory in <tmp> or above; run task-tree init
+    "dimensions: no .dimensions directory in <tmp> or above; run dimensions init
   ",
   ]
 `);

@@ -121,13 +121,13 @@ describe("shared types and onlyWhen from the command line", () => {
       [
         {
           "code": 1,
-          "stderr": "<tmp>/.task-tree/roots/page.json:16:15: ancestor-not-shared: "menu" needs a shared type for its subtree to depend on its state
+          "stderr": "<tmp>/.dimensions/roots/page.json:16:15: ancestor-not-shared: "menu" needs a shared type for its subtree to depend on its state
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "task-tree: type not found: nope
+          "stderr": "dimensions: type not found: nope
       ",
           "stdout": "",
         },

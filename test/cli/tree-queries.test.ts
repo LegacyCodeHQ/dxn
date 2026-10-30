@@ -371,9 +371,9 @@ describe("tree query errors", () => {
     snapshot.push(run("contexts", "toolbar", "--json").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "task-tree: "theme" is not a level here (breakpoint, focus, hover, keyboard, menu, pointer)
+        "dimensions: "theme" is not a level here (breakpoint, focus, hover, keyboard, menu, pointer)
       ",
-        "task-tree: "theme" is not a level here (breakpoint, focus, hover, keyboard, menu, pointer)
+        "dimensions: "theme" is not a level here (breakpoint, focus, hover, keyboard, menu, pointer)
       ",
         2,
         2,

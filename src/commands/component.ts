@@ -1,7 +1,7 @@
 import type { Command } from "./context.js";
 import { editCommand, group, parse, Refusal, requireNode, UsageError } from "./edit.js";
 
-const usage = `Usage: task-tree component <subcommand>
+const usage = `Usage: dimensions component <subcommand>
 
 Subcommands:
   add <id> --title <title>           Add a reusable component in components/<id>.json

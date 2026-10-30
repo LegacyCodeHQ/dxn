@@ -1,6 +1,6 @@
 # Diagnostics
 
-`task-tree validate`, and every command that compiles the project, reports
+`dimensions validate`, and every command that compiles the project, reports
 problems one per line on stderr:
 
 ```text
@@ -37,7 +37,7 @@ contents follow the order of the sections.
 ### `missing-file`
 
 A required file doesn't exist. The usual case is `types.json`. Run
-`task-tree init`, or create it with `{ "version": 1 }`.
+`dimensions init`, or create it with `{ "version": 1 }`.
 
 ### `not-a-file`
 
@@ -485,4 +485,4 @@ node that applies to the node.
 The model has a different number of contexts than the expectation says. The
 message gives both numbers. Either the model is wrong (fix the types,
 dimensions or overrides) or the expectation is. Run the same query with
-`task-tree contexts <node> ... --count` to compare.
+`dimensions contexts <node> ... --count` to compare.

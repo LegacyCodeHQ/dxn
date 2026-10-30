@@ -234,7 +234,7 @@ describe("state groups in reading commands", () => {
           "missing": 9,
           "passed": 1,
         },
-        "<tmp>/.task-tree/verification/page.json:19:24: removed-state: state "hovered" is removed in this context
+        "<tmp>/.dimensions/verification/page.json:19:24: removed-state: state "hovered" is removed in this context
       ",
       ]
     `);
@@ -538,7 +538,7 @@ describe("state group commands", () => {
             "result": "passed",
           },
         ],
-        "task-tree: state group "hover" has no value "pressed"
+        "dimensions: state group "hover" has no value "pressed"
       ",
       ]
     `);
@@ -558,17 +558,17 @@ describe("state group commands", () => {
       [
         {
           "code": 1,
-          "stderr": "task-tree: state group "interaction" already exists
+          "stderr": "dimensions: state group "interaction" already exists
       ",
           "stdout": "",
         },
-        "<tmp>/.task-tree/types.json:6:23: undeclared-state-group: state group "interaction" is not declared
+        "<tmp>/.dimensions/types.json:6:23: undeclared-state-group: state group "interaction" is not declared
       ",
-        "<tmp>/.task-tree/types.json:8:38: undeclared-state-group: state group "size" is not declared
+        "<tmp>/.dimensions/types.json:8:38: undeclared-state-group: state group "size" is not declared
       ",
         {
           "code": 1,
-          "stderr": "task-tree: type "wordmark" does not use state group "size"
+          "stderr": "dimensions: type "wordmark" does not use state group "size"
       ",
           "stdout": "",
         },

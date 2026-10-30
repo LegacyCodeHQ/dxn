@@ -13,7 +13,7 @@ import {
 } from "./edit.js";
 import { dimensions } from "./reading.js";
 
-const usage = `Usage: task-tree dimension <subcommand>
+const usage = `Usage: dimensions dimension <subcommand>
 
 Subcommands:
   list                               List every dimension, its values, default and scope

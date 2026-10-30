@@ -495,18 +495,18 @@ describe("contexts filters", () => {
       [
         {
           "code": 1,
-          "stderr": "task-tree: "theme" is not a dimension, state group or shared node here (breakpoint, focus, hover, menu, selection)
+          "stderr": "dimensions: "theme" is not a dimension, state group or shared node here (breakpoint, focus, hover, menu, selection)
       ",
           "stdout": "",
         },
-        "task-tree: "md" is not a value of breakpoint (base, sm, lg, xl)
+        "dimensions: "md" is not a value of breakpoint (base, sm, lg, xl)
       ",
-        "task-tree: "yes" is not a value of hover (unhovered, hovered)
+        "dimensions: "yes" is not a value of hover (unhovered, hovered)
       ",
-        "task-tree: "ajar" is not a state of menu (closed, open)
+        "dimensions: "ajar" is not a state of menu (closed, open)
       ",
         2,
-        "task-tree: "toolbar" is not in root "nope"
+        "dimensions: "toolbar" is not in root "nope"
       ",
       ]
     `);

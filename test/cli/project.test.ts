@@ -7,9 +7,9 @@ import { cleanup, rootFile, types, writeProject } from "../support/project.js";
 afterAll(cleanup);
 
 describe("finding the project", () => {
-  it("uses the nearest .task-tree directory above the working directory", () => {
+  it("uses the nearest .dimensions directory above the working directory", () => {
     const snapshot: unknown[] = [];
-    const root = writeProject({ ".task-tree/types.json": types });
+    const root = writeProject({ ".dimensions/types.json": types });
     const deep = join(root, "src", "components");
     mkdirSync(deep, { recursive: true });
     const result = capture(["validate"], deep);
@@ -21,7 +21,7 @@ describe("finding the project", () => {
     0,
     {
       "errors": 0,
-      "project": "<tmp>/.task-tree",
+      "project": "<tmp>/.dimensions",
     },
   ]
 `);
@@ -58,7 +58,7 @@ describe("finding the project", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "task-tree: no .task-tree directory in <tmp> or above; run task-tree init
+    "dimensions: no .dimensions directory in <tmp> or above; run dimensions init
   ",
     "",
   ]
@@ -74,12 +74,12 @@ describe("finding the project", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         2,
-        "task-tree: --dir needs a directory
+        "dimensions: --dir needs a directory
 
-      Usage: task-tree <command> [options]
+      Usage: dimensions <command> [options]
 
       Project
-        init                Create a .task-tree project in the working directory
+        init                Create a .dimensions project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -119,13 +119,13 @@ describe("finding the project", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      Run "task-tree help <command>" (or "task-tree <command> --help") for a command's
-      options. The docs/ folder of the task-tree package explains the concepts
+      Run "dimensions help <command>" (or "dimensions <command> --help") for a command's
+      options. The docs/ folder of the dimensions package explains the concepts
       (concepts.md), every command (commands.md), every diagnostic code
       (diagnostics.md) and the JSON output (output.md).
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .task-tree
+        --dir <directory>   Use this project directory instead of the nearest .dimensions
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON
@@ -135,21 +135,21 @@ describe("finding the project", () => {
   });
 });
 
-describe("task-tree init", () => {
-  it("creates .task-tree with types.json in the working directory", () => {
+describe("dimensions init", () => {
+  it("creates .dimensions with types.json in the working directory", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({});
     const result = capture(["init"], root);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
-    snapshot.push(JSON.parse(readFileSync(join(root, ".task-tree", "types.json"), "utf8")));
+    snapshot.push(JSON.parse(readFileSync(join(root, ".dimensions", "types.json"), "utf8")));
     snapshot.push(capture(["validate"], root).code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     0,
     {
-      "created": "<tmp>/.task-tree",
+      "created": "<tmp>/.dimensions",
     },
     {
       "version": 1,
@@ -176,16 +176,16 @@ describe("task-tree init", () => {
 
   it("refuses to overwrite an existing project", () => {
     const snapshot: unknown[] = [];
-    const root = writeProject({ ".task-tree/types.json": "keep" });
+    const root = writeProject({ ".dimensions/types.json": "keep" });
     const result = capture(["init"], root);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
-    snapshot.push(readFileSync(join(root, ".task-tree", "types.json"), "utf8"));
+    snapshot.push(readFileSync(join(root, ".dimensions", "types.json"), "utf8"));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "task-tree: <tmp>/.task-tree already exists
+    "dimensions: <tmp>/.dimensions already exists
   ",
     "keep",
   ]
@@ -197,16 +197,16 @@ describe("task-tree init", () => {
   });
 });
 
-describe("task-tree validate", () => {
+describe("dimensions validate", () => {
   it("prints each diagnostic with its file, line and column, and exits 1", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({
-      ".task-tree/types.json": types,
-      ".task-tree/roots/a.json": '{"version":1,"root":{"id":"a","title":"A","type":"nope"}}',
-      ".task-tree/roots/b.json": rootFile({ id: "b", title: "B", extra: 1 }),
+      ".dimensions/types.json": types,
+      ".dimensions/roots/a.json": '{"version":1,"root":{"id":"a","title":"A","type":"nope"}}',
+      ".dimensions/roots/b.json": rootFile({ id: "b", title: "B", extra: 1 }),
     });
     const result = capture(["validate"], root);
-    const _roots = join(root, ".task-tree", "roots");
+    const _roots = join(root, ".dimensions", "roots");
     snapshot.push(result.code);
     snapshot.push(result.stderr);
     snapshot.push(JSON.parse(result.stdout));
@@ -214,12 +214,12 @@ describe("task-tree validate", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "<tmp>/.task-tree/roots/a.json:1:50: undefined-type: type "nope" is not defined
-  <tmp>/.task-tree/roots/b.json:6:5: unknown-key: unknown key "extra"
+    "<tmp>/.dimensions/roots/a.json:1:50: undefined-type: type "nope" is not defined
+  <tmp>/.dimensions/roots/b.json:6:5: unknown-key: unknown key "extra"
   ",
     {
       "errors": 2,
-      "project": "<tmp>/.task-tree",
+      "project": "<tmp>/.dimensions",
     },
   ]
 `);

@@ -11,7 +11,7 @@ import {
   typesOrder,
 } from "./edit.js";
 
-const usage = `Usage: task-tree check <subcommand>
+const usage = `Usage: dimensions check <subcommand>
 
 Subcommands:
   add <name>                         Declare a check, such as visual or behavior

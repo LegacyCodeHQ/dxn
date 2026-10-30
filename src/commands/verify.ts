@@ -4,9 +4,9 @@ import type { Json, Workspace } from "../workspace.js";
 import type { Command } from "./context.js";
 import { editCommand, isObject, parse, Refusal, UsageError } from "./edit.js";
 
-const verifyUsage = `Usage: task-tree verify <node-id> --check <name> --result passed|failed --by <who>
-                       [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
-                       [--transition <id>] [--evidence <path>] [--at <time>] [--root <root-id>]
+const verifyUsage = `Usage: dimensions verify <node-id> --check <name> --result passed|failed --by <who>
+                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
+                        [--transition <id>] [--evidence <path>] [--at <time>] [--root <root-id>]
 
 Records a check's result for a node in one context, replacing any earlier
 record for the same node, context and check. The context gives one value for
@@ -16,8 +16,8 @@ the states of shared nodes above it; dimensions left out take their default.
 --at defaults to now; --root is needed when several roots include the node.
 `;
 
-const unverifyUsage = `Usage: task-tree unverify <node-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
-                         [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]
+const unverifyUsage = `Usage: dimensions unverify <node-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
+                          [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]
 
 Removes the record for that node and check, in that context or for that
 transition.
@@ -27,7 +27,7 @@ transition.
 function resolver(workspace: Workspace): Resolver {
   const { project } = compileDirectory(workspace.project);
   if (project === undefined) {
-    throw new Refusal("the project has errors; run task-tree validate");
+    throw new Refusal("the project has errors; run dimensions validate");
   }
   return new Resolver(project);
 }

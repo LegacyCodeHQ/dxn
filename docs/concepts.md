@@ -1,9 +1,9 @@
 # Concepts
 
-task-tree models work as a tree of **nodes**, says which **states** each node
+dimensions models work as a tree of **nodes**, says which **states** each node
 can be in and under which **dimensions** (breakpoint, pointer, …), and records
 whether each resulting combination has been checked. Everything lives in JSON
-files in a `.task-tree/` folder. The CLI edits them safely and answers
+files in a `.dimensions/` folder. The CLI edits them safely and answers
 questions about them.
 
 The running example is the toolbar of a blog (the `neo-website` project). It
@@ -28,7 +28,7 @@ opens a panel with the same link on narrow screens.
 ## The project folder
 
 ```
-.task-tree/
+.dimensions/
   types.json                  state groups, attributes, checks and types
   roots/<root-id>.json        one root per file
   components/<id>.json        one reusable component per file
@@ -39,11 +39,11 @@ opens a panel with the same link on narrow screens.
   expectations.json           counts the model must produce
 ```
 
-`task-tree init` creates the folder. Commands find the nearest `.task-tree`
+`dimensions init` creates the folder. Commands find the nearest `.dimensions`
 in the working directory or above, or the one `--dir` names. Every file has
 `"version": 1`, and every file has a JSON schema in `schema/`.
 
-`task-tree validate` compiles the whole folder and reports every error with
+`dimensions validate` compiles the whole folder and reports every error with
 its file, line and column. There are no warnings: a project either compiles
 or it doesn't. Every editing command compiles the result before it writes
 anything, so a command can't leave the project broken. See
@@ -88,7 +88,7 @@ contexts are counted from and where verification records are filed. A
 }
 ```
 
-`task-tree tree` prints the roots and the components.
+`dimensions tree` prints the roots and the components.
 
 ## Types and states
 
@@ -102,7 +102,7 @@ either a plain list:
 
 or a set of state groups (next section). A node without a type has no states.
 
-`task-tree show blog-link` shows a node's states in one context.
+`dimensions show blog-link` shows a node's states in one context.
 
 ## State groups
 
@@ -149,9 +149,9 @@ The toolbar has three dimensions: `breakpoint` (base, sm, lg, xl), `pointer`
 
 A **context** is one value for every dimension that applies to a node, one
 value for each of its state groups (or its one plain state), and the state of
-every shared node above it. `task-tree contexts blog-link` lists all of
+every shared node above it. `dimensions contexts blog-link` lists all of
 them, `--count` counts them, and `--tree` draws them as a merged tree.
-`task-tree dimension list` lists every dimension.
+`dimensions dimension list` lists every dimension.
 
 ## Presence: only
 
@@ -168,7 +168,7 @@ wide screens, and the menu only on narrow ones. `only` in
 
 A node left out of `only` exists at every value. `show` reports
 `"present": false` where a node doesn't exist, and `contexts` skips those
-contexts. Set it with `task-tree node only menu breakpoint base sm`.
+contexts. Set it with `dimensions node only menu breakpoint base sm`.
 
 ## Overrides
 
@@ -210,7 +210,7 @@ Two overrides at the same level that disagree in a context they share are a
 `conflicting-override` error. To settle it, add a combination override for
 those values, which outranks both.
 
-Set overrides with `task-tree override states pointer=touch --type
+Set overrides with `dimensions override states pointer=touch --type
 toolbar-link --remove hovered`. For a combination, write
 `breakpoint=sm,pointer=touch`.
 
@@ -268,7 +268,7 @@ A shared node can list how its state changes, as DOM events:
 
 `focus` (optional) is where keyboard focus ends up. The compiler checks that
 `target` exists in the `from` state, and that `focus` exists after the
-transition. `task-tree transitions menu` lists them, and
+transition. `dimensions transitions menu` lists them, and
 `contexts menu --tree --transitions` draws them under the states. A
 transition can be verified like a context (`verify --transition`).
 
@@ -289,7 +289,7 @@ link is the current page's link, so it is always `selected`:
 ```
 
 This narrows the root's contexts without changing the component. Set it with
-`task-tree node include-states article-page toolbar blog-link selection
+`dimensions node include-states article-page toolbar blog-link selection
 selected`.
 
 ## Custom attributes
@@ -331,8 +331,8 @@ A record's context gives a value for each of the node's state groups (`state`
 for a plain states list) and for each dimension that applies to it. A
 dimension it leaves out means that dimension's default, so the record above is
 for a mouse and a keyboard. The context must exist. A record can also name a `transition` instead of a
-context. `task-tree verify` writes records and `unverify` removes them.
-`task-tree status` reports every required check as passed, failed or
+context. `dimensions verify` writes records and `unverify` removes them.
+`dimensions status` reports every required check as passed, failed or
 missing.
 
 ## Expectations
@@ -359,8 +359,8 @@ values and shared node states.
 
 A **view** is one picture of a node's subtree: one value for each dimension
 that applies in it, plus a state for each shared node present. Inside a view,
-leaf nodes still list their states. `task-tree views toolbar` lists every
-distinct view (one diagram each), and `task-tree view toolbar breakpoint=base
-menu=open` prints the tree in one of them. `task-tree axes toolbar` lists
+leaf nodes still list their states. `dimensions views toolbar` lists every
+distinct view (one diagram each), and `dimensions view toolbar breakpoint=base
+menu=open` prints the tree in one of them. `dimensions axes toolbar` lists
 what a view accepts: the dimensions with values and defaults, and the shared
 nodes with their states and where they exist.

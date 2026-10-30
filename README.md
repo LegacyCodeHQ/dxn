@@ -1,32 +1,32 @@
-# task-tree
+# dimensions
 
 Track what has been specified, built and verified for a tree of nodes, across
 every dimension a node varies over: breakpoints, themes, interaction states,
 environments, roles, feature flags and so on.
 
 A UI component is one kind of node; an endpoint, a migration or a background job
-are others. Each node declares the dimensions that apply to it, and `task-tree`
+are others. Each node declares the dimensions that apply to it, and `dimensions`
 expands those into the cells that still need verifying.
 
 ## For agents
 
 Everything is a CLI call that prints JSON, run inside a project (the nearest
-`.task-tree/` folder, or `--dir`). To learn a project before changing it:
+`.dimensions/` folder, or `--dir`). To learn a project before changing it:
 
 ```bash
-task-tree --help                  # every command
-task-tree help contexts           # one command's usage; no project needed
-task-tree validate                # does the project compile? errors: file:line:col: code: message
-task-tree tree                    # the roots and components
-task-tree dimension list          # what nodes vary over
-task-tree axes toolbar            # what views and queries of a node accept
-task-tree contexts toolbar --subtree --tree   # every combination, merged, for reading
-task-tree views toolbar           # one entry per diagram to draw
-task-tree show blog-link pointer=touch        # one node in one context
-task-tree status                  # each required check: passed, failed or missing
+dimensions --help                  # every command
+dimensions help contexts           # one command's usage; no project needed
+dimensions validate                # does the project compile? errors: file:line:col: code: message
+dimensions tree                    # the roots and components
+dimensions dimension list          # what nodes vary over
+dimensions axes toolbar            # what views and queries of a node accept
+dimensions contexts toolbar --subtree --tree   # every combination, merged, for reading
+dimensions views toolbar           # one entry per diagram to draw
+dimensions show blog-link pointer=touch        # one node in one context
+dimensions status                  # each required check: passed, failed or missing
 ```
 
-To record a result, use `task-tree verify <node> --check <c> --result
+To record a result, use `dimensions verify <node> --check <c> --result
 passed|failed --by <who> <name>=<value>...`. To change the model, use the
 editing commands (`node`, `type`, `dimension`, `override`, …) rather than
 editing the files: they refuse any change that would break the project, and

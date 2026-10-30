@@ -88,11 +88,11 @@ describe("dimension add and remove", () => {
   [
     {
       "code": 1,
-      "stderr": "task-tree: dimension "pointer" already exists
+      "stderr": "dimensions: dimension "pointer" already exists
   ",
       "stdout": "",
     },
-    "<tmp>/.task-tree/dimensions/theme.json:4:17: unknown-node: node "nope" does not exist
+    "<tmp>/.dimensions/dimensions/theme.json:4:17: unknown-node: node "nope" does not exist
   ",
     2,
     2,
@@ -119,11 +119,11 @@ describe("dimension add and remove", () => {
   [
     0,
     false,
-    "<tmp>/.task-tree/overrides/theme.json:1:1: undeclared-dimension: no dimensions/theme.json declares this dimension
+    "<tmp>/.dimensions/overrides/theme.json:1:1: undeclared-dimension: no dimensions/theme.json declares this dimension
   ",
     {
       "code": 1,
-      "stderr": "task-tree: dimension not found: size
+      "stderr": "dimensions: dimension not found: size
   ",
       "stdout": "",
     },
@@ -179,7 +179,7 @@ describe("dimension values, default and scope", () => {
       ],
       "version": 1,
     },
-    "<tmp>/.task-tree/dimensions/pointer.json:4:14: unknown-dimension-value: default "nope" is not one of the values
+    "<tmp>/.dimensions/dimensions/pointer.json:4:14: unknown-dimension-value: default "nope" is not one of the values
   ",
     2,
   ]
@@ -211,11 +211,11 @@ describe("dimension values, default and scope", () => {
     },
     {
       "code": 1,
-      "stderr": "task-tree: dimension "pointer" does not apply to "a"
+      "stderr": "dimensions: dimension "pointer" does not apply to "a"
   ",
       "stdout": "",
     },
-    "<tmp>/.task-tree/dimensions/pointer.json:4:16: empty-applies-to: a dimension must apply to at least one node
+    "<tmp>/.dimensions/dimensions/pointer.json:4:16: empty-applies-to: a dimension must apply to at least one node
   ",
   ]
 `);
@@ -396,7 +396,7 @@ describe("dimension rename-value", () => {
     });
     expect(run("dimension", "rename-value", "pointer", "pen", "stylus")).toMatchObject({
       code: 1,
-      stderr: 'task-tree: dimension "pointer" has no value "pen"\n',
+      stderr: 'dimensions: dimension "pointer" has no value "pen"\n',
     });
   });
 });

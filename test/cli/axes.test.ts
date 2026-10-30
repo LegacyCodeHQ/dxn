@@ -238,7 +238,7 @@ describe("axes", () => {
       [
         {
           "code": 1,
-          "stderr": "task-tree: node not found: nope
+          "stderr": "dimensions: node not found: nope
       ",
           "stdout": "",
         },
@@ -258,13 +258,13 @@ describe("errors for wrong names and values", () => {
     snapshot.push(run("show", "blog-link", "theme=dark").stderr);
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "task-tree: "md" is not a value of breakpoint (base, sm, lg, xl)
+        "dimensions: "md" is not a value of breakpoint (base, sm, lg, xl)
       ",
-        "task-tree: "ajar" is not a state of menu (closed, open)
+        "dimensions: "ajar" is not a state of menu (closed, open)
       ",
-        "task-tree: "theme" is not a dimension or shared node in this view (breakpoint, menu)
+        "dimensions: "theme" is not a dimension or shared node in this view (breakpoint, menu)
       ",
-        "task-tree: "theme" is not a dimension of blog-link (breakpoint)
+        "dimensions: "theme" is not a dimension of blog-link (breakpoint)
       ",
       ]
     `);

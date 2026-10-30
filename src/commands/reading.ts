@@ -25,11 +25,11 @@ function readCommand(
       return 0;
     } catch (error) {
       if (error instanceof UsageError) {
-        io.stderr(`task-tree: ${error.message}\n\n${usage}`);
+        io.stderr(`dimensions: ${error.message}\n\n${usage}`);
         return 2;
       }
       if (error instanceof Refusal) {
-        io.stderr(`task-tree: ${error.message}\n`);
+        io.stderr(`dimensions: ${error.message}\n`);
         return 1;
       }
       throw error;
@@ -87,7 +87,7 @@ function contextValues(
   return context;
 }
 
-const dimensionsUsage = `Usage: task-tree dimension list
+const dimensionsUsage = `Usage: dimensions dimension list
 
 Lists every dimension: its values, default, and the nodes it applies to.
 `;
@@ -106,7 +106,7 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
   });
 });
 
-const axesUsage = `Usage: task-tree axes <node-id> [--root <root-id>]
+const axesUsage = `Usage: dimensions axes <node-id> [--root <root-id>]
 
 Lists what view and show accept for the node: the dimensions that apply in
 its subtree, with their values and defaults, and the shared nodes above or in
@@ -167,7 +167,7 @@ function existsWhenFor(
   return existsWhen;
 }
 
-const showUsage = `Usage: task-tree show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+const showUsage = `Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 
 Shows the node's states and custom attribute values in a context. Dimensions
 left out take their default; those without one are not applied.
@@ -213,8 +213,8 @@ export const show = readCommand(showUsage, (resolver, args, io) => {
   });
 });
 
-const contextsUsage = `Usage: task-tree contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]
-                         [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
+const contextsUsage = `Usage: dimensions contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]
+                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
 
 Lists every context the node exists in, in each root that contains it.
 --subtree lists every part of the node's subtree instead, with the component
@@ -358,7 +358,7 @@ function filter(
   }
 }
 
-const viewsUsage = `Usage: task-tree views <node-id> [--root <root-id>]
+const viewsUsage = `Usage: dimensions views <node-id> [--root <root-id>]
 
 Lists every distinct view of the node's subtree: each combination of the
 dimensions that apply in it, and the states of shared nodes wherever those
@@ -373,8 +373,8 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
   print(io, { node: id, views: resolver.views(id, values.root) });
 });
 
-const viewUsage = `Usage: task-tree view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
-                     [--root <root-id>]
+const viewUsage = `Usage: dimensions view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+                      [--root <root-id>]
 
 Prints the tree present in one view, with each node's states and values.
 Dimensions left out take their default; each shared node in the view needs
@@ -433,7 +433,7 @@ function describe(context: NodeContext): string {
     .join(" and ");
 }
 
-const transitionsUsage = `Usage: task-tree transitions <node-id>
+const transitionsUsage = `Usage: dimensions transitions <node-id>
 
 Lists how a shared node's state changes: each transition's states, DOM event,
 target and where focus ends up.
@@ -445,7 +445,7 @@ export const transitions = readCommand(transitionsUsage, (resolver, args, io) =>
   print(io, { node: id, transitions: resolver.node(id)?.transitions ?? [] });
 });
 
-const statusUsage = `Usage: task-tree status [<node-id>]
+const statusUsage = `Usage: dimensions status [<node-id>]
 
 Reports every check each typed node requires, in every context it exists in,
 as passed, failed or missing.
@@ -524,7 +524,7 @@ function nodesIn(resolver: Resolver, root: string): string[] {
   return ids;
 }
 
-const treeUsage = "Usage: task-tree tree\n";
+const treeUsage = "Usage: dimensions tree\n";
 
 export const tree = readCommand(treeUsage, (resolver, args, io) => {
   parse(args, [], {});

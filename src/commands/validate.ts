@@ -4,7 +4,7 @@ import { printDiagnostics, requireProject } from "../project.js";
 import { Resolver } from "../resolve.js";
 import { type Context, command } from "./context.js";
 
-export const validateUsage = "Usage: task-tree validate [--dir <directory>]\n";
+export const validateUsage = "Usage: dimensions validate [--dir <directory>]\n";
 
 // Compiles the project and reports every diagnostic.
 export const validate = command(

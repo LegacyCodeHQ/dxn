@@ -1,14 +1,14 @@
 # Commands
 
-Every command is `task-tree <command> ...`. The usage blocks below are the
-same text that `task-tree help <command>` and `task-tree <command> --help`
+Every command is `dimensions <command> ...`. The usage blocks below are the
+same text that `dimensions help <command>` and `dimensions <command> --help`
 print, and a test keeps them in sync. For the ideas behind the commands, see
 [concepts.md](concepts.md). For what they print, see [output.md](output.md).
 
 ## Global options
 
 - `--dir <directory>` uses that project directory instead of the nearest
-  `.task-tree` in the working directory or above.
+  `.dimensions` in the working directory or above.
 - `--dry-run` makes an editing command print the files it would write, as
   JSON, without writing them.
 - `-h`, `--help` print the overview, or a command's usage when they come
@@ -36,31 +36,31 @@ plain-states type (`state=open`), or a shared node's state (`menu=open`).
 ### init
 
 ```text
-Usage: task-tree init [--dir <directory>]
+Usage: dimensions init [--dir <directory>]
 ```
 
-Creates `.task-tree/` (or the `--dir` directory) with a `types.json` that declares nothing yet, and prints `{"created": "<path>"}`. Refuses if the directory exists.
+Creates `.dimensions/` (or the `--dir` directory) with a `types.json` that declares nothing yet, and prints `{"created": "<path>"}`. Refuses if the directory exists.
 
 ```bash
-task-tree init
+dimensions init
 ```
 
 ### validate
 
 ```text
-Usage: task-tree validate [--dir <directory>]
+Usage: dimensions validate [--dir <directory>]
 ```
 
 Compiles the project and checks `expectations.json`. Prints each problem to stderr as `<file>:<line>:<column>: <code>: <message>` and then `{"project": "<path>", "errors": <n>}` to stdout. Exits 1 when there are errors. The codes are in [diagnostics.md](diagnostics.md).
 
 ```bash
-task-tree validate
+dimensions validate
 ```
 
 ### status
 
 ```text
-Usage: task-tree status [<node-id>]
+Usage: dimensions status [<node-id>]
 
 Reports every check each typed node requires, in every context it exists in,
 as passed, failed or missing.
@@ -69,8 +69,8 @@ as passed, failed or missing.
 Prints, as JSON, a summary of passed, failed and missing checks, plus one item per required check per context. Pass a node id to cover only its subtree.
 
 ```bash
-task-tree status
-task-tree status toolbar
+dimensions status
+dimensions status toolbar
 ```
 
 ## Explore
@@ -78,19 +78,19 @@ task-tree status toolbar
 ### tree
 
 ```text
-Usage: task-tree tree
+Usage: dimensions tree
 ```
 
 Prints the roots and components as JSON, as they are written in the files.
 
 ```bash
-task-tree tree
+dimensions tree
 ```
 
 ### show
 
 ```text
-Usage: task-tree show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 
 Shows the node's states and custom attribute values in a context. Dimensions
 left out take their default; those without one are not applied.
@@ -99,16 +99,16 @@ left out take their default; those without one are not applied.
 Prints one node in one context as JSON: its states, its state groups, custom attribute values, and whether it is present. A context argument can be a dimension (`breakpoint=sm`) or a shared node's state (`menu=open`).
 
 ```bash
-task-tree show blog-link
-task-tree show blog-link pointer=touch
-task-tree show menu-blog-link breakpoint=base menu=open
+dimensions show blog-link
+dimensions show blog-link pointer=touch
+dimensions show menu-blog-link breakpoint=base menu=open
 ```
 
 ### contexts
 
 ```text
-Usage: task-tree contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]
-                         [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
+Usage: dimensions contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]
+                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
 
 Lists every context the node exists in, in each root that contains it.
 --subtree lists every part of the node's subtree instead, with the component
@@ -124,17 +124,17 @@ it, and --json prints the tree as JSON for tools.
 Lists the contexts a node exists in: each one gives a value per dimension, a value per state group (or `state`), and the state of each shared node above it. This is the list of things to design or check. Filters accept dimension values, state group values and shared node states. The tree form is the quickest overview for a person.
 
 ```bash
-task-tree contexts blog-link --count
-task-tree contexts toolbar --subtree --root article-page pointer=touch hover=hovered --count
-task-tree contexts wordmark --tree
-task-tree contexts toolbar --subtree --tree --by breakpoint
-task-tree contexts menu --tree --transitions
+dimensions contexts blog-link --count
+dimensions contexts toolbar --subtree --root article-page pointer=touch hover=hovered --count
+dimensions contexts wordmark --tree
+dimensions contexts toolbar --subtree --tree --by breakpoint
+dimensions contexts menu --tree --transitions
 ```
 
 ### views
 
 ```text
-Usage: task-tree views <node-id> [--root <root-id>]
+Usage: dimensions views <node-id> [--root <root-id>]
 
 Lists every distinct view of the node's subtree: each combination of the
 dimensions that apply in it, and the states of shared nodes wherever those
@@ -144,14 +144,14 @@ nodes are present. Each view is one diagram to draw.
 Prints every distinct view of a node's subtree as JSON. Each view is one diagram to draw: a value per dimension, and a state per shared node where it is present.
 
 ```bash
-task-tree views toolbar
+dimensions views toolbar
 ```
 
 ### view
 
 ```text
-Usage: task-tree view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
-                     [--root <root-id>]
+Usage: dimensions view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+                      [--root <root-id>]
 
 Prints the tree present in one view, with each node's states and values.
 Dimensions left out take their default; each shared node in the view needs
@@ -161,13 +161,13 @@ its state.
 Prints the tree present in one view as JSON, with each node's states and values.
 
 ```bash
-task-tree view toolbar breakpoint=base menu=open
+dimensions view toolbar breakpoint=base menu=open
 ```
 
 ### axes
 
 ```text
-Usage: task-tree axes <node-id> [--root <root-id>]
+Usage: dimensions axes <node-id> [--root <root-id>]
 
 Lists what view and show accept for the node: the dimensions that apply in
 its subtree, with their values and defaults, and the shared nodes above or in
@@ -177,13 +177,13 @@ it, with their states and the dimension values where each exists.
 Prints what a view or query of a node accepts, as JSON: the dimensions that apply in its subtree, and the shared nodes with their states and where they exist. Read this first to learn which `<name>=<value>` arguments make sense.
 
 ```bash
-task-tree axes toolbar
+dimensions axes toolbar
 ```
 
 ### transitions
 
 ```text
-Usage: task-tree transitions <node-id>
+Usage: dimensions transitions <node-id>
 
 Lists how a shared node's state changes: each transition's states, DOM event,
 target and where focus ends up.
@@ -192,7 +192,7 @@ target and where focus ends up.
 Prints a shared node's transitions as JSON.
 
 ```bash
-task-tree transitions menu
+dimensions transitions menu
 ```
 
 ## Record
@@ -200,9 +200,9 @@ task-tree transitions menu
 ### verify
 
 ```text
-Usage: task-tree verify <node-id> --check <name> --result passed|failed --by <who>
-                       [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
-                       [--transition <id>] [--evidence <path>] [--at <time>] [--root <root-id>]
+Usage: dimensions verify <node-id> --check <name> --result passed|failed --by <who>
+                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
+                        [--transition <id>] [--evidence <path>] [--at <time>] [--root <root-id>]
 
 Records a check's result for a node in one context, replacing any earlier
 record for the same node, context and check. The context gives one value for
@@ -215,15 +215,15 @@ the states of shared nodes above it; dimensions left out take their default.
 Writes a record to `verification/<root-id>.json`. The node's type must require the check (`type require`), and the context must be one the node exists in.
 
 ```bash
-task-tree verify blog-link --check visual --result passed --by pen.dev breakpoint=lg hover=hovered focus=blurred selection=selected
-task-tree verify menu --check behavior --result passed --by agent --transition escape
+dimensions verify blog-link --check visual --result passed --by pen.dev breakpoint=lg hover=hovered focus=blurred selection=selected
+dimensions verify menu --check behavior --result passed --by agent --transition escape
 ```
 
 ### unverify
 
 ```text
-Usage: task-tree unverify <node-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
-                         [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]
+Usage: dimensions unverify <node-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
+                          [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]
 
 Removes the record for that node and check, in that context or for that
 transition.
@@ -232,7 +232,7 @@ transition.
 Removes a record written by `verify`.
 
 ```bash
-task-tree unverify blog-link --check visual breakpoint=lg hover=hovered focus=blurred selection=selected
+dimensions unverify blog-link --check visual breakpoint=lg hover=hovered focus=blurred selection=selected
 ```
 
 ## Model
@@ -240,7 +240,7 @@ task-tree unverify blog-link --check visual breakpoint=lg hover=hovered focus=bl
 ### node
 
 ```text
-Usage: task-tree node <subcommand>
+Usage: dimensions node <subcommand>
 
 Subcommands:
   add <id> --title <title> [--parent <id>] [--type <type>]
@@ -272,21 +272,21 @@ Subcommands:
 Edits nodes in `roots/` and `components/`. Renames and removals update every reference: overrides, `only`, `appliesTo`, `onlyWhen`, transitions, include states and verification records. `node only` and `node only-when` say where a node exists: at some values of a dimension (stored as `only` in `overrides/<dimension>.json`), or in some states of a shared ancestor.
 
 ```bash
-task-tree node add article-page --title "Article page"
-task-tree node add blog-link --title "Blog link" --parent toolbar-links --type toolbar-link
-task-tree node include article-page toolbar
-task-tree node include-states article-page toolbar blog-link selection selected
-task-tree node only-when menu-panel menu open
-task-tree node transition add menu escape --from open --to closed --on keydown --key Escape --focus menu-button
-task-tree node only toolbar-links breakpoint lg xl
-task-tree node only menu breakpoint base sm
-task-tree node only menu breakpoint --everywhere
+dimensions node add article-page --title "Article page"
+dimensions node add blog-link --title "Blog link" --parent toolbar-links --type toolbar-link
+dimensions node include article-page toolbar
+dimensions node include-states article-page toolbar blog-link selection selected
+dimensions node only-when menu-panel menu open
+dimensions node transition add menu escape --from open --to closed --on keydown --key Escape --focus menu-button
+dimensions node only toolbar-links breakpoint lg xl
+dimensions node only menu breakpoint base sm
+dimensions node only menu breakpoint --everywhere
 ```
 
 ### component
 
 ```text
-Usage: task-tree component <subcommand>
+Usage: dimensions component <subcommand>
 
 Subcommands:
   add <id> --title <title>           Add a reusable component in components/<id>.json
@@ -297,15 +297,15 @@ Subcommands:
 Edits reusable components in `components/`.
 
 ```bash
-task-tree component add toolbar --title Toolbar
+dimensions component add toolbar --title Toolbar
 # toolbar was a child of article-page: move it to components/toolbar.json
-task-tree component extract toolbar
+dimensions component extract toolbar
 ```
 
 ### type
 
 ```text
-Usage: task-tree type <subcommand>
+Usage: dimensions type <subcommand>
 
 Subcommands:
   add <name> [--states a,b,c | --groups g,h] [--shared]
@@ -330,16 +330,16 @@ Subcommands:
 Edits `types` in `types.json`.
 
 ```bash
-task-tree type add toolbar-link --groups hover,focus,selection
-task-tree type add menu --states closed,open --shared
-task-tree type use-group menu-link selection --values selected
-task-tree type require toolbar-link visual
+dimensions type add toolbar-link --groups hover,focus,selection
+dimensions type add menu --states closed,open --shared
+dimensions type use-group menu-link selection --values selected
+dimensions type require toolbar-link visual
 ```
 
 ### state-group
 
 ```text
-Usage: task-tree state-group <subcommand>
+Usage: dimensions state-group <subcommand>
 
 A state group is a named set of states that exclude each other, such as hover
 (rest, hovered) or selection (unselected, selected). A type can use several
@@ -357,14 +357,14 @@ Subcommands:
 Edits `stateGroups` in `types.json`.
 
 ```bash
-task-tree state-group add hover --values rest,hovered
-task-tree state-group rename-value focus blurred idle
+dimensions state-group add hover --values rest,hovered
+dimensions state-group rename-value focus blurred idle
 ```
 
 ### attribute
 
 ```text
-Usage: task-tree attribute <subcommand>
+Usage: dimensions attribute <subcommand>
 
 Subcommands:
   add <name> --values a,b            Declare a custom attribute and its values
@@ -376,14 +376,14 @@ Subcommands:
 Edits `customAttributes` in `types.json`. Values are set on types (`type set`), nodes (`node set`) and overrides (`override set`).
 
 ```bash
-task-tree attribute add design --values missing,ready
-task-tree type set toolbar-link design rest=ready hovered=missing
+dimensions attribute add design --values missing,ready
+dimensions type set toolbar-link design rest=ready hovered=missing
 ```
 
 ### check
 
 ```text
-Usage: task-tree check <subcommand>
+Usage: dimensions check <subcommand>
 
 Subcommands:
   add <name>                         Declare a check, such as visual or behavior
@@ -393,13 +393,13 @@ Subcommands:
 Edits `customChecks` in `types.json`. Types require checks with `type require`.
 
 ```bash
-task-tree check add visual
+dimensions check add visual
 ```
 
 ### dimension
 
 ```text
-Usage: task-tree dimension <subcommand>
+Usage: dimensions dimension <subcommand>
 
 Subcommands:
   list                               List every dimension, its values, default and scope
@@ -418,15 +418,15 @@ Subcommands:
 Edits `dimensions/<name>.json`, and `dimension list` prints every dimension as JSON. Renaming a value updates overrides, `only`, records and expectations.
 
 ```bash
-task-tree dimension list
-task-tree dimension add breakpoint --values base,sm,lg,xl --applies-to toolbar --default xl
-task-tree dimension add pointer --values mouse,touch --applies-to toolbar --default mouse
+dimensions dimension list
+dimensions dimension add breakpoint --values base,sm,lg,xl --applies-to toolbar --default xl
+dimensions dimension add pointer --values mouse,touch --applies-to toolbar --default mouse
 ```
 
 ### override
 
 ```text
-Usage: task-tree override <subcommand>
+Usage: dimensions override <subcommand>
 
 <context> is <dimension>=<value>, or several joined by commas for a
 combination, e.g. breakpoint=sm,pointer=touch.
@@ -443,7 +443,7 @@ Subcommands:
 Edits `overrides/<dimension>.json`, or `overrides/<a>+<b>.json` for a combination.
 
 ```bash
-task-tree override states pointer=touch --type toolbar-link --remove hovered
-task-tree override states breakpoint=sm,pointer=touch --node menu-button --remove focused
-task-tree override set keyboard=no-keyboard --type toolbar-link design rest=missing
+dimensions override states pointer=touch --type toolbar-link --remove hovered
+dimensions override states breakpoint=sm,pointer=touch --node menu-button --remove focused
+dimensions override set keyboard=no-keyboard --type toolbar-link design rest=missing
 ```

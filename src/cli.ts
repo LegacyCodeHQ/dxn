@@ -26,10 +26,10 @@ import { version } from "./version.js";
 
 export type { Io } from "./io.js";
 
-const usage = `Usage: task-tree <command> [options]
+const usage = `Usage: dimensions <command> [options]
 
 Project
-  init                Create a .task-tree project in the working directory
+  init                Create a .dimensions project in the working directory
   validate            Compile the project and report every error
   status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -69,13 +69,13 @@ Model
 
   help [<command>]    Show this overview, or a command's usage
 
-Run "task-tree help <command>" (or "task-tree <command> --help") for a command's
-options. The docs/ folder of the task-tree package explains the concepts
+Run "dimensions help <command>" (or "dimensions <command> --help") for a command's
+options. The docs/ folder of the dimensions package explains the concepts
 (concepts.md), every command (commands.md), every diagnostic code
 (diagnostics.md) and the JSON output (output.md).
 
 Options:
-  --dir <directory>   Use this project directory instead of the nearest .task-tree
+  --dir <directory>   Use this project directory instead of the nearest .dimensions
   --dry-run           Print the files a command would write, without writing them
   -h, --help          Show this help
   -V, --version       Print version information as JSON
@@ -108,7 +108,7 @@ export function run(argv: string[], io: Io): number {
   const cwd = io.cwd ?? process.cwd();
   const global = parseGlobal(argv, cwd);
   if ("error" in global) {
-    io.stderr(`task-tree: ${global.error}\n\n${usage}`);
+    io.stderr(`dimensions: ${global.error}\n\n${usage}`);
     return 2;
   }
   const [first, ...rest] = global.args;
@@ -129,7 +129,7 @@ export function run(argv: string[], io: Io): number {
     }
     const target = commands[name];
     if (target === undefined) {
-      io.stderr(`task-tree: unknown command: ${name}\n\n${usage}`);
+      io.stderr(`dimensions: unknown command: ${name}\n\n${usage}`);
       return 2;
     }
     io.stdout(target.usage);
@@ -137,7 +137,7 @@ export function run(argv: string[], io: Io): number {
   }
   const command = commands[first];
   if (command === undefined) {
-    io.stderr(`task-tree: unknown command: ${first}\n\n${usage}`);
+    io.stderr(`dimensions: unknown command: ${first}\n\n${usage}`);
     return 2;
   }
   // --help anywhere after a command prints its usage; no project needed.

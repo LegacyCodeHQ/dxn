@@ -29,7 +29,7 @@ describe("component add and remove", () => {
     },
     {
       "code": 1,
-      "stderr": "task-tree: component "toolbar" already exists
+      "stderr": "dimensions: component "toolbar" already exists
   ",
       "stdout": "",
     },
@@ -53,11 +53,11 @@ describe("component add and remove", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.task-tree/roots/page.json:8:20: unknown-component: no components/toolbar.json defines this component
+    "<tmp>/.dimensions/roots/page.json:8:20: unknown-component: no components/toolbar.json defines this component
   ",
     {
       "code": 1,
-      "stderr": "task-tree: component not found: nope
+      "stderr": "dimensions: component not found: nope
   ",
       "stdout": "",
     },
@@ -131,7 +131,7 @@ describe("component extract", () => {
     const { run } = cliProject({ "types.json": types, "roots/page.json": page() });
     expect(run("component", "extract", "page")).toMatchObject({
       code: 1,
-      stderr: 'task-tree: "page" is a file\'s root; only a node inside one can be extracted\n',
+      stderr: 'dimensions: "page" is a file\'s root; only a node inside one can be extracted\n',
     });
   });
 });
@@ -166,7 +166,7 @@ describe("node include and uninclude", () => {
           },
           "version": 1,
         },
-        "<tmp>/.task-tree/roots/page.json:11:20: duplicate-include: "toolbar" is already part of "page"; its nodes would appear twice
+        "<tmp>/.dimensions/roots/page.json:11:20: duplicate-include: "toolbar" is already part of "page"; its nodes would appear twice
       ",
         0,
         {
@@ -179,7 +179,7 @@ describe("node include and uninclude", () => {
         },
         {
           "code": 1,
-          "stderr": "task-tree: "page" does not include "toolbar"
+          "stderr": "dimensions: "page" does not include "toolbar"
       ",
           "stdout": "",
         },
