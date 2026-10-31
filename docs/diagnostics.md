@@ -376,11 +376,19 @@ same combination as a laptop.
 A dimension that profiles cover has a `default`. Profiles fill it in instead,
 from the one profile that fits what you give, so remove the default.
 
+### `value-without-profile`
+
+A value of a dimension that profiles cover is in no profile, so no context
+can have it. Add the profiles that use it in the same edit (`profile add`
+takes several), or remove the value. Removing the last profile that uses a
+value is refused for the same reason.
+
 ### `no-profile`
 
-A verification record's context is a combination that no profile has, for
-example `breakpoint=xl` with `pointer=touch`. Use the values of one of the
-profiles (`profile list` shows them).
+A combination that no profile has, for example `breakpoint=xl` with
+`pointer=touch`: in a verification record's context, or as a combination
+override in `overrides/<a>+<b>.json`, which could never apply. Use the values
+of one of the profiles (`profile list` shows them), or remove the override.
 
 ## Overrides and only
 

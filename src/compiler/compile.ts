@@ -16,7 +16,7 @@ import type {
 } from "../tree.js";
 import { checkRootFile, checkTypesFile, emptySymbols, resolveOnlyWhen } from "./check.js";
 import { checkConflicts } from "./conflicts.js";
-import { Diagnostics, type FileDiagnostic } from "./diagnostic.js";
+import { childPath, Diagnostics, type FileDiagnostic } from "./diagnostic.js";
 import { checkDimensionFile } from "./dimensions.js";
 import { resolveIncludes } from "./includes.js";
 import { type JsonNode, parseJson } from "./json.js";
@@ -196,7 +196,7 @@ export function compileDirectory(directory: string): DirectoryResult {
 
   // profiles.json: the combinations of dimension values that exist. A
   // dimension the profiles cover has no default: a profile fills it in.
-  let profiles: ProfilesSymbol = { profiles: new Map(), dimensions: new Set() };
+  let profiles: ProfilesSymbol = { profiles: new Map(), dimensions: new Set(), complete: true };
   const profilesFile = readJson(directory, "profiles.json");
   if (profilesFile !== undefined) {
     if ("code" in profilesFile) {
@@ -209,6 +209,28 @@ export function compileDirectory(directory: string): DirectoryResult {
     }
   }
   for (const name of profiles.dimensions) {
+    // A value no profile uses can never be in a context.
+    const values = dimensions.get(name)?.parsed.root;
+    const list =
+      values?.kind === "object"
+        ? values.members.find(({ key }) => key.value === "values")?.value
+        : undefined;
+    if (list?.kind === "array" && profiles.complete) {
+      list.elements.forEach((element, index) => {
+        if (
+          element.kind === "string" &&
+          ![...profiles.profiles.values()].some((profile) => profile.get(name) === element.value)
+        ) {
+          report(
+            (dimensions.get(name) as DimensionEntry).parsed.diagnostics,
+            "value-without-profile",
+            `${JSON.stringify(element.value)} is in no profile; add a profile that uses it, or remove the value`,
+            `$.values[${index}]`,
+            element,
+          );
+        }
+      });
+    }
     const entry = dimensions.get(name);
     const root = entry?.parsed.root;
     const fallback =
@@ -290,6 +312,45 @@ export function compileDirectory(directory: string): DirectoryResult {
       });
     }
     combinations.push([name, file]);
+  }
+
+  // A combination override at a combination no profile has never applies.
+  for (const [name, file] of combinations) {
+    const names = name.split("+");
+    const walk = (item: JsonNode | undefined, depth: number, values: string[], path: string) => {
+      if (item?.kind !== "object") return;
+      for (const { key, value } of item.members) {
+        const here = childPath(path, key.value);
+        const chosen = [...values, key.value];
+        if (depth < names.length - 1) {
+          walk(value, depth + 1, chosen, here);
+          continue;
+        }
+        const covered = names.filter((dimension) => profiles.dimensions.has(dimension));
+        const fits =
+          covered.length === 0 ||
+          [...profiles.profiles.values()].some((profile) =>
+            covered.every(
+              (dimension) => profile.get(dimension) === chosen[names.indexOf(dimension)],
+            ),
+          );
+        if (!fits) {
+          report(
+            file.diagnostics,
+            "no-profile",
+            `no profile has ${covered.map((dimension) => `${dimension}=${chosen[names.indexOf(dimension)]}`).join(", ")}`,
+            here,
+            key,
+          );
+        }
+      }
+    };
+    const root = file.root;
+    const overridesNode =
+      root?.kind === "object"
+        ? root.members.find(({ key }) => key.value === "overrides")?.value
+        : undefined;
+    walk(overridesNode, 0, [], "$.overrides");
   }
 
   checkConflicts(entries, symbols, dimensions);

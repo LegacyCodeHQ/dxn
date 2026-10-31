@@ -100,6 +100,39 @@ describe("profiles.json", () => {
   });
 });
 
+describe("what no profile reaches", () => {
+  it("is an error: a value no profile uses", () => {
+    expect(
+      diagnose(
+        project(
+          { phone, laptop },
+          {
+            "dimensions/breakpoint.json": {
+              version: 1,
+              values: ["sm", "lg", "xl"],
+              appliesTo: ["page"],
+            },
+          },
+        ),
+      ),
+    ).toEqual([at("dimensions/breakpoint.json")("value-without-profile", "$.values[2]")]);
+  });
+
+  it("is an error: a combination override at a combination no profile has", () => {
+    const combination = (values: Record<string, Record<string, unknown>>) => ({
+      "overrides/breakpoint+pointer.json": { version: 1, overrides: values },
+    });
+    const remove = { nodes: { link: { states: { remove: ["hovered"] } } } };
+    expect([
+      diagnose(project({ phone, laptop }, combination({ sm: { touch: remove } }))),
+      diagnose(project({ phone, laptop }, combination({ sm: { mouse: remove } }))),
+    ]).toEqual([
+      [],
+      [at("overrides/breakpoint+pointer.json")("no-profile", "$.overrides.sm.mouse")],
+    ]);
+  });
+});
+
 describe("records under profiles", () => {
   const record = (context: Record<string, string>) => ({
     "verification/page.json": {

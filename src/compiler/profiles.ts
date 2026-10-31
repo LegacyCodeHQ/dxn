@@ -8,6 +8,8 @@ export interface ProfilesSymbol {
   // Profile name -> dimension -> value.
   profiles: Map<string, Map<string, string>>;
   dimensions: Set<string>;
+  // Whether profiles.json has no errors, so its profiles are all there.
+  complete: boolean;
 }
 
 // profiles.json: the combinations of dimension values that exist. Each
@@ -18,7 +20,8 @@ export function checkProfilesFile(
   diagnostics: Diagnostics,
   dimensions: Map<string, { symbol: DimensionSymbol }>,
 ): ProfilesSymbol {
-  const result: ProfilesSymbol = { profiles: new Map(), dimensions: new Set() };
+  const result: ProfilesSymbol = { profiles: new Map(), dimensions: new Set(), complete: false };
+  const before = diagnostics.items.length;
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) return result;
   const fields = keys(diagnostics, document, "$", ["$schema", "version", "profiles"], {
@@ -112,6 +115,7 @@ export function checkProfilesFile(
     seen.set(combination, name);
     result.profiles.set(name, values);
   }
+  result.complete = diagnostics.items.length === before;
   return result;
 }
 

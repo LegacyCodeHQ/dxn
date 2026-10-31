@@ -323,17 +323,20 @@ describe("profile commands", () => {
       ).code,
     );
     snapshot.push((read("profiles.json").profiles as Record<string, unknown>)["tablet-keyboard"]);
-    snapshot.push(run("profile", "remove", "phone").code);
+    snapshot.push(run("profile", "remove", "tablet-landscape").code);
+    // phone is the only profile with breakpoint=base, which would be left unused.
+    snapshot.push(run("profile", "remove", "phone").stderr.includes("value-without-profile"));
     snapshot.push(json(run("profile", "list")).profiles.map(({ name }: { name: string }) => name));
     expect(snapshot).toEqual([
       0,
       { breakpoint: "lg", keyboard: "keyboard", pointer: "touch" },
       0,
-      ["desktop", "laptop", "tablet-keyboard", "tablet-landscape", "tablet-portrait"],
+      true,
+      ["desktop", "laptop", "phone", "tablet-keyboard", "tablet-portrait"],
     ]);
   });
 
-  it("add several profiles in one step, where one alone would break an expectation", () => {
+  it("add several profiles in one step, where one alone would leave values unused", () => {
     const { "profiles.json": _, ...without } = files;
     const { run, read } = cliProject({
       ...without,
@@ -356,13 +359,23 @@ describe("profile commands", () => {
       },
     });
     const phone = ["phone", "breakpoint=base", "pointer=touch", "keyboard=no-keyboard"];
-    const desktop = ["desktop", "breakpoint=xl", "pointer=mouse", "keyboard=keyboard"];
+    const together = [
+      "desktop",
+      "breakpoint=xl",
+      "pointer=mouse",
+      "keyboard=keyboard",
+      ...["tablet", "breakpoint=sm", "pointer=touch", "keyboard=no-keyboard"],
+      ...["laptop", "breakpoint=lg", "pointer=mouse", "keyboard=keyboard"],
+    ];
     const alone = run("profile", "add", ...phone);
-    expect([alone.code, alone.stderr.includes("empty-expectation")]).toEqual([1, true]);
-    expect(run("profile", "add", ...phone, ...desktop).code).toBe(0);
+    // Alone, phone leaves the other breakpoints in no profile.
+    expect([alone.code, alone.stderr.includes("value-without-profile")]).toEqual([1, true]);
+    expect(run("profile", "add", ...phone, ...together).code).toBe(0);
     expect(Object.keys(read("profiles.json").profiles as Record<string, unknown>)).toEqual([
       "phone",
       "desktop",
+      "tablet",
+      "laptop",
     ]);
   });
 

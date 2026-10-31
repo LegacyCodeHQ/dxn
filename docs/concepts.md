@@ -181,7 +181,9 @@ does exist. Profiles live in `profiles.json`, for the whole project:
   two profiles, because they show different toolbars and are checked
   separately.
 - Every profile gives a value for the same dimensions, and no two profiles
-  give the same combination.
+  give the same combination. Every value of those dimensions is in some
+  profile, and every combination override is at a combination a profile has:
+  anything else could never apply.
 - Once profiles exist, a context exists only if it matches a profile: these
   five turn the toolbar's 16 combinations into 5. Dimensions that no profile
   mentions combine as before.
