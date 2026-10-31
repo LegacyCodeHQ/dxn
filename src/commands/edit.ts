@@ -265,15 +265,22 @@ export function swapValues(item: unknown, names: string[], from: string, to: str
 
 // Every record in the verification files, each marking its file changed when
 // visit returns true.
+// Visits every verification record and evidence entry: both name a node and
+// a context.
 export function editRecords(workspace: Workspace, visit: (record: Json) => boolean): void {
-  for (const file of workspace.list("verification")) {
-    const verification = workspace.read(file);
-    if (!Array.isArray(verification?.records)) continue;
-    let changed = false;
-    for (const record of verification.records) {
-      if (isObject(record) && visit(record)) changed = true;
+  for (const [folder, key] of [
+    ["verification", "records"],
+    ["evidence", "evidence"],
+  ] as const) {
+    for (const file of workspace.list(folder)) {
+      const items = workspace.read(file)?.[key];
+      if (!Array.isArray(items)) continue;
+      let changed = false;
+      for (const item of items) {
+        if (isObject(item) && visit(item)) changed = true;
+      }
+      if (changed) workspace.touch(file);
     }
-    if (changed) workspace.touch(file);
   }
 }
 

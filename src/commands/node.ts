@@ -137,6 +137,7 @@ const rename = editCommand(usage, (workspace, args) => {
     workspace.move(located.file, `${folder}/${next}.json`);
     if (located.key === "root") {
       workspace.move(`verification/${id}.json`, `verification/${next}.json`);
+      workspace.move(`evidence/${id}.json`, `evidence/${next}.json`);
     } else {
       for (const [file, item] of treeNodes(workspace)) {
         renameIncludes(workspace, file, item, id, next);
