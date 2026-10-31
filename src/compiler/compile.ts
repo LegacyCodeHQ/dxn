@@ -20,6 +20,7 @@ import { checkRootFile, checkTypesFile, emptySymbols, resolveOnlyWhen } from "./
 import { checkConflicts } from "./conflicts.js";
 import { childPath, Diagnostics, type FileDiagnostic } from "./diagnostic.js";
 import { checkDimensionFile } from "./dimensions.js";
+import { checkEvidence } from "./evidence.js";
 import { resolveIncludes } from "./includes.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { checkCombinationFile, checkOverridesFile } from "./overrides.js";
@@ -59,6 +60,7 @@ interface ParsedFile {
 //   overrides/<a>+<b>.json   overrides for combinations of those dimensions' values
 //   verification/<id>.json   verification records for the root <id>
 //   actors.json              the roles that do work against the model
+//   evidence/<id>.json       what actors recorded for nodes in the root <id>
 //
 // Anything else in the directory is ignored.
 export function compileDirectory(directory: string): DirectoryResult {
@@ -479,6 +481,15 @@ export function compileDirectory(directory: string): DirectoryResult {
   const expected = checkExpectations(directory, new Resolver(project));
   if (expected.length > 0) {
     return { diagnostics: expected };
+  }
+  // Evidence names the model's contexts, so it is checked once the model compiles.
+  const evidence = checkEvidence(directory, new Resolver(project));
+  if (evidence.diagnostics.length > 0) {
+    return { diagnostics: evidence.diagnostics };
+  }
+  if (Object.keys(evidence.files).length > 0) {
+    project.evidence = evidence.files;
+    project.revisions = evidence.revisions;
   }
   const expectations = readJson(directory, "expectations.json");
   if (expectations !== undefined && !("code" in expectations)) {

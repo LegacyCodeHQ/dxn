@@ -509,6 +509,38 @@ fixes to `selected`.
 `at` isn't an ISO 8601 date and time with a time zone, such as
 `2026-10-30T19:20:00Z`.
 
+## Evidence
+
+`evidence/<root-id>.json` is checked once the model compiles, against the
+node's contexts. Entries also report `unknown-node`, `node-outside-file` and
+`invalid-timestamp`, and a file named after no root reports `unknown-root`.
+
+### `unknown-context`
+
+An entry's context is not one of the node's contexts in that root. A context
+must be complete: every dimension, state and shared node's state the node has,
+exactly as `dimensions evidence <node-id> --actor <name>` lists them.
+
+### `undeclared-actor`
+
+An entry names an actor that `actors.json` does not declare. Add it with
+`dimensions actor add <name>`.
+
+### `missing-source`
+
+The file an entry points to does not exist. Paths are relative to the folder
+that holds `.dimensions`, normally the repository's root.
+
+### `invalid-revision`
+
+An entry's revision is not a git blob hash. Use what `git hash-object <file>`
+prints when the entry is recorded. When the file changes, the entry is not an
+error: `dimensions evidence` shows it as stale.
+
+### `duplicate-evidence`
+
+Two entries have the same node, context, actor and frame.
+
 ## Expectations
 
 The compiler checks `expectations.json` once everything else compiles. Like

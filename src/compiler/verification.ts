@@ -614,7 +614,7 @@ const timestamp =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):(\d{2}))$/;
 
 // ISO 8601 date and time with a time zone, with every field in range.
-function isTimestamp(text: string): boolean {
+export function isTimestamp(text: string): boolean {
   const match = timestamp.exec(text);
   if (match === null) {
     return false;

@@ -39,6 +39,7 @@ opens a panel with the same link on narrow screens.
   verification/<root-id>.json check results for nodes in that root
   expectations.json           counts the model must produce
   actors.json                 the roles that do work against the model
+  evidence/<root-id>.json     what actors recorded for nodes in that root
 ```
 
 `dimensions init` creates the folder. Commands find the nearest `.dimensions`
@@ -502,8 +503,42 @@ Actors are declared in `actors.json`:
 { "version": 1, "actors": { "design-agent": {} } }
 ```
 
-**Evidence** is what an actor has recorded for a node in one context.
-`dimensions evidence toolbar --actor design-agent --table` lists every
+**Evidence** is what an actor has recorded for one node in one complete
+context, in `evidence/<root-id>.json`:
+
+```json
+{
+  "version": 1,
+  "evidence": [
+    {
+      "node": "menu-button",
+      "context": {
+        "breakpoint": "base",
+        "keyboard": "no-keyboard",
+        "pointer": "touch",
+        "menu": "closed",
+        "hover": "rest",
+        "focus": "blurred"
+      },
+      "actor": "design-agent",
+      "at": "2026-10-31T12:00:00Z",
+      "source": { "file": "design/website.pen", "frame": "vbGba" },
+      "revision": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad"
+    }
+  ]
+}
+```
+
+`actor` and `at` are its provenance: which role recorded it, and when. `source`
+is where it points: a file, relative to the folder that holds `.dimensions`,
+and a frame in it. `revision` is the file's git blob hash then, as
+`git hash-object <file>` prints it. The context must be exactly one of the
+node's contexts, so an entry claims one row and no more; a frame that shows
+several gets an entry for each.
+
+`dimensions evidence menu-button --actor design-agent --table` lists every
 context of the node with the profile it matches and the actor's evidence for
-it. Nothing can be recorded yet, so every context shows `—`: the list of what
-is missing.
+it, where `—` is the list of what is missing. When the file changes after an
+entry is recorded, the entry is **stale**: still valid, shown as
+`website.pen#vbGba (stale)`, and due for another look. A stale entry is not an
+error, so editing a design never blocks work on the model.

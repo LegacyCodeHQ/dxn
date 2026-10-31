@@ -239,12 +239,13 @@ dimensions transitions menu
 Usage: dimensions evidence <node-id> --actor <name> [--root <root-id>] [--table]
 
 Lists every context the node exists in, with the profile it matches and the
-evidence the actor has recorded for it. Nothing can be recorded yet, so every
-context has none. --table prints a Markdown table, a row per context and a
-column for the actor, where — means no evidence.
+evidence the actor has recorded for it in evidence/<root-id>.json: when, the
+file and frame it points to, the file's revision then, and whether the file
+has changed since (stale). --table prints a Markdown table, a row per context
+and a column for the actor, where — means no evidence.
 ```
 
-Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it. Evidence cannot be recorded yet, so this is the list of what is missing: every context of the node, for that actor.
+Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it: `at`, `source`, `revision` and `stale`. A context with no evidence is what is missing. An entry is stale when the file it points to has changed since it was recorded; that is not an error. Entries are written by hand in `evidence/<root-id>.json` for now; see [concepts.md](concepts.md#actors-and-evidence).
 
 ```bash
 dimensions evidence toolbar --actor design-agent --table

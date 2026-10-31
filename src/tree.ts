@@ -165,6 +165,27 @@ export interface Project {
   profiles?: ProfilesFile;
   // actors.json, when the project has one.
   actors?: ActorsFile;
+  // evidence/<root-id>.json, by root id.
+  evidence?: Record<string, EvidenceFile>;
+  // Each file evidence points to -> its git blob hash now.
+  revisions?: Record<string, string>;
+}
+
+// evidence/<root-id>.json: what actors have recorded for nodes in that root.
+export interface EvidenceFile {
+  version: number;
+  evidence: EvidenceEntry[];
+}
+
+// One node in one complete context, recorded by an actor, pointing to a frame.
+export interface EvidenceEntry {
+  node: string;
+  context: Record<string, string>;
+  actor: string;
+  at: string;
+  source: { file: string; frame: string };
+  // The source file's git blob hash when the entry was recorded.
+  revision: string;
 }
 
 // actors.json: the roles that do work against the model, such as a design

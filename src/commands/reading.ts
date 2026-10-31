@@ -672,9 +672,10 @@ function profileOf(resolver: Resolver, context: NodeContext): string | undefined
 const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [--root <root-id>] [--table]
 
 Lists every context the node exists in, with the profile it matches and the
-evidence the actor has recorded for it. Nothing can be recorded yet, so every
-context has none. --table prints a Markdown table, a row per context and a
-column for the actor, where — means no evidence.
+evidence the actor has recorded for it in evidence/<root-id>.json: when, the
+file and frame it points to, the file's revision then, and whether the file
+has changed since (stale). --table prints a Markdown table, a row per context
+and a column for the actor, where — means no evidence.
 `;
 
 export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
@@ -703,7 +704,20 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
         root,
         ...(profile === undefined ? {} : { profile }),
         context,
-        evidence: [] as unknown[],
+        evidence: (resolver.project.evidence?.[root]?.evidence ?? [])
+          .filter(
+            (entry) =>
+              entry.node === id &&
+              entry.actor === actor &&
+              Object.keys(entry.context).length === Object.keys(context).length &&
+              Object.entries(context).every(([name, value]) => entry.context[name] === value),
+          )
+          .map(({ at, source, revision }) => ({
+            at,
+            source,
+            revision,
+            stale: resolver.project.revisions?.[source.file] !== revision,
+          })),
       };
     }),
   );
@@ -715,7 +729,14 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       rows.map((row) => [
         ...(profiled ? [row.profile ?? "—"] : []),
         ...names.map((name) => row.context[name] ?? "—"),
-        row.evidence.length === 0 ? "—" : String(row.evidence.length),
+        row.evidence.length === 0
+          ? "—"
+          : row.evidence
+              .map(
+                ({ source, stale }) =>
+                  `${source.file.split("/").pop()}#${source.frame}${stale ? " (stale)" : ""}`,
+              )
+              .join(", "),
       ]),
     );
     io.stdout(`${lines.join("\n")}\n`);
