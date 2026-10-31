@@ -551,17 +551,17 @@ Accessories that change some profiles' values are modifiers; see
 "dimensions modifier".
 
 Subcommands:
-  list                               List every profile and its values
+  list [--table]                     List every profile and its values
   add <name> <dimension>=<value>... [<name> <dimension>=<value>...]
                                      Add one or more profiles in profiles.json; add
                                      profiles that belong together in one step
   remove <name>                      Remove a profile
 ```
 
-Edits `profiles.json`: the combinations of dimension values that exist. `profile list` prints them, with a profile for each modifier on each profile it is on. Profiles may share a combination. Removing a profile takes it out of every modifier's `on`, and removes a modifier left on none. Add profiles that belong together in one command: once profiles exist only their combinations do, so adding one at a time can break expectations that need the others.
+Edits `profiles.json`: the combinations of dimension values that exist. `profile list` prints them in `profiles.json` order, with a profile for each modifier on each profile it is on, right after that profile, and `sameAs` naming other profiles with the same combination; `--table` prints a Markdown table. Profiles may share a combination. Removing a profile takes it out of every modifier's `on`, and removes a modifier left on none. Add profiles that belong together in one command: once profiles exist only their combinations do, so adding one at a time can break expectations that need the others.
 
 ```bash
-dimensions profile list
+dimensions profile list --table
 dimensions profile add phone breakpoint=base pointer=touch keyboard=no-keyboard desktop breakpoint=xl pointer=mouse keyboard=keyboard
 dimensions profile remove tablet-portrait
 ```

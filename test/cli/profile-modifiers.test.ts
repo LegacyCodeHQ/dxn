@@ -177,3 +177,44 @@ describe("profile remove", () => {
     });
   });
 });
+
+describe("profile list", () => {
+  it("lists profiles in file order, each modifier's after the profile it is on", () => {
+    const { run } = cliProject(files);
+    const listed = json(run("profile", "list")).profiles;
+    expect(listed.map(({ name }: { name: string }) => name)).toEqual([
+      "phone",
+      "tablet-portrait",
+      "tablet-portrait+magic-keyboard",
+      "tablet-landscape",
+      "tablet-landscape+magic-keyboard",
+      "laptop",
+      "desktop",
+    ]);
+    expect(listed[4]).toEqual({
+      name: "tablet-landscape+magic-keyboard",
+      values: { breakpoint: "lg", keyboard: "keyboard", pointer: "mouse" },
+      modifier: "magic-keyboard",
+      sameAs: ["laptop"],
+    });
+    expect(listed[0]).toEqual({ name: "phone", values: profiles.phone });
+  });
+
+  it("prints them as a Markdown table", () => {
+    const { run } = cliProject(files);
+    expect(run("profile", "list", "--table").stdout).toBe(
+      [
+        "| profile                         | breakpoint | keyboard    | pointer | modifier       | same combination as             |",
+        "| ------------------------------- | ---------- | ----------- | ------- | -------------- | ------------------------------- |",
+        "| phone                           | base       | no-keyboard | touch   |                |                                 |",
+        "| tablet-portrait                 | sm         | no-keyboard | touch   |                |                                 |",
+        "| tablet-portrait+magic-keyboard  | sm         | keyboard    | mouse   | magic-keyboard |                                 |",
+        "| tablet-landscape                | lg         | no-keyboard | touch   |                |                                 |",
+        "| tablet-landscape+magic-keyboard | lg         | keyboard    | mouse   | magic-keyboard | laptop                          |",
+        "| laptop                          | lg         | keyboard    | mouse   |                | tablet-landscape+magic-keyboard |",
+        "| desktop                         | xl         | keyboard    | mouse   |                |                                 |",
+        "",
+      ].join("\n"),
+    );
+  });
+});

@@ -37,11 +37,11 @@ describe("profiles limit the combinations", () => {
   it("and are listed by axes", () => {
     const { run } = cliProject(files);
     expect(json(run("axes", "toolbar")).profiles).toEqual([
-      { name: "desktop", values: profiles.desktop },
-      { name: "laptop", values: profiles.laptop },
       { name: "phone", values: profiles.phone },
-      { name: "tablet-landscape", values: profiles["tablet-landscape"] },
       { name: "tablet-portrait", values: profiles["tablet-portrait"] },
+      { name: "tablet-landscape", values: profiles["tablet-landscape"] },
+      { name: "laptop", values: profiles.laptop },
+      { name: "desktop", values: profiles.desktop },
     ]);
   });
 });
@@ -87,8 +87,8 @@ describe("views and axes filter", () => {
         ],
         shared: [],
         profiles: [
-          { name: "laptop", values: profiles.laptop },
           { name: "tablet-landscape", values: profiles["tablet-landscape"] },
+          { name: "laptop", values: profiles.laptop },
         ],
       },
       {
@@ -261,7 +261,7 @@ describe("profile commands", () => {
       { breakpoint: "lg", keyboard: "keyboard", pointer: "touch" },
       0,
       true,
-      ["desktop", "laptop", "tablet-keyboard", "tablet-portrait"],
+      ["tablet-portrait", "laptop", "desktop", "tablet-keyboard"],
     ]);
   });
 

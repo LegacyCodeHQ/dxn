@@ -292,10 +292,46 @@ export const axes = readCommand(axesUsage, (resolver, args, io) => {
   });
 });
 
-// Every profile, by name, with its dimension values; a modifier on a profile
-// makes one named <profile>+<modifier>.
-function profileList(resolver: Resolver): { name: string; values: Record<string, string> }[] {
-  return [...resolver.profiles].map(([name, values]) => ({ name, values }));
+// Every profile in profiles.json order, each modifier's after the profile it
+// is on, with its dimension values, the modifier that made it, and the other
+// profiles with the same combination.
+function profileList(resolver: Resolver): {
+  name: string;
+  values: Record<string, string>;
+  modifier?: string;
+  sameAs?: string[];
+}[] {
+  const modifiers = Object.entries(resolver.project.profiles?.modifiers ?? {});
+  const names = Object.keys(resolver.project.profiles?.profiles ?? {}).flatMap((profile) => [
+    { name: profile } as { name: string; modifier?: string },
+    ...modifiers
+      .filter(([, { on }]) => on.includes(profile))
+      .map(([modifier]) => ({ name: `${profile}+${modifier}`, modifier })),
+  ]);
+  const combination = (values: Record<string, string>) =>
+    JSON.stringify([...resolver.profiled].sort().map((dimension) => values[dimension]));
+  return names.flatMap(({ name, modifier }) => {
+    const values = resolver.profiles.get(name);
+    if (values === undefined) return [];
+    const sameAs = names
+      .map((other) => other.name)
+      .filter((other) => {
+        const otherValues = resolver.profiles.get(other);
+        return (
+          other !== name &&
+          otherValues !== undefined &&
+          combination(otherValues) === combination(values)
+        );
+      });
+    return [
+      {
+        name,
+        values,
+        ...(modifier === undefined ? {} : { modifier }),
+        ...(sameAs.length === 0 ? {} : { sameAs }),
+      },
+    ];
+  });
 }
 
 // The profiled dimensions' values from the one profile that fits, or a
@@ -335,10 +371,30 @@ export const modifierList = readCommand(
 );
 
 export const profileListCommand = readCommand(
-  "Usage: dimensions profile list\n",
+  `Usage: dimensions profile list [--table]
+
+Lists every profile in profiles.json order, each modifier's profiles after the
+profile they are on, with its values, the modifier that made it, and the other
+profiles with the same combination. --table prints a Markdown table.
+`,
   (resolver, args, io) => {
-    parse(args, [], {});
-    print(io, { profiles: profileList(resolver) });
+    const { values } = parse(args, [], { table: { type: "boolean" } });
+    const profiles = profileList(resolver);
+    if (values.table !== true) {
+      print(io, { profiles });
+      return;
+    }
+    const dimensions = [...resolver.profiled].sort();
+    const lines = markdown(
+      ["profile", ...dimensions, "modifier", "same combination as"],
+      profiles.map((profile) => [
+        profile.name,
+        ...dimensions.map((dimension) => profile.values[dimension] ?? "—"),
+        profile.modifier ?? "",
+        (profile.sameAs ?? []).join(", "),
+      ]),
+    );
+    io.stdout(`${lines.join("\n")}\n`);
   },
 );
 

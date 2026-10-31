@@ -326,8 +326,11 @@ profiles they match.
 }
 ```
 
-A modifier on a profile is listed as a profile of its own, named
-`<profile>+<modifier>`, with the modifier's values applied.
+Profiles come in `profiles.json` order. A modifier on a profile is listed as
+a profile of its own right after it, named `<profile>+<modifier>`, with the
+modifier's values applied and `"modifier"` naming it. `"sameAs"` lists the
+other profiles with the same combination, such as
+`tablet-landscape+magic-keyboard` and `laptop`; both are left out when empty.
 
 ## modifier list
 

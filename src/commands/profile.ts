@@ -13,7 +13,7 @@ Accessories that change some profiles' values are modifiers; see
 "dimensions modifier".
 
 Subcommands:
-  list                               List every profile and its values
+  list [--table]                     List every profile and its values
   add <name> <dimension>=<value>... [<name> <dimension>=<value>...]
                                      Add one or more profiles in profiles.json; add
                                      profiles that belong together in one step
