@@ -108,3 +108,60 @@ describe("NonEmptyString", () => {
     ]);
   });
 });
+
+describe("RelativePath", () => {
+  it("types a record's field", () => {
+    const source = "record Source {\n  file: RelativePath\n}\n";
+    expect([
+      problems(source),
+      parse(source).records[0]?.fields.map((field) => [field.name, field.type.name]),
+    ]).toEqual([[], [["file", "RelativePath"]]]);
+  });
+
+  it("is built in, so its name cannot be declared", () => {
+    expect(problems("record RelativePath {\n  at: Timestamp\n}\n")).toEqual([
+      "1:8: reserved-name: RelativePath is a built-in scalar; choose another name",
+    ]);
+  });
+
+  it("is only for records: no state or dimension can have one", () => {
+    expect([
+      problems("type Link {\n  states file: RelativePath\n}\n"),
+      problems("environment Device = RelativePath\n"),
+    ]).toEqual([
+      ["2:16: unknown-enum: RelativePath is a scalar, not an enum"],
+      ["1:22: unknown-dimension: RelativePath is a scalar, not a dimension"],
+    ]);
+  });
+
+  it("holds a path from the repository root, with / between its parts", () => {
+    expect(
+      data("RelativePath", "website.pen", "design/cc5fe35d/website.pen", "src/app/page.tsx"),
+    ).toEqual([]);
+  });
+
+  it("reports a path that is absolute, uses \\, or has an empty, . or .. part", () => {
+    const paths = [
+      "",
+      "/Users/me/website.pen",
+      "design\\website.pen",
+      "../website.pen",
+      "design/./website.pen",
+      "design//website.pen",
+      "design/",
+      "design/ website.pen",
+    ];
+    expect(data("RelativePath", ...paths)).toEqual(
+      paths.map(
+        (path, index) =>
+          `invalid-value: $[${index}].value: ${JSON.stringify(path)} is not a RelativePath: a path from the repository root: parts split by /, none of them empty, . or .., and none with a \\ or spaces at either end`,
+      ),
+    );
+  });
+
+  it("reports a value that is not a string", () => {
+    expect(data("RelativePath", ["design", "website.pen"])).toEqual([
+      "wrong-kind: $[0].value: expected a RelativePath (a string), found a list",
+    ]);
+  });
+});
