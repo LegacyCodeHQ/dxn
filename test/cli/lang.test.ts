@@ -14,7 +14,9 @@ function file(source: string) {
 
 describe("lang check", () => {
   it("prints the enums a file declares, as JSON", () => {
-    const run = file("enum Hover = rest | hovered\nenum Size = 19px | 20px | 22px\n");
+    const run = file(
+      "enum Hover = rest | hovered\nenum Size = 19px | 20px | 22px\ntype Wordmark {\n  states hover: Hover\n}\n",
+    );
     const result = run("check", "wordmark.dim");
     expect([result.code, JSON.parse(result.stdout)]).toEqual([
       0,
@@ -24,6 +26,7 @@ describe("lang check", () => {
           { name: "Hover", values: ["rest", "hovered"] },
           { name: "Size", values: ["19px", "20px", "22px"] },
         ],
+        types: [{ name: "Wordmark", states: [{ name: "hover", enum: "Hover" }] }],
       },
     ]);
   });

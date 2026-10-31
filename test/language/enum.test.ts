@@ -68,7 +68,7 @@ describe("enum", () => {
       problems("enum Ring = none | focus\nenum Ring = none\n"),
     ]).toEqual([
       ['1:36: duplicate-value: "lg" appears twice in Breakpoint'],
-      ["2:6: duplicate-enum: Ring is already declared at line 1"],
+      ["2:6: duplicate-name: Ring is already declared at line 1"],
     ]);
   });
 
@@ -84,7 +84,7 @@ describe("enum", () => {
       ['1:12: syntax-error: expected "=" after the enum name, found "blurred"'],
       ['1:13: syntax-error: expected a value after "=", found the end of the line'],
       ['2:1: syntax-error: expected a value after "|", found the end of the file'],
-      ['1:1: syntax-error: expected "enum", found "enumm"'],
+      ['1:1: syntax-error: expected "enum" or "type", found "enumm"'],
     ]);
   });
 });

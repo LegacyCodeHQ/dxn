@@ -8,9 +8,12 @@ const usage = `Usage: dimensions lang <subcommand>
 
 The dimensions language, which is being designed one concept at a time: see
 docs/language/design.md. So far a file declares enums, each a named set of
-values:
+values, and types with their states:
 
   enum Hover = rest | hovered
+  type Wordmark {
+    states hover: Hover
+  }
 
 Subcommands:
   check <file>                       Parse and check a file; print what it declares
@@ -29,7 +32,7 @@ const check: Command = command(usage, (args, { io, cwd }) => {
     io.stderr(`dimensions: file not found: ${JSON.stringify(file)}\n`);
     return 1;
   }
-  const { enums, diagnostics } = parse(readFileSync(path, "utf8"));
+  const { enums, types, diagnostics } = parse(readFileSync(path, "utf8"));
   if (diagnostics.length > 0) {
     const sorted = [...diagnostics].sort((a, b) => a.line - b.line || a.column - b.column);
     for (const { line, column, code, message } of sorted) {
@@ -44,6 +47,10 @@ const check: Command = command(usage, (args, { io, cwd }) => {
         enums: enums.map(({ name, values }) => ({
           name,
           values: values.map((value) => value.name),
+        })),
+        types: types.map(({ name, states }) => ({
+          name,
+          states: states.map((state) => ({ name: state.name, enum: state.enum })),
         })),
       },
       null,

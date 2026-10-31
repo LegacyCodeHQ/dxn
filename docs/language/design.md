@@ -102,7 +102,7 @@ own it compiles to nothing in today's model; its role comes from where it is
 used: a type's states, the inputs a node provides, or the values in a look.
 
 ```ebnf
-file  = { blank-line | enum } ;
+file  = { blank-line | enum | type } ;
 enum  = "enum" name "=" value { "|" [ newline ] value } newline ;
 name  = capital-letter { letter | digit } ;
 value = ( letter | digit ) { letter | digit | "-" } ;
@@ -121,13 +121,55 @@ value = ( letter | digit ) { letter | digit | "-" } ;
 | `duplicate-enum`  | an enum declared twice                                 |
 | `duplicate-value` | a value listed twice in one enum                       |
 
+### type
+
+**Decided and implemented.** A type is a named definition; so far it holds
+its states, each a field whose values come from an enum. `only when`,
+`look` and initial values come later, each as its own concept.
+
+```ebnf
+type   = "type" name "{" { blank-line | states } "}" ;
+states = "states" field { "," [ newline ] field } newline ;
+field  = state-name ":" name ;
+state-name = lowercase-letter { letter | digit | "-" } ;
+```
+
+```
+type Wordmark {
+  states hover: Hover, focus: Focus
+}
+
+type Toolbar {}
+```
+
+A state is not a variable: it holds no current value. It is a field of the
+type's state, and the tool reasons about every value at once, so the look is
+known for each. States belong to the element and change by interaction;
+inputs such as the breakpoint come from outside.
+
+Each scope keeps its names once:
+
+| Scope    | Holds               | Rule                                       |
+| -------- | ------------------- | ------------------------------------------ |
+| the file | enum and type names | one namespace: no name twice, enum or type |
+| a type   | its state fields    | no field twice                             |
+| an enum  | its values          | no value twice                             |
+
+| Code              | Means                                                    |
+| ----------------- | -------------------------------------------------------- |
+| `type-name`       | a type name that does not start with a capital letter    |
+| `state-name`      | a state name that does not start with a lowercase letter |
+| `duplicate-state` | a state listed twice in one type                         |
+| `states-twice`    | a type with more than one `states` line                  |
+| `unknown-enum`    | a state whose values name no enum, or name a type        |
+
 ## Primitives
 
 | Primitive          | Says                                                | Replaces today                                   | Status   |
 | ------------------ | --------------------------------------------------- | ------------------------------------------------ | -------- |
 | `enum`             | a finite set of values                              | state groups, dimension values, attribute values | Decided  |
-| `type`             | a definition with states, a look and inputs         | types in `types.json`                            | Proposed |
-| `states`           | a type's own fields                                 | state groups on a type                           | Proposed |
+| `type`             | a definition with states, a look and inputs         | types in `types.json`                            | Decided  |
+| `states`           | a type's own fields                                 | state groups on a type                           | Decided  |
 | `look`             | values computed from inputs and states              | attributes and their overrides                   | Proposed |
 | `match`            | an exhaustive choice by value                       | per-state tables, overrides per value            | Proposed |
 | `when`             | a default with exceptions                           | overrides per value or combination               | Proposed |
