@@ -106,6 +106,9 @@ export type Dimension = Enum;
 // A field of a record: its name, and the enum or record its value is.
 export interface Field extends Located {
   type: Located;
+  // A derived field: its value decided by another field's, which is not
+  // stored, one branch for each group of that field's values.
+  derived?: { on: Located; branches: { values: Located[]; result: Located }[] };
 }
 
 // A record: plain data, a named group of typed fields, every one of which is

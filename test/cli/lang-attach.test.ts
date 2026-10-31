@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { Fingerprints } from "../../src/compiler/fingerprint.js";
 import { capture } from "../support/cli.js";
 import { cleanup, writeProject } from "../support/project.js";
 
@@ -293,5 +294,73 @@ describe("lang status, with fingerprints", () => {
     expect(capture(["lang", "status", "plain.dxn"], root).stdout.split("\n")[0]).toBe(
       "plain.dxn: Note for 1 of 1 combination; Note has no fingerprint field next to a source { file, frame }, so staleness is not checked",
     );
+  });
+});
+
+describe("the tool convention", () => {
+  // The model, with two actors: a design agent drawing in pen.dev, and a
+  // reviewer whose evidence is a whole file.
+  const withTools = schema
+    .replace(
+      "enum Actor = design-agent",
+      "enum Actor = design-agent | reviewer\nenum Tool = pen-dev | file",
+    )
+    .replace(
+      "  actor: Actor\n",
+      "  actor: Actor\n  tool: Tool = when actor {\n    design-agent -> pen-dev\n    reviewer -> file\n  }\n",
+    );
+  const pen = JSON.stringify({
+    children: [{ id: "toggle", type: "frame", x: 0, y: 0, name: "Toggle" }],
+  });
+  const tooled = () => {
+    const result = project();
+    writeFileSync(join(result.root, "spec", "toolbar.dxn"), withTools);
+    writeFileSync(join(result.root, "design", "toolbar.pen"), pen);
+    return result;
+  };
+  const record = (actor: string, file: string, frame: string) => [
+    "spec/toolbar.dxn",
+    "Toolbar.menu.toggle",
+    "--file",
+    file,
+    "--frame",
+    frame,
+    "--field",
+    `actor=${actor}`,
+    "--at",
+    at,
+    "profile=phone",
+    "menu.menu=closed",
+    "hover=rest",
+    "expanded=closed",
+  ];
+
+  it("fingerprints a pen-dev actor's frame, and a file actor's whole file", () => {
+    const { root, run, stored } = tooled();
+    run(...record("design-agent", "design/toolbar.pen", "toggle"));
+    run(...record("reviewer", "design/toolbar.pen", "toggle"));
+    const frame = new Fingerprints().of(join(root, "design", "toolbar.pen"), "toggle");
+    expect(stored().map(({ fingerprint }) => fingerprint)).toEqual([frame, hash(pen)]);
+    expect(frame).not.toBe(hash(pen));
+    expect(Object.keys(stored()[0] ?? {})).not.toContain("tool");
+  });
+
+  it("refuses a pen-dev actor's frame in a file that is not a pen.dev file", () => {
+    const { run } = tooled();
+    expect(run(...record("design-agent", "design/toolbar.png", "toggle")).stderr).toBe(
+      'dxn: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file\n',
+    );
+  });
+
+  it("reports, in lang status, a stored entry whose file is not its tool's", () => {
+    const { root, run } = tooled();
+    run(...record("reviewer", "design/toolbar.png", "toggle"));
+    const path = join(root, "spec", "evidence", "toolbar.json");
+    writeFileSync(path, readFileSync(path, "utf8").replace('"reviewer"', '"design-agent"'));
+    const result = capture(["lang", "status", "spec/toolbar.dxn"], root);
+    expect([result.code, result.stderr.replace(/:\d+:\d+:/, ":L:C:")]).toEqual([
+      1,
+      'spec/evidence/toolbar.json:L:C: wrong-tool: $[0].source.file: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file\n',
+    ]);
   });
 });

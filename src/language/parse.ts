@@ -18,7 +18,8 @@
 //   profile     = "profile" profile-name ":" name "{" { assignment ( "," | newline ) } "}"
 //   modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile-name } "{" { assignment ( "," | newline ) } "}"
 //   assignment  = name "=" value
-//   record      = "record" name [ "with" "context" ] "{" { blank-line | field-name ":" name newline } "}"
+//   record      = "record" name [ "with" "context" ] "{" { blank-line | field } "}"
+//   field       = field-name ":" name { "." name } [ "=" "when" field-name "{" { blank-line | branch } "}" ] newline
 //   name        = capital letter, then letters and digits
 //   value       = a letter or digit, then letters, digits and hyphens
 //   comment     = "#" to the end of the line, skipped like a space
@@ -32,6 +33,7 @@ import type {
   Condition,
   Declaration,
   Enum,
+  Field,
   Located,
   ParseResult,
   Rule,
@@ -233,6 +235,28 @@ export function parse(source: string): ParseResult {
     return { on, values };
   };
 
+  // "when <subject> { <value>, ... -> <value> ... }", after the "=" of a
+  // derived state or field, to the end of its line.
+  const whenBlock = (owner: string, subject: "dimension" | "field") => {
+    keyword("when", '"when" after "="');
+    const on = word(`a ${subject} after "when"`);
+    const branches: { values: Located[]; result: Located }[] = [];
+    expect("{", `"{" after ${JSON.stringify(on.name)}`);
+    braces(`the when of ${owner}`, () => {
+      const values = [word(`a value of the ${subject}`)];
+      while (peek().kind === ",") {
+        next();
+        values.push(word('a value after ","'));
+      }
+      end(["->"], '"," or "->"');
+      next();
+      branches.push({ values, result: word('a value after "->"') });
+      end(["newline", "}"], "the end of the line");
+    });
+    end(["newline", "}"], "the end of the line");
+    return { on, branches };
+  };
+
   // A child: "has <name>: <Type>", then "{ <state> = <state>, ... }" for the
   // child's states the type sets, and "only when <condition>" when it is not
   // always there.
@@ -310,22 +334,8 @@ export function parse(source: string): ParseResult {
       const first = field();
       if (peek().kind === "=") {
         next();
-        keyword("when", '"when" after "="');
-        first.derived = { dimension: word('a dimension after "when"'), branches: [] };
-        expect("{", `"{" after ${JSON.stringify(first.derived.dimension.name)}`);
-        const derived = first.derived;
-        braces(`the when of ${first.name}`, () => {
-          const values = [word("a value of the dimension")];
-          while (peek().kind === ",") {
-            next();
-            values.push(word('a value after ","'));
-          }
-          end(["->"], '"," or "->"');
-          next();
-          derived.branches.push({ values, result: word('a value after "->"') });
-          end(["newline", "}"], "the end of the line");
-        });
-        end(["newline", "}"], "the end of the line");
+        const { on, branches } = whenBlock(first.name, "dimension");
+        first.derived = { dimension: on, branches };
         type.states.push(first);
         return;
       }
@@ -408,7 +418,12 @@ export function parse(source: string): ParseResult {
     braces(record.name, () => {
       const field = name("field", "a field name", lowercase);
       expect(":", `":" after ${JSON.stringify(field.name)}`);
-      record.fields.push({ ...field, type: qualified('a type after ":"') });
+      const declared: Field = { ...field, type: qualified('a type after ":"') };
+      if (peek().kind === "=") {
+        next();
+        declared.derived = whenBlock(field.name, "field");
+      }
+      record.fields.push(declared);
       end(["newline", "}"], "the end of the line");
     });
   };

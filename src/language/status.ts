@@ -1,4 +1,5 @@
 import type { ParseResult, Type } from "./ast.js";
+import { fieldValue } from "./derive.js";
 import { inPlace } from "./evaluate.js";
 
 // One combination of an element in place: the profiles that share it, the
@@ -31,7 +32,13 @@ export interface Coverage {
 
 // Whether an entry's frame is as it was recorded, changed since, or no more.
 export type Freshness = "present" | "stale" | "gone";
-export type Check = (entry: { file: string; frame: string; fingerprint: string }) => Freshness;
+export type Check = (entry: {
+  file: string;
+  frame: string;
+  fingerprint: string;
+  // By convention, how the frame is fingerprinted: pen-dev or file.
+  tool?: string;
+}) => Freshness;
 
 // Every element of the file's trees, by its path: each type that no type
 // contains, then each of its children, theirs, and so on.
@@ -67,6 +74,7 @@ export function coverage(
     ({ name }) => name === file.profiles[0]?.environment.name,
   );
   const given = environment?.dimensions.map(({ name }) => name) ?? [];
+  const declared = file.records.find(({ name }) => name === record);
   const contexts = sources.flatMap((source) =>
     (
       JSON.parse(source) as {
@@ -74,20 +82,30 @@ export function coverage(
         source?: { file?: string; frame?: string };
         fingerprint?: string;
       }[]
-    ).map(({ context, source: where, fingerprint }) => ({
-      path: (context.path ?? context.type) as string,
-      profile: context.profile as string | undefined,
-      dimensions: (context.dimensions ?? {}) as Record<string, string>,
-      parents: (context.parents ?? {}) as Record<string, string>,
-      states: (context.states ?? {}) as Record<string, string>,
-      freshness:
-        check === undefined ||
-        where?.file === undefined ||
-        where.frame === undefined ||
-        fingerprint === undefined
-          ? ("present" as Freshness)
-          : check({ file: where.file, frame: where.frame, fingerprint }),
-    })),
+    )
+      .map((entry) => ({
+        ...entry,
+        tool: declared === undefined ? undefined : fieldValue(declared, entry, "tool"),
+      }))
+      .map(({ context, source: where, fingerprint, tool }) => ({
+        path: (context.path ?? context.type) as string,
+        profile: context.profile as string | undefined,
+        dimensions: (context.dimensions ?? {}) as Record<string, string>,
+        parents: (context.parents ?? {}) as Record<string, string>,
+        states: (context.states ?? {}) as Record<string, string>,
+        freshness:
+          check === undefined ||
+          where?.file === undefined ||
+          where.frame === undefined ||
+          fingerprint === undefined
+            ? ("present" as Freshness)
+            : check({
+                file: where.file,
+                frame: where.frame,
+                fingerprint,
+                ...(typeof tool === "string" ? { tool } : {}),
+              }),
+      })),
   );
   const same = (a: Record<string, string>, b: Record<string, string>) =>
     Object.keys(a).length === Object.keys(b).length &&

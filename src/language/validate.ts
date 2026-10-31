@@ -311,11 +311,23 @@ export function validate(file: ParseResult, recordName: string, source: string):
         checkContext(context.value, childPath(path, "context"));
       }
     }
-    const fields = record.fields.map((field) => field.name);
+    // A derived field is not stored: its value follows from another's.
+    const fields = record.fields
+      .filter(({ derived }) => derived === undefined)
+      .map((field) => field.name);
     for (const { key, value } of node.members) {
       if (withContext && key.value === "context") continue;
       const at = childPath(path, key.value);
       const field = record.fields.find((candidate) => candidate.name === key.value);
+      if (field?.derived !== undefined) {
+        diagnostics.report(
+          "derived-field",
+          `${field.name} is derived from ${field.derived.on.name}; it is not stored`,
+          at,
+          key.span.start,
+        );
+        continue;
+      }
       if (field === undefined) {
         diagnostics.report(
           "unknown-field",

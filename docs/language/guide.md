@@ -783,6 +783,30 @@ record Evidence with context {
 their values must be listed, so a type's combinations can always be counted.
 A scalar's name is built in, so a file cannot declare it.
 
+### Derived fields: what follows from another field
+
+Some of a record's data follows from another field: which tool an actor
+records with follows from the actor. A field can be derived with a `when`, as
+a state can:
+
+```
+enum Actor = design-agent | reviewer
+enum Tool = pen-dev | file
+
+record Evidence with context {
+  actor: Actor
+  tool: Tool = when actor {
+    design-agent -> pen-dev
+    reviewer -> file
+  }
+}
+```
+
+A derived field is an enum's, on another field of the record that is an
+enum's and is not derived itself, and its `when` covers every value of that
+field once. It is not stored: its value always follows, so a stored record
+that gives it is reported.
+
 ### With context: a fact about one combination
 
 Evidence is always about one case of the matrix: _this_ drawing shows the
@@ -943,7 +967,17 @@ when its menu is open. By convention, the record's `at` is the time now, its
 `source` the file and frame, and its `fingerprint` the frame's fingerprint: in
 a pen.dev file, the frame and the components and variables it uses; in any
 other file, the whole file. The other fields, here `actor`, are given with
-`--field`. Recording the same combination, frame and fields again replaces the
+`--field`.
+
+By convention, a record's `tool` says how its frames are fingerprinted:
+`pen-dev`, a frame in a pen.dev file; `file`, the whole file, even a pen.dev
+one. A tool derived from the actor is how an actor's rules are written: a
+design agent records with pen-dev, so `lang attach` refuses its frame in any
+other file, and `lang status` reports a stored one.
+
+````
+dxn: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file
+``` Recording the same combination, frame and fields again replaces the
 entry, with the fingerprint the frame has now. The file is relative to the
 repository, and entries go in the record's folder, in a file named after the
 type the path starts at.
@@ -956,7 +990,7 @@ place, and which of them a stored record is about.
 
 ```bash
 dxn lang status toolbar.dxn
-```
+````
 
 ```
 toolbar.dxn: Evidence for 38 of 75 combinations
@@ -1160,7 +1194,8 @@ environment = "environment" Name "=" Name { "x" [newline] Name } newline
 profile     = "profile" profile-name ":" Name "{" { assignment ( "," | newline ) } "}"
 modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile-name } "{" { assignment ( "," | newline ) } "}"
 assignment  = Name "=" value
-record      = "record" Name [ "with" "context" ] "{" { blank-line | field-name ":" Name { "." Name } newline } "}"
+record      = "record" Name [ "with" "context" ] "{" { blank-line | record-field } "}"
+record-field = field-name ":" Name { "." Name } [ "=" "when" field-name "{" { blank-line | branch } "}" ] newline
 comment     = "#" to the end of the line
 ```
 
@@ -1197,6 +1232,7 @@ comment     = "#" to the end of the line
 | `duplicate-binding`                                                           | error    | a binding sets a child's state twice                                                             |
 | `binding-mismatch`                                                            | error    | a binding's two states take their values from different enums                                    |
 | `bound-derived`                                                               | error    | a binding sets a child's state that a `when` decides                                             |
+| `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
 | `nested-context`                                                              | error    | a record's field is a record with context, which would be a second context                       |
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |
 | `unused-need`                                                                 | warning  | a type needs a dimension that no rule uses                                                       |
@@ -1211,3 +1247,5 @@ JSON itself:
 | `unknown-field` | a record or a context has a field its declaration does not                                                                                                             |
 | `unknown-value` | an enum field's value is not one of the enum's; or a context's type, profile, dimension or state value is not one of the file's, or does not exist in that combination |
 | `invalid-value` | a scalar field's value is not a valid value of the scalar                                                                                                              |
+| `derived-field` | a stored record gives a derived field, whose value follows from another's                                                                                              |
+| `wrong-tool`    | (in `lang status`) a pen-dev entry's file is not a pen.dev file                                                                                                        |

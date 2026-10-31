@@ -1,7 +1,10 @@
 import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { Diagnostics } from "../compiler/diagnostic.js";
 import { Fingerprints } from "../compiler/fingerprint.js";
-import type { ParseResult, Type } from "../language/ast.js";
+import { parseJson } from "../compiler/json.js";
+import type { ParseResult, RecordDeclaration, Type } from "../language/ast.js";
+import { fieldValue } from "../language/derive.js";
 import {
   states as evaluateStates,
   type InPlace,
@@ -533,10 +536,10 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   // the one stored.
   const repository = repositoryOf(file, cwd);
   const fingerprints = new Fingerprints();
-  const check: Check = ({ file: where, frame, fingerprint }) => {
+  const check: Check = ({ file: where, frame, fingerprint, tool }) => {
     const full = join(repository, where);
     if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) return "gone";
-    const now = fingerprints.of(full, frame);
+    const now = fingerprints.of(full, frame, tool === "file" ? "file" : undefined);
     if (now === undefined) return "gone";
     return now === fingerprint ? "present" : "stale";
   };
@@ -555,6 +558,44 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       )
     );
   };
+  // By convention, a pen-dev entry's file is a pen.dev file.
+  let wrong = false;
+  for (const stored of data) {
+    const declared = parsed.records.find(({ name }) => name === stored.record);
+    if (declared === undefined) continue;
+    const entries = JSON.parse(stored.source) as Record<string, unknown>[];
+    const root = parseJson(stored.source).root;
+    entries.forEach((entry, index) => {
+      const where = (entry.source as { file?: string } | undefined)?.file;
+      if (fieldValue(declared, entry, "tool") !== "pen-dev" || where === undefined) return;
+      if (fingerprints.isPen(join(repository, where))) return;
+      const element = root?.kind === "array" ? root.elements[index] : undefined;
+      const sourceNode =
+        element?.kind === "object"
+          ? element.members.find(({ key }) => key.value === "source")?.value
+          : undefined;
+      const fileNode =
+        sourceNode?.kind === "object"
+          ? sourceNode.members.find(({ key }) => key.value === "file")?.value
+          : undefined;
+      const located = new Diagnostics(stored.source);
+      const path = `$[${index}].source.file`;
+      const message = `${toolOwner(declared, entry)} records with pen-dev; ${JSON.stringify(where)} is not a pen.dev file`;
+      located.report("wrong-tool", message, path, fileNode?.span.start ?? 0);
+      const { line, column } = located.items[0] as { line: number; column: number };
+      report.problem({
+        file: stored.shown,
+        line,
+        column,
+        severity: "error",
+        code: "wrong-tool",
+        path,
+        message,
+      });
+      wrong = true;
+    });
+  }
+  if (wrong) return report.fail();
   const records = parsed.records
     .filter(({ context }) => context)
     .map(({ name }) => ({
@@ -620,6 +661,13 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   const text = blocks.length === 0 ? `${file}: no records with context\n` : blocks.join("\n");
   return report.succeed({ file, records }, text);
 });
+
+// Who records with a record's tool, in messages: the value of the field the
+// tool is derived from, or the record.
+function toolOwner(record: RecordDeclaration, entry: Record<string, unknown>): string {
+  const on = record.fields.find(({ name }) => name === "tool")?.derived?.on.name;
+  return on === undefined ? record.name : String(entry[on]);
+}
 
 // The repository a file is in: the nearest folder above it with a .git, or
 // the working directory.
@@ -780,11 +828,9 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) {
     return report.refuse(`${JSON.stringify(source)} does not exist in the repository`);
   }
-  const fingerprint = new Fingerprints().of(full, frame);
-  if (fingerprint === undefined)
-    return report.refuse(`frame ${JSON.stringify(frame)} is not in ${source}`);
   // The record's fields: by convention, at is when, source where the frame is
-  // and fingerprint its fingerprint; the others are given with --field.
+  // and fingerprint its fingerprint; a derived one is not stored; the others
+  // are given with --field.
   const fields = new Map(
     (flags.get("--field") ?? []).map((pair) => pair.split(/=(.*)/s) as [string, string]),
   );
@@ -799,12 +845,26 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   const stamp = flags.get("--at")?.[0] ?? new Date().toISOString();
   const values: Record<string, unknown> = {};
   for (const field of record.fields) {
+    if (field.derived !== undefined) continue;
     if (field.name === "source") values.source = { file: source, frame };
-    else if (field.name === "fingerprint") values.fingerprint = fingerprint;
+    else if (field.name === "fingerprint") values.fingerprint = "";
     else if (field.name === "at" && !fields.has("at")) values.at = stamp;
     else if (fields.has(field.name)) values[field.name] = fields.get(field.name);
     else return report.refuse(`give ${field.name}, as --field ${field.name}=<value>`);
   }
+  // By convention, the record's tool says how its frames are fingerprinted:
+  // pen-dev, a frame in a pen.dev file; file, the whole file.
+  const fingerprints = new Fingerprints();
+  const tool = fieldValue(record, values, "tool");
+  if (tool === "pen-dev" && !fingerprints.isPen(full)) {
+    return report.refuse(
+      `${toolOwner(record, values)} records with pen-dev; ${JSON.stringify(source)} is not a pen.dev file`,
+    );
+  }
+  const fingerprint = fingerprints.of(full, frame, tool === "file" ? "file" : undefined);
+  if (fingerprint === undefined)
+    return report.refuse(`frame ${JSON.stringify(frame)} is not in ${source}`);
+  values.fingerprint = fingerprint;
   for (const name of fields.keys()) {
     if (!record.fields.some((field) => field.name === name)) {
       return report.refuse(

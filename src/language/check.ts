@@ -473,6 +473,78 @@ function checkProfiles(file: ParseResult, names: Names, report: Report): void {
   }
 }
 
+// A derived field: an enum's, on another field of the record that is not
+// derived and is an enum's, covering each of its values once, each branch
+// giving a value of the field's own enum.
+function checkDerivedField(
+  record: RecordDeclaration,
+  field: Field,
+  names: Names,
+  report: Report,
+): void {
+  const { on, branches } = field.derived as NonNullable<Field["derived"]>;
+  if (!names.is(field.type.name, "enum")) {
+    report(
+      "derived-field",
+      `${field.name} is derived, so its values must be an enum's, not ${field.type.name}`,
+      field.type,
+    );
+    return;
+  }
+  const subject = record.fields.find(({ name }) => name === on.name);
+  if (subject === undefined) {
+    const fields = record.fields
+      .filter(({ derived }) => derived === undefined)
+      .map(({ name }) => name);
+    report(
+      "unknown-field",
+      `${on.name} is not a field of ${record.name}${among(fields, "it has none")}`,
+      on,
+    );
+    return;
+  }
+  if (subject.derived !== undefined || !names.is(subject.type.name, "enum")) {
+    report(
+      "derived-field",
+      `${field.name} is derived from ${on.name}, whose values are not an enum's`,
+      on,
+    );
+    return;
+  }
+  const allowed = names.values(subject.type.name) ?? [];
+  const covered = new Set<string>();
+  for (const value of branches.flatMap(({ values }) => values)) {
+    if (!allowed.includes(value.name)) {
+      report(
+        "unknown-value",
+        `${JSON.stringify(value.name)} is not a value of ${on.name} (${allowed.join(", ")})`,
+        value,
+      );
+    } else if (covered.has(value.name)) {
+      report(
+        "duplicate-value",
+        `${JSON.stringify(value.name)} is already covered by the when`,
+        value,
+      );
+    }
+    covered.add(value.name);
+  }
+  const missing = allowed.filter((value) => !covered.has(value));
+  if (missing.length > 0) {
+    report("incomplete-when", `when ${on.name} does not cover ${missing.join(", ")}`, on);
+  }
+  const results = names.values(field.type.name) ?? [];
+  for (const { result } of branches) {
+    if (!results.includes(result.name)) {
+      report(
+        "unknown-value",
+        `${JSON.stringify(result.name)} is not a value of ${field.name} (${results.join(", ")})`,
+        result,
+      );
+    }
+  }
+}
+
 // Modifiers: on profiles that exist, each once; setting dimensions of the
 // profiles' environment, each once, with one of their values; and changing
 // something on each profile, or the profile it makes already exists.
@@ -558,6 +630,7 @@ function checkRecords(file: ParseResult, names: Names, report: Report): void {
       if (!names.is(type, "enum") && !names.is(type, "record") && !names.is(type, "scalar")) {
         report("unknown-type", names.not(type, "enum", "record", "scalar"), field.type);
       }
+      if (field.derived !== undefined) checkDerivedField(record, field, names, report);
       const inner = file.records.find(({ name }) => name === type);
       if (names.kindOf(type) === "record" && inner?.context) {
         report(
