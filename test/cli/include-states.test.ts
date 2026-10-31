@@ -169,11 +169,11 @@ describe("node include-states", () => {
     snapshot.push(run("node", "include-states", "home", "toolbar", "blog-link", "selection").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "<tmp>/.dimensions/roots/article-page.json:11:27: unknown-state: "current" is not in node "blog-link"'s "selection" group
+        "<tmp>/.dxn/roots/article-page.json:11:27: unknown-state: "current" is not in node "blog-link"'s "selection" group
       ",
         {
           "code": 1,
-          "stderr": "dimensions: "home" does not include "footer"
+          "stderr": "dxn: "home" does not include "footer"
       ",
           "stdout": "",
         },

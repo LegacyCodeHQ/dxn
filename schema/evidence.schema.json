@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "dimensions evidence",
+  "title": "dxn evidence",
   "description": "Editor aid for evidence/<root-id>.json; the file name is the root whose subtree the entries cover. Each entry is what an actor recorded for one node in one complete context, pointing to a frame in a file of the repository. The dimensions compiler is the authority: it also checks that nodes exist in this root, that each context is exactly one of the node's contexts, that actors are declared in actors.json, that files exist, that timestamps are real dates, and that entries are unique, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
@@ -38,7 +38,7 @@
           "$ref": "#/$defs/name"
         },
         "context": {
-          "description": "One complete context of the node: every dimension, state and shared node's state it has, as \"dimensions evidence\" lists them.",
+          "description": "One complete context of the node: every dimension, state and shared node's state it has, as \"dxn evidence\" lists them.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/name"
@@ -60,7 +60,7 @@
           "required": ["file", "frame"],
           "properties": {
             "file": {
-              "description": "Path of the file, relative to the folder that holds .dimensions.",
+              "description": "Path of the file, relative to the folder that holds .dxn.",
               "type": "string",
               "pattern": "\\S"
             },

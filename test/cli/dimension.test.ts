@@ -88,11 +88,11 @@ describe("dimension add and remove", () => {
       [
         {
           "code": 1,
-          "stderr": "dimensions: dimension "pointer" already exists
+          "stderr": "dxn: dimension "pointer" already exists
       ",
           "stdout": "",
         },
-        "<tmp>/.dimensions/dimensions/theme.json:4:17: unknown-node: node "nope" does not exist
+        "<tmp>/.dxn/dimensions/theme.json:4:17: unknown-node: node "nope" does not exist
       ",
         2,
         0,
@@ -119,11 +119,11 @@ describe("dimension add and remove", () => {
   [
     0,
     false,
-    "<tmp>/.dimensions/overrides/theme.json:1:1: undeclared-dimension: no dimensions/theme.json declares this dimension
+    "<tmp>/.dxn/overrides/theme.json:1:1: undeclared-dimension: no dimensions/theme.json declares this dimension
   ",
     {
       "code": 1,
-      "stderr": "dimensions: dimension not found: size
+      "stderr": "dxn: dimension not found: size
   ",
       "stdout": "",
     },
@@ -179,7 +179,7 @@ describe("dimension values, default and scope", () => {
       ],
       "version": 1,
     },
-    "<tmp>/.dimensions/dimensions/pointer.json:4:14: unknown-dimension-value: default "nope" is not one of the values
+    "<tmp>/.dxn/dimensions/pointer.json:4:14: unknown-dimension-value: default "nope" is not one of the values
   ",
     2,
   ]
@@ -211,7 +211,7 @@ describe("dimension values, default and scope", () => {
         },
         {
           "code": 1,
-          "stderr": "dimensions: dimension "pointer" does not apply to "a"
+          "stderr": "dxn: dimension "pointer" does not apply to "a"
       ",
           "stdout": "",
         },
@@ -396,7 +396,7 @@ describe("dimension rename-value", () => {
     });
     expect(run("dimension", "rename-value", "pointer", "pen", "stylus")).toMatchObject({
       code: 1,
-      stderr: 'dimensions: dimension "pointer" has no value "pen"\n',
+      stderr: 'dxn: dimension "pointer" has no value "pen"\n',
     });
   });
 });

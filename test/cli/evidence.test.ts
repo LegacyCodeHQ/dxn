@@ -38,7 +38,7 @@ const entry = (changes: Record<string, unknown> = {}) => ({
   ...changes,
 });
 
-// The toolbar with a design-agent, the design file next to .dimensions, and
+// The toolbar with a design-agent, the design file next to .dxn, and
 // these evidence entries for the page root.
 function project(entries: unknown[], extra: Record<string, unknown> = {}) {
   const result = cliProject({
@@ -128,10 +128,10 @@ describe("evidence entries", () => {
       [],
       ['undeclared-actor: actor "designer" is not declared in actors.json'],
       [
-        'unknown-context: menu-button has no such context in root "page"; "dimensions evidence menu-button --actor <name>" lists them',
+        'unknown-context: menu-button has no such context in root "page"; "dxn evidence menu-button --actor <name>" lists them',
       ],
       [
-        'unknown-context: menu-button has no such context in root "page"; "dimensions evidence menu-button --actor <name>" lists them',
+        'unknown-context: menu-button has no such context in root "page"; "dxn evidence menu-button --actor <name>" lists them',
       ],
       ['unknown-node: node "nope" does not exist'],
       ['missing-source: "design/missing.pen" does not exist in the repository'],

@@ -39,13 +39,13 @@ describe("actors", () => {
     run("actor", "add", "visual-reviewer");
     expect(run("actor", "remove", "visual-reviewer").code).toBe(0);
     expect(read("actors.json").actors).toEqual({ "design-agent": { evidence: "design" } });
-    expect(run("actor", "remove", "nobody").stderr).toBe("dimensions: actor not found: nobody\n");
+    expect(run("actor", "remove", "nobody").stderr).toBe("dxn: actor not found: nobody\n");
   });
 
   it("are added once", () => {
     const { run } = cliProject(withActor);
     expect(run("actor", "add", "design-agent").stderr).toBe(
-      'dimensions: actor "design-agent" already exists\n',
+      'dxn: actor "design-agent" already exists\n',
     );
   });
 
@@ -109,8 +109,8 @@ describe("evidence", () => {
       cliProject(toolbarFiles).run("evidence", "toolbar", "--actor", "design-agent").stderr,
       cliProject(withActor).run("evidence", "toolbar").code,
     ]).toEqual([
-      'dimensions: actor not found: "designer" (design-agent)\n',
-      'dimensions: no actors; add one with "dimensions actor add <name>"\n',
+      'dxn: actor not found: "designer" (design-agent)\n',
+      'dxn: no actors; add one with "dxn actor add <name>"\n',
       0,
     ]);
   });

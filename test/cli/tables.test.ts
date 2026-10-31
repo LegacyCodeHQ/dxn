@@ -144,7 +144,7 @@ describe("tables as Markdown", () => {
   it("refuse a --by that is neither profile nor a dimension", () => {
     const { run } = cliProject(toolbarFiles);
     expect(run("contexts", "blog-link", "--table", "--by", "colour").stderr).toBe(
-      'dimensions: "colour" is not profile, a dimension or a shared node of blog-link (breakpoint, keyboard, pointer)\n',
+      'dxn: "colour" is not profile, a dimension or a shared node of blog-link (breakpoint, keyboard, pointer)\n',
     );
   });
 });

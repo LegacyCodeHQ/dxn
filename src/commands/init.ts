@@ -3,9 +3,9 @@ import { join } from "node:path";
 import { projectFolder } from "../project.js";
 import { type Context, command } from "./context.js";
 
-export const initUsage = "Usage: dimensions init [--dir <directory>]\n";
+export const initUsage = "Usage: dxn init [--dir <directory>]\n";
 
-// Creates the project: .dimensions/ in the working directory, or --dir.
+// Creates the project: .dxn/ in the working directory, or --dir.
 export const init = command(initUsage, (args: string[], { io, cwd, dir }: Context): number => {
   if (args.length > 0) {
     io.stderr(initUsage);
@@ -13,7 +13,7 @@ export const init = command(initUsage, (args: string[], { io, cwd, dir }: Contex
   }
   const project = dir ?? join(cwd, projectFolder);
   if (existsSync(project)) {
-    io.stderr(`dimensions: ${project} already exists\n`);
+    io.stderr(`dxn: ${project} already exists\n`);
     return 1;
   }
   mkdirSync(project, { recursive: true });

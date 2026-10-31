@@ -1,7 +1,7 @@
 import type { Command } from "./context.js";
 import { editCommand, group, parse, Refusal, requireNode, UsageError } from "./edit.js";
 
-const usage = `Usage: dimensions fragment <subcommand>
+const usage = `Usage: dxn fragment <subcommand>
 
 Subcommands:
   add <id> --title <title>           Add a reusable fragment in fragments/<id>.json

@@ -21,7 +21,7 @@ import {
 } from "./edit.js";
 import { stateGroupList } from "./reading.js";
 
-const usage = `Usage: dimensions state-group <subcommand>
+const usage = `Usage: dxn state-group <subcommand>
 
 A state group is a named set of states that exclude each other, such as hover
 (rest, hovered) or selection (unselected, selected). A type can use several

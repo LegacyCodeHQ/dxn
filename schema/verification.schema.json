@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "dimensions verification",
+  "title": "dxn verification",
   "description": "Editor aid for verification/<root-id>.json; the file name is the root whose subtree the records cover. The dimensions compiler is the authority: it also checks that nodes exist in this root, that each context names exactly the node's dimensions and a state it has there, that actors are declared in actors.json, that checks are declared and required by the node's type, that timestamps are real dates, and that records are unique, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,

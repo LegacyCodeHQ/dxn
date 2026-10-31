@@ -24,17 +24,17 @@ describe("help", () => {
         [
           0,
           "",
-          "Usage: dimensions contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]",
+          "Usage: dxn contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]",
         ],
         [
           0,
           "",
-          "Usage: dimensions verify <node-id> --check <name> --result passed|failed --actor <role>",
+          "Usage: dxn verify <node-id> --check <name> --result passed|failed --actor <role>",
         ],
         [
           0,
           "",
-          "Usage: dimensions init [--dir <directory>]",
+          "Usage: dxn init [--dir <directory>]",
         ],
       ]
     `);
@@ -47,8 +47,8 @@ describe("help", () => {
     snapshot.push(help("dimension", "add", "-h").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "Usage: dimensions node <subcommand>",
-        "Usage: dimensions node <subcommand>",
+        "Usage: dxn node <subcommand>",
+        "Usage: dxn node <subcommand>",
         0,
       ]
     `);
@@ -63,7 +63,7 @@ describe("help", () => {
     const result = help("help");
     expect(result.code).toBe(0);
     expect(result.stdout).toBe(help("--help").stdout);
-    expect(result.stdout).toContain("dimensions help <command>");
+    expect(result.stdout).toContain("dxn help <command>");
     expect(result.stdout).toContain("docs/");
   });
 
@@ -71,13 +71,13 @@ describe("help", () => {
     expect(help("help", "nope")).toMatchInlineSnapshot(`
       {
         "code": 2,
-        "stderr": "dimensions: unknown command: nope
+        "stderr": "dxn: unknown command: nope
 
-      Usage: dimensions <command> [options]
+      Usage: dxn <command> [options]
 
       Project
         workflow            Print the step-by-step guide to building a model; start here
-        init                Create a .dimensions project in the working directory
+        init                Create a .dxn project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -133,14 +133,14 @@ describe("help", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      To build a model, start with "dimensions workflow": it prints the step-by-step
-      guide as Markdown. Run "dimensions help <command>" (or "dimensions <command>
-      --help") for a command's options. The docs/ folder of the dimensions package
+      To build a model, start with "dxn workflow": it prints the step-by-step
+      guide as Markdown. Run "dxn help <command>" (or "dxn <command>
+      --help") for a command's options. The docs/ folder of the dxn package
       also explains the concepts, every command, every diagnostic code and the JSON
       output.
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .dimensions
+        --dir <directory>   Use this project directory instead of the nearest .dxn
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON
@@ -157,7 +157,7 @@ describe("help", () => {
     );
     for (const command of commands) {
       const result = help(command, "--help");
-      expect([command, result.code, result.stdout.startsWith("Usage: dimensions")]).toEqual([
+      expect([command, result.code, result.stdout.startsWith("Usage: dxn")]).toEqual([
         command,
         0,
         true,

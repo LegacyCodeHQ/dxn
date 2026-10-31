@@ -13,7 +13,7 @@ import {
 } from "./edit.js";
 import { modifierList } from "./reading.js";
 
-const usage = `Usage: dimensions modifier <subcommand>
+const usage = `Usage: dxn modifier <subcommand>
 
 A modifier is an accessory that changes some of a profile's values, such as a
 keyboard with a trackpad on a tablet (pointer=mouse, keyboard=keyboard). It is

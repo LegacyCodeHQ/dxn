@@ -142,7 +142,7 @@ describe("evidence --by look", () => {
       "actors.json": { version: 1, actors: { "design-agent": { evidence: "design" } } },
     });
     expect(run("evidence", "wordmark", "--by", "look").stderr).toBe(
-      "dimensions: wordmark has no attributes, so every context looks alike; give its type attributes to tell its looks apart\n",
+      "dxn: wordmark has no attributes, so every context looks alike; give its type attributes to tell its looks apart\n",
     );
   });
 });

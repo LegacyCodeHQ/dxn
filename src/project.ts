@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import type { FileDiagnostic } from "./compiler/compile.js";
 import type { Io } from "./io.js";
 
-export const projectFolder = ".dimensions";
+export const projectFolder = ".dxn";
 
 // Options every command accepts, wherever they appear.
 export interface Global {
@@ -38,7 +38,7 @@ export function parseGlobal(argv: string[], cwd: string): Global | { error: stri
   return dir === undefined ? { dryRun, args } : { dir, dryRun, args };
 }
 
-// The project: --dir, or the nearest .dimensions directory from cwd upward.
+// The project: --dir, or the nearest .dxn directory from cwd upward.
 export function findProject(cwd: string, dir: string | undefined): string | undefined {
   if (dir !== undefined) {
     return dir;
@@ -58,9 +58,7 @@ export function findProject(cwd: string, dir: string | undefined): string | unde
 export function requireProject(io: Io, cwd: string, dir: string | undefined): string | undefined {
   const project = findProject(cwd, dir);
   if (project === undefined) {
-    io.stderr(
-      `dimensions: no ${projectFolder} directory in ${resolve(cwd)} or above; run dimensions init\n`,
-    );
+    io.stderr(`dxn: no ${projectFolder} directory in ${resolve(cwd)} or above; run dxn init\n`);
   }
   return project;
 }

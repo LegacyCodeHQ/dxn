@@ -89,7 +89,7 @@ describe("lang check", () => {
   it("needs a file that exists, and no project", () => {
     const run = file("");
     expect([run("check", "nope.dxn").stderr, run("check").code]).toEqual([
-      'dimensions: file not found: "nope.dxn"\n',
+      'dxn: file not found: "nope.dxn"\n',
       2,
     ]);
   });
@@ -131,7 +131,7 @@ type Wordmark needs Pointer, Keyboard {
       file(wordmark)("states", "wordmark.dxn", "Wordmrk").stderr,
       file("enum hover = rest\n")("states", "wordmark.dxn", "Wordmark").stderr,
     ]).toEqual([
-      'dimensions: no type "Wordmrk" in wordmark.dxn (Wordmark)\n',
+      'dxn: no type "Wordmrk" in wordmark.dxn (Wordmark)\n',
       'wordmark.dxn:1:6: enum-name: enum names start with a capital letter: "hover"\n',
     ]);
   });
@@ -310,11 +310,11 @@ record Evidence {
       run("evidence.dxn", "Actor.design-agent", "design agent").stderr,
       read("evidence.dxn"),
     ]).toEqual([
-      "dimensions: Actr is not an enum (Actor)\n",
-      "dimensions: Evidence is a record, not an enum\n",
-      'dimensions: "designer" is not a value of Actor (design-agent, reviewer)\n',
-      'dimensions: "reviewer" is already a value of Actor\n',
-      'dimensions: "design agent" is not a value: a letter or digit, then letters, digits and hyphens\n',
+      "dxn: Actr is not an enum (Actor)\n",
+      "dxn: Evidence is a record, not an enum\n",
+      'dxn: "designer" is not a value of Actor (design-agent, reviewer)\n',
+      'dxn: "reviewer" is already a value of Actor\n',
+      'dxn: "design agent" is not a value: a letter or digit, then letters, digits and hyphens\n',
       schema,
     ]);
   });

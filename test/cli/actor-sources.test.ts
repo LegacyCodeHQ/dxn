@@ -62,14 +62,14 @@ describe("an actor's source", () => {
     const { attach } = project({ evidence: "design", source: "pen.dev" });
     expect([attach("design.pen", "cell").code, attach("shot.png", "cell").stderr]).toEqual([
       0,
-      'dimensions: actor "agent" records pen.dev frames; "shot.png" is not a pen.dev file\n',
+      'dxn: actor "agent" records pen.dev frames; "shot.png" is not a pen.dev file\n',
     ]);
   });
 
   it("pen.dev: an entry written by hand that is not a pen.dev frame is an error", () => {
     const { attach, run, root } = project({ evidence: "design", source: "file" });
     attach("shot.png", "cell");
-    const actors = join(root, ".dimensions", "actors.json");
+    const actors = join(root, ".dxn", "actors.json");
     writeFileSync(
       actors,
       JSON.stringify({ version: 1, actors: { agent: { evidence: "design", source: "pen.dev" } } }),

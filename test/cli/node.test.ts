@@ -16,15 +16,15 @@ function project(files: Files = {}) {
   const root = writeProject(
     Object.fromEntries(
       Object.entries({ "types.json": typed, ...files }).map(([name, content]) => [
-        `.dimensions/${name}`,
+        `.dxn/${name}`,
         content,
       ]),
     ),
   );
   const run = (...argv: string[]) => capture(argv, root);
   const read = (name: string) =>
-    JSON.parse(readFileSync(join(root, ".dimensions", name), "utf8")) as unknown;
-  const exists = (name: string) => existsSync(join(root, ".dimensions", name));
+    JSON.parse(readFileSync(join(root, ".dxn", name), "utf8")) as unknown;
+  const exists = (name: string) => existsSync(join(root, ".dxn", name));
   return { root, run, read, exists };
 }
 
@@ -148,9 +148,9 @@ describe("node add", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         1,
-        "<tmp>/.dimensions/roots/page.json:8:15: duplicate-id: node id "page" is already used at roots/page.json $.root
+        "<tmp>/.dxn/roots/page.json:8:15: duplicate-id: node id "page" is already used at roots/page.json $.root
       ",
-        "<tmp>/.dimensions/roots/x.json:6:13: undefined-type: type "button" is not defined
+        "<tmp>/.dxn/roots/x.json:6:13: undefined-type: type "button" is not defined
       ",
         false,
       ]
@@ -169,7 +169,7 @@ describe("node add", () => {
   [
     {
       "code": 1,
-      "stderr": "dimensions: node not found: nope
+      "stderr": "dxn: node not found: nope
   ",
       "stdout": "",
     },
@@ -271,7 +271,7 @@ describe("node set-title and set-type", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "<tmp>/.dimensions/roots/page.json:10:9: attributes-without-type: attributes on a node require the node to have a type
+    "<tmp>/.dxn/roots/page.json:10:9: attributes-without-type: attributes on a node require the node to have a type
   ",
   ]
 `);
@@ -329,7 +329,7 @@ describe("node move", () => {
     });
     expect(run("node", "move", "a", "--parent", "b")).toMatchObject({
       code: 1,
-      stderr: 'dimensions: cannot move "a" into its own subtree\n',
+      stderr: 'dxn: cannot move "a" into its own subtree\n',
     });
   });
 
@@ -590,7 +590,7 @@ describe("node remove", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "<tmp>/.dimensions/dimensions/pointer.json:7:5: unknown-node: node "a" does not exist
+    "<tmp>/.dxn/dimensions/pointer.json:7:5: unknown-node: node "a" does not exist
   ",
     true,
   ]
@@ -682,7 +682,7 @@ describe("node set and unset", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.dimensions/roots/page.json:13:23: unknown-value: "maybe" is not a declared value of "design"
+    "<tmp>/.dxn/roots/page.json:13:23: unknown-value: "maybe" is not a declared value of "design"
   ",
     2,
     2,
@@ -704,7 +704,7 @@ describe("projects with unreadable files", () => {
   [
     {
       "code": 1,
-      "stderr": "dimensions: roots/page.json is not a JSON object; run dimensions validate
+      "stderr": "dxn: roots/page.json is not a JSON object; run dxn validate
   ",
       "stdout": "",
     },
@@ -718,7 +718,7 @@ describe("files the CLI writes", () => {
   it("are formatted as Prettier formats them", () => {
     const { root, run } = project();
     run("node", "add", "home", "--title", "Home");
-    expect(readFileSync(join(root, ".dimensions", "roots", "home.json"), "utf8")).toBe(
+    expect(readFileSync(join(root, ".dxn", "roots", "home.json"), "utf8")).toBe(
       [
         "{",
         '  "version": 1,',

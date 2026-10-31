@@ -40,7 +40,7 @@ command reads one, reports any problems, and otherwise prints what it
 declares as JSON:
 
 ```bash
-dimensions lang check wordmark.dxn
+dxn lang check wordmark.dxn
 ```
 
 It needs no project, so you can try everything in this guide in an empty
@@ -115,7 +115,7 @@ in any of the four combinations of hover and focus. You can ask the tool for
 them:
 
 ```bash
-dimensions lang states wordmark.dxn Wordmark --table
+dxn lang states wordmark.dxn Wordmark --table
 ```
 
 ```
@@ -240,7 +240,7 @@ where it exists. A second rule for the same value is an error.
 This is where the language pays off. Ask for the wordmark's states again:
 
 ```bash
-dimensions lang states wordmark.dxn Wordmark --table
+dxn lang states wordmark.dxn Wordmark --table
 ```
 
 ```
@@ -476,7 +476,7 @@ scalar field a string that is a valid value of the scalar.
 `lang validate` checks every stored record against its declaration:
 
 ```bash
-dimensions lang validate evidence.dxn
+dxn lang validate evidence.dxn
 ```
 
 ```
@@ -503,7 +503,7 @@ once: in the enum, in the rules on states of that enum, and in every stored
 record's fields of that enum, nested ones included.
 
 ```bash
-dimensions lang rename evidence.dxn Actor.design-agent designer
+dxn lang rename evidence.dxn Actor.design-agent designer
 ```
 
 ```json

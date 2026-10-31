@@ -162,6 +162,6 @@ describe("evidence in a pen.dev file", () => {
         "hover=rest",
         "focus=blurred",
       ).stderr,
-    ).toBe('dimensions: frame "nope" is not in design.pen\n');
+    ).toBe('dxn: frame "nope" is not in design.pen\n');
   });
 });

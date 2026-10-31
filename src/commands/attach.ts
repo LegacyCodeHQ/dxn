@@ -8,14 +8,14 @@ import { editCommand, isObject, parse, Refusal, UsageError } from "./edit.js";
 import { chooseEvidenceActor } from "./reading.js";
 import { contextArgs, resolver, rootFor, withProfile } from "./verify.js";
 
-const attachUsage = `Usage: dimensions attach <node-id> [--actor <role>] --file <path> --frame <id>
+const attachUsage = `Usage: dxn attach <node-id> [--actor <role>] --file <path> --frame <id>
                         [<group>=<value>[|<value>]...] [<dimension>=<value>[|<value>]...]
                         [<shared-node>=<state>[|<state>]...] [profile=<name>[|<name>]]
                         [--at <time>] [--root <root-id>]
 
 Records evidence that an actor made for a node in one context: a frame in a
 file of the repository, such as a design. The context must be complete, as
-"dimensions evidence" lists it; profile=<name> fills in its dimensions.
+"dxn evidence" lists it; profile=<name> fills in its dimensions.
 Values joined with | record the frame for every combination that is a context
 of the node, such as "profile=laptop|desktop" "hover=rest|hovered" for a frame
 that shows them all alike; a listed value the node never has is refused. The
@@ -23,11 +23,11 @@ frame's fingerprint is recorded, so the entry shows as stale once what the
 frame shows changes: for a pen.dev file, the frame and the components and
 variables it uses; for any other file, the file. Attaching it again records
 the new fingerprint. --file is relative to
-the folder that holds .dimensions. --at defaults to now; --root is needed when
+the folder that holds .dxn. --at defaults to now; --root is needed when
 several roots include the node.
 `;
 
-const detachUsage = `Usage: dimensions detach <node-id> [--actor <role>] --frame <id>
+const detachUsage = `Usage: dxn detach <node-id> [--actor <role>] --frame <id>
                         [<group>=<value>[|<value>]...] [<dimension>=<value>[|<value>]...]
                         [<shared-node>=<state>[|<state>]...] [profile=<name>[|<name>]]
                         [--root <root-id>]
@@ -134,7 +134,7 @@ function targets(
   }
   if (found.size === 0) {
     throw new Refusal(
-      `no context of ${id} matches; "dimensions evidence ${id} --actor ${actor}" lists them`,
+      `no context of ${id} matches; "dxn evidence ${id} --actor ${actor}" lists them`,
     );
   }
   return { root, contexts: [...found.values()] };

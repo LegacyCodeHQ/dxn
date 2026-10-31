@@ -3,7 +3,7 @@ import type { Command } from "./context.js";
 import { editCommand, group, isObject, parse, Refusal, UsageError } from "./edit.js";
 import { expectationList } from "./reading.js";
 
-const usage = `Usage: dimensions expectation <subcommand>
+const usage = `Usage: dxn expectation <subcommand>
 
 An expectation is a rule the model must follow, in expectations.json. The
 compiler checks every rule on every command, so adding one that fails, or that

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "dimensions profiles",
+  "title": "dxn profiles",
   "description": "Editor aid for profiles.json: the combinations of dimension values that exist, by name, and the modifiers that change some profiles' values. Once profiles exist, only their combinations do, and the dimensions they cover have no default. Profiles may share a combination. The dimensions compiler is the authority: it also checks that dimensions and values are declared, that every profile names the same dimensions, and that a modifier is on existing profiles, sets only dimensions the profiles give, and changes something on each, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,

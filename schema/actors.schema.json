@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "dimensions actors",
+  "title": "dxn actors",
   "description": "Editor aid for actors.json: the roles that do work against the model, each declaring what it records: evidence of one kind, such as a design agent's designs, and the checks whose results it may record. An actor is a role, not a person. The dimensions compiler is the authority: it also checks that the checks are declared in types.json.",
   "type": "object",
   "additionalProperties": false,

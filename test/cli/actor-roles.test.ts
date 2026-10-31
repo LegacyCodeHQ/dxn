@@ -118,7 +118,7 @@ describe("actor commands", () => {
       { name: "visual-reviewer", checks: ["visual"] },
     ]);
     expect(run("actor", "set", "nobody", "--evidence", "design").stderr).toBe(
-      "dimensions: actor not found: nobody\n",
+      "dxn: actor not found: nobody\n",
     );
   });
 });
@@ -132,7 +132,7 @@ describe("evidence queries", () => {
     expect(json(run("evidence", "wordmark", "--actor", "design-agent")).kind).toBe("design");
     expect(json(run("status", "--actor", "design-agent")).kind).toBe("design");
     expect(run("evidence", "wordmark", "--actor", "visual-reviewer").stderr).toBe(
-      'dimensions: actor "visual-reviewer" records no evidence\n',
+      'dxn: actor "visual-reviewer" records no evidence\n',
     );
   });
 });

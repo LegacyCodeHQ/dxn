@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "dimensions fragment",
+  "title": "dxn fragment",
   "description": "Editor aid for fragments/<id>.json: a reusable node tree that roots bring in with { \"include\": \"<id>\" }. The dimensions compiler is the authority: it also checks that the fragment's id matches the file name, that ids are unique across the project, that included fragments exist without cycles, and that types, attributes, states and values exist, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,

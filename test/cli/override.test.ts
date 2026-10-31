@@ -79,9 +79,9 @@ describe("node only", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.dimensions/overrides/breakpoint.json:4:15: unknown-dimension-value: "md" is not a value of this dimension
+    "<tmp>/.dxn/overrides/breakpoint.json:4:15: unknown-dimension-value: "md" is not a value of this dimension
   ",
-    "<tmp>/.dimensions/overrides/theme.json:1:1: undeclared-dimension: no dimensions/theme.json declares this dimension
+    "<tmp>/.dxn/overrides/theme.json:1:1: undeclared-dimension: no dimensions/theme.json declares this dimension
   ",
     2,
     2,
@@ -222,7 +222,7 @@ describe("override states", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.dimensions/overrides/pointer.json:8:24: unknown-state: "pressed" is not a state of this type
+    "<tmp>/.dxn/overrides/pointer.json:8:24: unknown-state: "pressed" is not a state of this type
   ",
     2,
     2,
@@ -306,11 +306,11 @@ describe("override set and unset", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.dimensions/overrides/pointer.json:9:25: unknown-value: "maybe" is not a declared value of "design"
+    "<tmp>/.dxn/overrides/pointer.json:9:25: unknown-value: "maybe" is not a declared value of "design"
   ",
     {
       "code": 1,
-      "stderr": "dimensions: no override for type link at pointer=touch
+      "stderr": "dxn: no override for type link at pointer=touch
   ",
       "stdout": "",
     },

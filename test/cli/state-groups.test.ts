@@ -237,7 +237,7 @@ describe("state groups in reading commands", () => {
           "missing": 9,
           "passed": 1,
         },
-        "<tmp>/.dimensions/verification/page.json:19:24: removed-state: state "hovered" is removed in this context
+        "<tmp>/.dxn/verification/page.json:19:24: removed-state: state "hovered" is removed in this context
       ",
       ]
     `);
@@ -542,7 +542,7 @@ describe("state group commands", () => {
             "result": "passed",
           },
         ],
-        "dimensions: state group "hover" has no value "pressed"
+        "dxn: state group "hover" has no value "pressed"
       ",
       ]
     `);
@@ -562,17 +562,17 @@ describe("state group commands", () => {
       [
         {
           "code": 1,
-          "stderr": "dimensions: state group "interaction" already exists
+          "stderr": "dxn: state group "interaction" already exists
       ",
           "stdout": "",
         },
-        "<tmp>/.dimensions/types.json:6:23: undeclared-state-group: state group "interaction" is not declared
+        "<tmp>/.dxn/types.json:6:23: undeclared-state-group: state group "interaction" is not declared
       ",
-        "<tmp>/.dimensions/types.json:8:38: undeclared-state-group: state group "size" is not declared
+        "<tmp>/.dxn/types.json:8:38: undeclared-state-group: state group "size" is not declared
       ",
         {
           "code": 1,
-          "stderr": "dimensions: type "wordmark" does not use state group "size"
+          "stderr": "dxn: type "wordmark" does not use state group "size"
       ",
           "stdout": "",
         },

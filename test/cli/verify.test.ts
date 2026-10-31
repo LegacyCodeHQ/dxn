@@ -147,9 +147,9 @@ describe("verify", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.dimensions/verification/page.json:7:18: removed-state: state "hovered" is removed in this context
+    "<tmp>/.dxn/verification/page.json:7:18: removed-state: state "hovered" is removed in this context
   ",
-    "<tmp>/.dimensions/verification/page.json:6:18: missing-key: missing required key "pointer"
+    "<tmp>/.dxn/verification/page.json:6:18: missing-key: missing required key "pointer"
   ",
     false,
   ]
@@ -175,7 +175,7 @@ describe("verify", () => {
   [
     {
       "code": 1,
-      "stderr": "dimensions: "blog-link" is in several roots (home, page); choose one with --root
+      "stderr": "dxn: "blog-link" is in several roots (home, page); choose one with --root
   ",
       "stdout": "",
     },
@@ -183,7 +183,7 @@ describe("verify", () => {
     true,
     {
       "code": 1,
-      "stderr": "dimensions: "blog-link" is not in root "nope"
+      "stderr": "dxn: "blog-link" is not in root "nope"
   ",
       "stdout": "",
     },
@@ -205,7 +205,7 @@ describe("verify", () => {
   [
     {
       "code": 1,
-      "stderr": "dimensions: "blog-link" is not in any root
+      "stderr": "dxn: "blog-link" is not in any root
   ",
       "stdout": "",
     },
@@ -261,8 +261,7 @@ describe("unverify", () => {
       run("unverify", "blog-link", "--check", "visual", "state=normal", "pointer=mouse"),
     ).toMatchObject({
       code: 1,
-      stderr:
-        'dimensions: no visual record for blog-link in {"state":"normal","pointer":"mouse"}\n',
+      stderr: 'dxn: no visual record for blog-link in {"state":"normal","pointer":"mouse"}\n',
     });
   });
 
@@ -289,7 +288,7 @@ describe("unverify", () => {
       1,
       'undeclared-actor: actor "nobody" is not declared in actors.json\n',
       2,
-      "dimensions: Unknown option '--by'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \"--by\"",
+      "dxn: Unknown option '--by'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \"--by\"",
     ]);
   });
 });

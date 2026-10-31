@@ -11,7 +11,7 @@ import { drawTable, NONE } from "../tables.js";
 import { type Command, type Context, command } from "./context.js";
 import { group } from "./edit.js";
 
-const usage = `Usage: dimensions lang <subcommand>
+const usage = `Usage: dxn lang <subcommand>
 
 dxn, the language of design and dimensions, which grows one concept at a
 time: see docs/language/guide.md. A .dxn file declares enums, each a named
@@ -66,7 +66,7 @@ function plain(value: unknown): unknown {
 function read(file: string, cwd: string, io: Context["io"]): ParseResult | number {
   const path = resolve(cwd, file);
   if (statSync(path, { throwIfNoEntry: false })?.isFile() !== true) {
-    io.stderr(`dimensions: file not found: ${JSON.stringify(file)}\n`);
+    io.stderr(`dxn: file not found: ${JSON.stringify(file)}\n`);
     return 1;
   }
   const parsed = parse(readFileSync(path, "utf8"));
@@ -80,7 +80,7 @@ function read(file: string, cwd: string, io: Context["io"]): ParseResult | numbe
 const check: Command = command(usage, (args, { io, cwd }) => {
   const [file, ...rest] = args;
   if (file === undefined || rest.length > 0) {
-    io.stderr(`dimensions: give one file to check\n\n${usage}`);
+    io.stderr(`dxn: give one file to check\n\n${usage}`);
     return 2;
   }
   const parsed = read(file, cwd, io);
@@ -105,14 +105,14 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const table = args.includes("--table");
   const [file, typeName, ...rest] = args.filter((arg) => arg !== "--table");
   if (file === undefined || typeName === undefined || rest.length > 0) {
-    io.stderr(`dimensions: give a file and a type\n\n${usage}`);
+    io.stderr(`dxn: give a file and a type\n\n${usage}`);
     return 2;
   }
   const parsed = read(file, cwd, io);
   if (typeof parsed === "number") return parsed;
   if (!parsed.types.some(({ name }) => name === typeName)) {
     io.stderr(
-      `dimensions: no type ${JSON.stringify(typeName)} in ${file} (${parsed.types.map(({ name }) => name).join(", ")})\n`,
+      `dxn: no type ${JSON.stringify(typeName)} in ${file} (${parsed.types.map(({ name }) => name).join(", ")})\n`,
     );
     return 1;
   }
@@ -189,7 +189,7 @@ function checkStored(parsed: ParseResult, stored: Stored[], io: Context["io"]): 
 const validateCommand: Command = command(usage, (args, { io, cwd }) => {
   const [file, ...rest] = args;
   if (file === undefined || rest.length > 0) {
-    io.stderr(`dimensions: give one file, whose stored records to check\n\n${usage}`);
+    io.stderr(`dxn: give one file, whose stored records to check\n\n${usage}`);
     return 2;
   }
   const parsed = read(file, cwd, io);
@@ -226,7 +226,7 @@ const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
     rest.length > 0 ||
     dot < 1
   ) {
-    io.stderr(`dimensions: give a file, <Enum>.<value> and the value's new name\n\n${usage}`);
+    io.stderr(`dxn: give a file, <Enum>.<value> and the value's new name\n\n${usage}`);
     return 2;
   }
   const enumName = target.slice(0, dot);
@@ -246,7 +246,7 @@ const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
             ? `${JSON.stringify(to)} is not a value: a letter or digit, then letters, digits and hyphens`
             : undefined;
   if (refusal !== undefined) {
-    io.stderr(`dimensions: ${refusal}\n`);
+    io.stderr(`dxn: ${refusal}\n`);
     return 1;
   }
   const stored = storedData(parsed, file, cwd);
@@ -272,7 +272,7 @@ const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
     after.diagnostics.some(({ severity }) => severity === "error") ||
     !checkStored(after, afterStored, io)
   ) {
-    io.stderr("dimensions: the rename would leave problems; nothing was written\n");
+    io.stderr("dxn: the rename would leave problems; nothing was written\n");
     return 1;
   }
   if (dryRun) {

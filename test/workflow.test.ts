@@ -6,9 +6,9 @@ import { cleanup, writeProject } from "./support/project.js";
 
 afterAll(cleanup);
 
-// The steps of docs/workflow.md, in order: each `dimensions ...` line of a
+// The steps of docs/workflow.md, in order: each `dxn ...` line of a
 // bash block is a command, and a block such as ```json expectations.json is
-// a file the reader writes into .dimensions/ (or next to it, for a name that
+// a file the reader writes into .dxn/ (or next to it, for a name that
 // starts with ../, such as a design file).
 type Step = { command: string[] } | { file: string; content: string };
 
@@ -19,7 +19,7 @@ function steps(): Step[] {
     const [language, file] = (info as string).trim().split(/\s+/);
     if (language === "bash") {
       for (const line of (body as string).split("\n")) {
-        if (line.startsWith("dimensions ")) result.push({ command: words(line).slice(1) });
+        if (line.startsWith("dxn ")) result.push({ command: words(line).slice(1) });
       }
     } else if (file !== undefined) {
       result.push({ file, content: body as string });
@@ -39,7 +39,7 @@ describe("docs/workflow.md", () => {
     const failed: string[] = [];
     for (const step of steps()) {
       if ("file" in step) {
-        const path = join(root, ".dimensions", step.file);
+        const path = join(root, ".dxn", step.file);
         mkdirSync(dirname(path), { recursive: true });
         writeFileSync(path, step.content);
         continue;

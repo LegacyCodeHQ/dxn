@@ -7,9 +7,9 @@ import { cleanup, rootFile, types, writeProject } from "../support/project.js";
 afterAll(cleanup);
 
 describe("finding the project", () => {
-  it("uses the nearest .dimensions directory above the working directory", () => {
+  it("uses the nearest .dxn directory above the working directory", () => {
     const snapshot: unknown[] = [];
-    const root = writeProject({ ".dimensions/types.json": types });
+    const root = writeProject({ ".dxn/types.json": types });
     const deep = join(root, "src", "fragments");
     mkdirSync(deep, { recursive: true });
     const result = capture(["validate"], deep);
@@ -21,7 +21,7 @@ describe("finding the project", () => {
     0,
     {
       "errors": 0,
-      "project": "<tmp>/.dimensions",
+      "project": "<tmp>/.dxn",
     },
   ]
 `);
@@ -58,7 +58,7 @@ describe("finding the project", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "dimensions: no .dimensions directory in <tmp> or above; run dimensions init
+    "dxn: no .dxn directory in <tmp> or above; run dxn init
   ",
     "",
   ]
@@ -74,13 +74,13 @@ describe("finding the project", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         2,
-        "dimensions: --dir needs a directory
+        "dxn: --dir needs a directory
 
-      Usage: dimensions <command> [options]
+      Usage: dxn <command> [options]
 
       Project
         workflow            Print the step-by-step guide to building a model; start here
-        init                Create a .dimensions project in the working directory
+        init                Create a .dxn project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -136,14 +136,14 @@ describe("finding the project", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      To build a model, start with "dimensions workflow": it prints the step-by-step
-      guide as Markdown. Run "dimensions help <command>" (or "dimensions <command>
-      --help") for a command's options. The docs/ folder of the dimensions package
+      To build a model, start with "dxn workflow": it prints the step-by-step
+      guide as Markdown. Run "dxn help <command>" (or "dxn <command>
+      --help") for a command's options. The docs/ folder of the dxn package
       also explains the concepts, every command, every diagnostic code and the JSON
       output.
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .dimensions
+        --dir <directory>   Use this project directory instead of the nearest .dxn
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON
@@ -153,21 +153,21 @@ describe("finding the project", () => {
   });
 });
 
-describe("dimensions init", () => {
-  it("creates .dimensions with types.json in the working directory", () => {
+describe("dxn init", () => {
+  it("creates .dxn with types.json in the working directory", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({});
     const result = capture(["init"], root);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
-    snapshot.push(JSON.parse(readFileSync(join(root, ".dimensions", "types.json"), "utf8")));
+    snapshot.push(JSON.parse(readFileSync(join(root, ".dxn", "types.json"), "utf8")));
     snapshot.push(capture(["validate"], root).code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     0,
     {
-      "created": "<tmp>/.dimensions",
+      "created": "<tmp>/.dxn",
     },
     {
       "version": 1,
@@ -194,16 +194,16 @@ describe("dimensions init", () => {
 
   it("refuses to overwrite an existing project", () => {
     const snapshot: unknown[] = [];
-    const root = writeProject({ ".dimensions/types.json": "keep" });
+    const root = writeProject({ ".dxn/types.json": "keep" });
     const result = capture(["init"], root);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
-    snapshot.push(readFileSync(join(root, ".dimensions", "types.json"), "utf8"));
+    snapshot.push(readFileSync(join(root, ".dxn", "types.json"), "utf8"));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "dimensions: <tmp>/.dimensions already exists
+    "dxn: <tmp>/.dxn already exists
   ",
     "keep",
   ]
@@ -215,16 +215,16 @@ describe("dimensions init", () => {
   });
 });
 
-describe("dimensions validate", () => {
+describe("dxn validate", () => {
   it("prints each diagnostic with its file, line and column, and exits 1", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({
-      ".dimensions/types.json": types,
-      ".dimensions/roots/a.json": '{"version":1,"root":{"id":"a","title":"A","type":"nope"}}',
-      ".dimensions/roots/b.json": rootFile({ id: "b", title: "B", extra: 1 }),
+      ".dxn/types.json": types,
+      ".dxn/roots/a.json": '{"version":1,"root":{"id":"a","title":"A","type":"nope"}}',
+      ".dxn/roots/b.json": rootFile({ id: "b", title: "B", extra: 1 }),
     });
     const result = capture(["validate"], root);
-    const _roots = join(root, ".dimensions", "roots");
+    const _roots = join(root, ".dxn", "roots");
     snapshot.push(result.code);
     snapshot.push(result.stderr);
     snapshot.push(JSON.parse(result.stdout));
@@ -232,12 +232,12 @@ describe("dimensions validate", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "<tmp>/.dimensions/roots/a.json:1:50: undefined-type: type "nope" is not defined
-  <tmp>/.dimensions/roots/b.json:6:5: unknown-key: unknown key "extra"
+    "<tmp>/.dxn/roots/a.json:1:50: undefined-type: type "nope" is not defined
+  <tmp>/.dxn/roots/b.json:6:5: unknown-key: unknown key "extra"
   ",
     {
       "errors": 2,
-      "project": "<tmp>/.dimensions",
+      "project": "<tmp>/.dxn",
     },
   ]
 `);

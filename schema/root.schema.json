@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "dimensions root",
+  "title": "dxn root",
   "description": "Editor aid for roots/<id>.json. The dimensions compiler is the authority: it also checks that the root's id matches the file name, that ids are unique across the project, that included fragments exist without cycles or repeats, and that types, attributes, states and values exist, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,

@@ -144,8 +144,8 @@ describe("expectation commands", () => {
       run("expectation", "add", "Once", "--node", "wordmark", "--exists").stderr,
     ]).toEqual([
       expect.stringContaining("give one of --then, --some, --exists and --absent"),
-      "dimensions: give one of --then, --some, --exists and --absent",
-      'dimensions: expectation "Once" already exists\n',
+      "dxn: give one of --then, --some, --exists and --absent",
+      'dxn: expectation "Once" already exists\n',
     ]);
   });
 
@@ -161,7 +161,7 @@ describe("expectation commands", () => {
       json(run("expectation", "list")).expectations.map(({ title }: { title: string }) => title),
     ).toEqual(["Twice"]);
     expect(run("expectation", "remove", "Nope").stderr).toBe(
-      'dimensions: expectation not found: "Nope"\n',
+      'dxn: expectation not found: "Nope"\n',
     );
   });
 });

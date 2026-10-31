@@ -1,6 +1,6 @@
 # Agent Instructions
 
-`dimensions` is a Node.js command-line tool written in TypeScript. It records a tree
+`dxn` is a Node.js command-line tool written in TypeScript. It records a tree
 of nodes, the dimensions each node varies over, and what has been specified,
 built and verified for every applicable combination. Data is stored as JSON.
 

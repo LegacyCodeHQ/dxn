@@ -49,7 +49,7 @@ describe("--actor", () => {
       "screenshot-agent": { evidence: "screenshot" },
     });
     expect(run("evidence", "wordmark").stderr).toBe(
-      "dimensions: give --actor <design-agent|screenshot-agent>\n",
+      "dxn: give --actor <design-agent|screenshot-agent>\n",
     );
   });
 });
@@ -70,7 +70,7 @@ describe("detach with lists", () => {
     expect(run(...detach).code).toBe(0);
     expect(read("evidence/page.json").evidence).toEqual([]);
     expect(run(...detach).stderr).toBe(
-      'dimensions: no evidence from design-agent for wordmark in frame "restCell" matches\n',
+      'dxn: no evidence from design-agent for wordmark in frame "restCell" matches\n',
     );
   });
 });

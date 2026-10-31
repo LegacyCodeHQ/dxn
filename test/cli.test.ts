@@ -6,7 +6,7 @@ const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url),
   version: string;
 };
 
-describe("dimensions cli", () => {
+describe("dxn cli", () => {
   it("prints the package version as JSON with --version", () => {
     const snapshot: unknown[] = [];
     const result = capture(["--version"]);
@@ -33,11 +33,11 @@ describe("dimensions cli", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         0,
-        "Usage: dimensions <command> [options]
+        "Usage: dxn <command> [options]
 
       Project
         workflow            Print the step-by-step guide to building a model; start here
-        init                Create a .dimensions project in the working directory
+        init                Create a .dxn project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -93,14 +93,14 @@ describe("dimensions cli", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      To build a model, start with "dimensions workflow": it prints the step-by-step
-      guide as Markdown. Run "dimensions help <command>" (or "dimensions <command>
-      --help") for a command's options. The docs/ folder of the dimensions package
+      To build a model, start with "dxn workflow": it prints the step-by-step
+      guide as Markdown. Run "dxn help <command>" (or "dxn <command>
+      --help") for a command's options. The docs/ folder of the dxn package
       also explains the concepts, every command, every diagnostic code and the JSON
       output.
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .dimensions
+        --dir <directory>   Use this project directory instead of the nearest .dxn
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON
@@ -118,11 +118,11 @@ describe("dimensions cli", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         0,
-        "Usage: dimensions <command> [options]
+        "Usage: dxn <command> [options]
 
       Project
         workflow            Print the step-by-step guide to building a model; start here
-        init                Create a .dimensions project in the working directory
+        init                Create a .dxn project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -178,14 +178,14 @@ describe("dimensions cli", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      To build a model, start with "dimensions workflow": it prints the step-by-step
-      guide as Markdown. Run "dimensions help <command>" (or "dimensions <command>
-      --help") for a command's options. The docs/ folder of the dimensions package
+      To build a model, start with "dxn workflow": it prints the step-by-step
+      guide as Markdown. Run "dxn help <command>" (or "dxn <command>
+      --help") for a command's options. The docs/ folder of the dxn package
       also explains the concepts, every command, every diagnostic code and the JSON
       output.
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .dimensions
+        --dir <directory>   Use this project directory instead of the nearest .dxn
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON
@@ -204,13 +204,13 @@ describe("dimensions cli", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         2,
-        "dimensions: unknown command: frobnicate
+        "dxn: unknown command: frobnicate
 
-      Usage: dimensions <command> [options]
+      Usage: dxn <command> [options]
 
       Project
         workflow            Print the step-by-step guide to building a model; start here
-        init                Create a .dimensions project in the working directory
+        init                Create a .dxn project in the working directory
         validate            Compile the project and report every error
         status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -266,14 +266,14 @@ describe("dimensions cli", () => {
 
         help [<command>]    Show this overview, or a command's usage
 
-      To build a model, start with "dimensions workflow": it prints the step-by-step
-      guide as Markdown. Run "dimensions help <command>" (or "dimensions <command>
-      --help") for a command's options. The docs/ folder of the dimensions package
+      To build a model, start with "dxn workflow": it prints the step-by-step
+      guide as Markdown. Run "dxn help <command>" (or "dxn <command>
+      --help") for a command's options. The docs/ folder of the dxn package
       also explains the concepts, every command, every diagnostic code and the JSON
       output.
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .dimensions
+        --dir <directory>   Use this project directory instead of the nearest .dxn
         --dry-run           Print the files a command would write, without writing them
         -h, --help          Show this help
         -V, --version       Print version information as JSON

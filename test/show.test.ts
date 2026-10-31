@@ -7,7 +7,7 @@ afterAll(cleanup);
 
 const website = fileURLToPath(new URL("../examples/website", import.meta.url));
 
-describe("dimensions show", () => {
+describe("dxn show", () => {
   it("reports the states blog-link gets from its type", () => {
     const snapshot: unknown[] = [];
     const result = capture(["show", "--dir", website, "blog-link"]);
@@ -70,7 +70,7 @@ describe("dimensions show", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "dimensions: node not found: missing-link
+    "dxn: node not found: missing-link
   ",
     "",
   ]
@@ -86,9 +86,9 @@ describe("dimensions show", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         2,
-        "dimensions: missing node-id
+        "dxn: missing node-id
 
-      Usage: dimensions show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+      Usage: dxn show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
                              [--root <root-id>]
 
       Shows the node's states and attribute values in a context. Dimensions
@@ -103,8 +103,8 @@ describe("dimensions show", () => {
   it("finds the project from the working directory", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({
-      ".dimensions/types.json": types,
-      ".dimensions/roots/a.json": rootFile({ id: "a", title: "A" }),
+      ".dxn/types.json": types,
+      ".dxn/roots/a.json": rootFile({ id: "a", title: "A" }),
     });
     const result = capture(["show", "a"], root);
     snapshot.push(result.code);
@@ -132,7 +132,7 @@ describe("dimensions show", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     1,
-    "dimensions: no .dimensions directory in <tmp> or above; run dimensions init
+    "dxn: no .dxn directory in <tmp> or above; run dxn init
   ",
   ]
 `);

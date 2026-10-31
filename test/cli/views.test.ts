@@ -149,7 +149,7 @@ describe("views", () => {
     const { run } = cliProject(files);
     expect(run("views", "nope")).toMatchObject({
       code: 1,
-      stderr: "dimensions: node not found: nope\n",
+      stderr: "dxn: node not found: nope\n",
     });
   });
 });
@@ -233,25 +233,25 @@ describe("view", () => {
       [
         {
           "code": 1,
-          "stderr": "dimensions: give menu=<closed|open> for this view
+          "stderr": "dxn: give menu=<closed|open> for this view
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "dimensions: "md" is not a value of breakpoint (base, sm, lg, xl)
+          "stderr": "dxn: "md" is not a value of breakpoint (base, sm, lg, xl)
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "dimensions: "ajar" is not a state of menu (closed, open)
+          "stderr": "dxn: "ajar" is not a state of menu (closed, open)
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "dimensions: "theme" is not a dimension or shared node in this view (breakpoint, menu)
+          "stderr": "dxn: "theme" is not a dimension or shared node in this view (breakpoint, menu)
       ",
           "stdout": "",
         },
@@ -270,7 +270,7 @@ describe("view configurations that cannot exist", () => {
       [
         {
           "code": 1,
-          "stderr": "dimensions: "menu" does not exist when breakpoint=lg; leave out menu=open
+          "stderr": "dxn: "menu" does not exist when breakpoint=lg; leave out menu=open
       ",
           "stdout": "",
         },
@@ -289,13 +289,13 @@ describe("view configurations that cannot exist", () => {
       [
         {
           "code": 1,
-          "stderr": "dimensions: "menu" does not exist when breakpoint=lg
+          "stderr": "dxn: "menu" does not exist when breakpoint=lg
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "dimensions: "menu-panel" does not exist when breakpoint=sm and menu=closed
+          "stderr": "dxn: "menu-panel" does not exist when breakpoint=sm and menu=closed
       ",
           "stdout": "",
         },
@@ -443,12 +443,12 @@ describe("show, like view", () => {
       {
         code: 1,
         stdout: "",
-        stderr: "dimensions: give menu=<closed|open> for this node\n",
+        stderr: "dxn: give menu=<closed|open> for this node\n",
       },
       {
         code: 1,
         stdout: "",
-        stderr: 'dimensions: "menu" does not exist when breakpoint=lg; leave out menu=open\n',
+        stderr: 'dxn: "menu" does not exist when breakpoint=lg; leave out menu=open\n',
       },
       false,
       true,
@@ -479,7 +479,7 @@ describe("show, like view", () => {
     ]).toEqual([
       { selection: ["unselected", "selected"] },
       { selection: ["selected"] },
-      'dimensions: "blog-link" is not in root "nope"\n',
+      'dxn: "blog-link" is not in root "nope"\n',
     ]);
   });
 });
@@ -539,7 +539,7 @@ describe("a shared type that uses a state group", () => {
     ]).toEqual([
       [{ node: "menu", states: ["closed", "open"], existsWhen: { breakpoint: ["base", "sm"] } }],
       4,
-      "dimensions: give menu=<closed|open> for this view\n",
+      "dxn: give menu=<closed|open> for this view\n",
       { breakpoint: "sm", menu: "open" },
     ]);
   });

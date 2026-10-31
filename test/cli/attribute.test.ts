@@ -7,12 +7,12 @@ import { cleanup, writeProject } from "../support/project.js";
 afterAll(cleanup);
 
 function project() {
-  const root = writeProject({ ".dimensions/types.json": { version: 1 } });
+  const root = writeProject({ ".dxn/types.json": { version: 1 } });
   return {
     run: (...argv: string[]) => capture(argv, root),
     attributes: () =>
       (
-        JSON.parse(readFileSync(join(root, ".dimensions", "types.json"), "utf8")) as {
+        JSON.parse(readFileSync(join(root, ".dxn", "types.json"), "utf8")) as {
           attributes?: unknown;
         }
       ).attributes,
@@ -79,9 +79,9 @@ describe("attribute commands", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.dimensions/types.json:13:21: unknown-value: "missing" is not a declared value of "design"
+    "<tmp>/.dxn/types.json:13:21: unknown-value: "missing" is not a declared value of "design"
   ",
-    "<tmp>/.dimensions/types.json:8:9: undeclared-attribute: attribute "design" is not declared
+    "<tmp>/.dxn/types.json:8:9: undeclared-attribute: attribute "design" is not declared
   ",
   ]
 `);
@@ -100,13 +100,13 @@ describe("attribute commands", () => {
   [
     {
       "code": 1,
-      "stderr": "dimensions: attribute "design" already exists
+      "stderr": "dxn: attribute "design" already exists
   ",
       "stdout": "",
     },
     {
       "code": 1,
-      "stderr": "dimensions: attribute not found: size
+      "stderr": "dxn: attribute not found: size
   ",
       "stdout": "",
     },

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "dimensions dimension",
+  "title": "dxn dimension",
   "description": "Editor aid for dimensions/<name>.json; the file name is the dimension's name. The dimensions compiler is the authority: it also checks that the default is one of the values and that appliesTo names existing nodes, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,

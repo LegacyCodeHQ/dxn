@@ -46,11 +46,11 @@ export function group(usage: string, subcommands: Record<string, Command>): Comm
 
 function report(io: Io, usage: string, error: unknown): number {
   if (error instanceof UsageError) {
-    io.stderr(`dimensions: ${error.message}\n\n${usage}`);
+    io.stderr(`dxn: ${error.message}\n\n${usage}`);
     return 2;
   }
   if (error instanceof Refusal || error instanceof UnreadableFile) {
-    io.stderr(`dimensions: ${error.message}\n`);
+    io.stderr(`dxn: ${error.message}\n`);
     return 1;
   }
   throw error;
@@ -304,7 +304,7 @@ export function overrideTargets(
 export function typesFile(workspace: Workspace): Json {
   const types = workspace.read("types.json");
   if (types === undefined) {
-    throw new Refusal("types.json not found; run dimensions validate");
+    throw new Refusal("types.json not found; run dxn validate");
   }
   return types;
 }

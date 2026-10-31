@@ -24,15 +24,15 @@ of combinations.
 
 Every editing command compiles the project with the change before it writes
 anything, and refuses a change that would break it. Add `--dry-run` to see
-what a command would write, and run `dimensions validate` at any point.
+what a command would write, and run `dxn validate` at any point.
 
 ## 1. Start a project
 
 ```bash
-dimensions init
+dxn init
 ```
 
-This creates `.dimensions/` with an empty `types.json`.
+This creates `.dxn/` with an empty `types.json`.
 
 ## 2. Dimensions: what varies outside the UI
 
@@ -41,9 +41,9 @@ size and the two parts of input, which vary independently (a tablet can have
 a keyboard).
 
 ```bash
-dimensions dimension add breakpoint --values base,sm,lg,xl
-dimensions dimension add pointer --values mouse,touch
-dimensions dimension add keyboard --values keyboard,no-keyboard
+dxn dimension add breakpoint --values base,sm,lg,xl
+dxn dimension add pointer --values mouse,touch
+dxn dimension add keyboard --values keyboard,no-keyboard
 ```
 
 The dimensions apply to nothing yet; step 6 attaches them to the tree. They
@@ -60,7 +60,7 @@ tablet-portrait,tablet-landscape pointer=mouse keyboard=keyboard` makes the
 profiles `tablet-portrait+magic-keyboard` and `tablet-landscape+magic-keyboard`.
 
 ```bash
-dimensions profile add phone breakpoint=base pointer=touch keyboard=no-keyboard tablet-portrait breakpoint=sm pointer=touch keyboard=no-keyboard tablet-landscape breakpoint=lg pointer=touch keyboard=no-keyboard laptop breakpoint=lg pointer=mouse keyboard=keyboard desktop breakpoint=xl pointer=mouse keyboard=keyboard
+dxn profile add phone breakpoint=base pointer=touch keyboard=no-keyboard tablet-portrait breakpoint=sm pointer=touch keyboard=no-keyboard tablet-landscape breakpoint=lg pointer=touch keyboard=no-keyboard laptop breakpoint=lg pointer=mouse keyboard=keyboard desktop breakpoint=xl pointer=mouse keyboard=keyboard
 ```
 
 Add profiles that belong together in one command: once profiles exist, only
@@ -74,14 +74,14 @@ the groups its nodes have. The menu's state shapes what exists below it, so
 its type is shared. A check is a kind of verification that types require.
 
 ```bash
-dimensions state-group add hover --values rest,hovered
-dimensions state-group add focus --values blurred,focused
-dimensions state-group add selection --values unselected,selected
-dimensions type add link --groups hover,focus,selection
-dimensions type add button --groups hover,focus
-dimensions type add menu --states closed,open --shared
-dimensions check add visual
-dimensions type require link visual
+dxn state-group add hover --values rest,hovered
+dxn state-group add focus --values blurred,focused
+dxn state-group add selection --values unselected,selected
+dxn type add link --groups hover,focus,selection
+dxn type add button --groups hover,focus
+dxn type add menu --states closed,open --shared
+dxn check add visual
+dxn type require link visual
 ```
 
 ## 5. The tree: fragments, nodes and roots
@@ -91,18 +91,18 @@ delivered: the article page. On the article page, the blog link is the
 current page's link, so the include fixes it to `selected`.
 
 ```bash
-dimensions fragment add toolbar --title Toolbar
-dimensions node add wordmark --title Wordmark --parent toolbar --type button
-dimensions node add links --title Links --parent toolbar
-dimensions node add blog-link --title "Blog link" --parent links --type link
-dimensions node add menu --title Menu --parent toolbar --type menu
-dimensions node add menu-button --title "Menu button" --parent menu --type button
-dimensions node add menu-panel --title "Menu panel" --parent menu
-dimensions node add menu-link --title "Menu link" --parent menu-panel --type link
-dimensions node add article-page --title "Article page"
-dimensions node include article-page toolbar
-dimensions node include-states article-page toolbar blog-link selection selected
-dimensions node include-states article-page toolbar menu-link selection selected
+dxn fragment add toolbar --title Toolbar
+dxn node add wordmark --title Wordmark --parent toolbar --type button
+dxn node add links --title Links --parent toolbar
+dxn node add blog-link --title "Blog link" --parent links --type link
+dxn node add menu --title Menu --parent toolbar --type menu
+dxn node add menu-button --title "Menu button" --parent menu --type button
+dxn node add menu-panel --title "Menu panel" --parent menu
+dxn node add menu-link --title "Menu link" --parent menu-panel --type link
+dxn node add article-page --title "Article page"
+dxn node include article-page toolbar
+dxn node include-states article-page toolbar blog-link selection selected
+dxn node include-states article-page toolbar menu-link selection selected
 ```
 
 ## 6. Variation: where dimensions apply and what changes
@@ -113,15 +113,15 @@ only on wide screens and the menu only on narrow ones (`node only`), touch
 removes hover and no keyboard removes focus (overrides).
 
 ```bash
-dimensions dimension apply breakpoint toolbar
-dimensions dimension apply pointer toolbar
-dimensions dimension apply keyboard toolbar
-dimensions node only links breakpoint lg xl
-dimensions node only menu breakpoint base sm
-dimensions override states pointer=touch --type link --remove hovered
-dimensions override states pointer=touch --type button --remove hovered
-dimensions override states keyboard=no-keyboard --type link --remove focused
-dimensions override states keyboard=no-keyboard --type button --remove focused
+dxn dimension apply breakpoint toolbar
+dxn dimension apply pointer toolbar
+dxn dimension apply keyboard toolbar
+dxn node only links breakpoint lg xl
+dxn node only menu breakpoint base sm
+dxn override states pointer=touch --type link --remove hovered
+dxn override states pointer=touch --type button --remove hovered
+dxn override states keyboard=no-keyboard --type link --remove focused
+dxn override states keyboard=no-keyboard --type button --remove focused
 ```
 
 ## 7. Behavior: shared states and transitions
@@ -130,10 +130,10 @@ The menu panel exists only while the menu is open. Transitions say how the
 menu's state changes, on which event, and where keyboard focus ends up.
 
 ```bash
-dimensions node only-when menu-panel menu open
-dimensions node transition add menu open --from closed --to open --on click --target menu-button
-dimensions node transition add menu escape --from open --to closed --on keydown --key Escape --focus menu-button
-dimensions node transition add menu widen --from open --to closed --on resize --when breakpoint=lg,xl --focus blog-link
+dxn node only-when menu-panel menu open
+dxn node transition add menu open --from closed --to open --on click --target menu-button
+dxn node transition add menu escape --from open --to closed --on keydown --key Escape --focus menu-button
+dxn node transition add menu widen --from open --to closed --on resize --when breakpoint=lg,xl --focus blog-link
 ```
 
 ## 8. Rules: what must hold
@@ -143,15 +143,15 @@ them. Each `expectation add` is checked like any other edit: a rule that fails,
 or that tests nothing, is refused.
 
 ```bash
-dimensions expectation add "Touch screens never show hover" --node toolbar --subtree --root article-page --when pointer=touch --then hover=rest
-dimensions expectation add "Without a keyboard nothing shows a focus ring" --node toolbar --subtree --root article-page --when keyboard=no-keyboard --then focus=blurred
-dimensions expectation add "A desktop link can be hovered and focused at once" --node blog-link --root article-page --when profile=desktop --some hover=hovered --some focus=focused
-dimensions expectation add "The menu panel only exists while the menu is open" --node menu-panel --root article-page --when menu=closed --absent
-dimensions expectation add "Escape closes the menu and returns focus to its button" --node menu --when menu=open --on keydown --key Escape --then menu=closed --then focus=menu-button
-dimensions validate
+dxn expectation add "Touch screens never show hover" --node toolbar --subtree --root article-page --when pointer=touch --then hover=rest
+dxn expectation add "Without a keyboard nothing shows a focus ring" --node toolbar --subtree --root article-page --when keyboard=no-keyboard --then focus=blurred
+dxn expectation add "A desktop link can be hovered and focused at once" --node blog-link --root article-page --when profile=desktop --some hover=hovered --some focus=focused
+dxn expectation add "The menu panel only exists while the menu is open" --node menu-panel --root article-page --when menu=closed --absent
+dxn expectation add "Escape closes the menu and returns focus to its button" --node menu --when menu=open --on keydown --key Escape --then menu=closed --then focus=menu-button
+dxn validate
 ```
 
-The rules are kept in `.dimensions/expectations.json`; `expectation list` shows
+The rules are kept in `.dxn/expectations.json`; `expectation list` shows
 them and `expectation remove <title>` removes one.
 
 Every rule has a `title`, a `node`, an optional selection and filter, and
@@ -182,12 +182,12 @@ Compare each view with the design, one profile or breakpoint at a time.
 Anything you confirm and want to keep can become another rule.
 
 ```bash
-dimensions views toolbar profile=phone
-dimensions view toolbar profile=phone menu=open
-dimensions axes toolbar breakpoint=lg
-dimensions contexts blog-link --tree
-dimensions contexts blog-link --table
-dimensions contexts toolbar --subtree --table
+dxn views toolbar profile=phone
+dxn view toolbar profile=phone menu=open
+dxn axes toolbar breakpoint=lg
+dxn contexts blog-link --tree
+dxn contexts blog-link --table
+dxn contexts toolbar --subtree --table
 ```
 
 `--table` prints Markdown tables: for a node, one per state group with a row
@@ -203,9 +203,9 @@ record, so a design agent cannot pass a visual review. `status` lists every requ
 check in every context as passed, failed or missing: what is left to check.
 
 ```bash
-dimensions actor add visual-reviewer --checks visual
-dimensions verify blog-link --check visual --result passed --actor visual-reviewer profile=desktop hover=rest focus=blurred selection=selected
-dimensions status blog-link
+dxn actor add visual-reviewer --checks visual
+dxn verify blog-link --check visual --result passed --actor visual-reviewer profile=desktop hover=rest focus=blurred selection=selected
+dxn status blog-link
 ```
 
 ## 11. Evidence: what an actor made for each context
@@ -220,7 +220,7 @@ it attaches each frame it made to the contexts the frame shows, and checks
 `evidence <node> --by look`, where every look should have its frame and nothing
 should be conflicting. A design change without its evidence leaves the model
 and the design out of step until someone else guesses what the change meant. Here the design file is `design/toolbar.png`, next
-to `.dimensions`:
+to `.dxn`:
 
 ```text ../design/toolbar.png
 The toolbar, drawn in a design tool.
@@ -238,11 +238,11 @@ takes lists joined with `|`, quoted in a shell: it is recorded for every
 combination that is a context of the node.
 
 ```bash
-dimensions actor add design-agent --evidence design --source file
-dimensions evidence menu --actor design-agent --table
-dimensions attach menu --actor design-agent --file design/toolbar.png --frame phone-closed profile=phone menu=closed
-dimensions attach menu --actor design-agent --file design/toolbar.png --frame phone-open profile=phone menu=open
-dimensions attach menu --actor design-agent --file design/toolbar.png --frame tablet-menu profile=tablet-portrait "menu=closed|open"
-dimensions evidence menu --actor design-agent profile=phone
-dimensions status --actor design-agent
+dxn actor add design-agent --evidence design --source file
+dxn evidence menu --actor design-agent --table
+dxn attach menu --actor design-agent --file design/toolbar.png --frame phone-closed profile=phone menu=closed
+dxn attach menu --actor design-agent --file design/toolbar.png --frame phone-open profile=phone menu=open
+dxn attach menu --actor design-agent --file design/toolbar.png --frame tablet-menu profile=tablet-portrait "menu=closed|open"
+dxn evidence menu --actor design-agent profile=phone
+dxn status --actor design-agent
 ```

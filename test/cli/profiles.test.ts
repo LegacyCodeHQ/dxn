@@ -68,7 +68,7 @@ describe("views and axes filter", () => {
         { breakpoint: "base", keyboard: "no-keyboard", pointer: "touch", menu: "open" },
         { breakpoint: "sm", keyboard: "no-keyboard", pointer: "touch", menu: "open" },
       ],
-      'dimensions: "md" is not a value of breakpoint (base, sm, lg, xl)\n',
+      'dxn: "md" is not a value of breakpoint (base, sm, lg, xl)\n',
     ]);
   });
 
@@ -122,11 +122,11 @@ describe("show and view fill in from a profile", () => {
     ]).toEqual([
       { breakpoint: "lg", keyboard: "keyboard", pointer: "mouse" },
       { breakpoint: "xl", keyboard: "keyboard", pointer: "mouse" },
-      `dimensions: give profile=<${names}> for this node\n`,
-      "dimensions: pointer=touch fits several profiles; give profile=<phone|tablet-landscape|tablet-portrait>\n",
-      `dimensions: no profile has breakpoint=xl, pointer=touch (${names.replaceAll("|", ", ")})\n`,
-      'dimensions: profile "phone" has breakpoint=base, not breakpoint=lg\n',
-      `dimensions: "watch" is not a profile (${names.replaceAll("|", ", ")})\n`,
+      `dxn: give profile=<${names}> for this node\n`,
+      "dxn: pointer=touch fits several profiles; give profile=<phone|tablet-landscape|tablet-portrait>\n",
+      `dxn: no profile has breakpoint=xl, pointer=touch (${names.replaceAll("|", ", ")})\n`,
+      'dxn: profile "phone" has breakpoint=base, not breakpoint=lg\n',
+      `dxn: "watch" is not a profile (${names.replaceAll("|", ", ")})\n`,
     ]);
   });
 
@@ -137,8 +137,8 @@ describe("show and view fill in from a profile", () => {
       run("view", "toolbar", "profile=phone").stderr,
       json(run("view", "toolbar", "profile=phone", "menu=open")).context,
     ]).toEqual([
-      `dimensions: give profile=<${names}> for this view\n`,
-      "dimensions: give menu=<closed|open> for this view\n",
+      `dxn: give profile=<${names}> for this view\n`,
+      "dxn: give menu=<closed|open> for this view\n",
       { breakpoint: "base", keyboard: "no-keyboard", pointer: "touch", menu: "open" },
     ]);
   });
@@ -151,11 +151,7 @@ describe("filters by profile", () => {
       json(run("contexts", "blog-link", "profile=laptop", "--count")).count,
       json(run("contexts", "wordmark", "profile=phone", "--count")).count,
       run("contexts", "wordmark", "profile=watch").stderr,
-    ]).toEqual([
-      4,
-      1,
-      `dimensions: "watch" is not a value of profile (${names.replaceAll("|", ", ")})\n`,
-    ]);
+    ]).toEqual([4, 1, `dxn: "watch" is not a value of profile (${names.replaceAll("|", ", ")})\n`]);
   });
 
   it("name the profile in a failing exists rule", () => {

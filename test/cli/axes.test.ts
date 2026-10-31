@@ -238,7 +238,7 @@ describe("axes", () => {
       [
         {
           "code": 1,
-          "stderr": "dimensions: node not found: nope
+          "stderr": "dxn: node not found: nope
       ",
           "stdout": "",
         },
@@ -258,13 +258,13 @@ describe("errors for wrong names and values", () => {
     snapshot.push(run("show", "blog-link", "theme=dark").stderr);
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "dimensions: "md" is not a value of breakpoint (base, sm, lg, xl)
+        "dxn: "md" is not a value of breakpoint (base, sm, lg, xl)
       ",
-        "dimensions: "ajar" is not a state of menu (closed, open)
+        "dxn: "ajar" is not a state of menu (closed, open)
       ",
-        "dimensions: "theme" is not a dimension or shared node in this view (breakpoint, menu)
+        "dxn: "theme" is not a dimension or shared node in this view (breakpoint, menu)
       ",
-        "dimensions: "theme" is not a dimension of blog-link (breakpoint)
+        "dxn: "theme" is not a dimension of blog-link (breakpoint)
       ",
       ]
     `);

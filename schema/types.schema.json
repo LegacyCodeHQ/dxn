@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "dimensions types",
+  "title": "dxn types",
   "description": "Editor aid for types.json. The dimensions compiler is the authority: it also checks that attribute values use declared attributes, the type's states and declared values, that required checks and state groups are declared, and that a type's groups do not share values, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,

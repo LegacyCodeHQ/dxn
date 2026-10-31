@@ -34,11 +34,11 @@ import { version } from "./version.js";
 
 export type { Io } from "./io.js";
 
-const usage = `Usage: dimensions <command> [options]
+const usage = `Usage: dxn <command> [options]
 
 Project
   workflow            Print the step-by-step guide to building a model; start here
-  init                Create a .dimensions project in the working directory
+  init                Create a .dxn project in the working directory
   validate            Compile the project and report every error
   status [<node-id>]  Report each required check as passed, failed or missing
 
@@ -94,14 +94,14 @@ Language
 
   help [<command>]    Show this overview, or a command's usage
 
-To build a model, start with "dimensions workflow": it prints the step-by-step
-guide as Markdown. Run "dimensions help <command>" (or "dimensions <command>
---help") for a command's options. The docs/ folder of the dimensions package
+To build a model, start with "dxn workflow": it prints the step-by-step
+guide as Markdown. Run "dxn help <command>" (or "dxn <command>
+--help") for a command's options. The docs/ folder of the dxn package
 also explains the concepts, every command, every diagnostic code and the JSON
 output.
 
 Options:
-  --dir <directory>   Use this project directory instead of the nearest .dimensions
+  --dir <directory>   Use this project directory instead of the nearest .dxn
   --dry-run           Print the files a command would write, without writing them
   -h, --help          Show this help
   -V, --version       Print version information as JSON
@@ -143,7 +143,7 @@ export function run(argv: string[], io: Io): number {
   const cwd = io.cwd ?? process.cwd();
   const global = parseGlobal(argv, cwd);
   if ("error" in global) {
-    io.stderr(`dimensions: ${global.error}\n\n${usage}`);
+    io.stderr(`dxn: ${global.error}\n\n${usage}`);
     return 2;
   }
   const [first, ...rest] = global.args;
@@ -164,7 +164,7 @@ export function run(argv: string[], io: Io): number {
     }
     const target = commands[name];
     if (target === undefined) {
-      io.stderr(`dimensions: unknown command: ${name}\n\n${usage}`);
+      io.stderr(`dxn: unknown command: ${name}\n\n${usage}`);
       return 2;
     }
     io.stdout(target.usage);
@@ -172,7 +172,7 @@ export function run(argv: string[], io: Io): number {
   }
   const command = commands[first];
   if (command === undefined) {
-    io.stderr(`dimensions: unknown command: ${first}\n\n${usage}`);
+    io.stderr(`dxn: unknown command: ${first}\n\n${usage}`);
     return 2;
   }
   // --help anywhere after a command prints its usage; no project needed.

@@ -101,7 +101,7 @@ export class Workspace {
   commit(io: Io, dryRun: boolean): number {
     const written = [...this.written].sort();
     const removed = [...this.removed].filter((path) => existsSync(join(this.project, path))).sort();
-    const scratch = mkdtempSync(join(tmpdir(), "dimensions-commit-"));
+    const scratch = mkdtempSync(join(tmpdir(), "dxn-commit-"));
     try {
       const copy = join(scratch, "project");
       cpSync(this.project, copy, { recursive: true });
@@ -149,6 +149,6 @@ export class Workspace {
 
 export class UnreadableFile extends Error {
   constructor(readonly path: string) {
-    super(`${path} is not a JSON object; run dimensions validate`);
+    super(`${path} is not a JSON object; run dxn validate`);
   }
 }

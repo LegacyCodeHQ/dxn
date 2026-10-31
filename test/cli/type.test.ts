@@ -15,13 +15,13 @@ function project(files: Files = {}) {
           attributes: { design: { values: ["available", "missing"] } },
         },
         ...files,
-      }).map(([name, content]) => [`.dimensions/${name}`, content]),
+      }).map(([name, content]) => [`.dxn/${name}`, content]),
     ),
   );
   return {
     run: (...argv: string[]) => capture(argv, root),
     read: (name: string) =>
-      JSON.parse(readFileSync(join(root, ".dimensions", name), "utf8")) as Record<string, unknown>,
+      JSON.parse(readFileSync(join(root, ".dxn", name), "utf8")) as Record<string, unknown>,
   };
 }
 
@@ -65,7 +65,7 @@ describe("type add", () => {
   [
     {
       "code": 1,
-      "stderr": "dimensions: type "link" already exists
+      "stderr": "dxn: type "link" already exists
   ",
       "stdout": "",
     },
@@ -115,11 +115,11 @@ describe("type add-state and remove-state", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "<tmp>/.dimensions/types.json:12:11: unknown-state: "normal" is not a state of this type
+        "<tmp>/.dxn/types.json:12:11: unknown-state: "normal" is not a state of this type
       ",
         {
           "code": 1,
-          "stderr": "dimensions: type not found: button
+          "stderr": "dxn: type not found: button
       ",
           "stdout": "",
         },
@@ -255,7 +255,7 @@ describe("type remove", () => {
     expect(snapshot).toMatchInlineSnapshot(`
   [
     0,
-    "<tmp>/.dimensions/roots/page.json:10:17: undefined-type: type "link" is not defined
+    "<tmp>/.dxn/roots/page.json:10:17: undefined-type: type "link" is not defined
   ",
     {
       "link": {},

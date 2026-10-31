@@ -176,13 +176,13 @@ describe("show", () => {
       [
         {
           "code": 1,
-          "stderr": "dimensions: "theme" is not a dimension of blog-link (breakpoint, pointer)
+          "stderr": "dxn: "theme" is not a dimension of blog-link (breakpoint, pointer)
       ",
           "stdout": "",
         },
         {
           "code": 1,
-          "stderr": "dimensions: "pen" is not a value of pointer (mouse, touch)
+          "stderr": "dxn: "pen" is not a value of pointer (mouse, touch)
       ",
           "stdout": "",
         },
@@ -281,7 +281,7 @@ describe("contexts", () => {
     const { run } = cliProject(files);
     expect(run("contexts", "nope")).toMatchObject({
       code: 1,
-      stderr: "dimensions: node not found: nope\n",
+      stderr: "dxn: node not found: nope\n",
     });
   });
 });
@@ -400,7 +400,7 @@ describe("tree", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.dimensions/types.json:2:14: unsupported-version: unsupported version 2
+    "<tmp>/.dxn/types.json:2:14: unsupported-version: unsupported version 2
   ",
     1,
     1,

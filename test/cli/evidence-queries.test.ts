@@ -91,7 +91,7 @@ describe("status --actor", () => {
     const all = json(run("status", "--actor", "design-agent"));
     expect(new Set(all.items.map(({ node }: { node: string }) => node)).has("wordmark")).toBe(true);
     expect(run("status", "--actor", "designer").stderr).toBe(
-      'dimensions: actor not found: "designer" (design-agent)\n',
+      'dxn: actor not found: "designer" (design-agent)\n',
     );
   });
 });

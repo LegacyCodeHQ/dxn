@@ -14,7 +14,7 @@ import {
   unsetValues,
 } from "./edit.js";
 
-const overrideUsage = `Usage: dimensions override <subcommand>
+const overrideUsage = `Usage: dxn override <subcommand>
 
 <context> is <dimension>=<value>, or several joined by commas for a
 combination, e.g. breakpoint=sm,pointer=touch; or a shared node's state,
@@ -31,7 +31,7 @@ Subcommands:
                                      Clear some values, an attribute, or the whole override
 `;
 
-const onlyUsage = `Usage: dimensions node only <node-id> <dimension> (<value>... | --everywhere)
+const onlyUsage = `Usage: dxn node only <node-id> <dimension> (<value>... | --everywhere)
 
 Says where a node and its subtree exist: only at the given values of the
 dimension, or everywhere again with --everywhere.

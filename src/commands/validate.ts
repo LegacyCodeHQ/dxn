@@ -2,7 +2,7 @@ import { compileDirectory } from "../compiler/compile.js";
 import { printDiagnostics, requireProject } from "../project.js";
 import { type Context, command } from "./context.js";
 
-export const validateUsage = "Usage: dimensions validate [--dir <directory>]\n";
+export const validateUsage = "Usage: dxn validate [--dir <directory>]\n";
 
 // Compiles the project and reports every diagnostic.
 export const validate = command(

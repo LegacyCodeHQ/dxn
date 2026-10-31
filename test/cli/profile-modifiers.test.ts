@@ -151,7 +151,7 @@ describe("modifier commands", () => {
       ],
     });
     expect(run("modifier", "add", "magic-keyboard", "--on", "phone", "pointer=mouse").stderr).toBe(
-      'dimensions: modifier "magic-keyboard" already exists\n',
+      'dxn: modifier "magic-keyboard" already exists\n',
     );
     expect(run("modifier", "remove", "magic-keyboard").code).toBe(0);
     expect(read("profiles.json").modifiers).toBeUndefined();

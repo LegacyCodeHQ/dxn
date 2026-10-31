@@ -29,7 +29,7 @@ describe("fragment add and remove", () => {
     },
     {
       "code": 1,
-      "stderr": "dimensions: fragment "toolbar" already exists
+      "stderr": "dxn: fragment "toolbar" already exists
   ",
       "stdout": "",
     },
@@ -53,11 +53,11 @@ describe("fragment add and remove", () => {
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
-    "<tmp>/.dimensions/roots/page.json:8:20: unknown-fragment: no fragments/toolbar.json defines this fragment
+    "<tmp>/.dxn/roots/page.json:8:20: unknown-fragment: no fragments/toolbar.json defines this fragment
   ",
     {
       "code": 1,
-      "stderr": "dimensions: fragment not found: nope
+      "stderr": "dxn: fragment not found: nope
   ",
       "stdout": "",
     },
@@ -131,8 +131,7 @@ describe("fragment extract", () => {
     const { run } = cliProject({ "types.json": types, "roots/page.json": page() });
     expect(run("fragment", "extract", "page")).toMatchObject({
       code: 1,
-      stderr:
-        'dimensions: "page" is the top node of its file; only a node inside one can be extracted\n',
+      stderr: 'dxn: "page" is the top node of its file; only a node inside one can be extracted\n',
     });
   });
 });
@@ -167,7 +166,7 @@ describe("node include and uninclude", () => {
           },
           "version": 1,
         },
-        "<tmp>/.dimensions/roots/page.json:11:20: duplicate-include: "toolbar" is already part of "page"; its nodes would appear twice
+        "<tmp>/.dxn/roots/page.json:11:20: duplicate-include: "toolbar" is already part of "page"; its nodes would appear twice
       ",
         0,
         {
@@ -180,7 +179,7 @@ describe("node include and uninclude", () => {
         },
         {
           "code": 1,
-          "stderr": "dimensions: "page" does not include "toolbar"
+          "stderr": "dxn: "page" does not include "toolbar"
       ",
           "stdout": "",
         },

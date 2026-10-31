@@ -91,9 +91,9 @@ describe("attach", () => {
       ).stderr,
       run("attach", "menu", "--actor", "design-agent", "profile=phone").stderr.split("\n")[0],
     ]).toEqual([
-      'unknown-context: menu has no such context in root "page"; "dimensions evidence menu --actor <name>" lists them\n',
-      'dimensions: "design/missing.pen" does not exist in the repository\n',
-      "dimensions: --file and --frame are required",
+      'unknown-context: menu has no such context in root "page"; "dxn evidence menu --actor <name>" lists them\n',
+      'dxn: "design/missing.pen" does not exist in the repository\n',
+      "dxn: --file and --frame are required",
     ]);
   });
 });
@@ -115,7 +115,7 @@ describe("detach", () => {
     expect(run(...detach).code).toBe(0);
     expect(read("evidence/page.json").evidence).toEqual([]);
     expect(run(...detach).stderr).toBe(
-      'dimensions: no evidence from design-agent for menu in frame "vbGba" in {"breakpoint":"base","keyboard":"no-keyboard","menu":"closed","pointer":"touch"}\n',
+      'dxn: no evidence from design-agent for menu in frame "vbGba" in {"breakpoint":"base","keyboard":"no-keyboard","menu":"closed","pointer":"touch"}\n',
     );
   });
 });
@@ -162,7 +162,7 @@ describe("attach with lists", () => {
   it("refuses a listed value the node never has, and writes nothing", () => {
     const { run, exists } = listed("profile=laptop", "hover=rest|hovred", "focus=blurred");
     expect([run.stderr, exists("evidence/page.json")]).toEqual([
-      'dimensions: "hovred" is not a value of hover for wordmark (rest, hovered)\n',
+      'dxn: "hovred" is not a value of hover for wordmark (rest, hovered)\n',
       false,
     ]);
   });
@@ -170,7 +170,7 @@ describe("attach with lists", () => {
   it("refuses lists where no combination is a context", () => {
     const { run } = listed("profile=phone|tablet-portrait", "hover=hovered", "focus=blurred");
     expect(run.stderr).toBe(
-      'dimensions: no context of wordmark matches; "dimensions evidence wordmark --actor design-agent" lists them\n',
+      'dxn: no context of wordmark matches; "dxn evidence wordmark --actor design-agent" lists them\n',
     );
   });
 });
