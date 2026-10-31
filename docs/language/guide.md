@@ -1425,7 +1425,7 @@ comment     = "#" to the end of the line
 | `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                                            |
 | `unknown-state`                                                               | error    | a rule, a child's condition or an action names a state the type does not have                    |
 | `unknown-value`                                                               | error    | a value is not one of its enum's or dimension's                                                  |
-| `unneeded-dimension`                                                          | error    | a rule or a `when` uses a dimension its type does not need                                       |
+| `unneeded-dimension`                                                          | error    | a rule, a `when`, a child condition or an event uses a dimension its type does not need          |
 | `incomplete-when`                                                             | error    | a `when` leaves out a value of its dimension                                                     |
 | `rule-on-derived`                                                             | error    | a rule is on a state that a `when` decides                                                       |
 | `unknown-environment`                                                         | error    | a profile's environment is not one                                                               |
@@ -1456,7 +1456,7 @@ comment     = "#" to the end of the line
 | `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
 | `nested-context`                                                              | error    | a record's field is a record with context, which would be a second context                       |
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |
-| `unused-need`                                                                 | warning  | a type needs a dimension that no rule uses                                                       |
+| `unused-need`                                                                 | warning  | a type needs a dimension that no rule, `when`, child condition or event uses                     |
 
 Checking stored records with `lang validate` reports these, after any problem with the
 JSON itself:

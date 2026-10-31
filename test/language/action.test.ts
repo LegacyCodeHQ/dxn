@@ -133,6 +133,23 @@ describe("actions and on", () => {
     ).toEqual(["26:31: focus-target: panel cannot take focus: Menu.Panel has no focus state"]);
   });
 
+  it("uses a dimension its event changes, which its type needs", () => {
+    const menu = (needs: string) => `dimension Breakpoint = base | lg
+enum State = closed | open
+type Menu${needs} {
+  state menu: State
+  action close: menu open -> closed
+  on Breakpoint = lg: close
+}
+`;
+    assert([problems(menu(" needs Breakpoint")), problems(menu(""))]).toEqual([
+      [],
+      [
+        '6:6: unneeded-dimension: Menu does not need Breakpoint; declare "type Menu needs Breakpoint"',
+      ],
+    ]);
+  });
+
   it("cannot change a state its parent binds", () => {
     assert(
       errors(`enum State = closed | open

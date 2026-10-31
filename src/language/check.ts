@@ -508,14 +508,17 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       }
       needed.add(need.name);
     }
-    // The dimensions its rules and its derived states use, in the order
-    // first used.
+    // The dimensions its rules, derived states, children and events use, in
+    // the order first used.
     const used = [
       ...new Set(
         [
           ...type.rules.map(({ when }) => when.dimension.name),
           ...type.states.flatMap(({ derived }) => (derived ? [derived.dimension.name] : [])),
           ...type.children.flatMap(({ when }) => (when ? [when.on.name] : [])),
+          ...type.triggers.flatMap(({ event }) =>
+            event.kind === "dimension" ? [event.dimension.name] : [],
+          ),
         ].filter((name) => names.is(name, "dimension")),
       ),
     ];
