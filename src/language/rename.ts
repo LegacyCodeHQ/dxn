@@ -2,6 +2,7 @@ import { type JsonNode, parseJson } from "../compiler/json.js";
 import type { Located, ParseResult } from "./ast.js";
 import { placement } from "./evaluate.js";
 import { Names } from "./names.js";
+import { treePaths } from "./status.js";
 
 // What a value is written as: a letter or digit, then letters, digits and
 // hyphens.
@@ -18,9 +19,9 @@ function replace(source: string, edits: { start: number; end: number; text: stri
 }
 
 // Renames a value of an enum in the file that declares it: in the enum's
-// declaration, in every rule on a state of that enum, and in the branches of
-// every derived state of that enum. A file without
-// problems.
+// declaration, and wherever a value of it is written: rules, children's
+// conditions, bindings, fixed and derived states, actions, expectations and
+// derived fields. A file without problems.
 export function renameInSource(
   file: ParseResult,
   source: string,
@@ -41,7 +42,16 @@ export function renameInSource(
       const state = type.states.find(({ name }) => name === rule.state.name);
       if (state?.enum.name === enumName && rule.value.name === from) named.push(rule.value);
     }
+    for (const action of type.actions) {
+      const state = type.states.find(({ name }) => name === action.state.name);
+      if (state?.enum.name !== enumName) continue;
+      named.push(...[action.from, action.to].filter(({ name }) => name === from));
+    }
     for (const child of type.children) {
+      const on = type.states.find(({ name }) => name === child.when?.on.name);
+      if (on?.enum.name === enumName) {
+        named.push(...(child.when?.values.filter(({ name }) => name === from) ?? []));
+      }
       const inner = file.types.find(({ name }) => name === child.type.name);
       for (const { state, from: source, map } of child.bindings ?? []) {
         const subject = type.states.find(({ name }) => name === source.name);
@@ -61,6 +71,40 @@ export function renameInSource(
       if (state.fixed?.name === from) named.push(state.fixed);
       for (const { result } of state.derived?.branches ?? []) {
         if (result.name === from) named.push(result);
+      }
+    }
+  }
+  // An expectation's key is a state of an element it names, or of a parent's
+  // in place: one of that enum at any of them.
+  const paths = treePaths(file);
+  for (const expectation of file.expectations) {
+    const path = expectation.path.name;
+    const elements = paths.filter(
+      (candidate) => candidate === path || (expectation.below && candidate.startsWith(`${path}.`)),
+    );
+    const enumsOf = (key: string) =>
+      elements.flatMap((element) => {
+        try {
+          const place = placement(file, element);
+          const state =
+            place.parents.find((parent) => parent.key === key)?.state ??
+            place.target.states.find(({ name }) => name === key);
+          return state === undefined ? [] : [state.enum.name];
+        } catch {
+          return [];
+        }
+      });
+    for (const { key, value } of [...expectation.when, ...expectation.values]) {
+      if (value.name === from && enumsOf(key.name).includes(enumName)) named.push(value);
+    }
+  }
+  for (const record of file.records) {
+    for (const field of record.fields) {
+      if (field.derived === undefined) continue;
+      const on = record.fields.find(({ name }) => name === field.derived?.on.name);
+      for (const { values, result } of field.derived.branches) {
+        if (on?.type.name === enumName) named.push(...values.filter(({ name }) => name === from));
+        if (field.type.name === enumName && result.name === from) named.push(result);
       }
     }
   }

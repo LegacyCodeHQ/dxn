@@ -1112,9 +1112,10 @@ Missing:
 
 An enum's values are stored as text, so renaming one by hand leaves every
 stored record that used it invalid. `lang rename` renames it everywhere at
-once: in the enum, in the rules on states of that enum, and in every stored
-record's fields of that enum, nested ones included, and in the states of
-every context.
+once: in the enum; wherever the file writes a value of it, in rules,
+children's conditions, bindings, fixed and derived states, actions,
+expectations and derived fields; and in every stored record's fields of that
+enum, nested ones included, and in the states of every context.
 
 ```bash
 dxn lang rename evidence.dxn Actor.design-agent designer
@@ -1129,7 +1130,9 @@ another enum, a dimension, or a string field stays as it is, and so does the
 rest of each file, comments and spacing included. It refuses a new name that
 is already a value or is not written like one, and it changes nothing while
 the file or its stored records have problems, so a rename never mixes with
-them. Add `--dry-run` to see what it would rename, without writing:
+them. A rename that would leave a problem of its own, such as a rule over
+elements whose states of one name come from different enums, is refused,
+with the problems it would leave. Add `--dry-run` to see what it would rename, without writing:
 `Would rename Actor.design-agent to designer in …`; with `--json` as well, it
 prints every file it would write, in full.
 

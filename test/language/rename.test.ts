@@ -31,6 +31,57 @@ describe("renaming an enum value", () => {
     );
   });
 
+  it("renames it in children's conditions, actions, expectations and derived fields", () => {
+    const menu = `enum State = closed | open
+enum Other = open | shut
+type Panel {
+  state other: Other
+}
+type Menu {
+  state menu: State
+  has panel: Panel only when menu = open
+  action open: menu closed -> open
+  action close: menu open -> closed
+}
+type Page {
+  has menu: Menu
+}
+expect "Open" {
+  in Page.menu
+  when menu = open
+  then menu = open
+}
+expect "Other" {
+  in Page.menu.panel
+  some other = open
+}
+enum Actor = agent
+record Entry {
+  actor: Actor
+  state: State = when actor {
+    agent -> open
+  }
+  other: Other = when actor {
+    agent -> open
+  }
+}
+`;
+    const renamed = renameInSource(parse(menu), menu, "State", "open", "shown");
+    expect([renamed, parse(renamed).diagnostics]).toEqual([
+      menu
+        .replace("closed | open", "closed | shown")
+        .replace("only when menu = open", "only when menu = shown")
+        .replace("menu closed -> open", "menu closed -> shown")
+        .replace("menu open -> closed", "menu shown -> closed")
+        .replace("when menu = open\n  then menu = open", "when menu = shown\n  then menu = shown")
+        .replace(
+          "state: State = when actor {\n    agent -> open",
+          "state: State = when actor {\n    agent -> shown",
+        ),
+      [],
+    ]);
+  });
+
   it("renames it in stored records, only in fields of that enum, keeping the file as it was", () => {
     const data = `[
   { "hover": "hovered", "other": "hovered", "note": "hovered",

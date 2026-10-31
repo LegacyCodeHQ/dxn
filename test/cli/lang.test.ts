@@ -583,6 +583,40 @@ record Evidence with context {
     ]);
   });
 
+  it("refuses a rename that would leave problems, saying which", () => {
+    const root = writeProject({});
+    const source = `enum State = closed | open
+enum Other = open | shut
+type A {
+  state m: State
+}
+type B {
+  state m: Other
+}
+type Page {
+  has a: A
+  has b: B
+}
+expect "Each m can be open" {
+  in Page and below
+  some m = open
+}
+`;
+    writeFileSync(join(root, "page.dxn"), source);
+    const result = capture(["lang", "rename", "page.dxn", "State.open", "shown"], root);
+    expect([
+      result.code,
+      result.stdout,
+      result.stderr,
+      readFileSync(join(root, "page.dxn"), "utf8"),
+    ]).toEqual([
+      1,
+      "",
+      "page.dxn:13:8: expectation-failed: Each m can be open: no combination of Page.b has m = shown\ndxn: the rename would leave problems; nothing was written\n",
+      source,
+    ]);
+  });
+
   it("renames a value of an enum inside a type, by its full name", () => {
     const root = writeProject({});
     const source = "type Menu {\n  enum State = closed | open\n  state menu: State\n}\n";

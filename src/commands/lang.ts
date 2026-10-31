@@ -555,10 +555,11 @@ const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
     ...data,
     source: writtenData.get(data.path) ?? data.source,
   }));
-  if (
-    after.diagnostics.some(({ severity }) => severity === "error") ||
-    !checkStored(after, afterStored, report)
-  ) {
+  const left = after.diagnostics.filter(({ severity }) => severity === "error");
+  for (const { line, column, severity, code, message } of left) {
+    report.problem({ file, line, column, severity, code, message });
+  }
+  if (left.length > 0 || !checkStored(after, afterStored, report)) {
     return report.refuse("the rename would leave problems; nothing was written");
   }
   const what = `${target} to ${to} in ${written.map(({ shown }) => shown).join(", ")} (${count(records, "value")})`;
