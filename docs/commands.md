@@ -452,15 +452,17 @@ profile that fits what you give.
 
 Subcommands:
   list                               List every profile and its values
-  add <name> <dimension>=<value>...  Add a profile in profiles.json
+  add <name> <dimension>=<value>... [<name> <dimension>=<value>...]
+                                     Add one or more profiles in profiles.json; add
+                                     profiles that belong together in one step
   remove <name>                      Remove a profile
 ```
 
-Edits `profiles.json`: the combinations of dimension values that exist. `profile list` prints them. Adding a profile that repeats another one's combination is refused.
+Edits `profiles.json`: the combinations of dimension values that exist. `profile list` prints them. Adding a profile that repeats another one's combination is refused. Add profiles that belong together in one command: once profiles exist only their combinations do, so adding one at a time can break expectations that need the others.
 
 ```bash
 dimensions profile list
-dimensions profile add tablet-portrait breakpoint=sm pointer=touch keyboard=no-keyboard
+dimensions profile add phone breakpoint=base pointer=touch keyboard=no-keyboard desktop breakpoint=xl pointer=mouse keyboard=keyboard
 dimensions profile remove tablet-portrait
 ```
 

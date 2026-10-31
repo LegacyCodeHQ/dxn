@@ -12,7 +12,9 @@ profile that fits what you give.
 
 Subcommands:
   list                               List every profile and its values
-  add <name> <dimension>=<value>...  Add a profile in profiles.json
+  add <name> <dimension>=<value>... [<name> <dimension>=<value>...]
+                                     Add one or more profiles in profiles.json; add
+                                     profiles that belong together in one step
   remove <name>                      Remove a profile
 `;
 
@@ -28,24 +30,31 @@ function profiles(workspace: Workspace, create: boolean): Json {
   return file.profiles as Json;
 }
 
+// Several profiles, each a name followed by its <dimension>=<value> pairs.
 const add = editCommand(usage, (workspace, args) => {
-  const [name, ...rest] = parse(args, ["name"], {}, true).positionals as [string, ...string[]];
-  if (rest.length === 0) {
-    throw new UsageError("give at least one <dimension>=<value>");
-  }
-  const values: Json = {};
-  for (const arg of rest) {
+  const { positionals } = parse(args, ["name"], {}, true);
+  const adding: [string, Json][] = [];
+  for (const arg of positionals) {
     const at = arg.indexOf("=");
-    if (at <= 0 || at === arg.length - 1) {
+    if (at < 0) {
+      adding.push([arg, {}]);
+      continue;
+    }
+    if (at === 0 || at === arg.length - 1) {
       throw new UsageError(`expected <dimension>=<value>, got ${JSON.stringify(arg)}`);
     }
-    values[arg.slice(0, at)] = arg.slice(at + 1);
+    (adding.at(-1) as [string, Json])[1][arg.slice(0, at)] = arg.slice(at + 1);
   }
   const all = profiles(workspace, true);
-  if (name in all) {
-    throw new Refusal(`profile "${name}" already exists`);
+  for (const [name, values] of adding) {
+    if (Object.keys(values).length === 0) {
+      throw new UsageError(`give at least one <dimension>=<value> for profile "${name}"`);
+    }
+    if (name in all || adding.filter(([other]) => other === name).length > 1) {
+      throw new Refusal(`profile "${name}" already exists`);
+    }
+    all[name] = Object.fromEntries(Object.entries(values).sort(([a], [b]) => (a < b ? -1 : 1)));
   }
-  all[name] = Object.fromEntries(Object.entries(values).sort(([a], [b]) => (a < b ? -1 : 1)));
 });
 
 const remove = editCommand(usage, (workspace, args) => {

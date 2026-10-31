@@ -191,6 +191,9 @@ does exist. Profiles live in `profiles.json`, for the whole project:
 
 Filters take `profile=<name>` too, in `contexts` and in expectations. Manage
 profiles with `dimensions profile list`, `profile add` and `profile remove`.
+`profile add` takes several profiles at once (`profile add phone breakpoint=base
+… desktop breakpoint=xl …`): add profiles that belong together in one step,
+because the first profile alone leaves out every other combination.
 
 ## Presence: only
 

@@ -255,6 +255,46 @@ describe("profile commands", () => {
     ]);
   });
 
+  it("add several profiles in one step, where one alone would break an expectation", () => {
+    const { "profiles.json": _, ...without } = files;
+    const { run, read } = cliProject({
+      ...without,
+      "expectations.json": {
+        version: 1,
+        expectations: [
+          {
+            title: "A phone shows the menu",
+            node: "menu",
+            when: { breakpoint: "base" },
+            exists: true,
+          },
+          {
+            title: "A desktop shows the links",
+            node: "toolbar-links",
+            when: { breakpoint: "xl" },
+            exists: true,
+          },
+        ],
+      },
+    });
+    const phone = ["phone", "breakpoint=base", "pointer=touch", "keyboard=no-keyboard"];
+    const desktop = ["desktop", "breakpoint=xl", "pointer=mouse", "keyboard=keyboard"];
+    const alone = run("profile", "add", ...phone);
+    expect([alone.code, alone.stderr.includes("empty-expectation")]).toEqual([1, true]);
+    expect(run("profile", "add", ...phone, ...desktop).code).toBe(0);
+    expect(Object.keys(read("profiles.json").profiles as Record<string, unknown>)).toEqual([
+      "phone",
+      "desktop",
+    ]);
+  });
+
+  it("need values for each profile they add", () => {
+    const { run } = cliProject(files);
+    expect(run("profile", "add", "watch", "tv", "breakpoint=xl").stderr).toContain(
+      'give at least one <dimension>=<value> for profile "watch"',
+    );
+  });
+
   it("refuse a combination that another profile already has", () => {
     const { run } = cliProject(files);
     const result = run(
