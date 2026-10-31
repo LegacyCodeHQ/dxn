@@ -3,8 +3,8 @@
 This guide teaches dxn, the language of design and dimensions, one concept at
 a time. Each section adds one idea, says why you need it, and ends with a file
 you can check yourself. It covers the language as it is today; the last
-section lists what is still being designed. For the reasoning behind each
-decision, see [design.md](design.md).
+section lists what is still being designed. The early design notes, which
+the language has since grown past in places, are in [design.md](design.md).
 
 ## Why a language
 
@@ -69,14 +69,16 @@ wordmark.dxn: 2 enums, 1 type
 ```
 
 It needs no project, so you can try everything in this guide in an empty
-folder. Four commands work on a file, each introduced where it is needed:
+folder. Six commands work on a file, each introduced where it is needed:
 
-| Command                                   | What it does                                                |
-| ----------------------------------------- | ----------------------------------------------------------- |
-| `lang check <file>`                       | reports every problem, or says what the file declares       |
-| `lang states <file> <Type>`               | evaluates a type: its states in each profile or combination |
-| `lang validate <file>`                    | checks every stored record against its declaration          |
-| `lang rename <file> <Enum>.<value> <new>` | renames an enum's value in the file and its stored records  |
+| Command                                      | What it does                                                         |
+| -------------------------------------------- | -------------------------------------------------------------------- |
+| `lang check <file>`                          | reports every problem, or says what the file declares                |
+| `lang states <file> <Type or path>`          | evaluates a type, or a child in place: its states in each profile    |
+| `lang validate <file>`                       | checks every stored record against its declaration                   |
+| `lang attach <file> <path> --file --frame …` | records evidence for an element in the combinations given            |
+| `lang status <file>`                         | counts which combinations have evidence, and which are stale or gone |
+| `lang rename <file> <Enum>.<value> <new>`    | renames an enum's value in the file and its stored records           |
 
 Each prints a readable answer for you. A tool or an agent adds `--json` to any
 of them, and gets one JSON document instead: the answer with its `problems`,
@@ -170,8 +172,8 @@ The checker holds you to what you declared. Misspell a state's enum, or name
 a state with a capital letter, and it says so, with the line and column:
 
 ```
-wordmark.dxn:3:24: state-name: state names start with a lowercase letter: "Focus"
-wordmark.dxn:3:31: unknown-enum: Focus is not an enum (Hover)
+wordmark.dxn:3:23: state-name: state names start with a lowercase letter: "Focus"
+wordmark.dxn:3:30: unknown-enum: Focus is not an enum (Hover)
 ```
 
 ## Nested declarations: what belongs to a type
@@ -214,10 +216,12 @@ dxn lang states menu.dxn Menu.Toggle
 | ✓           | ✓              | ✓                | ✓              |
 ```
 
-A nested name is not visible from a sibling, only from inside its own type:
+A nested name is not visible from a sibling, only from inside its own type.
+Written `state menu: State` in `Toolbar`, it is reported, with the names that
+would do:
 
 ```
-menu.dxn:5:15: unknown-enum: State is not an enum (Menu.State)
+menu.dxn:14:15: unknown-enum: State is not an enum (Hover, Menu.State)
 ```
 
 And it cannot repeat a name from around it, so a bare name always means one
@@ -384,9 +388,10 @@ type ArticlePage {
 }
 ```
 
-Like a derived state, a fixed state has no rules, and a parent cannot bind
-it. A stored context still gives its value, which
-must be the one the `when` gives there.
+Like a derived state, a fixed state has no rules, no action can change it,
+and a parent cannot bind it. A stored context still gives its value, which
+must be the fixed one, as a derived state's must be the one its `when` gives
+there.
 
 ## Has: what a type contains
 
@@ -483,9 +488,10 @@ type Menu {
 `{ expanded = menu }` reads: the toggle's `expanded` is the menu's `menu`.
 On its own, `Toggle` is self-contained, with an `expanded` that can be
 either; placed in the menu, it always follows the menu. Both states must take
-their values from one enum, each of the child's states is set at most once,
-and a state a `when` decides cannot be set. The bindings come right after the
-child's type, before any `only when`.
+their values from one enum, and each of the child's states is set at most
+once. A state the child decides itself cannot be set: one a `when` or a value
+decides, one it receives, or one its own actions change. The bindings come
+right after the child's type, before any `only when`.
 
 ### Provided and received: a state from far above
 
@@ -514,7 +520,7 @@ type Links receives current: Section {
 declares what it receives on its first line, after what it needs, with the
 enum it expects; inside, a received state is used like one of its own, in
 conditions and bindings, but it has no rules and no parent can bind it. A
-type provides only its own states, each once.
+type provides only its own states, each once: not one it receives itself.
 
 A received state often decides a child's own state rather than whether it is
 there: the blog link is always there, but selected only on the blog's pages.
@@ -538,15 +544,21 @@ on the path that provides it, with the same enum. In place, it is one of
 the parents' states, by its provider's name:
 
 ```bash
-dxn lang states site.dxn ArticlePage.toolbar.links
+dxn lang states site.dxn ArticlePage.toolbar.links.blog
+```
+
+```
+| current | selection: unselected | selection: selected |
+| ------- | --------------------- | ------------------- |
+| blog    | —                     | ✓                   |
 ```
 
 On its own, a receiving type has the state free, with every value; and a
-path where nothing above provides it is refused, by `lang states` and
-`lang status`:
+path where nothing above provides it is refused, by `lang states`, by
+`lang status`, and by an expectation that reaches it:
 
 ```
-dxn: Toolbar.links: current is received by Links, but nothing above it provides it
+dxn: current is received by Links, but nothing above it provides it
 ```
 
 ### In place: a child inside its parents
@@ -704,8 +716,8 @@ once, with one of its values. All profiles in a file share one environment, so
 they can be compared row by row.
 
 ```
-wordmark.dxn:4:9: incomplete-profile: laptop does not give Keyboard, which Device requires
-wordmark.dxn:5:34: unknown-value: "pen" is not a value of Pointer (mouse, touch)
+wordmark.dxn:16:54: unknown-value: "pen" is not a value of Pointer (mouse, touch)
+wordmark.dxn:18:9: incomplete-profile: laptop does not give Keyboard, which Device requires
 ```
 
 A type can need a dimension that the profiles do not give. The theme, for
@@ -772,13 +784,14 @@ either is lost: both stay declared, and a context still names the one profile
 its evidence was recorded on, `"profile": "laptop"` or
 `"profile": "tablet+magic-keyboard"`, which then counts for the whole row. If
 the two ever differ, the row splits, and each piece of evidence stays with the
-profile it named. In JSON, each row of `lang states` lists its `profiles`. A modifier sets dimensions of the
-profiles' environment, each once, with one of their values, and is on
-profiles that exist. One that changes nothing on a profile it is on is a
-warning, since that profile already exists:
+profile it named. In JSON, each row of `lang states` lists its `profiles`.
+
+A modifier sets dimensions of the profiles' environment, each once, with one
+of their values, and is on profiles that exist. One that changes nothing on a
+profile it is on is a warning, since that profile already exists:
 
 ```
-warning: unchanged-profile: magic changes nothing on laptop, which already has Keyboard = keyboard
+wordmark.dxn:20:19: warning: unchanged-profile: magic changes nothing on laptop, which already has Keyboard = keyboard
 ```
 
 ## Records: plain data
@@ -786,8 +799,8 @@ warning: unchanged-profile: magic changes nothing on laptop, which already has K
 Everything so far describes the matrix: what an element's states are, and
 where each one exists. But the tools around the matrix also keep data about
 it. When a designer draws a combination, the evidence they record says who
-recorded it, when, and where the drawing is. That data has a shape, and a shape is worth
-checking just as much as the states are.
+recorded it, when, and where the drawing is. That data has a shape, and a
+shape is worth checking just as much as the states are.
 
 A **record** is that shape: a named group of typed fields.
 
@@ -853,9 +866,10 @@ record Evidence with context {
 }
 ```
 
-(`with context` is the next section.) Scalars only type a record's fields. A state or a dimension cannot have one:
-their values must be listed, so a type's combinations can always be counted.
-A scalar's name is built in, so a file cannot declare it.
+(`with context` is the next section.) Scalars only type a record's fields. A
+state or a dimension cannot have one: their values must be listed, so a
+type's combinations can always be counted. A scalar's name is built in, so a
+file cannot declare it.
 
 ### Derived fields: what follows from another field
 
@@ -876,9 +890,9 @@ record Evidence with context {
 }
 ```
 
-A derived field is an enum's, on another field of the record that is an
-enum's and is not derived itself, and its `when` covers every value of that
-field once. It is not stored: its value always follows, so a stored record
+A derived field is an enum's, on another field of the record, not itself,
+that is an enum's and is not derived itself, and its `when` covers every
+value of that field once. It is not stored: its value always follows, so a stored record
 that gives it is reported.
 
 ### With context: a fact about one combination
@@ -937,7 +951,8 @@ path, with the parents' states that place it:
 }
 ```
 
-A context names a `type` or a `path`, never both. With a path, the dimensions
+A context names a `type` or a `path`, never both. A path starts at a type
+nothing contains, so it names one element of a tree. With a path, the dimensions
 are those of every type on the way, and `parents` gives each parent state
 that decides where the child is or that it is given, by its path. It is
 checked against the child in place: it must be there in that world, with
@@ -1014,8 +1029,8 @@ records that are the same in everything but `at` and `fingerprint`, which
 only say when one was recorded, are duplicates, in one file or across the
 record's files; `lang attach` replaces an entry rather than making one. Each
 problem has its file, line and column, and its JSON path, so a person or an
-agent can go straight to it. When everything is valid, the command says what it checked,
-a line for each stored record:
+agent can go straight to it. When everything is valid, the command says what
+it checked, a line for each stored record:
 
 ```
 evidence.dxn: Evidence, 2 records in 1 file in evidence/
@@ -1052,7 +1067,7 @@ one. A tool derived from the actor is how an actor's rules are written: a
 design agent records with pen-dev, so `lang attach` refuses its frame in any
 other file, and `lang status` reports a stored one.
 
-````
+```
 dxn: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file
 ```
 
@@ -1069,21 +1084,22 @@ place, and which of them a stored record is about.
 
 ```bash
 dxn lang status toolbar.dxn
-````
+```
 
 ```
-toolbar.dxn: Evidence for 38 of 75 combinations
+toolbar.dxn: Evidence for 38 of 66 combinations
 
-| path                    | combinations | present | stale | gone | missing |
-| ----------------------- | ------------ | ------- | ----- | ---- | ------- |
-| Toolbar                 | 6            | 0       | 0     | 0    | 6       |
-| Toolbar.wordmark        | 15           | 15      | 0     | 0    | 0       |
-| Toolbar.links           | 3            | 0       | 0     | 0    | 3       |
-| Toolbar.links.blog      | 18           | 9       | 0     | 0    | 9       |
-| Toolbar.menu            | 6            | 2       | 0     | 0    | 4       |
-| Toolbar.menu.toggle     | 12           | 12      | 0     | 0    | 0       |
-| Toolbar.menu.panel      | 3            | 0       | 0     | 0    | 3       |
-| Toolbar.menu.panel.blog | 12           | 0       | 0     | 0    | 12      |
+| path                                | combinations | present | stale | gone | missing |
+| ----------------------------------- | ------------ | ------- | ----- | ---- | ------- |
+| ArticlePage                         | 6            | 0       | 0     | 0    | 6       |
+| ArticlePage.toolbar                 | 6            | 0       | 0     | 0    | 6       |
+| ArticlePage.toolbar.wordmark        | 15           | 15      | 0     | 0    | 0       |
+| ArticlePage.toolbar.links           | 3            | 0       | 0     | 0    | 3       |
+| ArticlePage.toolbar.links.blog      | 9            | 9       | 0     | 0    | 0       |
+| ArticlePage.toolbar.menu            | 6            | 2       | 0     | 0    | 4       |
+| ArticlePage.toolbar.menu.toggle     | 12           | 12      | 0     | 0    | 0       |
+| ArticlePage.toolbar.menu.panel      | 3            | 0       | 0     | 0    | 3       |
+| ArticlePage.toolbar.menu.panel.blog | 6            | 0       | 0     | 0    | 6       |
 ```
 
 A tree starts at each type that no type contains, and every child below it
@@ -1094,7 +1110,8 @@ Each entry is also checked against its frame. By convention, a record with a
 `fingerprint` field next to a `source { file, frame }` is fingerprinted: an
 entry is **present** while its frame's fingerprint is the one recorded,
 **stale** once the frame has changed, and **gone** once the file or the frame
-is. A combination is as its best entry is, or **missing** without one. A
+is: a pen.dev file that is not there is gone, not the wrong tool. A
+combination is as its best entry is, or **missing** without one. A
 record without those fields is counted as recorded, and the first line says
 that staleness is not checked, so it never passes silently. Attaching the
 frame again records its fingerprint now, and the entry is present again.
@@ -1104,9 +1121,12 @@ Missing, Stale and Gone, in the words a context would use:
 
 ```
 Missing:
-  Toolbar.menu on tablet-portrait with layout = compact: menu = closed
-  Toolbar.menu.panel on phone with layout = compact, menu.menu = open
+  ArticlePage on phone: current = blog
+  ArticlePage.toolbar.menu on tablet-portrait with toolbar.layout = compact: menu = closed
 ```
+
+With `--json`, every count is a number, and each path lists the combinations
+that are not present under `listed`, as `stale`, `gone` and `missing`.
 
 ### Renaming a value
 
@@ -1132,9 +1152,9 @@ is already a value or is not written like one, and it changes nothing while
 the file or its stored records have problems, so a rename never mixes with
 them. A rename that would leave a problem of its own, such as a rule over
 elements whose states of one name come from different enums, is refused,
-with the problems it would leave. Add `--dry-run` to see what it would rename, without writing:
-`Would rename Actor.design-agent to designer in …`; with `--json` as well, it
-prints every file it would write, in full.
+with the problems it would leave. Add `--dry-run` to see what it would
+rename, without writing: `Would rename Actor.design-agent to designer in …`;
+with `--json` as well, it prints every file it would write, in full.
 
 With these, evidence is checked by the language itself: its shape, its
 values, and that the combination it is about exists.
@@ -1167,9 +1187,10 @@ type Menu {
 An action changes a state the type owns: not one a `when` or a value decides,
 nor one it receives. Those follow from something else, so no action can change
 them. Nor can a parent bind a state one of its child's actions changes: bound,
-its value is the parent's. An action applies only in its `from` value: `close` does nothing while
-the menu is closed. That is how one event can mean two things: a click on
-the toggle opens a closed menu and closes an open one.
+its value is the parent's. An action changes something: its `from` and `to`
+are two values. It applies only in its `from` value: `close` does nothing
+while the menu is closed. That is how one event can mean two things: a click
+on the toggle opens a closed menu and closes an open one.
 
 An event is one of:
 
@@ -1196,10 +1217,12 @@ has a state named `focus`. Focus is an effect, not a state of the matrix, so
 it is checked, and an expectation can assert it.
 
 One event makes one change: two actions that one event triggers, its own or
-a child's, cannot both apply to the same value. Events overlap when they are
-the same click, key or pointer, or a change of one dimension to a value they
-share: `Breakpoint in (base, lg)` and `Breakpoint = lg` overlap. The event words are built into
-the language for now; they belong to a UI kit, once there are kits.
+a child's, cannot both apply to the same value, and one event does not
+trigger the same action twice. Events overlap when they are the same click,
+key or pointer, or a change of one dimension to a value they share:
+`Breakpoint in (base, lg)` and `Breakpoint = lg` overlap. A dimension an
+event changes is one the type needs, as for a rule. The event words are built
+into the language for now; they belong to a UI kit, once there are kits.
 
 ## Expectations: rules the model must follow
 
@@ -1240,9 +1263,11 @@ assertion:
 - **some**: at least one has all of these values at once;
 - **absent**: the element is not there in any of them.
 
-With `on`, the assertion is about what happens after the event: the type's
-own action it triggers is applied to every combination `when` picks, and
-`focus` in `then` is where focus went.
+With `on`, the assertion is about what happens after the event: the action
+the element's own type triggers on it is applied to every combination `when`
+picks, and `focus` in `then` is where focus went. A trigger a parent has on
+the element's action, like the toolbar's `on click wordmark: menu.close`, is
+not applied yet.
 
 ```
 expect "Escape closes the menu and returns focus to its button" {
@@ -1259,14 +1284,15 @@ A change that breaks a rule is an error, with one combination that breaks
 it:
 
 ```
-toolbar.dxn:144:8: expectation-failed: Touch screens never show hover: ArticlePage.toolbar.wordmark on phone has hover = hovered
+toolbar.dxn:154:8: expectation-failed: Touch screens never show hover: ArticlePage.toolbar.wordmark on phone has hover = hovered
 ```
 
 A rule that picks nothing would always pass, so it is an error too: a
-profile that is not one, a key no element has, a path that leads nowhere.
+profile that is not one, a key no element has, a value its key does not
+have, a path that leads nowhere, or one to an element that cannot be placed.
 
 ```
-expectation-empty: Nothing tests nothing: no element in ArticlePage.toolbar.links has colour
+toolbar.dxn:194:8: expectation-empty: Nothing tests nothing: no element in ArticlePage.toolbar.links has colour
 ```
 
 ## When something is wrong
@@ -1274,8 +1300,9 @@ expectation-empty: Nothing tests nothing: no element in ArticlePage.toolbar.link
 Every problem is reported as `file:line:column: code: message`, in the order
 it appears in the file, and every one is reported at once, so you can fix them
 all in one pass. A problem in stored data also has its JSON path:
-`file:line:column: code: path: message`. The code is stable, for tools; the message is for reading,
-and usually says what was expected or what to write instead.
+`file:line:column: code: path: message`. The code is stable, for tools; the
+message is for reading, and usually says what was expected or what to write
+instead.
 
 There are two kinds:
 
@@ -1322,18 +1349,30 @@ wordmark.dxn:1:19: syntax-error: expected "|" or the end of the line after "rest
 ```
 
 Only the real mistake is reported: the missing `|`. `Hover` is still known to
-be an enum, so the state that uses it is fine.
+be an enum, so the state that uses it is fine. The same holds inside a type:
+a broken enum or type in it is not reported again where it is used. And a
+declaration left open, with its `}` missing, is reported where the next
+declaration starts, at the start of a line, which then reads as its own.
 
 ## What is still being designed
 
 The language grows one concept at a time, and the concepts below are designed
-or under discussion but not part of it yet; see [design.md](design.md):
+or under discussion but not part of it yet:
 
-- **Answers from evidence.** Evidence now says which combination it is for.
-  Next: what is missing (every combination `lang states` lists that has no
-  evidence), and which combinations look the same (those whose evidence
-  points to the same frame). Evidence is for a type today; for each element
-  of a type in a page, it waits for nodes.
+- **Provided state, checked by `lang check`.** A receiving type placed where
+  nothing above provides its state is found today when the path is
+  evaluated: by `lang states`, `lang status` or an expectation. `lang check`
+  could find it as soon as the `has` is written.
+- **Events and where things are.** An `on` that acts on a child, or moves
+  focus to one, does not yet say whether that child must be there before the
+  event or after it.
+- **Expectations on a parent's triggers,** and on a dimension event, which
+  would also move the dimension to its new value.
+- **Dimension keys below a path.** `when Pointer = touch` with `and below`
+  applies only to the elements whose types need `Pointer`, even where every
+  profile gives it.
+- **Evidence for a type across pages.** A context can name a type, but
+  `lang status` counts only the elements of trees.
 - **More renames.** `lang rename` renames an enum's value. Renaming a field,
   a record (and its folder), or an enum, dimension or type is still to come.
 - **A runtime.** Evidence today is recorded by the actors that draw and
@@ -1342,7 +1381,8 @@ or under discussion but not part of it yet; see [design.md](design.md):
 - **Kits.** Domain words that alias the core, such as a UI kit, so the same
   language can describe other domains. `Actor` in the records above is already
   the pattern: the core knows nothing about any actor or tool; a file or a kit
-  declares them.
+  declares them. The event words, `click`, `key` and `pointer outside`, are
+  the first that would move to one.
 
 ### What the language leaves out
 
@@ -1359,13 +1399,15 @@ rendering in the code, look the same.
 
 | Kind        | Example                       | Written                                             |
 | ----------- | ----------------------------- | --------------------------------------------------- |
-| enum        | `Hover`                       | capital letter                                      |
-| dimension   | `Pointer`                     | capital letter                                      |
-| type        | `Wordmark`                    | capital letter                                      |
-| environment | `Device`                      | capital letter                                      |
-| record      | `Evidence`                    | capital letter                                      |
+| enum        | `Hover`                       | capital letter, then letters and digits             |
+| dimension   | `Pointer`                     | capital letter, then letters and digits             |
+| type        | `Wordmark`                    | capital letter, then letters and digits             |
+| environment | `Device`                      | capital letter, then letters and digits             |
+| record      | `Evidence`                    | capital letter, then letters and digits             |
 | state       | `hover`                       | lowercase letter                                    |
 | profile     | `laptop`                      | lowercase letter                                    |
+| child       | `toggle`                      | lowercase letter                                    |
+| action      | `close`                       | lowercase letter                                    |
 | modifier    | `magic-keyboard`              | lowercase letter                                    |
 | field       | `source`                      | lowercase letter                                    |
 | value       | `rest`, `no-keyboard`, `19px` | a letter or digit, then letters, digits and hyphens |
@@ -1374,8 +1416,8 @@ An enum or a type can be declared inside a type, and is then named after it
 from outside: `Menu.State`, `Menu.Toggle`. A name is looked up first in the
 type it is used in, then in the types around it, then at the top of the file.
 
-Every enum, dimension, type, environment, profile, modifier and record shares one namespace:
-each name is declared once in a file.
+Every enum, dimension, type, environment, profile, modifier and record shares
+one namespace: each name is declared once in a file.
 
 ### Grammar
 
