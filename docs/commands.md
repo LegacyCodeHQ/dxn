@@ -719,11 +719,11 @@ dimensions actor list
 ```text
 Usage: dimensions lang <subcommand>
 
-The dimensions language, which is being designed one concept at a time: see
-docs/language/design.md. So far a file declares enums, each a named set of
-values; dimensions, each listing the values the environment varies by;
-types with the dimensions they need, their states, and rules for when a
-state's value exists; environments, each a product of dimensions;
+dxn, the language of design and dimensions, which grows one concept at a
+time: see docs/language/guide.md. A .dxn file declares enums, each a named
+set of values; dimensions, each listing the values the environment varies
+by; types with the dimensions they need, their states, and rules for when
+a state's value exists; environments, each a product of dimensions;
 profiles, each an instance of an environment; and records, each a named
 group of typed fields. A # starts a comment, to the end of the line:
 
@@ -757,9 +757,11 @@ Subcommands:
                                      print what it would write
 ```
 
-Checks a file written in the dimensions language, which is being designed one concept at a time in [language/design.md](language/design.md). It prints what the file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. So far a file declares enums, dimensions, types with their states and the rules for when a state's value exists, environments and profiles; the codes are listed in [language/design.md](language/design.md#grammar).
+Works on files written in dxn, the language of design and dimensions, which grows one concept at a time; [language/guide.md](language/guide.md) teaches it and lists every diagnostic code. `check` prints what a file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. `states` evaluates a type's states in each profile or combination. `validate` checks every stored record, the JSON files in a kebab-case folder named after each record, next to the file; a problem in stored data also has its JSON path. `rename` renames an enum's value in the file and in every stored record.
 
 ```bash
-dimensions lang check wordmark.dim
-dimensions lang states wordmark.dim Wordmark --table
+dimensions lang check wordmark.dxn
+dimensions lang states wordmark.dxn Wordmark --table
+dimensions lang validate evidence.dxn
+dimensions lang rename evidence.dxn Actor.design-agent designer
 ```

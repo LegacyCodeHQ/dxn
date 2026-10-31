@@ -1,4 +1,4 @@
-# A language for dimensions
+# dxn: a language for design and dimensions
 
 This document designs a typed language for the ideas dimensions models today
 in JSON: trees of nodes, their states, the dimensions they vary with, what

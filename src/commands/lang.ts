@@ -13,11 +13,11 @@ import { group } from "./edit.js";
 
 const usage = `Usage: dimensions lang <subcommand>
 
-The dimensions language, which is being designed one concept at a time: see
-docs/language/design.md. So far a file declares enums, each a named set of
-values; dimensions, each listing the values the environment varies by;
-types with the dimensions they need, their states, and rules for when a
-state's value exists; environments, each a product of dimensions;
+dxn, the language of design and dimensions, which grows one concept at a
+time: see docs/language/guide.md. A .dxn file declares enums, each a named
+set of values; dimensions, each listing the values the environment varies
+by; types with the dimensions they need, their states, and rules for when
+a state's value exists; environments, each a product of dimensions;
 profiles, each an instance of an environment; and records, each a named
 group of typed fields. A # starts a comment, to the end of the line:
 

@@ -129,7 +129,7 @@ describe("help", () => {
         actor <subcommand>  List and declare the roles that do work against the model
 
       Language
-        lang <subcommand>   Check a file in the dimensions language, being designed
+        lang <subcommand>   Check a file in the dxn language, being designed
 
         help [<command>]    Show this overview, or a command's usage
 

@@ -8,14 +8,14 @@ afterAll(cleanup);
 
 function file(source: string) {
   const root = writeProject({});
-  writeFileSync(join(root, "wordmark.dim"), source);
+  writeFileSync(join(root, "wordmark.dxn"), source);
   return (...args: string[]) => capture(["lang", ...args], root);
 }
 
 describe("lang check", () => {
   it("prints the records a file declares, with their fields", () => {
     const run = file("enum Tool = pen-dev | code\nrecord Source {\n  tool: Tool\n}\n");
-    const result = run("check", "wordmark.dim");
+    const result = run("check", "wordmark.dxn");
     expect([result.code, JSON.parse(result.stdout).records]).toEqual([
       0,
       [{ name: "Source", fields: [{ name: "tool", type: "Tool" }] }],
@@ -26,10 +26,10 @@ describe("lang check", () => {
     const run = file(
       "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  states hover: Hover\n}\n",
     );
-    const result = run("check", "wordmark.dim");
+    const result = run("check", "wordmark.dxn");
     expect([result.code, result.stderr, JSON.parse(result.stdout).types[0].needs]).toEqual([
       0,
-      "wordmark.dim:3:21: warning: unused-need: Wordmark needs Breakpoint, but no rule uses it\n",
+      "wordmark.dxn:3:21: warning: unused-need: Wordmark needs Breakpoint, but no rule uses it\n",
       ["Breakpoint"],
     ]);
   });
@@ -38,11 +38,11 @@ describe("lang check", () => {
     const run = file(
       "enum Hover = rest | hovered\nenum Size = 19px | 20px | 22px\ndimension Breakpoint = base | lg\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  states hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
     );
-    const result = run("check", "wordmark.dim");
+    const result = run("check", "wordmark.dxn");
     expect([result.code, JSON.parse(result.stdout)]).toEqual([
       0,
       {
-        file: "wordmark.dim",
+        file: "wordmark.dxn",
         enums: [
           { name: "Hover", values: ["rest", "hovered"] },
           { name: "Size", values: ["19px", "20px", "22px"] },
@@ -74,12 +74,12 @@ describe("lang check", () => {
 
   it("reports every problem with its file, line and column, and fails", () => {
     const run = file("enum hover = rest\nenum Ring = none | none\n");
-    const result = run("check", "wordmark.dim");
+    const result = run("check", "wordmark.dxn");
     expect([result.code, result.stderr, result.stdout]).toEqual([
       1,
       [
-        'wordmark.dim:1:6: enum-name: enum names start with a capital letter: "hover"',
-        'wordmark.dim:2:20: duplicate-value: "none" appears twice in Ring',
+        'wordmark.dxn:1:6: enum-name: enum names start with a capital letter: "hover"',
+        'wordmark.dxn:2:20: duplicate-value: "none" appears twice in Ring',
         "",
       ].join("\n"),
       "",
@@ -88,8 +88,8 @@ describe("lang check", () => {
 
   it("needs a file that exists, and no project", () => {
     const run = file("");
-    expect([run("check", "nope.dim").stderr, run("check").code]).toEqual([
-      'dimensions: file not found: "nope.dim"\n',
+    expect([run("check", "nope.dxn").stderr, run("check").code]).toEqual([
+      'dimensions: file not found: "nope.dxn"\n',
       2,
     ]);
   });
@@ -108,7 +108,7 @@ type Wordmark needs Pointer, Keyboard {
 `;
 
   it("prints which states a type has under which conditions, as a table", () => {
-    const result = file(wordmark)("states", "wordmark.dim", "Wordmark", "--table");
+    const result = file(wordmark)("states", "wordmark.dxn", "Wordmark", "--table");
     expect([result.code, result.stdout]).toEqual([
       0,
       [
@@ -122,17 +122,17 @@ type Wordmark needs Pointer, Keyboard {
       ].join("\n"),
     ]);
     expect(
-      JSON.parse(file(wordmark)("states", "wordmark.dim", "Wordmark").stdout).rows,
+      JSON.parse(file(wordmark)("states", "wordmark.dxn", "Wordmark").stdout).rows,
     ).toHaveLength(4);
   });
 
   it("refuses a type the file does not declare, and a file with problems", () => {
     expect([
-      file(wordmark)("states", "wordmark.dim", "Wordmrk").stderr,
-      file("enum hover = rest\n")("states", "wordmark.dim", "Wordmark").stderr,
+      file(wordmark)("states", "wordmark.dxn", "Wordmrk").stderr,
+      file("enum hover = rest\n")("states", "wordmark.dxn", "Wordmark").stderr,
     ]).toEqual([
-      'dimensions: no type "Wordmrk" in wordmark.dim (Wordmark)\n',
-      'wordmark.dim:1:6: enum-name: enum names start with a capital letter: "hover"\n',
+      'dimensions: no type "Wordmrk" in wordmark.dxn (Wordmark)\n',
+      'wordmark.dxn:1:6: enum-name: enum names start with a capital letter: "hover"\n',
     ]);
   });
 
@@ -142,7 +142,7 @@ ${wordmark}environment Device = Breakpoint x Pointer x Keyboard
 profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
 profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `;
-    expect(file(withProfiles)("states", "wordmark.dim", "Wordmark", "--table").stdout).toBe(
+    expect(file(withProfiles)("states", "wordmark.dxn", "Wordmark", "--table").stdout).toBe(
       [
         "| profile | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |",
         "| ------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |",
@@ -164,7 +164,7 @@ record Evidence {
 }
 `;
   // A folder with the schema in it, and these files, by path from it.
-  const project = (files: Record<string, string>, at = "evidence.dim") => {
+  const project = (files: Record<string, string>, at = "evidence.dxn") => {
     const root = writeProject({});
     mkdirSync(join(root, dirname(at)), { recursive: true });
     writeFileSync(join(root, at), schema);
@@ -182,19 +182,19 @@ record Evidence {
       "source/notes.md": "not data",
       "source/old/ignored.json": "not checked",
     });
-    const result = run("evidence.dim");
+    const result = run("evidence.dxn");
     expect([result.code, result.stderr, JSON.parse(result.stdout)]).toEqual([
       0,
       "",
       {
-        file: "evidence.dim",
+        file: "evidence.dxn",
         stored: [{ record: "Source", folder: "source", files: 2, records: 3 }],
       },
     ]);
   });
 
   it("leaves out a record with no folder: it is not stored", () => {
-    const result = project({})("evidence.dim");
+    const result = project({})("evidence.dxn");
     expect([result.code, JSON.parse(result.stdout).stored]).toEqual([0, []]);
   });
 
@@ -203,7 +203,7 @@ record Evidence {
       "source/a.json": '[{ "tool": "figma" }]',
       "evidence/b.json": '[{ "at": "yesterday" }]',
       "evidence/c.json": '{ "at": "2026-10-31T08:50:05Z" }',
-    })("evidence.dim");
+    })("evidence.dxn");
     expect([result.code, result.stderr.split("\n"), result.stdout]).toEqual([
       1,
       [
@@ -219,8 +219,8 @@ record Evidence {
   it("looks for the folders next to the file", () => {
     const result = project(
       { "model/source/a.json": '[{ "tool": "lisp" }]', "source/b.json": '[{ "tool": "lisp" }]' },
-      "model/evidence.dim",
-    )("model/evidence.dim");
+      "model/evidence.dxn",
+    )("model/evidence.dxn");
     expect(result.stderr).toBe(
       'model/source/a.json:1:12: unknown-value: $[0].tool: "lisp" is not a value of Tool (pen-dev, code)\n',
     );
@@ -228,7 +228,7 @@ record Evidence {
 
   it("needs one file", () => {
     const run = project({});
-    expect([run().code, run("evidence.dim", "Source", "records.json").code]).toEqual([2, 2]);
+    expect([run().code, run("evidence.dxn", "Source", "records.json").code]).toEqual([2, 2]);
   });
 });
 
@@ -240,7 +240,7 @@ record Evidence {
 `;
   const project = (data: string) => {
     const root = writeProject({});
-    writeFileSync(join(root, "evidence.dim"), schema);
+    writeFileSync(join(root, "evidence.dxn"), schema);
     mkdirSync(join(root, "evidence"));
     writeFileSync(join(root, "evidence", "page.json"), data);
     const run = (...args: string[]) => capture(["lang", "rename", ...args], root);
@@ -251,20 +251,20 @@ record Evidence {
 
   it("renames an enum value in the file and in every stored record, and says what changed", () => {
     const { run, read } = project(stored);
-    const result = run("evidence.dim", "Actor.design-agent", "designer");
+    const result = run("evidence.dxn", "Actor.design-agent", "designer");
     expect([
       result.code,
       JSON.parse(result.stdout),
-      read("evidence.dim"),
+      read("evidence.dxn"),
       read("evidence/page.json"),
     ]).toEqual([
       0,
       {
-        file: "evidence.dim",
+        file: "evidence.dxn",
         enum: "Actor",
         from: "design-agent",
         to: "designer",
-        written: ["evidence.dim", "evidence/page.json"],
+        written: ["evidence.dxn", "evidence/page.json"],
         records: 1,
       },
       schema.replace("design-agent", "designer"),
@@ -275,40 +275,40 @@ record Evidence {
   it("prints what it would write with --dry-run, and writes nothing", () => {
     const { read } = project(stored);
     const root = writeProject({});
-    writeFileSync(join(root, "evidence.dim"), schema);
+    writeFileSync(join(root, "evidence.dxn"), schema);
     mkdirSync(join(root, "evidence"));
     writeFileSync(join(root, "evidence", "page.json"), stored);
     const result = capture(
-      ["--dry-run", "lang", "rename", "evidence.dim", "Actor.design-agent", "designer"],
+      ["--dry-run", "lang", "rename", "evidence.dxn", "Actor.design-agent", "designer"],
       root,
     );
     expect([
       result.code,
       JSON.parse(result.stdout),
-      readFileSync(join(root, "evidence.dim"), "utf8"),
+      readFileSync(join(root, "evidence.dxn"), "utf8"),
     ]).toEqual([
       0,
       {
         dryRun: true,
         written: {
-          "evidence.dim": schema.replace("design-agent", "designer"),
+          "evidence.dxn": schema.replace("design-agent", "designer"),
           "evidence/page.json": '[{ "actor": "designer" }, { "actor": "reviewer" }]\n',
         },
       },
       schema,
     ]);
-    expect(read("evidence.dim")).toBe(schema);
+    expect(read("evidence.dxn")).toBe(schema);
   });
 
   it("refuses what it cannot rename, and writes nothing", () => {
     const { run, read } = project(stored);
     expect([
-      run("evidence.dim", "Actr.design-agent", "designer").stderr,
-      run("evidence.dim", "Evidence.design-agent", "designer").stderr,
-      run("evidence.dim", "Actor.designer", "maker").stderr,
-      run("evidence.dim", "Actor.design-agent", "reviewer").stderr,
-      run("evidence.dim", "Actor.design-agent", "design agent").stderr,
-      read("evidence.dim"),
+      run("evidence.dxn", "Actr.design-agent", "designer").stderr,
+      run("evidence.dxn", "Evidence.design-agent", "designer").stderr,
+      run("evidence.dxn", "Actor.designer", "maker").stderr,
+      run("evidence.dxn", "Actor.design-agent", "reviewer").stderr,
+      run("evidence.dxn", "Actor.design-agent", "design agent").stderr,
+      read("evidence.dxn"),
     ]).toEqual([
       "dimensions: Actr is not an enum (Actor)\n",
       "dimensions: Evidence is a record, not an enum\n",
@@ -321,8 +321,8 @@ record Evidence {
 
   it("refuses while the stored records have problems, so a rename never mixes with them", () => {
     const { run, read } = project('[{ "actor": "maker" }]\n');
-    const result = run("evidence.dim", "Actor.design-agent", "designer");
-    expect([result.code, result.stderr, read("evidence.dim")]).toEqual([
+    const result = run("evidence.dxn", "Actor.design-agent", "designer");
+    expect([result.code, result.stderr, read("evidence.dxn")]).toEqual([
       1,
       'evidence/page.json:1:13: unknown-value: $[0].actor: "maker" is not a value of Actor (design-agent, reviewer)\n',
       schema,
@@ -332,8 +332,8 @@ record Evidence {
   it("needs a file, an enum's value and its new name", () => {
     const { run } = project(stored);
     expect([
-      run("evidence.dim", "Actor.design-agent").code,
-      run("evidence.dim", "Actor", "x").code,
+      run("evidence.dxn", "Actor.design-agent").code,
+      run("evidence.dxn", "Actor", "x").code,
     ]).toEqual([2, 2]);
   });
 });

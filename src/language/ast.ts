@@ -1,4 +1,4 @@
-// The tree a file of the dimensions language parses to. Every name and value
+// The tree a file of the dxn language parses to. Every name and value
 // keeps its line and column, so checks can point at it.
 
 export interface Located {

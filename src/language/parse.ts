@@ -1,4 +1,4 @@
-// A hand-written parser for the dimensions language, which grows one concept
+// A hand-written parser for the dxn language, which grows one concept
 // at a time. A file declares enums, dimensions, types, environments and
 // profiles:
 //

@@ -1,8 +1,8 @@
-# The dimensions language: a guide
+# dxn: a guide
 
-This guide teaches the dimensions language one concept at a time. Each
-section adds one idea, says why you need it, and ends with a file you can
-check yourself. It covers the language as it is today; the last section lists
+This guide teaches dxn, the language of design and dimensions, one concept at
+a time. Each section adds one idea, says why you need it, and ends with a file
+you can check yourself. It covers the language as it is today; the last section lists
 what is still being designed. For the reasoning behind each decision, see
 [design.md](design.md).
 
@@ -21,7 +21,7 @@ combinations, most of which nobody ever writes down. The designer draws some
 of them, the developer builds some of them, and the two sets drift apart
 without anyone noticing.
 
-The dimensions language is where you write those combinations down once, in a
+dxn is where you write those combinations down once, in a
 form a tool can check. You state what an element's states are, what the world
 around it varies by, and which states exist under which conditions. The tool
 then answers the questions that are otherwise guesswork: _which states does
@@ -35,12 +35,12 @@ place it was made, with what to write instead.
 
 ## Your first file
 
-A file is plain text. By convention it ends in `.dim`. The `lang check`
+A dxn file is plain text, and its name ends in `.dxn`. The `lang check`
 command reads one, reports any problems, and otherwise prints what it
 declares as JSON:
 
 ```bash
-dimensions lang check wordmark.dim
+dimensions lang check wordmark.dxn
 ```
 
 It needs no project, so you can try everything in this guide in an empty
@@ -115,7 +115,7 @@ in any of the four combinations of hover and focus. You can ask the tool for
 them:
 
 ```bash
-dimensions lang states wordmark.dim Wordmark --table
+dimensions lang states wordmark.dxn Wordmark --table
 ```
 
 ```
@@ -131,8 +131,8 @@ The checker holds you to what you declared. Misspell a state's enum, or name
 a state with a capital letter, and it says so, with the line and column:
 
 ```
-wordmark.dim:3:24: state-name: state names start with a lowercase letter: "Focus"
-wordmark.dim:3:31: unknown-enum: Focus is not an enum (Hover)
+wordmark.dxn:3:24: state-name: state names start with a lowercase letter: "Focus"
+wordmark.dxn:3:31: unknown-enum: Focus is not an enum (Hover)
 ```
 
 ## Dimensions: what the world varies by
@@ -181,14 +181,14 @@ uses a dimension the type does not need, the error is at that rule, and says
 exactly what to declare:
 
 ```
-wordmark.dim:5:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Pointer"
+wordmark.dxn:5:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Pointer"
 ```
 
 A need that nothing uses yet is allowed, but you will get a warning, so a
 stale need does not linger unnoticed:
 
 ```
-wordmark.dim:4:21: warning: unused-need: Wordmark needs Breakpoint, but no rule uses it
+wordmark.dxn:4:21: warning: unused-need: Wordmark needs Breakpoint, but no rule uses it
 ```
 
 A warning does not fail the check: the file is still usable.
@@ -240,7 +240,7 @@ where it exists. A second rule for the same value is an error.
 This is where the language pays off. Ask for the wordmark's states again:
 
 ```bash
-dimensions lang states wordmark.dim Wordmark --table
+dimensions lang states wordmark.dxn Wordmark --table
 ```
 
 ```
@@ -328,8 +328,8 @@ once, with one of its values. All profiles in a file share one environment, so
 they can be compared row by row.
 
 ```
-wordmark.dim:4:9: incomplete-profile: laptop does not give Keyboard, which Device requires
-wordmark.dim:5:34: unknown-value: "pen" is not a value of Pointer (mouse, touch)
+wordmark.dxn:4:9: incomplete-profile: laptop does not give Keyboard, which Device requires
+wordmark.dxn:5:34: unknown-value: "pen" is not a value of Pointer (mouse, touch)
 ```
 
 A type can need a dimension that the profiles do not give. The theme, for
@@ -449,7 +449,7 @@ plural: `Evidence` is stored in `evidence/`, `DesignReview` in
 so the data can be split across as many files as you like:
 
 ```
-evidence.dim                # declares record Evidence
+evidence.dxn                # declares record Evidence
 evidence/
   article-page.json         # [ {…}, {…} ]
   home-page.json
@@ -476,7 +476,7 @@ scalar field a string that is a valid value of the scalar.
 `lang validate` checks every stored record against its declaration:
 
 ```bash
-dimensions lang validate evidence.dim
+dimensions lang validate evidence.dxn
 ```
 
 ```
@@ -490,7 +490,7 @@ straight to it. When everything is valid, the command prints what it checked:
 
 ```json
 {
-  "file": "evidence.dim",
+  "file": "evidence.dxn",
   "stored": [{ "record": "Evidence", "folder": "evidence", "files": 1, "records": 2 }]
 }
 ```
@@ -503,16 +503,16 @@ once: in the enum, in the rules on states of that enum, and in every stored
 record's fields of that enum, nested ones included.
 
 ```bash
-dimensions lang rename evidence.dim Actor.design-agent designer
+dimensions lang rename evidence.dxn Actor.design-agent designer
 ```
 
 ```json
 {
-  "file": "evidence.dim",
+  "file": "evidence.dxn",
   "enum": "Actor",
   "from": "design-agent",
   "to": "designer",
-  "written": ["evidence.dim", "evidence/article-page.json"],
+  "written": ["evidence.dxn", "evidence/article-page.json"],
   "records": 38
 }
 ```
@@ -556,7 +556,7 @@ type Wordmark {
 ```
 
 ```
-wordmark.dim:1:19: syntax-error: expected "|" or the end of the line after "rest", found "hovered"
+wordmark.dxn:1:19: syntax-error: expected "|" or the end of the line after "rest", found "hovered"
 ```
 
 Only the real mistake is reported: the missing `|`. `Hover` is still known to
