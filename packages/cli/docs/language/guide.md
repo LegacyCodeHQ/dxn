@@ -104,12 +104,20 @@ enum Focus = blurred | focused
 ```
 
 An enum lists every value it has, split by `|`. A long one can carry on to the
-next line after a `|`:
+next line, before or after a `|`, and can start its values on the line after
+the `=`, with a `|` before the first:
 
 ```
 enum Size = xs | sm | md |
   lg | xl
+
+enum Size =
+  | xs
+  | sm
+  | md
 ```
+
+An enum can have a single value.
 
 Why closed sets? Because a finite set can be counted. If `Hover` has two
 values and `Focus` has two, there are exactly four combinations, and the tool
@@ -1423,8 +1431,8 @@ one namespace: each name is declared once in a file.
 
 ```
 file        = { blank-line | comment | enum | dimension | type | environment | profile | modifier | record | expect }
-enum        = "enum" Name "=" value { "|" [newline] value } newline
-dimension   = "dimension" Name "=" value { "|" [newline] value } newline
+enum        = "enum" Name "=" [newline] [ "|" ] value { [newline] "|" [newline] value } newline
+dimension   = "dimension" Name "=" [newline] [ "|" ] value { [newline] "|" [newline] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" field { "," [newline] field } ]
               "{" { blank-line | state | rule | enum | type | has | provides | action | on } "}"
 action      = "action" action-name ":" state-name value "->" value newline

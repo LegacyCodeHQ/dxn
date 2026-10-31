@@ -45,6 +45,35 @@ describe("enum", () => {
     ]);
   });
 
+  it("can start a line with the |, and its first value with one", () => {
+    const values = (source: string) => {
+      const { enums, dimensions, diagnostics } = parse(source);
+      return [diagnostics, [...enums, ...dimensions][0]?.values.map(({ name }) => name)];
+    };
+    expect([
+      values("enum Size =\n  | xs\n  | sm\n  | md\n"),
+      values("enum Size = xs | sm\n  | md\n"),
+      values("enum Size = | xs | sm\n"),
+      values("dimension Pointer =\n  | mouse\n  | touch\n"),
+    ]).toEqual([
+      [[], ["xs", "sm", "md"]],
+      [[], ["xs", "sm", "md"]],
+      [[], ["xs", "sm"]],
+      [[], ["mouse", "touch"]],
+    ]);
+    expect([
+      problems("enum Size =\n"),
+      problems("enum Size = xs |\n  | sm\n"),
+      problems("enum Size =\n  | xs\n  md\n"),
+    ]).toEqual([
+      ['1:12: syntax-error: expected a value after "=", found the end of the line'],
+      ['2:3: syntax-error: expected a value after "|", found "|"'],
+      [
+        '3:3: syntax-error: expected "enum", "dimension", "type", "environment", "profile", "modifier", "record" or "expect", found "md"',
+      ],
+    ]);
+  });
+
   it("refuses names and values that do not follow the naming rules", () => {
     expect([
       problems("enum hover = rest | hovered\n"),

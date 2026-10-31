@@ -168,9 +168,26 @@ export function parse(source: string): ParseResult {
     const named = name(keyword, `a ${keyword} name after "${keyword}"`, capitalized);
     const declaration = keep(declarations, { ...named, values: [] });
     expect("=", `"=" after the ${keyword} name`);
+    // A line break can come before or after any "|", and the values can start
+    // on the next line, with a "|" before the first: "| xs" on each line.
+    const pipeNext = () => peek().kind === "newline" && tokens[position + 1]?.kind === "|";
+    if (pipeNext()) next();
+    let after = '"="';
+    if (peek().kind === "|") {
+      next();
+      after = '"|"';
+    }
+    declaration.values.push(word(`a value after ${after}`));
+    for (;;) {
+      if (pipeNext()) next();
+      if (peek().kind !== "|") break;
+      next();
+      if (peek().kind === "newline") next();
+      declaration.values.push(word('a value after "|"'));
+    }
     // Inside a type, the type's closing brace can end it too.
     const ends: TokenKind[] = nested ? ["newline", "end", "}"] : ["newline", "end"];
-    declaration.values.push(...list("|", '"="', (after) => word(`a value after ${after}`), ends));
+    end(ends, '"|" or the end of the line');
   };
 
   // A state field: "<state>: <Enum>".
