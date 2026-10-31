@@ -1,14 +1,13 @@
 import { defineConfig } from "vitest/config";
 
+// One run over both packages, so coverage and its thresholds cover them together.
 export default defineConfig({
   test: {
-    include: ["test/**/*.test.ts"],
-    environment: "node",
-    snapshotSerializers: ["test/support/serializer.ts"],
+    projects: ["packages/*"],
     coverage: {
       provider: "v8",
-      include: ["src/**/*.ts"],
-      exclude: ["src/main.ts"],
+      include: ["packages/*/src/**/*.ts"],
+      exclude: ["packages/cli/src/main.ts"],
       reporter: ["text", "lcov"],
       thresholds: { lines: 70, functions: 85 },
     },

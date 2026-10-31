@@ -7,13 +7,13 @@ help:
 	@echo "  fmt-check   - Check formatting with Biome"
 	@echo "  lint        - Run Biome lint rules"
 	@echo "  lint-check  - Run formatting, lint and type checks"
-	@echo "  typecheck   - Type-check sources and tests"
+	@echo "  typecheck   - Type-check both packages' sources and tests"
 	@echo "  cycles      - Fail on source-file dependency cycles (needs clarity; required in CI)"
 	@echo "  security    - Audit production dependencies for known vulnerabilities"
-	@echo "  test        - Run the test suite"
+	@echo "  test        - Run both packages' test suites"
 	@echo "  coverage    - Run the test suite with coverage thresholds"
-	@echo "  embed-docs  - Copy docs/workflow.md into the program (after editing it)"
-	@echo "  build       - Compile src/ to dist/"
+	@echo "  embed-docs  - Copy packages/cli/docs/workflow.md into the program (after editing it)"
+	@echo "  build       - Compile packages/*/src/ to packages/*/dist/"
 	@echo "  smoke       - Run the built CLI once"
 	@echo "  check       - Run the full quality gate (the pre-push hook)"
 	@echo "  check-fast  - Run the quality gate without coverage"
@@ -54,13 +54,14 @@ coverage:
 
 embed-docs:
 	node scripts/embed-docs/embed.mjs
-	npx biome format --write src/generated/workflow.ts
+	npx biome format --write packages/cli/src/generated/workflow.ts
 
+# The language, then the dxn command that imports it.
 build:
-	npx tsc --project tsconfig.build.json
+	npx tsc --build tsconfig.build.json
 
 smoke: build
-	node dist/main.js --version
+	node packages/cli/dist/main.js --version
 
 check: lint-check cycles security coverage smoke
 
@@ -72,4 +73,4 @@ setup-hooks:
 	git config core.hooksPath .githooks
 
 clean:
-	rm -rf dist coverage
+	rm -rf coverage packages/*/dist

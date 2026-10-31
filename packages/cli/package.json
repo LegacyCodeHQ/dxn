@@ -1,0 +1,26 @@
+{
+  "name": "@legacycodehq/dxn",
+  "version": "0.0.0",
+  "description": "Track what has been specified, built and verified for a tree of nodes across dimensions.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "dxn": "dist/main.js"
+  },
+  "files": [
+    "dist",
+    "!dist/tsconfig.build.tsbuildinfo",
+    "docs",
+    "schema"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc --build tsconfig.build.json"
+  },
+  "dependencies": {
+    "@legacycodehq/dxn-language": "0.0.0"
+  }
+}

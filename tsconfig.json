@@ -1,13 +1,15 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
     "noEmit": true,
-    "skipLibCheck": true,
-    "types": ["node"]
+    // Type-checks both packages as one program: the dxn command imports the
+    // language's sources, through the "source" export condition, not its build.
+    "customConditions": ["source"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"]
+  "include": [
+    "packages/*/src/**/*.ts",
+    "packages/*/test/**/*.ts",
+    "vitest.config.ts",
+    "packages/*/vitest.config.ts"
+  ]
 }

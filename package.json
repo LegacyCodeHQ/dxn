@@ -1,23 +1,19 @@
 {
-  "name": "@legacycodehq/dxn",
+  "name": "@legacycodehq/dxn-workspace",
   "version": "0.0.0",
-  "description": "Track what has been specified, built and verified for a tree of nodes across dimensions.",
+  "description": "The dxn command and the dxn language, as npm workspaces.",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
-  "bin": {
-    "dxn": "dist/main.js"
-  },
-  "files": [
-    "dist",
-    "docs",
-    "schema"
+  "workspaces": [
+    "packages/language",
+    "packages/cli"
   ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
+    "build": "make build",
     "check": "biome check . && tsc --noEmit",
     "format": "biome format --write .",
     "format:check": "biome format .",
