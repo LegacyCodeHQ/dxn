@@ -50,10 +50,12 @@ describe("enum", () => {
       problems("enum hover = rest | hovered\n"),
       problems("enum Hover = rest | -hovered\n"),
       problems("enum Hover = rest | hover_ed\n"),
+      problems("enum Hover-State = rest\n"),
     ]).toEqual([
       ['1:6: enum-name: enum names start with a capital letter: "hover"'],
       ['1:21: syntax-error: expected a value after "|", found "-"'],
       ['1:26: syntax-error: expected "|" or the end of the line after "hover", found "_"'],
+      ['1:6: enum-name: enum names are letters and digits: "Hover-State"'],
     ]);
   });
 

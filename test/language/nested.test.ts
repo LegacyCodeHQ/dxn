@@ -105,9 +105,21 @@ record Snapshot {
     expect([
       problems("type Menu {\n  state menu: Menu.\n}\n"),
       problems("type Menu {\n  record Note {}\n}\n"),
+      problems("type Menu {\n  | open\n}\n"),
+      problems("type Menu { enum State = closed | open }\n"),
+      problems(
+        "dimension D = x | y\nenum E = a | b\ntype Menu needs D {\n  state profile: E\n  profile = b only when D = x\n}\n",
+      ),
     ]).toEqual([
       ['2:20: syntax-error: expected a name after ".", found the end of the line'],
-      ['2:10: syntax-error: expected "=" after "record", found "Note"'],
+      [
+        '2:3: syntax-error: expected "state", "has", "action", "on", "provides", "enum", "type", a rule or "}", found "record"',
+      ],
+      [
+        '2:3: syntax-error: expected "state", "has", "action", "on", "provides", "enum", "type", a rule or "}", found "|"',
+      ],
+      [],
+      [],
     ]);
   });
 });

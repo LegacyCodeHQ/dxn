@@ -121,7 +121,11 @@ export function parse(source: string): ParseResult {
       result.diagnostics.push({
         severity: "error",
         code: `${kind}-name`,
-        message: `${kind} names start with ${casing.rule}: ${JSON.stringify(named.name)}`,
+        // One that starts right has other characters than a name can.
+        message:
+          casing === capitalized && /^[A-Z]/.test(named.name)
+            ? `${kind} names are letters and digits: ${JSON.stringify(named.name)}`
+            : `${kind} names start with ${casing.rule}: ${JSON.stringify(named.name)}`,
         line: named.line,
         column: named.column,
       });
@@ -196,9 +200,9 @@ export function parse(source: string): ParseResult {
     const named = name(keyword, `a ${keyword} name after "${keyword}"`, capitalized);
     const declaration = keep(declarations, { ...named, values: [] });
     expect("=", `"=" after the ${keyword} name`);
-    declaration.values.push(
-      ...list("|", '"="', (after) => word(`a value after ${after}`), ["newline", "end"]),
-    );
+    // Inside a type, the type's closing brace can end it too.
+    const ends: TokenKind[] = nested ? ["newline", "end", "}"] : ["newline", "end"];
+    declaration.values.push(...list("|", '"="', (after) => word(`a value after ${after}`), ends));
   };
 
   // A state field: "<state>: <Enum>".
@@ -395,8 +399,19 @@ export function parse(source: string): ParseResult {
       type.states.push(...list(",", '"receives"', received, ["{"], '"{"'));
     }
     expect("{", '"{" after the type name');
+    const body = '"state", "has", "action", "on", "provides", "enum", "type", a rule or "}"';
     braces(type.name, (token) => {
-      if (token.kind !== "word") fail(token, '"state", a rule or "}"');
+      if (token.kind !== "word") fail(token, body);
+      // A declaration of the file, not of a type; a rule on a state of that
+      // name has "=" next.
+      if (
+        ["dimension", "environment", "profile", "modifier", "record", "expect"].includes(
+          token.text,
+        ) &&
+        tokens[position + 1]?.kind !== "="
+      ) {
+        fail(token, body);
+      }
       if (token.text === "action") {
         next();
         const named = name("action", 'an action name after "action"', lowercase);
