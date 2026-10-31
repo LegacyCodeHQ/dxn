@@ -71,6 +71,23 @@ describe("a binding to a when", () => {
     ]);
   });
 
+  it("cannot set a state the child already decides", () => {
+    expect([
+      problems(
+        mapped.replace("state selection: Selection", "state selection: Selection = unselected"),
+      ),
+      problems(
+        mapped.replace(
+          "type Link {\n  state selection: Selection",
+          "type Link receives selection: Selection {",
+        ),
+      ),
+    ]).toEqual([
+      ["9:20: bound-derived: selection is decided by its value; it cannot also be bound"],
+      ["8:20: bound-derived: selection is received; it cannot also be bound"],
+    ]);
+  });
+
   it("is renamed with the enums of its values and of its branches' values", () => {
     expect(renameInSource(parse(mapped), mapped, "Selection", "selected", "current-page")).toBe(
       mapped

@@ -347,16 +347,17 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         );
       }
       if (target === undefined || source === undefined) continue;
-      const map = child.bindings?.find((binding) => binding.state === state)?.map;
-      if (map !== undefined) {
-        checkBranches(map, from, source.name, source.enum.name, target.name, target.enum.name);
-        continue;
-      }
+      // Mapped or not, a binding cannot set a state the child decides.
       if (target.derived !== undefined || target.fixed !== undefined || target.received) {
         const why = target.received
           ? "is received"
           : `is decided by ${target.fixed === undefined ? "its when" : "its value"}`;
         report("bound-derived", `${target.name} ${why}; it cannot also be bound`, state);
+        continue;
+      }
+      const map = child.bindings?.find((binding) => binding.state === state)?.map;
+      if (map !== undefined) {
+        checkBranches(map, from, source.name, source.enum.name, target.name, target.enum.name);
       } else if (target.enum.name !== source.enum.name) {
         report(
           "binding-mismatch",
