@@ -44,7 +44,14 @@ dimensions lang check wordmark.dim
 ```
 
 It needs no project, so you can try everything in this guide in an empty
-folder.
+folder. Four commands work on a file, each introduced where it is needed:
+
+| Command                                   | What it does                                                |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `lang check <file>`                       | reports every problem, or prints what the file declares     |
+| `lang states <file> <Type> [--table]`     | evaluates a type: its states in each profile or combination |
+| `lang validate <file>`                    | checks every stored record against its declaration          |
+| `lang rename <file> <Enum>.<value> <new>` | renames an enum's value in the file and its stored records  |
 
 A `#` starts a comment, which runs to the end of the line. Use comments for
 the _why_ that the declarations cannot say:
@@ -360,28 +367,32 @@ profile laptop: Device { Pointer = mouse }
 
 Everything so far describes the matrix: what an element's states are, and
 where each one exists. But the tools around the matrix also keep data about
-it. When a designer draws a combination, the evidence they record says which
-tool it was drawn in and where. That data has a shape, and a shape is worth
+it. When a designer draws a combination, the evidence they record says who
+recorded it, when, and where the drawing is. That data has a shape, and a shape is worth
 checking just as much as the states are.
 
 A **record** is that shape: a named group of typed fields.
 
 ```
-enum Tool = pen-dev | code
-enum Verdict = passed | failed
+enum Actor = design-agent
 
 record Source {
-  # where the evidence is
-  tool: Tool
-  verdict: Verdict
+  # where the drawing is
+  file: RelativePath
+  frame: NonEmptyString
 }
 
-record Evidence { source: Source }
+record Evidence {
+  actor: Actor
+  source: Source
+}
 ```
 
 A record's name is capitalized, like every other set of possibilities. Its
 fields come one to a line, each a lowercase name, a colon, and its type: an
-enum, another record, or a scalar (below).
+enum (`Actor`), another record (`Source`), or a scalar (`RelativePath` and
+`NonEmptyString`, below). A short record can sit on one line:
+`record Note { text: NonEmptyString }`.
 
 A record is not a type. A type is an element: it needs dimensions and has
 states that come and go with them. A record is plain data, with nothing that
@@ -405,13 +416,19 @@ values are checked rather than listed:
 | `NonEmptyString` | at least one character, with no spaces at either end and no control characters                                                    |
 | `RelativePath`   | a path from the repository root: parts split by `/`, none of them empty, `.` or `..`, and none with a `\` or spaces at either end |
 
+With them, `Evidence` can hold everything an actor records: who, when, where
+the drawing is, and the drawing's fingerprint at that moment.
+
 ```
+enum Actor = design-agent
+
 record Source {
   file: RelativePath
   frame: NonEmptyString
 }
 
 record Evidence {
+  actor: Actor
   at: Timestamp
   source: Source
   fingerprint: NonEmptyString
@@ -507,21 +524,22 @@ is already a value or is not written like one, and it changes nothing while
 the file or its stored records have problems, so a rename never mixes with
 them. Add `--dry-run` to see every file it would write, without writing.
 
-Records are the first step toward evidence that the language itself checks:
-the next steps are fields of text, times and hashes, and a field that refers
-to one combination of a type.
+These are the steps toward evidence that the language itself checks. What it
+cannot say yet is which combination a piece of evidence is for: that needs a
+field that refers to one combination of a type in a profile.
 
 ## When something is wrong
 
 Every problem is reported as `file:line:column: code: message`, in the order
 it appears in the file, and every one is reported at once, so you can fix them
-all in one pass. The code is stable, for tools; the message is for reading,
+all in one pass. A problem in stored data also has its JSON path:
+`file:line:column: code: path: message`. The code is stable, for tools; the message is for reading,
 and usually says what was expected or what to write instead.
 
 There are two kinds:
 
-- An **error** means the file cannot be used: `lang check` and `lang states`
-  exit with code 1, and nothing is evaluated.
+- An **error** means the file cannot be used: every command exits with code
+  1, and nothing is evaluated, validated or renamed.
 - A **warning** has `warning:` before its code. The file is still usable, and
   the command still succeeds.
 
@@ -549,12 +567,14 @@ be an enum, so the state that uses it is fine.
 The language grows one concept at a time, and the concepts below are designed
 or under discussion but not part of it yet; see [design.md](design.md):
 
-- **Evidence the language checks.** Records and `lang validate` are the first
-  steps. Next come fields that hold text, times and hashes, for when evidence
-  was recorded and what it points to; a field that refers to one combination
-  of a type in a profile, so the checker can tell that a piece of evidence is
-  for a combination that exists; and where evidence is stored, so the tool can
-  say what is drawn, built and verified, and what is missing.
+- **Evidence for a combination.** Records, scalars and stored data are in
+  place. What is left is a field that refers to one combination of a type in
+  a profile, so the checker can tell that a piece of evidence is for a
+  combination that exists, and the tool can say what is drawn, built and
+  verified, and what is missing. It also needs a decision: whether evidence is
+  for a type, or for each element of that type in a page.
+- **More renames.** `lang rename` renames an enum's value. Renaming a field,
+  a record (and its folder), or an enum, dimension or type is still to come.
 - **Provides and cascade.** Today, profiles are the only things that give
   dimensions their values. Next, an element in a page will _provide_ a
   dimension, and every element inside it that _needs_ it will receive the
@@ -562,9 +582,9 @@ or under discussion but not part of it yet; see [design.md](design.md):
 - **Modifiers.** Accessories that change some profiles' values, like an iPad
   with a Magic Keyboard.
 - **Kits.** Domain words that alias the core, such as a UI kit, so the same
-  language can describe other domains. `Tool` in the records above is already
-  the pattern: the core knows nothing about pen.dev; a file or a kit declares
-  it.
+  language can describe other domains. `Actor` in the records above is already
+  the pattern: the core knows nothing about any actor or tool; a file or a kit
+  declares them.
 
 ### What the language leaves out
 
@@ -585,8 +605,8 @@ rendering in the code, look the same.
 | dimension   | `Pointer`                     | capital letter                                      |
 | type        | `Wordmark`                    | capital letter                                      |
 | environment | `Device`                      | capital letter                                      |
-| state       | `hover`                       | lowercase letter                                    |
 | record      | `Evidence`                    | capital letter                                      |
+| state       | `hover`                       | lowercase letter                                    |
 | profile     | `laptop`                      | lowercase letter                                    |
 | field       | `source`                      | lowercase letter                                    |
 | value       | `rest`, `no-keyboard`, `19px` | a letter or digit, then letters, digits and hyphens |
@@ -637,6 +657,7 @@ comment     = "#" to the end of the line
 | `unknown-type`                                                                | error    | a field's type is not an enum, a record or a scalar                      |
 | `recursive-record`                                                            | error    | a record contains itself                                                 |
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name                               |
+| `unused-need`                                                                 | warning  | a type needs a dimension that no rule uses                               |
 
 Checking stored records with `lang validate` reports these, after any problem with the
 JSON itself:
@@ -648,4 +669,3 @@ JSON itself:
 | `unknown-field` | a record has a field its declaration does not                          |
 | `unknown-value` | an enum field's value is not one of the enum's                         |
 | `invalid-value` | a scalar field's value is not a valid value of the scalar              |
-| `unused-need`   | warning                                                                | a type needs a dimension that no rule uses |
