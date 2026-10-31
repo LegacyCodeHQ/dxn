@@ -2,9 +2,9 @@
 
 This guide teaches dxn, the language of design and dimensions, one concept at
 a time. Each section adds one idea, says why you need it, and ends with a file
-you can check yourself. It covers the language as it is today; the last section lists
-what is still being designed. For the reasoning behind each decision, see
-[design.md](design.md).
+you can check yourself. It covers the language as it is today; the last
+section lists what is still being designed. For the reasoning behind each
+decision, see [design.md](design.md).
 
 ## Why a language
 
@@ -21,17 +21,38 @@ combinations, most of which nobody ever writes down. The designer draws some
 of them, the developer builds some of them, and the two sets drift apart
 without anyone noticing.
 
-dxn is where you write those combinations down once, in a
-form a tool can check. You state what an element's states are, what the world
-around it varies by, and which states exist under which conditions. The tool
-then answers the questions that are otherwise guesswork: _which states does
-this element have on a phone? which combinations exist at all? what did I
-forget?_
+dxn is where you write those combinations down once, in a form a tool can
+check. You state what an element's states are, what the world around it
+varies by, and which states exist under which conditions. The tool then
+answers the questions that are otherwise guesswork: _which states does this
+element have on a phone? which combinations exist at all? what did I forget?_
+
+The same file says what is recorded about those combinations: who drew or
+built one, when, and where. That data is stored next to the file, checked
+against the declarations, and kept in step with them when a name changes, so
+the specification, the design and the code can be compared case by case.
 
 The language is written for people and for AI agents alike. Everything is
 declared explicitly, so a reader, human or not, can see what an element
 depends on without running anything, and every mistake is reported at the
 place it was made, with what to write instead.
+
+## What kind of language this is
+
+dxn is not a general-purpose programming language: nothing in it runs. It is
+a declarative specification language, with its own syntax, over finite sets of
+values. Each part of it comes from a family of languages you may know:
+
+| What it has                                        | Where the idea comes from                                                                                                    |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| dimensions, environments, profiles and `only when` | variability modeling, as in the feature models of software product lines: profiles are the configurations that exist         |
+| every combination listed and checked               | finite-state specification, as in Alloy or TLA+: because every set is finite, the whole space is checked, not sampled        |
+| records, scalars and stored data                   | schema languages such as Protobuf, JSON Schema or CUE: types that data is stored as and checked against                      |
+| `lang rename`, which rewrites the stored data      | schema evolution: every stored value is typed, so a rename knows exactly which values to change                              |
+| evidence that actors record as they draw and build | model-based testing: the model says which cases must exist, and the evidence records which ones the design and the code show |
+
+Put together, dxn is a typed specification of what varies: every case can be
+counted, and recorded evidence says which cases the real system shows.
 
 ## Your first file
 
@@ -579,6 +600,9 @@ or under discussion but not part of it yet; see [design.md](design.md):
   dimensions their values. Next, an element in a page will _provide_ a
   dimension, and every element inside it that _needs_ it will receive the
   value. That is dependency injection: `needs` is already its first half.
+- **A runtime.** Evidence today is recorded by the actors that draw and
+  build. A runtime would check the real system itself, driving a browser or a
+  device into each combination and recording what it shows.
 - **Modifiers.** Accessories that change some profiles' values, like an iPad
   with a Magic Keyboard.
 - **Kits.** Domain words that alias the core, such as a UI kit, so the same
