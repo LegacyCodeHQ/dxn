@@ -192,8 +192,9 @@ export interface EvidenceEntry {
 // agent that draws frames for it.
 export interface ActorsFile {
   version: number;
-  // Actor name -> its declaration, empty for now.
-  actors: Record<string, Record<string, never>>;
+  // Actor name -> what it records: evidence of one kind, and the checks whose
+  // results it may record.
+  actors: Record<string, { evidence?: string; checks?: string[] }>;
 }
 
 // profiles.json: the combinations of dimension values that exist, by name.

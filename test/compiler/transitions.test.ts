@@ -330,7 +330,7 @@ describe("verifying transitions", () => {
       project(
         {},
         {
-          "actors.json": { version: 1, actors: { agent: {} } },
+          "actors.json": { version: 1, actors: { agent: { checks: ["behavior"] } } },
           "verification/article-page.json": { version: 1, records },
         },
       ),

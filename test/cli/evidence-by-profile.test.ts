@@ -26,7 +26,7 @@ function project() {
         },
       },
     },
-    "actors.json": { version: 1, actors: { "design-agent": {} } },
+    "actors.json": { version: 1, actors: { "design-agent": { evidence: "design" } } },
     "evidence/page.json": {
       version: 1,
       evidence: [

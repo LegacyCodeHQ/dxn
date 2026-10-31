@@ -1,43 +1,73 @@
+import type { Json, Workspace } from "../workspace.js";
 import type { Command } from "./context.js";
-import { editCommand, group, isObject, parse, Refusal } from "./edit.js";
+import { editCommand, group, isObject, list, parse, Refusal, reorder } from "./edit.js";
 import { actorList } from "./reading.js";
 
 const usage = `Usage: dimensions actor <subcommand>
 
-An actor is a role that does work against the model, such as a design agent
-that draws frames for it. Actors are declared in actors.json.
+An actor is a role that does work against the model, declared in actors.json
+with what it records: evidence of one kind, such as a design agent's designs,
+and the checks whose results it may record, such as a visual reviewer's.
 
 Subcommands:
-  list                               List every actor
-  add <name>                         Declare an actor, such as design-agent
+  list                               List every actor and what it records
+  add <name> [--evidence <kind>] [--checks <check>,...]
+                                     Declare an actor, such as design-agent
+  set <name> [--evidence <kind>] [--checks <check>,...]
+                                     Change what an actor records
   remove <name>                      Remove an actor that no evidence or record names
 `;
 
-const add = editCommand(usage, (workspace, args) => {
-  const [name] = parse(args, ["name"], {}).positionals as [string];
+const options = { evidence: { type: "string" }, checks: { type: "string" } } as const;
+
+function actors(workspace: Workspace, create: boolean): Json {
   let file = workspace.read("actors.json");
   if (file === undefined) {
+    if (!create) return {};
     file = { version: 1, actors: {} };
     workspace.write("actors.json", file);
   }
   if (!isObject(file.actors)) file.actors = {};
-  const actors = file.actors as Record<string, unknown>;
-  if (name in actors) {
+  workspace.touch("actors.json");
+  return file.actors as Json;
+}
+
+// Writes what the options say the actor records.
+function declare(actor: Json, values: { evidence?: string; checks?: string }): void {
+  if (values.evidence !== undefined) actor.evidence = values.evidence;
+  if (values.checks !== undefined) actor.checks = list(values.checks) ?? [];
+  reorder(actor, ["evidence", "checks"]);
+}
+
+const add = editCommand(usage, (workspace, args) => {
+  const { values, positionals } = parse(args, ["name"], options);
+  const [name] = positionals as [string];
+  const all = actors(workspace, true);
+  if (name in all) {
     throw new Refusal(`actor "${name}" already exists`);
   }
-  actors[name] = {};
-  workspace.touch("actors.json");
+  const actor: Json = {};
+  declare(actor, values);
+  all[name] = actor;
+});
+
+const set = editCommand(usage, (workspace, args) => {
+  const { values, positionals } = parse(args, ["name"], options);
+  const [name] = positionals as [string];
+  const actor = actors(workspace, false)[name];
+  if (!isObject(actor)) {
+    throw new Refusal(`actor not found: ${name}`);
+  }
+  declare(actor, values);
 });
 
 const remove = editCommand(usage, (workspace, args) => {
   const [name] = parse(args, ["name"], {}).positionals as [string];
-  const file = workspace.read("actors.json");
-  const actors = isObject(file?.actors) ? file.actors : {};
-  if (file === undefined || !(name in actors)) {
+  const all = actors(workspace, false);
+  if (!(name in all)) {
     throw new Refusal(`actor not found: ${name}`);
   }
-  delete actors[name];
-  workspace.touch("actors.json");
+  delete all[name];
 });
 
-export const actor: Command = group(usage, { list: actorList, add, remove });
+export const actor: Command = group(usage, { list: actorList, add, set, remove });

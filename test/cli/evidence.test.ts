@@ -43,7 +43,7 @@ const entry = (changes: Record<string, unknown> = {}) => ({
 function project(entries: unknown[], extra: Record<string, unknown> = {}) {
   const result = cliProject({
     ...toolbarFiles,
-    "actors.json": { version: 1, actors: { "design-agent": {} } },
+    "actors.json": { version: 1, actors: { "design-agent": { evidence: "design" } } },
     "evidence/page.json": { version: 1, evidence: entries },
     ...extra,
   });

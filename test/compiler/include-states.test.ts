@@ -135,7 +135,7 @@ describe("states on an include", () => {
         project(
           { states: { "blog-link": { selection: ["selected"] } } },
           {
-            "actors.json": { version: 1, actors: { agent: {} } },
+            "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
             "verification/article-page.json": { version: 1, records: [record(selection)] },
           },
         ),

@@ -77,7 +77,7 @@ describe("overrides by a shared node's state", () => {
 
   it("are checked in records and rules", () => {
     const record = (availability: string) => ({
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
       "verification/sign-in.json": {
         version: 1,
         records: [

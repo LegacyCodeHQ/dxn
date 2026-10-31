@@ -201,7 +201,7 @@ describe("verify", () => {
   it("records the profile's dimension values", () => {
     const { run, read } = cliProject({
       ...files,
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
     });
     const result = run(
       "verify",

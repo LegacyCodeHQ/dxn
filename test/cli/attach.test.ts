@@ -17,7 +17,7 @@ const revisionOf = (content: string) =>
 function project() {
   const result = cliProject({
     ...toolbarFiles,
-    "actors.json": { version: 1, actors: { "design-agent": {} } },
+    "actors.json": { version: 1, actors: { "design-agent": { evidence: "design" } } },
   });
   mkdirSync(join(result.root, "design"), { recursive: true });
   writeFileSync(join(result.root, design), "drawn");

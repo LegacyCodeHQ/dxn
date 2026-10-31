@@ -206,6 +206,15 @@ function checkEntry(
       actor,
     );
     valid = false;
+  } else if (resolver.project.actors?.actors[actor.value]?.evidence === undefined) {
+    report(
+      diagnostics,
+      "actor-without-evidence",
+      `actor ${JSON.stringify(actor.value)} records no evidence`,
+      `${path}.actor`,
+      actor,
+    );
+    valid = false;
   }
 
   const at = fields.get("at");

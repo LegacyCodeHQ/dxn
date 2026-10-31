@@ -21,7 +21,10 @@ const project: Files = {
     types: { link: { states: ["normal", "hovered", "selected"], checks: ["visual", "behavior"] } },
   },
   "dimensions/pointer.json": pointer,
-  "actors.json": { version: 1, actors: { agent: {} } },
+  "actors.json": {
+    version: 1,
+    actors: { agent: { checks: ["a11y", "behavior", "visual"] } },
+  },
   "overrides/pointer.json": {
     version: 1,
     overrides: { touch: { types: { link: { states: { remove: ["hovered"] } } } } },
@@ -52,7 +55,10 @@ describe("verification files", () => {
   it("are returned by root", () => {
     const result = compileFiles({
       ...project,
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": {
+        version: 1,
+        actors: { agent: { checks: ["a11y", "behavior", "visual"] } },
+      },
       "verification/page.json": { version: 1, records: [record()] },
     });
     expect(result.project?.verification.page?.records).toEqual([record()]);
@@ -284,7 +290,10 @@ describe("record context", () => {
     snapshot.push(
       diagnose({
         ...project,
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": {
+          version: 1,
+          actors: { agent: { checks: ["a11y", "behavior", "visual"] } },
+        },
         "verification/footer-link.json": {
           version: 1,
           records: [
@@ -380,7 +389,10 @@ describe("record context", () => {
           version: 1,
           overrides: { touch: { nodes: { "blog-link": { states: { add: ["pressed"] } } } } },
         },
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": {
+          version: 1,
+          actors: { agent: { checks: ["a11y", "behavior", "visual"] } },
+        },
         "verification/page.json": {
           version: 1,
           records: [record({ context: { state: "pressed", pointer: "touch" } })],
@@ -407,7 +419,10 @@ describe("record context across dimensions", () => {
             },
           },
         },
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": {
+          version: 1,
+          actors: { agent: { checks: ["a11y", "behavior", "visual"] } },
+        },
         "verification/page.json": {
           version: 1,
           records: [record({ context: { state: "hovered", breakpoint: "sm", pointer: "touch" } })],
@@ -422,7 +437,10 @@ describe("record context defaults", () => {
     diagnose({
       ...project,
       "dimensions/pointer.json": { ...pointer, default: value },
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": {
+        version: 1,
+        actors: { agent: { checks: ["a11y", "behavior", "visual"] } },
+      },
       "verification/page.json": { version: 1, records: entries },
     });
 

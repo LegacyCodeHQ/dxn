@@ -16,7 +16,7 @@ const magicKeyboard = {
 const files = {
   ...toolbarFiles,
   "profiles.json": { version: 1, profiles, modifiers: { "magic-keyboard": magicKeyboard } },
-  "actors.json": { version: 1, actors: { "design-agent": {} } },
+  "actors.json": { version: 1, actors: { "design-agent": { evidence: "design" } } },
 };
 
 function problems(modifier: unknown, extra: Record<string, unknown> = {}): string[] {

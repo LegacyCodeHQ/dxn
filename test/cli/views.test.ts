@@ -412,7 +412,7 @@ describe("shared states in the other reading commands", () => {
   it("are matched in status", () => {
     const { run } = cliProject({
       ...files,
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
       "verification/article-page.json": {
         version: 1,
         records: [
@@ -488,7 +488,7 @@ describe("records for a shared node", () => {
   it("name its own state by its id, as contexts and status do", () => {
     const { run } = cliProject({
       ...files,
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": { version: 1, actors: { agent: { checks: ["behavior"] } } },
       "types.json": {
         version: 1,
         checks: { behavior: {} },

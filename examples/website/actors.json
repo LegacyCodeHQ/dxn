@@ -1,6 +1,8 @@
 {
   "version": 1,
   "actors": {
-    "agent": {}
+    "agent": {
+      "checks": ["visual"]
+    }
   }
 }

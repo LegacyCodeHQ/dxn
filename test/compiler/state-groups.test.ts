@@ -259,7 +259,7 @@ describe("grouped states elsewhere", () => {
             version: 1,
             overrides: { touch: { types: { link: { states: { remove: ["hovered"] } } } } },
           },
-          "actors.json": { version: 1, actors: { agent: {} } },
+          "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
           "verification/page.json": { version: 1, records },
         }),
       );

@@ -71,7 +71,7 @@ const files = {
     default: "sm",
     appliesTo: ["toolbar"],
   },
-  "actors.json": { version: 1, actors: { agent: {} } },
+  "actors.json": { version: 1, actors: { agent: { checks: ["visual", "behavior"] } } },
   "verification/page.json": {
     version: 1,
     records: [

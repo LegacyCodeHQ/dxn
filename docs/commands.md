@@ -290,12 +290,12 @@ shared nodes above it; dimensions left out take their default.
 --at defaults to now; --root is needed when several roots include the node.
 ```
 
-Writes a record to `verification/<root-id>.json`. The check must be declared (`check add`) and required by the node's type (`type require`), the actor declared (`actor add`), and the context must be one the node exists in. Every state group needs a value; dimensions left out take their default. The neo-website project declares no checks yet, so the first two lines below set them up.
+Writes a record to `verification/<root-id>.json`. The check must be declared (`check add`) and required by the node's type (`type require`), the actor declared with that check (`actor add --checks`), and the context must be one the node exists in. Every state group needs a value; dimensions left out take their default. The neo-website project declares no checks yet, so the first two lines below set them up.
 
 ```bash
 dimensions check add visual
 dimensions type require toolbar-link visual
-dimensions actor add visual-reviewer
+dimensions actor add visual-reviewer --checks visual
 dimensions verify blog-link --check visual --result passed --actor visual-reviewer breakpoint=lg hover=hovered focus=blurred selection=selected
 dimensions verify menu --check behavior --result passed --actor behavior-reviewer --transition escape
 ```
@@ -335,7 +335,7 @@ several roots include the node.
 Writes an entry to `evidence/<root-id>.json`: the node, its complete context, the actor, when, the file and frame, and the file's git revision. Attaching the same node, context, actor and frame again replaces the entry, which is how a stale entry is renewed after the design changes.
 
 ```bash
-dimensions actor add design-agent
+dimensions actor add design-agent --evidence design
 dimensions attach menu --actor design-agent --file design/website.pen --frame vbGba profile=phone menu=closed
 ```
 
@@ -672,18 +672,24 @@ dimensions expectation remove "Touch never hovers"
 ```text
 Usage: dimensions actor <subcommand>
 
-An actor is a role that does work against the model, such as a design agent
-that draws frames for it. Actors are declared in actors.json.
+An actor is a role that does work against the model, declared in actors.json
+with what it records: evidence of one kind, such as a design agent's designs,
+and the checks whose results it may record, such as a visual reviewer's.
 
 Subcommands:
-  list                               List every actor
-  add <name>                         Declare an actor, such as design-agent
+  list                               List every actor and what it records
+  add <name> [--evidence <kind>] [--checks <check>,...]
+                                     Declare an actor, such as design-agent
+  set <name> [--evidence <kind>] [--checks <check>,...]
+                                     Change what an actor records
   remove <name>                      Remove an actor that no evidence or record names
 ```
 
 Edits `actors.json`: the roles that do work against the model. An actor is a role, not a person: `design-agent`, not someone's name. `actor list` prints them; `evidence` queries what an actor has recorded.
 
 ```bash
-dimensions actor add design-agent
+dimensions actor add design-agent --evidence design
+dimensions actor add visual-reviewer --checks visual
+dimensions actor set design-agent --checks visual
 dimensions actor list
 ```

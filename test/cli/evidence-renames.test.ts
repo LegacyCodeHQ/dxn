@@ -33,7 +33,7 @@ const entry = {
 function project() {
   const result = cliProject({
     ...toolbarFiles,
-    "actors.json": { version: 1, actors: { "design-agent": {} } },
+    "actors.json": { version: 1, actors: { "design-agent": { evidence: "design" } } },
     "evidence/page.json": { version: 1, evidence: [entry] },
   });
   mkdirSync(join(result.root, "design"), { recursive: true });

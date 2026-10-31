@@ -399,7 +399,7 @@ const checked: Files = {
     types: { link: { states: ["normal", "hovered"], checks: ["visual"] } },
   },
   "dimensions/pointer.json": pointer,
-  "actors.json": { version: 1, actors: { agent: {} } },
+  "actors.json": { version: 1, actors: { agent: { checks: ["a11y", "visual"] } } },
 };
 const record = (fields: Record<string, unknown> = {}) => ({
   node: "blog-link",
@@ -607,7 +607,8 @@ const actorsFile = (actors: unknown) => ({ version: 1, actors });
 agree("actors", (doc) => ({ ...tree, "actors.json": doc }), {
   valid: [
     ["no actors", actorsFile({})],
-    ["a role", actorsFile({ "design-agent": {} })],
+    ["a role that records evidence", actorsFile({ "design-agent": { evidence: "design" } })],
+    ["a role that records no checks", actorsFile({ "visual-reviewer": { checks: [] } })],
     ["a $schema reference", { $schema: "x", ...actorsFile({}) }],
   ],
   structural: [
@@ -617,10 +618,12 @@ agree("actors", (doc) => ({ ...tree, "actors.json": doc }), {
     ["unsupported-version", { version: 2, actors: {} }],
     ["wrong-type", actorsFile([])],
     ["wrong-type", actorsFile({ "design-agent": "draws" })],
-    ["unknown-key", actorsFile({ "design-agent": { checks: [] } })],
+    ["unknown-key", actorsFile({ "design-agent": { draws: true } })],
     ["empty-string", actorsFile({ " ": {} })],
+    ["empty-string", actorsFile({ "design-agent": { evidence: " " } })],
+    ["wrong-type", actorsFile({ "visual-reviewer": { checks: "visual" } })],
   ],
-  crossReference: [],
+  crossReference: [["undeclared-check", actorsFile({ "visual-reviewer": { checks: ["visual"] } })]],
 });
 
 // Evidence points to files in the repository: the folder above the project,
@@ -638,7 +641,10 @@ const evidenceEntry = (changes: Record<string, unknown> = {}) => ({
   revision: "0".repeat(40),
   ...changes,
 });
-const withActors = { ...tree, "actors.json": actorsFile({ "design-agent": {} }) };
+const withActors = {
+  ...tree,
+  "actors.json": actorsFile({ "design-agent": { evidence: "design" } }),
+};
 
 agree("evidence", (doc) => ({ ...withActors, "evidence/page.json": doc }), {
   valid: [

@@ -15,7 +15,7 @@ import type {
   TypesFile,
   VerificationFile,
 } from "../tree.js";
-import { checkActorsFile } from "./actors.js";
+import { type ActorSymbol, checkActorsFile } from "./actors.js";
 import { checkRootFile, checkTypesFile, emptySymbols, resolveOnlyWhen } from "./check.js";
 import { checkConflicts } from "./conflicts.js";
 import { childPath, Diagnostics, type FileDiagnostic } from "./diagnostic.js";
@@ -407,14 +407,14 @@ export function compileDirectory(
 
   // actors.json: the roles that do work against the model.
   const actorsFile = readJson(directory, "actors.json");
-  let actors = new Set<string>();
+  let actors = new Map<string, ActorSymbol>();
   if (actorsFile !== undefined) {
     if ("code" in actorsFile) {
       problems.push(actorsFile);
     } else {
       parsed.push(actorsFile);
       if (actorsFile.root !== undefined) {
-        actors = checkActorsFile(actorsFile.root, actorsFile.diagnostics);
+        actors = checkActorsFile(actorsFile.root, actorsFile.diagnostics, symbols.checks);
       }
     }
   }

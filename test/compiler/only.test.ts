@@ -225,7 +225,7 @@ describe("absent nodes", () => {
       {},
       {
         ...extra,
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
         "verification/page.json": { version: 1, records },
       },
     );
@@ -302,7 +302,7 @@ describe("absent nodes", () => {
         },
         "roots/page.json": rootFile({ id: "page", title: "Page", children: [{ include: "menu" }] }),
         "overrides/breakpoint.json": { version: 1, only: { menu: ["base"] }, overrides: {} },
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
         "verification/page.json": {
           version: 1,
           records: [record("menu-item", { breakpoint: "xl" })],

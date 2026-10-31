@@ -1,3 +1,4 @@
+import type { ActorSymbol } from "./actors.js";
 import { childPath, type Diagnostics } from "./diagnostic.js";
 import type { JsonNode, ObjectNode } from "./json.js";
 import { fitsProfile, type ProfilesSymbol } from "./profiles.js";
@@ -37,7 +38,7 @@ export function checkVerificationFile(
   rootId: string,
   profiles: ProfilesSymbol,
   sharedOverrides: Map<string, DimensionInfo>,
-  actors: Set<string>,
+  actors: Map<string, ActorSymbol>,
 ): void {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
@@ -98,7 +99,7 @@ function checkRecord(
   path: string,
   profiles: ProfilesSymbol,
   sharedOverrides: Map<string, DimensionInfo>,
-  actors: Set<string>,
+  actors: Map<string, ActorSymbol>,
 ): string | undefined {
   const record = expectObject(diagnostics, item, path);
   if (record === undefined) {
@@ -204,11 +205,20 @@ function checkRecord(
 
   const actor = fields.get("actor");
   if (actor !== undefined && expectName(diagnostics, actor, `${path}.actor`)) {
-    if (!actors.has(actor.value)) {
+    const declared = actors.get(actor.value);
+    if (declared === undefined) {
       report(
         diagnostics,
         "undeclared-actor",
         `actor ${JSON.stringify(actor.value)} is not declared in actors.json`,
+        `${path}.actor`,
+        actor,
+      );
+    } else if (checkName !== undefined && !declared.checks.has(checkName)) {
+      report(
+        diagnostics,
+        "actor-cannot-check",
+        `actor ${JSON.stringify(actor.value)} does not record check ${JSON.stringify(checkName)}`,
         `${path}.actor`,
         actor,
       );

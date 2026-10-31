@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "dimensions actors",
-  "description": "Editor aid for actors.json: the roles that do work against the model, such as a design agent that draws frames for it. An actor is a role, not a person. The dimensions compiler is the authority.",
+  "description": "Editor aid for actors.json: the roles that do work against the model, each declaring what it records: evidence of one kind, such as a design agent's designs, and the checks whose results it may record. An actor is a role, not a person. The dimensions compiler is the authority: it also checks that the checks are declared in types.json.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "actors"],
@@ -15,14 +15,28 @@
       "const": 1
     },
     "actors": {
-      "description": "Actor name -> its declaration, which has no keys yet.",
+      "description": "Actor name -> what it records.",
       "type": "object",
       "propertyNames": {
         "$ref": "#/$defs/name"
       },
       "additionalProperties": {
         "type": "object",
-        "additionalProperties": false
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "description": "The kind of evidence it records, such as design. An actor without it records no evidence.",
+            "type": "string",
+            "pattern": "\\S"
+          },
+          "checks": {
+            "description": "The checks whose results it may record.",
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/name"
+            }
+          }
+        }
       }
     }
   },

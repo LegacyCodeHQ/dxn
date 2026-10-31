@@ -517,12 +517,24 @@ nodes with their states and where they exist.
 ## Actors and evidence
 
 An **actor** is a role that does work against the model, such as
-`design-agent`, which draws frames for it. It is a role, not a person.
-Actors are declared in `actors.json`:
+`design-agent`, which draws frames for it. It is a role, not a person. Actors
+are declared in `actors.json` with what they record: `evidence` names the kind
+of evidence an actor records, which gives its entries their meaning (a design
+agent's evidence says a design exists for that context), and `checks` names
+the checks whose results it may record.
 
 ```json
-{ "version": 1, "actors": { "design-agent": {} } }
+{
+  "version": 1,
+  "actors": {
+    "design-agent": { "evidence": "design" },
+    "visual-reviewer": { "checks": ["visual"] }
+  }
+}
 ```
+
+The compiler refuses evidence from an actor that records none, and a
+verification record for a check its actor does not list.
 
 **Evidence** is what an actor has recorded for one node in one complete
 context, in `evidence/<root-id>.json`:

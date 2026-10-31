@@ -284,14 +284,14 @@ describe("combination states", () => {
     snapshot.push(
       diagnose({
         ...files,
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
         "verification/page.json": record("sm"),
       }),
     );
     snapshot.push(
       diagnose({
         ...files,
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
         "verification/page.json": record("lg"),
       }),
     );

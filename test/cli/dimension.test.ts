@@ -265,7 +265,7 @@ describe("dimension rename-value", () => {
         version: 1,
         overrides: { "0": { mouse: { types: { link: { states: { remove: ["hovered"] } } } } } },
       },
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
       "verification/page.json": { version: 1, records: [record] },
     });
     snapshot.push(run("dimension", "rename-value", "breakpoint", "0", "base").code);

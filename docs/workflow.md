@@ -198,11 +198,12 @@ tables as data.
 ## 10. Verify: record what was checked
 
 Record each check's result in one context, as the actor (a role, such as
-`visual-reviewer`) that checked it. `status` lists every required
+`visual-reviewer`) that checked it. An actor declares the checks it may
+record, so a design agent cannot pass a visual review. `status` lists every required
 check in every context as passed, failed or missing: what is left to check.
 
 ```bash
-dimensions actor add visual-reviewer
+dimensions actor add visual-reviewer --checks visual
 dimensions verify blog-link --check visual --result passed --actor visual-reviewer profile=desktop hover=rest focus=blurred selection=selected
 dimensions status blog-link
 ```
@@ -226,7 +227,7 @@ missing across the whole model. After the design changes, attach the frame
 again to record the new revision.
 
 ```bash
-dimensions actor add design-agent
+dimensions actor add design-agent --evidence design
 dimensions evidence menu --actor design-agent --table
 dimensions attach menu --actor design-agent --file design/toolbar.pen --frame phone-closed profile=phone menu=closed
 dimensions attach menu --actor design-agent --file design/toolbar.pen --frame phone-open profile=phone menu=open

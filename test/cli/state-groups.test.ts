@@ -176,7 +176,7 @@ describe("state groups in reading commands", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       ...files,
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
     });
     snapshot.push(
       run(
@@ -410,7 +410,7 @@ describe("state group commands", () => {
           },
         },
       },
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
       "verification/page.json": { version: 1, records: [record] },
     });
     snapshot.push(run("state-group", "rename-value", "hover", "unhovered", "rest").code);

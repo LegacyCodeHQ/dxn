@@ -83,7 +83,7 @@ const files = {
       lg: { touch: { types: { link: { attributes: { design: { normal: "available" } } } } } },
     },
   },
-  "actors.json": { version: 1, actors: { agent: {} } },
+  "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
   "verification/page.json": {
     version: 1,
     records: [

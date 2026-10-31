@@ -9,7 +9,7 @@ const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 
 const withActor = {
   ...toolbarFiles,
-  "actors.json": { version: 1, actors: { "design-agent": {} } },
+  "actors.json": { version: 1, actors: { "design-agent": { evidence: "design" } } },
 };
 
 function problems(actors: unknown): string[] {
@@ -38,7 +38,7 @@ describe("actors", () => {
     const { run, read } = cliProject(withActor);
     run("actor", "add", "visual-reviewer");
     expect(run("actor", "remove", "visual-reviewer").code).toBe(0);
-    expect(read("actors.json").actors).toEqual({ "design-agent": {} });
+    expect(read("actors.json").actors).toEqual({ "design-agent": { evidence: "design" } });
     expect(run("actor", "remove", "nobody").stderr).toBe("dimensions: actor not found: nobody\n");
   });
 
@@ -52,12 +52,12 @@ describe("actors", () => {
   it("are checked in actors.json", () => {
     expect([
       problems({ version: 1, actors: { "design-agent": {} } }),
-      problems({ version: 1, actors: { "design-agent": { checks: [] } } }),
+      problems({ version: 1, actors: { "design-agent": { draws: true } } }),
       problems({ version: 1, actors: [] }),
       problems({ version: 1 }),
     ]).toEqual([
       [],
-      ['unknown-key: unknown key "checks"'],
+      ['unknown-key: unknown key "draws"'],
       ["wrong-type: expected an object, found an array"],
       ['missing-key: missing required key "actors"'],
     ]);

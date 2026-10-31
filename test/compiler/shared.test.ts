@@ -212,7 +212,7 @@ describe("verification under a shared ancestor", () => {
   const verify = (...records: unknown[]) =>
     diagnose(
       project({
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
         "verification/page.json": { version: 1, records },
       }),
     );

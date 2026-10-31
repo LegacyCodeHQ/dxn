@@ -15,7 +15,7 @@ const revision = createHash("sha1").update(`blob 5\0drawn`).digest("hex");
 function project() {
   const result = cliProject({
     ...toolbarFiles,
-    "actors.json": { version: 1, actors: { "design-agent": {} } },
+    "actors.json": { version: 1, actors: { "design-agent": { evidence: "design" } } },
     "evidence/page.json": {
       version: 1,
       evidence: [

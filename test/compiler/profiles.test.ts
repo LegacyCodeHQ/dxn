@@ -133,7 +133,7 @@ describe("dimensions under profiles", () => {
 
 describe("records under profiles", () => {
   const record = (context: Record<string, string>) => ({
-    "actors.json": { version: 1, actors: { agent: {} } },
+    "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
     "verification/page.json": {
       version: 1,
       records: [

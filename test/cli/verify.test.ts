@@ -30,7 +30,10 @@ const files = {
     version: 1,
     overrides: { touch: { types: { link: { states: { remove: ["hovered"] } } } } },
   },
-  "actors.json": { version: 1, actors: { agent: {}, "visual-reviewer": {} } },
+  "actors.json": {
+    version: 1,
+    actors: { agent: { checks: ["visual"] }, "visual-reviewer": { checks: ["visual"] } },
+  },
 };
 
 const at = "2026-10-30T19:20:00Z";

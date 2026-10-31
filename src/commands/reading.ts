@@ -179,9 +179,9 @@ export const checkList = readCommand("Usage: dimensions check list\n", (resolver
 export const actorList = readCommand("Usage: dimensions actor list\n", (resolver, args, io) => {
   parse(args, [], {});
   print(io, {
-    actors: Object.keys(resolver.project.actors?.actors ?? {})
-      .sort()
-      .map((name) => ({ name })),
+    actors: Object.entries(resolver.project.actors?.actors ?? {})
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([name, actor]) => ({ name, ...actor })),
   });
 });
 
@@ -753,6 +753,16 @@ function declaredValues(resolver: Resolver, id: string, name: string): string[] 
   return (type === undefined ? undefined : resolver.groupsOf(type)[name]) ?? [];
 }
 
+// The kind of evidence a declared actor records, or a refusal.
+function requireEvidenceActor(resolver: Resolver, actor: string): string {
+  requireActor(resolver, actor);
+  const kind = resolver.project.actors?.actors[actor]?.evidence;
+  if (kind === undefined) {
+    throw new Refusal(`actor ${JSON.stringify(actor)} records no evidence`);
+  }
+  return kind;
+}
+
 // The declared actor a command names, or a refusal.
 function requireActor(resolver: Resolver, actor: string): void {
   const actors = Object.keys(resolver.project.actors?.actors ?? {});
@@ -863,6 +873,7 @@ function evidenceSubtree(
   filterArgs: string[],
   options: { table?: boolean; by?: string; missing?: boolean; root?: string },
 ): void {
+  const kind = resolver.project.actors?.actors[actor]?.evidence;
   const nodes = resolver.subtree(id);
   const found = nodes.flatMap((node) =>
     roots
@@ -889,7 +900,15 @@ function evidenceSubtree(
     }));
     const withoutEvidence = rows.filter(({ evidence }) => evidence.length === 0).length;
     if (options.table !== true) {
-      print(io, { node: id, actor, subtree: true, by: "frame", frames: grouped, withoutEvidence });
+      print(io, {
+        node: id,
+        actor,
+        kind,
+        subtree: true,
+        by: "frame",
+        frames: grouped,
+        withoutEvidence,
+      });
       return;
     }
     const table = drawTable(
@@ -936,7 +955,7 @@ function evidenceSubtree(
         cells.some((cell) => cell !== null && cell.present < cell.total),
     );
   if (options.table !== true) {
-    print(io, { node: id, actor, subtree: true, columns, rows: table });
+    print(io, { node: id, actor, kind, subtree: true, columns, rows: table });
     return;
   }
   io.stdout(
@@ -975,7 +994,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
   if (values.by !== undefined && values.by !== "profile" && values.by !== "frame") {
     throw new Refusal('--by takes "profile" or "frame" here');
   }
-  requireActor(resolver, actor);
+  const kind = requireEvidenceActor(resolver, actor);
   requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
   const roots = values.root === undefined ? resolver.roots(id) : [values.root];
@@ -1038,7 +1057,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
     }));
     const withoutEvidence = rows.filter(({ evidence }) => evidence.length === 0).length;
     if (values.table !== true) {
-      print(io, { node: id, actor, by: "frame", frames: grouped, withoutEvidence });
+      print(io, { node: id, actor, kind, by: "frame", frames: grouped, withoutEvidence });
       return;
     }
     const table = drawTable(
@@ -1084,7 +1103,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       .filter((combination) => !existing.has(JSON.stringify(combination)))
       .sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b));
     if (values.table !== true) {
-      print(io, { node: id, actor, by: "profile", rows: grouped, notPresent });
+      print(io, { node: id, actor, kind, by: "profile", rows: grouped, notPresent });
       return;
     }
     const table = drawTable(
@@ -1130,7 +1149,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
     );
     return;
   }
-  print(io, { node: id, actor, contexts: rows });
+  print(io, { node: id, actor, kind, contexts: rows });
 });
 
 const viewUsage = `Usage: dimensions view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
@@ -1228,7 +1247,7 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
   const { project } = resolver;
   if (values.actor !== undefined) {
     const actor = values.actor;
-    requireActor(resolver, actor);
+    const kind = requireEvidenceActor(resolver, actor);
     const items = project.roots.flatMap((root) =>
       (only === undefined ? nodesIn(resolver, root.id) : [only])
         .filter((id) => resolver.roots(id).includes(root.id))
@@ -1245,6 +1264,8 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
     );
     const count = (state: string) => items.filter((item) => item.evidence === state).length;
     print(io, {
+      actor,
+      kind,
       summary: { present: count("present"), stale: count("stale"), missing: count("missing") },
       items,
     });

@@ -214,7 +214,7 @@ describe("transitions in status and verify", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({
       ...files,
-      "actors.json": { version: 1, actors: { agent: {} } },
+      "actors.json": { version: 1, actors: { agent: { checks: ["behavior"] } } },
     });
     run(
       "node",

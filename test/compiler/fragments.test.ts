@@ -382,14 +382,14 @@ describe("included fragments", () => {
       diagnose({
         ...project,
         "dimensions/breakpoint.json": breakpoint,
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
         "verification/article-page.json": record("blog-link"),
       }),
     );
     snapshot.push(
       diagnose({
         ...project,
-        "actors.json": { version: 1, actors: { agent: {} } },
+        "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
         "verification/toolbar.json": record("blog-link"),
       }),
     );

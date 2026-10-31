@@ -533,6 +533,20 @@ exactly as `dimensions evidence <node-id> --actor <name>` lists them.
 An evidence entry or a verification record names an actor that `actors.json`
 does not declare. Add it with `dimensions actor add <name>`.
 
+### `actor-without-evidence`
+
+An evidence entry names an actor that records no evidence. An actor declares
+the kind of evidence it records in `actors.json`, such as `"evidence": "design"`
+for a design agent; give it one with `dimensions actor set <name> --evidence
+<kind>`, or record the entry as the actor that made it.
+
+### `actor-cannot-check`
+
+A verification record names an actor whose `checks` in `actors.json` leave out
+that check: a design agent passing a visual review, say. Record it as an actor
+that may check it, or add the check with `dimensions actor set <name> --checks
+<check>,...`.
+
 ### `missing-source`
 
 The file an entry points to does not exist. Paths are relative to the folder
