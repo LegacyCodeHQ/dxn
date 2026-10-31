@@ -355,6 +355,15 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         report("bound-derived", `${target.name} ${why}; it cannot also be bound`, state);
         continue;
       }
+      // Bound, its value is the parent's: no action of the child can change it.
+      const action = inner?.actions.find((candidate) => candidate.state.name === target.name);
+      if (action !== undefined) {
+        report(
+          "bound-action",
+          `${target.name} is bound here, so ${inner?.name}'s action ${action.name.name} can never change it`,
+          state,
+        );
+      }
       const map = child.bindings?.find((binding) => binding.state === state)?.map;
       if (map !== undefined) {
         checkBranches(map, from, source.name, source.enum.name, target.name, target.enum.name);

@@ -133,6 +133,23 @@ describe("actions and on", () => {
     ).toEqual(["26:31: focus-target: panel cannot take focus: Menu.Panel has no focus state"]);
   });
 
+  it("cannot change a state its parent binds", () => {
+    assert(
+      errors(`enum State = closed | open
+type Toggle {
+  state expanded: State
+  action flip: expanded closed -> open
+}
+type Menu {
+  state menu: State
+  has toggle: Toggle { expanded = menu }
+}
+`),
+    ).toEqual([
+      "8:24: bound-action: expanded is bound here, so Toggle's action flip can never change it",
+    ]);
+  });
+
   it("cannot trigger two actions at once: one event, one change", () => {
     assert(
       errors(

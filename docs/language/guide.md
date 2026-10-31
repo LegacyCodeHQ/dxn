@@ -1163,7 +1163,8 @@ type Menu {
 
 An action changes a state the type owns: not one a `when` or a value decides,
 nor one it receives. Those follow from something else, so no action can change
-them. An action applies only in its `from` value: `close` does nothing while
+them. Nor can a parent bind a state one of its child's actions changes: bound,
+its value is the parent's. An action applies only in its `from` value: `close` does nothing while
 the menu is closed. That is how one event can mean two things: a click on
 the toggle opens a closed menu and closes an open one.
 
@@ -1438,6 +1439,7 @@ comment     = "#" to the end of the line
 | `bound-derived`                                                               | error    | a binding sets a child's state that a `when` or a value decides, or that it receives             |
 | `duplicate-provides`                                                          | error    | a type provides a state twice                                                                    |
 | `duplicate-action`                                                            | error    | a type has two actions with one name                                                             |
+| `bound-action`                                                                | error    | a binding sets a child's state that one of the child's actions changes                           |
 | `action-on-derived`                                                           | error    | an action changes a state that a `when` or a value decides, or that is received                  |
 | `unknown-child`                                                               | error    | an event, an action's path or a focus names a child that is not one                              |
 | `unknown-action`                                                              | error    | an `on` triggers an action its type does not have                                                |
