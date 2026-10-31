@@ -475,6 +475,67 @@ their values from one enum, each of the child's states is set at most once,
 and a state a `when` decides cannot be set. The bindings come right after the
 child's type, before any `only when`.
 
+### In place: a child inside its parents
+
+`lang states` on a type gives what that type can be on its own. A child
+inside a page is narrower: it is only where its parents put it, and some of
+its states are set by them. Give `lang states` a path from a type, and it
+evaluates the child in place:
+
+```
+dimension Breakpoint = base | sm | lg | xl
+dimension Pointer = mouse | touch
+dimension Keyboard = keyboard | no-keyboard
+enum Hover = rest | hovered
+enum Focus = blurred | focused
+enum Layout = compact | inline
+
+type Menu {
+  enum State = closed | open
+  state menu: State
+
+  type Toggle needs Pointer, Keyboard {
+    state hover: Hover, focus: Focus
+    state expanded: State
+    hover = hovered only when Pointer = mouse
+    focus = focused only when Keyboard = keyboard
+  }
+
+  has toggle: Toggle { expanded = menu }
+}
+
+type Toolbar needs Breakpoint {
+  state layout: Layout = when Breakpoint {
+    base, sm -> compact
+    lg, xl -> inline
+  }
+  has menu: Menu only when layout = compact
+}
+
+environment Device = Breakpoint x Pointer x Keyboard
+profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+```
+
+```bash
+dxn lang states toolbar.dxn Toolbar.menu.toggle
+```
+
+```
+| profiles | Breakpoint | Pointer | Keyboard    | layout  | menu.menu | hover: rest | hover: hovered | focus: blurred | focus: focused | expanded: closed | expanded: open |
+| -------- | ---------- | ------- | ----------- | ------- | --------- | ----------- | -------------- | -------------- | -------------- | ---------------- | -------------- |
+| phone    | base       | touch   | no-keyboard | compact | closed    | ✓           | —              | ✓              | —              | ✓                | —              |
+| phone    | base       | touch   | no-keyboard | compact | open      | ✓           | —              | ✓              | —              | —                | ✓              |
+```
+
+For each profile, it walks down the path: the toolbar is `compact` on a phone,
+so the menu is there; the menu can be `closed` or `open`; and in each, the
+toggle is there, with `expanded` set to match. On a laptop the toolbar is
+`inline`, so there is no menu, and no toggle: no row. The columns before the
+child's own states are its parents' states that decide where it is, or that
+it is given, named by their path: `layout` is the toolbar's, `menu.menu` the
+menu's.
+
 ## Evaluating: the matrix
 
 This is where the language pays off. Ask for the wordmark's state again:

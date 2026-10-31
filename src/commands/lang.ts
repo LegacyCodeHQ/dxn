@@ -1,7 +1,12 @@
 import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import type { ParseResult, Type } from "../language/ast.js";
-import { states as evaluateStates, type Presence } from "../language/evaluate.js";
+import {
+  states as evaluateStates,
+  type InPlace,
+  inPlace,
+  type Presence,
+} from "../language/evaluate.js";
 import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
 import { isValue, renameInData, renameInSource } from "../language/rename.js";
@@ -41,7 +46,10 @@ Subcommands:
   states <file> <type>               Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
-                                     as a Markdown table
+                                     as a Markdown table; or a child in place,
+                                     given its path from a type, such as
+                                     Toolbar.menu.toggle: where it is inside its
+                                     parents, with the states they give it
   validate <file>                    Check the stored records: each record's data is
                                      every JSON file in a folder named after it in
                                      kebab-case, next to the file, each a list of
@@ -232,6 +240,10 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
   if (typeof parsed === "number") return parsed;
+  // A path to a child, "<Type>.<child>...", is evaluated in place.
+  if (typeName.split(".").some((segment) => /^[a-z]/.test(segment))) {
+    return statesInPlace(parsed, typeName, report);
+  }
   if (!parsed.types.some(({ name }) => name === typeName)) {
     return report.refuse(
       `no type ${JSON.stringify(typeName)} in ${file} (${parsed.types.map(({ name }) => name).join(", ")})`,
@@ -274,6 +286,42 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
     ),
   );
 });
+
+// A child's states in place, as a table: each row a world and the states of
+// its parents on the way, then the child's own.
+function statesInPlace(parsed: ParseResult, path: string, report: Reporter): number {
+  let evaluated: InPlace;
+  try {
+    evaluated = inPlace(parsed, path);
+  } catch (error) {
+    return report.refuse((error as Error).message);
+  }
+  const type = parsed.types.find(({ name }) => name === evaluated.type);
+  const valuesOf = (name: string) =>
+    parsed.enums.find((declaration) => declaration.name === name)?.values.map((v) => v.name) ?? [];
+  const columns = (type?.states ?? []).flatMap((state) =>
+    valuesOf(state.enum.name).map((value) => [state.name, value] as const),
+  );
+  const parents = [...new Set(evaluated.rows.flatMap((row) => Object.keys(row.parents)))];
+  const profiled = evaluated.rows.some((row) => row.profiles !== undefined);
+  return report.succeed(
+    evaluated,
+    drawTable(
+      [
+        ...(profiled ? ["profiles"] : []),
+        ...evaluated.dimensions,
+        ...parents,
+        ...columns.map(([state, value]) => `${state}: ${value}`),
+      ],
+      evaluated.rows.map((row) => [
+        ...(profiled ? [row.profiles?.join(", ") ?? NONE] : []),
+        ...evaluated.dimensions.map((dimension) => row.when[dimension] ?? NONE),
+        ...parents.map((parent) => row.parents[parent] ?? NONE),
+        ...columns.map(([state, value]) => (row.states[state]?.includes(value) ? "✓" : NONE)),
+      ]),
+    ),
+  );
+}
 
 // A stored data file of a record: its path as shown, and its content.
 interface Stored {

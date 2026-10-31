@@ -235,6 +235,47 @@ type Toolbar needs Breakpoint {
     ]);
   });
 
+  it("evaluates a child in place, by its path from a type", () => {
+    const run = file(`dimension Breakpoint = base | lg
+dimension Pointer = mouse | touch
+enum Hover = rest | hovered
+enum Layout = compact | inline
+type Menu {
+  enum State = closed | open
+  state menu: State
+  type Toggle needs Pointer {
+    state hover: Hover
+    state expanded: State
+    hover = hovered only when Pointer = mouse
+  }
+  has toggle: Toggle { expanded = menu }
+}
+type Toolbar needs Breakpoint {
+  state layout: Layout = when Breakpoint {
+    base -> compact
+    lg -> inline
+  }
+  has menu: Menu only when layout = compact
+}
+environment Device = Breakpoint x Pointer
+profile phone: Device { Breakpoint = base, Pointer = touch }
+profile laptop: Device { Breakpoint = lg, Pointer = mouse }
+`);
+    expect([
+      run("states", "wordmark.dxn", "Toolbar.menu.toggle").stdout,
+      run("states", "wordmark.dxn", "Toolbar.menu.togle").stderr,
+    ]).toEqual([
+      [
+        "| profiles | Breakpoint | Pointer | layout  | menu.menu | hover: rest | hover: hovered | expanded: closed | expanded: open |",
+        "| -------- | ---------- | ------- | ------- | --------- | ----------- | -------------- | ---------------- | -------------- |",
+        "| phone    | base       | touch   | compact | closed    | ✓           | —              | ✓                | —              |",
+        "| phone    | base       | touch   | compact | open      | ✓           | —              | —                | ✓              |",
+        "",
+      ].join("\n"),
+      "dxn: togle is not a child of Menu (toggle)\n",
+    ]);
+  });
+
   it("names the profiles of each row when there are profiles", () => {
     const withProfiles = `dimension Breakpoint = base | lg
 ${wordmark}environment Device = Breakpoint x Pointer x Keyboard

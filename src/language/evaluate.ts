@@ -1,4 +1,4 @@
-import type { ParseResult } from "./ast.js";
+import type { Child, ParseResult, Type } from "./ast.js";
 import { profilesOf } from "./profiles.js";
 
 // What a type's states are under each combination of the dimensions its
@@ -64,23 +64,12 @@ export function states(file: ParseResult, typeName: string): TypeStates {
   );
   // Profiles with the same values are one combination: one start, naming
   // them all, in the order the first of them comes.
-  const groups = new Map<string, { profiles: string[]; when: Record<string, string> }>();
-  for (const profile of profiles) {
-    const key = JSON.stringify(Object.entries(profile.values).sort(([a], [b]) => (a < b ? -1 : 1)));
-    const group = groups.get(key);
-    if (group !== undefined) {
-      group.profiles.push(profile.name);
-      continue;
-    }
-    groups.set(key, {
-      profiles: [profile.name],
-      when: Object.fromEntries(
-        Object.entries(profile.values).filter(([name]) => dimensions.includes(name)),
-      ),
-    });
-  }
+  const groups = profileGroups(file).map(({ profiles: named, values }) => ({
+    profiles: named,
+    when: Object.fromEntries(Object.entries(values).filter(([name]) => dimensions.includes(name))),
+  }));
   const starts: { profiles?: string[]; when: Record<string, string> }[] =
-    profiles.length === 0 ? [{ when: {} }] : [...groups.values()];
+    profiles.length === 0 ? [{ when: {} }] : groups;
   let combinations = starts;
   for (const dimension of dimensions.filter(
     (name) => file.profiles.length === 0 || !given.has(name),
@@ -123,4 +112,162 @@ export function states(file: ParseResult, typeName: string): TypeStates {
       }),
     ),
   };
+}
+
+// A child's combinations inside its parents, by its path from a type:
+// "<Type>.<child>.<child>...".
+export interface InPlace {
+  path: string;
+  type: string;
+  // The dimensions of every type on the way, in the order first needed.
+  dimensions: string[];
+  rows: {
+    profiles?: string[];
+    when: Record<string, string>;
+    // The states of the parents on the way that decide where the child is, or
+    // that it is given, by their path: "layout", "menu.menu".
+    parents: Record<string, string>;
+    states: Record<string, string[]>;
+  }[];
+}
+
+// Evaluates a child in place: for each world (a group of profiles, and any
+// other dimension the types on the way need), walks down the path, trying
+// each parent's states that decide whether the next child is there or that
+// it binds into it, keeping where the child is, and setting its bound
+// states. Its own states are those it has in that world.
+export function inPlace(file: ParseResult, path: string): InPlace {
+  if (file.diagnostics.some(({ severity }) => severity === "error")) {
+    throw new Error("cannot evaluate a file with problems");
+  }
+  const segments = path.split(".");
+  const first = segments.findIndex((segment) => /^[a-z]/.test(segment));
+  const rootName = segments.slice(0, first === -1 ? segments.length : first).join(".");
+  const root = file.types.find(({ name }) => name === rootName);
+  if (root === undefined) throw new Error(`no type ${rootName}`);
+  type Step = { type: Type; child?: Child; prefix: string };
+  const chain: Step[] = [{ type: root, prefix: "" }];
+  for (const name of first === -1 ? [] : segments.slice(first)) {
+    const parent = (chain.at(-1) as Step).type;
+    const child = parent.children.find((candidate) => candidate.name === name);
+    if (child === undefined) {
+      const children = parent.children.map((candidate) => candidate.name).join(", ");
+      throw new Error(`${name} is not a child of ${parent.name} (${children})`);
+    }
+    const type = file.types.find(({ name }) => name === child.type.name) as Type;
+    const previous = (chain.at(-1) as Step).prefix;
+    chain.push({ type, child, prefix: previous === "" ? name : `${previous}.${name}` });
+  }
+  const dimensions = [...new Set(chain.flatMap(({ type }) => type.needs.map(({ name }) => name)))];
+  const valuesOf = (name: string) =>
+    file.dimensions
+      .find((declaration) => declaration.name === name)
+      ?.values.map(({ name }) => name) ?? [];
+  // The worlds: each group of profiles with the same values, or one with no
+  // profile; then every value of each dimension no profile gives.
+  const groups = profileGroups(file);
+  let worlds: { profiles?: string[]; when: Record<string, string> }[] =
+    groups.length === 0
+      ? [{ when: {} }]
+      : groups.map(({ profiles, values }) => ({ profiles, when: values }));
+  for (const dimension of dimensions) {
+    if (worlds.every(({ when }) => when[dimension] !== undefined)) continue;
+    worlds = worlds.flatMap((world) =>
+      valuesOf(dimension).map((value) => ({
+        ...world,
+        when: { ...world.when, [dimension]: value },
+      })),
+    );
+  }
+  const evaluated = new Map<string, TypeStates>();
+  const rowOf = (type: Type, world: (typeof worlds)[number]) => {
+    let alone = evaluated.get(type.name);
+    if (alone === undefined) {
+      alone = states(file, type.name);
+      evaluated.set(type.name, alone);
+    }
+    return alone.rows.find(
+      (row) =>
+        (world.profiles === undefined ||
+          row.profiles?.includes(world.profiles[0] as string) === true) &&
+        Object.entries(row.when).every(([name, value]) => world.when[name] === value),
+    );
+  };
+  const rows: InPlace["rows"] = [];
+  const walk = (
+    world: (typeof worlds)[number],
+    level: number,
+    fixed: Record<string, string>,
+    parents: Record<string, string>,
+  ) => {
+    const { type, prefix } = chain[level] as Step;
+    const row = rowOf(type, world);
+    if (row === undefined) return;
+    // A state's values here: the one it is given, when it is bound.
+    const available = (name: string) => {
+      const values = row.states[name] ?? [];
+      const given = fixed[name];
+      return given === undefined ? values : values.filter((value) => value === given);
+    };
+    const next = chain[level + 1]?.child;
+    if (next === undefined) {
+      const own = Object.fromEntries(type.states.map(({ name }) => [name, available(name)]));
+      if (Object.values(own).some((values) => values.length === 0)) return;
+      rows.push({
+        ...(world.profiles === undefined ? {} : { profiles: world.profiles }),
+        when: Object.fromEntries(dimensions.map((name) => [name, world.when[name] as string])),
+        parents,
+        states: own,
+      });
+      return;
+    }
+    const deciding =
+      next.when !== undefined && /^[a-z]/.test(next.when.on.name) ? [next.when.on.name] : [];
+    const relevant = [
+      ...new Set([...deciding, ...(next.bindings ?? []).map(({ from }) => from.name)]),
+    ];
+    let combinations: Record<string, string>[] = [{}];
+    for (const name of relevant) {
+      combinations = combinations.flatMap((combination) =>
+        available(name).map((value) => ({ ...combination, [name]: value })),
+      );
+    }
+    for (const combination of combinations) {
+      if (next.when !== undefined) {
+        const on = next.when.on.name;
+        const value = /^[a-z]/.test(on) ? combination[on] : world.when[on];
+        if (!next.when.values.some(({ name }) => name === value)) continue;
+      }
+      const given = Object.fromEntries(
+        (next.bindings ?? []).map(({ state, from }) => [
+          state.name,
+          combination[from.name] as string,
+        ]),
+      );
+      const named = Object.fromEntries(
+        Object.entries(combination).map(([name, value]) => [
+          prefix === "" ? name : `${prefix}.${name}`,
+          value,
+        ]),
+      );
+      walk(world, level + 1, given, { ...parents, ...named });
+    }
+  };
+  for (const world of worlds) walk(world, 0, {}, {});
+  return { path, type: (chain.at(-1) as Step).type.name, dimensions, rows };
+}
+
+// The file's profiles, those with the same values as one group, in the order
+// the first of each comes.
+function profileGroups(
+  file: ParseResult,
+): { profiles: string[]; values: Record<string, string> }[] {
+  const groups = new Map<string, { profiles: string[]; values: Record<string, string> }>();
+  for (const profile of profilesOf(file)) {
+    const key = JSON.stringify(Object.entries(profile.values).sort(([a], [b]) => (a < b ? -1 : 1)));
+    const group = groups.get(key);
+    if (group !== undefined) group.profiles.push(profile.name);
+    else groups.set(key, { profiles: [profile.name], values: { ...profile.values } });
+  }
+  return [...groups.values()];
 }
