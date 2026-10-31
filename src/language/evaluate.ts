@@ -20,12 +20,12 @@ export function states(file: ParseResult, typeName: string): TypeStates {
     [...file.enums, ...file.dimensions]
       .find((declaration) => declaration.name === name)
       ?.values.map(({ name }) => name) ?? [];
-  const dimensions = [...new Set(type.rules.map(({ when }) => when.dimension))];
+  const dimensions = [...new Set(type.rules.map(({ when }) => when.dimension.name))];
   // With profiles, a row per profile, with the values it gives; the
   // dimensions it does not give still go through every value.
   const given = new Set(
     file.environments
-      .filter(({ name }) => file.profiles.some(({ environment }) => environment === name))
+      .filter(({ name }) => file.profiles.some(({ environment }) => environment.name === name))
       .flatMap((environment) => environment.dimensions.map(({ name }) => name)),
   );
   const starts: { profile?: string; when: Record<string, string> }[] =
@@ -35,8 +35,8 @@ export function states(file: ParseResult, typeName: string): TypeStates {
           profile: profile.name,
           when: Object.fromEntries(
             profile.values
-              .filter(({ dimension }) => dimensions.includes(dimension))
-              .map(({ dimension, value }) => [dimension, value]),
+              .filter(({ dimension }) => dimensions.includes(dimension.name))
+              .map(({ dimension, value }) => [dimension.name, value.name]),
           ),
         }));
   let combinations = starts;
@@ -59,11 +59,11 @@ export function states(file: ParseResult, typeName: string): TypeStates {
       states: Object.fromEntries(
         type.states.map((state) => [
           state.name,
-          valuesOf(state.enum).filter((value) =>
+          valuesOf(state.enum.name).filter((value) =>
             type.rules
-              .filter((rule) => rule.state === state.name && rule.value === value)
+              .filter((rule) => rule.state.name === state.name && rule.value.name === value)
               .every((rule) =>
-                rule.when.values.some(({ name }) => name === chosen[rule.when.dimension]),
+                rule.when.values.some(({ name }) => name === chosen[rule.when.dimension.name]),
               ),
           ),
         ]),

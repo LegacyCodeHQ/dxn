@@ -25,21 +25,22 @@ describe("only when", () => {
     expect(diagnostics).toEqual([]);
     expect(
       types[0]?.rules.map(({ state, value, when }) => [
-        state,
-        value,
-        when.dimension,
+        state.name,
+        value.name,
+        when.dimension.name,
         when.values.map(({ name }) => name),
       ]),
     ).toEqual([
       ["hover", "hovered", "Pointer", ["mouse"]],
       ["focus", "focused", "Keyboard", ["keyboard"]],
     ]);
-    expect(types[0]?.rules[0]).toMatchObject({
-      line: 7,
-      column: 3,
-      valueLine: 7,
-      valueColumn: 11,
-      when: { line: 7, column: 29, values: [{ name: "mouse", line: 7, column: 39 }] },
+    expect(types[0]?.rules[0]).toEqual({
+      state: { name: "hover", line: 7, column: 3 },
+      value: { name: "hovered", line: 7, column: 11 },
+      when: {
+        dimension: { name: "Pointer", line: 7, column: 29 },
+        values: [{ name: "mouse", line: 7, column: 39 }],
+      },
     });
   });
 

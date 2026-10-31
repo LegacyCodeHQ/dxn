@@ -7,7 +7,7 @@ const enums = "enum Hover = rest | hovered\nenum Focus = blurred | focused\n";
 const shape = (source: string) =>
   parse(source).types.map(({ name, states }) => ({
     name,
-    states: states.map((state) => [state.name, state.enum]),
+    states: states.map((state) => [state.name, state.enum.name]),
   }));
 
 describe("type", () => {
@@ -37,7 +37,7 @@ type Toolbar {}
     expect([wordmark?.line, wordmark?.column, wordmark?.states[0]]).toEqual([
       3,
       6,
-      { name: "hover", enum: "Hover", line: 4, column: 10, enumLine: 4, enumColumn: 17 },
+      { name: "hover", line: 4, column: 10, enum: { name: "Hover", line: 4, column: 17 } },
     ]);
   });
 

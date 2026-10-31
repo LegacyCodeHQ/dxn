@@ -66,8 +66,8 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
     expect(
       profiles.map(({ name, environment, values }) => [
         name,
-        environment,
-        values.map(({ dimension, value }) => [dimension, value]),
+        environment.name,
+        values.map(({ dimension, value }) => [dimension.name, value.name]),
       ]),
     ).toEqual([
       [
@@ -92,7 +92,10 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
     expect([profiles[0]?.line, profiles[0]?.column, profiles[0]?.values[0]]).toEqual([
       5,
       9,
-      { dimension: "Breakpoint", value: "base", line: 6, column: 3, valueLine: 6, valueColumn: 16 },
+      {
+        dimension: { name: "Breakpoint", line: 6, column: 3 },
+        value: { name: "base", line: 6, column: 16 },
+      },
     ]);
   });
 

@@ -34,6 +34,17 @@ Subcommands:
                                      as JSON, or a Markdown table with --table
 `;
 
+// What a file declares, without positions, which are for diagnostics: each
+// located name becomes just its name.
+function plain(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(plain);
+  if (typeof value !== "object" || value === null) return value;
+  const { line, column, ...rest } = value as Record<string, unknown>;
+  const fields = Object.keys(rest);
+  if (line !== undefined && fields.length === 1 && fields[0] === "name") return rest.name;
+  return Object.fromEntries(Object.entries(rest).map(([key, item]) => [key, plain(item)]));
+}
+
 // Reads and parses a file; on a problem, reports it and gives the exit code.
 function read(file: string, cwd: string, io: Context["io"]): ParseResult | number {
   const path = resolve(cwd, file);
@@ -60,41 +71,17 @@ const check: Command = command(usage, (args, { io, cwd }) => {
   const parsed = read(file, cwd, io);
   if (typeof parsed === "number") return parsed;
   const { enums, dimensions, types, environments, profiles } = parsed;
-  io.stdout(
-    `${JSON.stringify(
-      {
-        file,
-        enums: enums.map(({ name, values }) => ({
-          name,
-          values: values.map((value) => value.name),
-        })),
-        dimensions: dimensions.map(({ name, values }) => ({
-          name,
-          values: values.map((value) => value.name),
-        })),
-        types: types.map(({ name, states, rules }) => ({
-          name,
-          states: states.map((state) => ({ name: state.name, enum: state.enum })),
-          rules: rules.map(({ state, value, when }) => ({
-            state,
-            value,
-            when: { dimension: when.dimension, values: when.values.map((item) => item.name) },
-          })),
-        })),
-        environments: environments.map(({ name, dimensions: parts }) => ({
-          name,
-          dimensions: parts.map((part) => part.name),
-        })),
-        profiles: profiles.map(({ name, environment, values }) => ({
-          name,
-          environment,
-          values: Object.fromEntries(values.map(({ dimension, value }) => [dimension, value])),
-        })),
-      },
-      null,
-      2,
-    )}\n`,
-  );
+  const output = {
+    file,
+    ...(plain({ enums, dimensions, types, environments }) as object),
+    profiles: profiles.map(({ values, ...profile }) => ({
+      ...(plain(profile) as object),
+      values: Object.fromEntries(
+        values.map(({ dimension, value }) => [dimension.name, value.name]),
+      ),
+    })),
+  };
+  io.stdout(`${JSON.stringify(output, null, 2)}\n`);
   return 0;
 });
 
@@ -122,7 +109,7 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const valuesOf = (name: string) =>
     parsed.enums.find((declaration) => declaration.name === name)?.values.map((v) => v.name) ?? [];
   const columns = (stateType?.states ?? []).flatMap((state) =>
-    valuesOf(state.enum).map((value) => [state.name, value] as const),
+    valuesOf(state.enum.name).map((value) => [state.name, value] as const),
   );
   const profiled = evaluated.rows.some((row) => row.profile !== undefined);
   io.stdout(
