@@ -8,11 +8,26 @@ import { readFileSync } from "node:fs";
 // while a change to a component or variable the frame shows does. For any
 // other file, the file as a whole, by its git blob hash. Undefined when a
 // pen.dev file has no such frame.
+// The sources an actor's evidence can come from: frames in pen.dev files,
+// fingerprinted by structure, or any file, fingerprinted as a whole.
+export const sources = ["pen.dev", "file"];
+
+// The key under which a frame's fingerprint is kept: a whole-file fingerprint
+// differs from a frame's, so the source is part of the key.
+export const fingerprintKey = (file: string, frame: string, source: string | undefined) =>
+  source === "file" ? `${file}#${frame}|file` : `${file}#${frame}`;
+
 export class Fingerprints {
   private readonly documents = new Map<string, PenDocument | undefined>();
 
-  of(path: string, frame: string): string | undefined {
-    if (!path.endsWith(".pen")) return blobHash(path);
+  // Whether the file is a pen.dev document.
+  isPen(path: string): boolean {
+    return path.endsWith(".pen") && this.document(path) !== undefined;
+  }
+
+  // With source "file", always the whole file; otherwise by what the file is.
+  of(path: string, frame: string, source?: string): string | undefined {
+    if (source === "file" || !path.endsWith(".pen")) return blobHash(path);
     const document = this.document(path);
     if (document === undefined) return blobHash(path);
     const node = document.nodes.get(frame);

@@ -1,4 +1,5 @@
 import { compileDirectory } from "../compiler/compile.js";
+import { fingerprintKey } from "../compiler/fingerprint.js";
 import type { Io } from "../io.js";
 import { printDiagnostics, requireProject } from "../project.js";
 import { choices, contextFilter, QueryError, sharedStates, subtreeContexts } from "../queries.js";
@@ -832,7 +833,10 @@ function evidenceFor(
         Object.entries(context).every(([name, value]) => entry.context[name] === value),
     )
     .map(({ at, source, fingerprint }) => {
-      const now = resolver.project.fingerprints?.[`${source.file}#${source.frame}`];
+      const now =
+        resolver.project.fingerprints?.[
+          fingerprintKey(source.file, source.frame, resolver.project.actors?.actors[actor]?.source)
+        ];
       const conflicting = resolver.project.conflicts?.includes(
         `${id}|${source.file}#${source.frame}`,
       );

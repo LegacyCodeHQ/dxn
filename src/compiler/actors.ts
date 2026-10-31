@@ -1,4 +1,5 @@
 import { childPath, type Diagnostics } from "./diagnostic.js";
+import { sources } from "./fingerprint.js";
 import type { JsonNode } from "./json.js";
 import {
   checkSchema,
@@ -15,6 +16,7 @@ import {
 // checks whose results it may record.
 export interface ActorSymbol {
   evidence?: string;
+  source?: string;
   checks: Set<string>;
 }
 
@@ -43,7 +45,29 @@ export function checkActorsFile(
     result.set(key.value, symbol);
     const actor = expectObject(diagnostics, value, path);
     if (actor === undefined) continue;
-    const parts = keys(diagnostics, actor, path, ["evidence", "checks"]);
+    const parts = keys(diagnostics, actor, path, ["evidence", "source", "checks"]);
+    const source = parts.get("source");
+    if (source !== undefined && expectName(diagnostics, source, `${path}.source`)) {
+      if (!sources.includes(source.value)) {
+        report(
+          diagnostics,
+          "unknown-source",
+          `${JSON.stringify(source.value)} is not a source (${sources.join(", ")})`,
+          `${path}.source`,
+          source,
+        );
+      } else if (!parts.has("evidence")) {
+        report(
+          diagnostics,
+          "source-without-evidence",
+          `actor ${JSON.stringify(key.value)} declares a source but records no evidence`,
+          `${path}.source`,
+          source,
+        );
+      } else {
+        symbol.source = source.value;
+      }
+    }
     const evidence = parts.get("evidence");
     if (evidence !== undefined && expectNonEmptyString(diagnostics, evidence, `${path}.evidence`)) {
       symbol.evidence = evidence.kind === "string" ? evidence.value : undefined;

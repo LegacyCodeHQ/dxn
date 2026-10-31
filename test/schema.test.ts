@@ -609,6 +609,10 @@ agree("actors", (doc) => ({ ...tree, "actors.json": doc }), {
     ["no actors", actorsFile({})],
     ["a role that records evidence", actorsFile({ "design-agent": { evidence: "design" } })],
     ["a role that records no checks", actorsFile({ "visual-reviewer": { checks: [] } })],
+    [
+      "a role that records pen.dev frames",
+      actorsFile({ "design-agent": { evidence: "design", source: "pen.dev" } }),
+    ],
     ["a $schema reference", { $schema: "x", ...actorsFile({}) }],
   ],
   structural: [
@@ -622,8 +626,12 @@ agree("actors", (doc) => ({ ...tree, "actors.json": doc }), {
     ["empty-string", actorsFile({ " ": {} })],
     ["empty-string", actorsFile({ "design-agent": { evidence: " " } })],
     ["wrong-type", actorsFile({ "visual-reviewer": { checks: "visual" } })],
+    ["unknown-source", actorsFile({ "design-agent": { evidence: "design", source: "figma" } })],
   ],
-  crossReference: [["undeclared-check", actorsFile({ "visual-reviewer": { checks: ["visual"] } })]],
+  crossReference: [
+    ["undeclared-check", actorsFile({ "visual-reviewer": { checks: ["visual"] } })],
+    ["source-without-evidence", actorsFile({ "visual-reviewer": { source: "file" } })],
+  ],
 });
 
 // Evidence points to files in the repository: the folder above the project,

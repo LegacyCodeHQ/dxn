@@ -198,7 +198,7 @@ export interface ActorsFile {
   version: number;
   // Actor name -> what it records: evidence of one kind, and the checks whose
   // results it may record.
-  actors: Record<string, { evidence?: string; checks?: string[] }>;
+  actors: Record<string, { evidence?: string; source?: string; checks?: string[] }>;
 }
 
 // profiles.json: the combinations of dimension values that exist, by name.

@@ -534,7 +534,13 @@ the checks whose results it may record.
 ```
 
 The compiler refuses evidence from an actor that records none, and a
-verification record for a check its actor does not list.
+verification record for a check its actor does not list. An actor that records
+evidence may also declare its `source`, what that evidence must be: `pen.dev`
+for frames in a pen.dev file, fingerprinted by what each frame shows, or
+`file` for any file, fingerprinted as a whole. A design agent that works in
+pen.dev declares `"source": "pen.dev"`, so each of its entries must point to a
+pen.dev frame; the role carries the shape of its records, and the compiler
+holds every entry to it.
 
 **Evidence** is what an actor has recorded for one node in one complete
 context, in `evidence/<root-id>.json`:

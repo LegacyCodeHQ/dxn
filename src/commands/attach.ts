@@ -172,7 +172,14 @@ export const attach: Command = editCommand(attachUsage, (workspace, args) => {
   }
   const { root, contexts } = targets(workspace, id, rest, values.root, actor);
   const at = values.at ?? new Date().toISOString();
-  const fingerprint = new Fingerprints().of(path, values.frame);
+  const source = resolver(workspace).project.actors?.actors[actor]?.source;
+  const measure = new Fingerprints();
+  if (source === "pen.dev" && !measure.isPen(path)) {
+    throw new Refusal(
+      `actor ${JSON.stringify(actor)} records pen.dev frames; ${JSON.stringify(values.file)} is not a pen.dev file`,
+    );
+  }
+  const fingerprint = measure.of(path, values.frame, source);
   if (fingerprint === undefined) {
     throw new Refusal(`frame ${JSON.stringify(values.frame)} is not in ${values.file}`);
   }

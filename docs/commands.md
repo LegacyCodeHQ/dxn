@@ -689,12 +689,15 @@ Usage: dimensions actor <subcommand>
 An actor is a role that does work against the model, declared in actors.json
 with what it records: evidence of one kind, such as a design agent's designs,
 and the checks whose results it may record, such as a visual reviewer's.
+--source says what its evidence must be: frames in a pen.dev file
+(pen.dev), fingerprinted by what each frame shows, or any file (file),
+fingerprinted as a whole.
 
 Subcommands:
   list                               List every actor and what it records
-  add <name> [--evidence <kind>] [--checks <check>,...]
+  add <name> [--evidence <kind>] [--source pen.dev|file] [--checks <check>,...]
                                      Declare an actor, such as design-agent
-  set <name> [--evidence <kind>] [--checks <check>,...]
+  set <name> [--evidence <kind>] [--source pen.dev|file] [--checks <check>,...]
                                      Change what an actor records
   remove <name>                      Remove an actor that no evidence or record names
 ```
@@ -702,7 +705,7 @@ Subcommands:
 Edits `actors.json`: the roles that do work against the model. An actor is a role, not a person: `design-agent`, not someone's name. `actor list` prints them; `evidence` queries what an actor has recorded.
 
 ```bash
-dimensions actor add design-agent --evidence design
+dimensions actor add design-agent --evidence design --source pen.dev
 dimensions actor add visual-reviewer --checks visual
 dimensions actor set design-agent --checks visual
 dimensions actor list

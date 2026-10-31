@@ -547,6 +547,21 @@ that check: a design agent passing a visual review, say. Record it as an actor
 that may check it, or add the check with `dimensions actor set <name> --checks
 <check>,...`.
 
+### `unknown-source`
+
+An actor's `source` is neither `pen.dev` nor `file`.
+
+### `source-without-evidence`
+
+An actor declares a `source` but no `evidence`. A source says what an actor's
+evidence must be, so it only makes sense for an actor that records evidence.
+
+### `wrong-source`
+
+An evidence entry does not fit its actor's source: an actor with
+`"source": "pen.dev"` records frames in pen.dev files, and the entry points to a
+file that is not one. `dimensions attach` refuses such an entry too.
+
 ### `missing-source`
 
 The file an entry points to does not exist. Paths are relative to the folder

@@ -238,7 +238,7 @@ takes lists joined with `|`, quoted in a shell: it is recorded for every
 combination that is a context of the node.
 
 ```bash
-dimensions actor add design-agent --evidence design
+dimensions actor add design-agent --evidence design --source file
 dimensions evidence menu --actor design-agent --table
 dimensions attach menu --actor design-agent --file design/toolbar.png --frame phone-closed profile=phone menu=closed
 dimensions attach menu --actor design-agent --file design/toolbar.png --frame phone-open profile=phone menu=open

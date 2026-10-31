@@ -29,6 +29,10 @@
             "type": "string",
             "pattern": "\\S"
           },
+          "source": {
+            "description": "What its evidence must be: frames in a pen.dev file (pen.dev), fingerprinted by what each frame shows, or any file (file), fingerprinted as a whole. Only for an actor that records evidence.",
+            "enum": ["pen.dev", "file"]
+          },
           "checks": {
             "description": "The checks whose results it may record.",
             "type": "array",

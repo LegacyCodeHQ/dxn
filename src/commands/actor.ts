@@ -8,17 +8,24 @@ const usage = `Usage: dimensions actor <subcommand>
 An actor is a role that does work against the model, declared in actors.json
 with what it records: evidence of one kind, such as a design agent's designs,
 and the checks whose results it may record, such as a visual reviewer's.
+--source says what its evidence must be: frames in a pen.dev file
+(pen.dev), fingerprinted by what each frame shows, or any file (file),
+fingerprinted as a whole.
 
 Subcommands:
   list                               List every actor and what it records
-  add <name> [--evidence <kind>] [--checks <check>,...]
+  add <name> [--evidence <kind>] [--source pen.dev|file] [--checks <check>,...]
                                      Declare an actor, such as design-agent
-  set <name> [--evidence <kind>] [--checks <check>,...]
+  set <name> [--evidence <kind>] [--source pen.dev|file] [--checks <check>,...]
                                      Change what an actor records
   remove <name>                      Remove an actor that no evidence or record names
 `;
 
-const options = { evidence: { type: "string" }, checks: { type: "string" } } as const;
+const options = {
+  evidence: { type: "string" },
+  source: { type: "string" },
+  checks: { type: "string" },
+} as const;
 
 function actors(workspace: Workspace, create: boolean): Json {
   let file = workspace.read("actors.json");
@@ -33,10 +40,14 @@ function actors(workspace: Workspace, create: boolean): Json {
 }
 
 // Writes what the options say the actor records.
-function declare(actor: Json, values: { evidence?: string; checks?: string }): void {
+function declare(
+  actor: Json,
+  values: { evidence?: string; source?: string; checks?: string },
+): void {
   if (values.evidence !== undefined) actor.evidence = values.evidence;
+  if (values.source !== undefined) actor.source = values.source;
   if (values.checks !== undefined) actor.checks = list(values.checks) ?? [];
-  reorder(actor, ["evidence", "checks"]);
+  reorder(actor, ["evidence", "source", "checks"]);
 }
 
 const add = editCommand(usage, (workspace, args) => {

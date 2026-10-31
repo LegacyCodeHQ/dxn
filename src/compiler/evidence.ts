@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { Context, Resolver } from "../resolve.js";
 import type { EvidenceFile } from "../tree.js";
 import { Diagnostics, type FileDiagnostic } from "./diagnostic.js";
-import { Fingerprints } from "./fingerprint.js";
+import { Fingerprints, fingerprintKey } from "./fingerprint.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { readSource } from "./read.js";
 import {
@@ -279,10 +279,24 @@ function checkEntry(
           file,
         );
       } else {
-        if (frameValid && frame?.kind === "string") {
+        const source =
+          actor?.kind === "string"
+            ? resolver.project.actors?.actors[actor.value]?.source
+            : undefined;
+        if (source === "pen.dev" && !measure.isPen(full)) {
+          report(
+            diagnostics,
+            "wrong-source",
+            `actor ${JSON.stringify(actor?.kind === "string" ? actor.value : "")} records pen.dev frames; ${JSON.stringify(file.value)} is not a pen.dev file`,
+            `${path}.source.file`,
+            file,
+          );
+          valid = false;
+        } else if (frameValid && frame?.kind === "string") {
           where = `${file.value}#${frame.value}`;
-          if (!(where in fingerprints)) {
-            fingerprints[where] = measure.of(full, frame.value) ?? null;
+          const key = fingerprintKey(file.value, frame.value, source);
+          if (!(key in fingerprints)) {
+            fingerprints[key] = measure.of(full, frame.value, source) ?? null;
             const named = measure.name(full, frame.value);
             if (named !== undefined) frameNames[where] = named;
           }
