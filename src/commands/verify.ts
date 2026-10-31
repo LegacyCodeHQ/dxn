@@ -27,7 +27,7 @@ transition.
 `;
 
 // The project as compiled from disk, for defaults and roots.
-function resolver(workspace: Workspace): Resolver {
+export function resolver(workspace: Workspace): Resolver {
   const { project } = compileDirectory(workspace.project);
   if (project === undefined) {
     throw new Refusal("the project has errors; run dimensions validate");
@@ -36,7 +36,7 @@ function resolver(workspace: Workspace): Resolver {
 }
 
 // state=... and <dimension>=... arguments: state first, then dimensions by name.
-function contextArgs(args: string[]): Context {
+export function contextArgs(args: string[]): Context {
   const entries = args.map((arg) => {
     const at = arg.indexOf("=");
     if (at <= 0 || at === arg.length - 1) {
@@ -50,7 +50,7 @@ function contextArgs(args: string[]): Context {
 
 // The context with profile=<name>, or the values that pick one profile,
 // replaced by that profile's values for the node's profiled dimensions.
-function withProfile(model: Resolver, id: string, given: Context): Context {
+export function withProfile(model: Resolver, id: string, given: Context): Context {
   if (model.node(id) === undefined || (model.profiles.size === 0 && given.profile === undefined)) {
     return given;
   }
@@ -63,7 +63,7 @@ function withProfile(model: Resolver, id: string, given: Context): Context {
   );
 }
 
-function rootFor(resolver: Resolver, id: string, chosen: string | undefined): string {
+export function rootFor(resolver: Resolver, id: string, chosen: string | undefined): string {
   if (resolver.node(id) === undefined) {
     throw new Refusal(`node not found: ${id}`);
   }

@@ -1,4 +1,5 @@
 import { actor } from "./commands/actor.js";
+import { attach, detach } from "./commands/attach.js";
 import { attribute } from "./commands/attribute.js";
 import { check } from "./commands/checks.js";
 import type { Command } from "./commands/context.js";
@@ -60,6 +61,10 @@ Record
                       Record a check's result for a node in one context
   unverify <node-id> --check <c> [<context>...]
                       Remove that record
+  attach <node-id> --actor <a> --file <path> --frame <id> [<context>...]
+                      Record an actor's evidence for a node in one context
+  detach <node-id> --actor <a> --frame <id> [<context>...]
+                      Remove that evidence
 
 Model
   node <subcommand>   Add, move, rename and remove nodes; say where they exist
@@ -125,6 +130,8 @@ const commands: Record<string, Command> = {
   actor,
   verify,
   unverify,
+  attach,
+  detach,
 };
 
 export function run(argv: string[], io: Io): number {

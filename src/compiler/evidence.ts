@@ -30,7 +30,7 @@ const entryKeys = ["node", "context", "actor", "at", "source", "revision"];
 const revisionPattern = /^[0-9a-f]{40}$/;
 
 // The git blob hash of a file, as "git hash-object" prints it.
-function revisionOf(path: string): string {
+export function revisionOf(path: string): string {
   const content = readFileSync(path);
   return createHash("sha1").update(`blob ${content.length}\0`).update(content).digest("hex");
 }

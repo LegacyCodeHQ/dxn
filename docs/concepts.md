@@ -557,6 +557,11 @@ and a frame in it. `revision` is the file's git blob hash then, as
 node's contexts, so an entry claims one row and no more; a frame that shows
 several gets an entry for each.
 
+`dimensions attach menu-button --actor design-agent --file design/website.pen
+--frame vbGba profile=phone menu=closed hover=rest focus=blurred` records an
+entry, filling in the context from the profile and the revision from the file;
+`detach` removes one.
+
 `dimensions evidence menu-button --actor design-agent --table` lists every
 context of the node with the profile it matches and the actor's evidence for
 it, where `—` is the list of what is missing. When the file changes after an

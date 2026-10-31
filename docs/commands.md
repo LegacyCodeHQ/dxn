@@ -31,7 +31,7 @@ asks which.
 
 - Project: [workflow](#workflow), [init](#init), [validate](#validate), [status](#status)
 - Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions), [evidence](#evidence)
-- Record: [verify](#verify), [unverify](#unverify)
+- Record: [verify](#verify), [unverify](#unverify), [attach](#attach), [detach](#detach)
 - Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [modifier](#modifier), [override](#override), [expectation](#expectation), [actor](#actor)
 
 ## Project
@@ -245,7 +245,7 @@ has changed since (stale). --table prints a Markdown table, a row per context
 and a column for the actor, where — means no evidence.
 ```
 
-Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it: `at`, `source`, `revision` and `stale`. A context with no evidence is what is missing. An entry is stale when the file it points to has changed since it was recorded; that is not an error. Entries are written by hand in `evidence/<root-id>.json` for now; see [concepts.md](concepts.md#actors-and-evidence).
+Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it: `at`, `source`, `revision` and `stale`. A context with no evidence is what is missing. An entry is stale when the file it points to has changed since it was recorded; that is not an error. `attach` records entries and `detach` removes them; see [concepts.md](concepts.md#actors-and-evidence).
 
 ```bash
 dimensions evidence toolbar --actor design-agent --table
@@ -294,6 +294,45 @@ Removes a record written by `verify`.
 
 ```bash
 dimensions unverify blog-link --check visual breakpoint=lg hover=hovered focus=blurred selection=selected
+```
+
+### attach
+
+```text
+Usage: dimensions attach <node-id> --actor <role> --file <path> --frame <id>
+                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
+                        [--at <time>] [--root <root-id>]
+
+Records evidence that an actor made for a node in one context: a frame in a
+file of the repository, such as a design. The context must be complete, as
+"dimensions evidence" lists it; profile=<name> fills in its dimensions. The
+file's git revision is recorded, so the entry shows as stale once the file
+changes; attaching it again records the new revision. --file is relative to
+the folder that holds .dimensions. --at defaults to now; --root is needed when
+several roots include the node.
+```
+
+Writes an entry to `evidence/<root-id>.json`: the node, its complete context, the actor, when, the file and frame, and the file's git revision. Attaching the same node, context, actor and frame again replaces the entry, which is how a stale entry is renewed after the design changes.
+
+```bash
+dimensions actor add design-agent
+dimensions attach menu --actor design-agent --file design/website.pen --frame vbGba profile=phone menu=closed
+```
+
+### detach
+
+```text
+Usage: dimensions detach <node-id> --actor <role> --frame <id>
+                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
+                        [--root <root-id>]
+
+Removes the actor's evidence for that node, context and frame.
+```
+
+Removes the actor's entry for that node, context and frame.
+
+```bash
+dimensions detach menu --actor design-agent --frame vbGba profile=phone menu=closed
 ```
 
 ## Model

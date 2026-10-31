@@ -104,6 +104,10 @@ describe("finding the project", () => {
                             Record a check's result for a node in one context
         unverify <node-id> --check <c> [<context>...]
                             Remove that record
+        attach <node-id> --actor <a> --file <path> --frame <id> [<context>...]
+                            Record an actor's evidence for a node in one context
+        detach <node-id> --actor <a> --frame <id> [<context>...]
+                            Remove that evidence
 
       Model
         node <subcommand>   Add, move, rename and remove nodes; say where they exist
