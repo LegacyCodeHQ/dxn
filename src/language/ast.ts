@@ -65,6 +65,17 @@ export interface Profile extends Declaration {
 // values cascade down the tree, which an enum's do not.
 export type Dimension = Enum;
 
+// A field of a record: its name, and the enum or record its value is.
+export interface Field extends Located {
+  type: Located;
+}
+
+// A record: plain data, a named group of typed fields, every one of which is
+// given.
+export interface RecordDeclaration extends Declaration {
+  fields: Field[];
+}
+
 export interface Diagnostic {
   // An error makes a file unusable; a warning does not.
   severity: "error" | "warning";
@@ -80,5 +91,6 @@ export interface ParseResult {
   types: Type[];
   environments: Environment[];
   profiles: Profile[];
+  records: RecordDeclaration[];
   diagnostics: Diagnostic[];
 }

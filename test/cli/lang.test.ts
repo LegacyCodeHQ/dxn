@@ -13,6 +13,15 @@ function file(source: string) {
 }
 
 describe("lang check", () => {
+  it("prints the records a file declares, with their fields", () => {
+    const run = file("enum Tool = pen-dev | code\nrecord Source {\n  tool: Tool\n}\n");
+    const result = run("check", "wordmark.dim");
+    expect([result.code, JSON.parse(result.stdout).records]).toEqual([
+      0,
+      [{ name: "Source", fields: [{ name: "tool", type: "Tool" }] }],
+    ]);
+  });
+
   it("prints warnings, and still succeeds", () => {
     const run = file(
       "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  states hover: Hover\n}\n",
@@ -58,6 +67,7 @@ describe("lang check", () => {
         ],
         environments: [],
         profiles: [],
+        records: [],
       },
     ]);
   });

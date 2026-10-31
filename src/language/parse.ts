@@ -2,7 +2,7 @@
 // at a time. A file declares enums, dimensions, types, environments and
 // profiles:
 //
-//   file        = { blank-line | enum | dimension | type | environment | profile }
+//   file        = { blank-line | enum | dimension | type | environment | profile | record }
 //   enum        = "enum" name "=" value { "|" [newline] value } newline
 //   dimension   = "dimension" name "=" value { "|" [newline] value } newline
 //   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | states | rule } "}"
@@ -13,6 +13,7 @@
 //   environment = "environment" name "=" name { "x" [newline] name } newline
 //   profile     = "profile" profile-name ":" name "{" { assignment ( "," | newline ) } "}"
 //   assignment  = name "=" value
+//   record      = "record" name "{" { blank-line | field-name ":" name newline } "}"
 //   name        = capital letter, then letters and digits
 //   value       = a letter or digit, then letters, digits and hyphens
 //   comment     = "#" to the end of the line, skipped like a space
@@ -39,6 +40,7 @@ export function parse(source: string): ParseResult {
     types: [],
     environments: [],
     profiles: [],
+    records: [],
     diagnostics: [],
   };
   let position = 0;
@@ -254,12 +256,27 @@ export function parse(source: string): ParseResult {
     });
   };
 
-  const declarations: Record<string, () => void> = {
+  // A record: "record <Name> { <field>: <Type> ... }", a field a line.
+  const recordDeclaration = () => {
+    next();
+    const named = name("record", 'a record name after "record"', capitalized);
+    const record = keep(result.records, { ...named, fields: [] });
+    expect("{", '"{" after the record name');
+    braces(record.name, () => {
+      const field = name("field", "a field name", lowercase);
+      expect(":", `":" after ${JSON.stringify(field.name)}`);
+      record.fields.push({ ...field, type: word('a type after ":"') });
+      end(["newline", "}"], "the end of the line");
+    });
+  };
+
+  const declarations: { [keyword: string]: () => void } = {
     enum: () => valuesDeclaration("enum", result.enums),
     dimension: () => valuesDeclaration("dimension", result.dimensions),
     type: typeDeclaration,
     environment: environmentDeclaration,
     profile: profileDeclaration,
+    record: recordDeclaration,
   };
   // A line that starts a declaration.
   const starts = (token: Token) =>
@@ -276,7 +293,7 @@ export function parse(source: string): ParseResult {
     try {
       const declaration = token.kind === "word" ? declarations[token.text] : undefined;
       if (declaration === undefined) {
-        fail(token, '"enum", "dimension", "type", "environment" or "profile"');
+        fail(token, '"enum", "dimension", "type", "environment", "profile" or "record"');
       }
       declaration?.();
     } catch (error) {

@@ -1,6 +1,6 @@
-import type { Declaration, Located, ParseResult, Rule } from "./ast.js";
+import type { Declaration, Field, Located, ParseResult, RecordDeclaration, Rule } from "./ast.js";
 
-type Kind = "enum" | "dimension" | "type" | "environment" | "profile";
+type Kind = "enum" | "dimension" | "type" | "environment" | "profile" | "record";
 
 type Report = (
   code: string,
@@ -23,13 +23,14 @@ class Names {
   }
 
   private lists(): [Kind, Declaration[]][] {
-    const { enums, dimensions, types, environments, profiles } = this.file;
+    const { enums, dimensions, types, environments, profiles, records } = this.file;
     return [
       ["enum", enums],
       ["dimension", dimensions],
       ["type", types],
       ["environment", environments],
       ["profile", profiles],
+      ["record", records],
     ];
   }
 
@@ -37,18 +38,23 @@ class Names {
     return this.lists().find(([candidate]) => candidate === kind)?.[1] ?? [];
   }
 
+  // What a name is, from its first declaration.
+  kindOf(name: string): Kind | undefined {
+    return this.kinds.get(name);
+  }
+
   is(name: string, kind: Kind): boolean {
     return this.of(kind).some((declaration) => declaration.name === name);
   }
 
-  // Why a name is not of a kind: what it is instead, or what there is to
-  // choose from.
-  not(name: string, kind: Kind): string {
+  // Why a name is not of a kind, or of any of several: what it is instead,
+  // or what there is to choose from.
+  not(name: string, ...kinds: Kind[]): string {
+    const wanted = kinds.map((kind) => `${article(kind)} ${kind}`).join(" or ");
     const actual = this.kinds.get(name);
-    if (actual !== undefined)
-      return `${name} is ${article(actual)} ${actual}, not ${article(kind)} ${kind}`;
-    const names = this.of(kind).map((declaration) => declaration.name);
-    return `${name} is not ${article(kind)} ${kind}${among(names)}`;
+    if (actual !== undefined) return `${name} is ${article(actual)} ${actual}, not ${wanted}`;
+    const names = kinds.flatMap((kind) => this.of(kind).map((declaration) => declaration.name));
+    return `${name} is not ${wanted}${among(names)}`;
   }
 
   // The values of an enum or a dimension, unless it is broken.
@@ -78,6 +84,7 @@ export function check(file: ParseResult): void {
   checkTypes(file, names, report);
   checkEnvironments(file, names, report);
   checkProfiles(file, names, report);
+  checkRecords(file, names, report);
 }
 
 // The file: each name declared once.
@@ -88,6 +95,7 @@ function checkDeclared(file: ParseResult, report: Report): void {
     ...file.types,
     ...file.environments,
     ...file.profiles,
+    ...file.records,
   ].sort((a, b) => a.line - b.line || a.column - b.column);
   const declared = new Map<string, Located>();
   for (const declaration of declarations) {
@@ -310,5 +318,56 @@ function checkProfiles(file: ParseResult, names: Names, report: Report): void {
         profile,
       );
     }
+  }
+}
+
+// Records: lowercase fields, each once, each an enum or a record; and no
+// record that contains itself, which could never be written down, since
+// every field is given.
+function checkRecords(file: ParseResult, names: Names, report: Report): void {
+  for (const record of file.records) {
+    const seen = new Set<string>();
+    for (const field of record.fields) {
+      if (seen.has(field.name)) {
+        report("duplicate-field", `${field.name} is already a field of ${record.name}`, field);
+      }
+      seen.add(field.name);
+      if (!names.is(field.type.name, "enum") && !names.is(field.type.name, "record")) {
+        report("unknown-type", names.not(field.type.name, "enum", "record"), field.type);
+      }
+    }
+  }
+  const byName = new Map<string, RecordDeclaration>();
+  for (const record of file.records) if (!byName.has(record.name)) byName.set(record.name, record);
+  // The fields that lead from a record back to the target, if any do.
+  const path = (
+    from: RecordDeclaration,
+    target: string,
+    visited: Set<string>,
+  ): { record: string; field: Field }[] | undefined => {
+    for (const field of from.fields) {
+      const inner =
+        names.kindOf(field.type.name) === "record" ? byName.get(field.type.name) : undefined;
+      if (inner === undefined) continue;
+      const step = { record: from.name, field };
+      if (inner.name === target) return [step];
+      if (visited.has(inner.name)) continue;
+      visited.add(inner.name);
+      const rest = path(inner, target, visited);
+      if (rest !== undefined) return [step, ...rest];
+    }
+    return undefined;
+  };
+  for (const record of byName.values()) {
+    const steps = path(record, record.name, new Set());
+    const first = steps?.[0];
+    if (steps === undefined || first === undefined) continue;
+    const through = steps
+      .map(({ record: owner, field }) => {
+        const type = field.type.name;
+        return `${owner}.${field.name} is ${article(type)} ${type}`;
+      })
+      .join(", and ");
+    report("recursive-record", `${record.name} contains itself: ${through}`, first.field);
   }
 }

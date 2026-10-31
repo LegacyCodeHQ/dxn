@@ -356,6 +356,47 @@ profile laptop: Device { Pointer = mouse }
 | laptop  | mouse   | dark  | ✓           | ✓              | ✓           | ✓              |
 ```
 
+## Records: plain data
+
+Everything so far describes the matrix: what an element's states are, and
+where each one exists. But the tools around the matrix also keep data about
+it. When a designer draws a combination, the evidence they record says which
+tool it was drawn in and where. That data has a shape, and a shape is worth
+checking just as much as the states are.
+
+A **record** is that shape: a named group of typed fields.
+
+```
+enum Tool = pen-dev | code
+enum Verdict = passed | failed
+
+record Source {
+  # where the evidence is
+  tool: Tool
+  verdict: Verdict
+}
+
+record Evidence { source: Source }
+```
+
+A record's name is capitalized, like every other set of possibilities. Its
+fields come one to a line, each a lowercase name, a colon, and its type. For
+now a field's type is an enum or another record.
+
+A record is not a type. A type is an element: it needs dimensions and has
+states that come and go with them. A record is plain data, with nothing that
+varies: every field is given, every time. That is also why a record cannot
+contain itself, directly or through other records: it could never be written
+down.
+
+```
+recursive-record: Evidence contains itself: Evidence.source is a Source, and Source.back is an Evidence
+```
+
+Records are the first step toward evidence that the language itself checks:
+the next steps are fields of text, times and hashes, and a field that refers
+to one combination of a type.
+
 ## When something is wrong
 
 Every problem is reported as `file:line:column: code: message`, in the order
@@ -421,16 +462,18 @@ or under discussion but not part of it yet; see [design.md](design.md):
 | type        | `Wordmark`                    | capital letter                                      |
 | environment | `Device`                      | capital letter                                      |
 | state       | `hover`                       | lowercase letter                                    |
+| record      | `Evidence`                    | capital letter                                      |
 | profile     | `laptop`                      | lowercase letter                                    |
+| field       | `source`                      | lowercase letter                                    |
 | value       | `rest`, `no-keyboard`, `19px` | a letter or digit, then letters, digits and hyphens |
 
-Every enum, dimension, type, environment and profile shares one namespace:
+Every enum, dimension, type, environment, profile and record shares one namespace:
 each name is declared once in a file.
 
 ### Grammar
 
 ```
-file        = { blank-line | comment | enum | dimension | type | environment | profile }
+file        = { blank-line | comment | enum | dimension | type | environment | profile | record }
 enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | states | rule } "}"
@@ -441,28 +484,32 @@ condition   = Name ( "=" value | "in" "(" value { "," value } ")" )
 environment = "environment" Name "=" Name { "x" [newline] Name } newline
 profile     = "profile" profile-name ":" Name "{" { assignment ( "," | newline ) } "}"
 assignment  = Name "=" value
+record      = "record" Name "{" { blank-line | field-name ":" Name newline } "}"
 comment     = "#" to the end of the line
 ```
 
 ### Diagnostics
 
-| Code                                                           | Severity | When                                                                     |
-| -------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
-| `syntax-error`                                                 | error    | the text does not follow the grammar                                     |
-| `enum-name`, `dimension-name`, `type-name`, `environment-name` | error    | the name does not start with a capital letter                            |
-| `state-name`, `profile-name`                                   | error    | the name does not start with a lowercase letter                          |
-| `duplicate-name`                                               | error    | a name is declared twice in the file                                     |
-| `duplicate-value`                                              | error    | a value appears twice in an enum, dimension or condition                 |
-| `duplicate-state`                                              | error    | a type has two states with one name                                      |
-| `states-twice`                                                 | error    | a type has two `states` lines                                            |
-| `duplicate-rule`                                               | error    | a state value has two rules                                              |
-| `duplicate-dimension`                                          | error    | a dimension appears twice in a type's needs, an environment or a profile |
-| `unknown-enum`                                                 | error    | a state's values come from something that is not an enum                 |
-| `unknown-dimension`                                            | error    | a name used as a dimension is not one                                    |
-| `unknown-state`                                                | error    | a rule names a state the type does not have                              |
-| `unknown-value`                                                | error    | a value is not one of its enum's or dimension's                          |
-| `unneeded-dimension`                                           | error    | a rule uses a dimension its type does not need                           |
-| `unknown-environment`                                          | error    | a profile's environment is not one                                       |
-| `incomplete-profile`                                           | error    | a profile leaves out a dimension of its environment                      |
-| `mixed-profiles`                                               | error    | profiles are instances of different environments                         |
-| `unused-need`                                                  | warning  | a type needs a dimension that no rule uses                               |
+| Code                                                                          | Severity | When                                                                     |
+| ----------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
+| `syntax-error`                                                                | error    | the text does not follow the grammar                                     |
+| `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name` | error    | the name does not start with a capital letter                            |
+| `state-name`, `profile-name`, `field-name`                                    | error    | the name does not start with a lowercase letter                          |
+| `duplicate-name`                                                              | error    | a name is declared twice in the file                                     |
+| `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension or condition                 |
+| `duplicate-state`                                                             | error    | a type has two states with one name                                      |
+| `states-twice`                                                                | error    | a type has two `states` lines                                            |
+| `duplicate-rule`                                                              | error    | a state value has two rules                                              |
+| `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment or a profile |
+| `unknown-enum`                                                                | error    | a state's values come from something that is not an enum                 |
+| `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                    |
+| `unknown-state`                                                               | error    | a rule names a state the type does not have                              |
+| `unknown-value`                                                               | error    | a value is not one of its enum's or dimension's                          |
+| `unneeded-dimension`                                                          | error    | a rule uses a dimension its type does not need                           |
+| `unknown-environment`                                                         | error    | a profile's environment is not one                                       |
+| `incomplete-profile`                                                          | error    | a profile leaves out a dimension of its environment                      |
+| `mixed-profiles`                                                              | error    | profiles are instances of different environments                         |
+| `duplicate-field`                                                             | error    | a record has two fields with one name                                    |
+| `unknown-type`                                                                | error    | a field's type is not an enum or a record                                |
+| `recursive-record`                                                            | error    | a record contains itself                                                 |
+| `unused-need`                                                                 | warning  | a type needs a dimension that no rule uses                               |
