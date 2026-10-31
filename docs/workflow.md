@@ -224,13 +224,16 @@ Attach a frame to each context it shows. The context must be complete, as
 context of a node with the frame that covers it, or `—` where none does, and
 `status --actor` counts what is present, stale (the file changed since) or
 missing across the whole model. After the design changes, attach the frame
-again to record the new revision.
+again to record the new revision. A frame that shows several contexts alike
+takes lists joined with `|`, quoted in a shell: it is recorded for every
+combination that is a context of the node.
 
 ```bash
 dimensions actor add design-agent --evidence design
 dimensions evidence menu --actor design-agent --table
 dimensions attach menu --actor design-agent --file design/toolbar.pen --frame phone-closed profile=phone menu=closed
 dimensions attach menu --actor design-agent --file design/toolbar.pen --frame phone-open profile=phone menu=open
+dimensions attach menu --actor design-agent --file design/toolbar.pen --frame tablet-menu profile=tablet-portrait "menu=closed|open"
 dimensions evidence menu --actor design-agent profile=phone
 dimensions status --actor design-agent
 ```

@@ -320,23 +320,28 @@ dimensions unverify blog-link --check visual breakpoint=lg hover=hovered focus=b
 
 ```text
 Usage: dimensions attach <node-id> --actor <role> --file <path> --frame <id>
-                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
+                        [<group>=<value>[|<value>]...] [<dimension>=<value>[|<value>]...]
+                        [<shared-node>=<state>[|<state>]...] [profile=<name>[|<name>]]
                         [--at <time>] [--root <root-id>]
 
 Records evidence that an actor made for a node in one context: a frame in a
 file of the repository, such as a design. The context must be complete, as
-"dimensions evidence" lists it; profile=<name> fills in its dimensions. The
+"dimensions evidence" lists it; profile=<name> fills in its dimensions.
+Values joined with | record the frame for every combination that is a context
+of the node, such as "profile=laptop|desktop" "hover=rest|hovered" for a frame
+that shows them all alike; a listed value the node never has is refused. The
 file's git revision is recorded, so the entry shows as stale once the file
 changes; attaching it again records the new revision. --file is relative to
 the folder that holds .dimensions. --at defaults to now; --root is needed when
 several roots include the node.
 ```
 
-Writes an entry to `evidence/<root-id>.json`: the node, its complete context, the actor, when, the file and frame, and the file's git revision. Attaching the same node, context, actor and frame again replaces the entry, which is how a stale entry is renewed after the design changes.
+Writes an entry to `evidence/<root-id>.json`: the node, its complete context, the actor, when, the file and frame, and the file's git revision. Values joined with `|` record one entry for each combination that is a context of the node, which is how one frame that shows several contexts alike is recorded in one step; a listed value the node never has is refused, and so are lists that match no context. Attaching the same node, context, actor and frame again replaces the entry, which is how a stale entry is renewed after the design changes.
 
 ```bash
 dimensions actor add design-agent --evidence design
 dimensions attach menu --actor design-agent --file design/website.pen --frame vbGba profile=phone menu=closed
+dimensions attach wordmark --actor design-agent --file design/website.pen --frame h7eW6z "profile=tablet-landscape|laptop|desktop" "hover=rest|hovered" focus=blurred
 ```
 
 ### detach

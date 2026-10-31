@@ -572,7 +572,10 @@ several gets an entry for each.
 `dimensions attach menu-button --actor design-agent --file design/website.pen
 --frame vbGba profile=phone menu=closed hover=rest focus=blurred` records an
 entry, filling in the context from the profile and the revision from the file;
-`detach` removes one.
+`detach` removes one. A frame that shows several contexts alike is recorded in one
+step with lists: `attach wordmark … --frame h7eW6z
+"profile=tablet-landscape|laptop|desktop" "hover=rest|hovered" focus=blurred`
+records an entry for each combination that is a context of the wordmark.
 
 `dimensions evidence menu-button --actor design-agent --table` lists every
 context of the node with the profile it matches and the actor's evidence for

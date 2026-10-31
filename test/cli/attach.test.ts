@@ -119,3 +119,58 @@ describe("detach", () => {
     );
   });
 });
+
+describe("attach with lists", () => {
+  const listed = (...context: string[]) => {
+    const result = project();
+    const run = result.run(
+      "attach",
+      "wordmark",
+      "--actor",
+      "design-agent",
+      "--file",
+      design,
+      "--frame",
+      "wide",
+      "--at",
+      at,
+      ...context,
+    );
+    return { ...result, run };
+  };
+  const recorded = (read: (name: string) => Record<string, unknown>) =>
+    (read("evidence/page.json").evidence as { context: Record<string, string> }[]).map(
+      ({ context }) => `${context.breakpoint}/${context.pointer}/${context.hover}/${context.focus}`,
+    );
+
+  it("records every combination that is a context of the node, once each", () => {
+    const { run, read } = listed(
+      "profile=tablet-landscape|laptop|desktop",
+      "hover=rest|hovered",
+      "focus=blurred",
+    );
+    expect(run.code).toBe(0);
+    expect(recorded(read)).toEqual([
+      "lg/touch/rest/blurred",
+      "lg/mouse/rest/blurred",
+      "lg/mouse/hovered/blurred",
+      "xl/mouse/rest/blurred",
+      "xl/mouse/hovered/blurred",
+    ]);
+  });
+
+  it("refuses a listed value the node never has, and writes nothing", () => {
+    const { run, exists } = listed("profile=laptop", "hover=rest|hovred", "focus=blurred");
+    expect([run.stderr, exists("evidence/page.json")]).toEqual([
+      'dimensions: "hovred" is not a value of hover for wordmark (rest, hovered)\n',
+      false,
+    ]);
+  });
+
+  it("refuses lists where no combination is a context", () => {
+    const { run } = listed("profile=phone|tablet-portrait", "hover=hovered", "focus=blurred");
+    expect(run.stderr).toBe(
+      'dimensions: no context of wordmark matches; "dimensions evidence wordmark --actor design-agent" lists them\n',
+    );
+  });
+});
