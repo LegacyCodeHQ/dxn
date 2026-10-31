@@ -40,4 +40,16 @@ describe("views --table", () => {
       ].join("\n"),
     );
   });
+
+  it("leaves out the profile column when there are no profiles", () => {
+    const { "profiles.json": _, ...withoutProfiles } = toolbarFiles;
+    const lines = cliProject(withoutProfiles)
+      .run("views", "toolbar", "breakpoint=xl", "--table")
+      .stdout.split("\n");
+    expect(lines.slice(0, 3)).toEqual([
+      "| breakpoint | keyboard    | pointer |",
+      "| ---------- | ----------- | ------- |",
+      "| xl         | keyboard    | mouse   |",
+    ]);
+  });
 });

@@ -89,6 +89,22 @@ describe("evidence entries", () => {
     );
   });
 
+  it("print as a table with a row per context and the actor's frames", () => {
+    const { run, root } = project([entry()]);
+    writeFileSync(join(root, design), "the toolbar, redrawn");
+    expect(run("evidence", "menu-button", "--actor", "design-agent", "--table").stdout).toBe(
+      [
+        "| profile         | hover | focus   | breakpoint | keyboard    | pointer | menu   | design-agent              |",
+        "| --------------- | ----- | ------- | ---------- | ----------- | ------- | ------ | ------------------------- |",
+        "| phone           | rest  | blurred | base       | no-keyboard | touch   | closed | website.pen#vbGba (stale) |",
+        "| phone           | rest  | blurred | base       | no-keyboard | touch   | open   | —                         |",
+        "| tablet-portrait | rest  | blurred | sm         | no-keyboard | touch   | closed | —                         |",
+        "| tablet-portrait | rest  | blurred | sm         | no-keyboard | touch   | open   | —                         |",
+        "",
+      ].join("\n"),
+    );
+  });
+
   it("name the revision git prints for the file", () => {
     const { root } = project([entry()]);
     expect(

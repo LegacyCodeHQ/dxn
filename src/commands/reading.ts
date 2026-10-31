@@ -11,9 +11,11 @@ import {
 } from "../resolve.js";
 import { buildStateTree, drawStateTree, type Entry, treeNames } from "../state-tree.js";
 import {
+  contextTable,
   drawNodeTables,
   drawPresenceMatrix,
-  markdown,
+  drawTable,
+  NONE,
   nodeTables,
   presenceMatrix,
   TableError,
@@ -385,16 +387,17 @@ profiles with the same combination. --table prints a Markdown table.
       return;
     }
     const dimensions = [...resolver.profiled].sort();
-    const lines = markdown(
-      ["profile", ...dimensions, "modifier", "same combination as"],
-      profiles.map((profile) => [
-        profile.name,
-        ...dimensions.map((dimension) => profile.values[dimension] ?? "—"),
-        profile.modifier ?? "",
-        (profile.sameAs ?? []).join(", "),
-      ]),
+    io.stdout(
+      drawTable(
+        ["profile", ...dimensions, "modifier", "same combination as"],
+        profiles.map((profile) => [
+          profile.name,
+          ...dimensions.map((dimension) => profile.values[dimension] ?? NONE),
+          profile.modifier ?? "",
+          (profile.sameAs ?? []).join(", "),
+        ]),
+      ),
     );
-    io.stdout(`${lines.join("\n")}\n`);
   },
 );
 
@@ -709,17 +712,7 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
   const all = resolver.views(id, values.root);
   const kept = all.filter(filter(resolver, rest, all, values.root));
   if (values.table === true) {
-    // A column for the profile each view matches, then one per name.
-    const names = [...new Set(kept.flatMap((view) => Object.keys(view)))];
-    const profiled = names.some((name) => resolver.profiled.has(name));
-    const lines = markdown(
-      [...(profiled ? ["profile"] : []), ...names],
-      kept.map((view) => [
-        ...(profiled ? [resolver.profilesOf(view).join(" / ") || "—"] : []),
-        ...names.map((name) => view[name] ?? "—"),
-      ]),
-    );
-    io.stdout(`${lines.join("\n")}\n`);
+    io.stdout(contextTable(resolver, kept));
     return;
   }
   print(io, { node: id, views: kept });
@@ -807,24 +800,28 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       evidence: evidenceFor(resolver, root, id, actor, context),
     }));
   if (values.table === true) {
-    const names = [...new Set(rows.flatMap(({ context }) => Object.keys(context)))];
-    const profiled = resolver.profiles.size > 0;
-    const lines = markdown(
-      [...(profiled ? ["profile"] : []), ...names, actor],
-      rows.map((row) => [
-        ...(profiled ? [row.profiles?.join(" / ") || "—"] : []),
-        ...names.map((name) => row.context[name] ?? "—"),
-        row.evidence.length === 0
-          ? "—"
-          : row.evidence
-              .map(
-                ({ source, stale }) =>
-                  `${source.file.split("/").pop()}#${source.frame}${stale ? " (stale)" : ""}`,
-              )
-              .join(", "),
-      ]),
+    io.stdout(
+      contextTable(
+        resolver,
+        rows.map(({ context }) => context),
+        {
+          header: [actor],
+          cells: (index) => {
+            const found = rows[index]?.evidence ?? [];
+            return [
+              found.length === 0
+                ? NONE
+                : found
+                    .map(
+                      ({ source, stale }) =>
+                        `${source.file.split("/").pop()}#${source.frame}${stale ? " (stale)" : ""}`,
+                    )
+                    .join(", "),
+            ];
+          },
+        },
+      ),
     );
-    io.stdout(`${lines.join("\n")}\n`);
     return;
   }
   print(io, { node: id, actor, contexts: rows });

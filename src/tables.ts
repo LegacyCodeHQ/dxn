@@ -55,7 +55,7 @@ function setups(resolver: Resolver, dimensions: string[]): Setup[] {
     covered.length === 0
       ? [{ name: "", values: {} }]
       : resolver.combinations().map(({ values, names }) => ({
-          name: names.join(" / "),
+          name: profileLabel(names),
           values: Object.fromEntries(
             covered.map((dimension) => [dimension, values[dimension] as string]),
           ),
@@ -236,12 +236,48 @@ const text = (value: Cell): string =>
   value === true
     ? "✓"
     : value === false
-      ? "—"
+      ? NONE
       : Array.isArray(value)
         ? value.join(", ")
         : Object.entries(value)
             .map(([name, states]) => `${name}=${states.join("|")}`)
             .join(", ");
+
+// The cell for a value a row does not have.
+export const NONE = "—";
+
+// The name for one combination that several profiles share.
+export function profileLabel(names: string[]): string {
+  return names.join(" / ");
+}
+
+// A Markdown table as printed: its lines, ending with a newline.
+export function drawTable(header: string[], body: string[][]): string {
+  return `${markdown(header, body).join("\n")}\n`;
+}
+
+// A table with a row per context: the profiles it matches when the contexts
+// name profiled dimensions, a column for each name the contexts use, then the
+// extra columns, whose cells come a row at a time.
+export function contextTable(
+  resolver: Resolver,
+  contexts: Context[],
+  extra: { header: string[]; cells: (index: number) => string[] } = {
+    header: [],
+    cells: () => [],
+  },
+): string {
+  const names = [...new Set(contexts.flatMap((context) => Object.keys(context)))];
+  const profiled = names.some((name) => resolver.profiled.has(name));
+  return drawTable(
+    [...(profiled ? ["profile"] : []), ...names, ...extra.header],
+    contexts.map((context, index) => [
+      ...(profiled ? [profileLabel(resolver.profilesOf(context)) || NONE] : []),
+      ...names.map((name) => context[name] ?? NONE),
+      ...extra.cells(index),
+    ]),
+  );
+}
 
 // A Markdown table with its columns padded to their widest cell.
 export function markdown(header: string[], body: string[][]): string[] {
