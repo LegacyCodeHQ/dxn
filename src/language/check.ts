@@ -757,6 +757,8 @@ function checkDerivedField(
   report: Report,
 ): void {
   const { on, branches } = field.derived as NonNullable<Field["derived"]>;
+  // A type that is not one is reported already.
+  if (names.kindOf(field.type.name) === undefined) return;
   if (!names.is(field.type.name, "enum")) {
     report(
       "derived-field",
@@ -775,6 +777,10 @@ function checkDerivedField(
       `${on.name} is not a field of ${record.name}${among(fields, "it has none")}`,
       on,
     );
+    return;
+  }
+  if (subject === field) {
+    report("derived-field", `${field.name} cannot be derived from itself`, on);
     return;
   }
   if (subject.derived !== undefined || !names.is(subject.type.name, "enum")) {

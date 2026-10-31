@@ -62,6 +62,18 @@ describe("a field with when", () => {
     ]);
   });
 
+  it("is on another field, and is reported once when its type is not one", () => {
+    expect([
+      problems(both.replace("when actor {", "when tool {")),
+      problems(both.replace("tool: Tool = when", "tool: Tol = when")),
+    ]).toEqual([
+      ["5:21: derived-field: tool cannot be derived from itself"],
+      [
+        "5:9: unknown-type: Tol is not an enum, a record or a scalar (Actor, Tool, Review, Timestamp, NonEmptyString, RelativePath)",
+      ],
+    ]);
+  });
+
   it("is not stored: its value follows from the field it is on", () => {
     const schema = parse(both);
     expect([
