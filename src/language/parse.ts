@@ -8,6 +8,9 @@
 //   type        = "type" name [ "needs" name { "," [newline] name } ] [ "receives" field { "," [newline] field } ]
 //                 "{" { blank-line | state | rule | enum | type | has | provides } "}"
 //   provides    = "provides" state-name newline
+//   action      = "action" action-name ":" state-name value "->" value newline
+//   on          = "on" event ":" name { "." name } [ "," "focus" name { "." name } ] newline
+//   event       = "click" name { "." name } | "key" name | "pointer" "outside" | name ( "=" value | "in" "(" value { "," value } ")" )
 //   has         = "has" child-name ":" name { "." name } [ bindings ] [ "only" "when" condition ] newline
 //   bindings    = "{" { state-name "=" state-name ( "," | newline ) } "}"
 //   state       = "state" field { "," [newline] field } newline
@@ -39,12 +42,14 @@ import type {
   Condition,
   Declaration,
   Enum,
+  Event,
   Expectation,
   Field,
   Located,
   ParseResult,
   Rule,
   State,
+  Trigger,
   Type,
 } from "./ast.js";
 import { check } from "./check.js";
@@ -279,6 +284,42 @@ export function parse(source: string): ParseResult {
     }
   };
 
+  // An event, after "on": "click <child>", "key <key>", "pointer outside", or
+  // "<Dimension> = <value>" or "<Dimension> in (<value>, ...)".
+  const eventOf = (): Event => {
+    const token = peek();
+    if (token.kind === "word" && token.text === "click") {
+      next();
+      return { kind: "click", target: qualified('a child after "click"') };
+    }
+    if (token.kind === "word" && token.text === "key") {
+      next();
+      return { kind: "key", key: word('a key after "key"') };
+    }
+    if (token.kind === "word" && token.text === "pointer") {
+      next();
+      keyword("outside", '"outside" after "pointer"');
+      return { kind: "pointer-outside", at: located(token) };
+    }
+    if (token.kind === "word" && /^[A-Z]/.test(token.text)) {
+      const dimension = word("a dimension");
+      const values: Located[] = [];
+      const operator = next();
+      if (operator.kind === "=") values.push(word('a value after "="'));
+      else if (operator.kind === "word" && operator.text === "in") {
+        expect("(", '"(" after "in"');
+        values.push(word('a value after "("'));
+        while (peek().kind === ",") {
+          next();
+          values.push(word('a value after ","'));
+        }
+        expect(")", '"," or ")"');
+      } else fail(operator, `"=" or "in" after ${JSON.stringify(dimension.name)}`);
+      return { kind: "dimension", dimension, values };
+    }
+    return fail(token, '"click", "key", "pointer" or a dimension after "on"');
+  };
+
   // A child: "has <name>: <Type>", then "{ <state> = <state>, ... }" for the
   // child's states the type sets, and "only when <condition>" when it is not
   // always there.
@@ -333,6 +374,8 @@ export function parse(source: string): ParseResult {
       types: [],
       children: [],
       provides: [],
+      actions: [],
+      triggers: [],
     });
     const after = peek();
     if (after.kind === "word" && after.text === "needs") {
@@ -353,6 +396,35 @@ export function parse(source: string): ParseResult {
     expect("{", '"{" after the type name');
     braces(type.name, (token) => {
       if (token.kind !== "word") fail(token, '"state", a rule or "}"');
+      if (token.text === "action") {
+        next();
+        const named = name("action", 'an action name after "action"', lowercase);
+        expect(":", `":" after ${JSON.stringify(named.name)}`);
+        const state = word('a state after ":"');
+        const from = word(`a value after ${JSON.stringify(state.name)}`);
+        expect("->", `"->" after ${JSON.stringify(from.name)}`);
+        type.actions.push({ name: named, state, from, to: word('a value after "->"') });
+        end(["newline", "}"], "the end of the line");
+        return;
+      }
+      if (token.text === "on") {
+        next();
+        const event = eventOf();
+        expect(":", '":" after the event');
+        const trigger: Trigger = {
+          ...located(token),
+          event,
+          action: qualified('an action after ":"'),
+        };
+        if (peek().kind === ",") {
+          next();
+          keyword("focus", '"focus" after ","');
+          trigger.focus = qualified('a path after "focus"');
+        }
+        type.triggers.push(trigger);
+        end(["newline", "}"], "the end of the line");
+        return;
+      }
       if (token.text === "provides") {
         next();
         type.provides.push(word('a state after "provides"'));
@@ -507,7 +579,8 @@ export function parse(source: string): ParseResult {
       for (;;) {
         const key = qualified("a state, a dimension or profile");
         expect("=", `"=" after ${JSON.stringify(key.name)}`);
-        read.push({ key, value: word('a value after "="') });
+        // A path, for where focus goes.
+        read.push({ key, value: qualified('a value after "="') });
         if (peek().kind !== ",") break;
         next();
       }
@@ -538,6 +611,9 @@ export function parse(source: string): ParseResult {
         placed = true;
       } else if (token.text === "when") {
         expectation.when.push(...pairs());
+      } else if (token.text === "on") {
+        expectation.on = eventOf();
+        end(["newline", "}"], "the end of the line");
       } else if (token.text === "then" || token.text === "some") {
         expectation.assertion = token.text;
         expectation.values = pairs();

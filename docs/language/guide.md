@@ -1134,6 +1134,65 @@ prints every file it would write, in full.
 With these, evidence is checked by the language itself: its shape, its
 values, and that the combination it is about exists.
 
+## Actions and on: how a state changes
+
+The matrix says which combinations exist; it does not say how the system
+moves between them. A menu is closed, then open, then closed again, and what
+makes it change is part of the design. An **action** names one change of a
+type's own state, from one of its values to another; an **on** says which
+event triggers it:
+
+```
+type Menu {
+  enum State = closed | open
+  state menu: State
+  has toggle: Toggle { expanded = menu }
+  has panel: Panel only when menu = open
+
+  action open: menu closed -> open
+  action close: menu open -> closed
+
+  on click toggle: open
+  on click toggle: close
+  on key Escape: close, focus toggle
+  on click panel.blog: close, focus toggle
+}
+```
+
+An action changes a state the type owns: not one a `when` or a value decides,
+nor one it receives. Those follow from something else, so no action can change
+them. An action applies only in its `from` value: `close` does nothing while
+the menu is closed. That is how one event can mean two things: a click on
+the toggle opens a closed menu and closes an open one.
+
+An event is one of:
+
+- **click** a child, by its path: `click toggle`, `click panel.blog`;
+- **key** a key: `key Escape`;
+- **pointer outside**: a press anywhere outside the type;
+- a change of a **dimension** the type needs: `Breakpoint in (lg, xl)`, or
+  `Breakpoint = lg`.
+
+An `on` can trigger a child's action by its path, so a parent decides what
+its own events do to what it contains:
+
+```
+type Toolbar needs Breakpoint {
+  ...
+  on click wordmark: menu.close
+  on pointer outside: menu.close
+  on Breakpoint in (lg, xl): menu.close, focus links.blog
+}
+```
+
+`focus` says where focus goes after the change: a child, by its path, that
+has a state named `focus`. Focus is an effect, not a state of the matrix, so
+it is checked, and an expectation can assert it.
+
+One event makes one change: two of a type's own actions that one event
+triggers cannot both apply to the same value. The event words are built into
+the language for now; they belong to a UI kit, once there are kits.
+
 ## Expectations: rules the model must follow
 
 Some things must stay true however the model changes: touch screens never
@@ -1170,6 +1229,21 @@ by its key in place. Then one assertion:
 - **then**: every combination picked has these values;
 - **some**: at least one has all of these values at once;
 - **absent**: the element is not there in any of them.
+
+With `on`, the assertion is about what happens after the event: the type's
+own action it triggers is applied to every combination `when` picks, and
+`focus` in `then` is where focus went.
+
+```
+expect "Escape closes the menu and returns focus to its button" {
+  in ArticlePage.toolbar.menu
+  when menu = open
+  on key Escape
+  then menu = closed, focus = toggle
+}
+```
+
+If the event changes nothing in a combination picked, the rule fails.
 
 A change that breaks a rule is an error, with one combination that breaks
 it:
@@ -1300,7 +1374,10 @@ file        = { blank-line | comment | enum | dimension | type | environment | p
 enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" field { "," [newline] field } ]
-              "{" { blank-line | state | rule | enum | type | has | provides } "}"
+              "{" { blank-line | state | rule | enum | type | has | provides | action | on } "}"
+action      = "action" action-name ":" state-name value "->" value newline
+on          = "on" event ":" path [ "," "focus" path ] newline     # path: an action, or a child's
+event       = "click" path | "key" word | "pointer" "outside" | condition
 provides    = "provides" state-name newline
 has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline
 bindings    = "{" { binding ( "," | newline ) } "}"
@@ -1319,7 +1396,7 @@ modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile
 assignment  = Name "=" value
 record      = "record" Name [ "with" "context" ] "{" { blank-line | record-field } "}"
 record-field = field-name ":" Name { "." Name } [ "=" "when" field-name "{" { blank-line | branch } "}" ] newline
-expect      = "expect" string "{" "in" path [ "and" "below" ] [ "when" pairs ] ( ( "then" | "some" ) pairs | "absent" ) "}"
+expect      = "expect" string "{" "in" path [ "and" "below" ] [ "when" pairs ] [ "on" event ] ( ( "then" | "some" ) pairs | "absent" ) "}"
 pairs       = key "=" value { "," key "=" value }       # key: profile, a dimension, a state, or a parent's state
 comment     = "#" to the end of the line
 ```
@@ -1338,7 +1415,7 @@ comment     = "#" to the end of the line
 | `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment, a profile or a modifier             |
 | `unknown-enum`                                                                | error    | a state's values come from something that is not an enum                                         |
 | `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                                            |
-| `unknown-state`                                                               | error    | a rule or a child's condition names a state the type does not have                               |
+| `unknown-state`                                                               | error    | a rule, a child's condition or an action names a state the type does not have                    |
 | `unknown-value`                                                               | error    | a value is not one of its enum's or dimension's                                                  |
 | `unneeded-dimension`                                                          | error    | a rule or a `when` uses a dimension its type does not need                                       |
 | `incomplete-when`                                                             | error    | a `when` leaves out a value of its dimension                                                     |
@@ -1358,6 +1435,12 @@ comment     = "#" to the end of the line
 | `binding-mismatch`                                                            | error    | a binding's two states take their values from different enums                                    |
 | `bound-derived`                                                               | error    | a binding sets a child's state that a `when` or a value decides, or that it receives             |
 | `duplicate-provides`                                                          | error    | a type provides a state twice                                                                    |
+| `duplicate-action`                                                            | error    | a type has two actions with one name                                                             |
+| `action-on-derived`                                                           | error    | an action changes a state that a `when` or a value decides, or that is received                  |
+| `unknown-child`                                                               | error    | an event, an action's path or a focus names a child that is not one                              |
+| `unknown-action`                                                              | error    | an `on` triggers an action its type does not have                                                |
+| `focus-target`                                                                | error    | focus goes to a child that has no `focus` state                                                  |
+| `ambiguous-event`                                                             | error    | one event triggers two of a type's actions that apply to the same value                          |
 | `expectation-failed`                                                          | error    | the model breaks an expectation; the message gives a combination that breaks it                  |
 | `expectation-empty`                                                           | error    | an expectation picks nothing, so it would always pass                                            |
 | `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |

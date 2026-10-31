@@ -1,4 +1,5 @@
-import type { Expectation, ParseResult } from "./ast.js";
+import type { Expectation, ParseResult, Trigger } from "./ast.js";
+import { eventText } from "./check.js";
 import { placement } from "./evaluate.js";
 import { profilesOf } from "./profiles.js";
 import { type Combination, expand, treePaths } from "./status.js";
@@ -47,7 +48,10 @@ function checkOne(
   } catch (error) {
     return empty((error as Error).message);
   }
-  const keys = [...expectation.when, ...expectation.values];
+  // After an event, focus is where it went, not a state of the element.
+  const on = expectation.on;
+  const values = expectation.values.filter(({ key }) => on === undefined || key.name !== "focus");
+  const keys = [...expectation.when, ...values];
   for (const { key, value } of keys) {
     if (key.name === "profile" && !profiles.some(({ name }) => name === value.name)) {
       return empty(
@@ -99,15 +103,61 @@ function checkOne(
       .join(", ");
     return `${element}${world === "" ? "" : ` on ${world}`}${parents === "" ? "" : ` with ${parents}`}`;
   };
+  // After the event: the element's own action it triggers in the
+  // combination applied, and where focus went.
+  const after = (element: string, combination: Combination) => {
+    if (on === undefined) return { combination, focus: undefined };
+    const event = eventText(on);
+    const type = placement(file, element).target;
+    const trigger: Trigger | undefined = type.triggers.find((candidate) => {
+      if (eventText(candidate.event) !== event) return false;
+      const action = type.actions.find(({ name }) => name.name === candidate.action.name);
+      return action !== undefined && combination.states[action.state.name] === action.from.name;
+    });
+    const action = type.actions.find(({ name }) => name.name === trigger?.action.name);
+    if (trigger === undefined || action === undefined) {
+      const condition = expectation.when
+        .map(({ key, value }) => `${key.name} = ${value.name}`)
+        .join(", ");
+      return failed(
+        `nothing happens on ${event} to ${element}${condition === "" ? "" : ` when ${condition}`}`,
+      );
+    }
+    return {
+      combination: {
+        ...combination,
+        states: { ...combination.states, [action.state.name]: action.to.name },
+      },
+      focus: trigger.focus?.name,
+    };
+  };
   let picked = 0;
   for (const element of applicable) {
-    const chosen = expand(file, element, given).filter((combination) =>
+    const before = expand(file, element, given).filter((combination) =>
       matches(combination, expectation.when),
     );
-    picked += chosen.length;
+    picked += before.length;
+    const chosen: Combination[] = [];
+    const focused: (string | undefined)[] = [];
+    for (const combination of before) {
+      const changed = after(element, combination);
+      if ("code" in changed) return changed;
+      chosen.push(changed.combination);
+      focused.push(changed.focus);
+    }
+    if (on !== undefined) {
+      const focus = expectation.values.find(({ key }) => key.name === "focus");
+      const wrong = focused.findIndex((went) => focus !== undefined && went !== focus.value.name);
+      if (focus !== undefined && wrong !== -1) {
+        const went = focused[wrong];
+        return failed(
+          `on ${eventText(on)}, focus ${went === undefined ? "stays where it was" : `goes to ${went}`}, not ${focus.value.name}`,
+        );
+      }
+    }
     if (expectation.assertion === "then") {
       for (const combination of chosen) {
-        const wrong = expectation.values.find(
+        const wrong = values.find(
           ({ key, value }) => valueAt(combination, key.name) !== value.name,
         );
         if (wrong !== undefined) {
@@ -117,15 +167,13 @@ function checkOne(
         }
       }
     } else if (expectation.assertion === "some") {
-      if (!chosen.some((combination) => matches(combination, expectation.values))) {
+      if (!chosen.some((combination) => matches(combination, values))) {
         const condition = expectation.when
           .map(({ key, value }) =>
             key.name === "profile" ? `on ${value.name}` : `with ${key.name} = ${value.name}`,
           )
           .join(" ");
-        const wanted = expectation.values
-          .map(({ key, value }) => `${key.name} = ${value.name}`)
-          .join(", ");
+        const wanted = values.map(({ key, value }) => `${key.name} = ${value.name}`).join(", ");
         return failed(
           `no combination of ${element}${condition === "" ? "" : ` ${condition}`} has ${wanted}`,
         );

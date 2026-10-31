@@ -1,6 +1,7 @@
 import type {
   Child,
   Derived,
+  Event,
   Field,
   Located,
   ParseResult,
@@ -143,6 +144,136 @@ function checkValues(file: ParseResult, report: Report): void {
 // needed dimension and its values, and one rule for each state value. A need
 // no rule uses is a warning.
 function checkTypes(file: ParseResult, names: Names, report: Report): void {
+  // A child of a type by its path, "<child>.<child>...": its type, or
+  // undefined, reported, when a part is not a child.
+  const childType = (type: Type, path: Located): Type | undefined => {
+    let at: Type | undefined = type;
+    for (const part of path.name.split(".")) {
+      const child: Child | undefined = at?.children.find(({ name }) => name === part);
+      if (child === undefined) {
+        const children = at?.children.map(({ name }) => name) ?? [];
+        report(
+          "unknown-child",
+          `${part} is not a child of ${at?.name}${among(children, "it has none")}`,
+          path,
+        );
+        return undefined;
+      }
+      at = file.types.find(({ name }) => name === child.type.name);
+    }
+    return at;
+  };
+  // Its actions, each a change of its own state between two of its values,
+  // once by name; and its triggers, each an event on the type, an action of
+  // it or of a child, and where focus goes, to a child that can take it. One
+  // event triggers one action in any state.
+  const checkActions = (type: Type, needed: Set<string>, declare: string) => {
+    const named = new Set<string>();
+    for (const action of type.actions) {
+      if (named.has(action.name.name)) {
+        report(
+          "duplicate-action",
+          `${action.name.name} is already an action of ${type.name}`,
+          action.name,
+        );
+      }
+      named.add(action.name.name);
+      const state = type.states.find(({ name }) => name === action.state.name);
+      if (state === undefined) {
+        const states = type.states.map(({ name }) => name);
+        report(
+          "unknown-state",
+          `${action.state.name} is not a state of ${type.name}${among(states, "it has none")}`,
+          action.state,
+        );
+        continue;
+      }
+      if (state.derived !== undefined || state.fixed !== undefined || state.received) {
+        const why = state.received
+          ? "is received"
+          : `is decided by ${state.fixed === undefined ? "its when" : "its value"}`;
+        report("action-on-derived", `${state.name} ${why}; no action can change it`, action.state);
+        continue;
+      }
+      checkChosen(
+        [action.from, action.to],
+        state.enum.name,
+        names,
+        report,
+        "the action",
+        state.name,
+      );
+    }
+    const resolved = type.triggers.map((trigger) => {
+      const { event } = trigger;
+      if (event.kind === "click") childType(type, event.target);
+      if (event.kind === "dimension") {
+        if (!names.is(event.dimension.name, "dimension")) {
+          report(
+            "unknown-dimension",
+            names.not(event.dimension.name, "dimension"),
+            event.dimension,
+          );
+        } else {
+          if (!needed.has(event.dimension.name)) {
+            report(
+              "unneeded-dimension",
+              `${type.name} does not need ${event.dimension.name}; declare ${declare}`,
+              event.dimension,
+            );
+          }
+          checkChosen(event.values, event.dimension.name, names, report, "the event");
+        }
+      }
+      // The action: the type's own, or a child's by its path.
+      const parts = trigger.action.name.split(".");
+      const actionName = parts.at(-1) as string;
+      const owner =
+        parts.length === 1
+          ? type
+          : childType(type, { ...trigger.action, name: parts.slice(0, -1).join(".") });
+      const action = owner?.actions.find(({ name }) => name.name === actionName);
+      // A broken type's actions may not all have been read.
+      if (owner !== undefined && action === undefined && !owner.broken) {
+        const actions = owner.actions.map(({ name }) => name.name);
+        report(
+          "unknown-action",
+          `${actionName} is not an action of ${owner.name}${among(actions, "it has none")}`,
+          trigger.action,
+        );
+      }
+      if (trigger.focus !== undefined) {
+        const target = childType(type, trigger.focus);
+        if (target !== undefined && !target.states.some(({ name }) => name === "focus")) {
+          report(
+            "focus-target",
+            `${trigger.focus.name} cannot take focus: ${target.name} has no focus state`,
+            trigger.focus,
+          );
+        }
+      }
+      return { trigger, action: parts.length === 1 ? action : undefined };
+    });
+    // One event, one change: no two of the type's own actions it triggers can
+    // both apply.
+    resolved.forEach(({ trigger, action }, index) => {
+      if (action === undefined) return;
+      for (const { trigger: earlier, action: other } of resolved.slice(0, index)) {
+        if (
+          other !== undefined &&
+          eventText(earlier.event) === eventText(trigger.event) &&
+          other.state.name === action.state.name &&
+          other.from.name === action.from.name
+        ) {
+          report(
+            "ambiguous-event",
+            `${eventText(trigger.event)} triggers both ${other.name.name} and ${action.name.name} when ${action.state.name} = ${action.from.name}`,
+            trigger,
+          );
+        }
+      }
+    });
+  };
   // A when's branches: each value of its subject's enum covered once, each
   // giving a value of the result's enum.
   const checkBranches = (
@@ -440,6 +571,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       checkChosen(chosen, dimension.name, names, report, "the condition");
     }
     checkChildren(type, needed, declare);
+    checkActions(type, needed, declare);
     // What it provides: its own states, each once.
     const provided = new Set<string>();
     for (const name of type.provides) {
@@ -760,4 +892,14 @@ function checkRecords(file: ParseResult, names: Names, report: Report): void {
       .join(", and ");
     report("recursive-record", `${record.name} contains itself: ${through}`, first.field);
   }
+}
+
+// An event, in words: "click toggle", "key Escape", "pointer outside",
+// "Breakpoint in (lg, xl)".
+export function eventText(event: Event): string {
+  if (event.kind === "click") return `click ${event.target.name}`;
+  if (event.kind === "key") return `key ${event.key.name}`;
+  if (event.kind === "pointer-outside") return "pointer outside";
+  const values = event.values.map(({ name }) => name);
+  return `${event.dimension.name} ${values.length === 1 ? `= ${values[0]}` : `in (${values.join(", ")})`}`;
 }

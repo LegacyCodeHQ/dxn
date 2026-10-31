@@ -68,6 +68,34 @@ export interface Type extends Declaration {
   children: Child[];
   // Its states that the types inside it can receive.
   provides: Located[];
+  // How its own states change, by name; and what triggers each change.
+  actions: Action[];
+  triggers: Trigger[];
+}
+
+// An action: a named change of one of a type's own states, from one value to
+// another.
+export interface Action {
+  name: Located;
+  state: Located;
+  from: Located;
+  to: Located;
+}
+
+// What can trigger an action: a click on a child, a key, a pointer outside
+// the type, or a dimension changing to one of these values.
+export type Event =
+  | { kind: "click"; target: Located }
+  | { kind: "key"; key: Located }
+  | { kind: "pointer-outside"; at: Located }
+  | { kind: "dimension"; dimension: Located; values: Located[] };
+
+// "on <event>: <action>[, focus <path>]": the action is the type's own, or a
+// child's by its path; focus says where keyboard focus goes after.
+export interface Trigger extends Located {
+  event: Event;
+  action: Located;
+  focus?: Located;
 }
 
 // A child of a type: its name, its type, and, when it is not always there,
@@ -137,6 +165,8 @@ export interface Expectation extends Declaration {
   below: boolean;
   when: { key: Located; value: Located }[];
   assertion: "then" | "some" | "absent";
+  // With an event: the assertion is about after it.
+  on?: Event;
   values: { key: Located; value: Located }[];
 }
 
