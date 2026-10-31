@@ -118,7 +118,8 @@ function checkFile(
       root = rootNode.value;
     }
 
-    const when = values(diagnostics, fields.get("when"), `${path}.when`, false);
+    // when: name -> a value, or a list of values any of which matches.
+    const when = values(diagnostics, fields.get("when"), `${path}.when`, true);
     if (when === undefined) valid = false;
 
     // Exactly one assertion.
@@ -183,7 +184,9 @@ function checkFile(
     if (!valid || id === undefined || when === undefined) return;
     const whenNode = fields.get("when");
     const describeWhen =
-      when.length === 0 ? "" : ` (${when.map(([name, [value]]) => `${name}=${value}`).join(", ")})`;
+      when.length === 0
+        ? ""
+        : ` (${when.map(([name, list]) => `${name}=${list.join("|")}`).join(", ")})`;
 
     if (kind === "exists") {
       checkExists(diagnostics, resolver, {
@@ -246,11 +249,16 @@ function checkFile(
         return undefined;
       }
     };
-    const keep = filter(
-      when.map(([name, [value]]) => [name, value as string]),
-      whenNode,
-      `${path}.when`,
+    // Each name keeps the contexts with any of its values.
+    const byName = when.map(([name, list]) =>
+      list.map((value) => filter([[name, value]], whenNode, `${path}.when`)),
     );
+    const keep = byName.flat().includes(undefined)
+      ? undefined
+      : (context: Context) =>
+          byName.every((predicates) =>
+            predicates.some((predicate) => (predicate as (c: Context) => boolean)(context)),
+          );
     const pairs = (asserted ?? []).flatMap(([name, list]) =>
       list.map((value) => [name, value] as [string, string]),
     );
@@ -408,7 +416,7 @@ function checkExists(
   const shared = [...new Set(lineages.flatMap(({ lineage }) => resolver.sharedAncestors(lineage)))];
 
   // Names exists can look at: the node's dimensions, profiles and shared nodes.
-  for (const [name, [value]] of e.when) {
+  for (const [name, list] of e.when) {
     const at =
       e.whenNode?.kind === "object"
         ? e.whenNode.members.find((m) => m.key.value === name)
@@ -441,10 +449,11 @@ function checkExists(
       );
       return;
     }
-    if (!allowed.includes(value as string)) {
+    const unknown = list.find((each) => !allowed.includes(each));
+    if (unknown !== undefined) {
       fail(
         "unknown-value",
-        `"${value}" is not a value of ${name} (${allowed.join(", ")})`,
+        `"${unknown}" is not a value of ${name} (${allowed.join(", ")})`,
         at?.value,
       );
       return;
@@ -452,13 +461,15 @@ function checkExists(
   }
 
   const matchesWhen = (candidate: Context) =>
-    e.when.every(([name, [value]]) => {
-      if (name !== "profile") return candidate[name] === value;
-      const profile = resolver.profiles.get(value as string) ?? {};
-      return Object.keys(candidate)
-        .filter((key) => resolver.profiled.has(key))
-        .every((key) => profile[key] === candidate[key]);
-    });
+    e.when.every(([name, list]) =>
+      list.some((value) => {
+        if (name !== "profile") return candidate[name] === value;
+        const profile = resolver.profiles.get(value) ?? {};
+        return Object.keys(candidate)
+          .filter((key) => resolver.profiled.has(key))
+          .every((key) => profile[key] === candidate[key]);
+      }),
+    );
   for (const { root, lineage } of lineages) {
     let candidates: Context[] = [{}];
     for (const name of dimensions) {

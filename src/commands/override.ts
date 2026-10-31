@@ -19,6 +19,8 @@ const overrideUsage = `Usage: dimensions override <subcommand>
 <context> is <dimension>=<value>, or several joined by commas for a
 combination, e.g. breakpoint=sm,pointer=touch; or a shared node's state,
 e.g. form=incomplete, which changes the nodes below that shared node.
+Separate several values with | to write the same override at each, e.g.
+"form=empty|email-filled" (quote it in a shell).
 
 Subcommands:
   states <context> (--type <t> | --node <id>) [--add <state>]... [--remove <state>]...
@@ -126,69 +128,108 @@ function prune(chain: Json[]): void {
   }
 }
 
-const states = editCommand(overrideUsage, (workspace, args) => {
-  const { values } = parse(
-    args,
-    ["context"],
-    {
-      type: { type: "string" },
-      node: { type: "string" },
-      add: { type: "string", multiple: true },
-      remove: { type: "string", multiple: true },
-    } as const,
-    true,
-  );
-  const add = (values.add ?? []).flatMap((item) => list(item) ?? []);
-  const remove = (values.remove ?? []).flatMap((item) => list(item) ?? []);
-  if (add.length === 0 && remove.length === 0) {
-    throw new UsageError("give --add or --remove");
-  }
-  const { override, file, rest } = target(workspace, args, true);
-  if (rest.length > 0) {
-    throw new UsageError(`unexpected ${rest.join(" ")}`);
-  }
-  const changes = (isObject(override?.states) ? override.states : {}) as Json;
-  for (const [key, items] of [
-    ["remove", remove],
-    ["add", add],
-  ] as const) {
-    if (items.length === 0) continue;
-    const existing = Array.isArray(changes[key]) ? (changes[key] as string[]) : [];
-    changes[key] = [...existing, ...items.filter((item) => !existing.includes(item))];
-  }
-  (override as Json).states = {
-    ...(changes.remove === undefined ? {} : { remove: changes.remove }),
-    ...(changes.add === undefined ? {} : { add: changes.add }),
+// Runs an override edit once for each context a list names: form=a|b, or
+// breakpoint=sm|lg,pointer=touch for each combination.
+function eachContext(
+  edit: (workspace: Workspace, args: string[]) => void,
+): (workspace: Workspace, args: string[]) => void {
+  return (workspace, args) => {
+    const index = args.findIndex((arg) => !arg.startsWith("--") && arg.includes("="));
+    const context = args[index];
+    if (context === undefined || !context.includes("|")) {
+      edit(workspace, args);
+      return;
+    }
+    let contexts: string[][] = [[]];
+    for (const part of context.split(",")) {
+      const at = part.indexOf("=");
+      const name = part.slice(0, at);
+      const values = part.slice(at + 1).split("|");
+      if (at <= 0 || values.some((value) => value === "")) {
+        throw new UsageError(`expected <name>=<value>[|<value>...], got ${JSON.stringify(part)}`);
+      }
+      contexts = contexts.flatMap((chosen) =>
+        values.map((value) => [...chosen, `${name}=${value}`]),
+      );
+    }
+    for (const chosen of contexts) {
+      edit(workspace, [...args.slice(0, index), chosen.join(","), ...args.slice(index + 1)]);
+    }
   };
-  reorder(override as Json, ["states", "attributes"]);
-  workspace.touch(file);
-});
+}
 
-const set = editCommand(overrideUsage, (workspace, args) => {
-  const { override, file, rest } = target(workspace, args, true);
-  const [attribute, ...assignments] = rest;
-  if (attribute === undefined) {
-    throw new UsageError("missing attribute");
-  }
-  setValues(override as Json, attribute, pairs(assignments));
-  reorder(override as Json, ["states", "attributes"]);
-  workspace.touch(file);
-});
+const states = editCommand(
+  overrideUsage,
+  eachContext((workspace, args) => {
+    const { values } = parse(
+      args,
+      ["context"],
+      {
+        type: { type: "string" },
+        node: { type: "string" },
+        add: { type: "string", multiple: true },
+        remove: { type: "string", multiple: true },
+      } as const,
+      true,
+    );
+    const add = (values.add ?? []).flatMap((item) => list(item) ?? []);
+    const remove = (values.remove ?? []).flatMap((item) => list(item) ?? []);
+    if (add.length === 0 && remove.length === 0) {
+      throw new UsageError("give --add or --remove");
+    }
+    const { override, file, rest } = target(workspace, args, true);
+    if (rest.length > 0) {
+      throw new UsageError(`unexpected ${rest.join(" ")}`);
+    }
+    const changes = (isObject(override?.states) ? override.states : {}) as Json;
+    for (const [key, items] of [
+      ["remove", remove],
+      ["add", add],
+    ] as const) {
+      if (items.length === 0) continue;
+      const existing = Array.isArray(changes[key]) ? (changes[key] as string[]) : [];
+      changes[key] = [...existing, ...items.filter((item) => !existing.includes(item))];
+    }
+    (override as Json).states = {
+      ...(changes.remove === undefined ? {} : { remove: changes.remove }),
+      ...(changes.add === undefined ? {} : { add: changes.add }),
+    };
+    reorder(override as Json, ["states", "attributes"]);
+    workspace.touch(file);
+  }),
+);
 
-const unset = editCommand(overrideUsage, (workspace, args) => {
-  const { override, chain, file, describe, rest } = target(workspace, args, false);
-  if (override === undefined) {
-    throw new Refusal(`no override for ${describe}`);
-  }
-  const [attribute, ...statesToClear] = rest;
-  if (attribute === undefined) {
-    for (const key of Object.keys(override)) delete override[key];
-  } else {
-    unsetValues(override, attribute, statesToClear);
-  }
-  prune(chain);
-  workspace.touch(file);
-});
+const set = editCommand(
+  overrideUsage,
+  eachContext((workspace, args) => {
+    const { override, file, rest } = target(workspace, args, true);
+    const [attribute, ...assignments] = rest;
+    if (attribute === undefined) {
+      throw new UsageError("missing attribute");
+    }
+    setValues(override as Json, attribute, pairs(assignments));
+    reorder(override as Json, ["states", "attributes"]);
+    workspace.touch(file);
+  }),
+);
+
+const unset = editCommand(
+  overrideUsage,
+  eachContext((workspace, args) => {
+    const { override, chain, file, describe, rest } = target(workspace, args, false);
+    if (override === undefined) {
+      throw new Refusal(`no override for ${describe}`);
+    }
+    const [attribute, ...statesToClear] = rest;
+    if (attribute === undefined) {
+      for (const key of Object.keys(override)) delete override[key];
+    } else {
+      unsetValues(override, attribute, statesToClear);
+    }
+    prune(chain);
+    workspace.touch(file);
+  }),
+);
 
 export const override: Command = group(overrideUsage, { states, set, unset });
 

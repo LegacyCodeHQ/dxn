@@ -23,3 +23,21 @@ describe("dimensions workflow", () => {
     expect(capture(["--help"]).stdout).toContain("dimensions workflow");
   });
 });
+
+describe("the workflow guide", () => {
+  it("lists every key a rule can have", () => {
+    for (const key of [
+      "title",
+      "node",
+      "subtree",
+      "root",
+      "when",
+      "then",
+      "some",
+      "exists",
+      "on",
+    ]) {
+      expect(guide).toContain(`| \`${key}\``);
+    }
+  });
+});

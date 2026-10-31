@@ -144,7 +144,19 @@ describe("tables as Markdown", () => {
   it("refuse a --by that is neither profile nor a dimension", () => {
     const { run } = cliProject(toolbarFiles);
     expect(run("contexts", "blog-link", "--table", "--by", "colour").stderr).toBe(
-      'dimensions: "colour" is not profile or a dimension of blog-link (breakpoint, keyboard, pointer)\n',
+      'dimensions: "colour" is not profile, a dimension or a shared node of blog-link (breakpoint, keyboard, pointer)\n',
     );
+  });
+});
+
+describe("tables by profile and a shared state", () => {
+  it("combine both on the rows", () => {
+    const result = table("menu-button", "--by", "profile,menu");
+    expect(result.tables[0].rows.map(({ row }: { row: string }) => row)).toEqual([
+      "phone, closed",
+      "phone, open",
+      "tablet-portrait, closed",
+      "tablet-portrait, open",
+    ]);
   });
 });

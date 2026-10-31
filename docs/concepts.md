@@ -476,7 +476,8 @@ Every transition that matches must lead there, and a rule that matches no
 transition is an error.
 
 `when`, `then` and `some` name dimensions, state groups, shared nodes and
-`profile`, as `contexts` filters do. A failing expectation names one context
+`profile`, as `contexts` filters do. A value in `when` can also be a list, which
+matches any of its values: `{ "form": ["empty", "email-filled"] }`. A failing expectation names one context
 that breaks it, and an expectation that selects nothing is an error too,
 because it would test nothing.
 

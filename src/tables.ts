@@ -13,11 +13,18 @@ interface Setup {
   values: Record<string, string>;
 }
 
-// A row: a setup, or with --by dimensions, every setup with those values.
+// A row: a setup, or with --by dimensions, every setup with those values;
+// with --by a shared node, also one of its states, which where fixes.
 interface Row {
   label: string;
   setups: Setup[];
+  where: Record<string, string>;
 }
+
+const inRow = (row: Row, contexts: Context[]) =>
+  contexts.filter((context) =>
+    Object.entries(row.where).every(([name, value]) => context[name] === value),
+  );
 
 export interface NodeTables {
   node: string;
@@ -75,13 +82,16 @@ export function tableAxis(
   dimensions: string[],
   by: string[] | undefined,
   subject: string,
+  shared: string[] = [],
 ): string[] {
   const profiled = dimensions.some((name) => resolver.profiled.has(name));
   const axis = by ?? (profiled ? ["profile"] : dimensions);
   for (const name of axis) {
-    if (name === "profile" ? !profiled : !dimensions.includes(name)) {
+    const known =
+      name === "profile" ? profiled : dimensions.includes(name) || shared.includes(name);
+    if (!known) {
       throw new TableError(
-        `"${name}" is not profile or a dimension of ${subject} (${dimensions.join(", ")})`,
+        `"${name}" is not profile, a dimension or a shared node of ${subject} (${[...dimensions, ...shared].join(", ")})`,
       );
     }
   }
@@ -92,18 +102,35 @@ export class TableError extends Error {}
 
 function rows(resolver: Resolver, dimensions: string[], axis: string[]): Row[] {
   const all = setups(resolver, dimensions);
-  if (axis.length === 1 && axis[0] === "profile") {
-    return all.map((setup) => ({ label: setup.name, setups: [setup] }));
+  const sharedAxis = axis.filter((name) => resolver.isShared(name) && !dimensions.includes(name));
+  const setupAxis = axis.filter((name) => !sharedAxis.includes(name));
+  let result: Row[];
+  if (setupAxis.length === 0) {
+    result = [{ label: "", setups: all, where: {} }];
+  } else if (setupAxis.length === 1 && setupAxis[0] === "profile") {
+    result = all.map((setup) => ({ label: setup.name, setups: [setup], where: {} }));
+  } else {
+    let labels: Record<string, string>[] = [{}];
+    for (const name of setupAxis) {
+      const options = resolver.project.dimensions[name]?.values ?? [];
+      labels = labels.flatMap((label) => options.map((value) => ({ ...label, [name]: value })));
+    }
+    result = labels.map((label) => ({
+      label: setupAxis.map((name) => label[name]).join(", "),
+      setups: all.filter((setup) => setupAxis.every((name) => setup.values[name] === label[name])),
+      where: {},
+    }));
   }
-  let labels: Record<string, string>[] = [{}];
-  for (const name of axis) {
-    const options = resolver.project.dimensions[name]?.values ?? [];
-    labels = labels.flatMap((label) => options.map((value) => ({ ...label, [name]: value })));
+  for (const name of sharedAxis) {
+    result = result.flatMap((row) =>
+      sharedStates(resolver, name).map((state) => ({
+        label: row.label === "" ? state : `${row.label}, ${state}`,
+        setups: row.setups,
+        where: { ...row.where, [name]: state },
+      })),
+    );
   }
-  return labels.map((label) => ({
-    label: axis.map((name) => label[name]).join(", "),
-    setups: all.filter((setup) => axis.every((name) => setup.values[name] === label[name])),
-  }));
+  return result;
 }
 
 function cell(present: Setup[], all: Setup[], restricted?: Record<string, string[]>): Cell {
@@ -147,7 +174,8 @@ export function nodeTables(
   const presentRows: { row: Row; present: Setup[] }[] = [];
   const notPresent: string[] = [];
   for (const row of rows(resolver, dimensions, axis)) {
-    const present = row.setups.filter((setup) => contexts.some((context) => fits(setup, context)));
+    const here = inRow(row, contexts);
+    const present = row.setups.filter((setup) => here.some((context) => fits(setup, context)));
     if (present.length === 0) notPresent.push(row.label);
     else presentRows.push({ row, present });
   }
@@ -160,7 +188,9 @@ export function nodeTables(
           value,
           cell(
             present.filter((setup) =>
-              contexts.some((context) => fits(setup, context) && context[group] === value),
+              inRow(row, contexts).some(
+                (context) => fits(setup, context) && context[group] === value,
+              ),
             ),
             present,
           ),
@@ -194,12 +224,11 @@ export function presenceMatrix(
     rows: nodes.map((node) => ({
       node: node.id,
       cells: columns.map((column) => {
+        const here = inRow(column, node.contexts);
         const present = column.setups.filter((setup) =>
-          node.contexts.some((context) => fits(setup, context)),
+          here.some((context) => fits(setup, context)),
         );
-        const inColumn = node.contexts.filter((context) =>
-          present.some((setup) => fits(setup, context)),
-        );
+        const inColumn = here.filter((context) => present.some((setup) => fits(setup, context)));
         return cell(present, column.setups, restrictions(resolver, node.id, inColumn));
       }),
     })),

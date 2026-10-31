@@ -147,3 +147,62 @@ describe("overrides by a shared node's state", () => {
     ]);
   });
 });
+
+describe("lists of values", () => {
+  it("in a rule's when match any of them", () => {
+    const rule = (states: string[]) => ({
+      "expectations.json": {
+        version: 1,
+        expectations: [
+          {
+            title: "Submit is disabled",
+            node: "submit",
+            when: { form: states },
+            then: { availability: "disabled" },
+          },
+        ],
+      },
+    });
+    expect([problems(rule(["incomplete"])), problems(rule(["incomplete", "complete"]))]).toEqual([
+      [],
+      [
+        "expectation-failed: Submit is disabled: submit (availability=enabled, form=complete) breaks availability=disabled",
+      ],
+    ]);
+  });
+
+  it("in an override's context write the override at each of them", () => {
+    const { "overrides/form.json": _, ...without } = files;
+    const { run, read } = cliProject(without);
+    expect(
+      run(
+        "override",
+        "states",
+        "form=incomplete|complete",
+        "--node",
+        "submit",
+        "--remove",
+        "enabled",
+      ).code,
+    ).toBe(0);
+    const added = { nodes: { submit: { states: { remove: ["enabled"] } } } };
+    expect(read("overrides/form.json").overrides).toEqual({ incomplete: added, complete: added });
+  });
+});
+
+describe("tables by a shared node's state", () => {
+  it("put its states on the rows", () => {
+    const { run } = cliProject(files);
+    expect(
+      JSON.parse(run("contexts", "submit", "--table", "--by", "form", "--json").stdout).tables,
+    ).toEqual([
+      {
+        group: "availability",
+        rows: [
+          { row: "incomplete", values: { enabled: false, disabled: true } },
+          { row: "complete", values: { enabled: true, disabled: false } },
+        ],
+      },
+    ]);
+  });
+});

@@ -282,7 +282,7 @@ With `--json`, the same tables as data:
 ```
 
 A cell is `true`, `false`, a list of the profiles (or combinations) where it
-holds, or, in the matrix, the shared states a node needs.
+holds, or, in the matrix, the shared states a node needs. `--by` can also name a shared node, such as `--by form`, for a row per state, alone or with `profile` or dimensions (`--by profile,menu`).
 
 ## axes
 

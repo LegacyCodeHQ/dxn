@@ -185,6 +185,21 @@ them. Expectations are written by hand in `.dimensions/expectations.json`:
 dimensions validate
 ```
 
+Every rule has a `title`, a `node`, an optional selection and filter, and
+exactly one assertion:
+
+| Key       | Meaning                                                                                                                                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`   | What the rule says, shown when it fails                                                                                                                                                                       |
+| `node`    | The node whose contexts it looks at                                                                                                                                                                           |
+| `subtree` | `true` to look at every node below it too                                                                                                                                                                     |
+| `root`    | Look only in this root                                                                                                                                                                                        |
+| `when`    | Keep contexts with these values: dimensions, state groups, shared nodes, `profile`; a list means any of them                                                                                                  |
+| `then`    | Every kept context has these values (or one of a list); `attributes` checks attribute values                                                                                                                  |
+| `some`    | At least one kept context has these values                                                                                                                                                                    |
+| `exists`  | `true`: the node is there wherever `when` holds; `false`: nowhere                                                                                                                                             |
+| `on`      | A transition rule: the `event` and its fields (`key`, `target`, `outside`, or the dimension values a resize reaches); its `when` names the shared node's state before, its `then` the state after and `focus` |
+
 The compiler checks the rules on every command from now on. A failing rule
 names one context that breaks it, and it stops every command until the model
 or the rule is fixed, so add a rule once the model can satisfy it, or fix the

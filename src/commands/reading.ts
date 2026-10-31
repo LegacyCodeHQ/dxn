@@ -419,8 +419,9 @@ it, and --json prints the tree as JSON for tools. --table prints Markdown
 tables instead: for a node, one per state group, with a row per profile (or
 per combination when there are no profiles) and a column per value; with
 --subtree, which nodes exist in which profiles. --by profile or --by a,b
-picks the rows; a cell names the profiles when they differ. --json prints the
-tables as JSON.
+picks the rows, where a and b are dimensions or shared nodes (a row per
+state); a cell names the profiles when they differ. --json prints the tables
+as JSON.
 `;
 
 export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
@@ -455,13 +456,14 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     throw new UsageError("--only and --transitions need --tree");
   }
   // Prints tables, as Markdown or JSON.
-  const axis = (dimensions: string[], subject: string) => {
+  const axis = (dimensions: string[], subject: string, shared: string[]) => {
     try {
       return tableAxis(
         resolver,
         dimensions,
         values.by === undefined ? undefined : list(values.by),
         subject,
+        shared,
       );
     } catch (error) {
       if (error instanceof TableError) throw new Refusal(error.message);
@@ -507,7 +509,7 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
         resolver,
         id,
         kept,
-        axis(resolver.axes(id, values.root).dimensions, id),
+        axis(resolver.axes(id, values.root).dimensions, id, resolver.axes(id, values.root).shared),
       );
       if (values.json === true) print(io, matrix);
       else io.stdout(drawPresenceMatrix(matrix));
@@ -548,7 +550,10 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
       resolver,
       id,
       kept.map(({ context }) => context),
-      axis(resolver.dimensions(id), id),
+      axis(resolver.dimensions(id), id, [
+        ...resolver.sharedAncestors(resolver.lineage(id, values.root)),
+        ...(resolver.isShared(id) ? [id] : []),
+      ]),
     );
     if (values.json === true) print(io, tables);
     else io.stdout(drawNodeTables(tables));

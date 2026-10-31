@@ -144,8 +144,9 @@ it, and --json prints the tree as JSON for tools. --table prints Markdown
 tables instead: for a node, one per state group, with a row per profile (or
 per combination when there are no profiles) and a column per value; with
 --subtree, which nodes exist in which profiles. --by profile or --by a,b
-picks the rows; a cell names the profiles when they differ. --json prints the
-tables as JSON.
+picks the rows, where a and b are dimensions or shared nodes (a row per
+state); a cell names the profiles when they differ. --json prints the tables
+as JSON.
 ```
 
 Lists the contexts a node exists in: each one gives a value per dimension, a value per state group (or `state`), and the state of each shared node above it. This is the list of things to design or check. Filters accept dimension values, state group values and shared node states. The tree form is the quickest overview for a person.
@@ -503,6 +504,8 @@ Usage: dimensions override <subcommand>
 <context> is <dimension>=<value>, or several joined by commas for a
 combination, e.g. breakpoint=sm,pointer=touch; or a shared node's state,
 e.g. form=incomplete, which changes the nodes below that shared node.
+Separate several values with | to write the same override at each, e.g.
+"form=empty|email-filled" (quote it in a shell).
 
 Subcommands:
   states <context> (--type <t> | --node <id>) [--add <state>]... [--remove <state>]...
