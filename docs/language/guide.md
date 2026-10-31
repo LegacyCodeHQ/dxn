@@ -935,9 +935,12 @@ evidence/wordmark.json:19:28: unknown-value: $[1].context.states.hover: "hovered
 evidence/wordmark.json:21:14: unknown-value: $[1].actor: "designer" is not a value of Actor (design-agent)
 ```
 
-Every field must be given, each of its type, and no others. Each problem has
-its file, line and column, and its JSON path, so a person or an agent can go
-straight to it. When everything is valid, the command says what it checked,
+Every field must be given, each of its type, and no others. Two stored
+records that are the same in everything but `at` and `fingerprint`, which
+only say when one was recorded, are duplicates, in one file or across the
+record's files; `lang attach` replaces an entry rather than making one. Each
+problem has its file, line and column, and its JSON path, so a person or an
+agent can go straight to it. When everything is valid, the command says what it checked,
 a line for each stored record:
 
 ```
@@ -1240,12 +1243,13 @@ comment     = "#" to the end of the line
 Checking stored records with `lang validate` reports these, after any problem with the
 JSON itself:
 
-| Code            | When                                                                                                                                                                   |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wrong-kind`    | a value is not the kind its place needs: a list, an object or a string                                                                                                 |
-| `missing-field` | a record leaves out one of its fields, its context, or a part of its context                                                                                           |
-| `unknown-field` | a record or a context has a field its declaration does not                                                                                                             |
-| `unknown-value` | an enum field's value is not one of the enum's; or a context's type, profile, dimension or state value is not one of the file's, or does not exist in that combination |
-| `invalid-value` | a scalar field's value is not a valid value of the scalar                                                                                                              |
-| `derived-field` | a stored record gives a derived field, whose value follows from another's                                                                                              |
-| `wrong-tool`    | (in `lang status`) a pen-dev entry's file is not a pen.dev file                                                                                                        |
+| Code               | When                                                                                                                                                                   |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrong-kind`       | a value is not the kind its place needs: a list, an object or a string                                                                                                 |
+| `missing-field`    | a record leaves out one of its fields, its context, or a part of its context                                                                                           |
+| `unknown-field`    | a record or a context has a field its declaration does not                                                                                                             |
+| `unknown-value`    | an enum field's value is not one of the enum's; or a context's type, profile, dimension or state value is not one of the file's, or does not exist in that combination |
+| `invalid-value`    | a scalar field's value is not a valid value of the scalar                                                                                                              |
+| `derived-field`    | a stored record gives a derived field, whose value follows from another's                                                                                              |
+| `wrong-tool`       | (in `lang status`) a pen-dev entry's file is not a pen.dev file                                                                                                        |
+| `duplicate-record` | two stored records are the same in everything but `at` and `fingerprint`                                                                                               |

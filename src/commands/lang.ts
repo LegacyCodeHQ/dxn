@@ -392,7 +392,54 @@ function checkStored(parsed: ParseResult, stored: Stored[], report: Reporter): b
       valid = false;
     }
   }
-  return valid;
+  return valid && !duplicates(stored, report);
+}
+
+// Two stored records of one record that are the same in everything but at and
+// fingerprint, which say when one was recorded, not what: each repeat is
+// reported, across the record's files. Whether there was one.
+function duplicates(stored: Stored[], report: Reporter): boolean {
+  const canonical = (value: unknown): unknown =>
+    Array.isArray(value)
+      ? value.map(canonical)
+      : typeof value === "object" && value !== null
+        ? Object.fromEntries(
+            Object.keys(value)
+              .sort()
+              .map((key) => [key, canonical((value as Record<string, unknown>)[key])]),
+          )
+        : value;
+  const seen = new Map<string, { shown: string; index: number }>();
+  let found = false;
+  for (const { record, shown, source } of stored) {
+    const root = parseJson(source).root;
+    (JSON.parse(source) as Record<string, unknown>[]).forEach((entry, index) => {
+      const { at: _at, fingerprint: _fingerprint, ...what } = entry;
+      const key = `${record}\u0000${JSON.stringify(canonical(what))}`;
+      const earlier = seen.get(key);
+      if (earlier === undefined) {
+        seen.set(key, { shown, index });
+        return;
+      }
+      const element = root?.kind === "array" ? root.elements[index] : undefined;
+      const located = new Diagnostics(source);
+      const path = `$[${index}]`;
+      const message = `the same ${record} as $[${earlier.index}] in ${earlier.shown}, apart from at and fingerprint`;
+      located.report("duplicate-record", message, path, element?.span.start ?? 0);
+      const { line, column } = located.items[0] as { line: number; column: number };
+      report.problem({
+        file: shown,
+        line,
+        column,
+        severity: "error",
+        code: "duplicate-record",
+        path,
+        message,
+      });
+      found = true;
+    });
+  }
+  return found;
 }
 
 const validateCommand: Command = command(usage, (args, { io, cwd }) => {

@@ -382,7 +382,7 @@ record Part {
     return (...args: string[]) => capture(["lang", "validate", ...args], root);
   };
   const valid = {
-    "source/designs.json": `[{ ${card}, "tool": "pen-dev" }, { ${card}, "tool": "code" }]`,
+    "source/designs.json": `[{ ${card}, "tool": "pen-dev" }]`,
     "source/code.json": `[{ ${card}, "tool": "code" }]`,
     "source/notes.md": "not data",
     "source/old/ignored.json": "not checked",
@@ -395,7 +395,7 @@ record Part {
       0,
       "",
       [
-        "evidence.dxn: Source, 3 records in 2 files in source/",
+        "evidence.dxn: Source, 2 records in 2 files in source/",
         "evidence.dxn: Evidence, 1 record in 1 file in evidence/",
         "",
       ].join("\n"),
@@ -461,7 +461,7 @@ record Part {
         {
           file: "evidence.dxn",
           stored: [
-            { record: "Source", folder: "source", files: 2, records: 3 },
+            { record: "Source", folder: "source", files: 2, records: 2 },
             { record: "Evidence", folder: "evidence", files: 1, records: 1 },
           ],
           problems: [],

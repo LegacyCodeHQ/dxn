@@ -364,3 +364,41 @@ describe("the tool convention", () => {
     ]);
   });
 });
+
+describe("duplicate records", () => {
+  // Two records attached, then the file's entries as written.
+  const twice = () => {
+    const { root, run } = project();
+    run(...attach("profile=phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"));
+    const path = join(root, "spec", "evidence", "toolbar.json");
+    const entries = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>[];
+    const validate = () => capture(["lang", "validate", "spec/toolbar.dxn"], root);
+    return { root, path, entries, validate };
+  };
+
+  it("are reported: the same in everything but when they were recorded", () => {
+    const { path, entries, validate } = twice();
+    const again = { ...entries[0], at: "2026-11-01T09:00:00Z", fingerprint: "other" };
+    writeFileSync(path, JSON.stringify([...entries, again], null, 2));
+    const result = validate();
+    expect([result.code, result.stderr.replace(/:\d+:\d+:/, ":L:C:")]).toEqual([
+      1,
+      "spec/evidence/toolbar.json:L:C: duplicate-record: $[2]: the same Evidence as $[0] in spec/evidence/toolbar.json, apart from at and fingerprint\n",
+    ]);
+  });
+
+  it("are found across the record's files", () => {
+    const { root, entries, validate } = twice();
+    writeFileSync(join(root, "spec", "evidence", "more.json"), JSON.stringify([entries[1]]));
+    expect(validate().stderr.replace(/:\d+:\d+:/, ":L:C:")).toBe(
+      "spec/evidence/toolbar.json:L:C: duplicate-record: $[1]: the same Evidence as $[0] in spec/evidence/more.json, apart from at and fingerprint\n",
+    );
+  });
+
+  it("are not records that differ in anything else, such as their frame", () => {
+    const { path, entries, validate } = twice();
+    const other = { ...entries[0], source: { file: "design/toolbar.png", frame: "another" } };
+    writeFileSync(path, JSON.stringify([...entries, other], null, 2));
+    expect(validate().code).toBe(0);
+  });
+});
