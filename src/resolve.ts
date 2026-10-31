@@ -70,7 +70,7 @@ export class Resolver {
     }
     for (const [name, dimension] of Object.entries(project.dimensions)) {
       const scope = new Set<string>();
-      for (const id of dimension.appliesTo) this.collect(id, scope);
+      for (const id of dimension.appliesTo ?? []) this.collect(id, scope);
       this.scopes.set(name, scope);
     }
   }

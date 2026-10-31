@@ -85,20 +85,20 @@ describe("dimension add and remove", () => {
     snapshot.push(run("dimension").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    {
-      "code": 1,
-      "stderr": "dimensions: dimension "pointer" already exists
-  ",
-      "stdout": "",
-    },
-    "<tmp>/.dimensions/dimensions/theme.json:4:17: unknown-node: node "nope" does not exist
-  ",
-    2,
-    2,
-    2,
-  ]
-`);
+      [
+        {
+          "code": 1,
+          "stderr": "dimensions: dimension "pointer" already exists
+      ",
+          "stdout": "",
+        },
+        "<tmp>/.dimensions/dimensions/theme.json:4:17: unknown-node: node "nope" does not exist
+      ",
+        2,
+        0,
+        2,
+      ]
+    `);
   });
 
   it("remove a dimension unless its overrides remain", () => {
@@ -196,29 +196,28 @@ describe("dimension values, default and scope", () => {
     snapshot.push(run("dimension", "unapply", "pointer", "b").stderr);
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    0,
-    0,
-    {
-      "appliesTo": [
-        "b",
-      ],
-      "values": [
-        "mouse",
-        "touch",
-      ],
-      "version": 1,
-    },
-    {
-      "code": 1,
-      "stderr": "dimensions: dimension "pointer" does not apply to "a"
-  ",
-      "stdout": "",
-    },
-    "<tmp>/.dimensions/dimensions/pointer.json:4:16: empty-applies-to: a dimension must apply to at least one node
-  ",
-  ]
-`);
+      [
+        0,
+        0,
+        {
+          "appliesTo": [
+            "b",
+          ],
+          "values": [
+            "mouse",
+            "touch",
+          ],
+          "version": 1,
+        },
+        {
+          "code": 1,
+          "stderr": "dimensions: dimension "pointer" does not apply to "a"
+      ",
+          "stdout": "",
+        },
+        "",
+      ]
+    `);
   });
 
   it("refuse to remove a value still in use", () => {
@@ -398,5 +397,38 @@ describe("dimension rename-value", () => {
       code: 1,
       stderr: 'dimensions: dimension "pointer" has no value "pen"\n',
     });
+  });
+});
+
+describe("a dimension before any node", () => {
+  it("can be added, used by profiles, and applied once nodes exist", () => {
+    const { run, read, exists } = cliProject({ "types.json": { version: 1 } });
+    const snapshot: unknown[] = [];
+    snapshot.push(run("dimension", "add", "breakpoint", "--values", "base,lg").code);
+    snapshot.push(read("dimensions/breakpoint.json"));
+    snapshot.push(
+      run("profile", "add", "phone", "breakpoint=base", "desktop", "breakpoint=lg").code,
+    );
+    snapshot.push(run("node", "add", "page", "--title", "Page").code);
+    snapshot.push(run("dimension", "apply", "breakpoint", "page").code);
+    snapshot.push(read("dimensions/breakpoint.json").appliesTo);
+    snapshot.push(JSON.parse(run("contexts", "page", "--count").stdout).count);
+    snapshot.push(run("dimension", "unapply", "breakpoint", "page").code);
+    snapshot.push("appliesTo" in read("dimensions/breakpoint.json"));
+    snapshot.push(JSON.parse(run("dimension", "list").stdout).dimensions[0].appliesTo);
+    snapshot.push(exists("profiles.json"));
+    expect(snapshot).toEqual([
+      0,
+      { version: 1, values: ["base", "lg"] },
+      0,
+      0,
+      0,
+      ["page"],
+      2,
+      0,
+      false,
+      [],
+      true,
+    ]);
   });
 });

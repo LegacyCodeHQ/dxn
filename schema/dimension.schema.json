@@ -4,7 +4,7 @@
   "description": "Editor aid for dimensions/<name>.json; the file name is the dimension's name. The dimensions compiler is the authority: it also checks that the default is one of the values and that appliesTo names existing nodes, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "values", "appliesTo"],
+  "required": ["version", "values"],
   "properties": {
     "$schema": {
       "description": "Path or URL of this schema, for editors.",
@@ -28,7 +28,7 @@
       "$ref": "#/$defs/name"
     },
     "appliesTo": {
-      "description": "Ids of the nodes this dimension applies to; each node's subtree is included.",
+      "description": "Ids of the nodes this dimension applies to; each node's subtree is included. Leave it out while the dimension applies to nothing yet.",
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,

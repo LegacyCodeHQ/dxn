@@ -22,8 +22,9 @@ const usage = `Usage: dimensions dimension <subcommand>
 
 Subcommands:
   list                               List every dimension, its values, default and scope
-  add <name> --values a,b --applies-to <id>[,<id>] [--default <value>]
-                                     Add a dimension in dimensions/<name>.json
+  add <name> --values a,b [--applies-to <id>[,<id>]] [--default <value>]
+                                     Add a dimension in dimensions/<name>.json; without
+                                     --applies-to it applies to nothing until applied
   add-value <name> <value>           Add a value
   remove-value <name> <value>        Remove a value
   rename-value <name> <old> <new>    Rename a value everywhere it is used
@@ -78,8 +79,8 @@ const add = editCommand(usage, (workspace, args) => {
   const [name] = positionals as [string];
   const declared = list(values.values);
   const appliesTo = list(values["applies-to"]);
-  if (declared === undefined || appliesTo === undefined) {
-    throw new UsageError("--values and --applies-to are required");
+  if (declared === undefined) {
+    throw new UsageError("--values is required");
   }
   const file = `dimensions/${name}.json`;
   if (workspace.exists(file)) {
@@ -89,7 +90,7 @@ const add = editCommand(usage, (workspace, args) => {
     version: 1,
     values: declared,
     ...(values.default === undefined ? {} : { default: values.default }),
-    appliesTo,
+    ...(appliesTo === undefined ? {} : { appliesTo }),
   });
 });
 
@@ -129,6 +130,8 @@ const unapply = editCommand(usage, (workspace, args) => {
     throw new Refusal(`dimension "${name}" does not apply to "${id}"`);
   }
   dimension.appliesTo = appliesTo.filter((existing) => existing !== id);
+  // A dimension that applies to nothing leaves appliesTo out.
+  if ((dimension.appliesTo as string[]).length === 0) delete dimension.appliesTo;
   workspace.touch(`dimensions/${name}.json`);
 });
 

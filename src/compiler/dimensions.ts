@@ -34,7 +34,7 @@ export function checkDimensionFile(
     "$",
     ["$schema", "version", "values", "default", "appliesTo"],
     {
-      required: ["version", "values", "appliesTo"],
+      required: ["version", "values"],
     },
   );
   checkSchema(diagnostics, fields.get("$schema"));
@@ -77,7 +77,7 @@ export function checkDimensionFile(
       report(
         diagnostics,
         "empty-applies-to",
-        "a dimension must apply to at least one node",
+        "list at least one node, or leave appliesTo out until the dimension applies to one",
         "$.appliesTo",
         appliesTo,
       );
@@ -104,6 +104,9 @@ export function checkDimensionFile(
     dimension.scopeComplete = diagnostics.items
       .slice(before)
       .every(({ code }) => code === "duplicate-node");
+  } else if (appliesTo === undefined) {
+    // Declared before the nodes it will apply to: it applies to nothing yet.
+    dimension.scopeComplete = true;
   }
   return dimension;
 }

@@ -344,7 +344,8 @@ with `dimension add-value`, or fix it.
 
 ### `empty-applies-to`
 
-`appliesTo` is empty. A dimension must apply to at least one node.
+`appliesTo` is an empty list. List at least one node, or leave `appliesTo` out
+while the dimension applies to nothing yet.
 
 ### `unknown-node`
 

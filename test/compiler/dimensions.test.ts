@@ -12,7 +12,7 @@ describe("dimension files", () => {
     expect(dimension(pointer)).toEqual([]);
   });
 
-  it("must be an object with version, values and appliesTo", () => {
+  it("must be an object with version and values", () => {
     const snapshot: unknown[] = [];
     snapshot.push(dimension([]));
     snapshot.push(dimension({}));
@@ -20,47 +20,42 @@ describe("dimension files", () => {
     snapshot.push(dimension({ ...pointer, version: 2 }));
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    [
-      {
-        "code": "wrong-type",
-        "file": "dimensions/pointer.json",
-        "path": "$",
-      },
-    ],
-    [
-      {
-        "code": "missing-key",
-        "file": "dimensions/pointer.json",
-        "path": "$.version",
-      },
-      {
-        "code": "missing-key",
-        "file": "dimensions/pointer.json",
-        "path": "$.values",
-      },
-      {
-        "code": "missing-key",
-        "file": "dimensions/pointer.json",
-        "path": "$.appliesTo",
-      },
-    ],
-    [
-      {
-        "code": "unknown-key",
-        "file": "dimensions/pointer.json",
-        "path": "$.extra",
-      },
-    ],
-    [
-      {
-        "code": "unsupported-version",
-        "file": "dimensions/pointer.json",
-        "path": "$.version",
-      },
-    ],
-  ]
-`);
+      [
+        [
+          {
+            "code": "wrong-type",
+            "file": "dimensions/pointer.json",
+            "path": "$",
+          },
+        ],
+        [
+          {
+            "code": "missing-key",
+            "file": "dimensions/pointer.json",
+            "path": "$.version",
+          },
+          {
+            "code": "missing-key",
+            "file": "dimensions/pointer.json",
+            "path": "$.values",
+          },
+        ],
+        [
+          {
+            "code": "unknown-key",
+            "file": "dimensions/pointer.json",
+            "path": "$.extra",
+          },
+        ],
+        [
+          {
+            "code": "unsupported-version",
+            "file": "dimensions/pointer.json",
+            "path": "$.version",
+          },
+        ],
+      ]
+    `);
   });
 
   it("may point editors at the JSON schema", () => {

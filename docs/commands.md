@@ -425,8 +425,9 @@ Usage: dimensions dimension <subcommand>
 
 Subcommands:
   list                               List every dimension, its values, default and scope
-  add <name> --values a,b --applies-to <id>[,<id>] [--default <value>]
-                                     Add a dimension in dimensions/<name>.json
+  add <name> --values a,b [--applies-to <id>[,<id>]] [--default <value>]
+                                     Add a dimension in dimensions/<name>.json; without
+                                     --applies-to it applies to nothing until applied
   add-value <name> <value>           Add a value
   remove-value <name> <value>        Remove a value
   rename-value <name> <old> <new>    Rename a value everywhere it is used

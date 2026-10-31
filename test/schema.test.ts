@@ -243,10 +243,11 @@ agree("dimension", (doc) => ({ ...tree, "dimensions/pointer.json": doc }), {
     ["a dimension over existing nodes", pointer],
     ["a $schema reference", { $schema: "x", ...pointer }],
     ["a default value", { ...pointer, default: "mouse" }],
+    ["a dimension that applies to nothing yet", { version: 1, values: ["mouse", "touch"] }],
   ],
   structural: [
     ["wrong-type", []],
-    ["missing-key", { version: 1, values: ["mouse"] }],
+    ["missing-key", { version: 1, appliesTo: ["page"] }],
     ["unknown-key", dimension({ extra: 1 })],
     ["wrong-type", dimension({ $schema: 1 })],
     ["wrong-type", dimension({ version: "1" })],

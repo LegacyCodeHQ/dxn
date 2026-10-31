@@ -90,7 +90,8 @@ export interface DimensionFile {
   values: string[];
   // The value a context means when it leaves this dimension out.
   default?: string;
-  appliesTo: string[];
+  // The nodes it applies to, subtrees included; none yet when left out.
+  appliesTo?: string[];
 }
 
 export interface Override {

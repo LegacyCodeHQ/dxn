@@ -141,7 +141,9 @@ or does, such as screen width or input device. Each dimension has its own file:
 
 - `values` are the dimension's values, in order.
 - `appliesTo` lists nodes. The dimension applies to each one and to its whole
-  subtree, wherever it is included.
+  subtree, wherever it is included. Leave it out to declare a dimension before
+  the nodes exist, for example to set up profiles first, and attach it later
+  with `dimension apply`.
 - `default` is the value `show`, `view` and `verify` use when you leave the
   dimension out. Without a default, leaving it out doesn't apply it. A
   dimension that [profiles](#profiles) cover has no default.

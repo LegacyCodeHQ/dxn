@@ -177,7 +177,7 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
         name,
         values: dimension.values,
         ...(dimension.default === undefined ? {} : { default: dimension.default }),
-        appliesTo: dimension.appliesTo,
+        appliesTo: dimension.appliesTo ?? [],
       })),
   });
 });
