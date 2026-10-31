@@ -38,6 +38,7 @@ opens a panel with the same link on narrow screens.
   overrides/<a>+<b>.json      overrides for combinations of dimensions
   verification/<root-id>.json check results for nodes in that root
   expectations.json           counts the model must produce
+  actors.json                 the roles that do work against the model
 ```
 
 `dimensions init` creates the folder. Commands find the nearest `.dimensions`
@@ -490,3 +491,19 @@ distinct view (one diagram each), and `dimensions view toolbar breakpoint=base
 menu=open` prints the tree in one of them. `dimensions axes toolbar` lists
 what a view accepts: the dimensions with values and defaults, and the shared
 nodes with their states and where they exist.
+
+## Actors and evidence
+
+An **actor** is a role that does work against the model, such as
+`design-agent`, which draws frames for it. It is a role, not a person.
+Actors are declared in `actors.json`:
+
+```json
+{ "version": 1, "actors": { "design-agent": {} } }
+```
+
+**Evidence** is what an actor has recorded for a node in one context.
+`dimensions evidence toolbar --actor design-agent --table` lists every
+context of the node with the profile it matches and the actor's evidence for
+it. Nothing can be recorded yet, so every context shows `—`: the list of what
+is missing.

@@ -579,6 +579,27 @@ agree("profiles", (doc) => ({ ...withPointer, "profiles.json": doc }), {
   ],
 });
 
+const actorsFile = (actors: unknown) => ({ version: 1, actors });
+
+agree("actors", (doc) => ({ ...tree, "actors.json": doc }), {
+  valid: [
+    ["no actors", actorsFile({})],
+    ["a role", actorsFile({ "design-agent": {} })],
+    ["a $schema reference", { $schema: "x", ...actorsFile({}) }],
+  ],
+  structural: [
+    ["wrong-type", []],
+    ["missing-key", { version: 1 }],
+    ["unknown-key", { ...actorsFile({}), extra: 1 }],
+    ["unsupported-version", { version: 2, actors: {} }],
+    ["wrong-type", actorsFile([])],
+    ["wrong-type", actorsFile({ "design-agent": "draws" })],
+    ["unknown-key", actorsFile({ "design-agent": { checks: [] } })],
+    ["empty-string", actorsFile({ " ": {} })],
+  ],
+  crossReference: [],
+});
+
 describe("website example", () => {
   it.each([
     ["types", "types.json"],

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "dimensions actors",
+  "description": "Editor aid for actors.json: the roles that do work against the model, such as a design agent that draws frames for it. An actor is a role, not a person. The dimensions compiler is the authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "actors"],
+  "properties": {
+    "$schema": {
+      "description": "Path or URL of this schema, for editors.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Format version.",
+      "const": 1
+    },
+    "actors": {
+      "description": "Actor name -> its declaration, which has no keys yet.",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "description": "Non-blank, without leading or trailing whitespace or control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])\\S(?:[\\s\\S]*\\S)?$"
+    }
+  }
+}

@@ -171,6 +171,15 @@ export const checkList = readCommand("Usage: dimensions check list\n", (resolver
   });
 });
 
+export const actorList = readCommand("Usage: dimensions actor list\n", (resolver, args, io) => {
+  parse(args, [], {});
+  print(io, {
+    actors: Object.keys(resolver.project.actors?.actors ?? {})
+      .sort()
+      .map((name) => ({ name })),
+  });
+});
+
 export const attributeList = readCommand(
   "Usage: dimensions attribute list\n",
   (resolver, args, io) => {
@@ -638,16 +647,10 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
     // A column for the profile each view matches, then one per name.
     const names = [...new Set(kept.flatMap((view) => Object.keys(view)))];
     const profiled = names.some((name) => resolver.profiled.has(name));
-    const profileOf = (view: NodeContext) =>
-      [...resolver.profiles].find(([, profile]) =>
-        Object.keys(view)
-          .filter((name) => resolver.profiled.has(name))
-          .every((name) => profile[name] === view[name]),
-      )?.[0] ?? "—";
     const lines = markdown(
       [...(profiled ? ["profile"] : []), ...names],
       kept.map((view) => [
-        ...(profiled ? [profileOf(view)] : []),
+        ...(profiled ? [profileOf(resolver, view) ?? "—"] : []),
         ...names.map((name) => view[name] ?? "—"),
       ]),
     );
@@ -655,6 +658,70 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
     return;
   }
   print(io, { node: id, views: kept });
+});
+
+// The profile a context or view matches, by the dimensions profiles cover.
+function profileOf(resolver: Resolver, context: NodeContext): string | undefined {
+  return [...resolver.profiles].find(([, profile]) =>
+    Object.keys(context)
+      .filter((name) => resolver.profiled.has(name))
+      .every((name) => profile[name] === context[name]),
+  )?.[0];
+}
+
+const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [--root <root-id>] [--table]
+
+Lists every context the node exists in, with the profile it matches and the
+evidence the actor has recorded for it. Nothing can be recorded yet, so every
+context has none. --table prints a Markdown table, a row per context and a
+column for the actor, where — means no evidence.
+`;
+
+export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
+  const { values, positionals } = parse(args, ["node-id"], {
+    actor: { type: "string" },
+    root: { type: "string" },
+    table: { type: "boolean" },
+  });
+  const [id] = positionals as [string];
+  const actor = values.actor;
+  if (actor === undefined) throw new UsageError("--actor is required");
+  const actors = Object.keys(resolver.project.actors?.actors ?? {});
+  if (actors.length === 0) {
+    throw new Refusal('no actors; add one with "dimensions actor add <name>"');
+  }
+  if (!actors.includes(actor)) {
+    throw new Refusal(`actor not found: ${JSON.stringify(actor)} (${choices(actors)})`);
+  }
+  requireNodeId(resolver, id);
+  requireRoot(resolver, id, values.root);
+  const roots = values.root === undefined ? resolver.roots(id) : [values.root];
+  const rows = roots.flatMap((root) =>
+    resolver.contexts(id, root).map((context) => {
+      const profile = profileOf(resolver, context);
+      return {
+        root,
+        ...(profile === undefined ? {} : { profile }),
+        context,
+        evidence: [] as unknown[],
+      };
+    }),
+  );
+  if (values.table === true) {
+    const names = [...new Set(rows.flatMap(({ context }) => Object.keys(context)))];
+    const profiled = rows.some((row) => row.profile !== undefined);
+    const lines = markdown(
+      [...(profiled ? ["profile"] : []), ...names, actor],
+      rows.map((row) => [
+        ...(profiled ? [row.profile ?? "—"] : []),
+        ...names.map((name) => row.context[name] ?? "—"),
+        row.evidence.length === 0 ? "—" : String(row.evidence.length),
+      ]),
+    );
+    io.stdout(`${lines.join("\n")}\n`);
+    return;
+  }
+  print(io, { node: id, actor, contexts: rows });
 });
 
 const viewUsage = `Usage: dimensions view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]

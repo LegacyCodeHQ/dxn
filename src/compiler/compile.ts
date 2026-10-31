@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { checkExpectations } from "../expectations.js";
 import { Resolver } from "../resolve.js";
 import type {
+  ActorsFile,
   CombinationOverridesFile,
   DimensionFile,
   ExpectationsFile,
@@ -14,6 +15,7 @@ import type {
   TypesFile,
   VerificationFile,
 } from "../tree.js";
+import { checkActorsFile } from "./actors.js";
 import { checkRootFile, checkTypesFile, emptySymbols, resolveOnlyWhen } from "./check.js";
 import { checkConflicts } from "./conflicts.js";
 import { childPath, Diagnostics, type FileDiagnostic } from "./diagnostic.js";
@@ -56,6 +58,7 @@ interface ParsedFile {
 //   overrides/<name>.json    overrides for the dimension of the same name
 //   overrides/<a>+<b>.json   overrides for combinations of those dimensions' values
 //   verification/<id>.json   verification records for the root <id>
+//   actors.json              the roles that do work against the model
 //
 // Anything else in the directory is ignored.
 export function compileDirectory(directory: string): DirectoryResult {
@@ -426,6 +429,19 @@ export function compileDirectory(directory: string): DirectoryResult {
     verification.push([name, file]);
   }
 
+  // actors.json: the roles that do work against the model.
+  const actorsFile = readJson(directory, "actors.json");
+  if (actorsFile !== undefined) {
+    if ("code" in actorsFile) {
+      problems.push(actorsFile);
+    } else {
+      parsed.push(actorsFile);
+      if (actorsFile.root !== undefined) {
+        checkActorsFile(actorsFile.root, actorsFile.diagnostics);
+      }
+    }
+  }
+
   const diagnostics = result().diagnostics;
   if (diagnostics.length > 0) {
     return { diagnostics };
@@ -455,6 +471,9 @@ export function compileDirectory(directory: string): DirectoryResult {
   };
   if (profilesFile !== undefined && !("code" in profilesFile)) {
     project.profiles = JSON.parse(profilesFile.source) as ProfilesFile;
+  }
+  if (actorsFile !== undefined && !("code" in actorsFile)) {
+    project.actors = JSON.parse(actorsFile.source) as ActorsFile;
   }
   // Expectations are checked against the model, so only once it compiles.
   const expected = checkExpectations(directory, new Resolver(project));

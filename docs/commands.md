@@ -30,9 +30,9 @@ asks which.
 ## Contents
 
 - Project: [workflow](#workflow), [init](#init), [validate](#validate), [status](#status)
-- Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions)
+- Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions), [evidence](#evidence)
 - Record: [verify](#verify), [unverify](#unverify)
-- Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [override](#override), [expectation](#expectation)
+- Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [override](#override), [expectation](#expectation), [actor](#actor)
 
 ## Project
 
@@ -231,6 +231,23 @@ Prints a shared node's transitions as JSON.
 
 ```bash
 dimensions transitions menu
+```
+
+### evidence
+
+```text
+Usage: dimensions evidence <node-id> --actor <name> [--root <root-id>] [--table]
+
+Lists every context the node exists in, with the profile it matches and the
+evidence the actor has recorded for it. Nothing can be recorded yet, so every
+context has none. --table prints a Markdown table, a row per context and a
+column for the actor, where — means no evidence.
+```
+
+Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it. Evidence cannot be recorded yet, so this is the list of what is missing: every context of the node, for that actor.
+
+```bash
+dimensions evidence toolbar --actor design-agent --table
 ```
 
 ## Record
@@ -559,4 +576,24 @@ dimensions expectation add "Touch never hovers" --node toolbar --subtree --when 
 dimensions expectation add "The panel is only there while open" --node menu-panel --when menu=closed --absent
 dimensions expectation list
 dimensions expectation remove "Touch never hovers"
+```
+
+### actor
+
+```text
+Usage: dimensions actor <subcommand>
+
+An actor is a role that does work against the model, such as a design agent
+that draws frames for it. Actors are declared in actors.json.
+
+Subcommands:
+  list                               List every actor
+  add <name>                         Declare an actor, such as design-agent
+```
+
+Edits `actors.json`: the roles that do work against the model. An actor is a role, not a person: `design-agent`, not someone's name. `actor list` prints them; `evidence` queries what an actor has recorded.
+
+```bash
+dimensions actor add design-agent
+dimensions actor list
 ```

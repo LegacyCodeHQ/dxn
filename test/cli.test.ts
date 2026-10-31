@@ -53,6 +53,8 @@ describe("dimensions cli", () => {
         axes <node-id>      List what a view or show of a node accepts
         transitions <node-id>
                             List how a shared node's state changes
+        evidence <node-id> --actor <name>
+                            List every context of a node and the actor's evidence for it
 
       Record
         verify <node-id> --check <c> --result passed|failed --by <who> [<context>...]
@@ -78,6 +80,7 @@ describe("dimensions cli", () => {
                             Change states and values for a dimension value or combination
         expectation <subcommand>
                             List, add and remove the rules the model must follow
+        actor <subcommand>  List and declare the roles that do work against the model
 
         help [<command>]    Show this overview, or a command's usage
 
@@ -126,6 +129,8 @@ describe("dimensions cli", () => {
         axes <node-id>      List what a view or show of a node accepts
         transitions <node-id>
                             List how a shared node's state changes
+        evidence <node-id> --actor <name>
+                            List every context of a node and the actor's evidence for it
 
       Record
         verify <node-id> --check <c> --result passed|failed --by <who> [<context>...]
@@ -151,6 +156,7 @@ describe("dimensions cli", () => {
                             Change states and values for a dimension value or combination
         expectation <subcommand>
                             List, add and remove the rules the model must follow
+        actor <subcommand>  List and declare the roles that do work against the model
 
         help [<command>]    Show this overview, or a command's usage
 
@@ -202,6 +208,8 @@ describe("dimensions cli", () => {
         axes <node-id>      List what a view or show of a node accepts
         transitions <node-id>
                             List how a shared node's state changes
+        evidence <node-id> --actor <name>
+                            List every context of a node and the actor's evidence for it
 
       Record
         verify <node-id> --check <c> --result passed|failed --by <who> [<context>...]
@@ -227,6 +235,7 @@ describe("dimensions cli", () => {
                             Change states and values for a dimension value or combination
         expectation <subcommand>
                             List, add and remove the rules the model must follow
+        actor <subcommand>  List and declare the roles that do work against the model
 
         help [<command>]    Show this overview, or a command's usage
 

@@ -163,6 +163,16 @@ export interface Project {
   expectations?: ExpectationsFile;
   // profiles.json, when the project has one.
   profiles?: ProfilesFile;
+  // actors.json, when the project has one.
+  actors?: ActorsFile;
+}
+
+// actors.json: the roles that do work against the model, such as a design
+// agent that draws frames for it.
+export interface ActorsFile {
+  version: number;
+  // Actor name -> its declaration, empty for now.
+  actors: Record<string, Record<string, never>>;
 }
 
 // profiles.json: the combinations of dimension values that exist, by name.
