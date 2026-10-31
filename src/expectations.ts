@@ -345,6 +345,11 @@ function values(
   for (const { key, value } of object.members) {
     const valuePath = childPath(path, key.value);
     if (lists && value.kind === "array") {
+      if (value.elements.length === 0) {
+        report(diagnostics, "empty-values", "list at least one value", valuePath, value);
+        valid = false;
+        continue;
+      }
       const list: string[] = [];
       value.elements.forEach((element, index) => {
         if (expectName(diagnostics, element, `${valuePath}[${index}]`)) list.push(element.value);
@@ -683,6 +688,11 @@ function checkTransitionRule(
       );
       return;
     }
+  }
+
+  if (to === undefined && focus === undefined) {
+    fail("missing-key", `give ${r.id}=<state>, focus=<node> or both`, `${r.path}.then`, r.thenNode);
+    return;
   }
 
   const transitions = (resolver.node(r.id)?.transitions ?? []).filter(

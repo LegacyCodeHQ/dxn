@@ -229,3 +229,17 @@ describe("attribute rules in then and some", () => {
     ]);
   });
 });
+
+describe("rules that assert nothing", () => {
+  it("are errors: an empty list of values, or a transition rule's empty then", () => {
+    expect(
+      problems([
+        { title: "Empty list", node: "home-link", then: { hover: [] } },
+        { ...escapeRule({}), title: "Empty then" },
+      ]),
+    ).toEqual([
+      "empty-values: list at least one value",
+      "missing-key: give menu=<state>, focus=<node> or both",
+    ]);
+  });
+});
