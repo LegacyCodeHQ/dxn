@@ -1054,10 +1054,12 @@ other file, and `lang status` reports a stored one.
 
 ````
 dxn: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file
-``` Recording the same combination, frame and fields again replaces the
-entry, with the fingerprint the frame has now. The file is relative to the
-repository, and entries go in the record's folder, in a file named after the
-type the path starts at.
+```
+
+Recording the same combination, frame and fields again replaces the entry,
+with the fingerprint the frame has now, in whichever of the record's files it
+is stored. The file is relative to the repository, and a new entry goes in
+the record's folder, in a file named after the type the path starts at.
 
 ### Status: what has evidence, and what is missing
 

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { Fingerprints } from "../../src/compiler/fingerprint.js";
@@ -130,6 +130,29 @@ describe("lang attach", () => {
     expect([result.stdout, stored().map(({ fingerprint }) => fingerprint)]).toEqual([
       "Attached 1 record to spec/evidence/toolbar.json, replacing 1\n",
       [hash("redrawn")],
+    ]);
+  });
+
+  it("replaces an entry where it is stored, in whichever of the record's files", () => {
+    const { root, run } = project();
+    const evidence = join(root, "spec", "evidence");
+    run(...attach("profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"));
+    renameSync(join(evidence, "toolbar.json"), join(evidence, "menus.json"));
+    writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
+    const result = run(
+      ...attach("profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"),
+    );
+    const moved = JSON.parse(readFileSync(join(evidence, "menus.json"), "utf8")) as {
+      fingerprint: string;
+    }[];
+    expect([
+      result.stdout,
+      moved.map(({ fingerprint }) => fingerprint),
+      existsSync(join(evidence, "toolbar.json")),
+    ]).toEqual([
+      "Attached 1 record to spec/evidence/menus.json, replacing 1\n",
+      [hash("redrawn")],
+      false,
     ]);
   });
 

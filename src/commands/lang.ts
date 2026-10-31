@@ -943,46 +943,74 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
       );
     }
   }
-  // Into the record's folder, in a file named after the path's type; an
-  // entry for the same combination, frame and given fields is replaced.
+  // An entry for the same combination, frame and given fields is replaced
+  // where it is stored, in whichever of the record's files; a new one goes
+  // into the record's folder, in a file named after the path's type.
   const folder = folderOf(record.name);
   const target = `${folderOf(place.steps[0]?.type.name ?? record.name)}.json`;
-  const at = join(resolve(cwd, dirname(file)), folder, target);
-  const shown = join(dirname(file), folder, target);
-  const existing = data.find((stored) => stored.path === at);
-  const entries =
-    existing === undefined ? [] : (JSON.parse(existing.source) as Record<string, unknown>[]);
+  const directory = resolve(cwd, dirname(file));
+  const files = new Map<string, { shown: string; entries: Record<string, unknown>[] }>();
+  for (const stored of data.filter((candidate) => candidate.record === record.name)) {
+    files.set(stored.path, {
+      shown: stored.shown,
+      entries: JSON.parse(stored.source) as Record<string, unknown>[],
+    });
+  }
   const same = (entry: Record<string, unknown>, context: object) =>
     JSON.stringify(entry.context) === JSON.stringify(context) &&
     JSON.stringify(entry.source) === JSON.stringify(values.source) &&
     [...fields.keys()].every((name) => entry[name] === fields.get(name));
+  const changed = new Set<string>();
   let replaced = 0;
   for (const context of contexts) {
     const entry = { context, ...values };
-    const index = entries.findIndex((candidate) => same(candidate, context));
-    if (index === -1) entries.push(entry);
-    else {
-      entries[index] = entry;
+    const holding = [...files].find(([, { entries }]) =>
+      entries.some((candidate) => same(candidate, context)),
+    );
+    if (holding !== undefined) {
+      const [path, { entries }] = holding;
+      entries[entries.findIndex((candidate) => same(candidate, context))] = entry;
+      changed.add(path);
       replaced++;
+      continue;
     }
+    const path = join(directory, folder, target);
+    const into = files.get(path) ?? { shown: join(dirname(file), folder, target), entries: [] };
+    into.entries.push(entry);
+    files.set(path, into);
+    changed.add(path);
   }
-  const written = `${JSON.stringify(entries, null, 2)}\n`;
-  const problems = validate(parsed, record.name, written);
-  if (problems.length > 0) {
-    for (const { line, column, code, path: where, message } of problems) {
+  const writes = [...changed].map((path) => {
+    const { shown, entries } = files.get(path) as { shown: string; entries: unknown[] };
+    return { path, shown, written: `${JSON.stringify(entries, null, 2)}\n` };
+  });
+  let invalid = false;
+  for (const { shown, written } of writes) {
+    for (const { line, column, code, path: where, message } of validate(
+      parsed,
+      record.name,
+      written,
+    )) {
       report.problem({ file: shown, line, column, severity: "error", code, path: where, message });
+      invalid = true;
     }
-    return report.fail();
   }
+  if (invalid) return report.fail();
+  const shown = writes.map((write) => write.shown).join(", ");
   const summary = `${count(contexts.length, "record")} to ${shown}${replaced > 0 ? `, replacing ${replaced}` : ""}`;
   if (dryRun) {
     return report.succeed(
-      { dryRun: true, written: { [shown]: written } },
+      {
+        dryRun: true,
+        written: Object.fromEntries(writes.map((write) => [write.shown, write.written])),
+      },
       `Would attach ${summary}\n`,
     );
   }
-  mkdirSync(dirname(at), { recursive: true });
-  writeFileSync(at, written);
+  for (const { path, written } of writes) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, written);
+  }
   return report.succeed(
     { file, record: record.name, written: shown, records: contexts.length, replaced },
     `Attached ${summary}\n`,
