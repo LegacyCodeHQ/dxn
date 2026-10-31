@@ -106,7 +106,7 @@ export class Workspace {
       const copy = join(scratch, "project");
       cpSync(this.project, copy, { recursive: true });
       this.apply(copy, written, removed);
-      const { diagnostics } = compileDirectory(copy);
+      const { diagnostics } = compileDirectory(copy, dirname(this.project));
       if (diagnostics.length > 0) {
         printDiagnostics(io, this.project, diagnostics);
         return 1;

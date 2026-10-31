@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import type { Context, Resolver } from "../resolve.js";
 import type { EvidenceFile } from "../tree.js";
 import { Diagnostics, type FileDiagnostic } from "./diagnostic.js";
@@ -42,11 +42,14 @@ const sameContext = (a: Context, b: Record<string, string>) =>
 // evidence/<root-id>.json: what actors have recorded for nodes, each entry
 // for one node in one complete context, pointing to a frame in a file of the
 // repository. Checked once the model compiles, against its contexts.
-export function checkEvidence(directory: string, resolver: Resolver): EvidenceResult {
+export function checkEvidence(
+  directory: string,
+  repository: string,
+  resolver: Resolver,
+): EvidenceResult {
   const result: EvidenceResult = { diagnostics: [], files: {}, revisions: {} };
   const folder = join(directory, "evidence");
   if (statSync(folder, { throwIfNoEntry: false })?.isDirectory() !== true) return result;
-  const repository = dirname(directory);
   const roots = new Set(resolver.project.roots.map((root) => root.id));
   const actors = new Set(Object.keys(resolver.project.actors?.actors ?? {}));
   const names = readdirSync(folder)

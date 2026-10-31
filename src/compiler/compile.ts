@@ -1,5 +1,5 @@
 import { readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { checkExpectations } from "../expectations.js";
 import { Resolver } from "../resolve.js";
 import type {
@@ -63,7 +63,12 @@ interface ParsedFile {
 //   evidence/<id>.json       what actors recorded for nodes in the root <id>
 //
 // Anything else in the directory is ignored.
-export function compileDirectory(directory: string): DirectoryResult {
+// Evidence points to files relative to repository, the folder that holds the
+// project unless a caller compiling a copy elsewhere names the original one.
+export function compileDirectory(
+  directory: string,
+  repository: string = dirname(directory),
+): DirectoryResult {
   if (statSync(directory, { throwIfNoEntry: false })?.isDirectory() === false) {
     return { diagnostics: [fileDiagnostic(".", "not-a-directory", "not a directory")] };
   }
@@ -484,7 +489,7 @@ export function compileDirectory(directory: string): DirectoryResult {
     return { diagnostics: expected };
   }
   // Evidence names the model's contexts, so it is checked once the model compiles.
-  const evidence = checkEvidence(directory, new Resolver(project));
+  const evidence = checkEvidence(directory, repository, new Resolver(project));
   if (evidence.diagnostics.length > 0) {
     return { diagnostics: evidence.diagnostics };
   }

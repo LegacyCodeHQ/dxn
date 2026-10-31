@@ -125,6 +125,12 @@ describe("evidence entries", () => {
     ]);
   });
 
+  it("let editing commands compile, though they check a copy of the project", () => {
+    const { run } = project([entry()]);
+    const result = run("actor", "add", "visual-reviewer");
+    expect([result.code, result.stderr]).toEqual([0, ""]);
+  });
+
   it("belong to a root", () => {
     expect(problems([], { "evidence/nope.json": { version: 1, evidence: [] } })).toEqual([
       "unknown-root: no roots/nope.json defines this root",
