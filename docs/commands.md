@@ -721,8 +721,10 @@ Usage: dimensions lang <subcommand>
 
 The dimensions language, which is being designed one concept at a time: see
 docs/language/design.md. So far a file declares enums, each a named set of
-values; dimensions, each listing the values the environment varies by; and
-types with their states, and rules for when a state's value exists:
+values; dimensions, each listing the values the environment varies by;
+types with their states, and rules for when a state's value exists;
+environments, each a product of dimensions; and profiles, each an instance
+of an environment:
 
   enum Hover = rest | hovered
   dimension Pointer = mouse | touch
@@ -730,17 +732,20 @@ types with their states, and rules for when a state's value exists:
     states hover: Hover
     hover = hovered only when Pointer = mouse
   }
+  environment Device = Pointer
+  profile laptop: Device { Pointer = mouse }
 
 Subcommands:
   check <file>                       Parse and check a file; print what it declares
                                      as JSON, or every problem it has. Needs no
                                      project.
-  states <file> <type> [--table]     Evaluate a type: the states it has under each
+  states <file> <type> [--table]     Evaluate a type: the states it has in each
+                                     profile, or without profiles under each
                                      combination of the dimensions its rules use,
                                      as JSON, or a Markdown table with --table
 ```
 
-Checks a file written in the dimensions language, which is being designed one concept at a time in [language/design.md](language/design.md). It prints what the file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. So far a file declares enums, dimensions, and types with their states and the rules for when a state's value exists; the codes are listed in [language/design.md](language/design.md#grammar).
+Checks a file written in the dimensions language, which is being designed one concept at a time in [language/design.md](language/design.md). It prints what the file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. So far a file declares enums, dimensions, types with their states and the rules for when a state's value exists, environments and profiles; the codes are listed in [language/design.md](language/design.md#grammar).
 
 ```bash
 dimensions lang check wordmark.dim

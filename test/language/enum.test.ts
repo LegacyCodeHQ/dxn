@@ -84,7 +84,9 @@ describe("enum", () => {
       ['1:12: syntax-error: expected "=" after the enum name, found "blurred"'],
       ['1:13: syntax-error: expected a value after "=", found the end of the line'],
       ['2:1: syntax-error: expected a value after "|", found the end of the file'],
-      ['1:1: syntax-error: expected "enum", "type" or "dimension", found "enumm"'],
+      [
+        '1:1: syntax-error: expected "enum", "dimension", "type", "environment" or "profile", found "enumm"',
+      ],
     ]);
   });
 });

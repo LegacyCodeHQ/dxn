@@ -43,6 +43,8 @@ describe("lang check", () => {
             ],
           },
         ],
+        environments: [],
+        profiles: [],
       },
     ]);
   });
@@ -109,5 +111,22 @@ type Wordmark {
       'dimensions: no type "Wordmrk" in wordmark.dim (Wordmark)\n',
       'wordmark.dim:1:6: enum-name: enum names start with a capital letter: "hover"\n',
     ]);
+  });
+
+  it("names the profile of each row when there are profiles", () => {
+    const withProfiles = `dimension Breakpoint = base | lg
+${wordmark}environment Device = Breakpoint × Pointer × Keyboard
+profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+`;
+    expect(file(withProfiles)("states", "wordmark.dim", "Wordmark", "--table").stdout).toBe(
+      [
+        "| profile | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |",
+        "| ------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |",
+        "| phone   | touch   | no-keyboard | ✓           | —              | ✓              | —              |",
+        "| laptop  | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |",
+        "",
+      ].join("\n"),
+    );
   });
 });

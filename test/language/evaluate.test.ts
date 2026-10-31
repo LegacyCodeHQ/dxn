@@ -68,4 +68,48 @@ type BlogLink {
       rows: [{ when: {}, states: {} }],
     });
   });
+
+  it("gives a row per profile when there are profiles, not every combination", () => {
+    const source = `dimension Breakpoint = base | sm | lg | xl
+${wordmark}environment Device = Breakpoint × Pointer × Keyboard
+profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+`;
+    expect(states(parse(source), "Wordmark").rows).toEqual([
+      {
+        profile: "phone",
+        when: { Pointer: "touch", Keyboard: "no-keyboard" },
+        states: { hover: ["rest"], focus: ["blurred"] },
+      },
+      {
+        profile: "laptop",
+        when: { Pointer: "mouse", Keyboard: "keyboard" },
+        states: { hover: ["rest", "hovered"], focus: ["blurred", "focused"] },
+      },
+    ]);
+  });
+
+  it("still goes through the values of a dimension no profile gives", () => {
+    const source = `dimension Pointer = mouse | touch
+dimension Theme = light | dark
+enum Hover = rest | hovered
+type Link {
+  states hover: Hover
+  hover = hovered only when Pointer = mouse
+  hover = rest only when Theme = light
+}
+environment Device = Pointer
+profile laptop: Device { Pointer = mouse }
+`;
+    expect(
+      states(parse(source), "Link").rows.map(({ profile, when, states: available }) => [
+        profile,
+        when.Theme,
+        available.hover,
+      ]),
+    ).toEqual([
+      ["laptop", "light", ["rest", "hovered"]],
+      ["laptop", "dark", ["hovered"]],
+    ]);
+  });
 });

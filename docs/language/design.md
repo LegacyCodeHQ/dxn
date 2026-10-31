@@ -241,6 +241,57 @@ rule says it positively, next to the state it limits.
 | `duplicate-rule`    | a second condition for the same value of a state           |
 | `duplicate-value`   | a value listed twice in one condition                      |
 
+### environment and profile
+
+**Decided and implemented.** A profile is one setup that occurs, such as a
+phone: a value for each of some dimensions. Its type is an **environment**, a
+product of dimensions, declared explicitly rather than inferred:
+
+```ebnf
+environment = "environment" name "=" name { "×" [ newline ] name } newline ;
+profile     = "profile" profile-name ":" name "{" { assignment ( "," | newline ) } "}" ;
+assignment  = name "=" value ;
+```
+
+```
+environment Device = Breakpoint × Pointer × Keyboard
+
+profile phone: Device {
+  Breakpoint = base
+  Pointer    = touch
+  Keyboard   = no-keyboard
+}
+profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+```
+
+`*` may be written for `×`.
+
+An environment is not a type. Both are product types, but a type describes an
+element, whose instances the tool enumerates from its states, while an
+environment describes a setup the page is viewed in, whose instances,
+profiles, are written by hand. Keeping them apart keeps `type` about
+elements: a type depends on dimensions through its rules, and an environment
+gives them values.
+
+Names follow one rule: a set of possibilities is capitalized (`Device`,
+`Breakpoint`, `Hover`); one particular thing is lowercase (`phone`, `sm`,
+`hover`). A profile is one particular combination, so its name is lowercase.
+
+A profile gives each of its environment's dimensions exactly one value. Two
+profiles may give the same combination. All profiles share one environment
+for now. A profile derived from another, such as a tablet with a keyboard, is
+inheritance; it comes later, with modifiers.
+
+| Code                  | Means                                                                         |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `environment-name`    | an environment name that does not start with a capital letter                 |
+| `profile-name`        | a profile name that does not start with a lowercase letter                    |
+| `unknown-environment` | a profile whose environment is not declared, or is not one                    |
+| `unknown-dimension`   | a part that is no dimension, or a value for a dimension the environment lacks |
+| `duplicate-dimension` | a dimension twice in an environment or in a profile                           |
+| `incomplete-profile`  | a profile that leaves out some of its environment's dimensions                |
+| `mixed-profiles`      | profiles of different environments                                            |
+
 ## Evaluating
 
 **Decided and implemented.** The language is evaluated directly, without
@@ -259,8 +310,10 @@ as JSON or, with `--table`, as a table:
 A value of a state is there in a row unless a rule limits it to dimension
 values the row does not have. The dimensions are the ones the type's rules
 use, so a type depends only on what it mentions. Without profiles, every
-combination is a row, touch with a keyboard included; once profiles exist,
-the rows narrow to the combinations that occur.
+combination is a row, touch with a keyboard included. With profiles, there is
+a row per profile, named in a `profile` column, so only the combinations that
+occur remain; a dimension no profile gives still goes through each of its
+values.
 
 ## Primitives
 

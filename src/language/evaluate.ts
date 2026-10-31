@@ -6,7 +6,8 @@ import type { ParseResult } from "./parse.js";
 export interface TypeStates {
   type: string;
   dimensions: string[];
-  rows: { when: Record<string, string>; states: Record<string, string[]> }[];
+  // With profiles, each row names its profile.
+  rows: { profile?: string; when: Record<string, string>; states: Record<string, string[]> }[];
 }
 
 // Evaluates a type of a parsed file without problems. A value of a state
@@ -20,17 +21,41 @@ export function states(file: ParseResult, typeName: string): TypeStates {
       .find((declaration) => declaration.name === name)
       ?.values.map(({ name }) => name) ?? [];
   const dimensions = [...new Set(type.rules.map(({ when }) => when.dimension))];
-  let combinations: Record<string, string>[] = [{}];
-  for (const dimension of dimensions) {
-    combinations = combinations.flatMap((chosen) =>
-      valuesOf(dimension).map((value) => ({ ...chosen, [dimension]: value })),
+  // With profiles, a row per profile, with the values it gives; the
+  // dimensions it does not give still go through every value.
+  const given = new Set(
+    file.environments
+      .filter(({ name }) => file.profiles.some(({ environment }) => environment === name))
+      .flatMap((environment) => environment.dimensions.map(({ name }) => name)),
+  );
+  const starts: { profile?: string; when: Record<string, string> }[] =
+    file.profiles.length === 0
+      ? [{ when: {} }]
+      : file.profiles.map((profile) => ({
+          profile: profile.name,
+          when: Object.fromEntries(
+            profile.values
+              .filter(({ dimension }) => dimensions.includes(dimension))
+              .map(({ dimension, value }) => [dimension, value]),
+          ),
+        }));
+  let combinations = starts;
+  for (const dimension of dimensions.filter(
+    (name) => file.profiles.length === 0 || !given.has(name),
+  )) {
+    combinations = combinations.flatMap((start) =>
+      valuesOf(dimension).map((value) => ({
+        ...start,
+        when: { ...start.when, [dimension]: value },
+      })),
     );
   }
   return {
     type: type.name,
     dimensions,
-    rows: combinations.map((when) => ({
-      when,
+    rows: combinations.map(({ profile, when: chosen }) => ({
+      ...(profile === undefined ? {} : { profile }),
+      when: Object.fromEntries(dimensions.map((name) => [name, chosen[name] as string])),
       states: Object.fromEntries(
         type.states.map((state) => [
           state.name,
@@ -38,7 +63,7 @@ export function states(file: ParseResult, typeName: string): TypeStates {
             type.rules
               .filter((rule) => rule.state === state.name && rule.value === value)
               .every((rule) =>
-                rule.when.values.some(({ name }) => name === when[rule.when.dimension]),
+                rule.when.values.some(({ name }) => name === chosen[rule.when.dimension]),
               ),
           ),
         ]),

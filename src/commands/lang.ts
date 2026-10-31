@@ -10,8 +10,10 @@ const usage = `Usage: dimensions lang <subcommand>
 
 The dimensions language, which is being designed one concept at a time: see
 docs/language/design.md. So far a file declares enums, each a named set of
-values; dimensions, each listing the values the environment varies by; and
-types with their states, and rules for when a state's value exists:
+values; dimensions, each listing the values the environment varies by;
+types with their states, and rules for when a state's value exists;
+environments, each a product of dimensions; and profiles, each an instance
+of an environment:
 
   enum Hover = rest | hovered
   dimension Pointer = mouse | touch
@@ -19,12 +21,15 @@ types with their states, and rules for when a state's value exists:
     states hover: Hover
     hover = hovered only when Pointer = mouse
   }
+  environment Device = Pointer
+  profile laptop: Device { Pointer = mouse }
 
 Subcommands:
   check <file>                       Parse and check a file; print what it declares
                                      as JSON, or every problem it has. Needs no
                                      project.
-  states <file> <type> [--table]     Evaluate a type: the states it has under each
+  states <file> <type> [--table]     Evaluate a type: the states it has in each
+                                     profile, or without profiles under each
                                      combination of the dimensions its rules use,
                                      as JSON, or a Markdown table with --table
 `;
@@ -55,7 +60,7 @@ const check: Command = command(usage, (args, { io, cwd }) => {
   }
   const parsed = read(file, cwd, io);
   if (typeof parsed === "number") return parsed;
-  const { enums, dimensions, types } = parsed;
+  const { enums, dimensions, types, environments, profiles } = parsed;
   io.stdout(
     `${JSON.stringify(
       {
@@ -76,6 +81,15 @@ const check: Command = command(usage, (args, { io, cwd }) => {
             value,
             when: { dimension: when.dimension, values: when.values.map((item) => item.name) },
           })),
+        })),
+        environments: environments.map(({ name, dimensions: parts }) => ({
+          name,
+          dimensions: parts.map((part) => part.name),
+        })),
+        profiles: profiles.map(({ name, environment, values }) => ({
+          name,
+          environment,
+          values: Object.fromEntries(values.map(({ dimension, value }) => [dimension, value])),
         })),
       },
       null,
@@ -111,10 +125,16 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const columns = (stateType?.states ?? []).flatMap((state) =>
     valuesOf(state.enum).map((value) => [state.name, value] as const),
   );
+  const profiled = evaluated.rows.some((row) => row.profile !== undefined);
   io.stdout(
     drawTable(
-      [...evaluated.dimensions, ...columns.map(([state, value]) => `${state}: ${value}`)],
+      [
+        ...(profiled ? ["profile"] : []),
+        ...evaluated.dimensions,
+        ...columns.map(([state, value]) => `${state}: ${value}`),
+      ],
       evaluated.rows.map((row) => [
+        ...(profiled ? [row.profile ?? NONE] : []),
         ...evaluated.dimensions.map((dimension) => row.when[dimension] ?? NONE),
         ...columns.map(([state, value]) => (row.states[state]?.includes(value) ? "✓" : NONE)),
       ]),

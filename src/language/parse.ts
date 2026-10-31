@@ -5,6 +5,9 @@
 //   dimension = "dimension" name "=" value { "|" [newline] value } newline
 //   enum   = "enum" name "=" value { "|" [newline] value } newline
 //   type   = "type" name "{" { blank-line | states | rule } "}"
+//   environment = "environment" name "=" name { "×" [newline] name } newline
+//   profile = "profile" profile-name ":" name "{" { assignment ( "," | newline ) } "}"
+//   assignment = name "=" value
 //   rule   = state-name "=" value "only" "when" condition newline
 //   condition = name ( "=" value | "in" "(" value { "," value } ")" )
 //   states = "states" field { "," [newline] field } newline
@@ -54,6 +57,30 @@ export interface Type extends Located {
   rules: Rule[];
 }
 
+// An environment: a product of dimensions, whose instances are profiles.
+export interface Environment extends Located {
+  dimensions: Located[];
+}
+
+// One dimension's value in a profile.
+export interface Assignment {
+  dimension: string;
+  value: string;
+  line: number;
+  column: number;
+  valueLine: number;
+  valueColumn: number;
+}
+
+// A profile: an instance of an environment, giving each of its dimensions a
+// value.
+export interface Profile extends Located {
+  environment: string;
+  environmentLine: number;
+  environmentColumn: number;
+  values: Assignment[];
+}
+
 // A dimension: what the environment varies by, with its own values. Its
 // values cascade down the tree, which an enum's do not.
 export type Dimension = Enum;
@@ -69,6 +96,8 @@ export interface ParseResult {
   enums: Enum[];
   dimensions: Dimension[];
   types: Type[];
+  environments: Environment[];
+  profiles: Profile[];
   diagnostics: Diagnostic[];
 }
 
@@ -82,6 +111,7 @@ type TokenKind =
   | ","
   | "("
   | ")"
+  | "×"
   | "newline"
   | "end"
   | "other";
@@ -126,7 +156,8 @@ function scan(source: string): Token[] {
       index = end;
       continue;
     }
-    const kind: TokenKind = "=|{}:,()".includes(char) ? (char as TokenKind) : "other";
+    const kind: TokenKind =
+      char === "*" ? "×" : "=|{}:,()×".includes(char) ? (char as TokenKind) : "other";
     tokens.push({ kind, text: char, line, column });
     index += 1;
     column += 1;
@@ -146,7 +177,14 @@ class ParseFailure extends Error {}
 
 export function parse(source: string): ParseResult {
   const tokens = scan(source);
-  const result: ParseResult = { enums: [], dimensions: [], types: [], diagnostics: [] };
+  const result: ParseResult = {
+    enums: [],
+    dimensions: [],
+    types: [],
+    environments: [],
+    profiles: [],
+    diagnostics: [],
+  };
   let position = 0;
   const peek = () => tokens[position] as Token;
   // The current token, moving past it; the end of the file is never passed.
@@ -296,6 +334,111 @@ export function parse(source: string): ParseResult {
     };
   };
 
+  // An environment: "environment <Name> = <Dimension> × <Dimension> ...".
+  const environmentDeclaration = (): Environment => {
+    next(); // "environment"
+    const nameToken = next();
+    if (nameToken.kind !== "word") fail(nameToken, 'an environment name after "environment"');
+    if (!/^[A-Z][A-Za-z0-9]*$/.test(nameToken.text)) {
+      report(
+        "environment-name",
+        `environment names start with a capital letter: ${JSON.stringify(nameToken.text)}`,
+        { name: nameToken.text, line: nameToken.line, column: nameToken.column },
+      );
+    }
+    const equals = next();
+    if (equals.kind !== "=") fail(equals, '"=" after the environment name');
+    const part = (after: string): Located => {
+      const token = next();
+      if (token.kind !== "word") fail(token, `a dimension after ${after}`);
+      return { name: token.text, line: token.line, column: token.column };
+    };
+    const dimensions = [part('"="')];
+    for (;;) {
+      const token = peek();
+      if (token.kind === "×") {
+        next();
+        if (peek().kind === "newline") next();
+        dimensions.push(part('"×"'));
+        continue;
+      }
+      if (token.kind === "newline" || token.kind === "end") break;
+      const last = dimensions[dimensions.length - 1] as Located;
+      fail(token, `"×" or the end of the line after ${JSON.stringify(last.name)}`);
+    }
+    return { name: nameToken.text, line: nameToken.line, column: nameToken.column, dimensions };
+  };
+
+  // A profile: "profile <name>: <Environment> { <Dimension> = <value>, ... }". A
+  // mistake inside skips to the closing brace.
+  const profileDeclaration = (): Profile => {
+    next(); // "profile"
+    const nameToken = next();
+    if (nameToken.kind !== "word") fail(nameToken, 'a profile name after "profile"');
+    if (!/^[a-z]/.test(nameToken.text)) {
+      report(
+        "profile-name",
+        `profile names start with a lowercase letter: ${JSON.stringify(nameToken.text)}`,
+        { name: nameToken.text, line: nameToken.line, column: nameToken.column },
+      );
+    }
+    const colon = next();
+    if (colon.kind !== ":") fail(colon, `":" after ${JSON.stringify(nameToken.text)}`);
+    const typeToken = next();
+    if (typeToken.kind !== "word") fail(typeToken, 'an environment name after ":"');
+    const profile: Profile = {
+      name: nameToken.text,
+      line: nameToken.line,
+      column: nameToken.column,
+      environment: typeToken.text,
+      environmentLine: typeToken.line,
+      environmentColumn: typeToken.column,
+      values: [],
+    };
+    try {
+      const open = next();
+      if (open.kind !== "{") fail(open, '"{" after the environment name');
+      for (;;) {
+        skipNewlines();
+        const token = peek();
+        if (token.kind === "}") {
+          next();
+          return profile;
+        }
+        if (token.kind === "end") fail(token, `"}" to close ${profile.name}`);
+        const dimensionToken = next();
+        if (dimensionToken.kind !== "word") fail(dimensionToken, 'a dimension or "}"');
+        const equals = next();
+        if (equals.kind !== "=") fail(equals, `"=" after ${JSON.stringify(dimensionToken.text)}`);
+        const valueToken = next();
+        if (valueToken.kind !== "word") fail(valueToken, 'a value after "="');
+        profile.values.push({
+          dimension: dimensionToken.text,
+          value: valueToken.text,
+          line: dimensionToken.line,
+          column: dimensionToken.column,
+          valueLine: valueToken.line,
+          valueColumn: valueToken.column,
+        });
+        const after = peek();
+        if (after.kind === ",") {
+          next();
+          continue;
+        }
+        if (after.kind !== "newline" && after.kind !== "}") {
+          fail(after, `",", the end of the line or "}" after ${JSON.stringify(valueToken.text)}`);
+        }
+      }
+    } catch (error) {
+      if (!(error instanceof ParseFailure)) throw error;
+      // A profile that does not parse is not checked further: skip to its
+      // closing brace and leave it out.
+      while (peek().kind !== "}" && peek().kind !== "end") next();
+      if (peek().kind === "}") next();
+      throw error;
+    }
+  };
+
   // A type: its name, then its states inside braces. A mistake inside skips
   // to the closing brace, so the rest of the file is still read.
   const typeDeclaration = (): Type => {
@@ -368,6 +511,15 @@ export function parse(source: string): ParseResult {
       next();
       continue;
     }
+    if (token.kind === "word" && token.text === "profile") {
+      try {
+        result.profiles.push(profileDeclaration());
+      } catch (error) {
+        if (!(error instanceof ParseFailure)) throw error;
+        while (peek().kind !== "newline" && peek().kind !== "end") next();
+      }
+      continue;
+    }
     if (token.kind === "word" && token.text === "type") {
       try {
         result.types.push(typeDeclaration());
@@ -378,12 +530,16 @@ export function parse(source: string): ParseResult {
       continue;
     }
     try {
+      if (token.kind === "word" && token.text === "environment") {
+        result.environments.push(environmentDeclaration());
+        continue;
+      }
       if (token.kind === "word" && token.text === "dimension") {
         result.dimensions.push(valuesDeclaration("dimension"));
         continue;
       }
       if (token.kind !== "word" || token.text !== "enum") {
-        fail(token, '"enum", "type" or "dimension"');
+        fail(token, '"enum", "dimension", "type", "environment" or "profile"');
       }
       result.enums.push(valuesDeclaration("enum"));
     } catch (error) {
@@ -402,9 +558,13 @@ export function parse(source: string): ParseResult {
 function check(result: ParseResult): void {
   const push = (code: string, message: string, at: { line: number; column: number }) =>
     result.diagnostics.push({ code, message, line: at.line, column: at.column });
-  const declarations = [...result.enums, ...result.dimensions, ...result.types].sort(
-    (a, b) => a.line - b.line || a.column - b.column,
-  );
+  const declarations = [
+    ...result.enums,
+    ...result.dimensions,
+    ...result.types,
+    ...result.environments,
+    ...result.profiles,
+  ].sort((a, b) => a.line - b.line || a.column - b.column);
   const declared = new Map<string, Located>();
   for (const declaration of declarations) {
     const earlier = declared.get(declaration.name);
@@ -524,6 +684,94 @@ function check(result: ParseResult): void {
         }
         seen.add(item.name);
       }
+    }
+  }
+  // An environment's dimensions: declared dimensions, each once.
+  const describeDimension = (name: string) =>
+    enumNames.includes(name)
+      ? `${name} is an enum, not a dimension`
+      : `${name} is not a dimension (${[...dimensionNames].join(", ")})`;
+  for (const environment of result.environments) {
+    const seen = new Set<string>();
+    for (const dimension of environment.dimensions) {
+      if (!dimensionNames.has(dimension.name)) {
+        push("unknown-dimension", describeDimension(dimension.name), dimension);
+      } else if (seen.has(dimension.name)) {
+        push(
+          "duplicate-dimension",
+          `${dimension.name} is already part of ${environment.name}`,
+          dimension,
+        );
+      }
+      seen.add(dimension.name);
+    }
+  }
+  // Profiles: instances of a declared environment, all of the same one, each
+  // giving every dimension of it once, with one of its values.
+  const article = (name: string) => (/^[AEIOU]/.test(name) ? "an" : "a");
+  const first = result.profiles[0];
+  for (const profile of result.profiles) {
+    const at = { line: profile.environmentLine, column: profile.environmentColumn };
+    const named = profile.environment;
+    const type = result.environments.find(({ name }) => name === named);
+    if (type === undefined) {
+      push(
+        "unknown-environment",
+        dimensionNames.has(named)
+          ? `${named} is a dimension, not an environment`
+          : enumNames.includes(named)
+            ? `${named} is an enum, not an environment`
+            : typeNames.has(named)
+              ? `${named} is a type, not an environment`
+              : `${named} is not an environment (${result.environments.map(({ name }) => name).join(", ")})`,
+        at,
+      );
+      continue;
+    }
+    if (first !== undefined && first !== profile && first.environment !== named) {
+      push(
+        "mixed-profiles",
+        `${profile.name} is ${article(named)} ${named}, but ${first.name} is ${article(first.environment)} ${first.environment}; all profiles share one environment`,
+        profile,
+      );
+    }
+    const required = type.dimensions.map(({ name }) => name);
+    const given = new Set<string>();
+    for (const assignment of profile.values) {
+      const at = { line: assignment.line, column: assignment.column };
+      if (!required.includes(assignment.dimension)) {
+        push(
+          "unknown-dimension",
+          `${assignment.dimension} is not a dimension of ${type.name} (${required.join(", ")})`,
+          at,
+        );
+        continue;
+      }
+      if (given.has(assignment.dimension)) {
+        push(
+          "duplicate-dimension",
+          `${assignment.dimension} is already given in ${profile.name}`,
+          at,
+        );
+        continue;
+      }
+      given.add(assignment.dimension);
+      const allowed = valuesOf(assignment.dimension) ?? [];
+      if (!allowed.includes(assignment.value)) {
+        push(
+          "unknown-value",
+          `${JSON.stringify(assignment.value)} is not a value of ${assignment.dimension} (${allowed.join(", ")})`,
+          { line: assignment.valueLine, column: assignment.valueColumn },
+        );
+      }
+    }
+    const missing = required.filter((name) => !given.has(name));
+    if (missing.length > 0) {
+      push(
+        "incomplete-profile",
+        `${profile.name} does not give ${missing.join(", ")}, which ${type.name} requires`,
+        profile,
+      );
     }
   }
 }
