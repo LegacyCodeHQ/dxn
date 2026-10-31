@@ -414,14 +414,14 @@ dimensions type require toolbar-link visual
 them.
 
 A **verification record** says that a check passed or failed in one context,
-by whom and when. Records live in `verification/<root-id>.json`:
+by which actor and when. Records live in `verification/<root-id>.json`:
 
 ```json
 {
   "node": "blog-link",
   "check": "visual",
   "result": "passed",
-  "by": "pen.dev",
+  "actor": "visual-reviewer",
   "at": "2026-10-30T19:20:00Z",
   "context": { "breakpoint": "lg", "hover": "hovered", "focus": "blurred", "selection": "selected" }
 }
@@ -432,8 +432,9 @@ for a plain states list, or the node's id for a shared node, as in
 `menu=open`) and for each dimension that applies to it. A dimension it leaves
 out means that dimension's default, so the record above is for a mouse and a
 keyboard. The context must exist. A record can also name a `transition`
-instead of a context. `dimensions verify` writes records and `unverify`
-removes them.
+instead of a context. `actor` is the role that checked, declared in
+`actors.json` (see [Actors and evidence](#actors-and-evidence)).
+`dimensions verify` writes records and `unverify` removes them.
 `dimensions status` reports every required check as passed, failed or
 missing.
 

@@ -412,6 +412,7 @@ describe("shared states in the other reading commands", () => {
   it("are matched in status", () => {
     const { run } = cliProject({
       ...files,
+      "actors.json": { version: 1, actors: { agent: {} } },
       "verification/article-page.json": {
         version: 1,
         records: [
@@ -420,7 +421,7 @@ describe("shared states in the other reading commands", () => {
             context: { state: "normal", breakpoint: "sm", menu: "open" },
             check: "visual",
             result: "passed",
-            by: "agent",
+            actor: "agent",
             at: "2026-10-30T19:20:00Z",
           },
         ],
@@ -487,6 +488,7 @@ describe("records for a shared node", () => {
   it("name its own state by its id, as contexts and status do", () => {
     const { run } = cliProject({
       ...files,
+      "actors.json": { version: 1, actors: { agent: {} } },
       "types.json": {
         version: 1,
         checks: { behavior: {} },
@@ -497,7 +499,17 @@ describe("records for a shared node", () => {
       },
     });
     const verify = (...context: string[]) =>
-      run("verify", "menu", "--check", "behavior", "--result", "passed", "--by", "p", ...context);
+      run(
+        "verify",
+        "menu",
+        "--check",
+        "behavior",
+        "--result",
+        "passed",
+        "--actor",
+        "agent",
+        ...context,
+      );
     const snapshot: unknown[] = [];
     snapshot.push(verify("breakpoint=base", "state=closed").code);
     snapshot.push(verify("breakpoint=base", "menu=closed").code);

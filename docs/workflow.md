@@ -196,10 +196,12 @@ tables as data.
 
 ## 10. Verify: record what was checked
 
-Record each check's result in one context. `status` lists every required
+Record each check's result in one context, as the actor (a role, such as
+`visual-reviewer`) that checked it. `status` lists every required
 check in every context as passed, failed or missing: what is left to check.
 
 ```bash
-dimensions verify blog-link --check visual --result passed --by designer profile=desktop hover=rest focus=blurred selection=selected
+dimensions actor add visual-reviewer
+dimensions verify blog-link --check visual --result passed --actor visual-reviewer profile=desktop hover=rest focus=blurred selection=selected
 dimensions status blog-link
 ```

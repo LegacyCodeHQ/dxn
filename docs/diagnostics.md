@@ -530,8 +530,8 @@ exactly as `dimensions evidence <node-id> --actor <name>` lists them.
 
 ### `undeclared-actor`
 
-An entry names an actor that `actors.json` does not declare. Add it with
-`dimensions actor add <name>`.
+An evidence entry or a verification record names an actor that `actors.json`
+does not declare. Add it with `dimensions actor add <name>`.
 
 ### `missing-source`
 

@@ -405,6 +405,20 @@ export function compileDirectory(
   checkConflicts(entries, symbols, new Map([...dimensions, ...shared]));
   checkTransitions(symbols, dimensions);
 
+  // actors.json: the roles that do work against the model.
+  const actorsFile = readJson(directory, "actors.json");
+  let actors = new Set<string>();
+  if (actorsFile !== undefined) {
+    if ("code" in actorsFile) {
+      problems.push(actorsFile);
+    } else {
+      parsed.push(actorsFile);
+      if (actorsFile.root !== undefined) {
+        actors = checkActorsFile(actorsFile.root, actorsFile.diagnostics);
+      }
+    }
+  }
+
   const rootIds = new Set(nodes.map((file) => file.file.slice("roots/".length, -".json".length)));
   const verification: [string, ParsedFile][] = [];
   for (const name of listJson(directory, "verification", problems)) {
@@ -431,22 +445,10 @@ export function compileDirectory(
         name,
         profiles,
         shared,
+        actors,
       );
     }
     verification.push([name, file]);
-  }
-
-  // actors.json: the roles that do work against the model.
-  const actorsFile = readJson(directory, "actors.json");
-  if (actorsFile !== undefined) {
-    if ("code" in actorsFile) {
-      problems.push(actorsFile);
-    } else {
-      parsed.push(actorsFile);
-      if (actorsFile.root !== undefined) {
-        checkActorsFile(actorsFile.root, actorsFile.diagnostics);
-      }
-    }
   }
 
   const diagnostics = result().diagnostics;

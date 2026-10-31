@@ -5,12 +5,13 @@ import type { Command } from "./context.js";
 import { editCommand, isObject, parse, Refusal, UsageError } from "./edit.js";
 import { fillProfile } from "./reading.js";
 
-const verifyUsage = `Usage: dimensions verify <node-id> --check <name> --result passed|failed --by <who>
+const verifyUsage = `Usage: dimensions verify <node-id> --check <name> --result passed|failed --actor <role>
                         [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
-                        [--transition <id>] [--evidence <path>] [--at <time>] [--root <root-id>]
+                        [--transition <id>] [--at <time>] [--root <root-id>]
 
 Records a check's result for a node in one context, replacing any earlier
-record for the same node, context and check. The context gives one value for
+record for the same node, context and check. --actor is the role that checked,
+declared in actors.json. The context gives one value for
 each of the node's state groups (state=<state> for a plain states list, or
 <node-id>=<state> for a shared node, as contexts names it) and the states of
 shared nodes above it; dimensions left out take their default.
@@ -130,8 +131,7 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
     {
       check: { type: "string" },
       result: { type: "string" },
-      by: { type: "string" },
-      evidence: { type: "string" },
+      actor: { type: "string" },
       at: { type: "string" },
       root: { type: "string" },
       transition: { type: "string" },
@@ -139,8 +139,8 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
     true,
   );
   const [id, ...rest] = positionals as [string, ...string[]];
-  if (values.check === undefined || values.result === undefined || values.by === undefined) {
-    throw new UsageError("--check, --result and --by are required");
+  if (values.check === undefined || values.result === undefined || values.actor === undefined) {
+    throw new UsageError("--check, --result and --actor are required");
   }
   if (values.transition !== undefined && rest.length > 0) {
     throw new UsageError("a record is about a transition or a context, not both");
@@ -153,9 +153,8 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
     ...(values.transition === undefined ? { context } : { transition: values.transition }),
     check: values.check,
     result: values.result,
-    by: values.by,
+    actor: values.actor,
     at: values.at ?? new Date().toISOString(),
-    ...(values.evidence === undefined ? {} : { evidence: values.evidence }),
   };
   const list = records(workspace, root, true) as unknown[];
   const key =

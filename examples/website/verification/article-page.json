@@ -11,9 +11,8 @@
       },
       "check": "visual",
       "result": "passed",
-      "by": "agent",
-      "at": "2026-10-30T19:20:00Z",
-      "evidence": "screenshots/blog-link-hovered-lg-mouse.png"
+      "actor": "agent",
+      "at": "2026-10-30T19:20:00Z"
     }
   ]
 }

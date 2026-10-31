@@ -249,7 +249,7 @@ describe("grouped states elsewhere", () => {
       context,
       check: "visual",
       result: "passed",
-      by: "agent",
+      actor: "agent",
       at: "2026-10-30T19:20:00Z",
     });
     const verify = (...records: unknown[]) =>
@@ -259,6 +259,7 @@ describe("grouped states elsewhere", () => {
             version: 1,
             overrides: { touch: { types: { link: { states: { remove: ["hovered"] } } } } },
           },
+          "actors.json": { version: 1, actors: { agent: {} } },
           "verification/page.json": { version: 1, records },
         }),
       );

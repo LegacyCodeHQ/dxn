@@ -29,7 +29,7 @@ describe("help", () => {
         [
           0,
           "",
-          "Usage: dimensions verify <node-id> --check <name> --result passed|failed --by <who>",
+          "Usage: dimensions verify <node-id> --check <name> --result passed|failed --actor <role>",
         ],
         [
           0,

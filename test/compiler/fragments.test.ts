@@ -373,7 +373,7 @@ describe("included fragments", () => {
           context: { state: "hovered", breakpoint: "lg" },
           check: "visual",
           result: "passed",
-          by: "agent",
+          actor: "agent",
           at: "2026-10-30T19:20:00Z",
         },
       ],
@@ -382,10 +382,17 @@ describe("included fragments", () => {
       diagnose({
         ...project,
         "dimensions/breakpoint.json": breakpoint,
+        "actors.json": { version: 1, actors: { agent: {} } },
         "verification/article-page.json": record("blog-link"),
       }),
     );
-    snapshot.push(diagnose({ ...project, "verification/toolbar.json": record("blog-link") }));
+    snapshot.push(
+      diagnose({
+        ...project,
+        "actors.json": { version: 1, actors: { agent: {} } },
+        "verification/toolbar.json": record("blog-link"),
+      }),
+    );
 
     expect(snapshot).toMatchInlineSnapshot(`
   [

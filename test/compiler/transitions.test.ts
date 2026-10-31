@@ -321,12 +321,20 @@ describe("verifying transitions", () => {
     node: "menu",
     check: "behavior",
     result: "passed",
-    by: "agent",
+    actor: "agent",
     at: "2026-10-30T19:20:00Z",
     ...fields,
   });
   const verify = (...records: unknown[]) =>
-    diagnose(project({}, { "verification/article-page.json": { version: 1, records } }));
+    diagnose(
+      project(
+        {},
+        {
+          "actors.json": { version: 1, actors: { agent: {} } },
+          "verification/article-page.json": { version: 1, records },
+        },
+      ),
+    );
 
   it("name a transition instead of a context", () => {
     const snapshot: unknown[] = [];

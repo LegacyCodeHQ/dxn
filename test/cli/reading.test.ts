@@ -9,7 +9,7 @@ const record = (node: string, context: Record<string, string>, result: string) =
   context,
   check: "visual",
   result,
-  by: "agent",
+  actor: "agent",
   at: "2026-10-30T19:20:00Z",
 });
 
@@ -83,6 +83,7 @@ const files = {
       lg: { touch: { types: { link: { attributes: { design: { normal: "available" } } } } } },
     },
   },
+  "actors.json": { version: 1, actors: { agent: {} } },
   "verification/page.json": {
     version: 1,
     records: [

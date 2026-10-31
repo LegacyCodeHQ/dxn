@@ -174,7 +174,10 @@ describe("state groups in reading commands", () => {
 
   it("are matched by status and written by verify", () => {
     const snapshot: unknown[] = [];
-    const { run, read } = cliProject(files);
+    const { run, read } = cliProject({
+      ...files,
+      "actors.json": { version: 1, actors: { agent: {} } },
+    });
     snapshot.push(
       run(
         "verify",
@@ -183,7 +186,7 @@ describe("state groups in reading commands", () => {
         "visual",
         "--result",
         "passed",
-        "--by",
+        "--actor",
         "agent",
         "--at",
         "2026-10-30T19:20:00Z",
@@ -202,7 +205,7 @@ describe("state groups in reading commands", () => {
         "visual",
         "--result",
         "passed",
-        "--by",
+        "--actor",
         "agent",
         "interaction=hovered",
         "selection=selected",
@@ -215,8 +218,8 @@ describe("state groups in reading commands", () => {
         {
           "records": [
             {
+              "actor": "agent",
               "at": "2026-10-30T19:20:00Z",
-              "by": "agent",
               "check": "visual",
               "context": {
                 "interaction": "hovered",
@@ -363,7 +366,7 @@ describe("state group commands", () => {
       context: { hover: "unhovered", selection: "selected", pointer: "mouse" },
       check: "visual",
       result: "passed",
-      by: "agent",
+      actor: "agent",
       at: "2026-10-30T19:20:00Z",
     };
     const { run, read } = cliProject({
@@ -407,6 +410,7 @@ describe("state group commands", () => {
           },
         },
       },
+      "actors.json": { version: 1, actors: { agent: {} } },
       "verification/page.json": { version: 1, records: [record] },
     });
     snapshot.push(run("state-group", "rename-value", "hover", "unhovered", "rest").code);
@@ -526,8 +530,8 @@ describe("state group commands", () => {
         },
         [
           {
+            "actor": "agent",
             "at": "2026-10-30T19:20:00Z",
-            "by": "agent",
             "check": "visual",
             "context": {
               "hover": "rest",

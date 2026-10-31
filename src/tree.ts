@@ -134,10 +134,10 @@ export interface VerificationRecord {
   transition?: string;
   check: string;
   result: "passed" | "failed";
-  by: string;
+  // The role that checked, declared in actors.json.
+  actor: string;
   // ISO 8601 date and time with a time zone.
   at: string;
-  evidence?: string;
 }
 
 // verification/<root-id>.json: records for nodes in that root's subtree.

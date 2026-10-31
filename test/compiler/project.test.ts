@@ -47,15 +47,14 @@ describe("compileDirectory", () => {
         },
         [
           {
+            "actor": "agent",
             "at": "2026-10-30T19:20:00Z",
-            "by": "agent",
             "check": "visual",
             "context": {
               "breakpoint": "lg",
               "pointer": "mouse",
               "state": "hovered",
             },
-            "evidence": "screenshots/blog-link-hovered-lg-mouse.png",
             "node": "blog-link",
             "result": "passed",
           },

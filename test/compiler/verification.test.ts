@@ -21,6 +21,7 @@ const project: Files = {
     types: { link: { states: ["normal", "hovered", "selected"], checks: ["visual", "behavior"] } },
   },
   "dimensions/pointer.json": pointer,
+  "actors.json": { version: 1, actors: { agent: {} } },
   "overrides/pointer.json": {
     version: 1,
     overrides: { touch: { types: { link: { states: { remove: ["hovered"] } } } } },
@@ -32,7 +33,7 @@ const record = (fields: Record<string, unknown> = {}) => ({
   context: { state: "hovered", pointer: "mouse" },
   check: "visual",
   result: "passed",
-  by: "agent",
+  actor: "agent",
   at: "2026-10-30T19:20:00Z",
   ...fields,
 });
@@ -45,12 +46,13 @@ const r = (fields: Record<string, unknown>) => records(record(fields));
 
 describe("verification files", () => {
   it("accept records for nodes in the file's root", () => {
-    expect(records(record(), record({ check: "behavior", evidence: "shots/a.png" }))).toEqual([]);
+    expect(records(record(), record({ check: "behavior" }))).toEqual([]);
   });
 
   it("are returned by root", () => {
     const result = compileFiles({
       ...project,
+      "actors.json": { version: 1, actors: { agent: {} } },
       "verification/page.json": { version: 1, records: [record()] },
     });
     expect(result.project?.verification.page?.records).toEqual([record()]);
@@ -173,7 +175,7 @@ describe("records", () => {
           {
             "code": "missing-key",
             "file": "verification/page.json",
-            "path": "$.records[0].by",
+            "path": "$.records[0].actor",
           },
           {
             "code": "missing-key",
@@ -282,6 +284,7 @@ describe("record context", () => {
     snapshot.push(
       diagnose({
         ...project,
+        "actors.json": { version: 1, actors: { agent: {} } },
         "verification/footer-link.json": {
           version: 1,
           records: [
@@ -377,6 +380,7 @@ describe("record context", () => {
           version: 1,
           overrides: { touch: { nodes: { "blog-link": { states: { add: ["pressed"] } } } } },
         },
+        "actors.json": { version: 1, actors: { agent: {} } },
         "verification/page.json": {
           version: 1,
           records: [record({ context: { state: "pressed", pointer: "touch" } })],
@@ -403,6 +407,7 @@ describe("record context across dimensions", () => {
             },
           },
         },
+        "actors.json": { version: 1, actors: { agent: {} } },
         "verification/page.json": {
           version: 1,
           records: [record({ context: { state: "hovered", breakpoint: "sm", pointer: "touch" } })],
@@ -417,6 +422,7 @@ describe("record context defaults", () => {
     diagnose({
       ...project,
       "dimensions/pointer.json": { ...pointer, default: value },
+      "actors.json": { version: 1, actors: { agent: {} } },
       "verification/page.json": { version: 1, records: entries },
     });
 
@@ -481,7 +487,7 @@ describe("record check", () => {
   });
 });
 
-describe("record result, by, at and evidence", () => {
+describe("record result, actor and at", () => {
   it("result is passed or failed", () => {
     const snapshot: unknown[] = [];
     snapshot.push(r({ result: "failed" }));
@@ -509,23 +515,11 @@ describe("record result, by, at and evidence", () => {
 `);
   });
 
-  it("by is a non-blank name", () => {
-    const snapshot: unknown[] = [];
-    snapshot.push(r({ by: "ragunath@legacycode.com" }));
-    snapshot.push(r({ by: " " }));
-
-    expect(snapshot).toMatchInlineSnapshot(`
-  [
-    [],
-    [
-      {
-        "code": "empty-string",
-        "file": "verification/page.json",
-        "path": "$.records[0].by",
-      },
-    ],
-  ]
-`);
+  it("actor is a role declared in actors.json", () => {
+    expect([r({ actor: "visual-reviewer" }), r({ actor: " " })]).toEqual([
+      [v("undeclared-actor", "$.records[0].actor")],
+      [v("empty-string", "$.records[0].actor")],
+    ]);
   });
 
   it("at is an ISO 8601 date and time with a time zone", () => {
@@ -582,7 +576,10 @@ describe("record result, by, at and evidence", () => {
     `);
   });
 
-  it("evidence is optional and non-blank", () => {
-    expect(r({ evidence: "" })).toEqual([v("empty-string", "$.records[0].evidence")]);
+  it("have no free-text evidence or by", () => {
+    expect([r({ evidence: "shots/a.png" }), r({ by: "agent" })]).toEqual([
+      [v("unknown-key", "$.records[0].evidence")],
+      [v("unknown-key", "$.records[0].by")],
+    ]);
   });
 });

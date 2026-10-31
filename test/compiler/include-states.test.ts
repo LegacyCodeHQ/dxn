@@ -127,14 +127,17 @@ describe("states on an include", () => {
       context: { hover: "rest", selection },
       check: "visual",
       result: "passed",
-      by: "agent",
+      actor: "agent",
       at: "2026-10-30T19:20:00Z",
     });
     const verify = (selection: string) =>
       diagnose(
         project(
           { states: { "blog-link": { selection: ["selected"] } } },
-          { "verification/article-page.json": { version: 1, records: [record(selection)] } },
+          {
+            "actors.json": { version: 1, actors: { agent: {} } },
+            "verification/article-page.json": { version: 1, records: [record(selection)] },
+          },
         ),
       );
     const snapshot: unknown[] = [];

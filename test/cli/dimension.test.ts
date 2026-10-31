@@ -241,7 +241,7 @@ describe("dimension rename-value", () => {
       context: { state: "normal", breakpoint: "0", pointer: "mouse" },
       check: "visual",
       result: "passed",
-      by: "agent",
+      actor: "agent",
       at: "2026-10-30T19:20:00Z",
     };
     const { run, read } = cliProject({
@@ -265,6 +265,7 @@ describe("dimension rename-value", () => {
         version: 1,
         overrides: { "0": { mouse: { types: { link: { states: { remove: ["hovered"] } } } } } },
       },
+      "actors.json": { version: 1, actors: { agent: {} } },
       "verification/page.json": { version: 1, records: [record] },
     });
     snapshot.push(run("dimension", "rename-value", "breakpoint", "0", "base").code);
@@ -329,8 +330,8 @@ describe("dimension rename-value", () => {
         {
           "records": [
             {
+              "actor": "agent",
               "at": "2026-10-30T19:20:00Z",
-              "by": "agent",
               "check": "visual",
               "context": {
                 "breakpoint": "base",

@@ -276,13 +276,25 @@ describe("combination states", () => {
           context: { state: "hovered", breakpoint, pointer: "touch", theme: "light" },
           check: "visual",
           result: "passed",
-          by: "agent",
+          actor: "agent",
           at: "2026-10-30T19:20:00Z",
         },
       ],
     });
-    snapshot.push(diagnose({ ...files, "verification/page.json": record("sm") }));
-    snapshot.push(diagnose({ ...files, "verification/page.json": record("lg") }));
+    snapshot.push(
+      diagnose({
+        ...files,
+        "actors.json": { version: 1, actors: { agent: {} } },
+        "verification/page.json": record("sm"),
+      }),
+    );
+    snapshot.push(
+      diagnose({
+        ...files,
+        "actors.json": { version: 1, actors: { agent: {} } },
+        "verification/page.json": record("lg"),
+      }),
+    );
 
     expect(snapshot).toMatchInlineSnapshot(`
   [

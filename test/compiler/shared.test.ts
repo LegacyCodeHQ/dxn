@@ -206,11 +206,16 @@ describe("verification under a shared ancestor", () => {
     context,
     check: "visual",
     result: "passed",
-    by: "agent",
+    actor: "agent",
     at: "2026-10-30T19:20:00Z",
   });
   const verify = (...records: unknown[]) =>
-    diagnose(project({ "verification/page.json": { version: 1, records } }));
+    diagnose(
+      project({
+        "actors.json": { version: 1, actors: { agent: {} } },
+        "verification/page.json": { version: 1, records },
+      }),
+    );
   const v = at("verification/page.json");
 
   it("names the ancestor's state in the context", () => {

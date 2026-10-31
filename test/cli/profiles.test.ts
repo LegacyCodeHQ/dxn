@@ -199,7 +199,10 @@ describe("filters by profile", () => {
 
 describe("verify", () => {
   it("records the profile's dimension values", () => {
-    const { run, read } = cliProject(files);
+    const { run, read } = cliProject({
+      ...files,
+      "actors.json": { version: 1, actors: { agent: {} } },
+    });
     const result = run(
       "verify",
       "blog-link",
@@ -207,8 +210,8 @@ describe("verify", () => {
       "visual",
       "--result",
       "passed",
-      "--by",
-      "p",
+      "--actor",
+      "agent",
       "--at",
       "2026-10-31T10:00:00Z",
       "profile=desktop",
@@ -227,7 +230,7 @@ describe("verify", () => {
       },
       check: "visual",
       result: "passed",
-      by: "p",
+      actor: "agent",
       at: "2026-10-31T10:00:00Z",
     });
     expect(json(run("status", "blog-link")).summary).toEqual({ passed: 1, failed: 0, missing: 8 });

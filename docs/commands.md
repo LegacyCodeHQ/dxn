@@ -256,12 +256,13 @@ dimensions evidence toolbar --actor design-agent --table
 ### verify
 
 ```text
-Usage: dimensions verify <node-id> --check <name> --result passed|failed --by <who>
+Usage: dimensions verify <node-id> --check <name> --result passed|failed --actor <role>
                         [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
-                        [--transition <id>] [--evidence <path>] [--at <time>] [--root <root-id>]
+                        [--transition <id>] [--at <time>] [--root <root-id>]
 
 Records a check's result for a node in one context, replacing any earlier
-record for the same node, context and check. The context gives one value for
+record for the same node, context and check. --actor is the role that checked,
+declared in actors.json. The context gives one value for
 each of the node's state groups (state=<state> for a plain states list, or
 <node-id>=<state> for a shared node, as contexts names it) and the states of
 shared nodes above it; dimensions left out take their default.
@@ -269,13 +270,14 @@ shared nodes above it; dimensions left out take their default.
 --at defaults to now; --root is needed when several roots include the node.
 ```
 
-Writes a record to `verification/<root-id>.json`. The check must be declared (`check add`) and required by the node's type (`type require`), and the context must be one the node exists in. Every state group needs a value; dimensions left out take their default. The neo-website project declares no checks yet, so the first two lines below set them up.
+Writes a record to `verification/<root-id>.json`. The check must be declared (`check add`) and required by the node's type (`type require`), the actor declared (`actor add`), and the context must be one the node exists in. Every state group needs a value; dimensions left out take their default. The neo-website project declares no checks yet, so the first two lines below set them up.
 
 ```bash
 dimensions check add visual
 dimensions type require toolbar-link visual
-dimensions verify blog-link --check visual --result passed --by pen.dev breakpoint=lg hover=hovered focus=blurred selection=selected
-dimensions verify menu --check behavior --result passed --by agent --transition escape
+dimensions actor add visual-reviewer
+dimensions verify blog-link --check visual --result passed --actor visual-reviewer breakpoint=lg hover=hovered focus=blurred selection=selected
+dimensions verify menu --check behavior --result passed --actor behavior-reviewer --transition escape
 ```
 
 ### unverify

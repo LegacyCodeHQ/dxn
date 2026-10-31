@@ -216,11 +216,19 @@ describe("absent nodes", () => {
     context: { state: "normal", ...context },
     check: "visual",
     result: "passed",
-    by: "agent",
+    actor: "agent",
     at: "2026-10-30T19:20:00Z",
   });
   const verify = (records: unknown[], extra: Files = {}) =>
-    withOnly(desktopOnly, {}, { ...extra, "verification/page.json": { version: 1, records } });
+    withOnly(
+      desktopOnly,
+      {},
+      {
+        ...extra,
+        "actors.json": { version: 1, actors: { agent: {} } },
+        "verification/page.json": { version: 1, records },
+      },
+    );
   const _v = at("verification/page.json");
 
   it("have no verification records where they are absent", () => {
@@ -294,6 +302,7 @@ describe("absent nodes", () => {
         },
         "roots/page.json": rootFile({ id: "page", title: "Page", children: [{ include: "menu" }] }),
         "overrides/breakpoint.json": { version: 1, only: { menu: ["base"] }, overrides: {} },
+        "actors.json": { version: 1, actors: { agent: {} } },
         "verification/page.json": {
           version: 1,
           records: [record("menu-item", { breakpoint: "xl" })],

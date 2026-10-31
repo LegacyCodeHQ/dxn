@@ -212,7 +212,10 @@ describe("node transition add and remove", () => {
 describe("transitions in status and verify", () => {
   it("are listed, verified and unverified by id", () => {
     const snapshot: unknown[] = [];
-    const { run, read } = cliProject(files);
+    const { run, read } = cliProject({
+      ...files,
+      "actors.json": { version: 1, actors: { agent: {} } },
+    });
     run(
       "node",
       "transition",
@@ -251,7 +254,7 @@ describe("transitions in status and verify", () => {
         "behavior",
         "--result",
         "passed",
-        "--by",
+        "--actor",
         "agent",
         "--at",
         "2026-10-30T19:20:00Z",
@@ -270,8 +273,8 @@ describe("transitions in status and verify", () => {
         {
           "records": [
             {
+              "actor": "agent",
               "at": "2026-10-30T19:20:00Z",
-              "by": "agent",
               "check": "behavior",
               "node": "menu",
               "result": "passed",

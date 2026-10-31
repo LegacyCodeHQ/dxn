@@ -6,7 +6,6 @@ import {
   checkVersion,
   expectKind,
   expectName,
-  expectNonEmptyString,
   expectObject,
   keys,
   report,
@@ -25,7 +24,7 @@ export interface DimensionInfo {
   overrides?: OverrideStates;
 }
 
-const recordKeys = ["node", "context", "transition", "check", "result", "by", "at", "evidence"];
+const recordKeys = ["node", "context", "transition", "check", "result", "actor", "at"];
 const results = new Set(["passed", "failed"]);
 
 // verification/<root-id>.json: one record per node, exact context and check.
@@ -38,6 +37,7 @@ export function checkVerificationFile(
   rootId: string,
   profiles: ProfilesSymbol,
   sharedOverrides: Map<string, DimensionInfo>,
+  actors: Set<string>,
 ): void {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
@@ -68,6 +68,7 @@ export function checkVerificationFile(
       path,
       profiles,
       sharedOverrides,
+      actors,
     );
     if (key === undefined) {
       return;
@@ -97,13 +98,14 @@ function checkRecord(
   path: string,
   profiles: ProfilesSymbol,
   sharedOverrides: Map<string, DimensionInfo>,
+  actors: Set<string>,
 ): string | undefined {
   const record = expectObject(diagnostics, item, path);
   if (record === undefined) {
     return undefined;
   }
   const fields = keys(diagnostics, record, path, recordKeys, {
-    required: ["node", "check", "result", "by", "at"],
+    required: ["node", "check", "result", "actor", "at"],
   });
   // A record is about a context, or about one of the node's transitions.
   const transitionNode = fields.get("transition");
@@ -200,9 +202,17 @@ function checkRecord(
     }
   }
 
-  const by = fields.get("by");
-  if (by !== undefined) {
-    expectNonEmptyString(diagnostics, by, `${path}.by`);
+  const actor = fields.get("actor");
+  if (actor !== undefined && expectName(diagnostics, actor, `${path}.actor`)) {
+    if (!actors.has(actor.value)) {
+      report(
+        diagnostics,
+        "undeclared-actor",
+        `actor ${JSON.stringify(actor.value)} is not declared in actors.json`,
+        `${path}.actor`,
+        actor,
+      );
+    }
   }
 
   const at = fields.get("at");
@@ -216,11 +226,6 @@ function checkRecord(
         at,
       );
     }
-  }
-
-  const evidence = fields.get("evidence");
-  if (evidence !== undefined) {
-    expectNonEmptyString(diagnostics, evidence, `${path}.evidence`);
   }
 
   if (nodeId === undefined || context === undefined || checkName === undefined) {

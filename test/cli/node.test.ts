@@ -372,6 +372,7 @@ describe("node rename", () => {
         only: { a: ["mouse"] },
         overrides: { mouse: { nodes: { a: { states: { remove: ["hovered"] } } } } },
       },
+      "actors.json": { version: 1, actors: { agent: {} } },
       "verification/page.json": { version: 1, records: [] },
     });
     snapshot.push(run("node", "rename", "a", "b").code);
@@ -435,6 +436,7 @@ describe("node rename", () => {
     const snapshot: unknown[] = [];
     const { run, exists } = project({
       "roots/page.json": page(),
+      "actors.json": { version: 1, actors: { agent: {} } },
       "verification/page.json": { version: 1, records: [] },
     });
     snapshot.push(run("node", "rename", "page", "home").code);
@@ -497,7 +499,7 @@ describe("node rename", () => {
       context: { state: "normal" },
       check: "visual",
       result: "passed",
-      by: "agent",
+      actor: "agent",
       at: "2026-10-30T19:20:00Z",
     };
     const { run, read } = project({
@@ -507,6 +509,7 @@ describe("node rename", () => {
         types: { link: { states: ["normal"], checks: ["visual"] } },
       },
       "roots/page.json": page([{ id: "a", title: "A", type: "link" }]),
+      "actors.json": { version: 1, actors: { agent: {} } },
       "verification/page.json": { version: 1, records: [record] },
     });
     snapshot.push(run("node", "rename", "a", "b").code);
@@ -518,8 +521,8 @@ describe("node rename", () => {
         {
           "records": [
             {
+              "actor": "agent",
               "at": "2026-10-30T19:20:00Z",
-              "by": "agent",
               "check": "visual",
               "context": {
                 "state": "normal",

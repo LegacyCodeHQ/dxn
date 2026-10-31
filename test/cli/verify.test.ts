@@ -30,6 +30,7 @@ const files = {
     version: 1,
     overrides: { touch: { types: { link: { states: { remove: ["hovered"] } } } } },
   },
+  "actors.json": { version: 1, actors: { agent: {}, "visual-reviewer": {} } },
 };
 
 const at = "2026-10-30T19:20:00Z";
@@ -40,7 +41,7 @@ const verify = (...extra: string[]) => [
   "visual",
   "--result",
   "passed",
-  "--by",
+  "--actor",
   "agent",
   "--at",
   at,
@@ -51,7 +52,7 @@ describe("verify", () => {
   it("records a result in the page's verification file", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    const result = run(...verify("state=hovered", "pointer=mouse", "--evidence", "shots/a.png"));
+    const result = run(...verify("state=hovered", "pointer=mouse"));
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
     snapshot.push(read("verification/page.json"));
@@ -68,14 +69,13 @@ describe("verify", () => {
         {
           "records": [
             {
+              "actor": "agent",
               "at": "2026-10-30T19:20:00Z",
-              "by": "agent",
               "check": "visual",
               "context": {
                 "pointer": "mouse",
                 "state": "hovered",
               },
-              "evidence": "shots/a.png",
               "node": "blog-link",
               "result": "passed",
             },
@@ -96,8 +96,8 @@ describe("verify", () => {
       "visual",
       "--result",
       "failed",
-      "--by",
-      "ragunath",
+      "--actor",
+      "visual-reviewer",
       "--at",
       at,
       "state=normal",
@@ -110,7 +110,7 @@ describe("verify", () => {
         context: { state: "normal", breakpoint: "lg", pointer: "mouse" },
         check: "visual",
         result: "failed",
-        by: "ragunath",
+        actor: "visual-reviewer",
         at,
       },
     ]);
@@ -126,7 +126,7 @@ describe("verify", () => {
       "visual",
       "--result",
       "passed",
-      "--by",
+      "--actor",
       "agent",
       "state=normal",
       "pointer=mouse",
@@ -195,7 +195,7 @@ describe("verify", () => {
       "roots/page.json": rootFile({ id: "page", title: "Page" }),
     });
     snapshot.push(run(...verify("state=normal")));
-    snapshot.push(run("verify", "blog-link", "--check", "visual", "--by", "agent").code);
+    snapshot.push(run("verify", "blog-link", "--check", "visual", "--actor", "agent").code);
     snapshot.push(run(...verify("pointer")).code);
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -237,8 +237,8 @@ describe("unverify", () => {
         0,
         [
           {
+            "actor": "agent",
             "at": "2026-10-30T19:20:00Z",
-            "by": "agent",
             "check": "visual",
             "context": {
               "pointer": "mouse",
@@ -261,5 +261,32 @@ describe("unverify", () => {
       stderr:
         'dimensions: no visual record for blog-link in {"state":"normal","pointer":"mouse"}\n',
     });
+  });
+
+  it("records who checked as a declared actor, and nothing free-text", () => {
+    const { run } = cliProject(files);
+    const undeclared = run(
+      ...verify("state=normal", "pointer=mouse").map((arg) => (arg === "agent" ? "nobody" : arg)),
+    );
+    expect([
+      undeclared.code,
+      undeclared.stderr.replace(/^.*?:\d+:\d+: /, ""),
+      run(...verify("state=normal", "pointer=mouse", "--evidence", "shots/a.png")).code,
+      run(
+        "verify",
+        "blog-link",
+        "--check",
+        "visual",
+        "--result",
+        "passed",
+        "--by",
+        "agent",
+      ).stderr.split("\n")[0],
+    ]).toEqual([
+      1,
+      'undeclared-actor: actor "nobody" is not declared in actors.json\n',
+      2,
+      "dimensions: Unknown option '--by'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- \"--by\"",
+    ]);
   });
 });

@@ -71,6 +71,7 @@ const files = {
     default: "sm",
     appliesTo: ["toolbar"],
   },
+  "actors.json": { version: 1, actors: { agent: {} } },
   "verification/page.json": {
     version: 1,
     records: [
@@ -94,7 +95,7 @@ const files = {
 };
 
 function passed(check: string) {
-  return { check, result: "passed", by: "p", at: "2026-10-30T10:00:00Z" };
+  return { check, result: "passed", actor: "agent", at: "2026-10-30T10:00:00Z" };
 }
 
 interface Transition {
