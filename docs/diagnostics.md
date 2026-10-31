@@ -164,9 +164,9 @@ verification record without `context` or `transition`.
 ### `unknown-key`
 
 A key that isn't allowed here, often a typo. On a transition, it is also a
-field its event doesn't use: `click` takes only `target`, `keydown` only `key`,
-`pointerdown` only `target` or `outside`, and `resize` only `when`, each with an
-optional `focus`. In a verification record's
+field its event doesn't use: `click`, `input` and `change` take only
+`target`, `keydown` only `key`, `pointerdown` only `target` or `outside`, and
+`resize` only `when`, each with an optional `focus`. In a verification record's
 context, it is a name that is neither a dimension of the node nor one of its
 state groups or shared ancestors.
 
@@ -444,8 +444,9 @@ one node or outside one, so keep one of them.
 
 ### `unknown-event`
 
-`on` isn't one of the supported events: `click`, `keydown`, `pointerdown`,
-`resize`. In a transition rule, it is the `event` in `on`.
+`on` isn't one of the supported events: `click`, `input`, `change`,
+`keydown`, `pointerdown`, `resize`. In a transition rule, it is the `event` in
+`on`.
 
 ### `target-absent`
 

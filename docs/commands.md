@@ -291,7 +291,7 @@ Subcommands:
                                      Make a node exist only at some values of a dimension
   only-when <id> <ancestor-id> (<state>... | --always)
                                      Make a node exist only in some states of a shared ancestor
-  transition add <node-id> <id> --from <state> --to <state> --on click|keydown|pointerdown|resize
+  transition add <node-id> <id> --from <state> --to <state> --on click|input|change|keydown|pointerdown|resize
                  [--key <key>] [--target <node>] [--outside <node>] [--when <dimension>=a,b] [--focus <node>]
                                      Add how a shared node's state changes
   transition remove <node-id> <id>   Remove a transition

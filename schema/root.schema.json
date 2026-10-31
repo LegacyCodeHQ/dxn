@@ -149,7 +149,7 @@
           "$ref": "#/$defs/name"
         },
         "on": {
-          "enum": ["click", "keydown", "pointerdown", "resize"]
+          "enum": ["click", "input", "change", "keydown", "pointerdown", "resize"]
         },
         "key": {
           "description": "keydown: the key, as KeyboardEvent.key names it.",

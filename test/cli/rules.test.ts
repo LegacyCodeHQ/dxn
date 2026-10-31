@@ -167,7 +167,7 @@ describe("transition rules: when, on an event, then", () => {
         { ...escapeRule({ menu: "closed" }), then: undefined, exists: true },
       ]),
     ).toEqual([
-      'unknown-event: "hover" is not a supported event (click, keydown, pointerdown, resize)',
+      'unknown-event: "hover" is not a supported event (click, input, change, keydown, pointerdown, resize)',
       'unknown-key: "key" does not apply to a click event',
       'missing-key: missing required key "event"',
       'unknown-node: node "nope" does not exist',

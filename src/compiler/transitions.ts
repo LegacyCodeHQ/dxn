@@ -7,6 +7,8 @@ import type { DimensionSymbol, TransitionRef, TreeSymbols } from "./symbols.js";
 // DOM events a transition can happen on, and the field each one needs.
 const events: Record<string, string> = {
   click: "target",
+  input: "target",
+  change: "target",
   keydown: "key",
   pointerdown: "target",
   resize: "when",
@@ -17,6 +19,8 @@ const fields = ["id", "from", "to", "on", "key", "target", "outside", "when", "f
 // The event fields each event uses; focus goes with any of them.
 export const uses: Record<string, string[]> = {
   click: ["target"],
+  input: ["target"],
+  change: ["target"],
   keydown: ["key"],
   pointerdown: ["target", "outside"],
   resize: ["when"],

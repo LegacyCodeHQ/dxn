@@ -418,3 +418,19 @@ describe("same-state transitions", () => {
     ).toEqual([k("same-state-transition", `${path}[0].to`)]);
   });
 });
+
+describe("input and change events", () => {
+  it("happen on a target, like a click", () => {
+    expect([
+      withTransition({ ...base, on: "input", target: "menu-button" }),
+      withTransition({ ...base, on: "change", target: "menu-button", focus: "menu-button" }),
+      withTransition({ ...base, on: "input" }),
+      withTransition({ ...base, on: "change", target: "menu-button", key: "a" }),
+    ]).toEqual([
+      [],
+      [],
+      [k("missing-key", `${path}[0].target`)],
+      [k("unknown-key", `${path}[0].key`)],
+    ]);
+  });
+});

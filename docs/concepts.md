@@ -310,6 +310,8 @@ A shared node can list how its state changes, as DOM events:
 | `on`          | needs                                   |
 | ------------- | --------------------------------------- |
 | `click`       | `target`: the node clicked              |
+| `input`       | `target`: the field typed in            |
+| `change`      | `target`: the field whose value changed |
 | `keydown`     | `key`, as `KeyboardEvent.key` names it  |
 | `pointerdown` | `target`, or `outside`: a node          |
 | `resize`      | `when`: the dimension values it reaches |

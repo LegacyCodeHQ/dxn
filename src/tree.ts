@@ -35,7 +35,7 @@ export interface Transition {
   id: string;
   from: string;
   to: string;
-  on: "click" | "keydown" | "pointerdown" | "resize";
+  on: "click" | "input" | "change" | "keydown" | "pointerdown" | "resize";
   // keydown: the key, as KeyboardEvent.key names it.
   key?: string;
   // click and pointerdown: the node the event happens on.

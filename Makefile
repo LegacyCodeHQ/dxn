@@ -54,6 +54,7 @@ coverage:
 
 embed-docs:
 	node scripts/embed-docs/embed.mjs
+	npx biome format --write src/generated/workflow.ts
 
 build:
 	npx tsc --project tsconfig.build.json
