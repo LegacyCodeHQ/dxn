@@ -24,7 +24,14 @@ export interface Located {
   column: number;
 }
 
-export interface Enum extends Located {
+// A declaration that did not parse to its end is kept with what was read, so
+// its name is known, and marked broken: what it holds may be incomplete, so
+// nothing is checked against it.
+interface Declaration extends Located {
+  broken?: true;
+}
+
+export interface Enum extends Declaration {
   values: Located[];
 }
 
@@ -52,13 +59,13 @@ export interface Rule extends Located {
   when: Condition;
 }
 
-export interface Type extends Located {
+export interface Type extends Declaration {
   states: State[];
   rules: Rule[];
 }
 
 // An environment: a product of dimensions, whose instances are profiles.
-export interface Environment extends Located {
+export interface Environment extends Declaration {
   dimensions: Located[];
 }
 
@@ -74,7 +81,7 @@ export interface Assignment {
 
 // A profile: an instance of an environment, giving each of its dimensions a
 // value.
-export interface Profile extends Located {
+export interface Profile extends Declaration {
   environment: string;
   environmentLine: number;
   environmentColumn: number;
@@ -205,6 +212,13 @@ export function parse(source: string): ParseResult {
   const report = (code: string, message: string, at: Located) => {
     result.diagnostics.push({ code, message, line: at.line, column: at.column });
   };
+  // The declaration being read, kept as soon as it has a name.
+  let current: Declaration | undefined;
+  const keep = <T extends Declaration>(list: T[], declaration: T): T => {
+    list.push(declaration);
+    current = declaration;
+    return declaration;
+  };
 
   // A value: a word that is not followed by anything but separators.
   const value = (after: string): Located => {
@@ -216,7 +230,7 @@ export function parse(source: string): ParseResult {
   // An enum or a dimension: the keyword, a capitalized name, "=" and its
   // values. The two differ only in what their values do later: a dimension's
   // cascade down the tree.
-  const valuesDeclaration = (keyword: "enum" | "dimension"): Enum => {
+  const valuesDeclaration = (keyword: "enum" | "dimension", list: Enum[]): void => {
     next(); // the keyword
     const nameToken = next();
     if (nameToken.kind !== "word") fail(nameToken, `a ${keyword} name after "${keyword}"`);
@@ -228,9 +242,10 @@ export function parse(source: string): ParseResult {
         name,
       );
     }
+    const { values } = keep(list, { ...name, values: [] });
     const equals = next();
     if (equals.kind !== "=") fail(equals, `"=" after the ${keyword} name`);
-    const values = [value('"="')];
+    values.push(value('"="'));
     for (;;) {
       const token = peek();
       if (token.kind === "|") {
@@ -243,7 +258,14 @@ export function parse(source: string): ParseResult {
       const last = values[values.length - 1] as Located;
       fail(token, `"|" or the end of the line after ${JSON.stringify(last.name)}`);
     }
-    return { ...name, values };
+  };
+
+  // After a mistake in braces: skip past the closing brace, unless the
+  // mistake was the closing brace.
+  const skipBody = () => {
+    if (tokens[position - 1]?.kind === "}") return;
+    while (peek().kind !== "}" && peek().kind !== "end") next();
+    if (peek().kind === "}") next();
   };
 
   const skipNewlines = () => {
@@ -335,7 +357,7 @@ export function parse(source: string): ParseResult {
   };
 
   // An environment: "environment <Name> = <Dimension> × <Dimension> ...".
-  const environmentDeclaration = (): Environment => {
+  const environmentDeclaration = (): void => {
     next(); // "environment"
     const nameToken = next();
     if (nameToken.kind !== "word") fail(nameToken, 'an environment name after "environment"');
@@ -346,6 +368,12 @@ export function parse(source: string): ParseResult {
         { name: nameToken.text, line: nameToken.line, column: nameToken.column },
       );
     }
+    const { dimensions } = keep(result.environments, {
+      name: nameToken.text,
+      line: nameToken.line,
+      column: nameToken.column,
+      dimensions: [],
+    });
     const equals = next();
     if (equals.kind !== "=") fail(equals, '"=" after the environment name');
     const part = (after: string): Located => {
@@ -353,7 +381,7 @@ export function parse(source: string): ParseResult {
       if (token.kind !== "word") fail(token, `a dimension after ${after}`);
       return { name: token.text, line: token.line, column: token.column };
     };
-    const dimensions = [part('"="')];
+    dimensions.push(part('"="'));
     for (;;) {
       const token = peek();
       if (token.kind === "×") {
@@ -366,12 +394,11 @@ export function parse(source: string): ParseResult {
       const last = dimensions[dimensions.length - 1] as Located;
       fail(token, `"×" or the end of the line after ${JSON.stringify(last.name)}`);
     }
-    return { name: nameToken.text, line: nameToken.line, column: nameToken.column, dimensions };
   };
 
   // A profile: "profile <name>: <Environment> { <Dimension> = <value>, ... }". A
   // mistake inside skips to the closing brace.
-  const profileDeclaration = (): Profile => {
+  const profileDeclaration = (): void => {
     next(); // "profile"
     const nameToken = next();
     if (nameToken.kind !== "word") fail(nameToken, 'a profile name after "profile"');
@@ -386,7 +413,7 @@ export function parse(source: string): ParseResult {
     if (colon.kind !== ":") fail(colon, `":" after ${JSON.stringify(nameToken.text)}`);
     const typeToken = next();
     if (typeToken.kind !== "word") fail(typeToken, 'an environment name after ":"');
-    const profile: Profile = {
+    const profile = keep(result.profiles, {
       name: nameToken.text,
       line: nameToken.line,
       column: nameToken.column,
@@ -394,7 +421,7 @@ export function parse(source: string): ParseResult {
       environmentLine: typeToken.line,
       environmentColumn: typeToken.column,
       values: [],
-    };
+    });
     try {
       const open = next();
       if (open.kind !== "{") fail(open, '"{" after the environment name');
@@ -403,7 +430,7 @@ export function parse(source: string): ParseResult {
         const token = peek();
         if (token.kind === "}") {
           next();
-          return profile;
+          return;
         }
         if (token.kind === "end") fail(token, `"}" to close ${profile.name}`);
         const dimensionToken = next();
@@ -431,27 +458,24 @@ export function parse(source: string): ParseResult {
       }
     } catch (error) {
       if (!(error instanceof ParseFailure)) throw error;
-      // A profile that does not parse is not checked further: skip to its
-      // closing brace and leave it out.
-      while (peek().kind !== "}" && peek().kind !== "end") next();
-      if (peek().kind === "}") next();
+      skipBody();
       throw error;
     }
   };
 
   // A type: its name, then its states inside braces. A mistake inside skips
   // to the closing brace, so the rest of the file is still read.
-  const typeDeclaration = (): Type => {
+  const typeDeclaration = (): void => {
     next(); // "type"
     const nameToken = next();
     if (nameToken.kind !== "word") fail(nameToken, 'a type name after "type"');
-    const type: Type = {
+    const type = keep(result.types, {
       name: nameToken.text,
       line: nameToken.line,
       column: nameToken.column,
       states: [],
       rules: [],
-    };
+    });
     if (!/^[A-Z][A-Za-z0-9]*$/.test(type.name)) {
       report(
         "type-name",
@@ -468,7 +492,7 @@ export function parse(source: string): ParseResult {
         const token = peek();
         if (token.kind === "}") {
           next();
-          return type;
+          return;
         }
         if (token.kind === "end") fail(token, `"}" to close ${type.name}`);
         if (token.kind === "word" && token.text !== "states") {
@@ -499,51 +523,36 @@ export function parse(source: string): ParseResult {
       }
     } catch (error) {
       if (!(error instanceof ParseFailure)) throw error;
-      while (peek().kind !== "}" && peek().kind !== "end") next();
-      if (peek().kind === "}") next();
-      return type;
+      skipBody();
+      throw error;
     }
   };
 
+  const declarations: Record<string, () => void> = {
+    enum: () => valuesDeclaration("enum", result.enums),
+    dimension: () => valuesDeclaration("dimension", result.dimensions),
+    type: typeDeclaration,
+    environment: environmentDeclaration,
+    profile: profileDeclaration,
+  };
   while (peek().kind !== "end") {
     const token = peek();
     if (token.kind === "newline") {
       next();
       continue;
     }
-    if (token.kind === "word" && token.text === "profile") {
-      try {
-        result.profiles.push(profileDeclaration());
-      } catch (error) {
-        if (!(error instanceof ParseFailure)) throw error;
-        while (peek().kind !== "newline" && peek().kind !== "end") next();
-      }
-      continue;
-    }
-    if (token.kind === "word" && token.text === "type") {
-      try {
-        result.types.push(typeDeclaration());
-      } catch (error) {
-        if (!(error instanceof ParseFailure)) throw error;
-        while (peek().kind !== "newline" && peek().kind !== "end") next();
-      }
-      continue;
-    }
+    current = undefined;
     try {
-      if (token.kind === "word" && token.text === "environment") {
-        result.environments.push(environmentDeclaration());
-        continue;
-      }
-      if (token.kind === "word" && token.text === "dimension") {
-        result.dimensions.push(valuesDeclaration("dimension"));
-        continue;
-      }
-      if (token.kind !== "word" || token.text !== "enum") {
+      const declaration = token.kind === "word" ? declarations[token.text] : undefined;
+      if (declaration === undefined) {
         fail(token, '"enum", "dimension", "type", "environment" or "profile"');
       }
-      result.enums.push(valuesDeclaration("enum"));
+      declaration?.();
     } catch (error) {
       if (!(error instanceof ParseFailure)) throw error;
+      // Set by the declaration as it reads, which TypeScript does not see here.
+      const kept = current as Declaration | undefined;
+      if (kept !== undefined) kept.broken = true;
       // Skip to the next line and carry on, so one mistake does not hide others.
       while (peek().kind !== "newline" && peek().kind !== "end") next();
     }
@@ -597,10 +606,13 @@ function check(result: ParseResult): void {
   const enumNames = result.enums.map(({ name }) => name);
   const typeNames = new Set(result.types.map(({ name }) => name));
   const dimensionNames = new Set(result.dimensions.map(({ name }) => name));
-  const valuesOf = (name: string) =>
-    [...result.enums, ...result.dimensions]
-      .find((declaration) => declaration.name === name)
-      ?.values.map((item) => item.name);
+  // The values of an enum or a dimension, unless it is broken.
+  const valuesOf = (name: string) => {
+    const declaration = [...result.enums, ...result.dimensions].find(
+      (candidate) => candidate.name === name,
+    );
+    return declaration?.broken ? undefined : declaration?.values.map((item) => item.name);
+  };
   // Where a state or dimension names the enum its values come from.
   const checkEnum = (name: string, at: { line: number; column: number }) => {
     if (enumNames.includes(name)) return;
@@ -631,7 +643,9 @@ function check(result: ParseResult): void {
     const conditioned = new Map<string, Rule>();
     for (const rule of type.rules) {
       const state = type.states.find(({ name }) => name === rule.state);
-      if (state === undefined) {
+      if (state === undefined && type.broken) {
+        // Its states may not all have been read.
+      } else if (state === undefined) {
         push(
           "unknown-state",
           `${rule.state} is not a state of ${type.name}${among(stateNames, "it has none")}`,
@@ -669,7 +683,8 @@ function check(result: ParseResult): void {
         );
         continue;
       }
-      const allowed = valuesOf(when.dimension) ?? [];
+      const allowed = valuesOf(when.dimension);
+      if (allowed === undefined) continue;
       const seen = new Set<string>();
       for (const item of when.values) {
         if (!allowed.includes(item.name)) {
@@ -743,6 +758,7 @@ function check(result: ParseResult): void {
     for (const assignment of profile.values) {
       const at = { line: assignment.line, column: assignment.column };
       if (!required.includes(assignment.dimension)) {
+        if (type.broken) continue;
         push(
           "unknown-dimension",
           `${assignment.dimension} is not a dimension of ${type.name} (${required.join(", ")})`,
@@ -759,8 +775,8 @@ function check(result: ParseResult): void {
         continue;
       }
       given.add(assignment.dimension);
-      const allowed = valuesOf(assignment.dimension) ?? [];
-      if (!allowed.includes(assignment.value)) {
+      const allowed = valuesOf(assignment.dimension);
+      if (allowed !== undefined && !allowed.includes(assignment.value)) {
         push(
           "unknown-value",
           `${JSON.stringify(assignment.value)} is not a value of ${assignment.dimension} (${allowed.join(", ")})`,
@@ -769,7 +785,7 @@ function check(result: ParseResult): void {
       }
     }
     const missing = required.filter((name) => !given.has(name));
-    if (missing.length > 0) {
+    if (missing.length > 0 && profile.broken !== true && type.broken !== true) {
       push(
         "incomplete-profile",
         `${profile.name} does not give ${missing.join(", ")}, which ${type.name} requires`,
