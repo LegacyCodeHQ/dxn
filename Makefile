@@ -13,7 +13,7 @@ help:
 	@echo "  test        - Run both packages' test suites"
 	@echo "  coverage    - Run the test suite with coverage thresholds"
 	@echo "  embed-docs  - Copy packages/cli/docs/workflow.md into the program (after editing it)"
-	@echo "  build       - Compile packages/*/src/ to packages/*/dist/"
+	@echo "  build       - Compile packages/*/src/ to packages/*/dist/, and add dist/main.js"
 	@echo "  smoke       - Run the built CLI once"
 	@echo "  check       - Run the full quality gate (the pre-push hook)"
 	@echo "  check-fast  - Run the quality gate without coverage"
@@ -56,12 +56,16 @@ embed-docs:
 	node scripts/embed-docs/embed.mjs
 	npx biome format --write packages/cli/src/generated/workflow.ts
 
-# The language, then the dxn command that imports it.
+# The language, then the dxn command. dist/main.js at the root runs the built
+# command, for tooling that runs the CLI from the repository root.
 build:
 	npx tsc --build tsconfig.build.json
+	mkdir -p dist
+	cp scripts/root-dist/main.js dist/main.js
 
 smoke: build
 	node packages/cli/dist/main.js --version
+	node dist/main.js --version
 
 check: lint-check cycles security coverage smoke
 
@@ -73,4 +77,4 @@ setup-hooks:
 	git config core.hooksPath .githooks
 
 clean:
-	rm -rf coverage packages/*/dist
+	rm -rf dist coverage packages/*/dist
