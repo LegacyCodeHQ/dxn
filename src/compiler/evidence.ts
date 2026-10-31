@@ -25,6 +25,8 @@ export interface EvidenceResult {
   // "<file>#<frame>" -> the frame's fingerprint now, or null when the file
   // no longer has the frame, for each frame evidence points to.
   fingerprints: Record<string, string | null>;
+  // "<file>#<frame>" -> the frame's name, where the file names it.
+  frameNames: Record<string, string>;
 }
 
 const entryKeys = ["node", "context", "actor", "at", "source", "fingerprint"];
@@ -42,7 +44,7 @@ export function checkEvidence(
   repository: string,
   resolver: Resolver,
 ): EvidenceResult {
-  const result: EvidenceResult = { diagnostics: [], files: {}, fingerprints: {} };
+  const result: EvidenceResult = { diagnostics: [], files: {}, fingerprints: {}, frameNames: {} };
   const measure = new Fingerprints();
   const folder = join(directory, "evidence");
   if (statSync(folder, { throwIfNoEntry: false })?.isDirectory() !== true) return result;
@@ -87,6 +89,7 @@ export function checkEvidence(
         actors,
         repository,
         fingerprints: result.fingerprints,
+        frameNames: result.frameNames,
         measure,
       };
       checkFile(diagnostics, parsed.root, context);
@@ -105,6 +108,7 @@ interface Scope {
   actors: Set<string>;
   repository: string;
   fingerprints: Record<string, string | null>;
+  frameNames: Record<string, string>;
   measure: Fingerprints;
 }
 
@@ -141,7 +145,7 @@ function checkEntry(
   diagnostics: Diagnostics,
   item: JsonNode,
   path: string,
-  { resolver, root, actors, repository, fingerprints, measure }: Scope,
+  { resolver, root, actors, repository, fingerprints, frameNames, measure }: Scope,
 ): string | undefined {
   const entry = expectObject(diagnostics, item, path);
   if (entry === undefined) return undefined;
@@ -261,7 +265,11 @@ function checkEntry(
       } else {
         if (frameValid && frame?.kind === "string") {
           where = `${file.value}#${frame.value}`;
-          if (!(where in fingerprints)) fingerprints[where] = measure.of(full, frame.value) ?? null;
+          if (!(where in fingerprints)) {
+            fingerprints[where] = measure.of(full, frame.value) ?? null;
+            const named = measure.name(full, frame.value);
+            if (named !== undefined) frameNames[where] = named;
+          }
         }
       }
     }

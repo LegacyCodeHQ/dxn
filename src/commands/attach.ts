@@ -5,9 +5,10 @@ import type { Context } from "../resolve.js";
 import type { Json, Workspace } from "../workspace.js";
 import type { Command } from "./context.js";
 import { editCommand, isObject, parse, Refusal, UsageError } from "./edit.js";
+import { chooseEvidenceActor } from "./reading.js";
 import { contextArgs, resolver, rootFor, withProfile } from "./verify.js";
 
-const attachUsage = `Usage: dimensions attach <node-id> --actor <role> --file <path> --frame <id>
+const attachUsage = `Usage: dimensions attach <node-id> [--actor <role>] --file <path> --frame <id>
                         [<group>=<value>[|<value>]...] [<dimension>=<value>[|<value>]...]
                         [<shared-node>=<state>[|<state>]...] [profile=<name>[|<name>]]
                         [--at <time>] [--root <root-id>]
@@ -26,11 +27,14 @@ the folder that holds .dimensions. --at defaults to now; --root is needed when
 several roots include the node.
 `;
 
-const detachUsage = `Usage: dimensions detach <node-id> --actor <role> --frame <id>
-                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
+const detachUsage = `Usage: dimensions detach <node-id> [--actor <role>] --frame <id>
+                        [<group>=<value>[|<value>]...] [<dimension>=<value>[|<value>]...]
+                        [<shared-node>=<state>[|<state>]...] [profile=<name>[|<name>]]
                         [--root <root-id>]
 
-Removes the actor's evidence for that node, context and frame.
+Removes the actor's evidence for that node, context and frame; with values
+joined with |, for every combination that is a context of the node. --actor
+may be left out when only one actor records evidence.
 `;
 
 const sorted = (context: Context): Context =>
@@ -158,14 +162,15 @@ export const attach: Command = editCommand(attachUsage, (workspace, args) => {
     true,
   );
   const [id, ...rest] = positionals as [string, ...string[]];
-  if (values.actor === undefined || values.file === undefined || values.frame === undefined) {
-    throw new UsageError("--actor, --file and --frame are required");
+  if (values.file === undefined || values.frame === undefined) {
+    throw new UsageError("--file and --frame are required");
   }
+  const actor = chooseEvidenceActor(resolver(workspace), values.actor);
   const path = join(dirname(workspace.project), values.file);
   if (statSync(path, { throwIfNoEntry: false })?.isFile() !== true) {
     throw new Refusal(`${JSON.stringify(values.file)} does not exist in the repository`);
   }
-  const { root, contexts } = targets(workspace, id, rest, values.root, values.actor);
+  const { root, contexts } = targets(workspace, id, rest, values.root, actor);
   const at = values.at ?? new Date().toISOString();
   const fingerprint = new Fingerprints().of(path, values.frame);
   if (fingerprint === undefined) {
@@ -176,12 +181,12 @@ export const attach: Command = editCommand(attachUsage, (workspace, args) => {
     const entry: Json = {
       node: id,
       context,
-      actor: values.actor,
+      actor,
       at,
       source: { file: values.file, frame: values.frame },
       fingerprint,
     };
-    const index = list.findIndex(same(id, context, values.actor, values.frame));
+    const index = list.findIndex(same(id, context, actor, values.frame));
     if (index >= 0) list[index] = entry;
     else list.push(entry);
   }
@@ -195,16 +200,24 @@ export const detach: Command = editCommand(detachUsage, (workspace, args) => {
     true,
   );
   const [id, ...rest] = positionals as [string, ...string[]];
-  if (values.actor === undefined || values.frame === undefined) {
-    throw new UsageError("--actor and --frame are required");
+  if (values.frame === undefined) {
+    throw new UsageError("--frame is required");
   }
-  const { root, context } = target(workspace, id, rest, values.root);
-  const list = entries(workspace, root, false);
-  const index = list?.findIndex(same(id, context, values.actor, values.frame)) ?? -1;
-  if (list === undefined || index < 0) {
+  const actor = chooseEvidenceActor(resolver(workspace), values.actor);
+  const listed = rest.some((arg) => arg.includes("|"));
+  const { root, contexts } = targets(workspace, id, rest, values.root, actor);
+  const list = entries(workspace, root, false) ?? [];
+  let removed = 0;
+  for (const context of contexts) {
+    const index = list.findIndex(same(id, context, actor, values.frame));
+    if (index < 0) continue;
+    list.splice(index, 1);
+    removed += 1;
+  }
+  if (removed === 0) {
+    const where = listed ? "matches" : `in ${JSON.stringify(contexts[0])}`;
     throw new Refusal(
-      `no evidence from ${values.actor} for ${id} in frame ${JSON.stringify(values.frame)} in ${JSON.stringify(context)}`,
+      `no evidence from ${actor} for ${id} in frame ${JSON.stringify(values.frame)} ${where}`,
     );
   }
-  list.splice(index, 1);
 });

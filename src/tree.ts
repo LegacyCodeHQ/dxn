@@ -169,6 +169,8 @@ export interface Project {
   evidence?: Record<string, EvidenceFile>;
   // "<file>#<frame>" -> the frame's fingerprint now; null when it is gone.
   fingerprints?: Record<string, string | null>;
+  // "<file>#<frame>" -> the frame's name, where the file names it.
+  frameNames?: Record<string, string>;
 }
 
 // evidence/<root-id>.json: what actors have recorded for nodes in that root.

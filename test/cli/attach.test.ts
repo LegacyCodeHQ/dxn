@@ -93,7 +93,7 @@ describe("attach", () => {
     ]).toEqual([
       'unknown-context: menu has no such context in root "page"; "dimensions evidence menu --actor <name>" lists them\n',
       'dimensions: "design/missing.pen" does not exist in the repository\n',
-      "dimensions: --actor, --file and --frame are required",
+      "dimensions: --file and --frame are required",
     ]);
   });
 });

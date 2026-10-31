@@ -284,6 +284,9 @@ export function notPresentLine(labels: string[]): string {
   return `Not present: ${labels.join(", ")}`;
 }
 
+// What --missing prints when every context has current evidence.
+export const NOTHING_MISSING = "Nothing missing: every context has current evidence.\n";
+
 // How many contexts have no evidence at all.
 export function noEvidenceLine(count: number): string {
   return `No evidence: ${count} ${count === 1 ? "context" : "contexts"}`;

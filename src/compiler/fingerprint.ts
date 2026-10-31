@@ -50,6 +50,13 @@ export class Fingerprints {
       .digest("hex");
   }
 
+  // The frame's name in a pen.dev file; undefined for other files.
+  name(path: string, frame: string): string | undefined {
+    if (!path.endsWith(".pen")) return undefined;
+    const name = this.document(path)?.nodes.get(frame)?.name;
+    return typeof name === "string" ? name : undefined;
+  }
+
   private document(path: string): PenDocument | undefined {
     if (!this.documents.has(path)) this.documents.set(path, readPen(path));
     return this.documents.get(path);

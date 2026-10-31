@@ -239,11 +239,12 @@ dimensions transitions menu
 ### evidence
 
 ```text
-Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>]
+Usage: dimensions evidence <node-id> [--actor <name>] [<name>=<value>...] [--root <root-id>]
                           [--subtree] [--missing] [--table] [--by profile|frame]
 
 Lists every context the node exists in, with the profile it matches and the
-evidence the actor has recorded for it in evidence/<root-id>.json: when, the
+evidence the actor has recorded for it (--actor may be left out when only one
+actor records evidence) in evidence/<root-id>.json: when, the
 file and frame it points to, the frame's fingerprint then, and whether what
 the frame shows has changed since (stale) or the frame is gone. <name>=<value> filters keep only the contexts with
 that dimension value, state, shared node state or profile. --table prints a
@@ -319,7 +320,7 @@ dimensions unverify blog-link --check visual breakpoint=lg hover=hovered focus=b
 ### attach
 
 ```text
-Usage: dimensions attach <node-id> --actor <role> --file <path> --frame <id>
+Usage: dimensions attach <node-id> [--actor <role>] --file <path> --frame <id>
                         [<group>=<value>[|<value>]...] [<dimension>=<value>[|<value>]...]
                         [<shared-node>=<state>[|<state>]...] [profile=<name>[|<name>]]
                         [--at <time>] [--root <root-id>]
@@ -349,14 +350,17 @@ dimensions attach wordmark --actor design-agent --file design/website.pen --fram
 ### detach
 
 ```text
-Usage: dimensions detach <node-id> --actor <role> --frame <id>
-                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
+Usage: dimensions detach <node-id> [--actor <role>] --frame <id>
+                        [<group>=<value>[|<value>]...] [<dimension>=<value>[|<value>]...]
+                        [<shared-node>=<state>[|<state>]...] [profile=<name>[|<name>]]
                         [--root <root-id>]
 
-Removes the actor's evidence for that node, context and frame.
+Removes the actor's evidence for that node, context and frame; with values
+joined with |, for every combination that is a context of the node. --actor
+may be left out when only one actor records evidence.
 ```
 
-Removes the actor's entry for that node, context and frame.
+Removes the actor's entry for that node, context and frame; with lists, every combination's entry. `--actor` can be left out when only one actor records evidence, here and in `attach` and `evidence`.
 
 ```bash
 dimensions detach menu --actor design-agent --frame vbGba profile=phone menu=closed

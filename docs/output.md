@@ -393,7 +393,7 @@ of its contexts have evidence that is present, stale or missing.
 `notPresent` lists the profiles the node does not exist on.
 With `--by frame`, there is a row per frame the actor pointed to: the
 contexts that share it, which the design draws as one look, with its
-provenance. `withoutEvidence` counts the contexts no frame covers.
+provenance. `name` is the frame's name, for a pen.dev file. `withoutEvidence` counts the contexts no frame covers.
 
 ```json
 {

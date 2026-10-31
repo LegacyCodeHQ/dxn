@@ -16,6 +16,7 @@ import {
   drawPresenceMatrix,
   drawTable,
   NONE,
+  NOTHING_MISSING,
   nodeTables,
   noEvidenceLine,
   notPresentLine,
@@ -715,11 +716,12 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
   print(io, { node: id, views: kept });
 });
 
-const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>]
+const evidenceUsage = `Usage: dimensions evidence <node-id> [--actor <name>] [<name>=<value>...] [--root <root-id>]
                           [--subtree] [--missing] [--table] [--by profile|frame]
 
 Lists every context the node exists in, with the profile it matches and the
-evidence the actor has recorded for it in evidence/<root-id>.json: when, the
+evidence the actor has recorded for it (--actor may be left out when only one
+actor records evidence) in evidence/<root-id>.json: when, the
 file and frame it points to, the frame's fingerprint then, and whether what
 the frame shows has changed since (stale) or the frame is gone. <name>=<value> filters keep only the contexts with
 that dimension value, state, shared node state or profile. --table prints a
@@ -751,6 +753,29 @@ function declaredValues(resolver: Resolver, id: string, name: string): string[] 
   if (resolver.isShared(name)) return sharedStates(resolver, name);
   const type = resolver.node(id)?.type;
   return (type === undefined ? undefined : resolver.groupsOf(type)[name]) ?? [];
+}
+
+// The actor a command records or reads evidence as: the one given, or else
+// the only actor that records evidence; with several, a refusal that asks.
+export function chooseEvidenceActor(resolver: Resolver, given: string | undefined): string {
+  if (given !== undefined) {
+    requireEvidenceActor(resolver, given);
+    return given;
+  }
+  const actors = Object.entries(resolver.project.actors?.actors ?? {});
+  if (actors.length === 0) {
+    throw new Refusal('no actors; add one with "dimensions actor add <name>"');
+  }
+  const recording = actors
+    .filter(([, actor]) => actor.evidence !== undefined)
+    .map(([name]) => name);
+  if (recording.length === 1) return recording[0] as string;
+  if (recording.length === 0) {
+    throw new Refusal(
+      'no actor records evidence; give one with "dimensions actor set <name> --evidence <kind>"',
+    );
+  }
+  throw new Refusal(`give --actor <${recording.sort().join("|")}>`);
 }
 
 // The kind of evidence a declared actor records, or a refusal.
@@ -854,6 +879,10 @@ function frameGroups(
       frame: group.frame,
       nodes: group.nodes,
       at: [...group.at].sort(),
+      ...(() => {
+        const name = resolver.project.frameNames?.[`${group.file}#${group.frame}`];
+        return name === undefined ? {} : { name };
+      })(),
       fingerprints: [...group.fingerprints],
       profiles: profiles.sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b)),
       members: group.members,
@@ -915,10 +944,12 @@ function evidenceSubtree(
       });
       return;
     }
+    const named = grouped.some((row) => row.name !== undefined);
     const table = drawTable(
-      ["frame", "nodes", "profiles", "contexts", "stale"],
+      ["frame", ...(named ? ["name"] : []), "nodes", "profiles", "contexts", "stale"],
       grouped.map((row) => [
         frameLabel(row.file, row.frame),
+        ...(named ? [row.name ?? NONE] : []),
         row.nodes.join(", "),
         row.profiles.map(profileLabel).join(", ") || NONE,
         String(row.contexts),
@@ -962,6 +993,10 @@ function evidenceSubtree(
     print(io, { node: id, actor, kind, subtree: true, columns, rows: table });
     return;
   }
+  if (table.length === 0 && options.missing === true) {
+    io.stdout(NOTHING_MISSING);
+    return;
+  }
   io.stdout(
     drawTable(
       ["node", "type", ...columns.map((names) => profileLabel(names) || "contexts")],
@@ -993,11 +1028,10 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
     true,
   );
   const [id, ...filterArgs] = positionals as [string, ...string[]];
-  const actor = values.actor;
-  if (actor === undefined) throw new UsageError("--actor is required");
   if (values.by !== undefined && values.by !== "profile" && values.by !== "frame") {
     throw new Refusal('--by takes "profile" or "frame" here');
   }
+  const actor = chooseEvidenceActor(resolver, values.actor);
   const kind = requireEvidenceActor(resolver, actor);
   requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
@@ -1064,10 +1098,12 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       print(io, { node: id, actor, kind, by: "frame", frames: grouped, withoutEvidence });
       return;
     }
+    const named = grouped.some((row) => row.name !== undefined);
     const table = drawTable(
-      ["frame", "profiles", ...unprofiled, "contexts", "stale"],
+      ["frame", ...(named ? ["name"] : []), "profiles", ...unprofiled, "contexts", "stale"],
       grouped.map((row) => [
         frameLabel(row.file, row.frame),
+        ...(named ? [row.name ?? NONE] : []),
         row.profiles.map(profileLabel).join(", ") || NONE,
         ...unprofiled.map((name) => (row.states[name] ?? []).join(", ")),
         String(row.contexts),
@@ -1110,6 +1146,10 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       print(io, { node: id, actor, kind, by: "profile", rows: grouped, notPresent });
       return;
     }
+    if (grouped.length === 0 && values.missing === true) {
+      io.stdout(NOTHING_MISSING);
+      return;
+    }
     const table = drawTable(
       ["profile", ...names, "contexts", "present", "stale", "missing"],
       grouped.map((row) => [
@@ -1129,6 +1169,10 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
     return;
   }
   if (values.table === true) {
+    if (rows.length === 0 && values.missing === true) {
+      io.stdout(NOTHING_MISSING);
+      return;
+    }
     io.stdout(
       contextTable(
         resolver,

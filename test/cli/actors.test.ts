@@ -107,11 +107,11 @@ describe("evidence", () => {
     expect([
       cliProject(withActor).run("evidence", "toolbar", "--actor", "designer").stderr,
       cliProject(toolbarFiles).run("evidence", "toolbar", "--actor", "design-agent").stderr,
-      cliProject(withActor).run("evidence", "toolbar").stderr.split("\n")[0],
+      cliProject(withActor).run("evidence", "toolbar").code,
     ]).toEqual([
       'dimensions: actor not found: "designer" (design-agent)\n',
       'dimensions: no actors; add one with "dimensions actor add <name>"\n',
-      "dimensions: --actor is required",
+      0,
     ]);
   });
 });
