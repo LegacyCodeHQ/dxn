@@ -735,10 +735,14 @@ Subcommands:
   check <file>                       Parse and check a file; print what it declares
                                      as JSON, or every problem it has. Needs no
                                      project.
+  states <file> <type> [--table]     Evaluate a type: the states it has under each
+                                     combination of the dimensions its rules use,
+                                     as JSON, or a Markdown table with --table
 ```
 
 Checks a file written in the dimensions language, which is being designed one concept at a time in [language/design.md](language/design.md). It prints what the file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. So far a file declares enums, dimensions, and types with their states and the rules for when a state's value exists; the codes are listed in [language/design.md](language/design.md#grammar).
 
 ```bash
 dimensions lang check wordmark.dim
+dimensions lang states wordmark.dim Wordmark --table
 ```

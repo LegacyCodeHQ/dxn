@@ -69,3 +69,45 @@ describe("lang check", () => {
     ]);
   });
 });
+
+describe("lang states", () => {
+  const wordmark = `dimension Pointer = mouse | touch
+dimension Keyboard = keyboard | no-keyboard
+enum Hover = rest | hovered
+enum Focus = blurred | focused
+type Wordmark {
+  states hover: Hover, focus: Focus
+  hover = hovered only when Pointer = mouse
+  focus = focused only when Keyboard = keyboard
+}
+`;
+
+  it("prints which states a type has under which conditions, as a table", () => {
+    const result = file(wordmark)("states", "wordmark.dim", "Wordmark", "--table");
+    expect([result.code, result.stdout]).toEqual([
+      0,
+      [
+        "| Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |",
+        "| ------- | ----------- | ----------- | -------------- | -------------- | -------------- |",
+        "| mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |",
+        "| mouse   | no-keyboard | ✓           | ✓              | ✓              | —              |",
+        "| touch   | keyboard    | ✓           | —              | ✓              | ✓              |",
+        "| touch   | no-keyboard | ✓           | —              | ✓              | —              |",
+        "",
+      ].join("\n"),
+    ]);
+    expect(
+      JSON.parse(file(wordmark)("states", "wordmark.dim", "Wordmark").stdout).rows,
+    ).toHaveLength(4);
+  });
+
+  it("refuses a type the file does not declare, and a file with problems", () => {
+    expect([
+      file(wordmark)("states", "wordmark.dim", "Wordmrk").stderr,
+      file("enum hover = rest\n")("states", "wordmark.dim", "Wordmark").stderr,
+    ]).toEqual([
+      'dimensions: no type "Wordmrk" in wordmark.dim (Wordmark)\n',
+      'wordmark.dim:1:6: enum-name: enum names start with a capital letter: "hover"\n',
+    ]);
+  });
+});

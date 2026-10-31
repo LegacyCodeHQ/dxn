@@ -1,7 +1,9 @@
 import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { parse } from "../language/parse.js";
-import { type Command, command } from "./context.js";
+import { states as evaluateStates } from "../language/evaluate.js";
+import { type ParseResult, parse } from "../language/parse.js";
+import { drawTable, NONE } from "../tables.js";
+import { type Command, type Context, command } from "./context.js";
 import { group } from "./edit.js";
 
 const usage = `Usage: dimensions lang <subcommand>
@@ -22,7 +24,28 @@ Subcommands:
   check <file>                       Parse and check a file; print what it declares
                                      as JSON, or every problem it has. Needs no
                                      project.
+  states <file> <type> [--table]     Evaluate a type: the states it has under each
+                                     combination of the dimensions its rules use,
+                                     as JSON, or a Markdown table with --table
 `;
+
+// Reads and parses a file; on a problem, reports it and gives the exit code.
+function read(file: string, cwd: string, io: Context["io"]): ParseResult | number {
+  const path = resolve(cwd, file);
+  if (statSync(path, { throwIfNoEntry: false })?.isFile() !== true) {
+    io.stderr(`dimensions: file not found: ${JSON.stringify(file)}\n`);
+    return 1;
+  }
+  const parsed = parse(readFileSync(path, "utf8"));
+  if (parsed.diagnostics.length > 0) {
+    const sorted = [...parsed.diagnostics].sort((a, b) => a.line - b.line || a.column - b.column);
+    for (const { line, column, code, message } of sorted) {
+      io.stderr(`${file}:${line}:${column}: ${code}: ${message}\n`);
+    }
+    return 1;
+  }
+  return parsed;
+}
 
 const check: Command = command(usage, (args, { io, cwd }) => {
   const [file, ...rest] = args;
@@ -30,19 +53,9 @@ const check: Command = command(usage, (args, { io, cwd }) => {
     io.stderr(`dimensions: give one file to check\n\n${usage}`);
     return 2;
   }
-  const path = resolve(cwd, file);
-  if (statSync(path, { throwIfNoEntry: false })?.isFile() !== true) {
-    io.stderr(`dimensions: file not found: ${JSON.stringify(file)}\n`);
-    return 1;
-  }
-  const { enums, dimensions, types, diagnostics } = parse(readFileSync(path, "utf8"));
-  if (diagnostics.length > 0) {
-    const sorted = [...diagnostics].sort((a, b) => a.line - b.line || a.column - b.column);
-    for (const { line, column, code, message } of sorted) {
-      io.stderr(`${file}:${line}:${column}: ${code}: ${message}\n`);
-    }
-    return 1;
-  }
+  const parsed = read(file, cwd, io);
+  if (typeof parsed === "number") return parsed;
+  const { enums, dimensions, types } = parsed;
   io.stdout(
     `${JSON.stringify(
       {
@@ -72,4 +85,42 @@ const check: Command = command(usage, (args, { io, cwd }) => {
   return 0;
 });
 
-export const lang: Command = group(usage, { check });
+const statesCommand: Command = command(usage, (args, { io, cwd }) => {
+  const table = args.includes("--table");
+  const [file, typeName, ...rest] = args.filter((arg) => arg !== "--table");
+  if (file === undefined || typeName === undefined || rest.length > 0) {
+    io.stderr(`dimensions: give a file and a type\n\n${usage}`);
+    return 2;
+  }
+  const parsed = read(file, cwd, io);
+  if (typeof parsed === "number") return parsed;
+  if (!parsed.types.some(({ name }) => name === typeName)) {
+    io.stderr(
+      `dimensions: no type ${JSON.stringify(typeName)} in ${file} (${parsed.types.map(({ name }) => name).join(", ")})\n`,
+    );
+    return 1;
+  }
+  const evaluated = evaluateStates(parsed, typeName);
+  if (!table) {
+    io.stdout(`${JSON.stringify(evaluated, null, 2)}\n`);
+    return 0;
+  }
+  const stateType = parsed.types.find(({ name }) => name === typeName);
+  const valuesOf = (name: string) =>
+    parsed.enums.find((declaration) => declaration.name === name)?.values.map((v) => v.name) ?? [];
+  const columns = (stateType?.states ?? []).flatMap((state) =>
+    valuesOf(state.enum).map((value) => [state.name, value] as const),
+  );
+  io.stdout(
+    drawTable(
+      [...evaluated.dimensions, ...columns.map(([state, value]) => `${state}: ${value}`)],
+      evaluated.rows.map((row) => [
+        ...evaluated.dimensions.map((dimension) => row.when[dimension] ?? NONE),
+        ...columns.map(([state, value]) => (row.states[state]?.includes(value) ? "✓" : NONE)),
+      ]),
+    ),
+  );
+  return 0;
+});
+
+export const lang: Command = group(usage, { check, states: statesCommand });

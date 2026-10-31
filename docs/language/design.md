@@ -241,6 +241,27 @@ rule says it positively, next to the state it limits.
 | `duplicate-rule`    | a second condition for the same value of a state           |
 | `duplicate-value`   | a value listed twice in one condition                      |
 
+## Evaluating
+
+**Decided and implemented.** The language is evaluated directly, without
+compiling it to today's JSON model first: a type can be evaluated on its own,
+with no tree or page around it. `dimensions lang states <file> <type>` lists
+the states a type has under each combination of the dimensions its rules use,
+as JSON or, with `--table`, as a table:
+
+| Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |
+| ------- | ----------- | ----------- | -------------- | -------------- | -------------- |
+| mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
+| mouse   | no-keyboard | ✓           | ✓              | ✓              | —              |
+| touch   | keyboard    | ✓           | —              | ✓              | ✓              |
+| touch   | no-keyboard | ✓           | —              | ✓              | —              |
+
+A value of a state is there in a row unless a rule limits it to dimension
+values the row does not have. The dimensions are the ones the type's rules
+use, so a type depends only on what it mentions. Without profiles, every
+combination is a row, touch with a keyboard included; once profiles exist,
+the rows narrow to the combinations that occur.
+
 ## Primitives
 
 | Primitive          | Says                                                           | Replaces today                                      | Status   |
