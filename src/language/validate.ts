@@ -2,6 +2,7 @@ import { childPath, type Diagnostic, Diagnostics } from "../compiler/diagnostic.
 import { type JsonNode, parseJson } from "../compiler/json.js";
 import type { ParseResult, RecordDeclaration } from "./ast.js";
 import { article, Names } from "./names.js";
+import { scalar } from "./scalars.js";
 
 // How a JSON value reads in a message.
 const found: Record<JsonNode["kind"], string> = {
@@ -64,10 +65,24 @@ export function validate(file: ParseResult, recordName: string, source: string):
     }
   };
 
-  // A field's value: a record, or one of an enum's values.
+  // A field's value: a record, a scalar's string, or one of an enum's values.
   const checkValue = (node: JsonNode, type: string, path: string) => {
     if (names.kindOf(type) === "record") {
       checkRecord(node, type, path);
+      return;
+    }
+    const builtIn = scalar(type);
+    if (builtIn !== undefined) {
+      if (node.kind !== "string") {
+        wrong(node, path, `${article(type)} ${type} (a string)`);
+      } else if (!builtIn.valid(node.value)) {
+        diagnostics.report(
+          "invalid-value",
+          `${JSON.stringify(node.value)} is not ${article(type)} ${type}: ${builtIn.definition}`,
+          path,
+          node.span.start,
+        );
+      }
       return;
     }
     if (node.kind !== "string") {

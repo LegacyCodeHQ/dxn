@@ -380,8 +380,8 @@ record Evidence { source: Source }
 ```
 
 A record's name is capitalized, like every other set of possibilities. Its
-fields come one to a line, each a lowercase name, a colon, and its type. For
-now a field's type is an enum or another record.
+fields come one to a line, each a lowercase name, a colon, and its type: an
+enum, another record, or a scalar (below).
 
 A record is not a type. A type is an element: it needs dimensions and has
 states that come and go with them. A record is plain data, with nothing that
@@ -392,6 +392,26 @@ down.
 ```
 recursive-record: Evidence contains itself: Evidence.source is a Source, and Source.back is an Evidence
 ```
+
+### Scalars: values that are checked, not listed
+
+Some data can never be an enum: the moment evidence was recorded, for
+instance, is one of endlessly many. A **scalar** is a built-in type whose
+values are checked rather than listed:
+
+| Scalar      | A valid value                                                           |
+| ----------- | ----------------------------------------------------------------------- |
+| `Timestamp` | an ISO 8601 date and time with a time zone, e.g. `2026-10-31T08:50:05Z` |
+
+```
+record Evidence {
+  at: Timestamp
+}
+```
+
+Scalars only type a record's fields. A state or a dimension cannot have one:
+their values must be listed, so a type's combinations can always be counted.
+A scalar's name is built in, so a file cannot declare it.
 
 ### Checking data against a record
 
@@ -547,8 +567,9 @@ comment     = "#" to the end of the line
 | `incomplete-profile`                                                          | error    | a profile leaves out a dimension of its environment                      |
 | `mixed-profiles`                                                              | error    | profiles are instances of different environments                         |
 | `duplicate-field`                                                             | error    | a record has two fields with one name                                    |
-| `unknown-type`                                                                | error    | a field's type is not an enum or a record                                |
+| `unknown-type`                                                                | error    | a field's type is not an enum, a record or a scalar                      |
 | `recursive-record`                                                            | error    | a record contains itself                                                 |
+| `reserved-name`                                                               | error    | a declaration has a built-in scalar's name                               |
 
 Checking data with `lang validate` reports these, after any problem with the
 JSON itself:
@@ -559,4 +580,5 @@ JSON itself:
 | `missing-field` | a record leaves out one of its fields                                  |
 | `unknown-field` | a record has a field its declaration does not                          |
 | `unknown-value` | an enum field's value is not one of the enum's                         |
+| `invalid-value` | a scalar field's value is not a valid value of the scalar              |
 | `unused-need`   | warning                                                                | a type needs a dimension that no rule uses |

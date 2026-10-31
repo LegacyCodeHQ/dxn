@@ -1,5 +1,6 @@
 import type { Field, Located, ParseResult, RecordDeclaration, Rule } from "./ast.js";
 import { among, article, Names } from "./names.js";
+import { scalar } from "./scalars.js";
 
 type Report = (
   code: string,
@@ -24,7 +25,7 @@ export function check(file: ParseResult): void {
   checkRecords(file, names, report);
 }
 
-// The file: each name declared once.
+// The file: each name declared once, and none a built-in scalar's.
 function checkDeclared(file: ParseResult, report: Report): void {
   const declarations = [
     ...file.enums,
@@ -36,6 +37,14 @@ function checkDeclared(file: ParseResult, report: Report): void {
   ].sort((a, b) => a.line - b.line || a.column - b.column);
   const declared = new Map<string, Located>();
   for (const declaration of declarations) {
+    if (scalar(declaration.name) !== undefined) {
+      report(
+        "reserved-name",
+        `${declaration.name} is a built-in scalar; choose another name`,
+        declaration,
+      );
+      continue;
+    }
     const earlier = declared.get(declaration.name);
     if (earlier !== undefined) {
       report(
@@ -258,7 +267,7 @@ function checkProfiles(file: ParseResult, names: Names, report: Report): void {
   }
 }
 
-// Records: lowercase fields, each once, each an enum or a record; and no
+// Records: lowercase fields, each once, each an enum, a record or a scalar; and no
 // record that contains itself, which could never be written down, since
 // every field is given.
 function checkRecords(file: ParseResult, names: Names, report: Report): void {
@@ -269,8 +278,9 @@ function checkRecords(file: ParseResult, names: Names, report: Report): void {
         report("duplicate-field", `${field.name} is already a field of ${record.name}`, field);
       }
       seen.add(field.name);
-      if (!names.is(field.type.name, "enum") && !names.is(field.type.name, "record")) {
-        report("unknown-type", names.not(field.type.name, "enum", "record"), field.type);
+      const type = field.type.name;
+      if (!names.is(type, "enum") && !names.is(type, "record") && !names.is(type, "scalar")) {
+        report("unknown-type", names.not(type, "enum", "record", "scalar"), field.type);
       }
     }
   }

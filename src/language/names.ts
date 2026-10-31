@@ -1,15 +1,18 @@
 import type { Declaration, ParseResult } from "./ast.js";
+import { scalars } from "./scalars.js";
 
-export type Kind = "enum" | "dimension" | "type" | "environment" | "profile" | "record";
+export type Kind = "enum" | "dimension" | "type" | "environment" | "profile" | "record" | "scalar";
 
 export const article = (word: string) => (/^[AEIOUaeiou]/.test(word) ? "an" : "a");
 
-// The names the file declares, by kind, for checking the names that refer to
-// them.
+// The names the file declares, by kind, and the built-in scalars, for
+// checking the names that refer to them. A scalar's name stays a scalar, even
+// where the file declares it.
 export class Names {
   private readonly kinds = new Map<string, Kind>();
 
   constructor(private readonly file: ParseResult) {
+    for (const { name } of scalars) this.kinds.set(name, "scalar");
     for (const [kind, list] of this.lists()) {
       for (const { name } of list) if (!this.kinds.has(name)) this.kinds.set(name, kind);
     }
@@ -27,8 +30,10 @@ export class Names {
     ];
   }
 
-  private of(kind: Kind): Declaration[] {
-    return this.lists().find(([candidate]) => candidate === kind)?.[1] ?? [];
+  private of(kind: Kind): string[] {
+    if (kind === "scalar") return scalars.map(({ name }) => name);
+    const list = this.lists().find(([candidate]) => candidate === kind)?.[1] ?? [];
+    return list.map(({ name }) => name);
   }
 
   // What a name is, from its first declaration.
@@ -37,17 +42,18 @@ export class Names {
   }
 
   is(name: string, kind: Kind): boolean {
-    return this.of(kind).some((declaration) => declaration.name === name);
+    return this.of(kind).includes(name);
   }
 
   // Why a name is not of a kind, or of any of several: what it is instead,
   // or what there is to choose from.
   not(name: string, ...kinds: Kind[]): string {
-    const wanted = kinds.map((kind) => `${article(kind)} ${kind}`).join(" or ");
+    const each = kinds.map((kind) => `${article(kind)} ${kind}`);
+    const wanted =
+      each.length > 1 ? `${each.slice(0, -1).join(", ")} or ${each.at(-1)}` : (each[0] ?? "");
     const actual = this.kinds.get(name);
     if (actual !== undefined) return `${name} is ${article(actual)} ${actual}, not ${wanted}`;
-    const names = kinds.flatMap((kind) => this.of(kind).map((declaration) => declaration.name));
-    return `${name} is not ${wanted}${among(names)}`;
+    return `${name} is not ${wanted}${among(kinds.flatMap((kind) => this.of(kind)))}`;
   }
 
   // The values of an enum or a dimension, unless it is broken.
