@@ -487,6 +487,51 @@ their values from one enum, each of the child's states is set at most once,
 and a state a `when` decides cannot be set. The bindings come right after the
 child's type, before any `only when`.
 
+### Provided and received: a state from far above
+
+A state lives in the lowest type that all its users share: the menu's in the
+menu, since the toggle and the panel both follow it. Some states have users
+far below: which section the page is, which decides whether the toolbar's
+blog link is selected. Passing it down level by level would make every type
+between carry it. Instead, the type that owns it **provides** it, and the
+types that need it **receive** it:
+
+```
+enum Section = home | blog
+
+type ArticlePage {
+  state current: Section = blog
+  provides current
+  has toolbar: Toolbar
+}
+
+type Links receives current: Section {
+  has blog: Link only when current = blog
+}
+```
+
+`Toolbar`, between the page and the links, says nothing about it. A type
+declares what it receives on its first line, after what it needs, with the
+enum it expects; inside, a received state is used like one of its own, in
+conditions and bindings, but it has no rules and no parent can bind it. A
+type provides only its own states, each once.
+
+Where a received state comes from is known in place: the nearest type above
+on the path that provides it, with the same enum. In place, it is one of
+the parents' states, by its provider's name:
+
+```bash
+dxn lang states site.dxn ArticlePage.toolbar.links
+```
+
+On its own, a receiving type has the state free, with every value; and a
+path where nothing above provides it is refused, by `lang states` and
+`lang status`:
+
+```
+dxn: Toolbar.links: current is received by Links, but nothing above it provides it
+```
+
 ### In place: a child inside its parents
 
 `lang states` on a type gives what that type can be on its own. A child
@@ -1139,16 +1184,9 @@ or under discussion but not part of it yet; see [design.md](design.md):
   of a type in a page, it waits for nodes.
 - **More renames.** `lang rename` renames an enum's value. Renaming a field,
   a record (and its folder), or an enum, dimension or type is still to come.
-- **Provided and received state.** A state lives in the lowest type that all
-  its users share, as the menu's does, so the toggle and the panel both
-  follow it. A state whose users are far below, like the page you are on,
-  which decides whether the blog link is selected, lives in the page: the page
-  _provides_ it, the types that need it _receive_ it, and the types between
-  do not pass it on. A binding then maps it to each child's own state, such
-  as `selection = when current { blog -> selected, home -> unselected }`.
-  This waits for a second page, or for the theme, which the reader can switch,
-  to show its shape; matching a received state by its name is the leading
-  choice.
+- **Mapping a received state.** A binding that maps one state onto another,
+  such as `selection = when current { blog -> selected, home -> unselected }`,
+  so that each link's own state follows the page's.
 - **A runtime.** Evidence today is recorded by the actors that draw and
   build. A runtime would check the real system itself, driving a browser or a
   device into each combination and recording what it shows.
@@ -1196,7 +1234,9 @@ each name is declared once in a file.
 file        = { blank-line | comment | enum | dimension | type | environment | profile | modifier | record }
 enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
-type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | state | rule | enum | type | has } "}"
+type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" field { "," [newline] field } ]
+              "{" { blank-line | state | rule | enum | type | has | provides } "}"
+provides    = "provides" state-name newline
 has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline
 bindings    = "{" { state-name "=" state-name ( "," | newline ) } "}"
 state       = "state" field { "," [newline] field } newline
@@ -1247,7 +1287,8 @@ comment     = "#" to the end of the line
 | `recursive-type`                                                              | error    | a type contains itself through its children                                                      |
 | `duplicate-binding`                                                           | error    | a binding sets a child's state twice                                                             |
 | `binding-mismatch`                                                            | error    | a binding's two states take their values from different enums                                    |
-| `bound-derived`                                                               | error    | a binding sets a child's state that a `when` decides                                             |
+| `bound-derived`                                                               | error    | a binding sets a child's state that a `when` or a value decides, or that it receives             |
+| `duplicate-provides`                                                          | error    | a type provides a state twice                                                                    |
 | `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
 | `nested-context`                                                              | error    | a record's field is a record with context, which would be a second context                       |
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |

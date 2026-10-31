@@ -144,7 +144,8 @@ export function inPlace(file: ParseResult, path: string): InPlace {
   if (file.diagnostics.some(({ severity }) => severity === "error")) {
     throw new Error("cannot evaluate a file with problems");
   }
-  const { steps: chain, dimensions } = placement(file, path);
+  const place = placement(file, path);
+  const { steps: chain, dimensions } = place;
   type Step = Placement["steps"][number];
   const valuesOf = (name: string) =>
     file.dimensions
@@ -190,6 +191,12 @@ export function inPlace(file: ParseResult, path: string): InPlace {
     const { type, prefix } = chain[level] as Step;
     const row = rowOf(type, world);
     if (row === undefined) return;
+    // A received state has the value its provider has here.
+    for (const { name } of type.states.filter((state) => state.received)) {
+      const key = place.providerKey(level, name);
+      const value = key === undefined ? undefined : parents[key];
+      if (value !== undefined) fixed = { ...fixed, [name]: value };
+    }
     // A state's values here: the one it is given, when it is bound.
     const available = (name: string) => {
       const values = row.states[name] ?? [];
@@ -210,8 +217,11 @@ export function inPlace(file: ParseResult, path: string): InPlace {
     }
     const deciding =
       next.when !== undefined && /^[a-z]/.test(next.when.on.name) ? [next.when.on.name] : [];
+    // The states that decide the next child, that it is given, or that a type
+    // further down receives from here.
+    const provided = place.received.filter(({ from }) => from === level).map(({ name }) => name);
     const relevant = [
-      ...new Set([...deciding, ...(next.bindings ?? []).map(({ from }) => from.name)]),
+      ...new Set([...deciding, ...(next.bindings ?? []).map(({ from }) => from.name), ...provided]),
     ];
     let combinations: Record<string, string>[] = [{}];
     for (const name of relevant) {
@@ -231,11 +241,14 @@ export function inPlace(file: ParseResult, path: string): InPlace {
           combination[from.name] as string,
         ]),
       );
+      // A received state is named by its provider's key, already given.
+      const received = new Set(
+        type.states.filter((state) => state.received).map(({ name }) => name),
+      );
       const named = Object.fromEntries(
-        Object.entries(combination).map(([name, value]) => [
-          prefix === "" ? name : `${prefix}.${name}`,
-          value,
-        ]),
+        Object.entries(combination)
+          .filter(([name]) => !received.has(name))
+          .map(([name, value]) => [prefix === "" ? name : `${prefix}.${name}`, value]),
       );
       walk(world, level + 1, given, { ...parents, ...named });
     }
@@ -253,6 +266,10 @@ export interface Placement {
   steps: { type: Type; child?: Child; prefix: string }[];
   dimensions: string[];
   parents: { key: string; state: State }[];
+  // Each received state on the way: the level it is received at, the level
+  // of the type that provides it, and its key in the parents' names.
+  received: { level: number; name: string; from: number; key: string }[];
+  providerKey: (level: number, name: string) => string | undefined;
 }
 
 // Follows a path, "<Type>.<child>...": a refusal names the first part that
@@ -274,8 +291,45 @@ export function placement(file: ParseResult, path: string): Placement {
     const type = file.types.find(({ name }) => name === child.type.name) as Type;
     steps.push({ type, child, prefix: previous === "" ? name : `${previous}.${name}` });
   }
+  const keyAt = (level: number, name: string) => {
+    const prefix = steps[level]?.prefix ?? "";
+    return prefix === "" ? name : `${prefix}.${name}`;
+  };
   const parents: Placement["parents"] = [];
-  steps.forEach(({ type, prefix }, level) => {
+  const add = (key: string, state: State) => {
+    if (!parents.some((parent) => parent.key === key)) parents.push({ key, state });
+  };
+  // Each received state, from the nearest type above that provides it.
+  const received: Placement["received"] = [];
+  steps.forEach(({ type }, level) => {
+    for (const wanted of type.states.filter((state) => state.received)) {
+      let from = level - 1;
+      for (; from >= 0; from--) {
+        const above = (steps[from] as Placement["steps"][number]).type;
+        if (above.provides.some(({ name }) => name === wanted.name)) break;
+      }
+      if (from < 0) {
+        throw new Error(
+          `${wanted.name} is received by ${type.name}, but nothing above it provides it`,
+        );
+      }
+      const above = (steps[from] as Placement["steps"][number]).type;
+      const state = above.states.find(({ name, received: own }) => name === wanted.name && !own);
+      if (state === undefined) continue;
+      if (state.enum.name !== wanted.enum.name) {
+        const a = (name: string) => (/^[AEIOU]/.test(name) ? "an" : "a");
+        throw new Error(
+          `${type.name} receives ${wanted.name} as ${a(wanted.enum.name)} ${wanted.enum.name}, but ${above.name} provides it as ${a(state.enum.name)} ${state.enum.name}`,
+        );
+      }
+      const key = keyAt(from, wanted.name);
+      received.push({ level, name: wanted.name, from, key });
+      add(key, state);
+    }
+  });
+  const providerKey = (level: number, name: string) =>
+    received.find((entry) => entry.level === level && entry.name === name)?.key;
+  steps.forEach(({ type }, level) => {
     const next = steps[level + 1]?.child;
     if (next === undefined) return;
     const deciding =
@@ -283,8 +337,8 @@ export function placement(file: ParseResult, path: string): Placement {
     const relevant = new Set([...deciding, ...(next.bindings ?? []).map(({ from }) => from.name)]);
     for (const name of relevant) {
       const state = type.states.find((candidate) => candidate.name === name);
-      if (state !== undefined)
-        parents.push({ key: prefix === "" ? name : `${prefix}.${name}`, state });
+      if (state === undefined || state.received) continue;
+      add(keyAt(level, name), state);
     }
   });
   return {
@@ -292,6 +346,8 @@ export function placement(file: ParseResult, path: string): Placement {
     steps,
     dimensions: [...new Set(steps.flatMap(({ type }) => type.needs.map(({ name }) => name)))],
     parents,
+    received,
+    providerKey,
   };
 }
 

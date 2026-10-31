@@ -31,6 +31,9 @@ export interface State extends Located {
   derived?: Derived;
   // A fixed state: always this one value.
   fixed?: Located;
+  // A received state: its value is provided by a type above, wherever this
+  // type is placed.
+  received?: true;
 }
 
 // "when <Dimension> { <value>, ... -> <value> ... }".
@@ -63,6 +66,8 @@ export interface Type extends Declaration {
   types: Type[];
   // The elements it contains.
   children: Child[];
+  // Its states that the types inside it can receive.
+  provides: Located[];
 }
 
 // A child of a type: its name, its type, and, when it is not always there,

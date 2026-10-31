@@ -733,3 +733,16 @@ record Evidence with context {}
     expect([result.code, result.stdout]).toEqual([1, ""]);
   });
 });
+
+describe("lang status, with a received state", () => {
+  it("refuses a tree where a received state has no provider above it", () => {
+    const root = writeProject({});
+    writeFileSync(
+      join(root, "site.dxn"),
+      "enum Section = home | blog\ntype Links receives current: Section {}\ntype Toolbar {\n  has links: Links\n}\nrecord Evidence with context {}\n",
+    );
+    expect(capture(["lang", "status", "site.dxn"], root).stderr).toBe(
+      "dxn: Toolbar.links: current is received by Links, but nothing above it provides it\n",
+    );
+  });
+});

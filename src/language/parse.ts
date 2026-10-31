@@ -5,7 +5,9 @@
 //   file        = { blank-line | enum | dimension | type | environment | profile | modifier | record }
 //   enum        = "enum" name "=" value { "|" [newline] value } newline
 //   dimension   = "dimension" name "=" value { "|" [newline] value } newline
-//   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | state | rule | enum | type | has } "}"
+//   type        = "type" name [ "needs" name { "," [newline] name } ] [ "receives" field { "," [newline] field } ]
+//                 "{" { blank-line | state | rule | enum | type | has | provides } "}"
+//   provides    = "provides" state-name newline
 //   has         = "has" child-name ":" name { "." name } [ bindings ] [ "only" "when" condition ] newline
 //   bindings    = "{" { state-name "=" state-name ( "," | newline ) } "}"
 //   state       = "state" field { "," [newline] field } newline
@@ -300,16 +302,33 @@ export function parse(source: string): ParseResult {
       enums: [],
       types: [],
       children: [],
+      provides: [],
     });
     const after = peek();
     if (after.kind === "word" && after.text === "needs") {
       next();
       const dimension = (after: string) => word(`a dimension after ${after}`);
-      type.needs.push(...list(",", '"needs"', dimension, ["{"], '"{"'));
+      type.needs.push(...list(",", '"needs"', dimension, ["{", "word"], '"{"'));
+      // Only "receives" may follow the needs, before the braces.
+      if (peek().kind === "word" && peek().text !== "receives") {
+        fail(peek(), `"," or "{" after ${JSON.stringify(previous().text)}`);
+      }
+    }
+    const receiving = peek();
+    if (receiving.kind === "word" && receiving.text === "receives") {
+      next();
+      const received = () => ({ ...field(), received: true as const });
+      type.states.push(...list(",", '"receives"', received, ["{"], '"{"'));
     }
     expect("{", '"{" after the type name');
     braces(type.name, (token) => {
       if (token.kind !== "word") fail(token, '"state", a rule or "}"');
+      if (token.text === "provides") {
+        next();
+        type.provides.push(word('a state after "provides"'));
+        end(["newline", "}"], "the end of the line");
+        return;
+      }
       if (token.text === "has") {
         next();
         type.children.push(child());

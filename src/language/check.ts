@@ -159,13 +159,11 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         );
       }
       if (target === undefined || source === undefined) continue;
-      if (target.derived !== undefined || target.fixed !== undefined) {
-        const by = target.fixed === undefined ? "its when" : "its value";
-        report(
-          "bound-derived",
-          `${target.name} is decided by ${by}; it cannot also be bound`,
-          state,
-        );
+      if (target.derived !== undefined || target.fixed !== undefined || target.received) {
+        const why = target.received
+          ? "is received"
+          : `is decided by ${target.fixed === undefined ? "its when" : "its value"}`;
+        report("bound-derived", `${target.name} ${why}; it cannot also be bound`, state);
       } else if (target.enum.name !== source.enum.name) {
         report(
           "binding-mismatch",
@@ -331,13 +329,11 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     const conditioned = new Map<string, Rule>();
     for (const rule of type.rules) {
       const state = type.states.find(({ name }) => name === rule.state.name);
-      if (state?.derived !== undefined || state?.fixed !== undefined) {
-        const by = state.fixed === undefined ? "its when" : "its value";
-        report(
-          "rule-on-derived",
-          `${state.name} is decided by ${by}; it cannot also have a rule`,
-          rule.state,
-        );
+      if (state?.derived !== undefined || state?.fixed !== undefined || state?.received) {
+        const why = state.received
+          ? "is received"
+          : `is decided by ${state.fixed === undefined ? "its when" : "its value"}`;
+        report("rule-on-derived", `${state.name} ${why}; it cannot also have a rule`, rule.state);
       }
       // A broken type's states may not all have been read.
       if (state === undefined && !type.broken) {
@@ -382,6 +378,22 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       checkChosen(chosen, dimension.name, names, report, "the condition");
     }
     checkChildren(type, needed, declare);
+    // What it provides: its own states, each once.
+    const provided = new Set<string>();
+    for (const name of type.provides) {
+      const own = type.states.filter(({ received }) => received === undefined);
+      if (!own.some((state) => state.name === name.name)) {
+        const states = own.map((state) => state.name);
+        report(
+          "unknown-state",
+          `${name.name} is not a state of ${type.name}${among(states, "it has none")}`,
+          name,
+        );
+      } else if (provided.has(name.name)) {
+        report("duplicate-provides", `${name.name} is already provided by ${type.name}`, name);
+      }
+      provided.add(name.name);
+    }
   }
 }
 

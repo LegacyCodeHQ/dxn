@@ -17,7 +17,7 @@ import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
 import { profilesOf } from "../language/profiles.js";
 import { isValue, renameInData, renameInSource } from "../language/rename.js";
-import { type Check, type Combination, coverage } from "../language/status.js";
+import { type Check, type Combination, coverage, treePaths } from "../language/status.js";
 import { folderOf, storedFiles } from "../language/store.js";
 import { validate } from "../language/validate.js";
 import { drawTable, NONE } from "../tables.js";
@@ -100,12 +100,13 @@ function plain(value: unknown): unknown {
 // A type, with its nested enums and types, and its children, only when it
 // has any.
 function nestedOnly(type: Type): unknown {
-  const { enums, types, children, ...rest } = type;
+  const { enums, types, children, provides, ...rest } = type;
   return {
     ...rest,
     ...(enums.length > 0 ? { enums } : {}),
     ...(types.length > 0 ? { types: types.map(nestedOnly) } : {}),
     ...(children.length > 0 ? { children } : {}),
+    ...(provides.length > 0 ? { provides } : {}),
   };
 }
 
@@ -643,6 +644,14 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     });
   }
   if (wrong) return report.fail();
+  // Every element must be evaluable in place: a received state, provided.
+  for (const path of treePaths(parsed)) {
+    try {
+      placement(parsed, path);
+    } catch (error) {
+      return report.refuse(`${path}: ${(error as Error).message}`);
+    }
+  }
   const records = parsed.records
     .filter(({ context }) => context)
     .map(({ name }) => ({
