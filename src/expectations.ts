@@ -484,13 +484,12 @@ function checkExists(
       (candidate) => resolver.resolve(e.id, candidate, lineage).present !== e.exists,
     );
     if (wrong !== undefined) {
-      const at = Object.entries(wrong)
-        .map(([name, value]) => `${name}=${value}`)
-        .join(", ");
+      // The node and the combination, by profile where it matches one.
+      const described = describeContext(resolver, e.id, wrong).slice(e.id.length);
       report(
         diagnostics,
         "expectation-failed",
-        `${e.named}: ${e.id} ${e.exists ? "does not exist" : "exists"}${at === "" ? "" : ` (${at})`}`,
+        `${e.named}: ${e.id} ${e.exists ? "does not exist" : "exists"}${described}`,
         e.assertionPath,
         e.assertionNode,
       );

@@ -232,6 +232,26 @@ describe("filters by profile", () => {
     ]);
   });
 
+  it("name the profile in a failing exists rule", () => {
+    const { run } = cliProject({
+      ...files,
+      "expectations.json": {
+        version: 1,
+        expectations: [
+          {
+            title: "The panel never exists",
+            node: "menu-panel",
+            when: { profile: "phone" },
+            exists: false,
+          },
+        ],
+      },
+    });
+    expect(run("validate").stderr.replace(/^.*?:\d+:\d+: /, "")).toBe(
+      "expectation-failed: The panel never exists: menu-panel exists at phone (menu=open)\n",
+    );
+  });
+
   it("work in expectations", () => {
     const { run } = cliProject({
       ...files,
