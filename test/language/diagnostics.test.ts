@@ -72,6 +72,27 @@ describe("diagnostics", () => {
     ]);
   });
 
+  it("end a declaration left open at the next one, and report nothing that follows from it", () => {
+    expect([
+      problems(
+        "enum E = a | b\ntype A {\n  state a: E\n\ntype B {\n  state b: E\n}\nenum F = x | y\ntype C {\n  state c: Nope\n}\n",
+      ),
+      problems(
+        "type Menu {\n  enum State = closed open\n  state menu: State\n}\ntype Bar {\n  state m: Menu.State = open\n}\n",
+      ),
+      problems(
+        "enum E = a | b\ntype Toggle {\n  state t: E\n  bogus line\n  state u: E\n}\ntype Bar {\n  state x: E\n  has m: Toggle { u = x }\n}\n",
+      ),
+    ]).toEqual([
+      [
+        '5:1: syntax-error: expected "}" to close A, found "type"',
+        "10:12: unknown-enum: Nope is not an enum (E, F)",
+      ],
+      ['2:23: syntax-error: expected "|" or the end of the line after "closed", found "open"'],
+      ['4:9: syntax-error: expected "=" after "bogus", found "line"'],
+    ]);
+  });
+
   it("come in source order", () => {
     expect(
       parse("type Wordmark {\n  state hover: Hover\n}\nenum Size =\n").diagnostics.map(

@@ -161,7 +161,8 @@ export function parse(source: string): ParseResult {
         next();
         return;
       }
-      if (token.kind === "end") fail(token, `"}" to close ${owner}`);
+      // A declaration at the start of a line ends one left open.
+      if (token.kind === "end" || starts(token)) fail(token, `"}" to close ${owner}`);
       entry(token);
     }
   };
@@ -440,9 +441,19 @@ export function parse(source: string): ParseResult {
       if (token.text === "enum" || token.text === "type") {
         const outer = nested;
         nested = true;
-        if (token.text === "enum") valuesDeclaration("enum", type.enums);
-        else typeDeclaration(type.types);
-        nested = outer;
+        const list: Declaration[] = token.text === "enum" ? type.enums : type.types;
+        const before = list.length;
+        try {
+          if (token.text === "enum") valuesDeclaration("enum", type.enums);
+          else typeDeclaration(type.types);
+        } catch (error) {
+          // It broke too, not only the type around it.
+          const broken = list.length > before ? list.at(-1) : undefined;
+          if (broken !== undefined) broken.broken = true;
+          throw error;
+        } finally {
+          nested = outer;
+        }
         return;
       }
       // "states hover: Hover" is the old keyword; a rule on a state named

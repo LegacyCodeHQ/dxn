@@ -354,7 +354,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       }
       bound.add(state.name);
       const target = inner?.states.find(({ name }) => name === state.name);
-      if (inner !== undefined && target === undefined) {
+      // A broken type's states may not all have been read.
+      if (inner !== undefined && target === undefined && !inner.broken) {
         const states = inner.states.map(({ name }) => name);
         report(
           "unknown-state",
