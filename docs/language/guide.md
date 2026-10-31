@@ -9,11 +9,11 @@ what is still being designed. For the reasoning behind each decision, see
 ## Why a language
 
 Take one small element of a website: the wordmark in its toolbar. It sounds
-simple, but ask what it can look like and the answers multiply:
+simple, but ask which cases it has to handle and the answers multiply:
 
 - With a mouse it can be hovered; with a finger it cannot.
 - With a keyboard it can be focused; without one it cannot.
-- On a phone it is small; on a desktop it is larger.
+- It has to work at every screen size, from a phone to a desktop.
 
 Every one of those is a question of _which combination_. Multiply the inputs,
 the screen sizes and the states together and a single wordmark has dozens of
@@ -462,21 +462,31 @@ be an enum, so the state that uses it is fine.
 The language grows one concept at a time, and the concepts below are designed
 or under discussion but not part of it yet; see [design.md](design.md):
 
+- **Evidence the language checks.** Records and `lang validate` are the first
+  steps. Next come fields that hold text, times and hashes, for when evidence
+  was recorded and what it points to; a field that refers to one combination
+  of a type in a profile, so the checker can tell that a piece of evidence is
+  for a combination that exists; and where evidence is stored, so the tool can
+  say what is drawn, built and verified, and what is missing.
 - **Provides and cascade.** Today, profiles are the only things that give
   dimensions their values. Next, an element in a page will _provide_ a
   dimension, and every element inside it that _needs_ it will receive the
   value. That is dependency injection: `needs` is already its first half.
-- **Looks and match.** Saying how an element looks under each combination: its
-  size, its color, its icon, with `match` to choose between replacements.
-- **Overrides.** Changing a value for one dimension's value or one
-  combination, without repeating the rest.
 - **Modifiers.** Accessories that change some profiles' values, like an iPad
   with a Magic Keyboard.
-- **Evidence.** Linking each combination to the design frame and the code that
-  show it, so the tool can tell what is drawn, built and verified, and what is
-  missing.
 - **Kits.** Domain words that alias the core, such as a UI kit, so the same
-  language can describe other domains.
+  language can describe other domains. `Tool` in the records above is already
+  the pattern: the core knows nothing about pen.dev; a file or a kit declares
+  it.
+
+### What the language leaves out
+
+The language says what exists: the states, what they depend on, and which
+combinations happen. It does not say what anything looks like: no colors,
+sizes or icons. Whether two combinations look the same is something you
+observe, not something you declare. Evidence answers it: two combinations
+whose evidence points to the same design frame, or later to the same
+rendering in the code, look the same.
 
 ## Reference
 
