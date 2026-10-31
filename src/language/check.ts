@@ -252,25 +252,50 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           );
         }
       }
-      return { trigger, action: parts.length === 1 ? action : undefined };
+      const path = parts.slice(0, -1).join(".");
+      return { trigger, action, path };
     });
-    // One event, one change: no two of the type's own actions it triggers can
-    // both apply.
-    resolved.forEach(({ trigger, action }, index) => {
+    // One event, one change: no two actions that events which overlap
+    // trigger can both apply to one state, from one value.
+    const overlap = (a: Event, b: Event) => {
+      if (a.kind === "click" && b.kind === "click") return a.target.name === b.target.name;
+      if (a.kind === "key" && b.kind === "key") return a.key.name === b.key.name;
+      if (a.kind === "dimension" && b.kind === "dimension") {
+        return (
+          a.dimension.name === b.dimension.name &&
+          a.values.some(({ name }) => b.values.some((value) => value.name === name))
+        );
+      }
+      return a.kind === b.kind;
+    };
+    resolved.forEach(({ trigger, action, path }, index) => {
       if (action === undefined) return;
-      for (const { trigger: earlier, action: other } of resolved.slice(0, index)) {
+      const of = (name: string) => (path === "" ? name : `${path}.${name}`);
+      for (const earlier of resolved.slice(0, index)) {
+        const other = earlier.action;
         if (
-          other !== undefined &&
-          eventText(earlier.event) === eventText(trigger.event) &&
-          other.state.name === action.state.name &&
-          other.from.name === action.from.name
+          other === undefined ||
+          earlier.path !== path ||
+          !overlap(earlier.trigger.event, trigger.event) ||
+          other.state.name !== action.state.name ||
+          other.from.name !== action.from.name
         ) {
+          continue;
+        }
+        if (other === action) {
+          report(
+            "duplicate-trigger",
+            `${eventText(trigger.event)} already triggers ${of(action.name.name)}`,
+            trigger,
+          );
+        } else {
           report(
             "ambiguous-event",
-            `${eventText(trigger.event)} triggers both ${other.name.name} and ${action.name.name} when ${action.state.name} = ${action.from.name}`,
+            `${eventText(trigger.event)} triggers both ${of(other.name.name)} and ${of(action.name.name)} when ${of(action.state.name)} = ${action.from.name}`,
             trigger,
           );
         }
+        break;
       }
     });
   };

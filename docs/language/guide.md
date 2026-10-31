@@ -1195,8 +1195,10 @@ type Toolbar needs Breakpoint {
 has a state named `focus`. Focus is an effect, not a state of the matrix, so
 it is checked, and an expectation can assert it.
 
-One event makes one change: two of a type's own actions that one event
-triggers cannot both apply to the same value. The event words are built into
+One event makes one change: two actions that one event triggers, its own or
+a child's, cannot both apply to the same value. Events overlap when they are
+the same click, key or pointer, or a change of one dimension to a value they
+share: `Breakpoint in (base, lg)` and `Breakpoint = lg` overlap. The event words are built into
 the language for now; they belong to a UI kit, once there are kits.
 
 ## Expectations: rules the model must follow
@@ -1447,7 +1449,8 @@ comment     = "#" to the end of the line
 | `unknown-child`                                                               | error    | an event, an action's path or a focus names a child that is not one                              |
 | `unknown-action`                                                              | error    | an `on` triggers an action its type does not have                                                |
 | `focus-target`                                                                | error    | focus goes to a child that has no `focus` state                                                  |
-| `ambiguous-event`                                                             | error    | one event triggers two of a type's actions that apply to the same value                          |
+| `ambiguous-event`                                                             | error    | events that overlap trigger two actions that apply to one state's same value                     |
+| `duplicate-trigger`                                                           | error    | an event triggers the same action twice                                                          |
 | `expectation-failed`                                                          | error    | the model breaks an expectation; the message gives a combination that breaks it                  |
 | `expectation-empty`                                                           | error    | an expectation picks nothing, so it would always pass                                            |
 | `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |

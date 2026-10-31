@@ -163,6 +163,33 @@ type Menu {
     ]);
   });
 
+  it("cannot trigger two actions at once where events overlap, or a child's", () => {
+    const shut = (lines: string) =>
+      errors(
+        model
+          .replace(
+            "  action close: menu open -> closed\n",
+            "  action close: menu open -> closed\n  action shut: menu open -> closed\n",
+          )
+          .replace("  on Breakpoint = lg: menu.close, focus link\n", `  ${lines}\n`),
+      );
+    assert([
+      shut("on Breakpoint in (base, lg): menu.close\n  on Breakpoint = lg: menu.shut"),
+      shut("on key Escape: menu.close\n  on key Escape: menu.shut"),
+      shut("on key Escape: menu.close\n  on key Escape: menu.close"),
+      shut("on Breakpoint = base: menu.close\n  on Breakpoint = lg: menu.shut"),
+    ]).toEqual([
+      [
+        "43:3: ambiguous-event: Breakpoint = lg triggers both menu.close and menu.shut when menu.menu = open",
+      ],
+      [
+        "43:3: ambiguous-event: key Escape triggers both menu.close and menu.shut when menu.menu = open",
+      ],
+      ["43:3: duplicate-trigger: key Escape already triggers menu.close"],
+      [],
+    ]);
+  });
+
   it("can be the subject of an expectation: its state, and where focus goes, after the event", () => {
     const rule = (then: string) => `${model}
 expect "Escape closes the menu and returns focus to its button" {
