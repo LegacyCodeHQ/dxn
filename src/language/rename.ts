@@ -1,5 +1,6 @@
 import { type JsonNode, parseJson } from "../compiler/json.js";
 import type { Located, ParseResult } from "./ast.js";
+import { placement } from "./evaluate.js";
 import { Names } from "./names.js";
 
 // What a value is written as: a letter or digit, then letters, digits and
@@ -72,17 +73,27 @@ export function renameInData(
       edits.push({ start: node.span.start, end: node.span.end, text: JSON.stringify(to) });
     }
   };
-  // The states in a context, those of that enum renamed.
+  // The states in a context, those of that enum renamed: of its type, or of
+  // the child at its path, and of the parents that place it.
   const context = (node: JsonNode) => {
     if (node.kind !== "object") return;
-    const typeName = node.members.find(({ key }) => key.value === "type")?.value;
-    const type = file.types.find(
-      ({ name }) => typeName?.kind === "string" && name === typeName.value,
-    );
-    const states = node.members.find(({ key }) => key.value === "states")?.value;
+    const member = (name: string) => node.members.find(({ key }) => key.value === name)?.value;
+    const typeName = member("type");
+    const path = member("path");
+    const place = path?.kind === "string" ? placement(file, path.value) : undefined;
+    const type =
+      place?.target ??
+      file.types.find(({ name }) => typeName?.kind === "string" && name === typeName.value);
+    const states = member("states");
     if (type === undefined || states?.kind !== "object") return;
     for (const { key, value } of states.members) {
       const state = type.states.find(({ name }) => name === key.value);
+      if (state?.enum.name === enumName) rename(value);
+    }
+    const parents = member("parents");
+    if (place === undefined || parents?.kind !== "object") return;
+    for (const { key, value } of parents.members) {
+      const state = place.parents.find((parent) => parent.key === key.value)?.state;
       if (state?.enum.name === enumName) rename(value);
     }
   };

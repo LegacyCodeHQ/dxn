@@ -824,6 +824,31 @@ named anything, even `profile`. And it is checked against the matrix, not
 only against the enums: `hovered` is a value of `hover`, but there is no
 hovered wordmark on a phone, so a context that says so is reported.
 
+Evidence is usually about one element on a page, not about any element of a
+type: _this_ toggle, inside _this_ toolbar's menu. Such a context names the
+child by its path instead of a type, and is one row of `lang states` for that
+path, with the parents' states that place it:
+
+```json
+"context": {
+  "path": "Toolbar.menu.toggle",
+  "profile": "phone",
+  "dimensions": {},
+  "parents": { "layout": "compact", "menu.menu": "closed" },
+  "states": { "hover": "rest", "focus": "blurred", "expanded": "closed" }
+}
+```
+
+A context names a `type` or a `path`, never both. With a path, the dimensions
+are those of every type on the way, and `parents` gives each parent state
+that decides where the child is or that it is given, by its path. It is
+checked against the child in place: it must be there in that world, with
+those parents, and its bound states must be the ones its parents give it.
+
+```
+evidence/toolbar.json:14:21: unknown-value: $[0].context.states.expanded: "open" is not a value of expanded on phone with layout = compact, menu.menu = closed (closed)
+```
+
 Only a record with context can be stored, since stored data is a fact about
 the matrix. A record with context cannot be a field of another record, which
 would give it a second context, and it cannot declare a field named

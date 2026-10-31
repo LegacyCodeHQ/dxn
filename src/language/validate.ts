@@ -1,7 +1,7 @@
 import { childPath, type Diagnostic, Diagnostics } from "../compiler/diagnostic.js";
 import { type JsonNode, parseJson } from "../compiler/json.js";
-import type { ParseResult, RecordDeclaration } from "./ast.js";
-import { states as evaluate } from "./evaluate.js";
+import type { ParseResult, RecordDeclaration, Type } from "./ast.js";
+import { states as evaluate, inPlace, type Placement, placement } from "./evaluate.js";
 import { article, Names } from "./names.js";
 import { profilesOf } from "./profiles.js";
 import { scalar } from "./scalars.js";
@@ -47,11 +47,30 @@ export function validate(file: ParseResult, recordName: string, source: string):
       wrong(node, path, "a context (an object)");
       return;
     }
-    const profiled = file.profiles.length > 0;
-    const keys = profiled
-      ? ["type", "profile", "dimensions", "states"]
-      : ["type", "dimensions", "states"];
     const member = (key: string) => node.members.find((candidate) => candidate.key.value === key);
+    const typed = member("type");
+    const placed = member("path");
+    if (typed !== undefined && placed !== undefined) {
+      diagnostics.report(
+        "unknown-field",
+        "context has both type and path; give one",
+        childPath(path, "type"),
+        typed.key.span.start,
+      );
+      return;
+    }
+    if (typed === undefined && placed === undefined) {
+      diagnostics.report("missing-field", "context is missing type or path", path, node.span.start);
+      return;
+    }
+    const profiled = file.profiles.length > 0;
+    const keys = [
+      placed === undefined ? "type" : "path",
+      ...(profiled ? ["profile"] : []),
+      "dimensions",
+      ...(placed === undefined ? [] : ["parents"]),
+      "states",
+    ];
     for (const { key } of node.members) {
       if (!keys.includes(key.value)) {
         diagnostics.report(
@@ -85,15 +104,43 @@ export function validate(file: ParseResult, recordName: string, source: string):
       }
       return value.value;
     };
-    const typeName = choose(
-      "a type",
-      "type",
-      file.types.map(({ name }) => name),
-      childPath(path, "type"),
-      member("type")?.value,
-    );
-    const type = file.types.find(({ name }) => name === typeName);
-    if (type === undefined) return;
+    // What the context is about: a type on its own, or a child in place, by
+    // its path; and the dimensions of every type that takes part.
+    let type: Type | undefined;
+    let place: Placement | undefined;
+    let label = "";
+    if (placed !== undefined) {
+      const at = childPath(path, "path");
+      if (placed.value.kind !== "string") {
+        wrong(placed.value, at, "a path (a string)");
+        return;
+      }
+      try {
+        place = placement(file, placed.value.value);
+      } catch (error) {
+        diagnostics.report(
+          "unknown-value",
+          `${JSON.stringify(placed.value.value)} is not a path: ${(error as Error).message}`,
+          at,
+          placed.value.span.start,
+        );
+        return;
+      }
+      type = place.target;
+      label = placed.value.value;
+    } else {
+      const typeName = choose(
+        "a type",
+        "type",
+        file.types.map(({ name }) => name),
+        childPath(path, "type"),
+        typed?.value,
+      );
+      type = file.types.find(({ name }) => name === typeName);
+      if (type === undefined) return;
+      label = type.name;
+    }
+    const needs = place?.dimensions ?? type.needs.map(({ name }) => name);
     const profile = profiled
       ? choose(
           "a profile",
@@ -108,11 +155,12 @@ export function validate(file: ParseResult, recordName: string, source: string):
       ({ name }) => name === file.profiles[0]?.environment.name,
     );
     const given = profiled ? (environment?.dimensions.map(({ name }) => name) ?? []) : [];
-    const expected = type.needs.map(({ name }) => name).filter((name) => !given.includes(name));
+    const expected = needs.filter((name) => !given.includes(name));
     const chosen: Record<string, string> = {};
+    const parents: Record<string, string> = {};
     let complete = !profiled || profile !== undefined;
     const group = (
-      key: "dimensions" | "states",
+      key: "dimensions" | "parents" | "states",
       names: string[],
       unknown: (name: string) => string,
       check: (name: string, value: JsonNode, at: string) => boolean,
@@ -160,25 +208,38 @@ export function validate(file: ParseResult, recordName: string, source: string):
       (name) =>
         given.includes(name)
           ? `${name} is given by the profile; context.dimensions has ${has}`
-          : `${type.name} does not need ${name}; context.dimensions has ${has}`,
+          : `${label} does not need ${name}; context.dimensions has ${has}`,
       (name, value, at) => {
         const result = choose(`a value of ${name}`, name, names.values(name) ?? [], at, value);
         if (result !== undefined) chosen[name] = result;
         return result !== undefined;
       },
     );
-    const where = [
-      ...(profile === undefined ? [] : [profile]),
-      ...expected.map((name) => `${name} ${chosen[name]}`),
-    ];
+    if (place !== undefined) {
+      const deciding = place.parents;
+      const all = deciding.map(({ key }) => key);
+      group(
+        "parents",
+        all,
+        (name) => `${name} does not decide where ${label} is (${all.join(", ")})`,
+        (name, value, at) => {
+          const state = deciding.find(({ key }) => key === name)?.state;
+          const values = names.values(state?.enum.name ?? "") ?? [];
+          const result = choose(`a value of ${name}`, name, values, at, value);
+          if (result !== undefined) parents[name] = result;
+          return result !== undefined;
+        },
+      );
+    }
     const states = type.states.map(({ name }) => name);
     const pending: { name: string; value: string; at: string; start: number }[] = [];
+    const owner = type;
     group(
       "states",
       states,
-      (name) => `${type.name} has no state ${JSON.stringify(name)} (${states.join(", ")})`,
+      (name) => `${owner.name} has no state ${JSON.stringify(name)} (${states.join(", ")})`,
       (name, value, at) => {
-        const state = type.states.find((candidate) => candidate.name === name);
+        const state = owner.states.find((candidate) => candidate.name === name);
         const values = names.values(state?.enum.name ?? "") ?? [];
         const result = choose(`a value of ${name}`, name, values, at, value);
         if (result !== undefined)
@@ -187,18 +248,47 @@ export function validate(file: ParseResult, recordName: string, source: string):
       },
     );
     if (!complete) return;
-    // Each state value must exist in that combination.
-    const row = evaluate(file, type.name).rows.find(
-      (candidate) =>
-        (profile === undefined || candidate.profiles?.includes(profile) === true) &&
-        expected.every((name) => candidate.when[name] === chosen[name]),
-    );
-    for (const { name, value, at, start } of pending) {
-      const available = row?.states[name] ?? [];
-      if (!available.includes(value)) {
+    const world = [
+      ...(profile === undefined ? [] : [profile]),
+      ...expected.map((name) => `${name} ${chosen[name]}`),
+    ].join(", ");
+    const inWorld = (row: { profiles?: string[]; when: Record<string, string> }) =>
+      (profile === undefined || row.profiles?.includes(profile) === true) &&
+      expected.every((name) => row.when[name] === chosen[name]);
+    // Each state value must exist in that combination: of the type, or of
+    // the child, there.
+    let available: Record<string, string[]> | undefined;
+    let where = world;
+    if (place !== undefined) {
+      const settled = Object.entries(parents)
+        .map(([name, value]) => `${name} = ${value}`)
+        .join(", ");
+      where = `${world} with ${settled}`;
+      const row = inPlace(file, label).rows.find(
+        (candidate) =>
+          inWorld(candidate) &&
+          Object.entries(parents).every(([name, value]) => candidate.parents[name] === value),
+      );
+      if (row === undefined) {
+        const parentsAt = member("parents")?.value;
         diagnostics.report(
           "unknown-value",
-          `${JSON.stringify(value)} is not a value of ${name} on ${where.join(", ")} (${available.join(", ")})`,
+          `${label} is not there on ${where}`,
+          childPath(path, "parents"),
+          parentsAt?.span.start ?? node.span.start,
+        );
+        return;
+      }
+      available = row.states;
+    } else {
+      available = evaluate(file, owner.name).rows.find(inWorld)?.states;
+    }
+    for (const { name, value, at, start } of pending) {
+      const values = available?.[name] ?? [];
+      if (!values.includes(value)) {
+        diagnostics.report(
+          "unknown-value",
+          `${JSON.stringify(value)} is not a value of ${name} on ${where} (${values.join(", ")})`,
           at,
           start,
         );

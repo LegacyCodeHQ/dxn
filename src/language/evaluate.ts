@@ -1,4 +1,4 @@
-import type { Child, ParseResult, Type } from "./ast.js";
+import type { Child, ParseResult, State, Type } from "./ast.js";
 import { profilesOf } from "./profiles.js";
 
 // What a type's states are under each combination of the dimensions its
@@ -140,25 +140,8 @@ export function inPlace(file: ParseResult, path: string): InPlace {
   if (file.diagnostics.some(({ severity }) => severity === "error")) {
     throw new Error("cannot evaluate a file with problems");
   }
-  const segments = path.split(".");
-  const first = segments.findIndex((segment) => /^[a-z]/.test(segment));
-  const rootName = segments.slice(0, first === -1 ? segments.length : first).join(".");
-  const root = file.types.find(({ name }) => name === rootName);
-  if (root === undefined) throw new Error(`no type ${rootName}`);
-  type Step = { type: Type; child?: Child; prefix: string };
-  const chain: Step[] = [{ type: root, prefix: "" }];
-  for (const name of first === -1 ? [] : segments.slice(first)) {
-    const parent = (chain.at(-1) as Step).type;
-    const child = parent.children.find((candidate) => candidate.name === name);
-    if (child === undefined) {
-      const children = parent.children.map((candidate) => candidate.name).join(", ");
-      throw new Error(`${name} is not a child of ${parent.name} (${children})`);
-    }
-    const type = file.types.find(({ name }) => name === child.type.name) as Type;
-    const previous = (chain.at(-1) as Step).prefix;
-    chain.push({ type, child, prefix: previous === "" ? name : `${previous}.${name}` });
-  }
-  const dimensions = [...new Set(chain.flatMap(({ type }) => type.needs.map(({ name }) => name)))];
+  const { steps: chain, dimensions } = placement(file, path);
+  type Step = Placement["steps"][number];
   const valuesOf = (name: string) =>
     file.dimensions
       .find((declaration) => declaration.name === name)
@@ -255,6 +238,57 @@ export function inPlace(file: ParseResult, path: string): InPlace {
   };
   for (const world of worlds) walk(world, 0, {}, {});
   return { path, type: (chain.at(-1) as Step).type.name, dimensions, rows };
+}
+
+// Where a path leads: each type on the way, from the type the path starts
+// at, with the child that leads to it and its prefix in the parents' names;
+// the dimensions of every type on the way; and the parents' states that
+// decide where the child is, or that it is given, by their path.
+export interface Placement {
+  target: Type;
+  steps: { type: Type; child?: Child; prefix: string }[];
+  dimensions: string[];
+  parents: { key: string; state: State }[];
+}
+
+// Follows a path, "<Type>.<child>...": a refusal names the first part that
+// is not a type or a child.
+export function placement(file: ParseResult, path: string): Placement {
+  const segments = path.split(".");
+  const first = segments.findIndex((segment) => /^[a-z]/.test(segment));
+  const rootName = segments.slice(0, first === -1 ? segments.length : first).join(".");
+  const root = file.types.find(({ name }) => name === rootName);
+  if (root === undefined) throw new Error(`no type ${rootName}`);
+  const steps: Placement["steps"] = [{ type: root, prefix: "" }];
+  for (const name of first === -1 ? [] : segments.slice(first)) {
+    const { type: parent, prefix: previous } = steps.at(-1) as Placement["steps"][number];
+    const child = parent.children.find((candidate) => candidate.name === name);
+    if (child === undefined) {
+      const children = parent.children.map((candidate) => candidate.name).join(", ");
+      throw new Error(`${name} is not a child of ${parent.name} (${children})`);
+    }
+    const type = file.types.find(({ name }) => name === child.type.name) as Type;
+    steps.push({ type, child, prefix: previous === "" ? name : `${previous}.${name}` });
+  }
+  const parents: Placement["parents"] = [];
+  steps.forEach(({ type, prefix }, level) => {
+    const next = steps[level + 1]?.child;
+    if (next === undefined) return;
+    const deciding =
+      next.when !== undefined && /^[a-z]/.test(next.when.on.name) ? [next.when.on.name] : [];
+    const relevant = new Set([...deciding, ...(next.bindings ?? []).map(({ from }) => from.name)]);
+    for (const name of relevant) {
+      const state = type.states.find((candidate) => candidate.name === name);
+      if (state !== undefined)
+        parents.push({ key: prefix === "" ? name : `${prefix}.${name}`, state });
+    }
+  });
+  return {
+    target: (steps.at(-1) as Placement["steps"][number]).type,
+    steps,
+    dimensions: [...new Set(steps.flatMap(({ type }) => type.needs.map(({ name }) => name)))],
+    parents,
+  };
 }
 
 // The file's profiles, those with the same values as one group, in the order
