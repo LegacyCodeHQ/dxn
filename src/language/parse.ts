@@ -15,6 +15,7 @@
 //   assignment  = name "=" value
 //   name        = capital letter, then letters and digits
 //   value       = a letter or digit, then letters, digits and hyphens
+//   comment     = "#" to the end of the line, skipped like a space
 //
 // A mistake is reported where it is, and reading skips to the next line that
 // starts a declaration. Then check.ts checks what was read.

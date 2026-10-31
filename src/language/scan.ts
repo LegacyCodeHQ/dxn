@@ -25,7 +25,7 @@ const wordStart = /[A-Za-z0-9]/;
 const wordPart = /[A-Za-z0-9-]/;
 
 // Splits the source into words, "=", "|", newlines and anything else, one
-// character at a time for the rest, skipping spaces and tabs.
+// character at a time for the rest, skipping spaces, tabs and comments.
 export function scan(source: string): Token[] {
   const tokens: Token[] = [];
   let line = 1;
@@ -36,6 +36,14 @@ export function scan(source: string): Token[] {
     if (char === " " || char === "\t" || char === "\r") {
       index += 1;
       column += 1;
+      continue;
+    }
+    // A comment, from # to the end of the line; the line's end is kept.
+    if (char === "#") {
+      while (index < source.length && source[index] !== "\n") {
+        index += 1;
+        column += 1;
+      }
       continue;
     }
     if (char === "\n") {

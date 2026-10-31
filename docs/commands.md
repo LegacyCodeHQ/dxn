@@ -724,8 +724,10 @@ docs/language/design.md. So far a file declares enums, each a named set of
 values; dimensions, each listing the values the environment varies by;
 types with the dimensions they need, their states, and rules for when a
 state's value exists; environments, each a product of dimensions; and
-profiles, each an instance of an environment:
+profiles, each an instance of an environment. A # starts a comment, to
+the end of the line:
 
+  # The wordmark's hover only exists with a mouse.
   enum Hover = rest | hovered
   dimension Pointer = mouse | touch
   type Wordmark needs Pointer {
