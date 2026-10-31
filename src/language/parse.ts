@@ -10,7 +10,7 @@
 //   field       = state-name ":" name
 //   rule        = state-name "=" value "only" "when" condition newline
 //   condition   = name ( "=" value | "in" "(" value { "," value } ")" )
-//   environment = "environment" name "=" name { "×" [newline] name } newline
+//   environment = "environment" name "=" name { "x" [newline] name } newline
 //   profile     = "profile" profile-name ":" name "{" { assignment ( "," | newline ) } "}"
 //   assignment  = name "=" value
 //   name        = capital letter, then letters and digits
@@ -92,18 +92,20 @@ export function parse(source: string): ParseResult {
     return named;
   };
 
-  // Items split by a separator, which may end a line; the first follows
-  // what was read before it. The list ends at one of the ends: by default,
-  // the end of the line.
+  // Items split by a separator, a token or a word, which may end a line; the
+  // first follows what was read before it. The list ends at one of the ends:
+  // by default, the end of the line.
   const list = <T>(
-    separator: TokenKind,
+    separator: TokenKind | "x",
     first: string,
     item: (after: string) => T,
     ends: TokenKind[],
     ending = "the end of the line",
   ): T[] => {
     const items = [item(first)];
-    while (peek().kind === separator) {
+    const separates = (token: Token) =>
+      token.kind === separator || (token.kind === "word" && token.text === separator);
+    while (separates(peek())) {
       next();
       if (peek().kind === "newline") next();
       items.push(item(`"${separator}"`));
@@ -222,14 +224,15 @@ export function parse(source: string): ParseResult {
     });
   };
 
-  // An environment: "environment <Name> = <Dimension> × <Dimension> ...".
+  // An environment: "environment <Name> = <Dimension> x <Dimension> ...". The
+  // x is a word, but dimension names are capitalized, so it is never one.
   const environmentDeclaration = () => {
     next();
     const named = name("environment", 'an environment name after "environment"', capitalized);
     const environment = keep(result.environments, { ...named, dimensions: [] });
     expect("=", '"=" after the environment name');
     environment.dimensions.push(
-      ...list("×", '"="', (after) => word(`a dimension after ${after}`), ["newline", "end"]),
+      ...list("x", '"="', (after) => word(`a dimension after ${after}`), ["newline", "end"]),
     );
   };
 

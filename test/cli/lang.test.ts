@@ -128,7 +128,7 @@ type Wordmark needs Pointer, Keyboard {
 
   it("names the profile of each row when there are profiles", () => {
     const withProfiles = `dimension Breakpoint = base | lg
-${wordmark}environment Device = Breakpoint × Pointer × Keyboard
+${wordmark}environment Device = Breakpoint x Pointer x Keyboard
 profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
 profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `;

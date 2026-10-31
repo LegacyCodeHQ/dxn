@@ -43,7 +43,7 @@ describe("diagnostics", () => {
     ]).toEqual([
       ['1:19: syntax-error: expected "|" or the end of the line after "rest", found "hovered"'],
       ['2:27: syntax-error: expected "|" or the end of the line after "mouse", found "touch"'],
-      ['3:30: syntax-error: expected "×" or the end of the line after "Pointer", found "Keyboard"'],
+      ['3:30: syntax-error: expected "x" or the end of the line after "Pointer", found "Keyboard"'],
       ['5:16: syntax-error: expected ":" after "hover", found "Hover"'],
       [
         '3:36: syntax-error: expected a value after "=", found "}"',

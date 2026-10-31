@@ -71,7 +71,7 @@ type BlogLink needs Breakpoint {
 
   it("gives a row per profile when there are profiles, not every combination", () => {
     const source = `dimension Breakpoint = base | sm | lg | xl
-${wordmark}environment Device = Breakpoint × Pointer × Keyboard
+${wordmark}environment Device = Breakpoint x Pointer x Keyboard
 profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
 profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `;

@@ -6,12 +6,12 @@ const dimensions = `dimension Breakpoint = base | sm | lg | xl
 dimension Pointer = mouse | touch
 dimension Keyboard = keyboard | no-keyboard
 `;
-const device = `${dimensions}environment Device = Breakpoint × Pointer × Keyboard\n`;
+const device = `${dimensions}environment Device = Breakpoint x Pointer x Keyboard\n`;
 // A one-dimension environment, so each problem below stands alone.
 const pointing = `${dimensions}environment Device = Pointer\n`;
 
 describe("environment", () => {
-  it("is a product of dimensions, written with × or *", () => {
+  it("is a product of dimensions, written with x", () => {
     const parts = (source: string) =>
       parse(source).environments.map(({ name, dimensions }) => [
         name,
@@ -20,7 +20,7 @@ describe("environment", () => {
     expect([
       parse(device).diagnostics,
       parts(device),
-      parts(`${dimensions}environment Device = Breakpoint * Pointer *\n  Keyboard\n`),
+      parts(`${dimensions}environment Device = Breakpoint x Pointer x\n  Keyboard\n`),
     ]).toEqual([
       [],
       [["Device", ["Breakpoint", "Pointer", "Keyboard"]]],
@@ -33,7 +33,7 @@ describe("environment", () => {
       problems(`${dimensions}environment device = Pointer\n`),
       problems(`${dimensions}environment Device = Pointr\n`),
       problems(`${dimensions}enum Hover = rest | hovered\nenvironment Device = Hover\n`),
-      problems(`${dimensions}environment Device = Pointer × Pointer\n`),
+      problems(`${dimensions}environment Device = Pointer x Pointer\n`),
     ]).toEqual([
       ['4:13: environment-name: environment names start with a capital letter: "device"'],
       ["4:22: unknown-dimension: Pointr is not a dimension (Breakpoint, Pointer, Keyboard)"],
@@ -48,7 +48,29 @@ describe("environment", () => {
       problems(`${dimensions}environment Device = Pointer Keyboard\n`),
     ]).toEqual([
       ['4:20: syntax-error: expected "=" after the environment name, found "Pointer"'],
-      ['4:30: syntax-error: expected "×" or the end of the line after "Pointer", found "Keyboard"'],
+      ['4:30: syntax-error: expected "x" or the end of the line after "Pointer", found "Keyboard"'],
+    ]);
+  });
+
+  it("is written with x only, which needs spaces around it", () => {
+    expect([
+      problems(`${dimensions}environment Device = Breakpoint × Pointer\n`),
+      problems(`${dimensions}environment Device = Breakpoint * Pointer\n`),
+      problems(`${dimensions}environment Device = BreakpointxPointer\n`),
+    ]).toEqual([
+      ['4:33: syntax-error: expected "x" or the end of the line after "Breakpoint", found "×"'],
+      ['4:33: syntax-error: expected "x" or the end of the line after "Breakpoint", found "*"'],
+      [
+        "4:22: unknown-dimension: BreakpointxPointer is not a dimension (Breakpoint, Pointer, Keyboard)",
+      ],
+    ]);
+  });
+
+  it("leaves x an ordinary value outside environments", () => {
+    const source = "enum Axis = x | y\ndimension Corner = x | y\n";
+    expect([problems(source), parse(source).enums[0]?.values.map(({ name }) => name)]).toEqual([
+      [],
+      ["x", "y"],
     ]);
   });
 });
