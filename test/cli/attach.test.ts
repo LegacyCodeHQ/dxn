@@ -8,7 +8,7 @@ import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
 
-const design = "design/website.pen";
+const design = "design/website.png";
 const revisionOf = (content: string) =>
   createHash("sha1")
     .update(`blob ${Buffer.byteLength(content)}\0${content}`)
@@ -58,7 +58,7 @@ describe("attach", () => {
           actor: "design-agent",
           at,
           source: { file: design, frame: "vbGba" },
-          revision: revisionOf("drawn"),
+          fingerprint: revisionOf("drawn"),
         },
       ],
     });
@@ -69,8 +69,8 @@ describe("attach", () => {
     run(...attach("profile=phone", "menu=closed"));
     writeFileSync(join(root, design), "redrawn");
     expect(run(...attach("profile=phone", "menu=closed")).code).toBe(0);
-    const entries = read("evidence/page.json").evidence as { revision: string }[];
-    expect(entries.map(({ revision }) => revision)).toEqual([revisionOf("redrawn")]);
+    const entries = read("evidence/page.json").evidence as { fingerprint: string }[];
+    expect(entries.map(({ fingerprint }) => fingerprint)).toEqual([revisionOf("redrawn")]);
   });
 
   it("refuses an incomplete context, a missing file and missing options", () => {

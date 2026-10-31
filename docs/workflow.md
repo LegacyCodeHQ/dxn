@@ -212,28 +212,30 @@ dimensions status blog-link
 
 An actor such as a design agent makes evidence: frames in a design file that
 show a node in one context. The specification stays the source of truth; the
-design is evidence for it. Here the design file is `design/toolbar.pen`, next
+design is evidence for it. Here the design file is `design/toolbar.png`, next
 to `.dimensions`:
 
-```text ../design/toolbar.pen
+```text ../design/toolbar.png
 The toolbar, drawn in a design tool.
 ```
 
 Attach a frame to each context it shows. The context must be complete, as
 `evidence` lists it; a profile fills in its dimensions. `evidence` shows each
 context of a node with the frame that covers it, or `—` where none does, and
-`status --actor` counts what is present, stale (the file changed since) or
-missing across the whole model. After the design changes, attach the frame
-again to record the new revision. A frame that shows several contexts alike
+`status --actor` counts what is present, stale (what the frame shows changed
+since) or missing across the whole model. In a pen.dev file, only a change to
+the frame or to a component or variable it uses makes it stale; for any other
+file, such as this image, any change to the file does. After the design
+changes, attach the frame again to record its new fingerprint. A frame that shows several contexts alike
 takes lists joined with `|`, quoted in a shell: it is recorded for every
 combination that is a context of the node.
 
 ```bash
 dimensions actor add design-agent --evidence design
 dimensions evidence menu --actor design-agent --table
-dimensions attach menu --actor design-agent --file design/toolbar.pen --frame phone-closed profile=phone menu=closed
-dimensions attach menu --actor design-agent --file design/toolbar.pen --frame phone-open profile=phone menu=open
-dimensions attach menu --actor design-agent --file design/toolbar.pen --frame tablet-menu profile=tablet-portrait "menu=closed|open"
+dimensions attach menu --actor design-agent --file design/toolbar.png --frame phone-closed profile=phone menu=closed
+dimensions attach menu --actor design-agent --file design/toolbar.png --frame phone-open profile=phone menu=open
+dimensions attach menu --actor design-agent --file design/toolbar.png --frame tablet-menu profile=tablet-portrait "menu=closed|open"
 dimensions evidence menu --actor design-agent profile=phone
 dimensions status --actor design-agent
 ```

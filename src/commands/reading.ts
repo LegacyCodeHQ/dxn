@@ -720,8 +720,8 @@ const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [<nam
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
-file and frame it points to, the file's revision then, and whether the file
-has changed since (stale). <name>=<value> filters keep only the contexts with
+file and frame it points to, the frame's fingerprint then, and whether what
+the frame shows has changed since (stale) or the frame is gone. <name>=<value> filters keep only the contexts with
 that dimension value, state, shared node state or profile. --table prints a
 Markdown table, a row per context and a column for the actor, where — means no
 evidence. Rows come in profile order. --by profile makes a row per profile
@@ -790,17 +790,21 @@ function evidenceFor(
         Object.keys(entry.context).length === Object.keys(context).length &&
         Object.entries(context).every(([name, value]) => entry.context[name] === value),
     )
-    .map(({ at, source, revision }) => ({
-      at,
-      source,
-      revision,
-      stale: resolver.project.revisions?.[source.file] !== revision,
-    }));
+    .map(({ at, source, fingerprint }) => {
+      const now = resolver.project.fingerprints?.[`${source.file}#${source.frame}`];
+      return {
+        at,
+        source,
+        fingerprint,
+        stale: now !== fingerprint,
+        ...(now === null ? { gone: true } : {}),
+      };
+    });
 }
 
 // The frames evidence points to, in the order first met: each with the
 // nodes and contexts that share it, when they were recorded, the file's
-// revisions then, the profiles they are on, and how many are stale.
+// fingerprints then, the profiles they are on, and how many are stale.
 function frameGroups(
   resolver: Resolver,
   rows: { node: string; context: NodeContext; evidence: ReturnType<typeof evidenceFor> }[],
@@ -812,26 +816,26 @@ function frameGroups(
       frame: string;
       nodes: string[];
       at: Set<string>;
-      revisions: Set<string>;
+      fingerprints: Set<string>;
       members: NodeContext[];
       stale: number;
     }
   >();
   for (const row of rows) {
-    for (const { at, source, revision, stale } of row.evidence) {
+    for (const { at, source, fingerprint, stale } of row.evidence) {
       const key = JSON.stringify([source.file, source.frame]);
       const group = frames.get(key) ?? {
         file: source.file,
         frame: source.frame,
         nodes: [],
         at: new Set<string>(),
-        revisions: new Set<string>(),
+        fingerprints: new Set<string>(),
         members: [],
         stale: 0,
       };
       if (!group.nodes.includes(row.node)) group.nodes.push(row.node);
       group.at.add(at);
-      group.revisions.add(revision);
+      group.fingerprints.add(fingerprint);
       group.members.push(row.context);
       if (stale) group.stale += 1;
       frames.set(key, group);
@@ -850,7 +854,7 @@ function frameGroups(
       frame: group.frame,
       nodes: group.nodes,
       at: [...group.at].sort(),
-      revisions: [...group.revisions],
+      fingerprints: [...group.fingerprints],
       profiles: profiles.sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b)),
       members: group.members,
       stale: group.stale,
@@ -1138,8 +1142,8 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
                 ? NONE
                 : found
                     .map(
-                      ({ source, stale }) =>
-                        `${source.file.split("/").pop()}#${source.frame}${stale ? " (stale)" : ""}`,
+                      ({ source, stale, gone }) =>
+                        `${source.file.split("/").pop()}#${source.frame}${gone === true ? " (gone)" : stale ? " (stale)" : ""}`,
                     )
                     .join(", "),
             ];

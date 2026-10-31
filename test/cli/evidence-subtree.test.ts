@@ -9,7 +9,7 @@ import { cliProject } from "../support/workspace.js";
 afterAll(cleanup);
 
 const json = (result: { stdout: string }) => JSON.parse(result.stdout);
-const design = "design/website.pen";
+const design = "design/website.png";
 const revision = createHash("sha1").update("blob 5\0drawn").digest("hex");
 const touch = { keyboard: "no-keyboard", pointer: "touch" };
 
@@ -19,7 +19,7 @@ const entry = (node: string, context: Record<string, string>, frame: string) => 
   actor: "design-agent",
   at: "2026-10-31T12:00:00Z",
   source: { file: design, frame },
-  revision,
+  fingerprint: revision,
 });
 
 // The closed menu button on a phone, and the open panel on a phone and on a
@@ -129,8 +129,8 @@ describe("evidence --subtree", () => {
       [
         "| frame                    | nodes       | profiles               | contexts | stale |",
         "| ------------------------ | ----------- | ---------------------- | -------- | ----- |",
-        "| website.pen#closedButton | menu-button | phone                  | 1        | 0     |",
-        "| website.pen#openPanel    | menu-panel  | phone, tablet-portrait | 2        | 0     |",
+        "| website.png#closedButton | menu-button | phone                  | 1        | 0     |",
+        "| website.png#openPanel    | menu-panel  | phone, tablet-portrait | 2        | 0     |",
         "",
       ].join("\n"),
     );

@@ -244,8 +244,8 @@ Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root 
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
-file and frame it points to, the file's revision then, and whether the file
-has changed since (stale). <name>=<value> filters keep only the contexts with
+file and frame it points to, the frame's fingerprint then, and whether what
+the frame shows has changed since (stale) or the frame is gone. <name>=<value> filters keep only the contexts with
 that dimension value, state, shared node state or profile. --table prints a
 Markdown table, a row per context and a column for the actor, where — means no
 evidence. Rows come in profile order. --by profile makes a row per profile
@@ -260,7 +260,7 @@ profile, each cell the contexts with current evidence out of all, and how
 many are stale; with --by frame, a row per frame with the nodes it covers.
 ```
 
-Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it: `at`, `source`, `revision` and `stale`. A context with no evidence is what is missing. An entry is stale when the file it points to has changed since it was recorded; that is not an error. `attach` records entries and `detach` removes them; see [concepts.md](concepts.md#actors-and-evidence).
+Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it: `at`, `source`, `fingerprint` and `stale`, plus `gone` when the frame is no longer in the file. A context with no evidence is what is missing. An entry is stale when what its frame shows has changed since it was recorded; that is not an error. `attach` records entries and `detach` removes them; see [concepts.md](concepts.md#actors-and-evidence).
 
 ```bash
 dimensions evidence toolbar --actor design-agent --table
@@ -330,13 +330,15 @@ file of the repository, such as a design. The context must be complete, as
 Values joined with | record the frame for every combination that is a context
 of the node, such as "profile=laptop|desktop" "hover=rest|hovered" for a frame
 that shows them all alike; a listed value the node never has is refused. The
-file's git revision is recorded, so the entry shows as stale once the file
-changes; attaching it again records the new revision. --file is relative to
+frame's fingerprint is recorded, so the entry shows as stale once what the
+frame shows changes: for a pen.dev file, the frame and the components and
+variables it uses; for any other file, the file. Attaching it again records
+the new fingerprint. --file is relative to
 the folder that holds .dimensions. --at defaults to now; --root is needed when
 several roots include the node.
 ```
 
-Writes an entry to `evidence/<root-id>.json`: the node, its complete context, the actor, when, the file and frame, and the file's git revision. Values joined with `|` record one entry for each combination that is a context of the node, which is how one frame that shows several contexts alike is recorded in one step; a listed value the node never has is refused, and so are lists that match no context. Attaching the same node, context, actor and frame again replaces the entry, which is how a stale entry is renewed after the design changes.
+Writes an entry to `evidence/<root-id>.json`: the node, its complete context, the actor, when, the file and frame, and the frame's fingerprint: for a pen.dev file, the frame with the components and variables it uses; for any other file, the file. A frame the file does not have is refused. Values joined with `|` record one entry for each combination that is a context of the node, which is how one frame that shows several contexts alike is recorded in one step; a listed value the node never has is refused, and so are lists that match no context. Attaching the same node, context, actor and frame again replaces the entry, which is how a stale entry is renewed after the design changes.
 
 ```bash
 dimensions actor add design-agent --evidence design

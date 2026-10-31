@@ -11,7 +11,7 @@ afterAll(cleanup);
 
 const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 
-const design = "design/website.pen";
+const design = "design/website.png";
 const drawn = "the toolbar, drawn";
 // The git blob hash of a file's content, as "git hash-object" prints it.
 const revisionOf = (content: string) =>
@@ -34,7 +34,7 @@ const entry = (changes: Record<string, unknown> = {}) => ({
   actor: "design-agent",
   at: "2026-10-31T12:00:00Z",
   source: { file: design, frame: "vbGba" },
-  revision: revisionOf(drawn),
+  fingerprint: revisionOf(drawn),
   ...changes,
 });
 
@@ -67,13 +67,13 @@ describe("evidence entries", () => {
       {
         at: "2026-10-31T12:00:00Z",
         source: { file: design, frame: "vbGba" },
-        revision: revisionOf(drawn),
+        fingerprint: revisionOf(drawn),
         stale: false,
       },
     ]);
     expect(rows.slice(1).map((row: { evidence: unknown[] }) => row.evidence)).toEqual([[], [], []]);
     expect(run("evidence", "menu-button", "--actor", "design-agent", "--table").stdout).toContain(
-      "| touch   | closed | website.pen#vbGba |",
+      "| touch   | closed | website.png#vbGba |",
     );
   });
 
@@ -85,7 +85,7 @@ describe("evidence entries", () => {
       json(run("evidence", "menu-button", "--actor", "design-agent")).contexts[0].evidence[0],
     ).toMatchObject({ stale: true });
     expect(run("evidence", "menu-button", "--actor", "design-agent", "--table").stdout).toContain(
-      "| website.pen#vbGba (stale) |",
+      "| website.png#vbGba (stale) |",
     );
   });
 
@@ -96,7 +96,7 @@ describe("evidence entries", () => {
       [
         "| profile         | hover | focus   | breakpoint | keyboard    | pointer | menu   | design-agent              |",
         "| --------------- | ----- | ------- | ---------- | ----------- | ------- | ------ | ------------------------- |",
-        "| phone           | rest  | blurred | base       | no-keyboard | touch   | closed | website.pen#vbGba (stale) |",
+        "| phone           | rest  | blurred | base       | no-keyboard | touch   | closed | website.png#vbGba (stale) |",
         "| phone           | rest  | blurred | base       | no-keyboard | touch   | open   | —                         |",
         "| tablet-portrait | rest  | blurred | sm         | no-keyboard | touch   | closed | —                         |",
         "| tablet-portrait | rest  | blurred | sm         | no-keyboard | touch   | open   | —                         |",
@@ -121,7 +121,7 @@ describe("evidence entries", () => {
       problems([entry({ context: { ...closedOnPhone, hover: "hovered" } })]),
       problems([entry({ node: "nope" })]),
       problems([entry({ source: { file: "design/missing.pen", frame: "vbGba" } })]),
-      problems([entry({ revision: "abc" })]),
+      problems([entry({ fingerprint: "abc" })]),
       problems([entry(), entry()]),
       problems([entry({ comment: "x" })]),
     ]).toEqual([
@@ -135,7 +135,7 @@ describe("evidence entries", () => {
       ],
       ['unknown-node: node "nope" does not exist'],
       ['missing-source: "design/missing.pen" does not exist in the repository'],
-      ["invalid-revision: must be the file's git blob hash: 40 hexadecimal characters"],
+      ["invalid-fingerprint: must be a fingerprint: 40 hexadecimal characters"],
       ["duplicate-evidence: another entry has the same node, context, actor and frame"],
       ['unknown-key: unknown key "comment"'],
     ]);

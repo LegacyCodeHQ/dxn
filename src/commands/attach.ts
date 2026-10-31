@@ -1,6 +1,6 @@
 import { statSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { revisionOf } from "../compiler/evidence.js";
+import { Fingerprints } from "../compiler/fingerprint.js";
 import type { Context } from "../resolve.js";
 import type { Json, Workspace } from "../workspace.js";
 import type { Command } from "./context.js";
@@ -18,8 +18,10 @@ file of the repository, such as a design. The context must be complete, as
 Values joined with | record the frame for every combination that is a context
 of the node, such as "profile=laptop|desktop" "hover=rest|hovered" for a frame
 that shows them all alike; a listed value the node never has is refused. The
-file's git revision is recorded, so the entry shows as stale once the file
-changes; attaching it again records the new revision. --file is relative to
+frame's fingerprint is recorded, so the entry shows as stale once what the
+frame shows changes: for a pen.dev file, the frame and the components and
+variables it uses; for any other file, the file. Attaching it again records
+the new fingerprint. --file is relative to
 the folder that holds .dimensions. --at defaults to now; --root is needed when
 several roots include the node.
 `;
@@ -165,7 +167,10 @@ export const attach: Command = editCommand(attachUsage, (workspace, args) => {
   }
   const { root, contexts } = targets(workspace, id, rest, values.root, values.actor);
   const at = values.at ?? new Date().toISOString();
-  const revision = revisionOf(path);
+  const fingerprint = new Fingerprints().of(path, values.frame);
+  if (fingerprint === undefined) {
+    throw new Refusal(`frame ${JSON.stringify(values.frame)} is not in ${values.file}`);
+  }
   const list = entries(workspace, root, true) as unknown[];
   for (const context of contexts) {
     const entry: Json = {
@@ -174,7 +179,7 @@ export const attach: Command = editCommand(attachUsage, (workspace, args) => {
       actor: values.actor,
       at,
       source: { file: values.file, frame: values.frame },
-      revision,
+      fingerprint,
     };
     const index = list.findIndex(same(id, context, values.actor, values.frame));
     if (index >= 0) list[index] = entry;

@@ -552,11 +552,13 @@ that may check it, or add the check with `dimensions actor set <name> --checks
 The file an entry points to does not exist. Paths are relative to the folder
 that holds `.dimensions`, normally the repository's root.
 
-### `invalid-revision`
+### `invalid-fingerprint`
 
-An entry's revision is not a git blob hash. Use what `git hash-object <file>`
-prints when the entry is recorded. When the file changes, the entry is not an
-error: `dimensions evidence` shows it as stale.
+An entry's fingerprint is not 40 hexadecimal characters. `dimensions attach`
+records it: for a pen.dev frame, a hash of the frame and the components and
+variables it uses; for any other file, the file's git blob hash. When what the
+frame shows changes, the entry is not an error: `dimensions evidence` shows it
+as stale, or as gone when the frame is no longer in the file.
 
 ### `duplicate-evidence`
 

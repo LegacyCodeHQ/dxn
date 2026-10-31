@@ -8,7 +8,7 @@ import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
 
-const design = "design/website.pen";
+const design = "design/website.png";
 const drawn = "the toolbar, drawn";
 const revision = createHash("sha1")
   .update(`blob ${Buffer.byteLength(drawn)}\0${drawn}`)
@@ -27,7 +27,7 @@ const entry = {
   actor: "design-agent",
   at: "2026-10-31T12:00:00Z",
   source: { file: design, frame: "vbGba" },
-  revision,
+  fingerprint: revision,
 };
 
 function project() {

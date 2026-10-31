@@ -1,9 +1,9 @@
-import { createHash } from "node:crypto";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { Context, Resolver } from "../resolve.js";
 import type { EvidenceFile } from "../tree.js";
 import { Diagnostics, type FileDiagnostic } from "./diagnostic.js";
+import { Fingerprints } from "./fingerprint.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { readSource } from "./read.js";
 import {
@@ -22,18 +22,13 @@ export interface EvidenceResult {
   diagnostics: FileDiagnostic[];
   // Root id -> its evidence file.
   files: Record<string, EvidenceFile>;
-  // Source file -> its git blob hash now, for each file evidence points to.
-  revisions: Record<string, string>;
+  // "<file>#<frame>" -> the frame's fingerprint now, or null when the file
+  // no longer has the frame, for each frame evidence points to.
+  fingerprints: Record<string, string | null>;
 }
 
-const entryKeys = ["node", "context", "actor", "at", "source", "revision"];
-const revisionPattern = /^[0-9a-f]{40}$/;
-
-// The git blob hash of a file, as "git hash-object" prints it.
-export function revisionOf(path: string): string {
-  const content = readFileSync(path);
-  return createHash("sha1").update(`blob ${content.length}\0`).update(content).digest("hex");
-}
+const entryKeys = ["node", "context", "actor", "at", "source", "fingerprint"];
+const fingerprintPattern = /^[0-9a-f]{40}$/;
 
 const sameContext = (a: Context, b: Record<string, string>) =>
   Object.keys(a).length === Object.keys(b).length &&
@@ -47,7 +42,8 @@ export function checkEvidence(
   repository: string,
   resolver: Resolver,
 ): EvidenceResult {
-  const result: EvidenceResult = { diagnostics: [], files: {}, revisions: {} };
+  const result: EvidenceResult = { diagnostics: [], files: {}, fingerprints: {} };
+  const measure = new Fingerprints();
   const folder = join(directory, "evidence");
   if (statSync(folder, { throwIfNoEntry: false })?.isDirectory() !== true) return result;
   const roots = new Set(resolver.project.roots.map((root) => root.id));
@@ -85,7 +81,14 @@ export function checkEvidence(
     const diagnostics = new Diagnostics(read.source);
     diagnostics.items.push(...parsed.diagnostics);
     if (parsed.root !== undefined) {
-      const context = { resolver, root: name, actors, repository, revisions: result.revisions };
+      const context = {
+        resolver,
+        root: name,
+        actors,
+        repository,
+        fingerprints: result.fingerprints,
+        measure,
+      };
       checkFile(diagnostics, parsed.root, context);
     }
     result.diagnostics.push(...diagnostics.items.map((item) => ({ file, ...item })));
@@ -101,7 +104,8 @@ interface Scope {
   root: string;
   actors: Set<string>;
   repository: string;
-  revisions: Record<string, string>;
+  fingerprints: Record<string, string | null>;
+  measure: Fingerprints;
 }
 
 function checkFile(diagnostics: Diagnostics, root: JsonNode, scope: Scope): void {
@@ -137,7 +141,7 @@ function checkEntry(
   diagnostics: Diagnostics,
   item: JsonNode,
   path: string,
-  { resolver, root, actors, repository, revisions }: Scope,
+  { resolver, root, actors, repository, fingerprints, measure }: Scope,
 ): string | undefined {
   const entry = expectObject(diagnostics, item, path);
   if (entry === undefined) return undefined;
@@ -255,22 +259,27 @@ function checkEntry(
           file,
         );
       } else {
-        revisions[file.value] ??= revisionOf(full);
-        if (frameValid && frame?.kind === "string") where = `${file.value}#${frame.value}`;
+        if (frameValid && frame?.kind === "string") {
+          where = `${file.value}#${frame.value}`;
+          if (!(where in fingerprints)) fingerprints[where] = measure.of(full, frame.value) ?? null;
+        }
       }
     }
   }
   if (where === undefined) valid = false;
 
-  const revision = fields.get("revision");
-  if (revision !== undefined && expectKind(diagnostics, revision, `${path}.revision`, "string")) {
-    if (!revisionPattern.test(revision.value)) {
+  const fingerprint = fields.get("fingerprint");
+  if (
+    fingerprint !== undefined &&
+    expectKind(diagnostics, fingerprint, `${path}.fingerprint`, "string")
+  ) {
+    if (!fingerprintPattern.test(fingerprint.value)) {
       report(
         diagnostics,
-        "invalid-revision",
-        "must be the file's git blob hash: 40 hexadecimal characters",
-        `${path}.revision`,
-        revision,
+        "invalid-fingerprint",
+        "must be a fingerprint: 40 hexadecimal characters",
+        `${path}.fingerprint`,
+        fingerprint,
       );
     }
   }

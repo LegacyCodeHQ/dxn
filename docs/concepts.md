@@ -556,7 +556,7 @@ context, in `evidence/<root-id>.json`:
       "actor": "design-agent",
       "at": "2026-10-31T12:00:00Z",
       "source": { "file": "design/website.pen", "frame": "vbGba" },
-      "revision": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad"
+      "fingerprint": "3b18e512dba79e4c8300dd08aeb37f8e728b8dad"
     }
   ]
 }
@@ -564,14 +564,13 @@ context, in `evidence/<root-id>.json`:
 
 `actor` and `at` are its provenance: which role recorded it, and when. `source`
 is where it points: a file, relative to the folder that holds `.dimensions`,
-and a frame in it. `revision` is the file's git blob hash then, as
-`git hash-object <file>` prints it. The context must be exactly one of the
+and a frame in it. `fingerprint` records what the frame showed then. The context must be exactly one of the
 node's contexts, so an entry claims one row and no more; a frame that shows
 several gets an entry for each.
 
 `dimensions attach menu-button --actor design-agent --file design/website.pen
 --frame vbGba profile=phone menu=closed hover=rest focus=blurred` records an
-entry, filling in the context from the profile and the revision from the file;
+entry, filling in the context from the profile and the fingerprint from the frame;
 `detach` removes one. A frame that shows several contexts alike is recorded in one
 step with lists: `attach wordmark … --frame h7eW6z
 "profile=tablet-landscape|laptop|desktop" "hover=rest|hovered" focus=blurred`
@@ -579,10 +578,20 @@ records an entry for each combination that is a context of the wordmark.
 
 `dimensions evidence menu-button --actor design-agent --table` lists every
 context of the node with the profile it matches and the actor's evidence for
-it, where `—` is the list of what is missing. When the file changes after an
-entry is recorded, the entry is **stale**: still valid, shown as
-`website.pen#vbGba (stale)`, and due for another look. A stale entry is not an
-error, so editing a design never blocks work on the model.
+it, where `—` is the list of what is missing.
+
+An entry is **stale** when what its frame shows may have changed since it was
+recorded: still valid, shown as `website.pen#vbGba (stale)`, and due for
+another look. The fingerprint decides. For a pen.dev file it covers the frame's
+subtree (not its position on the canvas), every component it uses, through
+components inside components, and every variable any of them use. Adding or
+editing another frame, or moving this one, changes nothing; changing a
+component or a variable the frame shows makes it stale, along with every other
+frame that shows it. For any other file, such as a screenshot, the fingerprint
+is the file's git blob hash, so any change to the file makes its entries
+stale. A frame no longer in the file is **gone**. Neither is an error, so
+editing a design never blocks work on the model; attaching the frame again
+records its new fingerprint.
 
 Several entries can point to the same frame. That says the design draws those
 contexts as one look: the closed menu button on a phone and on a tablet, say.

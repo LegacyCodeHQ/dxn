@@ -167,8 +167,8 @@ export interface Project {
   actors?: ActorsFile;
   // evidence/<root-id>.json, by root id.
   evidence?: Record<string, EvidenceFile>;
-  // Each file evidence points to -> its git blob hash now.
-  revisions?: Record<string, string>;
+  // "<file>#<frame>" -> the frame's fingerprint now; null when it is gone.
+  fingerprints?: Record<string, string | null>;
 }
 
 // evidence/<root-id>.json: what actors have recorded for nodes in that root.
@@ -184,8 +184,8 @@ export interface EvidenceEntry {
   actor: string;
   at: string;
   source: { file: string; frame: string };
-  // The source file's git blob hash when the entry was recorded.
-  revision: string;
+  // The fingerprint of what the frame showed when the entry was recorded.
+  fingerprint: string;
 }
 
 // actors.json: the roles that do work against the model, such as a design

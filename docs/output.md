@@ -372,7 +372,7 @@ other profiles with the same combination, such as
         {
           "at": "2026-10-31T12:00:00Z",
           "source": { "file": "design/website.pen", "frame": "vbGba" },
-          "revision": "824028d8f908241af9555729993799556d69f07f",
+          "fingerprint": "824028d8f908241af9555729993799556d69f07f",
           "stale": false
         }
       ]
@@ -384,7 +384,8 @@ other profiles with the same combination, such as
 There is one item per context of the node, on each root. `profiles` names
 every profile with that combination, and is left out when there are no
 profiles. `evidence` is empty where the actor has none; `stale` is true when
-the file's git revision now differs from the one recorded.
+the frame's fingerprint now differs from the one recorded, and `gone` is true
+when the frame is no longer in the file.
 
 With `--by profile`, there is a row per profile (or profiles sharing a
 combination), in profile order: the states the node has there, and how many
@@ -405,7 +406,7 @@ provenance. `withoutEvidence` counts the contexts no frame covers.
       "frame": "l5Z3Z",
       "actor": "design-agent",
       "at": ["2026-10-31T13:15:00Z"],
-      "revisions": ["9f3c…"],
+      "fingerprints": ["9f3c…"],
       "profiles": [["phone"], ["tablet-portrait"], ["tablet-portrait+magic-keyboard"]],
       "states": { "hover": ["rest"], "focus": ["blurred"], "menu": ["closed"] },
       "contexts": 3,
@@ -565,5 +566,5 @@ With `--actor`, the summary and items are about evidence instead of checks:
 ```
 
 There is one item per context of each node (or of the node named), on each
-root. `evidence` is `present`, `stale` when every entry's file has changed
+root. `evidence` is `present`, `stale` when every entry's frame has changed
 since, or `missing`.

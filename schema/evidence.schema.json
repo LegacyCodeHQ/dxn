@@ -31,7 +31,7 @@
     "entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["node", "context", "actor", "at", "source", "revision"],
+      "required": ["node", "context", "actor", "at", "source", "fingerprint"],
       "properties": {
         "node": {
           "description": "Id of a node in this file's root.",
@@ -71,8 +71,8 @@
             }
           }
         },
-        "revision": {
-          "description": "The file's git blob hash when the entry was recorded, as \"git hash-object <file>\" prints it. When the file's hash differs, the entry is stale.",
+        "fingerprint": {
+          "description": "A fingerprint of what the frame showed when the entry was recorded: for a pen.dev file, the frame with the components and variables it uses; for any other file, the file's git blob hash, as \"git hash-object <file>\" prints it. When it differs now, the entry is stale.",
           "type": "string",
           "pattern": "^[0-9a-f]{40}$"
         }

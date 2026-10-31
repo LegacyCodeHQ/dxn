@@ -9,7 +9,7 @@ import { cliProject } from "../support/workspace.js";
 afterAll(cleanup);
 
 const json = (result: { stdout: string }) => JSON.parse(result.stdout);
-const design = "design/website.pen";
+const design = "design/website.png";
 const revision = createHash("sha1").update("blob 5\0drawn").digest("hex");
 
 // One frame for the closed menu button on a phone and on a tablet in
@@ -27,7 +27,7 @@ const entry = (breakpoint: string, menu: string, frame: string) => ({
   actor: "design-agent",
   at: "2026-10-31T12:00:00Z",
   source: { file: design, frame },
-  revision,
+  fingerprint: revision,
 });
 
 function project() {
@@ -57,8 +57,8 @@ describe("evidence --by frame", () => {
       [
         "| frame                    | profiles               | hover | focus   | menu   | contexts | stale |",
         "| ------------------------ | ---------------------- | ----- | ------- | ------ | -------- | ----- |",
-        "| website.pen#closedButton | phone, tablet-portrait | rest  | blurred | closed | 2        | 0     |",
-        "| website.pen#openButton   | phone                  | rest  | blurred | open   | 1        | 0     |",
+        "| website.png#closedButton | phone, tablet-portrait | rest  | blurred | closed | 2        | 0     |",
+        "| website.png#openButton   | phone                  | rest  | blurred | open   | 1        | 0     |",
         "",
         "No evidence: 1 context",
         "",
@@ -73,7 +73,7 @@ describe("evidence --by frame", () => {
       frame: "closedButton",
       actor: "design-agent",
       at: ["2026-10-31T12:00:00Z"],
-      revisions: [revision],
+      fingerprints: [revision],
       profiles: [["phone"], ["tablet-portrait"]],
       states: { hover: ["rest"], focus: ["blurred"], menu: ["closed"] },
       contexts: 2,

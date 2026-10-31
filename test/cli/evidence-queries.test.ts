@@ -9,7 +9,7 @@ import { cliProject } from "../support/workspace.js";
 afterAll(cleanup);
 
 const json = (result: { stdout: string }) => JSON.parse(result.stdout);
-const design = "design/website.pen";
+const design = "design/website.png";
 const revision = createHash("sha1").update(`blob 5\0drawn`).digest("hex");
 
 function project() {
@@ -32,7 +32,7 @@ function project() {
           actor: "design-agent",
           at: "2026-10-31T12:00:00Z",
           source: { file: design, frame: "vbGba" },
-          revision,
+          fingerprint: revision,
         },
       ],
     },

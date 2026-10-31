@@ -628,7 +628,7 @@ agree("actors", (doc) => ({ ...tree, "actors.json": doc }), {
 
 // Evidence points to files in the repository: the folder above the project,
 // which for these projects is the system's temporary folder.
-const designFile = "dimensions-schema-design.pen";
+const designFile = "dimensions-schema-design.png";
 writeFileSync(join(tmpdir(), designFile), "drawn");
 afterAll(() => rmSync(join(tmpdir(), designFile), { force: true }));
 const evidenceFile = (evidence: unknown[]) => ({ version: 1, evidence });
@@ -638,7 +638,7 @@ const evidenceEntry = (changes: Record<string, unknown> = {}) => ({
   actor: "design-agent",
   at: "2026-10-31T12:00:00Z",
   source: { file: designFile, frame: "vbGba" },
-  revision: "0".repeat(40),
+  fingerprint: "0".repeat(40),
   ...changes,
 });
 const withActors = {
@@ -658,11 +658,11 @@ agree("evidence", (doc) => ({ ...withActors, "evidence/page.json": doc }), {
     ["unknown-key", { ...evidenceFile([]), extra: 1 }],
     ["unsupported-version", { version: 2, evidence: [] }],
     ["wrong-type", evidenceFile([1])],
-    ["missing-key", evidenceFile([{ ...evidenceEntry(), revision: undefined }])],
+    ["missing-key", evidenceFile([{ ...evidenceEntry(), fingerprint: undefined }])],
     ["unknown-key", evidenceFile([evidenceEntry({ by: "someone" })])],
     ["wrong-type", evidenceFile([evidenceEntry({ context: [] })])],
     ["missing-key", evidenceFile([evidenceEntry({ source: { file: designFile } })])],
-    ["invalid-revision", evidenceFile([evidenceEntry({ revision: "abc" })])],
+    ["invalid-fingerprint", evidenceFile([evidenceEntry({ fingerprint: "abc" })])],
     ["invalid-timestamp", evidenceFile([evidenceEntry({ at: "yesterday" })])],
   ],
   crossReference: [
