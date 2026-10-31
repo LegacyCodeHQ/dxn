@@ -69,6 +69,9 @@ export interface Type extends Declaration {
 export interface Child extends Located {
   type: Located;
   when?: { on: Located; values: Located[] };
+  // The child's states the type sets, each from one of its own states, whose
+  // values come from the same enum.
+  bindings?: { state: Located; from: Located }[];
 }
 
 // An environment: a product of dimensions, whose instances are profiles.

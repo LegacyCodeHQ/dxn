@@ -1,4 +1,5 @@
 import type {
+  Child,
   Derived,
   Field,
   Located,
@@ -128,6 +129,51 @@ function checkValues(file: ParseResult, report: Report): void {
 // needed dimension and its values, and one rule for each state value. A need
 // no rule uses is a warning.
 function checkTypes(file: ParseResult, names: Names, report: Report): void {
+  // A child's bindings: each a state of the child, set once, from a state of
+  // the type, both with their values from one enum.
+  const checkBindings = (type: Type, child: Child) => {
+    const inner = file.types.find(({ name }) => name === child.type.name);
+    const bound = new Set<string>();
+    for (const { state, from } of child.bindings ?? []) {
+      if (bound.has(state.name)) {
+        report("duplicate-binding", `${state.name} is already bound`, state);
+        continue;
+      }
+      bound.add(state.name);
+      const target = inner?.states.find(({ name }) => name === state.name);
+      if (inner !== undefined && target === undefined) {
+        const states = inner.states.map(({ name }) => name);
+        report(
+          "unknown-state",
+          `${state.name} is not a state of ${inner.name}${among(states, "it has none")}`,
+          state,
+        );
+      }
+      const source = type.states.find(({ name }) => name === from.name);
+      if (source === undefined) {
+        const states = type.states.map(({ name }) => name);
+        report(
+          "unknown-state",
+          `${from.name} is not a state of ${type.name}${among(states, "it has none")}`,
+          from,
+        );
+      }
+      if (target === undefined || source === undefined) continue;
+      if (target.derived !== undefined) {
+        report(
+          "bound-derived",
+          `${target.name} is decided by its when; it cannot also be bound`,
+          state,
+        );
+      } else if (target.enum.name !== source.enum.name) {
+        report(
+          "binding-mismatch",
+          `${target.name}'s values come from ${target.enum.name}, but ${source.name}'s from ${source.enum.name}; a binding needs one enum`,
+          state,
+        );
+      }
+    }
+  };
   // A type's children: each named once, among its children and its states,
   // of a type, and there only when one of its states, or a dimension it
   // needs, has one of the values given.
@@ -142,6 +188,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       if (!names.is(child.type.name, "type")) {
         report("unknown-type", names.not(child.type.name, "type"), child.type);
       }
+      checkBindings(type, child);
       if (child.when === undefined) continue;
       const { on, values } = child.when;
       if (/^[a-z]/.test(on.name)) {

@@ -448,6 +448,33 @@ its children, since the tree would have no end. Like everything a type uses,
 a condition sees only the type's own states and the dimensions it needs, not
 the states of the types around it.
 
+### Bindings: a state a child is given
+
+The menu's toggle shows ☰ while the menu is closed and ✕ while it is open. It
+does not decide that: it shows the menu's state. The toggle declares the
+state, and the menu sets it where it places the toggle, with a **binding**:
+
+```
+type Menu {
+  enum State = closed | open
+  state menu: State
+
+  type Toggle needs Pointer, Keyboard {
+    state hover: Hover, focus: Focus
+    state expanded: State             # closed: ☰ Menu; open: ✕ Close
+  }
+
+  has toggle: Toggle { expanded = menu }
+}
+```
+
+`{ expanded = menu }` reads: the toggle's `expanded` is the menu's `menu`.
+On its own, `Toggle` is self-contained, with an `expanded` that can be
+either; placed in the menu, it always follows the menu. Both states must take
+their values from one enum, each of the child's states is set at most once,
+and a state a `when` decides cannot be set. The bindings come right after the
+child's type, before any `only when`.
+
 ## Evaluating: the matrix
 
 This is where the language pays off. Ask for the wordmark's state again:
@@ -954,7 +981,8 @@ file        = { blank-line | comment | enum | dimension | type | environment | p
 enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | state | rule | enum | type | has } "}"
-has         = "has" child-name ":" Name { "." Name } [ "only" "when" condition ] newline
+has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline
+bindings    = "{" { state-name "=" state-name ( "," | newline ) } "}"
 state       = "state" field { "," [newline] field } newline
             | "state" field "=" "when" Name "{" { blank-line | branch } "}" newline
 branch      = value { "," value } "->" value newline
@@ -999,6 +1027,9 @@ comment     = "#" to the end of the line
 | `recursive-record`                                                            | error    | a record contains itself                                                                         |
 | `duplicate-child`                                                             | error    | a type has two children, or a child and a state, with one name                                   |
 | `recursive-type`                                                              | error    | a type contains itself through its children                                                      |
+| `duplicate-binding`                                                           | error    | a binding sets a child's state twice                                                             |
+| `binding-mismatch`                                                            | error    | a binding's two states take their values from different enums                                    |
+| `bound-derived`                                                               | error    | a binding sets a child's state that a `when` decides                                             |
 | `nested-context`                                                              | error    | a record's field is a record with context, which would be a second context                       |
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |
 | `unused-need`                                                                 | warning  | a type needs a dimension that no rule uses                                                       |

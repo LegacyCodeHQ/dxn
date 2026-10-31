@@ -6,7 +6,8 @@
 //   enum        = "enum" name "=" value { "|" [newline] value } newline
 //   dimension   = "dimension" name "=" value { "|" [newline] value } newline
 //   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | state | rule | enum | type | has } "}"
-//   has         = "has" child-name ":" name { "." name } [ "only" "when" condition ] newline
+//   has         = "has" child-name ":" name { "." name } [ bindings ] [ "only" "when" condition ] newline
+//   bindings    = "{" { state-name "=" state-name ( "," | newline ) } "}"
 //   state       = "state" field { "," [newline] field } newline
 //               | "state" field "=" "when" name "{" { blank-line | branch } "}" newline
 //   branch      = value { "," value } "->" value newline
@@ -232,12 +233,25 @@ export function parse(source: string): ParseResult {
     return { on, values };
   };
 
-  // A child: "has <name>: <Type>", and "only when <condition>" when it is not
+  // A child: "has <name>: <Type>", then "{ <state> = <state>, ... }" for the
+  // child's states the type sets, and "only when <condition>" when it is not
   // always there.
   const child = (): Child => {
     const named = name("child", "a child name", lowercase);
     expect(":", `":" after ${JSON.stringify(named.name)}`);
     const placed: Child = { ...named, type: qualified('a type after ":"') };
+    if (peek().kind === "{") {
+      next();
+      const bindings: { state: Located; from: Located }[] = [];
+      braces(`the bindings of ${named.name}`, () => {
+        const state = word('a state of the child or "}"');
+        expect("=", `"=" after ${JSON.stringify(state.name)}`);
+        bindings.push({ state, from: word('a state after "="') });
+        if (peek().kind === ",") next();
+        else end(["newline", "}"], '",", the end of the line or "}"');
+      });
+      placed.bindings = bindings;
+    }
     if (peek().kind === "word" && peek().text === "only") {
       next();
       keyword("when", '"when" after "only"');
