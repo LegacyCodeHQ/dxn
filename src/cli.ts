@@ -7,6 +7,7 @@ import { dimension } from "./commands/dimension.js";
 import { expectation } from "./commands/expectation.js";
 import { fragment } from "./commands/fragment.js";
 import { init } from "./commands/init.js";
+import { lang } from "./commands/lang.js";
 import { modifier } from "./commands/modifier.js";
 import { node } from "./commands/node.js";
 import { override } from "./commands/override.js";
@@ -88,6 +89,9 @@ Model
                       List, add and remove the rules the model must follow
   actor <subcommand>  List and declare the roles that do work against the model
 
+Language
+  lang <subcommand>   Check a file in the dimensions language, being designed
+
   help [<command>]    Show this overview, or a command's usage
 
 To build a model, start with "dimensions workflow": it prints the step-by-step
@@ -132,6 +136,7 @@ const commands: Record<string, Command> = {
   unverify,
   attach,
   detach,
+  lang,
 };
 
 export function run(argv: string[], io: Io): number {

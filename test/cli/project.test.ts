@@ -131,6 +131,9 @@ describe("finding the project", () => {
                             List, add and remove the rules the model must follow
         actor <subcommand>  List and declare the roles that do work against the model
 
+      Language
+        lang <subcommand>   Check a file in the dimensions language, being designed
+
         help [<command>]    Show this overview, or a command's usage
 
       To build a model, start with "dimensions workflow": it prints the step-by-step

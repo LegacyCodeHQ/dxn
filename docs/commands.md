@@ -33,6 +33,7 @@ asks which.
 - Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions), [evidence](#evidence)
 - Record: [verify](#verify), [unverify](#unverify), [attach](#attach), [detach](#detach)
 - Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [modifier](#modifier), [override](#override), [expectation](#expectation), [actor](#actor)
+- Language: [lang](#lang)
 
 ## Project
 
@@ -709,4 +710,29 @@ dimensions actor add design-agent --evidence design --source pen.dev
 dimensions actor add visual-reviewer --checks visual
 dimensions actor set design-agent --checks visual
 dimensions actor list
+```
+
+## Language
+
+### lang
+
+```text
+Usage: dimensions lang <subcommand>
+
+The dimensions language, which is being designed one concept at a time: see
+docs/language/design.md. So far a file declares enums, each a named set of
+values:
+
+  enum Hover = rest | hovered
+
+Subcommands:
+  check <file>                       Parse and check a file; print what it declares
+                                     as JSON, or every problem it has. Needs no
+                                     project.
+```
+
+Checks a file written in the dimensions language, which is being designed one concept at a time in [language/design.md](language/design.md). It prints what the file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. So far a file declares enums; the codes are `syntax-error`, `enum-name`, `duplicate-enum` and `duplicate-value`.
+
+```bash
+dimensions lang check wordmark.dim
 ```

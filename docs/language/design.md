@@ -90,11 +90,42 @@ type Wordmark {
 }
 ```
 
+## Grammar
+
+Built one concept at a time; each section here is implemented by the parser
+in `src/language/parse.ts` and checked by `dimensions lang check <file>`.
+
+### enum
+
+**Decided and implemented.** An enum is a named, finite set of values. On its
+own it compiles to nothing in today's model; its role comes from where it is
+used: a type's states, the inputs a node provides, or the values in a look.
+
+```ebnf
+file  = { blank-line | enum } ;
+enum  = "enum" name "=" value { "|" [ newline ] value } newline ;
+name  = capital-letter { letter | digit } ;
+value = ( letter | digit ) { letter | digit | "-" } ;
+```
+
+- One enum per line; after a `|`, the values may continue on the next line.
+- Enum names start with a capital letter (`Hover`), so a set reads
+  differently from its values (`hovered`).
+- Values follow the same rule as names in today's JSON, so they carry over
+  unchanged: `no-keyboard` and `19px` are values.
+
+| Code              | Means                                                  |
+| ----------------- | ------------------------------------------------------ |
+| `syntax-error`    | what was expected, and what was found instead          |
+| `enum-name`       | an enum name that does not start with a capital letter |
+| `duplicate-enum`  | an enum declared twice                                 |
+| `duplicate-value` | a value listed twice in one enum                       |
+
 ## Primitives
 
 | Primitive          | Says                                                | Replaces today                                   | Status   |
 | ------------------ | --------------------------------------------------- | ------------------------------------------------ | -------- |
-| `enum`             | a finite set of values                              | state groups, dimension values, attribute values | Proposed |
+| `enum`             | a finite set of values                              | state groups, dimension values, attribute values | Decided  |
 | `type`             | a definition with states, a look and inputs         | types in `types.json`                            | Proposed |
 | `states`           | a type's own fields                                 | state groups on a type                           | Proposed |
 | `look`             | values computed from inputs and states              | attributes and their overrides                   | Proposed |
