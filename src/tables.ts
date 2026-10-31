@@ -279,6 +279,11 @@ export function contextTable(
   );
 }
 
+// The rows a node has none of, such as profiles it does not exist on.
+export function notPresentLine(labels: string[]): string {
+  return `Not present: ${labels.join(", ")}`;
+}
+
 // A Markdown table with its columns padded to their widest cell.
 export function markdown(header: string[], body: string[][]): string[] {
   const widths = header.map((title, index) =>
@@ -305,8 +310,7 @@ export function drawNodeTables(tables: NodeTables): string {
       "",
     );
   }
-  if (tables.notPresent !== undefined)
-    lines.push(`Not present: ${tables.notPresent.join(", ")}`, "");
+  if (tables.notPresent !== undefined) lines.push(notPresentLine(tables.notPresent), "");
   if (tables.onlyWhen !== undefined) lines.push(`Only when ${text(tables.onlyWhen)}`, "");
   return lines.join("\n");
 }

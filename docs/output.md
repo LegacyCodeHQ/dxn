@@ -386,6 +386,30 @@ every profile with that combination, and is left out when there are no
 profiles. `evidence` is empty where the actor has none; `stale` is true when
 the file's git revision now differs from the one recorded.
 
+With `--by profile`, there is a row per profile (or profiles sharing a
+combination), in profile order: the states the node has there, and how many
+of its contexts have evidence that is present, stale or missing.
+`notPresent` lists the profiles the node does not exist on.
+
+```json
+{
+  "node": "menu-button",
+  "actor": "design-agent",
+  "by": "profile",
+  "rows": [
+    {
+      "profiles": ["phone"],
+      "states": { "hover": ["rest"], "focus": ["blurred"], "menu": ["closed", "open"] },
+      "contexts": 2,
+      "present": 1,
+      "stale": 0,
+      "missing": 1
+    }
+  ],
+  "notPresent": [["tablet-landscape"], ["laptop", "tablet-landscape+magic-keyboard"], ["desktop"]]
+}
+```
+
 ## views
 
 ```json

@@ -117,6 +117,26 @@ export class Resolver {
     );
   }
 
+  // Every profile in profiles.json order, each modifier's right after the
+  // profile it is on, with the modifier that made it.
+  listedProfiles(): { name: string; modifier?: string }[] {
+    const modifiers = Object.entries(this.project.profiles?.modifiers ?? {});
+    return Object.keys(this.project.profiles?.profiles ?? {}).flatMap((profile) => [
+      { name: profile },
+      ...modifiers
+        .filter(([, { on }]) => on.includes(profile))
+        .map(([modifier]) => ({ name: `${profile}+${modifier}`, modifier })),
+    ]);
+  }
+
+  // Where a context's profiles come in the listed order; contexts that match
+  // no profile come last.
+  profileRank(names: string[]): number {
+    const listed = this.listedProfiles().map(({ name }) => name);
+    const ranks = names.map((name) => listed.indexOf(name)).filter((rank) => rank >= 0);
+    return ranks.length === 0 ? Number.MAX_SAFE_INTEGER : Math.min(...ranks);
+  }
+
   // The profiles a context is in, in the order profiles.json lists them.
   profilesOf(context: Context): string[] {
     return this.profileOrder.filter((name) => this.inProfile(name, context));

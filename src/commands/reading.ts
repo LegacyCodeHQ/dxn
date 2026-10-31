@@ -17,7 +17,9 @@ import {
   drawTable,
   NONE,
   nodeTables,
+  notPresentLine,
   presenceMatrix,
+  profileLabel,
   TableError,
   tableAxis,
 } from "../tables.js";
@@ -303,13 +305,7 @@ function profileList(resolver: Resolver): {
   modifier?: string;
   sameAs?: string[];
 }[] {
-  const modifiers = Object.entries(resolver.project.profiles?.modifiers ?? {});
-  const names = Object.keys(resolver.project.profiles?.profiles ?? {}).flatMap((profile) => [
-    { name: profile } as { name: string; modifier?: string },
-    ...modifiers
-      .filter(([, { on }]) => on.includes(profile))
-      .map(([modifier]) => ({ name: `${profile}+${modifier}`, modifier })),
-  ]);
+  const names = resolver.listedProfiles();
   const combination = (values: Record<string, string>) =>
     JSON.stringify([...resolver.profiled].sort().map((dimension) => values[dimension]));
   return names.flatMap(({ name, modifier }) => {
@@ -718,7 +714,8 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
   print(io, { node: id, views: kept });
 });
 
-const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>] [--table]
+const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>]
+                          [--table] [--by profile]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
@@ -726,8 +723,27 @@ file and frame it points to, the file's revision then, and whether the file
 has changed since (stale). <name>=<value> filters keep only the contexts with
 that dimension value, state, shared node state or profile. --table prints a
 Markdown table, a row per context and a column for the actor, where — means no
-evidence.
+evidence. Rows come in profile order. --by profile makes a row per profile
+instead: the states the node has there, and how many of its contexts have
+evidence that is present, stale or missing.
 `;
+
+// Whether a context has the actor's evidence: present when some entry's file
+// is unchanged, stale when every entry's file has changed, or missing.
+function evidenceState(found: { stale: boolean }[]): "present" | "stale" | "missing" {
+  if (found.length === 0) return "missing";
+  return found.some(({ stale }) => !stale) ? "present" : "stale";
+}
+
+// The values a name can take in a node's contexts, in the order they are
+// declared: a dimension's values, a shared node's states, or a state group's.
+function declaredValues(resolver: Resolver, id: string, name: string): string[] {
+  const dimension = resolver.project.dimensions[name];
+  if (dimension !== undefined) return dimension.values;
+  if (resolver.isShared(name)) return sharedStates(resolver, name);
+  const type = resolver.node(id)?.type;
+  return (type === undefined ? undefined : resolver.groupsOf(type)[name]) ?? [];
+}
 
 // The declared actor a command names, or a refusal.
 function requireActor(resolver: Resolver, actor: string): void {
@@ -772,12 +788,16 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       actor: { type: "string" },
       root: { type: "string" },
       table: { type: "boolean" },
+      by: { type: "string" },
     },
     true,
   );
   const [id, ...filterArgs] = positionals as [string, ...string[]];
   const actor = values.actor;
   if (actor === undefined) throw new UsageError("--actor is required");
+  if (values.by !== undefined && values.by !== "profile") {
+    throw new Refusal('--by takes only "profile" here');
+  }
   requireActor(resolver, actor);
   requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
@@ -798,7 +818,68 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       ...(resolver.profiles.size === 0 ? {} : { profiles: resolver.profilesOf(context) }),
       context,
       evidence: evidenceFor(resolver, root, id, actor, context),
-    }));
+    }))
+    .sort(
+      (a, b) =>
+        resolver.profileRank(resolver.profilesOf(a.context)) -
+        resolver.profileRank(resolver.profilesOf(b.context)),
+    );
+  if (values.by === "profile") {
+    // A row per combination of profiles, in profile order.
+    const names = [...new Set(rows.flatMap(({ context }) => Object.keys(context)))].filter(
+      (name) => !resolver.profiled.has(name),
+    );
+    const groups = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const key = JSON.stringify(resolver.profilesOf(row.context));
+      groups.set(key, [...(groups.get(key) ?? []), row]);
+    }
+    const grouped = [...groups].map(([key, members]) => {
+      const count = (state: string) =>
+        members.filter(({ evidence }) => evidenceState(evidence) === state).length;
+      return {
+        profiles: JSON.parse(key) as string[],
+        states: Object.fromEntries(
+          names.map((name) => [
+            name,
+            declaredValues(resolver, id, name).filter((value) =>
+              members.some(({ context }) => context[name] === value),
+            ),
+          ]),
+        ),
+        contexts: members.length,
+        present: count("present"),
+        stale: count("stale"),
+        missing: count("missing"),
+      };
+    });
+    const notPresent = resolver
+      .combinations()
+      .map(({ names: combination }) => combination)
+      .filter((combination) => !groups.has(JSON.stringify(combination)))
+      .sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b));
+    if (values.table !== true) {
+      print(io, { node: id, actor, by: "profile", rows: grouped, notPresent });
+      return;
+    }
+    const table = drawTable(
+      ["profile", ...names, "contexts", "present", "stale", "missing"],
+      grouped.map((row) => [
+        profileLabel(row.profiles) || NONE,
+        ...names.map((name) => (row.states[name] ?? []).join(", ")),
+        String(row.contexts),
+        String(row.present),
+        String(row.stale),
+        String(row.missing),
+      ]),
+    );
+    io.stdout(
+      notPresent.length === 0
+        ? table
+        : `${table}\n${notPresentLine(notPresent.map(profileLabel))}\n`,
+    );
+    return;
+  }
   if (values.table === true) {
     io.stdout(
       contextTable(
@@ -928,17 +1009,11 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
         .filter((id) => resolver.roots(id).includes(root.id))
         .flatMap((id) =>
           resolver.contexts(id, root.id).map((context) => {
-            const found = evidenceFor(resolver, root.id, id, actor, context);
             return {
               root: root.id,
               node: id,
               context,
-              evidence:
-                found.length === 0
-                  ? "missing"
-                  : found.some(({ stale }) => !stale)
-                    ? "present"
-                    : "stale",
+              evidence: evidenceState(evidenceFor(resolver, root.id, id, actor, context)),
             };
           }),
         ),
