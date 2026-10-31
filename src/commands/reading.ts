@@ -660,7 +660,7 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
     const lines = markdown(
       [...(profiled ? ["profile"] : []), ...names],
       kept.map((view) => [
-        ...(profiled ? [resolver.profilesOf(view).join(", ") || "—"] : []),
+        ...(profiled ? [resolver.profilesOf(view).join(" / ") || "—"] : []),
         ...names.map((name) => view[name] ?? "—"),
       ]),
     );
@@ -728,7 +728,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
     const lines = markdown(
       [...(profiled ? ["profile"] : []), ...names, actor],
       rows.map((row) => [
-        ...(profiled ? [row.profiles?.join(", ") || "—"] : []),
+        ...(profiled ? [row.profiles?.join(" / ") || "—"] : []),
         ...names.map((name) => row.context[name] ?? "—"),
         row.evidence.length === 0
           ? "—"

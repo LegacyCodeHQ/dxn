@@ -190,7 +190,7 @@ Profiles live in `profiles.json`, for the whole project:
   combinations.
 - Profiles may share a combination: an iPad with a keyboard in landscape is
   `lg`, `mouse`, `keyboard`, like a laptop. Tables and views name every profile
-  on a row (`laptop, ipad-keyboard`), and evidence for that combination counts
+  on a row (`laptop / ipad-keyboard`), and evidence for that combination counts
   for both, because it belongs to the combination, not the name.
 - Every combination gives a value for the same dimensions, and a profile lists
   each of its combinations once. A combination override must be at a

@@ -69,9 +69,12 @@ describe("a profile with several combinations", () => {
       json(run("contexts", "blog-link", "--table", "--json")).tables[0].rows.map(
         ({ row }: { row: string }) => row,
       ),
-    ).toEqual(["tablet-landscape", "laptop, ipad-keyboard", "desktop"]);
+    ).toEqual(["tablet-landscape", "laptop / ipad-keyboard", "desktop"]);
+    expect(run("contexts", "menu-button", "--table").stdout).toContain(
+      "Not present: tablet-landscape, laptop / ipad-keyboard, desktop",
+    );
     expect(run("views", "toolbar", "breakpoint=lg", "--table").stdout).toContain(
-      "| laptop, ipad-keyboard | lg         | keyboard    | mouse   |",
+      "| laptop / ipad-keyboard | lg         | keyboard    | mouse   |",
     );
     expect(
       json(run("evidence", "blog-link", "--actor", "design-agent")).contexts.find(
@@ -109,7 +112,7 @@ describe("a profile with several combinations", () => {
         ],
       },
     }).run("validate");
-    expect(result.stderr).toContain("blog-link at laptop, ipad-keyboard");
+    expect(result.stderr).toContain("blog-link at laptop / ipad-keyboard");
   });
 });
 

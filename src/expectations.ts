@@ -377,7 +377,7 @@ function values(
 function describeContext(resolver: Resolver, node: string, context: Context): string {
   const profiled = Object.keys(context).filter((name) => resolver.profiled.has(name));
   const names = profiled.length === 0 ? [] : resolver.profilesOf(context);
-  const profile = names.length === 0 ? undefined : names.join(", ");
+  const profile = names.length === 0 ? undefined : names.join(" / ");
   const rest = Object.entries(context)
     .filter(([name]) => profile === undefined || !resolver.profiled.has(name))
     .map(([name, value]) => `${name}=${value}`);

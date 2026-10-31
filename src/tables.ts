@@ -55,7 +55,7 @@ function setups(resolver: Resolver, dimensions: string[]): Setup[] {
     covered.length === 0
       ? [{ name: "", values: {} }]
       : resolver.combinations().map(({ values, names }) => ({
-          name: names.join(", "),
+          name: names.join(" / "),
           values: Object.fromEntries(
             covered.map((dimension) => [dimension, values[dimension] as string]),
           ),
