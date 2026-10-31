@@ -112,4 +112,10 @@ profile laptop: Device { Pointer = mouse }
       ["laptop", "dark", ["hovered"]],
     ]);
   });
+
+  it("refuses a file with problems, which it cannot evaluate", () => {
+    expect(() => states(parse(`${wordmark}enum Size =\n`), "Wordmark")).toThrow(
+      "cannot evaluate a file with problems",
+    );
+  });
 });

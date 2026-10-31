@@ -10,10 +10,11 @@ export interface TypeStates {
   rows: { profile?: string; when: Record<string, string>; states: Record<string, string[]> }[];
 }
 
-// Evaluates a type of a parsed file without problems. A value of a state
-// exists in a row unless a rule limits it to dimension values the row does
-// not have.
+// Evaluates a type of a parsed file, which must have no problems. A value of
+// a state exists in a row unless a rule limits it to dimension values the row
+// does not have.
 export function states(file: ParseResult, typeName: string): TypeStates {
+  if (file.diagnostics.length > 0) throw new Error("cannot evaluate a file with problems");
   const type = file.types.find(({ name }) => name === typeName);
   if (type === undefined) throw new Error(`no type ${typeName}`);
   const valuesOf = (name: string) =>
