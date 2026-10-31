@@ -721,9 +721,12 @@ Usage: dimensions lang <subcommand>
 
 The dimensions language, which is being designed one concept at a time: see
 docs/language/design.md. So far a file declares enums, each a named set of
-values, and types with their states:
+values, dimensions, each with an enum for its type, and types with their
+states:
 
   enum Hover = rest | hovered
+  enum Breakpoint = base | sm | lg | xl
+  dimension breakpoint: Breakpoint
   type Wordmark {
     states hover: Hover
   }
@@ -734,7 +737,7 @@ Subcommands:
                                      project.
 ```
 
-Checks a file written in the dimensions language, which is being designed one concept at a time in [language/design.md](language/design.md). It prints what the file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. So far a file declares enums and types with their states; the codes are listed in [language/design.md](language/design.md#grammar).
+Checks a file written in the dimensions language, which is being designed one concept at a time in [language/design.md](language/design.md). It prints what the file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. So far a file declares enums, dimensions, and types with their states; the codes are listed in [language/design.md](language/design.md#grammar).
 
 ```bash
 dimensions lang check wordmark.dim

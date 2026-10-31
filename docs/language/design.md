@@ -102,7 +102,7 @@ own it compiles to nothing in today's model; its role comes from where it is
 used: a type's states, the inputs a node provides, or the values in a look.
 
 ```ebnf
-file  = { blank-line | enum | type } ;
+file  = { blank-line | enum | dimension | type } ;
 enum  = "enum" name "=" value { "|" [ newline ] value } newline ;
 name  = capital-letter { letter | digit } ;
 value = ( letter | digit ) { letter | digit | "-" } ;
@@ -120,6 +120,41 @@ value = ( letter | digit ) { letter | digit | "-" } ;
 | `enum-name`       | an enum name that does not start with a capital letter |
 | `duplicate-enum`  | an enum declared twice                                 |
 | `duplicate-value` | a value listed twice in one enum                       |
+
+### dimension
+
+**Decided and implemented.** A dimension is what the environment varies by,
+such as the breakpoint. It has a type, the enum its values come from, as a
+state does:
+
+```ebnf
+dimension      = "dimension" dimension-name ":" name newline ;
+dimension-name = lowercase-letter { letter | digit | "-" } ;
+```
+
+```
+enum Breakpoint = base | sm | lg | xl
+dimension breakpoint: Breakpoint
+```
+
+A dimension is not a type: it has one. An enum is a sum type, a value being
+exactly one of its alternatives, which is why a dimension holds one value in
+each situation. A type with states is a product type, a value being a
+combination of its states, so it cannot be a dimension's type.
+
+What a dimension adds over an enum is that its value cascades down the tree,
+to everything below where it is provided. Cascading and providing come later,
+with nodes; for now a dimension is only declared.
+
+Dimension names share the file's namespace with enum and type names, so
+`dimension breakpoint` and `enum Breakpoint` are two names, while a second
+`breakpoint` is not.
+
+| Code             | Means                                                        |
+| ---------------- | ------------------------------------------------------------ |
+| `dimension-name` | a dimension name that does not start with a lowercase letter |
+| `unknown-enum`   | a type that names no enum, or names a type with states       |
+| `duplicate-name` | a name already declared in the file                          |
 
 ### type
 
