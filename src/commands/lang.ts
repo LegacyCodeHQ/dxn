@@ -1,14 +1,18 @@
-import { readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { Fingerprints } from "../compiler/fingerprint.js";
 import type { ParseResult, Type } from "../language/ast.js";
 import {
   states as evaluateStates,
   type InPlace,
   inPlace,
+  type Placement,
   type Presence,
+  placement,
 } from "../language/evaluate.js";
 import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
+import { profilesOf } from "../language/profiles.js";
 import { isValue, renameInData, renameInSource } from "../language/rename.js";
 import { type Combination, coverage } from "../language/status.js";
 import { folderOf, storedFiles } from "../language/store.js";
@@ -57,6 +61,13 @@ Subcommands:
                                      records with every field given, each of its
                                      type, and no others. Print what it checked, or
                                      every problem with its line, column and path
+  attach <file> <path> --file <f> --frame <id> [--field <name>=<value>]... <key>=<value>...
+                                     Record a frame for each combination the
+                                     context's keys give (a|b lists several) that
+                                     exists in place, with its fingerprint; an
+                                     entry for the same combination, frame and
+                                     fields is replaced; with --dry-run, say what
+                                     it would write
   status <file> [--missing]          Count, for each record with context, the
                                      combinations of every element in the file's
                                      trees, in place, and those a stored record is
@@ -563,10 +574,248 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   return report.succeed({ file, records }, text);
 });
 
+// The repository a file is in: the nearest folder above it with a .git, or
+// the working directory.
+function repositoryOf(file: string, cwd: string): string {
+  for (let at = dirname(resolve(cwd, file)); ; at = dirname(at)) {
+    if (statSync(join(at, ".git"), { throwIfNoEntry: false }) !== undefined) return at;
+    if (dirname(at) === at) return cwd;
+  }
+}
+
+const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
+  const { json, rest } = options(args);
+  // The options with a value, and the context's key=value pairs.
+  const flags = new Map<string, string[]>();
+  const pairs: string[] = [];
+  const positional: string[] = [];
+  for (let index = 0; index < rest.length; index++) {
+    const arg = rest[index] as string;
+    if (["--file", "--frame", "--field", "--at", "--record"].includes(arg)) {
+      flags.set(arg, [...(flags.get(arg) ?? []), rest[index + 1] ?? ""]);
+      index++;
+    } else if (arg.includes("=")) pairs.push(arg);
+    else positional.push(arg);
+  }
+  const [file, path, ...extra] = positional;
+  const source = flags.get("--file")?.[0];
+  const frame = flags.get("--frame")?.[0];
+  if (file === undefined || path === undefined || extra.length > 0 || !source || !frame) {
+    io.stderr(`dxn: give a file, a path, --file and --frame, and the context\n\n${usage}`);
+    return 2;
+  }
+  const report = new Reporter(io, json, file);
+  const parsed = read(file, cwd, report);
+  if (typeof parsed === "number") return parsed;
+  const uncontexted = storedWithoutContext(parsed, file, cwd);
+  if (uncontexted.length > 0) return report.refuse(...uncontexted);
+  const data = storedData(parsed, file, cwd);
+  if (!checkStored(parsed, data, report)) return report.fail();
+  // The record: the one given, or the only one with context.
+  const named = flags.get("--record")?.[0];
+  const candidates = parsed.records.filter(
+    ({ context, name }) => context && (named === undefined || name === named),
+  );
+  const record = candidates[0];
+  if (record === undefined || (named === undefined && candidates.length > 1)) {
+    return report.refuse(
+      named === undefined
+        ? `give the record, as --record <name> (${parsed.records
+            .filter(({ context }) => context)
+            .map(({ name }) => name)
+            .join(", ")})`
+        : `${named} is not a record with context`,
+    );
+  }
+  let place: Placement;
+  try {
+    place = placement(parsed, path);
+  } catch (error) {
+    return report.refuse((error as Error).message);
+  }
+  // The context's keys, and the values each can take.
+  const names = new Names(parsed);
+  const profiled = parsed.profiles.length > 0;
+  const environment = parsed.environments.find(
+    ({ name }) => name === parsed.profiles[0]?.environment.name,
+  );
+  const given = profiled ? (environment?.dimensions.map(({ name }) => name) ?? []) : [];
+  const keys: [string, string, string[]][] = [
+    ...(profiled
+      ? ([["profile", "profile", profilesOf(parsed).map(({ name }) => name)]] as [
+          string,
+          string,
+          string[],
+        ][])
+      : []),
+    ...place.dimensions
+      .filter((name) => !given.includes(name))
+      .map((name) => [name, "dimension", names.values(name) ?? []] as [string, string, string[]]),
+    ...place.parents.map(
+      ({ key, state }) =>
+        [key, "parent", names.values(state.enum.name) ?? []] as [string, string, string[]],
+    ),
+    ...place.target.states.map(
+      ({ name, enum: of }) =>
+        [name, "state", names.values(of.name) ?? []] as [string, string, string[]],
+    ),
+  ];
+  const chosen = new Map<string, string[]>();
+  for (const pair of pairs) {
+    const [key, value = ""] = pair.split(/=(.*)/s);
+    const entry = keys.find(([name]) => name === key);
+    if (entry === undefined) {
+      return report.refuse(
+        `${JSON.stringify(key)} is not part of a context of ${path} (${keys.map(([name]) => name).join(", ")})`,
+      );
+    }
+    const values = value.split("|");
+    for (const one of values) {
+      if (!entry[2].includes(one)) {
+        const what = key === "profile" ? "a profile" : `a value of ${key}`;
+        return report.refuse(`${JSON.stringify(one)} is not ${what} (${entry[2].join(", ")})`);
+      }
+    }
+    chosen.set(key as string, values);
+  }
+  for (const [name] of keys) {
+    if (!chosen.has(name)) {
+      return report.refuse(`give ${name}, as ${name}=<value>, or several as ${name}=<a>|<b>`);
+    }
+  }
+  // Every combination listed, kept where it exists in place.
+  let combinations: Record<string, string>[] = [{}];
+  for (const [name] of keys) {
+    combinations = combinations.flatMap((combination) =>
+      (chosen.get(name) ?? []).map((value) => ({ ...combination, [name]: value })),
+    );
+  }
+  const rows = inPlace(parsed, path).rows;
+  const contexts = combinations
+    .map((combination) => ({
+      path,
+      ...(profiled ? { profile: combination.profile as string } : {}),
+      dimensions: Object.fromEntries(
+        keys
+          .filter(([, kind]) => kind === "dimension")
+          .map(([name]) => [name, combination[name] as string]),
+      ),
+      parents: Object.fromEntries(
+        keys
+          .filter(([, kind]) => kind === "parent")
+          .map(([name]) => [name, combination[name] as string]),
+      ),
+      states: Object.fromEntries(
+        keys
+          .filter(([, kind]) => kind === "state")
+          .map(([name]) => [name, combination[name] as string]),
+      ),
+    }))
+    .filter((context) =>
+      rows.some(
+        (row) =>
+          (context.profile === undefined || row.profiles?.includes(context.profile) === true) &&
+          Object.entries(context.dimensions).every(([name, value]) => row.when[name] === value) &&
+          Object.entries(context.parents).every(([name, value]) => row.parents[name] === value) &&
+          Object.entries(context.states).every(([name, value]) =>
+            row.states[name]?.includes(value),
+          ),
+      ),
+    );
+  if (contexts.length === 0) {
+    return report.refuse(
+      `no combination given exists for ${path}; dxn lang states ${file} ${path} lists them`,
+    );
+  }
+  // The frame, and its fingerprint now.
+  const repository = repositoryOf(file, cwd);
+  const full = join(repository, source);
+  if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) {
+    return report.refuse(`${JSON.stringify(source)} does not exist in the repository`);
+  }
+  const fingerprint = new Fingerprints().of(full, frame);
+  if (fingerprint === undefined)
+    return report.refuse(`frame ${JSON.stringify(frame)} is not in ${source}`);
+  // The record's fields: by convention, at is when, source where the frame is
+  // and fingerprint its fingerprint; the others are given with --field.
+  const fields = new Map(
+    (flags.get("--field") ?? []).map((pair) => pair.split(/=(.*)/s) as [string, string]),
+  );
+  if (
+    !record.fields.some(({ name }) => name === "fingerprint") ||
+    !record.fields.some(({ name }) => name === "source")
+  ) {
+    return report.refuse(
+      `${record.name} has no fingerprint field next to a source { file, frame }; attach needs both`,
+    );
+  }
+  const stamp = flags.get("--at")?.[0] ?? new Date().toISOString();
+  const values: Record<string, unknown> = {};
+  for (const field of record.fields) {
+    if (field.name === "source") values.source = { file: source, frame };
+    else if (field.name === "fingerprint") values.fingerprint = fingerprint;
+    else if (field.name === "at" && !fields.has("at")) values.at = stamp;
+    else if (fields.has(field.name)) values[field.name] = fields.get(field.name);
+    else return report.refuse(`give ${field.name}, as --field ${field.name}=<value>`);
+  }
+  for (const name of fields.keys()) {
+    if (!record.fields.some((field) => field.name === name)) {
+      return report.refuse(
+        `${record.name} has no field ${JSON.stringify(name)} (${record.fields.map((field) => field.name).join(", ")})`,
+      );
+    }
+  }
+  // Into the record's folder, in a file named after the path's type; an
+  // entry for the same combination, frame and given fields is replaced.
+  const folder = folderOf(record.name);
+  const target = `${folderOf(place.steps[0]?.type.name ?? record.name)}.json`;
+  const at = join(resolve(cwd, dirname(file)), folder, target);
+  const shown = join(dirname(file), folder, target);
+  const existing = data.find((stored) => stored.path === at);
+  const entries =
+    existing === undefined ? [] : (JSON.parse(existing.source) as Record<string, unknown>[]);
+  const same = (entry: Record<string, unknown>, context: object) =>
+    JSON.stringify(entry.context) === JSON.stringify(context) &&
+    JSON.stringify(entry.source) === JSON.stringify(values.source) &&
+    [...fields.keys()].every((name) => entry[name] === fields.get(name));
+  let replaced = 0;
+  for (const context of contexts) {
+    const entry = { context, ...values };
+    const index = entries.findIndex((candidate) => same(candidate, context));
+    if (index === -1) entries.push(entry);
+    else {
+      entries[index] = entry;
+      replaced++;
+    }
+  }
+  const written = `${JSON.stringify(entries, null, 2)}\n`;
+  const problems = validate(parsed, record.name, written);
+  if (problems.length > 0) {
+    for (const { line, column, code, path: where, message } of problems) {
+      report.problem({ file: shown, line, column, severity: "error", code, path: where, message });
+    }
+    return report.fail();
+  }
+  const summary = `${count(contexts.length, "record")} to ${shown}${replaced > 0 ? `, replacing ${replaced}` : ""}`;
+  if (dryRun) {
+    return report.succeed(
+      { dryRun: true, written: { [shown]: written } },
+      `Would attach ${summary}\n`,
+    );
+  }
+  mkdirSync(dirname(at), { recursive: true });
+  writeFileSync(at, written);
+  return report.succeed(
+    { file, record: record.name, written: shown, records: contexts.length, replaced },
+    `Attached ${summary}\n`,
+  );
+});
+
 export const lang: Command = group(usage, {
   check,
   states: statesCommand,
   validate: validateCommand,
   rename: renameCommand,
   status: statusCommand,
+  attach: attachCommand,
 });

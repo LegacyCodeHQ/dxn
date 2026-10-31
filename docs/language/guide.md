@@ -920,6 +920,34 @@ a line for each stored record:
 evidence.dxn: Evidence, 2 records in 1 file in evidence/
 ```
 
+### Attaching: recording evidence
+
+An actor records evidence with `lang attach`: the element by its path, the
+frame, the record's other fields, and the context as `key=value` pairs, the
+same keys a context has. Every key is given, and `a|b` lists several values:
+it records one entry for each combination listed that exists in place.
+
+```bash
+dxn lang attach toolbar.dxn Toolbar.menu.toggle \
+  --file design/website.pen --frame l5Z3Z --field actor=design-agent \
+  profile=phone layout=compact "menu.menu=closed|open" \
+  hover=rest focus=blurred "expanded=closed|open"
+```
+
+```
+Attached 2 records to evidence/toolbar.json
+```
+
+Of the four combinations listed, two exist: the toggle is expanded exactly
+when its menu is open. By convention, the record's `at` is the time now, its
+`source` the file and frame, and its `fingerprint` the frame's fingerprint: in
+a pen.dev file, the frame and the components and variables it uses; in any
+other file, the whole file. The other fields, here `actor`, are given with
+`--field`. Recording the same combination, frame and fields again replaces the
+entry, with the fingerprint the frame has now. The file is relative to the
+repository, and entries go in the record's folder, in a file named after the
+type the path starts at.
+
 ### Status: what has evidence, and what is missing
 
 With evidence recorded for children, `lang status` says how much of the

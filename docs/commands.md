@@ -757,6 +757,13 @@ Subcommands:
                                      records with every field given, each of its
                                      type, and no others. Print what it checked, or
                                      every problem with its line, column and path
+  attach <file> <path> --file <f> --frame <id> [--field <name>=<value>]... <key>=<value>...
+                                     Record a frame for each combination the
+                                     context's keys give (a|b lists several) that
+                                     exists in place, with its fingerprint; an
+                                     entry for the same combination, frame and
+                                     fields is replaced; with --dry-run, say what
+                                     it would write
   status <file> [--missing]          Count, for each record with context, the
                                      combinations of every element in the file's
                                      trees, in place, and those a stored record is
