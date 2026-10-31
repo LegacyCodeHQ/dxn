@@ -135,6 +135,20 @@ describe("actions and on", () => {
     ).toEqual(["26:31: focus-target: panel cannot take focus: Menu.Panel has no focus state"]);
   });
 
+  it("reports nothing more about a path through a child whose type is not one", () => {
+    assert(
+      errors(`enum State = closed | open
+type Menu {
+  state menu: State
+  has toggle: Nope
+  action close: menu open -> closed
+  on click toggle.x: close
+  on key Escape: toggle.y.close, focus toggle.z
+}
+`),
+    ).toEqual(["4:15: unknown-type: Nope is not a type (Menu)"]);
+  });
+
   it("uses a dimension its event changes, which its type needs", () => {
     const menu = (needs: string) => `dimension Breakpoint = base | lg
 enum State = closed | open

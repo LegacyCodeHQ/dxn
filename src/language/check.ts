@@ -149,12 +149,15 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
   const childType = (type: Type, path: Located): Type | undefined => {
     let at: Type | undefined = type;
     for (const part of path.name.split(".")) {
-      const child: Child | undefined = at?.children.find(({ name }) => name === part);
+      // A child whose type is not one, or a broken type, is reported already.
+      if (at === undefined) return undefined;
+      const child: Child | undefined = at.children.find(({ name }) => name === part);
       if (child === undefined) {
-        const children = at?.children.map(({ name }) => name) ?? [];
+        if (at.broken) return undefined;
+        const children = at.children.map(({ name }) => name);
         report(
           "unknown-child",
-          `${part} is not a child of ${at?.name}${among(children, "it has none")}`,
+          `${part} is not a child of ${at.name}${among(children, "it has none")}`,
           path,
         );
         return undefined;
