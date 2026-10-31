@@ -5,7 +5,7 @@
 //   file        = { blank-line | enum | dimension | type | environment | profile }
 //   enum        = "enum" name "=" value { "|" [newline] value } newline
 //   dimension   = "dimension" name "=" value { "|" [newline] value } newline
-//   type        = "type" name "{" { blank-line | states | rule } "}"
+//   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | states | rule } "}"
 //   states      = "states" field { "," [newline] field } newline
 //   field       = state-name ":" name
 //   rule        = state-name "=" value "only" "when" condition newline
@@ -51,6 +51,7 @@ export function parse(source: string): ParseResult {
   const previous = () => tokens[position - 1] as Token;
   const fail = (token: Token, expected: string): never => {
     result.diagnostics.push({
+      severity: "error",
       code: "syntax-error",
       message: `expected ${expected}, found ${describe(token)}`,
       line: token.line,
@@ -81,6 +82,7 @@ export function parse(source: string): ParseResult {
     const named = word(expected);
     if (!casing.pattern.test(named.name)) {
       result.diagnostics.push({
+        severity: "error",
         code: `${kind}-name`,
         message: `${kind} names start with ${casing.rule}: ${JSON.stringify(named.name)}`,
         line: named.line,
@@ -91,12 +93,14 @@ export function parse(source: string): ParseResult {
   };
 
   // Items split by a separator, which may end a line; the first follows
-  // what was read before it. The list ends a line, or one of the other ends.
+  // what was read before it. The list ends at one of the ends: by default,
+  // the end of the line.
   const list = <T>(
     separator: TokenKind,
     first: string,
     item: (after: string) => T,
     ends: TokenKind[],
+    ending = "the end of the line",
   ): T[] => {
     const items = [item(first)];
     while (peek().kind === separator) {
@@ -104,7 +108,7 @@ export function parse(source: string): ParseResult {
       if (peek().kind === "newline") next();
       items.push(item(`"${separator}"`));
     }
-    end(["newline", ...ends], `"${separator}" or the end of the line`);
+    end(ends, `"${separator}" or ${ending}`);
     return items;
   };
 
@@ -140,7 +144,7 @@ export function parse(source: string): ParseResult {
     const declaration = keep(declarations, { ...named, values: [] });
     expect("=", `"=" after the ${keyword} name`);
     declaration.values.push(
-      ...list("|", '"="', (after) => word(`a value after ${after}`), ["end"]),
+      ...list("|", '"="', (after) => word(`a value after ${after}`), ["newline", "end"]),
     );
   };
 
@@ -184,11 +188,17 @@ export function parse(source: string): ParseResult {
     return { state, value, when };
   };
 
-  // A type: "type <Name> { states <field>, ... <rule> ... }".
+  // A type: "type <Name> needs <Dimension>, ... { states <field>, ... <rule> ... }".
   const typeDeclaration = () => {
     next();
     const named = name("type", 'a type name after "type"', capitalized);
-    const type = keep(result.types, { ...named, states: [], rules: [] });
+    const type = keep(result.types, { ...named, needs: [], states: [], rules: [] });
+    const after = peek();
+    if (after.kind === "word" && after.text === "needs") {
+      next();
+      const dimension = (after: string) => word(`a dimension after ${after}`);
+      type.needs.push(...list(",", '"needs"', dimension, ["{"], '"{"'));
+    }
     expect("{", '"{" after the type name');
     let listed = false;
     braces(type.name, (token) => {
@@ -200,6 +210,7 @@ export function parse(source: string): ParseResult {
       next();
       if (listed) {
         result.diagnostics.push({
+          severity: "error",
           code: "states-twice",
           message: `${type.name} lists its states twice; put them on one states line`,
           line: token.line,
@@ -207,7 +218,7 @@ export function parse(source: string): ParseResult {
         });
       }
       listed = true;
-      type.states.push(...list(",", '"states"', field, ["}"]));
+      type.states.push(...list(",", '"states"', field, ["newline", "}"]));
     });
   };
 
@@ -218,7 +229,7 @@ export function parse(source: string): ParseResult {
     const environment = keep(result.environments, { ...named, dimensions: [] });
     expect("=", '"=" after the environment name');
     environment.dimensions.push(
-      ...list("×", '"="', (after) => word(`a dimension after ${after}`), ["end"]),
+      ...list("×", '"="', (after) => word(`a dimension after ${after}`), ["newline", "end"]),
     );
   };
 

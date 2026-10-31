@@ -12,13 +12,13 @@ const usage = `Usage: dimensions lang <subcommand>
 The dimensions language, which is being designed one concept at a time: see
 docs/language/design.md. So far a file declares enums, each a named set of
 values; dimensions, each listing the values the environment varies by;
-types with their states, and rules for when a state's value exists;
-environments, each a product of dimensions; and profiles, each an instance
-of an environment:
+types with the dimensions they need, their states, and rules for when a
+state's value exists; environments, each a product of dimensions; and
+profiles, each an instance of an environment:
 
   enum Hover = rest | hovered
   dimension Pointer = mouse | touch
-  type Wordmark {
+  type Wordmark needs Pointer {
     states hover: Hover
     hover = hovered only when Pointer = mouse
   }
@@ -27,11 +27,12 @@ of an environment:
 
 Subcommands:
   check <file>                       Parse and check a file; print what it declares
-                                     as JSON, or every problem it has. Needs no
+                                     as JSON, or every problem it has. Warnings
+                                     are printed, but do not fail. Needs no
                                      project.
   states <file> <type> [--table]     Evaluate a type: the states it has in each
                                      profile, or without profiles under each
-                                     combination of the dimensions its rules use,
+                                     combination of the dimensions it needs,
                                      as JSON, or a Markdown table with --table
 `;
 
@@ -54,13 +55,11 @@ function read(file: string, cwd: string, io: Context["io"]): ParseResult | numbe
     return 1;
   }
   const parsed = parse(readFileSync(path, "utf8"));
-  if (parsed.diagnostics.length > 0) {
-    for (const { line, column, code, message } of parsed.diagnostics) {
-      io.stderr(`${file}:${line}:${column}: ${code}: ${message}\n`);
-    }
-    return 1;
+  for (const { line, column, severity, code, message } of parsed.diagnostics) {
+    const warning = severity === "warning" ? "warning: " : "";
+    io.stderr(`${file}:${line}:${column}: ${warning}${code}: ${message}\n`);
   }
-  return parsed;
+  return parsed.diagnostics.some(({ severity }) => severity === "error") ? 1 : parsed;
 }
 
 const check: Command = command(usage, (args, { io, cwd }) => {

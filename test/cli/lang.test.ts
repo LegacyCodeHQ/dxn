@@ -13,9 +13,21 @@ function file(source: string) {
 }
 
 describe("lang check", () => {
+  it("prints warnings, and still succeeds", () => {
+    const run = file(
+      "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  states hover: Hover\n}\n",
+    );
+    const result = run("check", "wordmark.dim");
+    expect([result.code, result.stderr, JSON.parse(result.stdout).types[0].needs]).toEqual([
+      0,
+      "wordmark.dim:3:21: warning: unused-need: Wordmark needs Breakpoint, but no rule uses it\n",
+      ["Breakpoint"],
+    ]);
+  });
+
   it("prints the enums a file declares, as JSON", () => {
     const run = file(
-      "enum Hover = rest | hovered\nenum Size = 19px | 20px | 22px\ndimension Breakpoint = base | lg\ndimension Pointer = mouse | touch\ntype Wordmark {\n  states hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
+      "enum Hover = rest | hovered\nenum Size = 19px | 20px | 22px\ndimension Breakpoint = base | lg\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  states hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
     );
     const result = run("check", "wordmark.dim");
     expect([result.code, JSON.parse(result.stdout)]).toEqual([
@@ -33,6 +45,7 @@ describe("lang check", () => {
         types: [
           {
             name: "Wordmark",
+            needs: ["Pointer"],
             states: [{ name: "hover", enum: "Hover" }],
             rules: [
               {
@@ -77,7 +90,7 @@ describe("lang states", () => {
 dimension Keyboard = keyboard | no-keyboard
 enum Hover = rest | hovered
 enum Focus = blurred | focused
-type Wordmark {
+type Wordmark needs Pointer, Keyboard {
   states hover: Hover, focus: Focus
   hover = hovered only when Pointer = mouse
   focus = focused only when Keyboard = keyboard

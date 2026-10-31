@@ -2,7 +2,12 @@ import type { Declaration, Located, ParseResult, Rule } from "./ast.js";
 
 type Kind = "enum" | "dimension" | "type" | "environment" | "profile";
 
-type Report = (code: string, message: string, at: { line: number; column: number }) => void;
+type Report = (
+  code: string,
+  message: string,
+  at: { line: number; column: number },
+  severity?: "error" | "warning",
+) => void;
 
 const article = (word: string) => (/^[AEIOUaeiou]/.test(word) ? "an" : "a");
 
@@ -65,8 +70,8 @@ function among(names: string[], none = "the file declares none"): string {
 // value once, and every name that refers to a declaration names one of the
 // right kind.
 export function check(file: ParseResult): void {
-  const report: Report = (code, message, at) =>
-    file.diagnostics.push({ code, message, line: at.line, column: at.column });
+  const report: Report = (code, message, at, severity = "error") =>
+    file.diagnostics.push({ severity, code, message, line: at.line, column: at.column });
   const names = new Names(file);
   checkDeclared(file, report);
   checkValues(file, report);
@@ -116,11 +121,42 @@ function checkValues(file: ParseResult, report: Report): void {
   }
 }
 
-// A type: each state once, its values from an enum; each rule on a state of
-// the type and one of its values, under a dimension and its values, and one
-// rule for each state value.
+// A type: each need a dimension, once; each state once, its values from an
+// enum; each rule on a state of the type and one of its values, under a
+// needed dimension and its values, and one rule for each state value. A need
+// no rule uses is a warning.
 function checkTypes(file: ParseResult, names: Names, report: Report): void {
   for (const type of file.types) {
+    const needed = new Set<string>();
+    for (const need of type.needs) {
+      if (!names.is(need.name, "dimension")) {
+        report("unknown-dimension", names.not(need.name, "dimension"), need);
+      } else if (needed.has(need.name)) {
+        report("duplicate-dimension", `${need.name} is already a need of ${type.name}`, need);
+      }
+      needed.add(need.name);
+    }
+    // The dimensions its rules use, in the order first used.
+    const used = [
+      ...new Set(
+        type.rules
+          .map(({ when }) => when.dimension.name)
+          .filter((name) => names.is(name, "dimension")),
+      ),
+    ];
+    const declare = `"type ${type.name} needs ${[...new Set([...needed, ...used])].join(", ")}"`;
+    if (!type.broken) {
+      for (const need of type.needs) {
+        if (names.is(need.name, "dimension") && !used.includes(need.name)) {
+          report(
+            "unused-need",
+            `${type.name} needs ${need.name}, but no rule uses it`,
+            need,
+            "warning",
+          );
+        }
+      }
+    }
     const seen = new Set<string>();
     for (const state of type.states) {
       if (seen.has(state.name)) {
@@ -166,6 +202,14 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       if (!names.is(dimension.name, "dimension")) {
         report("unknown-dimension", names.not(dimension.name, "dimension"), dimension);
         continue;
+      }
+      // A broken type's needs may not all have been read.
+      if (!needed.has(dimension.name) && !type.broken) {
+        report(
+          "unneeded-dimension",
+          `${type.name} does not need ${dimension.name}; declare ${declare}`,
+          dimension,
+        );
       }
       checkChosen(chosen, dimension.name, names, report, "the condition");
     }

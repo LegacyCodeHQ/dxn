@@ -14,14 +14,16 @@ export interface TypeStates {
 // a state exists in a row unless a rule limits it to dimension values the row
 // does not have.
 export function states(file: ParseResult, typeName: string): TypeStates {
-  if (file.diagnostics.length > 0) throw new Error("cannot evaluate a file with problems");
+  if (file.diagnostics.some(({ severity }) => severity === "error")) {
+    throw new Error("cannot evaluate a file with problems");
+  }
   const type = file.types.find(({ name }) => name === typeName);
   if (type === undefined) throw new Error(`no type ${typeName}`);
   const valuesOf = (name: string) =>
     [...file.enums, ...file.dimensions]
       .find((declaration) => declaration.name === name)
       ?.values.map(({ name }) => name) ?? [];
-  const dimensions = [...new Set(type.rules.map(({ when }) => when.dimension.name))];
+  const dimensions = type.needs.map(({ name }) => name);
   // With profiles, a row per profile, with the values it gives; the
   // dimensions it does not give still go through every value.
   const given = new Set(

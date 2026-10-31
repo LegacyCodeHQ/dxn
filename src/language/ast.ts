@@ -37,6 +37,8 @@ export interface Rule {
 }
 
 export interface Type extends Declaration {
+  // The dimensions it depends on, which something else provides.
+  needs: Located[];
   states: State[];
   rules: Rule[];
 }
@@ -64,6 +66,8 @@ export interface Profile extends Declaration {
 export type Dimension = Enum;
 
 export interface Diagnostic {
+  // An error makes a file unusable; a warning does not.
+  severity: "error" | "warning";
   code: string;
   message: string;
   line: number;

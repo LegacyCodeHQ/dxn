@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../../src/language/parse.js";
-import { problems } from "../support/language.js";
+import { errors, problems } from "../support/language.js";
 
 const declarations = `dimension Pointer = mouse | touch
 dimension Keyboard = keyboard | no-keyboard
 enum Hover = rest | hovered
 enum Focus = blurred | focused
-type Wordmark {
+type Wordmark needs Pointer, Keyboard {
   states hover: Hover, focus: Focus
 `;
 
@@ -47,7 +47,7 @@ describe("only when", () => {
   it("can name several values with in", () => {
     const source = `dimension Breakpoint = base | sm | lg | xl
 enum Hover = rest | hovered
-type BlogLink {
+type BlogLink needs Breakpoint {
   states hover: Hover
   hover = hovered only when Breakpoint in (lg, xl)
 }
@@ -60,8 +60,8 @@ type BlogLink {
 
   it("names a state of the type and one of its values", () => {
     expect([
-      problems(wordmark("hovr = hovered only when Pointer = mouse")),
-      problems(wordmark("hover = hovred only when Pointer = mouse")),
+      errors(wordmark("hovr = hovered only when Pointer = mouse")),
+      errors(wordmark("hover = hovred only when Pointer = mouse")),
     ]).toEqual([
       ["7:3: unknown-state: hovr is not a state of Wordmark (hover, focus)"],
       ['7:11: unknown-value: "hovred" is not a value of hover (rest, hovered)'],
@@ -70,10 +70,10 @@ type BlogLink {
 
   it("names a dimension and its values", () => {
     expect([
-      problems(wordmark("hover = hovered only when Pointr = mouse")),
-      problems(wordmark("hover = hovered only when Hover = rest")),
-      problems(wordmark("hover = hovered only when Pointer = mous")),
-      problems(wordmark("hover = hovered only when Pointer in (mouse, mouse)")),
+      errors(wordmark("hover = hovered only when Pointr = mouse")),
+      errors(wordmark("hover = hovered only when Hover = rest")),
+      errors(wordmark("hover = hovered only when Pointer = mous")),
+      errors(wordmark("hover = hovered only when Pointer in (mouse, mouse)")),
     ]).toEqual([
       ["7:29: unknown-dimension: Pointr is not a dimension (Pointer, Keyboard)"],
       ["7:29: unknown-dimension: Hover is an enum, not a dimension"],
