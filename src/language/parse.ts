@@ -4,7 +4,9 @@
 //   file   = { blank-line | enum | dimension | type }
 //   dimension = "dimension" name "=" value { "|" [newline] value } newline
 //   enum   = "enum" name "=" value { "|" [newline] value } newline
-//   type   = "type" name "{" { blank-line | states } "}"
+//   type   = "type" name "{" { blank-line | states | rule } "}"
+//   rule   = state-name "=" value "only" "when" condition newline
+//   condition = name ( "=" value | "in" "(" value { "," value } ")" )
 //   states = "states" field { "," [newline] field } newline
 //   field  = state-name ":" name
 //   name   = capital letter, then letters and digits
@@ -30,8 +32,26 @@ export interface State extends Located {
   enumColumn: number;
 }
 
+// A condition on a dimension: it has one of these values.
+export interface Condition {
+  dimension: string;
+  line: number;
+  column: number;
+  values: Located[];
+}
+
+// A rule: the state's value exists only when the condition holds.
+export interface Rule extends Located {
+  state: string;
+  value: string;
+  valueLine: number;
+  valueColumn: number;
+  when: Condition;
+}
+
 export interface Type extends Located {
   states: State[];
+  rules: Rule[];
 }
 
 // A dimension: what the environment varies by, with its own values. Its
@@ -52,7 +72,19 @@ export interface ParseResult {
   diagnostics: Diagnostic[];
 }
 
-type TokenKind = "word" | "=" | "|" | "{" | "}" | ":" | "," | "newline" | "end" | "other";
+type TokenKind =
+  | "word"
+  | "="
+  | "|"
+  | "{"
+  | "}"
+  | ":"
+  | ","
+  | "("
+  | ")"
+  | "newline"
+  | "end"
+  | "other";
 
 interface Token {
   kind: TokenKind;
@@ -94,7 +126,7 @@ function scan(source: string): Token[] {
       index = end;
       continue;
     }
-    const kind: TokenKind = "=|{}:,".includes(char) ? (char as TokenKind) : "other";
+    const kind: TokenKind = "=|{}:,()".includes(char) ? (char as TokenKind) : "other";
     tokens.push({ kind, text: char, line, column });
     index += 1;
     column += 1;
@@ -205,6 +237,65 @@ export function parse(source: string): ParseResult {
     };
   };
 
+  // A rule: "<state> = <value> only when <condition>".
+  const rule = (): Rule => {
+    const stateToken = next();
+    const equals = next();
+    if (equals.kind !== "=") fail(equals, `"=" after ${JSON.stringify(stateToken.text)}`);
+    const valueToken = next();
+    if (valueToken.kind !== "word") fail(valueToken, 'a value after "="');
+    const only = next();
+    if (only.kind !== "word" || only.text !== "only") {
+      fail(only, `"only" after ${JSON.stringify(valueToken.text)}`);
+    }
+    const when = next();
+    if (when.kind !== "word" || when.text !== "when") fail(when, '"when" after "only"');
+    const dimensionToken = next();
+    if (dimensionToken.kind !== "word") fail(dimensionToken, 'a dimension after "when"');
+    const condition: Condition = {
+      dimension: dimensionToken.text,
+      line: dimensionToken.line,
+      column: dimensionToken.column,
+      values: [],
+    };
+    const operator = next();
+    const conditionValue = (after: string): Located => {
+      const token = next();
+      if (token.kind !== "word") fail(token, `a value after ${after}`);
+      return { name: token.text, line: token.line, column: token.column };
+    };
+    if (operator.kind === "=") {
+      condition.values.push(conditionValue('"="'));
+    } else if (operator.kind === "word" && operator.text === "in") {
+      const open = next();
+      if (open.kind !== "(") fail(open, '"(" after "in"');
+      condition.values.push(conditionValue('"("'));
+      for (;;) {
+        const token = next();
+        if (token.kind === ")") break;
+        const last = condition.values[condition.values.length - 1] as Located;
+        if (token.kind !== ",") fail(token, `"," or ")" after ${JSON.stringify(last.name)}`);
+        condition.values.push(conditionValue('","'));
+      }
+    } else {
+      fail(operator, `"=" or "in" after ${JSON.stringify(dimensionToken.text)}`);
+    }
+    const after = peek();
+    if (after.kind !== "newline" && after.kind !== "}") {
+      fail(after, "the end of the line after the condition");
+    }
+    return {
+      name: stateToken.text,
+      line: stateToken.line,
+      column: stateToken.column,
+      state: stateToken.text,
+      value: valueToken.text,
+      valueLine: valueToken.line,
+      valueColumn: valueToken.column,
+      when: condition,
+    };
+  };
+
   // A type: its name, then its states inside braces. A mistake inside skips
   // to the closing brace, so the rest of the file is still read.
   const typeDeclaration = (): Type => {
@@ -216,6 +307,7 @@ export function parse(source: string): ParseResult {
       line: nameToken.line,
       column: nameToken.column,
       states: [],
+      rules: [],
     };
     if (!/^[A-Z][A-Za-z0-9]*$/.test(type.name)) {
       report(
@@ -236,7 +328,11 @@ export function parse(source: string): ParseResult {
           return type;
         }
         if (token.kind === "end") fail(token, `"}" to close ${type.name}`);
-        if (token.kind !== "word" || token.text !== "states") fail(token, '"states" or "}"');
+        if (token.kind === "word" && token.text !== "states") {
+          type.rules.push(rule());
+          continue;
+        }
+        if (token.kind !== "word") fail(token, '"states", a rule or "}"');
         next();
         if (listed) {
           report(
@@ -338,6 +434,10 @@ function check(result: ParseResult): void {
   const enumNames = result.enums.map(({ name }) => name);
   const typeNames = new Set(result.types.map(({ name }) => name));
   const dimensionNames = new Set(result.dimensions.map(({ name }) => name));
+  const valuesOf = (name: string) =>
+    [...result.enums, ...result.dimensions]
+      .find((declaration) => declaration.name === name)
+      ?.values.map((item) => item.name);
   // Where a state or dimension names the enum its values come from.
   const checkEnum = (name: string, at: { line: number; column: number }) => {
     if (enumNames.includes(name)) return;
@@ -359,6 +459,71 @@ function check(result: ParseResult): void {
       }
       seen.add(state.name);
       checkEnum(state.enum, { line: state.enumLine, column: state.enumColumn });
+    }
+  }
+  // Rules: a state of the type and one of its values, a dimension and its
+  // values, and one condition for each state value.
+  for (const type of result.types) {
+    const stateNames = type.states.map(({ name }) => name);
+    const conditioned = new Map<string, Rule>();
+    for (const rule of type.rules) {
+      const state = type.states.find(({ name }) => name === rule.state);
+      if (state === undefined) {
+        push(
+          "unknown-state",
+          `${rule.state} is not a state of ${type.name} (${stateNames.join(", ")})`,
+          rule,
+        );
+      } else {
+        const values = valuesOf(state.enum);
+        if (values !== undefined && !values.includes(rule.value)) {
+          push(
+            "unknown-value",
+            `${JSON.stringify(rule.value)} is not a value of ${rule.state} (${values.join(", ")})`,
+            { line: rule.valueLine, column: rule.valueColumn },
+          );
+        }
+      }
+      const key = `${rule.state}=${rule.value}`;
+      const earlier = conditioned.get(key);
+      if (earlier !== undefined) {
+        push(
+          "duplicate-rule",
+          `${rule.state} = ${rule.value} already has a condition at line ${earlier.line}`,
+          rule,
+        );
+      } else {
+        conditioned.set(key, rule);
+      }
+      const { when } = rule;
+      if (!dimensionNames.has(when.dimension)) {
+        push(
+          "unknown-dimension",
+          enumNames.includes(when.dimension)
+            ? `${when.dimension} is an enum, not a dimension`
+            : `${when.dimension} is not a dimension (${[...dimensionNames].join(", ")})`,
+          when,
+        );
+        continue;
+      }
+      const allowed = valuesOf(when.dimension) ?? [];
+      const seen = new Set<string>();
+      for (const item of when.values) {
+        if (!allowed.includes(item.name)) {
+          push(
+            "unknown-value",
+            `${JSON.stringify(item.name)} is not a value of ${when.dimension} (${allowed.join(", ")})`,
+            item,
+          );
+        } else if (seen.has(item.name)) {
+          push(
+            "duplicate-value",
+            `${JSON.stringify(item.name)} appears twice in the condition`,
+            item,
+          );
+        }
+        seen.add(item.name);
+      }
     }
   }
 }

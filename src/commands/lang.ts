@@ -9,12 +9,13 @@ const usage = `Usage: dimensions lang <subcommand>
 The dimensions language, which is being designed one concept at a time: see
 docs/language/design.md. So far a file declares enums, each a named set of
 values; dimensions, each listing the values the environment varies by; and
-types with their states:
+types with their states, and rules for when a state's value exists:
 
   enum Hover = rest | hovered
-  dimension Breakpoint = base | sm | lg | xl
+  dimension Pointer = mouse | touch
   type Wordmark {
     states hover: Hover
+    hover = hovered only when Pointer = mouse
   }
 
 Subcommands:
@@ -54,9 +55,14 @@ const check: Command = command(usage, (args, { io, cwd }) => {
           name,
           values: values.map((value) => value.name),
         })),
-        types: types.map(({ name, states }) => ({
+        types: types.map(({ name, states, rules }) => ({
           name,
           states: states.map((state) => ({ name: state.name, enum: state.enum })),
+          rules: rules.map(({ state, value, when }) => ({
+            state,
+            value,
+            when: { dimension: when.dimension, values: when.values.map((item) => item.name) },
+          })),
         })),
       },
       null,

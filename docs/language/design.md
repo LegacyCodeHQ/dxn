@@ -200,19 +200,60 @@ Each scope keeps its names once:
 | `states-twice`    | a type with more than one `states` line                  |
 | `unknown-enum`    | a state whose values name no enum, or name a type        |
 
+### only when
+
+**Decided and implemented.** A rule in a type says that one value of a state
+exists only where a dimension has certain values. It brings the language's
+first expressions: a dimension equal to a value, or in a list of values.
+
+```ebnf
+type      = "type" name "{" { blank-line | states | rule } "}" ;
+rule      = state-name "=" value "only" "when" condition newline ;
+condition = name ( "=" value | "in" "(" value { "," value } ")" ) ;
+```
+
+```
+type Wordmark {
+  states hover: Hover, focus: Focus
+
+  hover = hovered  only when Pointer = mouse
+  focus = focused  only when Keyboard = keyboard
+}
+
+type BlogLink {
+  states hover: Hover
+  hover = hovered  only when Breakpoint in (lg, xl)
+}
+```
+
+A value without a rule exists everywhere; a value with one exists only where
+its condition holds. The tool keeps the value in the situations where the
+condition is true and leaves it out of the others, so the wordmark is never
+hovered on a touch screen and never asks for a design of it. Today's model
+says the same in `overrides/pointer.json` as "on touch, remove hovered"; the
+rule says it positively, next to the state it limits.
+
+| Code                | Means                                                      |
+| ------------------- | ---------------------------------------------------------- |
+| `unknown-state`     | a rule for a state the type does not have                  |
+| `unknown-value`     | a value that is not one of the state's, or the dimension's |
+| `unknown-dimension` | a condition on a name that is no dimension, or is an enum  |
+| `duplicate-rule`    | a second condition for the same value of a state           |
+| `duplicate-value`   | a value listed twice in one condition                      |
+
 ## Primitives
 
-| Primitive          | Says                                                | Replaces today                                   | Status   |
-| ------------------ | --------------------------------------------------- | ------------------------------------------------ | -------- |
-| `enum`             | a finite set of values                              | state groups, dimension values, attribute values | Decided  |
-| `type`             | a definition with states, a look and inputs         | types in `types.json`                            | Decided  |
-| `states`           | a type's own fields                                 | state groups on a type                           | Decided  |
-| `look`             | values computed from inputs and states              | attributes and their overrides                   | Proposed |
-| `match`            | an exhaustive choice by value                       | per-state tables, overrides per value            | Proposed |
-| `when`             | a default with exceptions                           | overrides per value or combination               | Proposed |
-| `only when`        | a node or state exists only where a condition holds | `only`, `onlyWhen`, overrides removing states    | Proposed |
-| `match` over nodes | exactly one of several nodes, by value              | pairs of `only` that must not leave gaps         | Decided  |
-| `provides`         | where an input's value comes from                   | dimensions, profiles, shared nodes               | Proposed |
+| Primitive          | Says                                                           | Replaces today                                      | Status   |
+| ------------------ | -------------------------------------------------------------- | --------------------------------------------------- | -------- |
+| `enum`             | a finite set of values                                         | state groups, dimension values, attribute values    | Decided  |
+| `type`             | a definition with states, a look and inputs                    | types in `types.json`                               | Decided  |
+| `states`           | a type's own fields                                            | state groups on a type                              | Decided  |
+| `look`             | values computed from inputs and states                         | attributes and their overrides                      | Proposed |
+| `match`            | an exhaustive choice by value                                  | per-state tables, overrides per value               | Proposed |
+| `when`             | a default with exceptions                                      | overrides per value or combination                  | Proposed |
+| `only when`        | a state value exists only where a condition holds; nodes later | overrides removing states; `only`, `onlyWhen` later | Decided  |
+| `match` over nodes | exactly one of several nodes, by value                         | pairs of `only` that must not leave gaps            | Decided  |
+| `provides`         | where an input's value comes from                              | dimensions, profiles, shared nodes                  | Proposed |
 
 ## Inputs: injection and cascade
 
