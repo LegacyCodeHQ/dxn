@@ -534,7 +534,10 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         ].filter((name) => names.is(name, "dimension")),
       ),
     ];
-    const declare = `"type ${type.name} needs ${[...new Set([...needed, ...used])].join(", ")}"`;
+    // The needs to declare: those that are dimensions, and those used.
+    const declare = `"type ${type.name} needs ${[
+      ...new Set([...[...needed].filter((name) => names.is(name, "dimension")), ...used]),
+    ].join(", ")}"`;
     if (!type.broken) {
       for (const need of type.needs) {
         if (names.is(need.name, "dimension") && !used.includes(need.name)) {

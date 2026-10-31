@@ -66,6 +66,15 @@ describe("needs", () => {
     ]);
   });
 
+  it("suggests only dimensions there are, leaving a misspelled need out", () => {
+    expect(
+      problems(wordmark(" needs Pointr", "hover = hovered only when Pointer = mouse")),
+    ).toEqual([
+      "5:21: unknown-dimension: Pointr is not a dimension (Breakpoint, Pointer, Keyboard)",
+      '7:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Pointer"',
+    ]);
+  });
+
   it("warns about a need no rule uses, and only warns", () => {
     const { diagnostics } = parse(
       wordmark(" needs Breakpoint, Pointer", "hover = hovered only when Pointer = mouse"),
