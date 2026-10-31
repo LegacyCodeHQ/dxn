@@ -1,3 +1,4 @@
+import { hasControlCharacter } from "../language/text.js";
 import { childPath, type Diagnostics } from "./diagnostic.js";
 import type { ArrayNode, JsonNode, ObjectNode, StringNode } from "./json.js";
 
@@ -67,22 +68,6 @@ export function expectNonEmptyString(
     return false;
   }
   return true;
-}
-
-// C0 and C1 control characters, including tab and newline.
-function hasControlCharacter(text: string): boolean {
-  for (let i = 0; i < text.length; i++) {
-    const code = text.charCodeAt(i);
-    if (code <= 0x1f || (code >= 0x7f && code <= 0x9f)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// Whether text is a valid name, for names that come from file names.
-export function isName(text: string): boolean {
-  return text !== "" && text.trim() === text && !hasControlCharacter(text);
 }
 
 // A name (id, type, state, attribute, dimension or value): non-blank and

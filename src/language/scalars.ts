@@ -1,5 +1,4 @@
-import { isName } from "../compiler/shape.js";
-import { isTimestamp } from "../compiler/verification.js";
+import { isName, isTimestamp } from "./text.js";
 
 // A path from the repository root: parts split by /, none of them empty, . or
 // .., none with a backslash or surrounding spaces, and not starting with a

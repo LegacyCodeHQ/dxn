@@ -1,3 +1,4 @@
+import { isTimestamp } from "../language/text.js";
 import type { ActorSymbol } from "./actors.js";
 import { childPath, type Diagnostics } from "./diagnostic.js";
 import type { JsonNode, ObjectNode } from "./json.js";
@@ -623,33 +624,4 @@ function subtree(tree: TreeSymbols, id: string, into = new Set<string>()): Set<s
     subtree(tree, child, into);
   }
   return into;
-}
-
-const timestamp =
-  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):(\d{2}))$/;
-
-// ISO 8601 date and time with a time zone, with every field in range.
-export function isTimestamp(text: string): boolean {
-  const match = timestamp.exec(text);
-  if (match === null) {
-    return false;
-  }
-  const [year, month, day, hour, minute, second = 0, offsetHour = 0, offsetMinute = 0] = match
-    .slice(1)
-    .map((part) => (part === undefined ? undefined : Number(part)));
-  if (year === undefined || month === undefined || day === undefined) {
-    return false;
-  }
-  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  return (
-    month >= 1 &&
-    month <= 12 &&
-    day >= 1 &&
-    day <= daysInMonth &&
-    (hour ?? 0) <= 23 &&
-    (minute ?? 0) <= 59 &&
-    second <= 59 &&
-    offsetHour <= 23 &&
-    offsetMinute <= 59
-  );
 }

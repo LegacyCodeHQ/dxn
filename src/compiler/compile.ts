@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { checkExpectations } from "../expectations.js";
+import { isName } from "../language/text.js";
 import { Resolver } from "../resolve.js";
 import type {
   ActorsFile,
@@ -26,7 +27,7 @@ import { type JsonNode, parseJson } from "./json.js";
 import { checkCombinationFile, checkOverridesFile } from "./overrides.js";
 import { checkProfilesFile, type ProfilesSymbol } from "./profiles.js";
 import { readSource } from "./read.js";
-import { isName, report } from "./shape.js";
+import { report } from "./shape.js";
 import type { CombinationStates, DimensionSymbol, OverrideEntry } from "./symbols.js";
 import { checkTransitions } from "./transitions.js";
 import { checkVerificationFile, type DimensionInfo } from "./verification.js";

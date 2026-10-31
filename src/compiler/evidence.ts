@@ -1,5 +1,6 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { isTimestamp } from "../language/text.js";
 import type { Context, Resolver } from "../resolve.js";
 import type { EvidenceFile } from "../tree.js";
 import { Diagnostics, type FileDiagnostic } from "./diagnostic.js";
@@ -16,7 +17,6 @@ import {
   keys,
   report,
 } from "./shape.js";
-import { isTimestamp } from "./verification.js";
 
 export interface EvidenceResult {
   diagnostics: FileDiagnostic[];
