@@ -146,18 +146,19 @@ type Wordmark needs Pointer, Keyboard {
     ]);
   });
 
-  it("names the profile of each row when there are profiles", () => {
+  it("names the profiles of each row when there are profiles", () => {
     const withProfiles = `dimension Breakpoint = base | lg
 ${wordmark}environment Device = Breakpoint x Pointer x Keyboard
 profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
 profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile studio: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `;
     expect(file(withProfiles)("states", "wordmark.dxn", "Wordmark", "--table").stdout).toBe(
       [
-        "| profile | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |",
-        "| ------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |",
-        "| phone   | touch   | no-keyboard | ✓           | —              | ✓              | —              |",
-        "| laptop  | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |",
+        "| profiles       | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |",
+        "| -------------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |",
+        "| phone          | touch   | no-keyboard | ✓           | —              | ✓              | —              |",
+        "| laptop, studio | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |",
         "",
       ].join("\n"),
     );

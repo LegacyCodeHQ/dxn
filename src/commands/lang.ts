@@ -135,16 +135,16 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const columns = (stateType?.states ?? []).flatMap((state) =>
     valuesOf(state.enum.name).map((value) => [state.name, value] as const),
   );
-  const profiled = evaluated.rows.some((row) => row.profile !== undefined);
+  const profiled = evaluated.rows.some((row) => row.profiles !== undefined);
   io.stdout(
     drawTable(
       [
-        ...(profiled ? ["profile"] : []),
+        ...(profiled ? ["profiles"] : []),
         ...evaluated.dimensions,
         ...columns.map(([state, value]) => `${state}: ${value}`),
       ],
       evaluated.rows.map((row) => [
-        ...(profiled ? [row.profile ?? NONE] : []),
+        ...(profiled ? [row.profiles?.join(", ") ?? NONE] : []),
         ...evaluated.dimensions.map((dimension) => row.when[dimension] ?? NONE),
         ...columns.map(([state, value]) => (row.states[state]?.includes(value) ? "✓" : NONE)),
       ]),

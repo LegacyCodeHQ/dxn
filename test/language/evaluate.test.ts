@@ -77,12 +77,12 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `;
     expect(states(parse(source), "Wordmark").rows).toEqual([
       {
-        profile: "phone",
+        profiles: ["phone"],
         when: { Pointer: "touch", Keyboard: "no-keyboard" },
         states: { hover: ["rest"], focus: ["blurred"] },
       },
       {
-        profile: "laptop",
+        profiles: ["laptop"],
         when: { Pointer: "mouse", Keyboard: "keyboard" },
         states: { hover: ["rest", "hovered"], focus: ["blurred", "focused"] },
       },
@@ -102,14 +102,29 @@ environment Device = Pointer
 profile laptop: Device { Pointer = mouse }
 `;
     expect(
-      states(parse(source), "Link").rows.map(({ profile, when, states: available }) => [
-        profile,
+      states(parse(source), "Link").rows.map(({ profiles, when, states: available }) => [
+        profiles,
         when.Theme,
         available.hover,
       ]),
     ).toEqual([
-      ["laptop", "light", ["rest", "hovered"]],
-      ["laptop", "dark", ["hovered"]],
+      [["laptop"], "light", ["rest", "hovered"]],
+      [["laptop"], "dark", ["hovered"]],
+    ]);
+  });
+
+  it("gives profiles with the same values one row, which names them all", () => {
+    const source = `dimension Breakpoint = base | lg
+${wordmark}environment Device = Breakpoint x Pointer x Keyboard
+profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile tablet: Device { Breakpoint = lg, Pointer = touch, Keyboard = no-keyboard }
+profile studio: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+`;
+    expect(states(parse(source), "Wordmark").rows.map(({ profiles }) => profiles)).toEqual([
+      ["laptop", "studio"],
+      ["tablet"],
+      ["phone"],
     ]);
   });
 

@@ -190,7 +190,7 @@ export function validate(file: ParseResult, recordName: string, source: string):
     // Each state value must exist in that combination.
     const row = evaluate(file, type.name).rows.find(
       (candidate) =>
-        (profile === undefined || candidate.profile === profile) &&
+        (profile === undefined || candidate.profiles?.includes(profile) === true) &&
         expected.every((name) => candidate.when[name] === chosen[name]),
     );
     for (const { name, value, at, start } of pending) {

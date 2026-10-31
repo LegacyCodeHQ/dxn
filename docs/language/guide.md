@@ -332,14 +332,15 @@ A profile's name is lowercase, because it is a single thing. After the colon
 comes the environment it is an instance of, then a value for each of that
 environment's dimensions, split by commas or lines.
 
-Now the matrix has one row per profile instead of one per combination:
+Now the matrix has one row per profile instead of one per combination (and
+one row for profiles with the same values, as the next section shows):
 
 ```
-| profile | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |
-| ------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |
-| phone   | touch   | no-keyboard | ✓           | —              | ✓              | —              |
-| tablet  | touch   | no-keyboard | ✓           | —              | ✓              | —              |
-| laptop  | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
+| profiles | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |
+| -------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |
+| phone    | touch   | no-keyboard | ✓           | —              | ✓              | —              |
+| tablet   | touch   | no-keyboard | ✓           | —              | ✓              | —              |
+| laptop   | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
 ```
 
 These are the cases that matter, named the way the team talks about them.
@@ -376,12 +377,12 @@ profile laptop: Device { Pointer = mouse }
 ```
 
 ```
-| profile | Pointer | Theme | hover: rest | hover: hovered | tone: plain | tone: inverted |
-| ------- | ------- | ----- | ----------- | -------------- | ----------- | -------------- |
-| phone   | touch   | light | ✓           | —              | ✓           | —              |
-| phone   | touch   | dark  | ✓           | —              | ✓           | ✓              |
-| laptop  | mouse   | light | ✓           | ✓              | ✓           | —              |
-| laptop  | mouse   | dark  | ✓           | ✓              | ✓           | ✓              |
+| profiles | Pointer | Theme | hover: rest | hover: hovered | tone: plain | tone: inverted |
+| -------- | ------- | ----- | ----------- | -------------- | ----------- | -------------- |
+| phone    | touch   | light | ✓           | —              | ✓           | —              |
+| phone    | touch   | dark  | ✓           | —              | ✓           | ✓              |
+| laptop   | mouse   | light | ✓           | ✓              | ✓           | —              |
+| laptop   | mouse   | dark  | ✓           | ✓              | ✓           | ✓              |
 ```
 
 ## Modifiers: accessories that change a profile
@@ -404,16 +405,20 @@ profile it is on, it makes one more, named `<profile>+<modifier>`, and the
 matrix has a row for it:
 
 ```
-| profile               | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |
-| --------------------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |
-| phone                 | touch   | no-keyboard | ✓           | —              | ✓              | —              |
-| tablet                | touch   | no-keyboard | ✓           | —              | ✓              | —              |
-| laptop                | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
-| tablet+magic-keyboard | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
+| profiles                      | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |
+| ----------------------------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |
+| phone                         | touch   | no-keyboard | ✓           | —              | ✓              | —              |
+| tablet                        | touch   | no-keyboard | ✓           | —              | ✓              | —              |
+| laptop, tablet+magic-keyboard | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
 ```
 
-A context names such a profile the same way:
-`"profile": "tablet+magic-keyboard"`. A modifier sets dimensions of the
+A tablet with the magic keyboard has the same values as the laptop, so the
+two are one combination, and share a row that names them both. Nothing about
+either is lost: both stay declared, and a context still names the one profile
+its evidence was recorded on, `"profile": "laptop"` or
+`"profile": "tablet+magic-keyboard"`, which then counts for the whole row. If
+the two ever differ, the row splits, and each piece of evidence stays with the
+profile it named. In JSON, each row of `lang states` lists its `profiles`. A modifier sets dimensions of the
 profiles' environment, each once, with one of their values, and is on
 profiles that exist. One that changes nothing on a profile it is on is a
 warning, since that profile already exists:

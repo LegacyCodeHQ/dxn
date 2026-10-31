@@ -7,8 +7,9 @@ import { profilesOf } from "./profiles.js";
 export interface TypeStates {
   type: string;
   dimensions: string[];
-  // With profiles, each row names its profile.
-  rows: { profile?: string; when: Record<string, string>; states: Record<string, string[]> }[];
+  // With profiles, each row names its profiles: every profile with the same
+  // values, which are one combination.
+  rows: { profiles?: string[]; when: Record<string, string>; states: Record<string, string[]> }[];
 }
 
 // Evaluates a type of a parsed file, which must have no problems. A value of
@@ -33,15 +34,25 @@ export function states(file: ParseResult, typeName: string): TypeStates {
       .filter(({ name }) => profiles.some(({ environment }) => environment === name))
       .flatMap((environment) => environment.dimensions.map(({ name }) => name)),
   );
-  const starts: { profile?: string; when: Record<string, string> }[] =
-    profiles.length === 0
-      ? [{ when: {} }]
-      : profiles.map((profile) => ({
-          profile: profile.name,
-          when: Object.fromEntries(
-            Object.entries(profile.values).filter(([name]) => dimensions.includes(name)),
-          ),
-        }));
+  // Profiles with the same values are one combination: one start, naming
+  // them all, in the order the first of them comes.
+  const groups = new Map<string, { profiles: string[]; when: Record<string, string> }>();
+  for (const profile of profiles) {
+    const key = JSON.stringify(Object.entries(profile.values).sort(([a], [b]) => (a < b ? -1 : 1)));
+    const group = groups.get(key);
+    if (group !== undefined) {
+      group.profiles.push(profile.name);
+      continue;
+    }
+    groups.set(key, {
+      profiles: [profile.name],
+      when: Object.fromEntries(
+        Object.entries(profile.values).filter(([name]) => dimensions.includes(name)),
+      ),
+    });
+  }
+  const starts: { profiles?: string[]; when: Record<string, string> }[] =
+    profiles.length === 0 ? [{ when: {} }] : [...groups.values()];
   let combinations = starts;
   for (const dimension of dimensions.filter(
     (name) => file.profiles.length === 0 || !given.has(name),
@@ -56,8 +67,8 @@ export function states(file: ParseResult, typeName: string): TypeStates {
   return {
     type: type.name,
     dimensions,
-    rows: combinations.map(({ profile, when: chosen }) => ({
-      ...(profile === undefined ? {} : { profile }),
+    rows: combinations.map(({ profiles: named, when: chosen }) => ({
+      ...(named === undefined ? {} : { profiles: named }),
       when: Object.fromEntries(dimensions.map((name) => [name, chosen[name] as string])),
       states: Object.fromEntries(
         type.states.map((state) => [

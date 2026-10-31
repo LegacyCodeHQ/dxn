@@ -51,18 +51,17 @@ describe("modifier", () => {
 
   it("makes a profile <profile>+<modifier> for each profile it is on", () => {
     expect(
-      states(parse(wordmark + magic), "Wordmark").rows.map(({ profile, when, states }) => [
-        profile,
+      states(parse(wordmark + magic), "Wordmark").rows.map(({ profiles, when, states }) => [
+        profiles,
         when.Pointer,
         states.hover,
       ]),
     ).toEqual([
-      ["phone", "touch", ["rest"]],
-      ["tablet-portrait", "touch", ["rest"]],
-      ["tablet-landscape", "touch", ["rest"]],
-      ["laptop", "mouse", ["rest", "hovered"]],
-      ["tablet-portrait+magic-keyboard", "mouse", ["rest", "hovered"]],
-      ["tablet-landscape+magic-keyboard", "mouse", ["rest", "hovered"]],
+      [["phone"], "touch", ["rest"]],
+      [["tablet-portrait"], "touch", ["rest"]],
+      [["tablet-landscape"], "touch", ["rest"]],
+      [["laptop", "tablet-landscape+magic-keyboard"], "mouse", ["rest", "hovered"]],
+      [["tablet-portrait+magic-keyboard"], "mouse", ["rest", "hovered"]],
     ]);
   });
 
@@ -83,6 +82,18 @@ describe("modifier", () => {
         '"phone+magic-keyboard" is not a profile (phone, tablet-portrait, tablet-landscape, laptop, tablet-portrait+magic-keyboard, tablet-landscape+magic-keyboard)',
       ],
     ]);
+  });
+
+  it("lets a context name either of two profiles with the same values", () => {
+    const schema = parse(`${wordmark}${magic}record Evidence with context {}\n`);
+    const context = (profile: string) =>
+      JSON.stringify([
+        { context: { type: "Wordmark", profile, dimensions: {}, states: { hover: "hovered" } } },
+      ]);
+    expect([
+      validate(schema, "Evidence", context("laptop")),
+      validate(schema, "Evidence", context("tablet-landscape+magic-keyboard")),
+    ]).toEqual([[], []]);
   });
 
   it("has a lowercase name, declared once, on profiles that exist, each once", () => {
