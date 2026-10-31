@@ -42,18 +42,18 @@ editing the files: they refuse any change that would break the project, and
 refused, 2 means the command line is wrong.
 
 To build a model from an empty folder, run `dxn workflow`: it prints
-the step-by-step guide ([workflow.md](docs/workflow.md)) as Markdown, from the
+the step-by-step guide ([workflow.md](packages/cli/docs/workflow.md)) as Markdown, from the
 program itself, so it works wherever the tool is installed.
 
-The [docs](docs/) explain the rest:
+The [docs](packages/cli/docs/) explain the rest:
 
-- [workflow.md](docs/workflow.md): building a model step by step
-- [concepts.md](docs/concepts.md): nodes, types, state groups, dimensions,
+- [workflow.md](packages/cli/docs/workflow.md): building a model step by step
+- [concepts.md](packages/cli/docs/concepts.md): nodes, types, state groups, dimensions,
   overrides, shared states, transitions, verification and expectations, using
   a real toolbar as the example
-- [commands.md](docs/commands.md): every command, with its usage and examples
-- [diagnostics.md](docs/diagnostics.md): every error code and how to fix it
-- [output.md](docs/output.md): the JSON each command prints, and exit codes
+- [commands.md](packages/cli/docs/commands.md): every command, with its usage and examples
+- [diagnostics.md](packages/cli/docs/diagnostics.md): every error code and how to fix it
+- [output.md](packages/cli/docs/output.md): the JSON each command prints, and exit codes
 
 ## Development
 
