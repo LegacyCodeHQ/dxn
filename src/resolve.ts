@@ -43,6 +43,10 @@ export interface ViewNode {
 // context. Precedence, weakest first: type base, type overrides for single
 // dimensions, type combinations (fewer dimensions first), the instance's own
 // values, then instance overrides in the same order.
+// A request that no profile, or more than one, fits; the message says what
+// to give instead.
+export class ProfileError extends Error {}
+
 export class Resolver {
   private readonly nodes = new Map<string, TreeNode>();
   private readonly children = new Map<string, string[]>();
@@ -52,7 +56,15 @@ export class Resolver {
   // "<parent>><fragment>" -> the include's "states".
   private readonly includeStates = new Map<string, Record<string, Record<string, string[]>>>();
 
+  // Profile name -> dimension -> value, and the dimensions profiles cover.
+  readonly profiles: Map<string, Record<string, string>>;
+  readonly profiled: Set<string>;
+
   constructor(readonly project: Project) {
+    this.profiles = new Map(
+      Object.entries(project.profiles?.profiles ?? {}).sort(([a], [b]) => (a < b ? -1 : 1)),
+    );
+    this.profiled = new Set([...this.profiles.values()].flatMap((values) => Object.keys(values)));
     for (const root of [...project.roots, ...project.fragments]) {
       this.index(root);
     }
@@ -65,6 +77,66 @@ export class Resolver {
 
   node(id: string): TreeNode | undefined {
     return this.nodes.get(id);
+  }
+
+  // Whether a profile has the context's values for every profiled dimension
+  // it names. A context naming none of them fits.
+  fitsProfile(context: Context): boolean {
+    const named = Object.keys(context).filter((name) => this.profiled.has(name));
+    return (
+      named.length === 0 ||
+      [...this.profiles.values()].some((profile) =>
+        named.every((name) => profile[name] === context[name]),
+      )
+    );
+  }
+
+  // The values of the profiled dimensions among these, from the one profile
+  // that fits what was given: a profile=<name>, or some of the values.
+  // Several profiles fitting, or none, is an error that says what to give.
+  fillProfile(dimensions: string[], given: Context, subject: string): Context {
+    const covered = dimensions.filter((name) => this.profiled.has(name));
+    const named = given.profile;
+    if (named !== undefined && !this.profiles.has(named)) {
+      throw new ProfileError(
+        `"${named}" is not a profile (${[...this.profiles.keys()].join(", ")})`,
+      );
+    }
+    if (covered.length === 0) return {};
+    const chosen = named === undefined ? undefined : this.profiles.get(named);
+    for (const name of covered) {
+      if (chosen !== undefined && given[name] !== undefined && chosen[name] !== given[name]) {
+        throw new ProfileError(
+          `profile "${named}" has ${name}=${chosen[name]}, not ${name}=${given[name]}`,
+        );
+      }
+    }
+    const asked = covered.filter((name) => given[name] !== undefined);
+    const fitting = [...this.profiles].filter(
+      ([name, values]) =>
+        (named === undefined || name === named) &&
+        asked.every((dimension) => values[dimension] === given[dimension]),
+    );
+    // Profiles that differ only in dimensions not covered here are one.
+    const project = (values: Record<string, string>) =>
+      JSON.stringify(covered.map((name) => values[name]));
+    const distinct = new Map(fitting.map(([name, values]) => [project(values), name]));
+    if (distinct.size === 1) {
+      const values = (fitting[0] as [string, Record<string, string>])[1];
+      return Object.fromEntries(covered.map((name) => [name, values[name] as string]));
+    }
+    const describe = asked.map((name) => `${name}=${given[name]}`).join(", ");
+    if (distinct.size === 0) {
+      throw new ProfileError(
+        `no profile has ${describe} (${[...this.profiles.keys()].join(", ")})`,
+      );
+    }
+    const choices = fitting.map(([name]) => name).join("|");
+    throw new ProfileError(
+      asked.length === 0
+        ? `give profile=<${choices}> for ${subject}`
+        : `${describe} fits several profiles; give profile=<${choices}>`,
+    );
   }
 
   // Dimensions that apply to a node, by name.
@@ -113,6 +185,7 @@ export class Resolver {
         values.map((value) => ({ ...context, [name]: value })),
       );
     }
+    contexts = contexts.filter((context) => this.fitsProfile(context));
     for (const ancestor of this.sharedAncestors(lineage)) {
       contexts = contexts.flatMap((context) =>
         this.resolve(ancestor, context, this.lineage(ancestor, root)).states.map((state) => ({
@@ -150,6 +223,7 @@ export class Resolver {
       const values = this.project.dimensions[name]?.values ?? [];
       views = views.flatMap((view) => values.map((value) => ({ ...view, [name]: value })));
     }
+    views = views.filter((view) => this.fitsProfile(view));
     for (const node of shared) {
       const nodeLineage = this.lineageWithin(id, node, root);
       views = views.flatMap((view) => {

@@ -493,6 +493,44 @@ agree("expectations", (doc) => ({ ...tree, "expectations.json": doc }), {
   ],
 });
 
+const withPointer = {
+  ...tree,
+  "dimensions/pointer.json": pointer,
+  "dimensions/size.json": { version: 1, values: ["sm", "lg"], appliesTo: ["page"] },
+};
+const profilesFile = (profiles: unknown) => ({ version: 1, profiles });
+
+agree("profiles", (doc) => ({ ...withPointer, "profiles.json": doc }), {
+  valid: [
+    ["no profiles", profilesFile({})],
+    ["two profiles", profilesFile({ phone: { pointer: "touch" }, laptop: { pointer: "mouse" } })],
+    ["a $schema reference", { $schema: "x", ...profilesFile({}) }],
+  ],
+  structural: [
+    ["wrong-type", []],
+    ["missing-key", { version: 1 }],
+    ["unknown-key", { ...profilesFile({}), extra: 1 }],
+    ["unsupported-version", { version: 2, profiles: {} }],
+    ["wrong-type", profilesFile([])],
+    ["wrong-type", profilesFile({ phone: "touch" })],
+    ["wrong-type", profilesFile({ phone: { pointer: 1 } })],
+    ["empty-values", profilesFile({ phone: {} })],
+    ["empty-string", profilesFile({ phone: { pointer: " " } })],
+  ],
+  crossReference: [
+    ["undeclared-dimension", profilesFile({ phone: { theme: "dark" } })],
+    ["unknown-dimension-value", profilesFile({ phone: { pointer: "pen" } })],
+    [
+      "duplicate-profile",
+      profilesFile({ phone: { pointer: "touch" }, ipad: { pointer: "touch" } }),
+    ],
+    [
+      "incomplete-profile",
+      profilesFile({ phone: { pointer: "touch", size: "sm" }, laptop: { pointer: "mouse" } }),
+    ],
+  ],
+});
+
 describe("website example", () => {
   it.each([
     ["types", "types.json"],

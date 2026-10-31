@@ -2,7 +2,7 @@ import { compileDirectory } from "../compiler/compile.js";
 import type { Io } from "../io.js";
 import { printDiagnostics, requireProject } from "../project.js";
 import { choices, contextFilter, QueryError, sharedStates, subtreeContexts } from "../queries.js";
-import { contextKey, type Context as NodeContext, Resolver } from "../resolve.js";
+import { contextKey, type Context as NodeContext, ProfileError, Resolver } from "../resolve.js";
 import { buildStateTree, drawStateTree, type Entry, treeNames } from "../state-tree.js";
 import { type Command, type Context, command } from "./context.js";
 import { list, parse, Refusal, UsageError } from "./edit.js";
@@ -74,6 +74,8 @@ function contextValues(
       if (!values.includes(value)) {
         throw new Refusal(`"${value}" is not a value of ${name} (${choices(values)})`);
       }
+    } else if (name === "profile" && resolver.profiles.size > 0) {
+      // Checked when the profile fills in the dimensions.
     } else if (shared.includes(name)) {
       const states = sharedStates(resolver, name);
       if (!states.includes(value)) {
@@ -211,8 +213,38 @@ export const axes = readCommand(axesUsage, (resolver, args, io) => {
         ...(Object.keys(existsWhen).length === 0 ? {} : { existsWhen }),
       };
     }),
+    ...(resolver.profiles.size === 0 ? {} : { profiles: profileList(resolver) }),
   });
 });
+
+// Every profile, by name, with its dimension values.
+function profileList(resolver: Resolver): { name: string; values: Record<string, string> }[] {
+  return [...resolver.profiles].map(([name, values]) => ({ name, values }));
+}
+
+// The profiled dimensions' values from the one profile that fits, or a
+// refusal that says what to give.
+export function fillProfile(
+  resolver: Resolver,
+  dimensions: string[],
+  given: NodeContext,
+  subject: string,
+): NodeContext {
+  try {
+    return resolver.fillProfile(dimensions, given, subject);
+  } catch (error) {
+    if (error instanceof ProfileError) throw new Refusal(error.message);
+    throw error;
+  }
+}
+
+export const profileListCommand = readCommand(
+  "Usage: dimensions profile list\n",
+  (resolver, args, io) => {
+    parse(args, [], {});
+    print(io, { profiles: profileList(resolver) });
+  },
+);
 
 // The values of each of a shared node's dimensions at which it exists in some
 // context, leaving out dimensions it exists at in full.
@@ -265,7 +297,12 @@ export const show = readCommand(showUsage, (resolver, args, io) => {
     shared,
     (name, allowed) => `"${name}" is not a dimension of ${id} (${allowed})`,
   );
-  const context: NodeContext = { ...resolver.withDefaults(id, given) };
+  const context: NodeContext = {
+    ...resolver.withDefaults(id, {
+      ...given,
+      ...fillProfile(resolver, resolver.dimensions(id), given, "this node"),
+    }),
+  };
   for (const ancestor of shared) {
     const present = resolver.resolve(
       ancestor,
@@ -484,9 +521,10 @@ export const view = readCommand(viewUsage, (resolver, args, io) => {
     axes.shared,
     (name, allowed) => `"${name}" is not a dimension or shared node in this view (${allowed})`,
   );
+  const filled = fillProfile(resolver, axes.dimensions, given, "this view");
   const context: NodeContext = {};
   for (const name of axes.dimensions) {
-    const value = given[name] ?? resolver.project.dimensions[name]?.default;
+    const value = filled[name] ?? given[name] ?? resolver.project.dimensions[name]?.default;
     if (value !== undefined) context[name] = value;
   }
   for (const node of axes.shared) {

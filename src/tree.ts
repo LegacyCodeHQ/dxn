@@ -160,6 +160,15 @@ export interface Project {
   verification: Record<string, VerificationFile>;
   // expectations.json, when the project has one.
   expectations?: ExpectationsFile;
+  // profiles.json, when the project has one.
+  profiles?: ProfilesFile;
+}
+
+// profiles.json: the combinations of dimension values that exist, by name.
+export interface ProfilesFile {
+  version: number;
+  // Profile name -> dimension -> value.
+  profiles: Record<string, Record<string, string>>;
 }
 
 // expectations.json: how many contexts each filter must select.

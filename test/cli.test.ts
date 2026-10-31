@@ -71,6 +71,8 @@ describe("dimensions cli", () => {
         check <subcommand>  List and declare checks that types can require
         dimension <subcommand>
                             List and add dimensions, their values, default and scope
+        profile <subcommand>
+                            List, add and remove the combinations of values that exist
         override <subcommand>
                             Change states and values for a dimension value or combination
 
@@ -138,6 +140,8 @@ describe("dimensions cli", () => {
         check <subcommand>  List and declare checks that types can require
         dimension <subcommand>
                             List and add dimensions, their values, default and scope
+        profile <subcommand>
+                            List, add and remove the combinations of values that exist
         override <subcommand>
                             Change states and values for a dimension value or combination
 
@@ -208,6 +212,8 @@ describe("dimensions cli", () => {
         check <subcommand>  List and declare checks that types can require
         dimension <subcommand>
                             List and add dimensions, their values, default and scope
+        profile <subcommand>
+                            List, add and remove the combinations of values that exist
         override <subcommand>
                             Change states and values for a dimension value or combination
 

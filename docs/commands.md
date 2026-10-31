@@ -22,14 +22,17 @@ formatted like Prettier would (two spaces, 80 columns).
 
 Arguments of the form `<name>=<value>` name a context: a dimension
 (`breakpoint=sm`), a state group value (`hover=hovered`), the state of a
-plain-states type (`state=open`), or a shared node's state (`menu=open`).
+plain-states type (`state=open`), a shared node's state (`menu=open`), or
+a profile (`profile=laptop`). When profiles exist, the dimensions they cover
+are filled in from the one profile that fits; when several fit, the command
+asks which.
 
 ## Contents
 
 - Project: [init](#init), [validate](#validate), [status](#status)
 - Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions)
 - Record: [verify](#verify), [unverify](#unverify)
-- Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [override](#override)
+- Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [override](#override)
 
 ## Project
 
@@ -435,6 +438,30 @@ Edits `dimensions/<name>.json`, and `dimension list` prints every dimension as J
 dimensions dimension list
 dimensions dimension add breakpoint --values base,sm,lg,xl --applies-to toolbar --default xl
 dimensions dimension add pointer --values mouse,touch --applies-to toolbar --default mouse
+```
+
+### profile
+
+```text
+Usage: dimensions profile <subcommand>
+
+A profile is a combination of dimension values that exists, such as phone
+(breakpoint=base, pointer=touch, keyboard=no-keyboard). Once profiles exist,
+only their combinations do, and commands fill those dimensions in from the one
+profile that fits what you give.
+
+Subcommands:
+  list                               List every profile and its values
+  add <name> <dimension>=<value>...  Add a profile in profiles.json
+  remove <name>                      Remove a profile
+```
+
+Edits `profiles.json`: the combinations of dimension values that exist. `profile list` prints them. Adding a profile that repeats another one's combination is refused.
+
+```bash
+dimensions profile list
+dimensions profile add tablet-portrait breakpoint=sm pointer=touch keyboard=no-keyboard
+dimensions profile remove tablet-portrait
 ```
 
 ### override

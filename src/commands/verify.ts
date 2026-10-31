@@ -3,6 +3,7 @@ import { type Context, contextKey, Resolver } from "../resolve.js";
 import type { Json, Workspace } from "../workspace.js";
 import type { Command } from "./context.js";
 import { editCommand, isObject, parse, Refusal, UsageError } from "./edit.js";
+import { fillProfile } from "./reading.js";
 
 const verifyUsage = `Usage: dimensions verify <node-id> --check <name> --result passed|failed --by <who>
                         [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
@@ -44,6 +45,21 @@ function contextArgs(args: string[]): Context {
   });
   entries.sort(([a], [b]) => (a === "state" ? -1 : b === "state" ? 1 : a < b ? -1 : a > b ? 1 : 0));
   return Object.fromEntries(entries);
+}
+
+// The context with profile=<name>, or the values that pick one profile,
+// replaced by that profile's values for the node's profiled dimensions.
+function withProfile(model: Resolver, id: string, given: Context): Context {
+  if (model.node(id) === undefined || (model.profiles.size === 0 && given.profile === undefined)) {
+    return given;
+  }
+  const filled = fillProfile(model, model.dimensions(id), given, "this node");
+  const { profile: _, ...rest } = { ...given, ...filled };
+  return Object.fromEntries(
+    Object.entries(rest).sort(([a], [b]) =>
+      a === "state" ? -1 : b === "state" ? 1 : a < b ? -1 : a > b ? 1 : 0,
+    ),
+  );
 }
 
 function rootFor(resolver: Resolver, id: string, chosen: string | undefined): string {
@@ -129,8 +145,8 @@ export const verify: Command = editCommand(verifyUsage, (workspace, args) => {
   if (values.transition !== undefined && rest.length > 0) {
     throw new UsageError("a record is about a transition or a context, not both");
   }
-  const context = contextArgs(rest);
   const model = resolver(workspace);
+  const context = withProfile(model, id, contextArgs(rest));
   const root = rootFor(model, id, values.root);
   const record: Json = {
     node: id,
@@ -165,8 +181,8 @@ export const unverify: Command = editCommand(unverifyUsage, (workspace, args) =>
   if (values.check === undefined) {
     throw new UsageError("--check is required");
   }
-  const context = contextArgs(rest);
   const model = resolver(workspace);
+  const context = withProfile(model, id, contextArgs(rest));
   const root = rootFor(model, id, values.root);
   const list = records(workspace, root, false);
   const key =

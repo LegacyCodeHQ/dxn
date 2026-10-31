@@ -276,6 +276,27 @@ shared node.
 where it exists. It is left out when no dimension limits it. `shared` is `[]`
 when there are no shared nodes.
 
+When the project has profiles, `axes` also lists them, as `profile list` does:
+
+```json
+"profiles": [{ "name": "desktop", "values": { "breakpoint": "xl", "keyboard": "keyboard", "pointer": "mouse" } }]
+```
+
+Profiles are sorted by name. A dimension that profiles cover has no `default`.
+
+## profile list
+
+```json
+{
+  "profiles": [
+    {
+      "name": "phone",
+      "values": { "breakpoint": "base", "keyboard": "no-keyboard", "pointer": "touch" }
+    }
+  ]
+}
+```
+
 ## views
 
 ```json

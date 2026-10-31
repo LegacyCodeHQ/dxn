@@ -27,6 +27,7 @@ contents follow the order of the sections.
 - [Nodes, fragments and includes](#nodes-fragments-and-includes)
 - [Shared states and onlyWhen](#shared-states-and-onlywhen)
 - [Dimensions](#dimensions)
+- [Profiles](#profiles)
 - [Overrides and only](#overrides-and-only)
 - [Transitions](#transitions)
 - [Verification records](#verification-records)
@@ -232,7 +233,8 @@ say which group it belongs to. Rename the value in one group
 
 A name is taken. A state group can't be called `state`, which is the key for
 a plain states list. A dimension can't be called `state`, or have the name of
-a state group or a shared node, because contexts use those names as keys.
+a state group or a shared node, because contexts use those names as keys,
+and it can't be called `profile`, which commands use to pick a profile.
 Rename it.
 
 ### `shared-without-states`
@@ -353,6 +355,31 @@ After `node rename`, references are updated automatically.
 ### `duplicate-node`
 
 `appliesTo` lists the same node twice. Remove the repeat.
+
+## Profiles
+
+### `incomplete-profile`
+
+A profile leaves out a dimension that other profiles give. Every profile gives
+one value for each dimension the profiles cover, so add the missing value.
+
+### `duplicate-profile`
+
+Two profiles give the same combination of values, so they are the same thing
+to design and check. Remove one, or make them differ. For example, an iPad
+with a Magic Keyboard has a trackpad, so it is `lg`, `mouse`, `keyboard`, the
+same combination as a laptop.
+
+### `profiled-default`
+
+A dimension that profiles cover has a `default`. Profiles fill it in instead,
+from the one profile that fits what you give, so remove the default.
+
+### `no-profile`
+
+A verification record's context is a combination that no profile has, for
+example `breakpoint=xl` with `pointer=touch`. Use the values of one of the
+profiles (`profile list` shows them).
 
 ## Overrides and only
 

@@ -8,6 +8,7 @@ import type {
   ExpectationsFile,
   FragmentFile,
   OverridesFile,
+  ProfilesFile,
   Project,
   RootFile,
   TypesFile,
@@ -20,8 +21,9 @@ import { checkDimensionFile } from "./dimensions.js";
 import { resolveIncludes } from "./includes.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { checkCombinationFile, checkOverridesFile } from "./overrides.js";
+import { checkProfilesFile, type ProfilesSymbol } from "./profiles.js";
 import { readSource } from "./read.js";
-import { isName } from "./shape.js";
+import { isName, report } from "./shape.js";
 import type { CombinationStates, DimensionSymbol, OverrideEntry } from "./symbols.js";
 import { checkTransitions } from "./transitions.js";
 import { checkVerificationFile, type DimensionInfo } from "./verification.js";
@@ -162,6 +164,16 @@ export function compileDirectory(directory: string): DirectoryResult {
       );
       continue;
     }
+    if (name === "profile") {
+      problems.push(
+        fileDiagnostic(
+          path,
+          "reserved-name",
+          'a dimension cannot be named "profile": contexts use profile=<name> to pick a profile',
+        ),
+      );
+      continue;
+    }
     // Declared even when unreadable, so its override file is not reported as
     // undeclared on top of the real problem.
     const symbol: DimensionSymbol = { values: undefined, scope: new Set(), scopeComplete: false };
@@ -180,6 +192,36 @@ export function compileDirectory(directory: string): DirectoryResult {
       symbol:
         file.root === undefined ? symbol : checkDimensionFile(file.root, file.diagnostics, symbols),
     });
+  }
+
+  // profiles.json: the combinations of dimension values that exist. A
+  // dimension the profiles cover has no default: a profile fills it in.
+  let profiles: ProfilesSymbol = { profiles: new Map(), dimensions: new Set() };
+  const profilesFile = readJson(directory, "profiles.json");
+  if (profilesFile !== undefined) {
+    if ("code" in profilesFile) {
+      problems.push(profilesFile);
+    } else {
+      parsed.push(profilesFile);
+      if (profilesFile.root !== undefined) {
+        profiles = checkProfilesFile(profilesFile.root, profilesFile.diagnostics, dimensions);
+      }
+    }
+  }
+  for (const name of profiles.dimensions) {
+    const entry = dimensions.get(name);
+    const root = entry?.parsed.root;
+    const fallback =
+      root?.kind === "object" ? root.members.find(({ key }) => key.value === "default") : undefined;
+    if (entry !== undefined && fallback !== undefined) {
+      report(
+        entry.parsed.diagnostics,
+        "profiled-default",
+        `${name} is in profiles.json, so it has no default: a profile fills it in`,
+        "$.default",
+        fallback.value,
+      );
+    }
   }
 
   const overrides: [string, ParsedFile][] = [];
@@ -277,6 +319,7 @@ export function compileDirectory(directory: string): DirectoryResult {
         dimensions,
         combinationStates,
         name,
+        profiles,
       );
     }
     verification.push([name, file]);
@@ -309,6 +352,9 @@ export function compileDirectory(directory: string): DirectoryResult {
       verification.map(([name, file]) => [name, JSON.parse(file.source) as VerificationFile]),
     ),
   };
+  if (profilesFile !== undefined && !("code" in profilesFile)) {
+    project.profiles = JSON.parse(profilesFile.source) as ProfilesFile;
+  }
   // Expectations are checked against the model, so only once it compiles.
   const expected = checkExpectations(directory, new Resolver(project));
   if (expected.length > 0) {

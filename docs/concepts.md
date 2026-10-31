@@ -15,6 +15,7 @@ opens a panel with the same link on narrow screens.
 - [Types and states](#types-and-states)
 - [State groups](#state-groups)
 - [Dimensions and contexts](#dimensions-and-contexts)
+- [Profiles](#profiles)
 - [Presence: only](#presence-only)
 - [Overrides](#overrides)
 - [Shared states and onlyWhen](#shared-states-and-onlywhen)
@@ -142,7 +143,8 @@ or does, such as screen width or input device. Each dimension has its own file:
 - `appliesTo` lists nodes. The dimension applies to each one and to its whole
   subtree, wherever it is included.
 - `default` is the value `show`, `view` and `verify` use when you leave the
-  dimension out. Without a default, leaving it out doesn't apply it.
+  dimension out. Without a default, leaving it out doesn't apply it. A
+  dimension that [profiles](#profiles) cover has no default.
 
 The toolbar has three dimensions: `breakpoint` (base, sm, lg, xl), `pointer`
 (mouse, touch) and `keyboard` (keyboard, no-keyboard).
@@ -152,6 +154,43 @@ value for each of its state groups (or its one plain state), and the state of
 every shared node above it. `dimensions contexts blog-link` lists all of
 them, `--count` counts them, and `--tree` draws them as a merged tree.
 `dimensions dimension list` lists every dimension.
+
+## Profiles
+
+On their own, dimensions combine freely: 4 breakpoints × 2 pointers × 2
+keyboard values make 16 combinations, many of which no real user has, such as
+a phone-sized screen with a mouse. A **profile** names one combination that
+does exist. Profiles live in `profiles.json`, for the whole project:
+
+```json
+{
+  "version": 1,
+  "profiles": {
+    "phone": { "breakpoint": "base", "pointer": "touch", "keyboard": "no-keyboard" },
+    "tablet-portrait": { "breakpoint": "sm", "pointer": "touch", "keyboard": "no-keyboard" },
+    "tablet-landscape": { "breakpoint": "lg", "pointer": "touch", "keyboard": "no-keyboard" },
+    "laptop": { "breakpoint": "lg", "pointer": "mouse", "keyboard": "keyboard" },
+    "desktop": { "breakpoint": "xl", "pointer": "mouse", "keyboard": "keyboard" }
+  }
+}
+```
+
+- Each profile is exactly one combination. Portrait and landscape tablets are
+  two profiles, because they show different toolbars and are checked
+  separately.
+- Every profile gives a value for the same dimensions, and no two profiles
+  give the same combination.
+- Once profiles exist, a context exists only if it matches a profile: these
+  five turn the toolbar's 16 combinations into 5. Dimensions that no profile
+  mentions combine as before.
+- The dimensions profiles cover have no default. Commands fill them in from
+  the one profile that fits what you give, and ask when that is not one:
+  `show blog-link profile=laptop` and `show blog-link breakpoint=xl` both
+  work, `show blog-link pointer=touch` asks which of three profiles you mean,
+  and `breakpoint=xl pointer=touch` is refused because no profile has it.
+
+Filters take `profile=<name>` too, in `contexts` and in expectations. Manage
+profiles with `dimensions profile list`, `profile add` and `profile remove`.
 
 ## Presence: only
 

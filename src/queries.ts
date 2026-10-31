@@ -45,7 +45,18 @@ export function contextFilter(
   root: string | undefined,
 ): (context: Context) => boolean {
   const names = [...new Set(contexts.flatMap((context) => Object.keys(context)))].sort();
+  if (resolver.profiles.size > 0) names.push("profile");
   for (const [name, value] of wanted) {
+    if (name === "profile" && resolver.profiles.size > 0) {
+      const profiles = [...resolver.profiles.keys()];
+      if (!profiles.includes(value)) {
+        throw new QueryError(
+          "value",
+          `"${value}" is not a value of profile (${choices(profiles)})`,
+        );
+      }
+      continue;
+    }
     if (!names.includes(name)) {
       throw new QueryError(
         "name",
@@ -73,8 +84,20 @@ export function contextFilter(
     if (!resolver.isShared(name)) return false;
     return resolver.resolve(name, context, resolver.lineage(name, root)).present;
   };
+  // A profile keeps the contexts with its values for the profiled dimensions
+  // they name.
+  const inProfile = (name: string, context: Context) => {
+    const profile = resolver.profiles.get(name) ?? {};
+    return Object.keys(context)
+      .filter((key) => resolver.profiled.has(key))
+      .every((key) => profile[key] === context[key]);
+  };
   return (context) =>
     wanted.every(([name, value]) =>
-      context[name] === undefined ? inView(name, context) : context[name] === value,
+      name === "profile" && resolver.profiles.size > 0
+        ? inProfile(value, context)
+        : context[name] === undefined
+          ? inView(name, context)
+          : context[name] === value,
     );
 }

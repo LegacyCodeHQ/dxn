@@ -1,5 +1,6 @@
 import { childPath, type Diagnostics } from "./diagnostic.js";
 import type { JsonNode, ObjectNode } from "./json.js";
+import { fitsProfile, type ProfilesSymbol } from "./profiles.js";
 import {
   checkSchema,
   checkVersion,
@@ -35,6 +36,7 @@ export function checkVerificationFile(
   dimensions: Map<string, DimensionInfo>,
   combinations: CombinationStates[],
   rootId: string,
+  profiles: ProfilesSymbol,
 ): void {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
@@ -63,6 +65,7 @@ export function checkVerificationFile(
       rootId,
       element,
       path,
+      profiles,
     );
     if (key === undefined) {
       return;
@@ -90,6 +93,7 @@ function checkRecord(
   rootId: string,
   item: JsonNode,
   path: string,
+  profiles: ProfilesSymbol,
 ): string | undefined {
   const record = expectObject(diagnostics, item, path);
   if (record === undefined) {
@@ -150,6 +154,7 @@ function checkRecord(
         lineage(tree, rootId, nodeId) ?? [nodeId],
         object,
         `${path}.context`,
+        profiles,
       );
     }
   }
@@ -272,6 +277,7 @@ function checkContext(
   ancestry: string[],
   context: ObjectNode,
   path: string,
+  profiles: ProfilesSymbol,
 ): string | undefined {
   const applicable = [...dimensions]
     .filter(([, { symbol }]) => symbol.scope.has(nodeId))
@@ -434,6 +440,13 @@ function checkContext(
   }
 
   if (!valid) {
+    return undefined;
+  }
+  if (!fitsProfile(profiles, (name) => values.get(name), applicable)) {
+    const named = applicable
+      .filter((name) => profiles.dimensions.has(name))
+      .map((name) => `${name}=${values.get(name)}`);
+    report(diagnostics, "no-profile", `no profile has ${named.join(", ")}`, path, context);
     return undefined;
   }
   // "only" in any applicable dimension, on the node or a node above it on

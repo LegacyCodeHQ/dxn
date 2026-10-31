@@ -6,6 +6,7 @@ import { fragment } from "./commands/fragment.js";
 import { init } from "./commands/init.js";
 import { node } from "./commands/node.js";
 import { override } from "./commands/override.js";
+import { profile } from "./commands/profile.js";
 import {
   axes,
   contexts,
@@ -64,6 +65,8 @@ Model
   check <subcommand>  List and declare checks that types can require
   dimension <subcommand>
                       List and add dimensions, their values, default and scope
+  profile <subcommand>
+                      List, add and remove the combinations of values that exist
   override <subcommand>
                       Change states and values for a dimension value or combination
 
@@ -99,6 +102,7 @@ const commands: Record<string, Command> = {
   check,
   fragment,
   dimension,
+  profile,
   override,
   verify,
   unverify,

@@ -165,6 +165,12 @@ const renameValue = editCommand(usage, (workspace, args) => {
     return true;
   };
   editRecords(workspace, (record) => swapIn(record.context));
+  const profiles = workspace.read("profiles.json")?.profiles;
+  if (isObject(profiles)) {
+    for (const values of Object.values(profiles)) {
+      if (swapIn(values)) workspace.touch("profiles.json");
+    }
+  }
   editExpectations(workspace, (expectation) => swapIn(expectation.where));
   for (const [file, item] of treeNodes(workspace)) {
     for (const transition of Array.isArray(item.transitions) ? item.transitions : []) {

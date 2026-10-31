@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "dimensions profiles",
+  "description": "Editor aid for profiles.json: the combinations of dimension values that exist, by name. Once profiles exist, only their combinations do, and the dimensions they cover have no default. The dimensions compiler is the authority: it also checks that dimensions and values are declared, that every profile names the same dimensions, and that no two profiles are the same combination, which this schema cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "profiles"],
+  "properties": {
+    "$schema": {
+      "description": "Path or URL of this schema, for editors.",
+      "type": "string"
+    },
+    "version": {
+      "description": "Format version.",
+      "const": 1
+    },
+    "profiles": {
+      "description": "Profile name -> dimension -> value.",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/profile"
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "description": "Non-blank, without leading or trailing whitespace or control characters.",
+      "type": "string",
+      "pattern": "^(?![\\s\\S]*[\\u0000-\\u001F\\u007F-\\u009F])\\S(?:[\\s\\S]*\\S)?$"
+    },
+    "profile": {
+      "description": "One value for each dimension the profiles cover.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/name"
+      }
+    }
+  }
+}
