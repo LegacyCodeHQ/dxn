@@ -1,4 +1,4 @@
-import type { ParseResult } from "./parse.js";
+import type { ParseResult } from "./ast.js";
 
 // What a type's states are under each combination of the dimensions its
 // rules use: one row per combination, in the order the dimensions are first

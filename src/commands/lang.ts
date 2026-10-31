@@ -1,7 +1,8 @@
 import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import type { ParseResult } from "../language/ast.js";
 import { states as evaluateStates } from "../language/evaluate.js";
-import { type ParseResult, parse } from "../language/parse.js";
+import { parse } from "../language/parse.js";
 import { drawTable, NONE } from "../tables.js";
 import { type Command, type Context, command } from "./context.js";
 import { group } from "./edit.js";
