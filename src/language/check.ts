@@ -195,6 +195,14 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         report("action-on-derived", `${state.name} ${why}; no action can change it`, action.state);
         continue;
       }
+      if (action.from.name === action.to.name) {
+        report(
+          "unchanged-action",
+          `${action.name.name} changes nothing: ${state.name} is ${action.from.name} before and after`,
+          action.to,
+        );
+        continue;
+      }
       checkChosen(
         [action.from, action.to],
         state.enum.name,

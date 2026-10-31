@@ -95,10 +95,12 @@ describe("actions and on", () => {
       action("action close: menu open -> shut"),
       action("action close: menu open -> closed\n  action close: menu closed -> open"),
       action("action close: menus open -> closed"),
+      action("action close: menu open -> open"),
     ]).toEqual([
       ['22:30: unknown-value: "shut" is not a value of menu (closed, open)'],
       ["23:10: duplicate-action: close is already an action of Menu"],
       ["22:17: unknown-state: menus is not a state of Menu (menu)"],
+      ["22:30: unchanged-action: close changes nothing: menu is open before and after"],
     ]);
     assert(
       errors(

@@ -1446,6 +1446,7 @@ comment     = "#" to the end of the line
 | `duplicate-action`                                                            | error    | a type has two actions with one name                                                             |
 | `bound-action`                                                                | error    | a binding sets a child's state that one of the child's actions changes                           |
 | `action-on-derived`                                                           | error    | an action changes a state that a `when` or a value decides, or that is received                  |
+| `unchanged-action`                                                            | error    | an action's from and to are one value, so it changes nothing                                     |
 | `unknown-child`                                                               | error    | an event, an action's path or a focus names a child that is not one                              |
 | `unknown-action`                                                              | error    | an `on` triggers an action its type does not have                                                |
 | `focus-target`                                                                | error    | focus goes to a child that has no `focus` state                                                  |
