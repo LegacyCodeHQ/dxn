@@ -448,7 +448,7 @@ record Source {
   frame: NonEmptyString
 }
 
-record Evidence {
+record Evidence with context {
   actor: Actor
   at: Timestamp
   source: Source
@@ -456,9 +456,56 @@ record Evidence {
 }
 ```
 
-Scalars only type a record's fields. A state or a dimension cannot have one:
+(`with context` is the next section.) Scalars only type a record's fields. A state or a dimension cannot have one:
 their values must be listed, so a type's combinations can always be counted.
 A scalar's name is built in, so a file cannot declare it.
+
+### With context: a fact about one combination
+
+Evidence is always about one case of the matrix: _this_ drawing shows the
+wordmark on a laptop, in the dark theme, hovered. A record that is a fact about
+one combination says so on its first line:
+
+```
+record Evidence with context {
+  actor: Actor
+  at: Timestamp
+  source: Source
+  fingerprint: NonEmptyString
+}
+```
+
+Every stored `Evidence` then has a `context`: the one row of `lang states` it
+is about. The field is not listed among the record's fields, because every
+record with context has it, in the same shape:
+
+| Part         | What it holds                                                                                             |
+| ------------ | --------------------------------------------------------------------------------------------------------- |
+| `type`       | the type it is about                                                                                      |
+| `profile`    | the profile, when the file declares profiles; it fixes the dimensions it gives                            |
+| `dimensions` | a value for each dimension the type needs that the profile does not give, or all of them without profiles |
+| `states`     | a value for every state of the type                                                                       |
+
+```json
+"context": {
+  "type": "Wordmark",
+  "profile": "laptop",
+  "dimensions": { "Theme": "dark" },
+  "states": { "hover": "hovered", "tone": "inverted" }
+}
+```
+
+A context is always complete: one exact cell, nothing left out and nothing
+extra. Dimensions and states each have their own group, so a state can be
+named anything, even `profile`. And it is checked against the matrix, not
+only against the enums: `hovered` is a value of `hover`, but there is no
+hovered wordmark on a phone, so a context that says so is reported.
+
+Only a record with context can be stored, since stored data is a fact about
+the matrix. A record with context cannot be a field of another record, which
+would give it a second context, and it cannot declare a field named
+`context`. A record without it, like `Source`, is a part of the facts that
+contain it.
 
 ### Where records are stored, and checking them
 
@@ -470,22 +517,33 @@ plural: `Evidence` is stored in `evidence/`, `DesignReview` in
 so the data can be split across as many files as you like:
 
 ```
-evidence.dxn                # declares record Evidence
+evidence.dxn                # declares record Evidence with context
 evidence/
-  article-page.json         # [ {…}, {…} ]
-  home-page.json
+  wordmark.json             # [ {…}, {…} ]
+  menu-button.json
 ```
 
 A record with no folder is not stored: `Source` above only ever appears
-inside `Evidence`, so it needs none.
+inside `Evidence`, so it needs none. Only a record with context can have a
+folder; for any other, `lang validate` stops before checking anything:
 
-Each stored record is an object with a key for every field: a record field
-holds an object, an enum field one of the enum's values as a string, and a
-scalar field a string that is a valid value of the scalar.
+```
+dxn: Source is stored in source/, but has no context; declare "record Source with context"
+```
+
+Each stored record is an object with its `context`, and a key for every
+field: a record field holds an object, an enum field one of the enum's values
+as a string, and a scalar field a string that is a valid value of the scalar.
 
 ```json
 [
   {
+    "context": {
+      "type": "Wordmark",
+      "profile": "laptop",
+      "dimensions": { "Theme": "dark" },
+      "states": { "hover": "hovered", "tone": "inverted" }
+    },
     "actor": "design-agent",
     "at": "2026-10-31T08:50:05Z",
     "source": { "file": "design/website.pen", "frame": "R353q" },
@@ -501,8 +559,8 @@ dxn lang validate evidence.dxn
 ```
 
 ```
-evidence/article-page.json:9:14: unknown-value: $[1].actor: "designer" is not a value of Actor (design-agent)
-evidence/article-page.json:11:25: invalid-value: $[1].source.file: "/Users/me/website.pen" is not a RelativePath: a path from the repository root: parts split by /, none of them empty, . or .., and none with a \ or spaces at either end
+evidence/wordmark.json:19:28: unknown-value: $[1].context.states.hover: "hovered" is not a value of hover on phone, Theme dark (rest)
+evidence/wordmark.json:21:14: unknown-value: $[1].actor: "designer" is not a value of Actor (design-agent)
 ```
 
 Every field must be given, each of its type, and no others. Each problem has
@@ -521,7 +579,8 @@ straight to it. When everything is valid, the command prints what it checked:
 An enum's values are stored as text, so renaming one by hand leaves every
 stored record that used it invalid. `lang rename` renames it everywhere at
 once: in the enum, in the rules on states of that enum, and in every stored
-record's fields of that enum, nested ones included.
+record's fields of that enum, nested ones included, and in the states of
+every context.
 
 ```bash
 dxn lang rename evidence.dxn Actor.design-agent designer
@@ -533,8 +592,8 @@ dxn lang rename evidence.dxn Actor.design-agent designer
   "enum": "Actor",
   "from": "design-agent",
   "to": "designer",
-  "written": ["evidence.dxn", "evidence/article-page.json"],
-  "records": 38
+  "written": ["evidence.dxn", "evidence/wordmark.json"],
+  "records": 2
 }
 ```
 
@@ -545,9 +604,8 @@ is already a value or is not written like one, and it changes nothing while
 the file or its stored records have problems, so a rename never mixes with
 them. Add `--dry-run` to see every file it would write, without writing.
 
-These are the steps toward evidence that the language itself checks. What it
-cannot say yet is which combination a piece of evidence is for: that needs a
-field that refers to one combination of a type in a profile.
+With these, evidence is checked by the language itself: its shape, its
+values, and that the combination it is about exists.
 
 ## When something is wrong
 
@@ -588,12 +646,11 @@ be an enum, so the state that uses it is fine.
 The language grows one concept at a time, and the concepts below are designed
 or under discussion but not part of it yet; see [design.md](design.md):
 
-- **Evidence for a combination.** Records, scalars and stored data are in
-  place. What is left is a field that refers to one combination of a type in
-  a profile, so the checker can tell that a piece of evidence is for a
-  combination that exists, and the tool can say what is drawn, built and
-  verified, and what is missing. It also needs a decision: whether evidence is
-  for a type, or for each element of that type in a page.
+- **Answers from evidence.** Evidence now says which combination it is for.
+  Next: what is missing (every combination `lang states` lists that has no
+  evidence), and which combinations look the same (those whose evidence
+  points to the same frame). Evidence is for a type today; for each element
+  of a type in a page, it waits for nodes.
 - **More renames.** `lang rename` renames an enum's value. Renaming a field,
   a record (and its folder), or an enum, dimension or type is still to come.
 - **Provides and cascade.** Today, profiles are the only things that give
@@ -652,44 +709,45 @@ condition   = Name ( "=" value | "in" "(" value { "," value } ")" )
 environment = "environment" Name "=" Name { "x" [newline] Name } newline
 profile     = "profile" profile-name ":" Name "{" { assignment ( "," | newline ) } "}"
 assignment  = Name "=" value
-record      = "record" Name "{" { blank-line | field-name ":" Name newline } "}"
+record      = "record" Name [ "with" "context" ] "{" { blank-line | field-name ":" Name newline } "}"
 comment     = "#" to the end of the line
 ```
 
 ### Diagnostics
 
-| Code                                                                          | Severity | When                                                                     |
-| ----------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
-| `syntax-error`                                                                | error    | the text does not follow the grammar                                     |
-| `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name` | error    | the name does not start with a capital letter                            |
-| `state-name`, `profile-name`, `field-name`                                    | error    | the name does not start with a lowercase letter                          |
-| `duplicate-name`                                                              | error    | a name is declared twice in the file                                     |
-| `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension or condition                 |
-| `duplicate-state`                                                             | error    | a type has two states with one name                                      |
-| `states-twice`                                                                | error    | a type has two `states` lines                                            |
-| `duplicate-rule`                                                              | error    | a state value has two rules                                              |
-| `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment or a profile |
-| `unknown-enum`                                                                | error    | a state's values come from something that is not an enum                 |
-| `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                    |
-| `unknown-state`                                                               | error    | a rule names a state the type does not have                              |
-| `unknown-value`                                                               | error    | a value is not one of its enum's or dimension's                          |
-| `unneeded-dimension`                                                          | error    | a rule uses a dimension its type does not need                           |
-| `unknown-environment`                                                         | error    | a profile's environment is not one                                       |
-| `incomplete-profile`                                                          | error    | a profile leaves out a dimension of its environment                      |
-| `mixed-profiles`                                                              | error    | profiles are instances of different environments                         |
-| `duplicate-field`                                                             | error    | a record has two fields with one name                                    |
-| `unknown-type`                                                                | error    | a field's type is not an enum, a record or a scalar                      |
-| `recursive-record`                                                            | error    | a record contains itself                                                 |
-| `reserved-name`                                                               | error    | a declaration has a built-in scalar's name                               |
-| `unused-need`                                                                 | warning  | a type needs a dimension that no rule uses                               |
+| Code                                                                          | Severity | When                                                                                             |
+| ----------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `syntax-error`                                                                | error    | the text does not follow the grammar                                                             |
+| `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name` | error    | the name does not start with a capital letter                                                    |
+| `state-name`, `profile-name`, `field-name`                                    | error    | the name does not start with a lowercase letter                                                  |
+| `duplicate-name`                                                              | error    | a name is declared twice in the file                                                             |
+| `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension or condition                                         |
+| `duplicate-state`                                                             | error    | a type has two states with one name                                                              |
+| `states-twice`                                                                | error    | a type has two `states` lines                                                                    |
+| `duplicate-rule`                                                              | error    | a state value has two rules                                                                      |
+| `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment or a profile                         |
+| `unknown-enum`                                                                | error    | a state's values come from something that is not an enum                                         |
+| `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                                            |
+| `unknown-state`                                                               | error    | a rule names a state the type does not have                                                      |
+| `unknown-value`                                                               | error    | a value is not one of its enum's or dimension's                                                  |
+| `unneeded-dimension`                                                          | error    | a rule uses a dimension its type does not need                                                   |
+| `unknown-environment`                                                         | error    | a profile's environment is not one                                                               |
+| `incomplete-profile`                                                          | error    | a profile leaves out a dimension of its environment                                              |
+| `mixed-profiles`                                                              | error    | profiles are instances of different environments                                                 |
+| `duplicate-field`                                                             | error    | a record has two fields with one name                                                            |
+| `unknown-type`                                                                | error    | a field's type is not an enum, a record or a scalar                                              |
+| `recursive-record`                                                            | error    | a record contains itself                                                                         |
+| `nested-context`                                                              | error    | a record's field is a record with context, which would be a second context                       |
+| `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |
+| `unused-need`                                                                 | warning  | a type needs a dimension that no rule uses                                                       |
 
 Checking stored records with `lang validate` reports these, after any problem with the
 JSON itself:
 
-| Code            | When                                                                   |
-| --------------- | ---------------------------------------------------------------------- |
-| `wrong-kind`    | a value is not the kind its place needs: a list, an object or a string |
-| `missing-field` | a record leaves out one of its fields                                  |
-| `unknown-field` | a record has a field its declaration does not                          |
-| `unknown-value` | an enum field's value is not one of the enum's                         |
-| `invalid-value` | a scalar field's value is not a valid value of the scalar              |
+| Code            | When                                                                                                                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrong-kind`    | a value is not the kind its place needs: a list, an object or a string                                                                                                 |
+| `missing-field` | a record leaves out one of its fields, its context, or a part of its context                                                                                           |
+| `unknown-field` | a record or a context has a field its declaration does not                                                                                                             |
+| `unknown-value` | an enum field's value is not one of the enum's; or a context's type, profile, dimension or state value is not one of the file's, or does not exist in that combination |
+| `invalid-value` | a scalar field's value is not a valid value of the scalar                                                                                                              |

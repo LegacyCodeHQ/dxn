@@ -267,7 +267,9 @@ function checkProfiles(file: ParseResult, names: Names, report: Report): void {
   }
 }
 
-// Records: lowercase fields, each once, each an enum, a record or a scalar; and no
+// Records: lowercase fields, each once, each an enum, a record or a scalar,
+// none a record with its own context, nor named context in a record with
+// one; and no
 // record that contains itself, which could never be written down, since
 // every field is given.
 function checkRecords(file: ParseResult, names: Names, report: Report): void {
@@ -278,9 +280,24 @@ function checkRecords(file: ParseResult, names: Names, report: Report): void {
         report("duplicate-field", `${field.name} is already a field of ${record.name}`, field);
       }
       seen.add(field.name);
+      if (record.context && field.name === "context") {
+        report(
+          "reserved-name",
+          `context is ${record.name}'s context; choose another field name`,
+          field,
+        );
+      }
       const type = field.type.name;
       if (!names.is(type, "enum") && !names.is(type, "record") && !names.is(type, "scalar")) {
         report("unknown-type", names.not(type, "enum", "record", "scalar"), field.type);
+      }
+      const inner = file.records.find(({ name }) => name === type);
+      if (names.kindOf(type) === "record" && inner?.context) {
+        report(
+          "nested-context",
+          `${record.name}.${field.name} is ${article(type)} ${type}, which has its own context`,
+          field,
+        );
       }
     }
   }

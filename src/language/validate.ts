@@ -1,6 +1,7 @@
 import { childPath, type Diagnostic, Diagnostics } from "../compiler/diagnostic.js";
 import { type JsonNode, parseJson } from "../compiler/json.js";
 import type { ParseResult, RecordDeclaration } from "./ast.js";
+import { states as evaluate } from "./evaluate.js";
 import { article, Names } from "./names.js";
 import { scalar } from "./scalars.js";
 
@@ -37,14 +38,191 @@ export function validate(file: ParseResult, recordName: string, source: string):
       node.span.start,
     );
 
-  const checkRecord = (node: JsonNode, name: string, path: string) => {
+  // A stored record's context: one combination of a type, as its type, its
+  // profile when the file has profiles, the dimensions the type needs that
+  // the profile does not give, and a value for every state that exists there.
+  const checkContext = (node: JsonNode, path: string) => {
+    if (node.kind !== "object") {
+      wrong(node, path, "a context (an object)");
+      return;
+    }
+    const profiled = file.profiles.length > 0;
+    const keys = profiled
+      ? ["type", "profile", "dimensions", "states"]
+      : ["type", "dimensions", "states"];
+    const member = (key: string) => node.members.find((candidate) => candidate.key.value === key);
+    for (const { key } of node.members) {
+      if (!keys.includes(key.value)) {
+        diagnostics.report(
+          "unknown-field",
+          `context has no field ${JSON.stringify(key.value)} (${keys.join(", ")})`,
+          childPath(path, key.value),
+          key.span.start,
+        );
+      }
+    }
+    for (const key of keys) {
+      if (member(key) === undefined) {
+        diagnostics.report("missing-field", `context is missing ${key}`, path, node.span.start);
+      }
+    }
+    // A string among the choices, or a problem; the string when it is one.
+    const choose = (key: string, of: string, choices: string[], at: string, value?: JsonNode) => {
+      if (value === undefined) return undefined;
+      if (value.kind !== "string") {
+        wrong(value, at, `${article(of)} ${of} (a string)`);
+        return undefined;
+      }
+      if (!choices.includes(value.value)) {
+        diagnostics.report(
+          "unknown-value",
+          `${JSON.stringify(value.value)} is not ${key} (${choices.join(", ")})`,
+          at,
+          value.span.start,
+        );
+        return undefined;
+      }
+      return value.value;
+    };
+    const typeName = choose(
+      "a type",
+      "type",
+      file.types.map(({ name }) => name),
+      childPath(path, "type"),
+      member("type")?.value,
+    );
+    const type = file.types.find(({ name }) => name === typeName);
+    if (type === undefined) return;
+    const profile = profiled
+      ? choose(
+          "a profile",
+          "profile",
+          file.profiles.map(({ name }) => name),
+          childPath(path, "profile"),
+          member("profile")?.value,
+        )
+      : undefined;
+    // The dimensions the profiles give, and so the ones to give here.
+    const environment = file.environments.find(
+      ({ name }) => name === file.profiles[0]?.environment.name,
+    );
+    const given = profiled ? (environment?.dimensions.map(({ name }) => name) ?? []) : [];
+    const expected = type.needs.map(({ name }) => name).filter((name) => !given.includes(name));
+    const chosen: Record<string, string> = {};
+    let complete = !profiled || profile !== undefined;
+    const group = (
+      key: "dimensions" | "states",
+      names: string[],
+      unknown: (name: string) => string,
+      check: (name: string, value: JsonNode, at: string) => boolean,
+    ) => {
+      const value = member(key)?.value;
+      const at = childPath(path, key);
+      if (value === undefined) {
+        complete = false;
+        return;
+      }
+      if (value.kind !== "object") {
+        wrong(value, at, "an object");
+        complete = false;
+        return;
+      }
+      for (const entry of value.members) {
+        const entryAt = childPath(at, entry.key.value);
+        if (!names.includes(entry.key.value)) {
+          diagnostics.report(
+            "unknown-field",
+            unknown(entry.key.value),
+            entryAt,
+            entry.key.span.start,
+          );
+        } else if (!check(entry.key.value, entry.value, entryAt)) {
+          complete = false;
+        }
+      }
+      for (const name of names) {
+        if (!value.members.some((entry) => entry.key.value === name)) {
+          diagnostics.report(
+            "missing-field",
+            `context.${key} is missing ${name}`,
+            at,
+            value.span.start,
+          );
+          complete = false;
+        }
+      }
+    };
+    const has = expected.length > 0 ? expected.join(", ") : "nothing";
+    group(
+      "dimensions",
+      expected,
+      (name) =>
+        given.includes(name)
+          ? `${name} is given by the profile; context.dimensions has ${has}`
+          : `${type.name} does not need ${name}; context.dimensions has ${has}`,
+      (name, value, at) => {
+        const result = choose(`a value of ${name}`, name, names.values(name) ?? [], at, value);
+        if (result !== undefined) chosen[name] = result;
+        return result !== undefined;
+      },
+    );
+    const where = [
+      ...(profile === undefined ? [] : [profile]),
+      ...expected.map((name) => `${name} ${chosen[name]}`),
+    ];
+    const states = type.states.map(({ name }) => name);
+    const pending: { name: string; value: string; at: string; start: number }[] = [];
+    group(
+      "states",
+      states,
+      (name) => `${type.name} has no state ${JSON.stringify(name)} (${states.join(", ")})`,
+      (name, value, at) => {
+        const state = type.states.find((candidate) => candidate.name === name);
+        const values = names.values(state?.enum.name ?? "") ?? [];
+        const result = choose(`a value of ${name}`, name, values, at, value);
+        if (result !== undefined)
+          pending.push({ name, value: result, at, start: value.span.start });
+        return result !== undefined;
+      },
+    );
+    if (!complete) return;
+    // Each state value must exist in that combination.
+    const row = evaluate(file, type.name).rows.find(
+      (candidate) =>
+        (profile === undefined || candidate.profile === profile) &&
+        expected.every((name) => candidate.when[name] === chosen[name]),
+    );
+    for (const { name, value, at, start } of pending) {
+      const available = row?.states[name] ?? [];
+      if (!available.includes(value)) {
+        diagnostics.report(
+          "unknown-value",
+          `${JSON.stringify(value)} is not a value of ${name} on ${where.join(", ")} (${available.join(", ")})`,
+          at,
+          start,
+        );
+      }
+    }
+  };
+
+  const checkRecord = (node: JsonNode, name: string, path: string, stored = false) => {
     const record = records.get(name) as RecordDeclaration;
     if (node.kind !== "object") {
       wrong(node, path, `${article(name)} ${name} record (an object)`);
       return;
     }
+    const withContext = stored && record.context;
+    if (withContext) {
+      const context = node.members.find(({ key }) => key.value === "context");
+      if (context === undefined) {
+        diagnostics.report("missing-field", `${name} is missing context`, path, node.span.start);
+      } else {
+        checkContext(context.value, childPath(path, "context"));
+      }
+    }
     const fields = record.fields.map((field) => field.name);
     for (const { key, value } of node.members) {
+      if (withContext && key.value === "context") continue;
       const at = childPath(path, key.value);
       const field = record.fields.find((candidate) => candidate.name === key.value);
       if (field === undefined) {
@@ -105,7 +283,7 @@ export function validate(file: ParseResult, recordName: string, source: string):
     wrong(root, "$", `a list of ${recordName} records`);
   } else {
     root.elements.forEach((element, index) => {
-      checkRecord(element, recordName, `$[${index}]`);
+      checkRecord(element, recordName, `$[${index}]`, true);
     });
   }
   return diagnostics.items.sort((a, b) => a.line - b.line || a.column - b.column);

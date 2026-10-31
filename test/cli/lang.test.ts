@@ -18,7 +18,7 @@ describe("lang check", () => {
     const result = run("check", "wordmark.dxn");
     expect([result.code, JSON.parse(result.stdout).records]).toEqual([
       0,
-      [{ name: "Source", fields: [{ name: "tool", type: "Tool" }] }],
+      [{ name: "Source", context: false, fields: [{ name: "tool", type: "Tool" }] }],
     ]);
   });
 
@@ -156,13 +156,19 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 
 describe("lang validate", () => {
   const schema = `enum Tool = pen-dev | code
-record Source {
+type Card {}
+record Source with context {
   tool: Tool
 }
-record Evidence {
+record Evidence with context {
   at: Timestamp
 }
+record Part {
+  tool: Tool
+}
 `;
+  // A stored record of Card, which has one combination.
+  const card = '"context": { "type": "Card", "dimensions": {}, "states": {} }';
   // A folder with the schema in it, and these files, by path from it.
   const project = (files: Record<string, string>, at = "evidence.dxn") => {
     const root = writeProject({});
@@ -177,8 +183,8 @@ record Evidence {
 
   it("checks every JSON file in each record's folder, and says what it checked", () => {
     const run = project({
-      "source/designs.json": '[{ "tool": "pen-dev" }, { "tool": "code" }]',
-      "source/code.json": '[{ "tool": "code" }]',
+      "source/designs.json": `[{ ${card}, "tool": "pen-dev" }, { ${card}, "tool": "code" }]`,
+      "source/code.json": `[{ ${card}, "tool": "code" }]`,
       "source/notes.md": "not data",
       "source/old/ignored.json": "not checked",
     });
@@ -193,6 +199,15 @@ record Evidence {
     ]);
   });
 
+  it("refuses a stored record without a context: it would be a fact about nothing", () => {
+    const result = project({ "part/a.json": '[{ "tool": "code" }]' })("evidence.dxn");
+    expect([result.code, result.stderr, result.stdout]).toEqual([
+      1,
+      'dxn: Part is stored in part/, but has no context; declare "record Part with context"\n',
+      "",
+    ]);
+  });
+
   it("leaves out a record with no folder: it is not stored", () => {
     const result = project({})("evidence.dxn");
     expect([result.code, JSON.parse(result.stdout).stored]).toEqual([0, []]);
@@ -200,15 +215,15 @@ record Evidence {
 
   it("reports every problem in every file, with the file's path, and fails", () => {
     const result = project({
-      "source/a.json": '[{ "tool": "figma" }]',
-      "evidence/b.json": '[{ "at": "yesterday" }]',
-      "evidence/c.json": '{ "at": "2026-10-31T08:50:05Z" }',
+      "source/a.json": `[{ ${card}, "tool": "figma" }]`,
+      "evidence/b.json": `[{ ${card}, "at": "yesterday" }]`,
+      "evidence/c.json": `{ ${card}, "at": "2026-10-31T08:50:05Z" }`,
     })("evidence.dxn");
     expect([result.code, result.stderr.split("\n"), result.stdout]).toEqual([
       1,
       [
-        'source/a.json:1:12: unknown-value: $[0].tool: "figma" is not a value of Tool (pen-dev, code)',
-        'evidence/b.json:1:10: invalid-value: $[0].at: "yesterday" is not a Timestamp: an ISO 8601 date and time with a time zone, e.g. 2026-10-31T08:50:05Z',
+        'source/a.json:1:75: unknown-value: $[0].tool: "figma" is not a value of Tool (pen-dev, code)',
+        'evidence/b.json:1:73: invalid-value: $[0].at: "yesterday" is not a Timestamp: an ISO 8601 date and time with a time zone, e.g. 2026-10-31T08:50:05Z',
         "evidence/c.json:1:1: wrong-kind: $: expected a list of Evidence records, found an object",
         "",
       ],
@@ -218,11 +233,14 @@ record Evidence {
 
   it("looks for the folders next to the file", () => {
     const result = project(
-      { "model/source/a.json": '[{ "tool": "lisp" }]', "source/b.json": '[{ "tool": "lisp" }]' },
+      {
+        "model/source/a.json": `[{ ${card}, "tool": "lisp" }]`,
+        "source/b.json": `[{ ${card}, "tool": "lisp" }]`,
+      },
       "model/evidence.dxn",
     )("model/evidence.dxn");
     expect(result.stderr).toBe(
-      'model/source/a.json:1:12: unknown-value: $[0].tool: "lisp" is not a value of Tool (pen-dev, code)\n',
+      'model/source/a.json:1:75: unknown-value: $[0].tool: "lisp" is not a value of Tool (pen-dev, code)\n',
     );
   });
 
@@ -234,10 +252,15 @@ record Evidence {
 
 describe("lang rename", () => {
   const schema = `enum Actor = design-agent | reviewer
-record Evidence {
+type Card {
+  states owner: Actor
+}
+record Evidence with context {
   actor: Actor
 }
 `;
+  const card = (owner: string) =>
+    `"context": { "type": "Card", "dimensions": {}, "states": { "owner": "${owner}" } }`;
   const project = (data: string) => {
     const root = writeProject({});
     writeFileSync(join(root, "evidence.dxn"), schema);
@@ -247,7 +270,8 @@ record Evidence {
     const read = (path: string) => readFileSync(join(root, path), "utf8");
     return { run, read };
   };
-  const stored = '[{ "actor": "design-agent" }, { "actor": "reviewer" }]\n';
+  const stored = `[{ ${card("design-agent")}, "actor": "design-agent" }, { ${card("reviewer")}, "actor": "reviewer" }]\n`;
+  const renamed = `[{ ${card("designer")}, "actor": "designer" }, { ${card("reviewer")}, "actor": "reviewer" }]\n`;
 
   it("renames an enum value in the file and in every stored record, and says what changed", () => {
     const { run, read } = project(stored);
@@ -265,10 +289,10 @@ record Evidence {
         from: "design-agent",
         to: "designer",
         written: ["evidence.dxn", "evidence/page.json"],
-        records: 1,
+        records: 2,
       },
       schema.replace("design-agent", "designer"),
-      '[{ "actor": "designer" }, { "actor": "reviewer" }]\n',
+      renamed,
     ]);
   });
 
@@ -292,7 +316,7 @@ record Evidence {
         dryRun: true,
         written: {
           "evidence.dxn": schema.replace("design-agent", "designer"),
-          "evidence/page.json": '[{ "actor": "designer" }, { "actor": "reviewer" }]\n',
+          "evidence/page.json": renamed,
         },
       },
       schema,
@@ -320,11 +344,11 @@ record Evidence {
   });
 
   it("refuses while the stored records have problems, so a rename never mixes with them", () => {
-    const { run, read } = project('[{ "actor": "maker" }]\n');
+    const { run, read } = project(`[{ ${card("reviewer")}, "actor": "maker" }]\n`);
     const result = run("evidence.dxn", "Actor.design-agent", "designer");
     expect([result.code, result.stderr, read("evidence.dxn")]).toEqual([
       1,
-      'evidence/page.json:1:13: unknown-value: $[0].actor: "maker" is not a value of Actor (design-agent, reviewer)\n',
+      'evidence/page.json:1:97: unknown-value: $[0].actor: "maker" is not a value of Actor (design-agent, reviewer)\n',
       schema,
     ]);
   });

@@ -73,6 +73,9 @@ export interface Field extends Located {
 // A record: plain data, a named group of typed fields, every one of which is
 // given.
 export interface RecordDeclaration extends Declaration {
+  // Whether it is a fact about one combination of a type: each stored one
+  // then has a context, which its fields do not list.
+  context: boolean;
   fields: Field[];
 }
 

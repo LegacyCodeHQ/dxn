@@ -173,6 +173,26 @@ function storedData(parsed: ParseResult, file: string, cwd: string): Stored[] {
   return stored;
 }
 
+// Reports each record stored without a context, which would be a fact about
+// nothing; whether there is one.
+function storedWithoutContext(
+  parsed: ParseResult,
+  file: string,
+  cwd: string,
+  io: Context["io"],
+): boolean {
+  const directory = resolve(cwd, dirname(file));
+  let found = false;
+  for (const { name, context } of parsed.records) {
+    if (context || storedFiles(directory, name) === undefined) continue;
+    io.stderr(
+      `dxn: ${name} is stored in ${folderOf(name)}/, but has no context; declare "record ${name} with context"\n`,
+    );
+    found = true;
+  }
+  return found;
+}
+
 // Checks stored data against the file, reporting every problem; whether all of
 // it is valid.
 function checkStored(parsed: ParseResult, stored: Stored[], io: Context["io"]): boolean {
@@ -194,6 +214,7 @@ const validateCommand: Command = command(usage, (args, { io, cwd }) => {
   }
   const parsed = read(file, cwd, io);
   if (typeof parsed === "number") return parsed;
+  if (storedWithoutContext(parsed, file, cwd, io)) return 1;
   const data = storedData(parsed, file, cwd);
   if (!checkStored(parsed, data, io)) return 1;
   const directory = resolve(cwd, dirname(file));
@@ -249,6 +270,7 @@ const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
     io.stderr(`dxn: ${refusal}\n`);
     return 1;
   }
+  if (storedWithoutContext(parsed, file, cwd, io)) return 1;
   const stored = storedData(parsed, file, cwd);
   if (!checkStored(parsed, stored, io)) return 1;
   const path = resolve(cwd, file);

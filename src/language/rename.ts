@@ -47,8 +47,9 @@ export function renameInSource(
 }
 
 // Renames a value of an enum in stored records of a record: every field of
-// that enum, in nested records too, keeping the rest of the file as it was.
-// Data without problems.
+// that enum, in nested records too, and every state of that enum in a
+// record's context, keeping the rest of the file as it was. Data without
+// problems.
 export function renameInData(
   file: ParseResult,
   record: string,
@@ -59,19 +60,42 @@ export function renameInData(
 ): { source: string; changed: number } {
   const names = new Names(file);
   const edits: { start: number; end: number; text: string }[] = [];
-  const visit = (node: JsonNode, type: string) => {
+  const rename = (node: JsonNode) => {
+    if (node.kind === "string" && node.value === from) {
+      edits.push({ start: node.span.start, end: node.span.end, text: JSON.stringify(to) });
+    }
+  };
+  // The states in a context, those of that enum renamed.
+  const context = (node: JsonNode) => {
+    if (node.kind !== "object") return;
+    const typeName = node.members.find(({ key }) => key.value === "type")?.value;
+    const type = file.types.find(
+      ({ name }) => typeName?.kind === "string" && name === typeName.value,
+    );
+    const states = node.members.find(({ key }) => key.value === "states")?.value;
+    if (type === undefined || states?.kind !== "object") return;
+    for (const { key, value } of states.members) {
+      const state = type.states.find(({ name }) => name === key.value);
+      if (state?.enum.name === enumName) rename(value);
+    }
+  };
+  const visit = (node: JsonNode, type: string, stored = false) => {
     if (names.kindOf(type) === "record") {
       const declaration = file.records.find(({ name }) => name === type);
       if (node.kind !== "object" || declaration === undefined) return;
       for (const { key, value } of node.members) {
+        if (stored && declaration.context && key.value === "context") {
+          context(value);
+          continue;
+        }
         const field = declaration.fields.find(({ name }) => name === key.value);
         if (field !== undefined) visit(value, field.type.name);
       }
-    } else if (type === enumName && node.kind === "string" && node.value === from) {
-      edits.push({ start: node.span.start, end: node.span.end, text: JSON.stringify(to) });
+    } else if (type === enumName) {
+      rename(node);
     }
   };
   const { root } = parseJson(source);
-  if (root?.kind === "array") for (const element of root.elements) visit(element, record);
+  if (root?.kind === "array") for (const element of root.elements) visit(element, record, true);
   return { source: replace(source, edits), changed: edits.length };
 }

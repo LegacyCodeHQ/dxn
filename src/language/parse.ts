@@ -13,7 +13,7 @@
 //   environment = "environment" name "=" name { "x" [newline] name } newline
 //   profile     = "profile" profile-name ":" name "{" { assignment ( "," | newline ) } "}"
 //   assignment  = name "=" value
-//   record      = "record" name "{" { blank-line | field-name ":" name newline } "}"
+//   record      = "record" name [ "with" "context" ] "{" { blank-line | field-name ":" name newline } "}"
 //   name        = capital letter, then letters and digits
 //   value       = a letter or digit, then letters, digits and hyphens
 //   comment     = "#" to the end of the line, skipped like a space
@@ -256,11 +256,18 @@ export function parse(source: string): ParseResult {
     });
   };
 
-  // A record: "record <Name> { <field>: <Type> ... }", a field a line.
+  // A record: "record <Name> [with context] { <field>: <Type> ... }", a field
+  // a line.
   const recordDeclaration = () => {
     next();
     const named = name("record", 'a record name after "record"', capitalized);
-    const record = keep(result.records, { ...named, fields: [] });
+    const record = keep(result.records, { ...named, context: false, fields: [] });
+    const after = peek();
+    if (after.kind === "word" && after.text === "with") {
+      next();
+      keyword("context", '"context" after "with"');
+      record.context = true;
+    }
     expect("{", '"{" after the record name');
     braces(record.name, () => {
       const field = name("field", "a field name", lowercase);
