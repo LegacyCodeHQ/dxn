@@ -117,6 +117,16 @@ export function validate(file: ParseResult, recordName: string, source: string):
       }
       try {
         place = placement(file, placed.value.value);
+        // Only a path from a type nothing contains is an element of a tree.
+        const root = place.steps[0]?.type;
+        const container = file.types.find(({ children }) =>
+          children.some((child) => child.type.name === root?.name),
+        );
+        if (container !== undefined) {
+          throw new Error(
+            `${root?.name} is inside ${container.name}; a path starts at a type nothing contains`,
+          );
+        }
       } catch (error) {
         diagnostics.report(
           "unknown-value",

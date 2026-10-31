@@ -75,6 +75,20 @@ describe("a context for a child", () => {
     ]);
   });
 
+  it("starts at a type nothing contains, so it names an element of a tree", () => {
+    expect(
+      check(
+        toggle({
+          path: "Menu.toggle",
+          dimensions: { Breakpoint: "base" },
+          parents: { menu: "closed" },
+        }),
+      ),
+    ).toEqual([
+      'unknown-value: $[0].context.path: "Menu.toggle" is not a path: Menu is inside Toolbar; a path starts at a type nothing contains',
+    ]);
+  });
+
   it("gives the states of the parents that decide where it is, or that it is given", () => {
     expect([
       check(toggle({ parents: { layout: "compact" } })),
