@@ -95,7 +95,9 @@ type BlogLink needs Breakpoint {
           "hover = hovered only when Keyboard = keyboard",
         ),
       ),
-    ).toEqual(["8:3: duplicate-rule: hover = hovered already has a condition at line 7"]);
+    ).toEqual([
+      '8:3: duplicate-rule: hover = hovered already has a condition at line 7; join them in one: "hover = hovered only when Pointer = mouse and Keyboard = keyboard"',
+    ]);
   });
 
   it("says what it expected when the syntax is wrong", () => {

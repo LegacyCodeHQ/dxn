@@ -219,12 +219,26 @@ export function parse(source: string): ParseResult {
     }
     return read;
   };
+  // An "and" or an "or" next, on this line or at the start of the next: one
+  // there is not a rule on a state of that name, which has "=" after it.
+  const joining = (at: number) => {
+    const token = tokens[at];
+    return (
+      token?.kind === "word" &&
+      (token.text === "and" || token.text === "or") &&
+      tokens[at + 1]?.kind !== "="
+    );
+  };
   const junction = (subject: string, after: string): Condition => {
     const terms = [term(subject, after)];
     const operators: Token[] = [];
-    while (peek().kind === "word" && (peek().text === "and" || peek().text === "or")) {
+    for (;;) {
+      if (peek().kind === "newline" && joining(position + 1)) next();
+      if (!joining(position)) break;
       const operator = next();
       operators.push(operator);
+      // A line can also end with it.
+      if (peek().kind === "newline") next();
       terms.push(term(subject, JSON.stringify(operator.text)));
     }
     const first = operators[0];
@@ -258,7 +272,10 @@ export function parse(source: string): ParseResult {
   const term = (subject: string, after: string): Condition => {
     if (peek().kind === "(") {
       next();
+      // Inside brackets, lines can break after "(" and before ")".
+      if (peek().kind === "newline") next();
       const inner = junction(subject, '"("');
+      if (peek().kind === "newline" && tokens[position + 1]?.kind === ")") next();
       expect(")", `")" after ${JSON.stringify(previous().text)}`);
       return inner;
     }

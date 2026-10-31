@@ -376,7 +376,24 @@ link.dxn:7:3: warning: vacuous-condition: Pointer = mouse or Pointer = touch is 
 ```
 
 Each state value has at most one rule, so there is a single place to read
-where it exists. A second rule for the same value is an error.
+where it exists, and no question of whether a second one adds to the first,
+narrows it or replaces it. A second rule for the same value is an error,
+which gives the one rule to write instead:
+
+```
+link.dxn:8:3: duplicate-rule: hover = hovered already has a condition at line 7; join them in one: "hover = hovered only when Pointer = mouse and Keyboard = keyboard"
+```
+
+A long condition carries on to the next line, before or after an `and` or an
+`or`, and inside brackets, so each part can have a comment of its own:
+
+```
+hover = hovered only when Pointer = mouse   # touch has no hover
+  and enabled = enabled                     # nor does a disabled button
+```
+
+A line break never changes the order: `and` and `or` still mix only in
+brackets.
 
 A condition can also compare another of the type's own states, where two
 states are not independent: a disabled button is never hovered.
@@ -1526,8 +1543,8 @@ state       = "state" field { "," [newline] field } newline
 branch      = value { "," value } "->" value       # a when's branches are split by commas or lines
 field       = state-name ":" Name { "." Name }
 rule        = state-name "=" value "only" "when" condition newline
-condition   = term { "and" term } | term { "or" term }          # and and or mix only in brackets
-term        = comparison | "(" condition ")"
+condition   = term { [newline] "and" [newline] term } | term { [newline] "or" [newline] term }   # mixed only in brackets
+term        = comparison | "(" [newline] condition [newline] ")"
 comparison  = name ( "=" value | "in" "(" value { "," value } ")" )   # on a dimension the type needs, or one of its states
 environment = "environment" Name "=" Name { "x" [newline] Name } newline
 profile     = "profile" profile-name ":" Name "{" { assignment ( "," | newline ) } "}"
@@ -1552,7 +1569,7 @@ comment     = "#" to the end of the line
 | `duplicate-name`                                                              | error    | a name is declared twice in the file, or an expectation's title                                  |
 | `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension, condition or `when`                                 |
 | `duplicate-state`                                                             | error    | a type has two states with one name                                                              |
-| `duplicate-rule`                                                              | error    | a state value has two rules                                                                      |
+| `duplicate-rule`                                                              | error    | a state value has two rules; the message gives the one rule that joins them                      |
 | `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment, a profile or a modifier             |
 | `unknown-enum`                                                                | error    | a state's values come from something that is not an enum                                         |
 | `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                                            |

@@ -672,9 +672,17 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       const key = `${rule.state.name}=${rule.value.name}`;
       const earlier = conditioned.get(key);
       if (earlier !== undefined) {
+        // Both, as one condition: an "and" of each, an "and" inside not in
+        // brackets.
+        const both: Condition = {
+          kind: "and",
+          terms: [earlier.when, rule.when].flatMap((when) =>
+            when.kind === "and" ? when.terms : [when],
+          ),
+        };
         report(
           "duplicate-rule",
-          `${rule.state.name} = ${rule.value.name} already has a condition at line ${earlier.state.line}`,
+          `${rule.state.name} = ${rule.value.name} already has a condition at line ${earlier.state.line}; join them in one: "${rule.state.name} = ${rule.value.name} only when ${conditionText(both)}"`,
           rule.state,
         );
       } else {

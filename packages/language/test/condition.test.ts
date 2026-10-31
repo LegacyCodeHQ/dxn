@@ -75,8 +75,53 @@ describe("a condition with and and or", () => {
       problems(link("hover = hovered only when Pointer = mouse and")),
     ]).toEqual([
       ['9:45: syntax-error: expected ")" after "mouse", found the end of the line'],
-      ['9:48: syntax-error: expected a dimension after "and", found the end of the line'],
+      ['10:1: syntax-error: expected a dimension after "and", found "}"'],
     ]);
+  });
+
+  it("carries on to the next line before or after an and or an or", () => {
+    const rules = (...lines: string[]) => {
+      const file = parse(link(...lines));
+      return [problems(link(...lines)), file.types[0]?.rules.map(({ when }) => text(when))];
+    };
+    expect([
+      rules("hover = hovered only when Pointer = mouse and\n    Breakpoint in (lg, xl)"),
+      rules(
+        "hover = hovered only when Pointer = mouse   # touch has no hover\n    and Breakpoint in (lg, xl)   # nor a narrow screen",
+      ),
+      rules(
+        "hover = hovered only when Pointer = mouse and (\n    Breakpoint = lg\n    or Breakpoint = xl\n  )",
+      ),
+    ]).toEqual([
+      [[], ["(Pointer = mouse and Breakpoint in (lg, xl))"]],
+      [[], ["(Pointer = mouse and Breakpoint in (lg, xl))"]],
+      [[], ["(Pointer = mouse and (Breakpoint = lg or Breakpoint = xl))"]],
+    ]);
+    expect([
+      problems(
+        link(
+          "hover = hovered only when Pointer = mouse and Breakpoint = lg\n    or Breakpoint = xl",
+        ),
+      ),
+      problems(menu("menu = open\n    and Breakpoint = base")),
+    ]).toEqual([
+      [
+        '10:5: syntax-error: "and" and "or" need brackets to mix: write "(Pointer = mouse and Breakpoint = lg) or Breakpoint = xl" or "Pointer = mouse and (Breakpoint = lg or Breakpoint = xl)"',
+      ],
+      [],
+    ]);
+  });
+
+  it("does not carry on to a rule on a state named and", () => {
+    const named = `dimension Pointer = mouse | touch
+enum Hover = rest | hovered
+type Link needs Pointer {
+  state hover: Hover, and: Hover
+  hover = hovered only when Pointer = mouse
+  and = hovered only when Pointer = mouse
+}
+`;
+    expect([problems(named), parse(named).types[0]?.rules.length]).toEqual([[], 2]);
   });
 
   it("gives a value where the whole condition holds", () => {
