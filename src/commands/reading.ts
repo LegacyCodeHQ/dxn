@@ -205,7 +205,11 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
         // Values of a dimension the profiles cover that no profile uses.
         ...(() => {
           if (!resolver.profiled.has(name)) return {};
-          const used = new Set([...resolver.profiles.values()].map((profile) => profile[name]));
+          const used = new Set(
+            [...resolver.profiles.values()].flatMap((combinations) =>
+              combinations.map((profile) => profile[name]),
+            ),
+          );
           const unused = dimension.values.filter((value) => !used.has(value));
           return unused.length === 0 ? {} : { inNoProfile: unused };
         })(),
@@ -263,12 +267,8 @@ export const axes = readCommand(axesUsage, (resolver, args, io) => {
       ...(resolver.profiles.size === 0
         ? {}
         : {
-            profiles: profileList(resolver).filter(({ values: profile }) =>
-              matching.some((view) =>
-                Object.keys(view)
-                  .filter((name) => resolver.profiled.has(name))
-                  .every((name) => profile[name] === view[name]),
-              ),
+            profiles: profileList(resolver).filter(({ name }) =>
+              matching.some((view) => resolver.inProfile(name, view)),
             ),
           }),
     });
@@ -296,9 +296,19 @@ export const axes = readCommand(axesUsage, (resolver, args, io) => {
   });
 });
 
-// Every profile, by name, with its dimension values.
-function profileList(resolver: Resolver): { name: string; values: Record<string, string> }[] {
-  return [...resolver.profiles].map(([name, values]) => ({ name, values }));
+// Every profile, by name, with its dimension values, or its combinations
+// when it has several.
+function profileList(
+  resolver: Resolver,
+): ({ name: string } & (
+  | { values: Record<string, string> }
+  | { combinations: Record<string, string>[] }
+))[] {
+  return [...resolver.profiles].map(([name, combinations]) =>
+    combinations.length === 1
+      ? { name, values: combinations[0] as Record<string, string> }
+      : { name, combinations },
+  );
 }
 
 // The profiled dimensions' values from the one profile that fits, or a
@@ -650,7 +660,7 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
     const lines = markdown(
       [...(profiled ? ["profile"] : []), ...names],
       kept.map((view) => [
-        ...(profiled ? [profileOf(resolver, view) ?? "—"] : []),
+        ...(profiled ? [resolver.profilesOf(view).join(", ") || "—"] : []),
         ...names.map((name) => view[name] ?? "—"),
       ]),
     );
@@ -659,15 +669,6 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
   }
   print(io, { node: id, views: kept });
 });
-
-// The profile a context or view matches, by the dimensions profiles cover.
-function profileOf(resolver: Resolver, context: NodeContext): string | undefined {
-  return [...resolver.profiles].find(([, profile]) =>
-    Object.keys(context)
-      .filter((name) => resolver.profiled.has(name))
-      .every((name) => profile[name] === context[name]),
-  )?.[0];
-}
 
 const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [--root <root-id>] [--table]
 
@@ -699,10 +700,10 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
   const roots = values.root === undefined ? resolver.roots(id) : [values.root];
   const rows = roots.flatMap((root) =>
     resolver.contexts(id, root).map((context) => {
-      const profile = profileOf(resolver, context);
+      const profiles = resolver.profilesOf(context);
       return {
         root,
-        ...(profile === undefined ? {} : { profile }),
+        ...(resolver.profiles.size === 0 ? {} : { profiles }),
         context,
         evidence: (resolver.project.evidence?.[root]?.evidence ?? [])
           .filter(
@@ -723,11 +724,11 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
   );
   if (values.table === true) {
     const names = [...new Set(rows.flatMap(({ context }) => Object.keys(context)))];
-    const profiled = rows.some((row) => row.profile !== undefined);
+    const profiled = resolver.profiles.size > 0;
     const lines = markdown(
       [...(profiled ? ["profile"] : []), ...names, actor],
       rows.map((row) => [
-        ...(profiled ? [row.profile ?? "—"] : []),
+        ...(profiled ? [row.profiles?.join(", ") || "—"] : []),
         ...names.map((name) => row.context[name] ?? "—"),
         row.evidence.length === 0
           ? "—"

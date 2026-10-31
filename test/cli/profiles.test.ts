@@ -311,17 +311,12 @@ describe("profile commands", () => {
     );
   });
 
-  it("refuse a combination that another profile already has", () => {
+  it("accept a combination that another profile already has", () => {
     const { run } = cliProject(files);
-    const result = run(
-      "profile",
-      "add",
-      "ipad-keyboard",
-      "breakpoint=lg",
-      "pointer=mouse",
-      "keyboard=keyboard",
-    );
-    expect([result.code, result.stderr.includes("duplicate-profile")]).toEqual([1, true]);
+    expect(
+      run("profile", "add", "ipad-keyboard", "breakpoint=lg", "pointer=mouse", "keyboard=keyboard")
+        .code,
+    ).toBe(0);
   });
 
   it("follow a renamed dimension value", () => {

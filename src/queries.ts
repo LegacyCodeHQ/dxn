@@ -86,12 +86,7 @@ export function contextFilter(
   };
   // A profile keeps the contexts with its values for the profiled dimensions
   // they name.
-  const inProfile = (name: string, context: Context) => {
-    const profile = resolver.profiles.get(name) ?? {};
-    return Object.keys(context)
-      .filter((key) => resolver.profiled.has(key))
-      .every((key) => profile[key] === context[key]);
-  };
+  const inProfile = (name: string, context: Context) => resolver.inProfile(name, context);
   return (context) =>
     wanted.every(([name, value]) =>
       name === "profile" && resolver.profiles.size > 0

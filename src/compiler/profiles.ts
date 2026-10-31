@@ -5,22 +5,24 @@ import type { DimensionSymbol } from "./symbols.js";
 
 // The profiles that compiled, and the dimensions they cover.
 export interface ProfilesSymbol {
-  // Profile name -> dimension -> value.
-  profiles: Map<string, Map<string, string>>;
+  // Every distinct combination some profile lists: dimension -> value.
+  combinations: Map<string, string>[];
   dimensions: Set<string>;
   // Whether profiles.json has no errors, so its profiles are all there.
   complete: boolean;
 }
 
-// profiles.json: the combinations of dimension values that exist. Each
-// profile gives one value for each dimension the profiles cover, and no two
-// profiles give the same combination.
+// profiles.json: the setups that exist. A profile is one combination of
+// dimension values, or a list of them for a setup that can be in several, such
+// as a tablet in either orientation. Every combination gives one value for
+// each dimension the profiles cover. Profiles may share a combination, but a
+// profile lists each of its combinations once.
 export function checkProfilesFile(
   root: JsonNode,
   diagnostics: Diagnostics,
   dimensions: Map<string, { symbol: DimensionSymbol }>,
 ): ProfilesSymbol {
-  const result: ProfilesSymbol = { profiles: new Map(), dimensions: new Set(), complete: false };
+  const result: ProfilesSymbol = { combinations: [], dimensions: new Set(), complete: false };
   const before = diagnostics.items.length;
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) return result;
@@ -33,61 +35,77 @@ export function checkProfilesFile(
   const profiles = list === undefined ? undefined : expectObject(diagnostics, list, "$.profiles");
   if (profiles === undefined) return result;
 
-  const checked: { name: string; values: Map<string, string>; item: ObjectNode; path: string }[] =
-    [];
+  const checked: {
+    name: string;
+    values: Map<string, string>;
+    item: ObjectNode;
+    path: string;
+  }[] = [];
   for (const { key, value } of profiles.members) {
     const path = childPath("$.profiles", key.value);
     if (!expectName(diagnostics, key, path)) continue;
-    const item = expectObject(diagnostics, value, path);
-    if (item === undefined) continue;
-    if (item.members.length === 0) {
-      report(
-        diagnostics,
-        "empty-values",
-        "a profile names at least one dimension and its value",
-        path,
-        item,
-      );
+    // One combination, or a list of them.
+    const items: [JsonNode, string][] =
+      value.kind === "array"
+        ? value.elements.map((element, index) => [element, `${path}[${index}]`])
+        : [[value, path]];
+    if (value.kind === "array" && value.elements.length === 0) {
+      report(diagnostics, "empty-values", "a profile lists at least one combination", path, value);
       continue;
     }
-    const values = new Map<string, string>();
-    let valid = true;
-    for (const { key: name, value: given } of item.members) {
-      const valuePath = childPath(path, name.value);
-      const dimension = dimensions.get(name.value);
-      if (dimension === undefined) {
+    for (const [element, here] of items) {
+      const item = expectObject(diagnostics, element, here);
+      if (item === undefined) continue;
+      if (item.members.length === 0) {
         report(
           diagnostics,
-          "undeclared-dimension",
-          `dimension ${JSON.stringify(name.value)} is not declared`,
-          valuePath,
-          name,
+          "empty-values",
+          "a profile names at least one dimension and its value",
+          here,
+          item,
         );
-        valid = false;
         continue;
       }
-      if (!expectName(diagnostics, given, valuePath)) {
-        valid = false;
-        continue;
+      const values = new Map<string, string>();
+      let valid = true;
+      for (const { key: name, value: given } of item.members) {
+        const valuePath = childPath(here, name.value);
+        const dimension = dimensions.get(name.value);
+        if (dimension === undefined) {
+          report(
+            diagnostics,
+            "undeclared-dimension",
+            `dimension ${JSON.stringify(name.value)} is not declared`,
+            valuePath,
+            name,
+          );
+          valid = false;
+          continue;
+        }
+        if (!expectName(diagnostics, given, valuePath)) {
+          valid = false;
+          continue;
+        }
+        if (dimension.symbol.values !== undefined && !dimension.symbol.values.has(given.value)) {
+          report(
+            diagnostics,
+            "unknown-dimension-value",
+            `${JSON.stringify(given.value)} is not a value of dimension ${JSON.stringify(name.value)}`,
+            valuePath,
+            given,
+          );
+          valid = false;
+          continue;
+        }
+        values.set(name.value, given.value);
       }
-      if (dimension.symbol.values !== undefined && !dimension.symbol.values.has(given.value)) {
-        report(
-          diagnostics,
-          "unknown-dimension-value",
-          `${JSON.stringify(given.value)} is not a value of dimension ${JSON.stringify(name.value)}`,
-          valuePath,
-          given,
-        );
-        valid = false;
-        continue;
-      }
-      values.set(name.value, given.value);
+      for (const name of values.keys()) result.dimensions.add(name);
+      if (valid) checked.push({ name: key.value, values, item, path: here });
     }
-    for (const name of values.keys()) result.dimensions.add(name);
-    if (valid) checked.push({ name: key.value, values, item, path });
   }
 
-  const seen = new Map<string, string>();
+  const seen = new Set<string>();
+  const listed = new Set<string>();
   for (const { name, values, item, path } of checked) {
     const missing = [...result.dimensions].filter((dimension) => !values.has(dimension));
     if (missing.length > 0) {
@@ -101,19 +119,19 @@ export function checkProfilesFile(
       continue;
     }
     const combination = JSON.stringify([...values].sort(([a], [b]) => (a < b ? -1 : 1)));
-    const first = seen.get(combination);
-    if (first !== undefined) {
+    if (listed.has(JSON.stringify([name, combination]))) {
       report(
         diagnostics,
         "duplicate-profile",
-        `profile ${JSON.stringify(name)} is the same combination as ${JSON.stringify(first)}`,
+        `profile ${JSON.stringify(name)} lists the same combination twice`,
         path,
         item,
       );
       continue;
     }
-    seen.set(combination, name);
-    result.profiles.set(name, values);
+    listed.add(JSON.stringify([name, combination]));
+    if (!seen.has(combination)) result.combinations.push(values);
+    seen.add(combination);
   }
   result.complete = diagnostics.items.length === before;
   return result;
@@ -128,7 +146,7 @@ export function fitsProfile(
 ): boolean {
   const covered = dimensions.filter((dimension) => profiles.dimensions.has(dimension));
   if (covered.length === 0) return true;
-  return [...profiles.profiles.values()].some((profile) =>
+  return profiles.combinations.some((profile) =>
     covered.every((dimension) => profile.get(dimension) === values(dimension)),
   );
 }

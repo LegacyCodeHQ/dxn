@@ -201,7 +201,7 @@ export function compileDirectory(directory: string): DirectoryResult {
 
   // profiles.json: the combinations of dimension values that exist. A
   // dimension the profiles cover has no default: a profile fills it in.
-  let profiles: ProfilesSymbol = { profiles: new Map(), dimensions: new Set(), complete: true };
+  let profiles: ProfilesSymbol = { combinations: [], dimensions: new Set(), complete: true };
   const profilesFile = readJson(directory, "profiles.json");
   if (profilesFile !== undefined) {
     if ("code" in profilesFile) {
@@ -231,8 +231,9 @@ export function compileDirectory(directory: string): DirectoryResult {
       root?.kind === "object" && root.members.some(({ key }) => key.value === "default");
     if (!hasDefault || profilesFile === undefined || "code" in profilesFile) continue;
     for (const { key: profile, value } of profileMembers) {
+      const first = value.kind === "array" ? value.elements[0] : value;
       const entry =
-        value.kind === "object" ? value.members.find(({ key }) => key.value === name) : undefined;
+        first?.kind === "object" ? first.members.find(({ key }) => key.value === name) : undefined;
       if (entry === undefined) continue;
       report(
         profilesFile.diagnostics,
@@ -373,7 +374,7 @@ export function compileDirectory(directory: string): DirectoryResult {
         const covered = names.filter((dimension) => profiles.dimensions.has(dimension));
         const fits =
           covered.length === 0 ||
-          [...profiles.profiles.values()].some((profile) =>
+          profiles.combinations.some((profile) =>
             covered.every(
               (dimension) => profile.get(dimension) === chosen[names.indexOf(dimension)],
             ),

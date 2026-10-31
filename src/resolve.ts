@@ -56,15 +56,22 @@ export class Resolver {
   // "<parent>><fragment>" -> the include's "states".
   private readonly includeStates = new Map<string, Record<string, Record<string, string[]>>>();
 
-  // Profile name -> dimension -> value, and the dimensions profiles cover.
-  readonly profiles: Map<string, Record<string, string>>;
+  // Profile name -> its combinations (dimension -> value), sorted by name,
+  // and the dimensions profiles cover.
+  readonly profiles: Map<string, Record<string, string>[]>;
   readonly profiled: Set<string>;
 
   constructor(readonly project: Project) {
     this.profiles = new Map(
-      Object.entries(project.profiles?.profiles ?? {}).sort(([a], [b]) => (a < b ? -1 : 1)),
+      Object.entries(project.profiles?.profiles ?? {})
+        .map(([name, value]) => [name, Array.isArray(value) ? value : [value]] as const)
+        .sort(([a], [b]) => (a < b ? -1 : 1)),
     );
-    this.profiled = new Set([...this.profiles.values()].flatMap((values) => Object.keys(values)));
+    this.profiled = new Set(
+      [...this.profiles.values()].flatMap((combinations) =>
+        combinations.flatMap((values) => Object.keys(values)),
+      ),
+    );
     for (const root of [...project.roots, ...project.fragments]) {
       this.index(root);
     }
@@ -83,17 +90,44 @@ export class Resolver {
   // it names. A context naming none of them fits.
   fitsProfile(context: Context): boolean {
     const named = Object.keys(context).filter((name) => this.profiled.has(name));
-    return (
-      named.length === 0 ||
-      [...this.profiles.values()].some((profile) =>
-        named.every((name) => profile[name] === context[name]),
-      )
+    return named.length === 0 || this.profilesOf(context).length > 0;
+  }
+
+  // Whether one of the profile's combinations has the context's values for
+  // the profiled dimensions it names.
+  inProfile(name: string, context: Context): boolean {
+    return (this.profiles.get(name) ?? []).some((values) =>
+      Object.keys(context)
+        .filter((key) => this.profiled.has(key))
+        .every((key) => values[key] === context[key]),
     );
   }
 
-  // The values of the profiled dimensions among these, from the one profile
-  // that fits what was given: a profile=<name>, or some of the values.
-  // Several profiles fitting, or none, is an error that says what to give.
+  // The profiles a context is in, in the order profiles.json lists them.
+  profilesOf(context: Context): string[] {
+    return Object.keys(this.project.profiles?.profiles ?? {}).filter((name) =>
+      this.inProfile(name, context),
+    );
+  }
+
+  // Every distinct combination of the profiled dimensions, with the profiles
+  // that list it, in the order profiles.json first lists them.
+  combinations(): { values: Record<string, string>; names: string[] }[] {
+    const result = new Map<string, { values: Record<string, string>; names: string[] }>();
+    for (const name of Object.keys(this.project.profiles?.profiles ?? {})) {
+      for (const values of this.profiles.get(name) ?? []) {
+        const key = JSON.stringify([...this.profiled].sort().map((dimension) => values[dimension]));
+        const entry = result.get(key) ?? { values, names: [] };
+        if (!entry.names.includes(name)) entry.names.push(name);
+        result.set(key, entry);
+      }
+    }
+    return [...result.values()];
+  }
+
+  // The values of the profiled dimensions among these, from the one
+  // combination that fits what was given: a profile=<name>, or some of the
+  // values. Several fitting, or none, is an error that says what to give.
   fillProfile(dimensions: string[], given: Context, subject: string): Context {
     const covered = dimensions.filter((name) => this.profiled.has(name));
     const named = given.profile;
@@ -103,35 +137,52 @@ export class Resolver {
       );
     }
     if (covered.length === 0) return {};
-    const chosen = named === undefined ? undefined : this.profiles.get(named);
-    for (const name of covered) {
-      if (chosen !== undefined && given[name] !== undefined && chosen[name] !== given[name]) {
-        throw new ProfileError(
-          `profile "${named}" has ${name}=${chosen[name]}, not ${name}=${given[name]}`,
-        );
-      }
-    }
     const asked = covered.filter((name) => given[name] !== undefined);
-    const fitting = [...this.profiles].filter(
-      ([name, values]) =>
-        (named === undefined || name === named) &&
-        asked.every((dimension) => values[dimension] === given[dimension]),
+    const describe = asked.map((name) => `${name}=${given[name]}`).join(", ");
+    const candidates =
+      named === undefined
+        ? this.combinations()
+        : (this.profiles.get(named) ?? []).map((values) => ({ values, names: [named] }));
+    const fitting = candidates.filter(({ values }) =>
+      asked.every((dimension) => values[dimension] === given[dimension]),
     );
-    // Profiles that differ only in dimensions not covered here are one.
+    if (named !== undefined && fitting.length === 0) {
+      const name = asked.find((dimension) =>
+        candidates.every(({ values }) => values[dimension] !== given[dimension]),
+      ) as string;
+      const options = [...new Set(candidates.map(({ values }) => values[name]))].join("|");
+      throw new ProfileError(
+        `profile "${named}" has ${name}=${options}, not ${name}=${given[name]}`,
+      );
+    }
+    // Combinations that differ only in dimensions not covered here are one.
     const project = (values: Record<string, string>) =>
       JSON.stringify(covered.map((name) => values[name]));
-    const distinct = new Map(fitting.map(([name, values]) => [project(values), name]));
+    const distinct = new Map(
+      fitting.map((combination) => [project(combination.values), combination]),
+    );
     if (distinct.size === 1) {
-      const values = (fitting[0] as [string, Record<string, string>])[1];
+      const { values } = fitting[0] as { values: Record<string, string> };
       return Object.fromEntries(covered.map((name) => [name, values[name] as string]));
     }
-    const describe = asked.map((name) => `${name}=${given[name]}`).join(", ");
     if (distinct.size === 0) {
       throw new ProfileError(
         `no profile has ${describe} (${[...this.profiles.keys()].join(", ")})`,
       );
     }
-    const choices = fitting.map(([name]) => name).join("|");
+    if (named !== undefined) {
+      // The first covered dimension its combinations disagree on.
+      const name = covered.find(
+        (dimension) => new Set(fitting.map(({ values }) => values[dimension])).size > 1,
+      ) as string;
+      const options = [...new Set(fitting.map(({ values }) => values[name]))].join("|");
+      throw new ProfileError(
+        `profile "${named}" has several combinations; give ${name}=<${options}>`,
+      );
+    }
+    const choices = [...this.profiles.keys()]
+      .filter((name) => fitting.some(({ names }) => names.includes(name)))
+      .join("|");
     throw new ProfileError(
       asked.length === 0
         ? `give profile=<${choices}> for ${subject}`

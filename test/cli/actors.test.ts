@@ -82,7 +82,7 @@ describe("evidence", () => {
     expect(result.contexts).toHaveLength(4);
     expect(result.contexts[0]).toEqual({
       root: "page",
-      profile: "phone",
+      profiles: ["phone"],
       context: {
         breakpoint: "base",
         keyboard: "no-keyboard",

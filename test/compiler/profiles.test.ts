@@ -52,9 +52,10 @@ describe("profiles.json", () => {
     ]);
   });
 
-  it("never names one combination twice", () => {
-    expect(diagnose(project({ phone, laptop, ipad: { ...phone } }))).toEqual([
-      p("duplicate-profile", "$.profiles.ipad"),
+  it("may share a combination, but never list one twice", () => {
+    expect(diagnose(project({ phone, laptop, ipad: { ...phone } }))).toEqual([]);
+    expect(diagnose(project({ phone, laptop, ipad: [phone, { ...phone }] }))).toEqual([
+      p("duplicate-profile", "$.profiles.ipad[1]"),
     ]);
   });
 

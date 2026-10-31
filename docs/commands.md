@@ -496,24 +496,28 @@ dimensions dimension add pointer --values mouse,touch --applies-to toolbar --def
 ```text
 Usage: dimensions profile <subcommand>
 
-A profile is a combination of dimension values that exists, such as phone
-(breakpoint=base, pointer=touch, keyboard=no-keyboard). Once profiles exist,
-only their combinations do, and commands fill those dimensions in from the one
-profile that fits what you give.
+A profile is a setup that exists, such as phone (breakpoint=base,
+pointer=touch, keyboard=no-keyboard): one combination of dimension values, or
+several for a setup that can be in more than one, such as an iPad with a
+keyboard in either orientation (breakpoint=sm|lg). Profiles may share a
+combination. Once profiles exist, only their combinations do, and commands fill
+those dimensions in from the one combination that fits what you give.
 
 Subcommands:
   list                               List every profile and its values
-  add <name> <dimension>=<value>... [<name> <dimension>=<value>...]
+  add <name> <dimension>=<value>[|<value>]... [<name> <dimension>=<value>...]
                                      Add one or more profiles in profiles.json; add
-                                     profiles that belong together in one step
+                                     profiles that belong together in one step.
+                                     Values joined with | give a combination for each
   remove <name>                      Remove a profile
 ```
 
-Edits `profiles.json`: the combinations of dimension values that exist. `profile list` prints them. Adding a profile that repeats another one's combination is refused. Add profiles that belong together in one command: once profiles exist only their combinations do, so adding one at a time can break expectations that need the others.
+Edits `profiles.json`: the setups that exist, each one combination of dimension values or a list of them. `profile list` prints them, with `values` for a profile with one combination and `combinations` for one with several. Profiles may share a combination; a profile that lists one twice is refused. Add profiles that belong together in one command: once profiles exist only their combinations do, so adding one at a time can break expectations that need the others.
 
 ```bash
 dimensions profile list
 dimensions profile add phone breakpoint=base pointer=touch keyboard=no-keyboard desktop breakpoint=xl pointer=mouse keyboard=keyboard
+dimensions profile add ipad-keyboard "breakpoint=sm|lg" pointer=mouse keyboard=keyboard
 dimensions profile remove tablet-portrait
 ```
 

@@ -361,15 +361,15 @@ After `node rename`, references are updated automatically.
 
 ### `incomplete-profile`
 
-A profile leaves out a dimension that other profiles give. Every profile gives
-one value for each dimension the profiles cover, so add the missing value.
+A profile, or one of its combinations, leaves out a dimension that other
+profiles give. Every combination gives one value for each dimension the
+profiles cover, so add the missing value.
 
 ### `duplicate-profile`
 
-Two profiles give the same combination of values, so they are the same thing
-to design and check. Remove one, or make them differ. For example, an iPad
-with a Magic Keyboard has a trackpad, so it is `lg`, `mouse`, `keyboard`, the
-same combination as a laptop.
+A profile lists the same combination twice. Remove one. Different profiles may
+share a combination: an iPad with a keyboard in landscape is `lg`, `mouse`,
+`keyboard`, like a laptop, and both profiles can list it.
 
 ### `profiled-default`
 

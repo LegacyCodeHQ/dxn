@@ -376,12 +376,8 @@ function values(
 // are profiles), and the other values.
 function describeContext(resolver: Resolver, node: string, context: Context): string {
   const profiled = Object.keys(context).filter((name) => resolver.profiled.has(name));
-  const profile =
-    profiled.length === 0
-      ? undefined
-      : [...resolver.profiles].find(([, values]) =>
-          profiled.every((name) => values[name] === context[name]),
-        )?.[0];
+  const names = profiled.length === 0 ? [] : resolver.profilesOf(context);
+  const profile = names.length === 0 ? undefined : names.join(", ");
   const rest = Object.entries(context)
     .filter(([name]) => profile === undefined || !resolver.profiled.has(name))
     .map(([name, value]) => `${name}=${value}`);
@@ -464,10 +460,7 @@ function checkExists(
     e.when.every(([name, list]) =>
       list.some((value) => {
         if (name !== "profile") return candidate[name] === value;
-        const profile = resolver.profiles.get(value) ?? {};
-        return Object.keys(candidate)
-          .filter((key) => resolver.profiled.has(key))
-          .every((key) => profile[key] === candidate[key]);
+        return resolver.inProfile(value, candidate);
       }),
     );
   for (const { root, lineage } of lineages) {

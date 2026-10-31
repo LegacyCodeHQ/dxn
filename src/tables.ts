@@ -54,15 +54,12 @@ function setups(resolver: Resolver, dimensions: string[]): Setup[] {
   let result: Setup[] =
     covered.length === 0
       ? [{ name: "", values: {} }]
-      : Object.keys(resolver.project.profiles?.profiles ?? {}).map((name) => {
-          const profile = resolver.profiles.get(name) ?? {};
-          return {
-            name,
-            values: Object.fromEntries(
-              covered.map((dimension) => [dimension, profile[dimension] as string]),
-            ),
-          };
-        });
+      : resolver.combinations().map(({ values, names }) => ({
+          name: names.join(", "),
+          values: Object.fromEntries(
+            covered.map((dimension) => [dimension, values[dimension] as string]),
+          ),
+        }));
   for (const name of free) {
     const options = resolver.project.dimensions[name]?.values ?? [];
     result = result.flatMap((setup) =>
