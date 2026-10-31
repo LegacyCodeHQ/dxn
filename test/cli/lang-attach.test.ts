@@ -261,6 +261,15 @@ describe("lang attach", () => {
       run("spec/toolbar.dxn", "Toolbar.menu.toggle", "profile=phone").code,
     ]).toEqual([2, 2]);
   });
+
+  it("says, with --json, why it needs more, as a refusal does", () => {
+    const { run } = project();
+    const result = run("spec/toolbar.dxn", "--json");
+    expect([result.code, JSON.parse(result.stdout)]).toEqual([
+      2,
+      { error: "give a file, a path, --file and --frame, and the context" },
+    ]);
+  });
 });
 
 describe("lang status, with fingerprints", () => {
@@ -271,6 +280,24 @@ describe("lang status, with fingerprints", () => {
       capture(["lang", "status", "spec/toolbar.dxn", ...args], root);
     return { root, status };
   };
+
+  it("gives, with --json, each count as a number, and lists what is not present", () => {
+    const { root, status } = recorded();
+    rmSync(join(root, "design", "toolbar.png"));
+    const [record] = JSON.parse(status("--json").stdout).records;
+    const toggle = record.paths.find(
+      ({ path }: { path: string }) => path === "Toolbar.menu.toggle",
+    );
+    expect([
+      [record.combinations, record.present, record.stale, record.gone, record.missing],
+      [toggle.combinations, toggle.present, toggle.stale, toggle.gone, toggle.missing],
+      [toggle.listed.gone.length, toggle.listed.stale.length, toggle.listed.missing.length],
+    ]).toEqual([
+      [12, 0, 0, 2, 10],
+      [6, 0, 0, 2, 4],
+      [2, 0, 4],
+    ]);
+  });
 
   it("counts an entry as present while its frame is as it was recorded", () => {
     const { status } = recorded();

@@ -83,8 +83,8 @@ Subcommands:
 Options:
   --json                             Print one JSON document, for tools: the result
                                      and any warnings as "problems"; on a failure,
-                                     the file and its problems; on a refusal,
-                                     {"error": "<message>"}
+                                     the file and its problems; on a refusal or
+                                     a usage error, {"error": "<message>"}
 `;
 
 // What a file declares, without positions, which are for diagnostics: each
@@ -178,6 +178,18 @@ function options(args: string[]): { json: boolean; rest: string[] } {
   return { json: args.includes("--json"), rest: args.filter((arg) => arg !== "--json") };
 }
 
+// A command given too little or too much: why, and the usage, exit 2; with
+// --json, why, as a refusal says it.
+function misused(
+  io: { stdout: (text: string) => void; stderr: (text: string) => void },
+  json: boolean,
+  message: string,
+): number {
+  if (json) io.stdout(`${JSON.stringify({ error: message }, null, 2)}\n`);
+  io.stderr(`dxn: ${message}\n\n${usage}`);
+  return 2;
+}
+
 // A count of things, singular or plural: "1 record", "3 records".
 const count = (n: number, thing: string) => `${n} ${thing}${n === 1 ? "" : "s"}`;
 
@@ -201,8 +213,7 @@ const check: Command = command(usage, (args, { io, cwd }) => {
     rest: [file, ...rest],
   } = options(args);
   if (file === undefined || rest.length > 0) {
-    io.stderr(`dxn: give one file to check\n\n${usage}`);
-    return 2;
+    return misused(io, json, "give one file to check");
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
@@ -269,8 +280,7 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
     rest: [file, typeName, ...rest],
   } = options(args);
   if (file === undefined || typeName === undefined || rest.length > 0) {
-    io.stderr(`dxn: give a file and a type\n\n${usage}`);
-    return 2;
+    return misused(io, json, "give a file and a type");
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
@@ -464,8 +474,7 @@ const validateCommand: Command = command(usage, (args, { io, cwd }) => {
     rest: [file, ...rest],
   } = options(args);
   if (file === undefined || rest.length > 0) {
-    io.stderr(`dxn: give one file, whose stored records to check\n\n${usage}`);
-    return 2;
+    return misused(io, json, "give one file, whose stored records to check");
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
@@ -513,8 +522,7 @@ const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
     rest.length > 0 ||
     dot < 1
   ) {
-    io.stderr(`dxn: give a file, <Enum>.<value> and the value's new name\n\n${usage}`);
-    return 2;
+    return misused(io, json, "give a file, <Enum>.<value> and the value's new name");
   }
   const enumName = target.slice(0, dot);
   const from = target.slice(dot + 1);
@@ -586,8 +594,7 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   } = options(args.filter((arg) => arg !== "--missing"));
   const listMissing = args.includes("--missing");
   if (file === undefined || rest.length > 0) {
-    io.stderr(`dxn: give one file, whose evidence to count\n\n${usage}`);
-    return 2;
+    return misused(io, json, "give one file, whose evidence to count");
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
@@ -734,7 +741,23 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     }`;
   });
   const text = blocks.length === 0 ? `${file}: no records with context\n` : blocks.join("\n");
-  return report.succeed({ file, records }, text);
+  // In JSON, each count a number, and each combination not present listed.
+  const counted = records.map(({ paths, stale, gone, ...rest }) => ({
+    ...rest,
+    stale,
+    gone,
+    missing: paths.reduce((sum, path) => sum + path.missing.length, 0),
+    paths: paths.map((path) => ({
+      path: path.path,
+      combinations: path.combinations,
+      present: path.present,
+      stale: path.stale.length,
+      gone: path.gone.length,
+      missing: path.missing.length,
+      listed: { stale: path.stale, gone: path.gone, missing: path.missing },
+    })),
+  }));
+  return report.succeed({ file, records: counted }, text);
 });
 
 // Who records with a record's tool, in messages: the value of the field the
@@ -771,8 +794,7 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   const source = flags.get("--file")?.[0];
   const frame = flags.get("--frame")?.[0];
   if (file === undefined || path === undefined || extra.length > 0 || !source || !frame) {
-    io.stderr(`dxn: give a file, a path, --file and --frame, and the context\n\n${usage}`);
-    return 2;
+    return misused(io, json, "give a file, a path, --file and --frame, and the context");
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);

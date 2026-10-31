@@ -776,8 +776,8 @@ Subcommands:
 Options:
   --json                             Print one JSON document, for tools: the result
                                      and any warnings as "problems"; on a failure,
-                                     the file and its problems; on a refusal,
-                                     {"error": "<message>"}
+                                     the file and its problems; on a refusal or
+                                     a usage error, {"error": "<message>"}
 ```
 
 Works on files written in dxn, the language of design and dimensions, which grows one concept at a time; [language/guide.md](language/guide.md) teaches it and lists every diagnostic code. Each prints a readable answer by default, and one JSON document with `--json`. `check` says what a file declares, in one line, or prints each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. `states` prints a type's states in each profile or combination as a Markdown table. `validate` checks every stored record, the JSON files in a kebab-case folder named after each record, next to the file; a problem in stored data also has its JSON path. `rename` renames an enum's value in the file and in every stored record.
