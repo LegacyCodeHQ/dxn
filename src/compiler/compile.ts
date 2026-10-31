@@ -208,41 +208,35 @@ export function compileDirectory(directory: string): DirectoryResult {
       }
     }
   }
-  for (const name of profiles.dimensions) {
-    // A value no profile uses can never be in a context.
-    const values = dimensions.get(name)?.parsed.root;
+  // Profiles build on dimensions: a dimension is valid on its own, and only
+  // profiles.json reports what the profiles need of it. A dimension they
+  // cover has no default, because a profile fills it in.
+  const profileMembers = (() => {
+    const root =
+      profilesFile !== undefined && !("code" in profilesFile) ? profilesFile.root : undefined;
     const list =
-      values?.kind === "object"
-        ? values.members.find(({ key }) => key.value === "values")?.value
+      root?.kind === "object"
+        ? root.members.find(({ key }) => key.value === "profiles")?.value
         : undefined;
-    if (list?.kind === "array" && profiles.complete) {
-      list.elements.forEach((element, index) => {
-        if (
-          element.kind === "string" &&
-          ![...profiles.profiles.values()].some((profile) => profile.get(name) === element.value)
-        ) {
-          report(
-            (dimensions.get(name) as DimensionEntry).parsed.diagnostics,
-            "value-without-profile",
-            `${JSON.stringify(element.value)} is in no profile; add a profile that uses it, or remove the value`,
-            `$.values[${index}]`,
-            element,
-          );
-        }
-      });
-    }
-    const entry = dimensions.get(name);
-    const root = entry?.parsed.root;
-    const fallback =
-      root?.kind === "object" ? root.members.find(({ key }) => key.value === "default") : undefined;
-    if (entry !== undefined && fallback !== undefined) {
+    return list?.kind === "object" ? list.members : [];
+  })();
+  for (const name of profiles.dimensions) {
+    const root = dimensions.get(name)?.parsed.root;
+    const hasDefault =
+      root?.kind === "object" && root.members.some(({ key }) => key.value === "default");
+    if (!hasDefault || profilesFile === undefined || "code" in profilesFile) continue;
+    for (const { key: profile, value } of profileMembers) {
+      const entry =
+        value.kind === "object" ? value.members.find(({ key }) => key.value === name) : undefined;
+      if (entry === undefined) continue;
       report(
-        entry.parsed.diagnostics,
+        profilesFile.diagnostics,
         "profiled-default",
-        `${name} is in profiles.json, so it has no default: a profile fills it in`,
-        "$.default",
-        fallback.value,
+        `dimension ${name} has a default, but profiles fill it in: remove its default`,
+        childPath(childPath("$.profiles", profile.value), name),
+        entry.key,
       );
+      break;
     }
   }
 

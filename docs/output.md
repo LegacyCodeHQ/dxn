@@ -109,7 +109,7 @@ The roots, exactly as written in `roots/` and `fragments/`.
 }
 ```
 
-`default` is left out when the dimension has none.
+`default` is left out when the dimension has none. When profiles cover the dimension and some of its values are in no profile, `inNoProfile` lists them.
 
 ## type list, state-group list, check list, attribute list
 

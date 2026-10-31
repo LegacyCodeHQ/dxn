@@ -324,19 +324,19 @@ describe("profile commands", () => {
     );
     snapshot.push((read("profiles.json").profiles as Record<string, unknown>)["tablet-keyboard"]);
     snapshot.push(run("profile", "remove", "tablet-landscape").code);
-    // phone is the only profile with breakpoint=base, which would be left unused.
-    snapshot.push(run("profile", "remove", "phone").stderr.includes("value-without-profile"));
+    // phone is the only profile with breakpoint=base, which is then simply unused.
+    snapshot.push(run("profile", "remove", "phone").code === 0);
     snapshot.push(json(run("profile", "list")).profiles.map(({ name }: { name: string }) => name));
     expect(snapshot).toEqual([
       0,
       { breakpoint: "lg", keyboard: "keyboard", pointer: "touch" },
       0,
       true,
-      ["desktop", "laptop", "phone", "tablet-keyboard", "tablet-portrait"],
+      ["desktop", "laptop", "tablet-keyboard", "tablet-portrait"],
     ]);
   });
 
-  it("add several profiles in one step, where one alone would leave values unused", () => {
+  it("add several profiles in one step, where one alone would break an expectation", () => {
     const { "profiles.json": _, ...without } = files;
     const { run, read } = cliProject({
       ...without,
@@ -368,8 +368,7 @@ describe("profile commands", () => {
       ...["laptop", "breakpoint=lg", "pointer=mouse", "keyboard=keyboard"],
     ];
     const alone = run("profile", "add", ...phone);
-    // Alone, phone leaves the other breakpoints in no profile.
-    expect([alone.code, alone.stderr.includes("value-without-profile")]).toEqual([1, true]);
+    expect([alone.code, alone.stderr.includes("empty-expectation")]).toEqual([1, true]);
     expect(run("profile", "add", ...phone, ...together).code).toBe(0);
     expect(Object.keys(read("profiles.json").profiles as Record<string, unknown>)).toEqual([
       "phone",
@@ -406,5 +405,26 @@ describe("profile commands", () => {
       (read("profiles.json").profiles as Record<string, Record<string, string>>).desktop
         ?.breakpoint,
     ).toBe("wide");
+  });
+});
+
+describe("dimension list", () => {
+  it("shows the values no profile uses", () => {
+    const { run } = cliProject({
+      ...files,
+      "profiles.json": {
+        version: 1,
+        profiles: { phone: profiles.phone, desktop: profiles.desktop },
+      },
+    });
+    expect(
+      json(run("dimension", "list")).dimensions.map(
+        ({ name, inNoProfile }: { name: string; inNoProfile?: string[] }) => [name, inNoProfile],
+      ),
+    ).toEqual([
+      ["breakpoint", ["sm", "lg"]],
+      ["keyboard", undefined],
+      ["pointer", undefined],
+    ]);
   });
 });

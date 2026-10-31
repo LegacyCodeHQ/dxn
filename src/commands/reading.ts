@@ -178,6 +178,13 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
         values: dimension.values,
         ...(dimension.default === undefined ? {} : { default: dimension.default }),
         appliesTo: dimension.appliesTo ?? [],
+        // Values of a dimension the profiles cover that no profile uses.
+        ...(() => {
+          if (!resolver.profiled.has(name)) return {};
+          const used = new Set([...resolver.profiles.values()].map((profile) => profile[name]));
+          const unused = dimension.values.filter((value) => !used.has(value));
+          return unused.length === 0 ? {} : { inNoProfile: unused };
+        })(),
       })),
   });
 });

@@ -373,15 +373,10 @@ same combination as a laptop.
 
 ### `profiled-default`
 
-A dimension that profiles cover has a `default`. Profiles fill it in instead,
-from the one profile that fits what you give, so remove the default.
-
-### `value-without-profile`
-
-A value of a dimension that profiles cover is in no profile, so no context
-can have it. Add the profiles that use it in the same edit (`profile add`
-takes several), or remove the value. Removing the last profile that uses a
-value is refused for the same reason.
+Profiles cover a dimension that has a `default`. Profiles fill that dimension
+in from the one profile that fits what you give, so its default would never
+be used. The error is in `profiles.json`, because profiles build on dimensions:
+the dimension file is valid on its own. Remove the default.
 
 ### `no-profile`
 

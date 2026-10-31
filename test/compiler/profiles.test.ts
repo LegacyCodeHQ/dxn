@@ -58,7 +58,7 @@ describe("profiles.json", () => {
     ]);
   });
 
-  it("leaves no default on a dimension it covers", () => {
+  it("cover only dimensions without a default, reported where the profiles are", () => {
     expect(
       diagnose(
         project(
@@ -73,7 +73,7 @@ describe("profiles.json", () => {
           },
         ),
       ),
-    ).toEqual([at("dimensions/pointer.json")("profiled-default", "$.default")]);
+    ).toEqual([p("profiled-default", "$.profiles.phone.pointer")]);
   });
 
   it("keeps the name profile for itself", () => {
@@ -100,8 +100,8 @@ describe("profiles.json", () => {
   });
 });
 
-describe("what no profile reaches", () => {
-  it("is an error: a value no profile uses", () => {
+describe("dimensions under profiles", () => {
+  it("leaves a value no profile uses valid: a dimension exists without profiles", () => {
     expect(
       diagnose(
         project(
@@ -115,7 +115,7 @@ describe("what no profile reaches", () => {
           },
         ),
       ),
-    ).toEqual([at("dimensions/breakpoint.json")("value-without-profile", "$.values[2]")]);
+    ).toEqual([]);
   });
 
   it("is an error: a combination override at a combination no profile has", () => {
