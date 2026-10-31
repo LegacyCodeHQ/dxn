@@ -21,9 +21,14 @@
 
 import type { Condition, Declaration, Enum, Located, ParseResult, Rule, State } from "./ast.js";
 import { check } from "./check.js";
-import { describe, located, scan, type Token } from "./scan.js";
+import { describe, located, scan, type Token, type TokenKind } from "./scan.js";
 
 class ParseFailure extends Error {}
+
+// How a kind of name is written: sets of possibilities are capitalized,
+// single things lowercase.
+const capitalized = { pattern: /^[A-Z][A-Za-z0-9]*$/, rule: "a capital letter" };
+const lowercase = { pattern: /^[a-z]/, rule: "a lowercase letter" };
 
 export function parse(source: string): ParseResult {
   const tokens = scan(source);
@@ -43,6 +48,7 @@ export function parse(source: string): ParseResult {
     if (token.kind !== "end") position += 1;
     return token;
   };
+  const previous = () => tokens[position - 1] as Token;
   const fail = (token: Token, expected: string): never => {
     result.diagnostics.push({
       code: "syntax-error",
@@ -52,9 +58,71 @@ export function parse(source: string): ParseResult {
     });
     throw new ParseFailure();
   };
-  const report = (code: string, message: string, at: Located) => {
-    result.diagnostics.push({ code, message, line: at.line, column: at.column });
+
+  // The next token, which must be of this kind.
+  const expect = (kind: TokenKind, expected: string): Token => {
+    const token = next();
+    if (token.kind !== kind) fail(token, expected);
+    return token;
   };
+  const word = (expected: string): Located => located(expect("word", expected));
+  const keyword = (text: string, expected: string) => {
+    const token = next();
+    if (token.kind !== "word" || token.text !== text) fail(token, expected);
+  };
+  // The token after the last one read must be one of these.
+  const end = (kinds: TokenKind[], expected: string) => {
+    if (!kinds.includes(peek().kind))
+      fail(peek(), `${expected} after ${JSON.stringify(previous().text)}`);
+  };
+
+  // A name of a kind, written as names of that kind are.
+  const name = (kind: string, expected: string, casing: typeof capitalized): Located => {
+    const named = word(expected);
+    if (!casing.pattern.test(named.name)) {
+      result.diagnostics.push({
+        code: `${kind}-name`,
+        message: `${kind} names start with ${casing.rule}: ${JSON.stringify(named.name)}`,
+        line: named.line,
+        column: named.column,
+      });
+    }
+    return named;
+  };
+
+  // Items split by a separator, which may end a line; the first follows
+  // what was read before it. The list ends a line, or one of the other ends.
+  const list = <T>(
+    separator: TokenKind,
+    first: string,
+    item: (after: string) => T,
+    ends: TokenKind[],
+  ): T[] => {
+    const items = [item(first)];
+    while (peek().kind === separator) {
+      next();
+      if (peek().kind === "newline") next();
+      items.push(item(`"${separator}"`));
+    }
+    end(["newline", ...ends], `"${separator}" or the end of the line`);
+    return items;
+  };
+
+  // The entries inside braces, each read from its first token, to the
+  // closing brace; blank lines between them are skipped.
+  const braces = (owner: string, entry: (token: Token) => void) => {
+    for (;;) {
+      while (peek().kind === "newline") next();
+      const token = peek();
+      if (token.kind === "}") {
+        next();
+        return;
+      }
+      if (token.kind === "end") fail(token, `"}" to close ${owner}`);
+      entry(token);
+    }
+  };
+
   // The declaration being read, kept as soon as it has a name.
   let current: Declaration | undefined;
   const keep = <T extends Declaration>(list: T[], declaration: T): T => {
@@ -63,260 +131,112 @@ export function parse(source: string): ParseResult {
     return declaration;
   };
 
-  // A value: a word that is not followed by anything but separators.
-  const value = (after: string): Located => {
-    const token = next();
-    if (token.kind !== "word") fail(token, `a value after ${after}`);
-    return { name: token.text, line: token.line, column: token.column };
+  // An enum or a dimension: "<keyword> <Name> = <value> | <value> ...". The
+  // two differ only in what their values do later: a dimension's cascade down
+  // the tree.
+  const valuesDeclaration = (keyword: "enum" | "dimension", declarations: Enum[]) => {
+    next();
+    const named = name(keyword, `a ${keyword} name after "${keyword}"`, capitalized);
+    const declaration = keep(declarations, { ...named, values: [] });
+    expect("=", `"=" after the ${keyword} name`);
+    declaration.values.push(
+      ...list("|", '"="', (after) => word(`a value after ${after}`), ["end"]),
+    );
   };
 
-  // An enum or a dimension: the keyword, a capitalized name, "=" and its
-  // values. The two differ only in what their values do later: a dimension's
-  // cascade down the tree.
-  const valuesDeclaration = (keyword: "enum" | "dimension", list: Enum[]): void => {
-    next(); // the keyword
-    const nameToken = next();
-    if (nameToken.kind !== "word") fail(nameToken, `a ${keyword} name after "${keyword}"`);
-    const name: Located = { name: nameToken.text, line: nameToken.line, column: nameToken.column };
-    if (!/^[A-Z][A-Za-z0-9]*$/.test(name.name)) {
-      report(
-        `${keyword}-name`,
-        `${keyword} names start with a capital letter: ${JSON.stringify(name.name)}`,
-        name,
-      );
-    }
-    const { values } = keep(list, { ...name, values: [] });
-    const equals = next();
-    if (equals.kind !== "=") fail(equals, `"=" after the ${keyword} name`);
-    values.push(value('"="'));
-    for (;;) {
-      const token = peek();
-      if (token.kind === "|") {
-        next();
-        if (peek().kind === "newline") next();
-        values.push(value('"|"'));
-        continue;
-      }
-      if (token.kind === "newline" || token.kind === "end") break;
-      const last = values[values.length - 1] as Located;
-      fail(token, `"|" or the end of the line after ${JSON.stringify(last.name)}`);
-    }
-  };
-
-  const skipNewlines = () => {
-    while (peek().kind === "newline") next();
-  };
-
-  // A state field: its name, ":" and the enum its values come from.
+  // A state field: "<state>: <Enum>".
   const field = (): State => {
-    const nameToken = next();
-    if (nameToken.kind !== "word") fail(nameToken, "a state name");
-    if (!/^[a-z]/.test(nameToken.text)) {
-      report(
-        "state-name",
-        `state names start with a lowercase letter: ${JSON.stringify(nameToken.text)}`,
-        { name: nameToken.text, line: nameToken.line, column: nameToken.column },
-      );
-    }
-    const colon = next();
-    if (colon.kind !== ":") fail(colon, `":" after ${JSON.stringify(nameToken.text)}`);
-    const enumToken = next();
-    if (enumToken.kind !== "word") fail(enumToken, 'an enum name after ":"');
-    return { ...located(nameToken), enum: located(enumToken) };
+    const named = name("state", "a state name", lowercase);
+    expect(":", `":" after ${JSON.stringify(named.name)}`);
+    return { ...named, enum: word('an enum name after ":"') };
   };
 
-  // A rule: "<state> = <value> only when <condition>".
+  // A rule: "<state> = <value> only when <Dimension> = <value>", or with
+  // "in (<value>, ...)" for several values.
   const rule = (): Rule => {
-    const stateToken = next();
-    const equals = next();
-    if (equals.kind !== "=") fail(equals, `"=" after ${JSON.stringify(stateToken.text)}`);
-    const valueToken = next();
-    if (valueToken.kind !== "word") fail(valueToken, 'a value after "="');
-    const only = next();
-    if (only.kind !== "word" || only.text !== "only") {
-      fail(only, `"only" after ${JSON.stringify(valueToken.text)}`);
-    }
-    const when = next();
-    if (when.kind !== "word" || when.text !== "when") fail(when, '"when" after "only"');
-    const dimensionToken = next();
-    if (dimensionToken.kind !== "word") fail(dimensionToken, 'a dimension after "when"');
-    const condition: Condition = { dimension: located(dimensionToken), values: [] };
+    const state = word("a state name");
+    expect("=", `"=" after ${JSON.stringify(state.name)}`);
+    const value = word('a value after "="');
+    keyword("only", `"only" after ${JSON.stringify(value.name)}`);
+    keyword("when", '"when" after "only"');
+    const when: Condition = { dimension: word('a dimension after "when"'), values: [] };
     const operator = next();
-    const conditionValue = (after: string): Located => {
-      const token = next();
-      if (token.kind !== "word") fail(token, `a value after ${after}`);
-      return { name: token.text, line: token.line, column: token.column };
-    };
+    const conditionValue = (after: string) => word(`a value after ${after}`);
     if (operator.kind === "=") {
-      condition.values.push(conditionValue('"="'));
+      when.values.push(conditionValue('"="'));
     } else if (operator.kind === "word" && operator.text === "in") {
-      const open = next();
-      if (open.kind !== "(") fail(open, '"(" after "in"');
-      condition.values.push(conditionValue('"("'));
+      expect("(", '"(" after "in"');
+      when.values.push(conditionValue('"("'));
       for (;;) {
         const token = next();
         if (token.kind === ")") break;
-        const last = condition.values[condition.values.length - 1] as Located;
-        if (token.kind !== ",") fail(token, `"," or ")" after ${JSON.stringify(last.name)}`);
-        condition.values.push(conditionValue('","'));
+        if (token.kind !== ",") {
+          fail(token, `"," or ")" after ${JSON.stringify(when.values.at(-1)?.name)}`);
+        }
+        when.values.push(conditionValue('","'));
       }
     } else {
-      fail(operator, `"=" or "in" after ${JSON.stringify(dimensionToken.text)}`);
+      fail(operator, `"=" or "in" after ${JSON.stringify(when.dimension.name)}`);
     }
-    const after = peek();
-    if (after.kind !== "newline" && after.kind !== "}") {
-      fail(after, "the end of the line after the condition");
+    if (!["newline", "}"].includes(peek().kind)) {
+      fail(peek(), "the end of the line after the condition");
     }
-    return { state: located(stateToken), value: located(valueToken), when: condition };
+    return { state, value, when };
   };
 
-  // An environment: "environment <Name> = <Dimension> × <Dimension> ...".
-  const environmentDeclaration = (): void => {
-    next(); // "environment"
-    const nameToken = next();
-    if (nameToken.kind !== "word") fail(nameToken, 'an environment name after "environment"');
-    if (!/^[A-Z][A-Za-z0-9]*$/.test(nameToken.text)) {
-      report(
-        "environment-name",
-        `environment names start with a capital letter: ${JSON.stringify(nameToken.text)}`,
-        { name: nameToken.text, line: nameToken.line, column: nameToken.column },
-      );
-    }
-    const { dimensions } = keep(result.environments, {
-      name: nameToken.text,
-      line: nameToken.line,
-      column: nameToken.column,
-      dimensions: [],
-    });
-    const equals = next();
-    if (equals.kind !== "=") fail(equals, '"=" after the environment name');
-    const part = (after: string): Located => {
-      const token = next();
-      if (token.kind !== "word") fail(token, `a dimension after ${after}`);
-      return { name: token.text, line: token.line, column: token.column };
-    };
-    dimensions.push(part('"="'));
-    for (;;) {
-      const token = peek();
-      if (token.kind === "×") {
-        next();
-        if (peek().kind === "newline") next();
-        dimensions.push(part('"×"'));
-        continue;
-      }
-      if (token.kind === "newline" || token.kind === "end") break;
-      const last = dimensions[dimensions.length - 1] as Located;
-      fail(token, `"×" or the end of the line after ${JSON.stringify(last.name)}`);
-    }
-  };
-
-  // A profile: "profile <name>: <Environment> { <Dimension> = <value>, ... }".
-  const profileDeclaration = (): void => {
-    next(); // "profile"
-    const nameToken = next();
-    if (nameToken.kind !== "word") fail(nameToken, 'a profile name after "profile"');
-    if (!/^[a-z]/.test(nameToken.text)) {
-      report(
-        "profile-name",
-        `profile names start with a lowercase letter: ${JSON.stringify(nameToken.text)}`,
-        { name: nameToken.text, line: nameToken.line, column: nameToken.column },
-      );
-    }
-    const colon = next();
-    if (colon.kind !== ":") fail(colon, `":" after ${JSON.stringify(nameToken.text)}`);
-    const typeToken = next();
-    if (typeToken.kind !== "word") fail(typeToken, 'an environment name after ":"');
-    const profile = keep(result.profiles, {
-      name: nameToken.text,
-      line: nameToken.line,
-      column: nameToken.column,
-      environment: located(typeToken),
-      values: [],
-    });
-    const open = next();
-    if (open.kind !== "{") fail(open, '"{" after the environment name');
-    for (;;) {
-      skipNewlines();
-      const token = peek();
-      if (token.kind === "}") {
-        next();
-        return;
-      }
-      if (token.kind === "end") fail(token, `"}" to close ${profile.name}`);
-      const dimensionToken = next();
-      if (dimensionToken.kind !== "word") fail(dimensionToken, 'a dimension or "}"');
-      const equals = next();
-      if (equals.kind !== "=") fail(equals, `"=" after ${JSON.stringify(dimensionToken.text)}`);
-      const valueToken = next();
-      if (valueToken.kind !== "word") fail(valueToken, 'a value after "="');
-      profile.values.push({ dimension: located(dimensionToken), value: located(valueToken) });
-      const after = peek();
-      if (after.kind === ",") {
-        next();
-        continue;
-      }
-      if (after.kind !== "newline" && after.kind !== "}") {
-        fail(after, `",", the end of the line or "}" after ${JSON.stringify(valueToken.text)}`);
-      }
-    }
-  };
-
-  // A type: its name, then its states and rules inside braces.
-  const typeDeclaration = (): void => {
-    next(); // "type"
-    const nameToken = next();
-    if (nameToken.kind !== "word") fail(nameToken, 'a type name after "type"');
-    const type = keep(result.types, {
-      name: nameToken.text,
-      line: nameToken.line,
-      column: nameToken.column,
-      states: [],
-      rules: [],
-    });
-    if (!/^[A-Z][A-Za-z0-9]*$/.test(type.name)) {
-      report(
-        "type-name",
-        `type names start with a capital letter: ${JSON.stringify(type.name)}`,
-        type,
-      );
-    }
-    const open = next();
-    if (open.kind !== "{") fail(open, '"{" after the type name');
+  // A type: "type <Name> { states <field>, ... <rule> ... }".
+  const typeDeclaration = () => {
+    next();
+    const named = name("type", 'a type name after "type"', capitalized);
+    const type = keep(result.types, { ...named, states: [], rules: [] });
+    expect("{", '"{" after the type name');
     let listed = false;
-    for (;;) {
-      skipNewlines();
-      const token = peek();
-      if (token.kind === "}") {
-        next();
+    braces(type.name, (token) => {
+      if (token.kind !== "word") fail(token, '"states", a rule or "}"');
+      if (token.text !== "states") {
+        type.rules.push(rule());
         return;
       }
-      if (token.kind === "end") fail(token, `"}" to close ${type.name}`);
-      if (token.kind === "word" && token.text !== "states") {
-        type.rules.push(rule());
-        continue;
-      }
-      if (token.kind !== "word") fail(token, '"states", a rule or "}"');
       next();
       if (listed) {
-        report("states-twice", `${type.name} lists its states twice; put them on one states line`, {
-          name: token.text,
+        result.diagnostics.push({
+          code: "states-twice",
+          message: `${type.name} lists its states twice; put them on one states line`,
           line: token.line,
           column: token.column,
         });
       }
       listed = true;
-      type.states.push(field());
-      while (peek().kind === ",") {
-        next();
-        if (peek().kind === "newline") next();
-        type.states.push(field());
-      }
-      const after = peek();
-      if (after.kind !== "newline" && after.kind !== "}") {
-        const last = type.states[type.states.length - 1] as State;
-        fail(after, `"," or the end of the line after ${JSON.stringify(last.enum.name)}`);
-      }
-    }
+      type.states.push(...list(",", '"states"', field, ["}"]));
+    });
+  };
+
+  // An environment: "environment <Name> = <Dimension> × <Dimension> ...".
+  const environmentDeclaration = () => {
+    next();
+    const named = name("environment", 'an environment name after "environment"', capitalized);
+    const environment = keep(result.environments, { ...named, dimensions: [] });
+    expect("=", '"=" after the environment name');
+    environment.dimensions.push(
+      ...list("×", '"="', (after) => word(`a dimension after ${after}`), ["end"]),
+    );
+  };
+
+  // A profile: "profile <name>: <Environment> { <Dimension> = <value>, ... }".
+  const profileDeclaration = () => {
+    next();
+    const named = name("profile", 'a profile name after "profile"', lowercase);
+    expect(":", `":" after ${JSON.stringify(named.name)}`);
+    const environment = word('an environment name after ":"');
+    const profile = keep(result.profiles, { ...named, environment, values: [] });
+    expect("{", '"{" after the environment name');
+    braces(profile.name, () => {
+      const dimension = word('a dimension or "}"');
+      expect("=", `"=" after ${JSON.stringify(dimension.name)}`);
+      profile.values.push({ dimension, value: word('a value after "="') });
+      if (peek().kind === ",") next();
+      else end(["newline", "}"], '",", the end of the line or "}"');
+    });
   };
 
   const declarations: Record<string, () => void> = {
@@ -326,6 +246,11 @@ export function parse(source: string): ParseResult {
     environment: environmentDeclaration,
     profile: profileDeclaration,
   };
+  // A line that starts a declaration.
+  const starts = (token: Token) =>
+    token.kind === "word" &&
+    Object.hasOwn(declarations, token.text) &&
+    tokens[position - 1]?.kind === "newline";
   while (peek().kind !== "end") {
     const token = peek();
     if (token.kind === "newline") {
@@ -346,10 +271,6 @@ export function parse(source: string): ParseResult {
       if (kept !== undefined) kept.broken = true;
       // Skip to the next line that starts a declaration and carry on, so one
       // mistake does not hide others, nor cause more.
-      const starts = (token: Token) =>
-        token.kind === "word" &&
-        Object.hasOwn(declarations, token.text) &&
-        tokens[position - 1]?.kind === "newline";
       while (peek().kind !== "end" && !starts(peek())) next();
     }
   }
