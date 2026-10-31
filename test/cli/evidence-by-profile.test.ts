@@ -93,9 +93,9 @@ describe("evidence --by profile", () => {
     ]);
   });
 
-  it("takes only profile", () => {
+  it("takes only profile or frame", () => {
     expect(evidence("--table", "--by", "breakpoint").stderr).toBe(
-      'dimensions: --by takes only "profile" here\n',
+      'dimensions: --by takes "profile" or "frame" here\n',
     );
   });
 });

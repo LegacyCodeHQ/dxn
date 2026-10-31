@@ -17,6 +17,7 @@ import {
   drawTable,
   NONE,
   nodeTables,
+  noEvidenceLine,
   notPresentLine,
   presenceMatrix,
   profileLabel,
@@ -715,7 +716,7 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
 });
 
 const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>]
-                          [--missing] [--table] [--by profile]
+                          [--missing] [--table] [--by profile|frame]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
@@ -725,7 +726,9 @@ that dimension value, state, shared node state or profile. --table prints a
 Markdown table, a row per context and a column for the actor, where — means no
 evidence. Rows come in profile order. --by profile makes a row per profile
 instead: the states the node has there, and how many of its contexts have
-evidence that is present, stale or missing. --missing keeps only the contexts
+evidence that is present, stale or missing. --by frame makes a row per frame
+the actor pointed to: the contexts it covers, which the design draws as one
+look, with when they were recorded and how many are stale. --missing keeps only the contexts
 still to cover: those without evidence, or whose evidence is stale.
 `;
 
@@ -797,8 +800,8 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
   const [id, ...filterArgs] = positionals as [string, ...string[]];
   const actor = values.actor;
   if (actor === undefined) throw new UsageError("--actor is required");
-  if (values.by !== undefined && values.by !== "profile") {
-    throw new Refusal('--by takes only "profile" here');
+  if (values.by !== undefined && values.by !== "profile" && values.by !== "frame") {
+    throw new Refusal('--by takes "profile" or "frame" here');
   }
   requireActor(resolver, actor);
   requireNodeId(resolver, id);
@@ -830,11 +833,88 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
     values.missing === true
       ? everyRow.filter(({ evidence }) => evidenceState(evidence) !== "present")
       : everyRow;
+  // The states a set of contexts covers, for each name the profiles do not
+  // fix, in declared order.
+  const unprofiled = [...new Set(rows.flatMap(({ context }) => Object.keys(context)))].filter(
+    (name) => !resolver.profiled.has(name),
+  );
+  const statesOf = (contexts: NodeContext[]) =>
+    Object.fromEntries(
+      unprofiled.map((name) => [
+        name,
+        declaredValues(resolver, id, name).filter((value) =>
+          contexts.some((context) => context[name] === value),
+        ),
+      ]),
+    );
+  if (values.by === "frame") {
+    const frames = new Map<
+      string,
+      {
+        file: string;
+        frame: string;
+        at: Set<string>;
+        revisions: Set<string>;
+        members: { context: NodeContext; stale: boolean }[];
+      }
+    >();
+    for (const row of rows) {
+      for (const { at, source, revision, stale } of row.evidence) {
+        const key = JSON.stringify([source.file, source.frame]);
+        const group = frames.get(key) ?? {
+          file: source.file,
+          frame: source.frame,
+          at: new Set<string>(),
+          revisions: new Set<string>(),
+          members: [],
+        };
+        group.at.add(at);
+        group.revisions.add(revision);
+        group.members.push({ context: row.context, stale });
+        frames.set(key, group);
+      }
+    }
+    const grouped = [...frames.values()].map((group) => {
+      const profiles: string[][] = [];
+      for (const { context } of group.members) {
+        const names = resolver.profilesOf(context);
+        if (!profiles.some((known) => JSON.stringify(known) === JSON.stringify(names))) {
+          profiles.push(names);
+        }
+      }
+      return {
+        file: group.file,
+        frame: group.frame,
+        actor,
+        at: [...group.at].sort(),
+        revisions: [...group.revisions],
+        profiles: profiles.sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b)),
+        states: statesOf(group.members.map(({ context }) => context)),
+        contexts: group.members.length,
+        stale: group.members.filter(({ stale }) => stale).length,
+      };
+    });
+    const withoutEvidence = rows.filter(({ evidence }) => evidence.length === 0).length;
+    if (values.table !== true) {
+      print(io, { node: id, actor, by: "frame", frames: grouped, withoutEvidence });
+      return;
+    }
+    const table = drawTable(
+      ["frame", "profiles", ...unprofiled, "contexts", "stale"],
+      grouped.map((row) => [
+        `${row.file.split("/").pop()}#${row.frame}`,
+        row.profiles.map(profileLabel).join(", ") || NONE,
+        ...unprofiled.map((name) => (row.states[name] ?? []).join(", ")),
+        String(row.contexts),
+        String(row.stale),
+      ]),
+    );
+    io.stdout(withoutEvidence === 0 ? table : `${table}\n${noEvidenceLine(withoutEvidence)}\n`);
+    return;
+  }
   if (values.by === "profile") {
     // A row per combination of profiles, in profile order.
-    const names = [...new Set(rows.flatMap(({ context }) => Object.keys(context)))].filter(
-      (name) => !resolver.profiled.has(name),
-    );
+    const names = unprofiled;
     const groups = new Map<string, typeof rows>();
     for (const row of rows) {
       const key = JSON.stringify(resolver.profilesOf(row.context));
@@ -845,14 +925,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
         members.filter(({ evidence }) => evidenceState(evidence) === state).length;
       return {
         profiles: JSON.parse(key) as string[],
-        states: Object.fromEntries(
-          names.map((name) => [
-            name,
-            declaredValues(resolver, id, name).filter((value) =>
-              members.some(({ context }) => context[name] === value),
-            ),
-          ]),
-        ),
+        states: statesOf(members.map(({ context }) => context)),
         contexts: members.length,
         present: count("present"),
         stale: count("stale"),

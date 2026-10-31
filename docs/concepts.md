@@ -568,3 +568,9 @@ it, where `—` is the list of what is missing. When the file changes after an
 entry is recorded, the entry is **stale**: still valid, shown as
 `website.pen#vbGba (stale)`, and due for another look. A stale entry is not an
 error, so editing a design never blocks work on the model.
+
+Several entries can point to the same frame. That says the design draws those
+contexts as one look: the closed menu button on a phone and on a tablet, say.
+`dimensions evidence menu-button --actor design-agent --by frame` lists each
+frame with the contexts it covers. It is the actor's claim, recorded with its
+provenance; nothing yet checks it against the model.

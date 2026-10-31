@@ -390,6 +390,32 @@ With `--by profile`, there is a row per profile (or profiles sharing a
 combination), in profile order: the states the node has there, and how many
 of its contexts have evidence that is present, stale or missing.
 `notPresent` lists the profiles the node does not exist on.
+With `--by frame`, there is a row per frame the actor pointed to: the
+contexts that share it, which the design draws as one look, with its
+provenance. `withoutEvidence` counts the contexts no frame covers.
+
+```json
+{
+  "node": "menu-button",
+  "actor": "design-agent",
+  "by": "frame",
+  "frames": [
+    {
+      "file": "design/website.pen",
+      "frame": "l5Z3Z",
+      "actor": "design-agent",
+      "at": ["2026-10-31T13:15:00Z"],
+      "revisions": ["9f3c…"],
+      "profiles": [["phone"], ["tablet-portrait"], ["tablet-portrait+magic-keyboard"]],
+      "states": { "hover": ["rest"], "focus": ["blurred"], "menu": ["closed"] },
+      "contexts": 3,
+      "stale": 0
+    }
+  ],
+  "withoutEvidence": 0
+}
+```
+
 With `--missing`, only contexts without evidence, or with stale evidence, are
 kept: the rows and `states` then show what is still to cover.
 

@@ -284,6 +284,11 @@ export function notPresentLine(labels: string[]): string {
   return `Not present: ${labels.join(", ")}`;
 }
 
+// How many contexts have no evidence at all.
+export function noEvidenceLine(count: number): string {
+  return `No evidence: ${count} ${count === 1 ? "context" : "contexts"}`;
+}
+
 // A Markdown table with its columns padded to their widest cell.
 export function markdown(header: string[], body: string[][]): string[] {
   const widths = header.map((title, index) =>
