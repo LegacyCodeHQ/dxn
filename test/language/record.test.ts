@@ -67,9 +67,11 @@ record Evidence { source: Source }
     ]).toEqual([
       ["5:12: unknown-type: Pointer is a dimension, not an enum, a record or a scalar"],
       [
-        "4:9: unknown-type: Tol is not an enum, a record or a scalar (Tool, Verdict, Source, Timestamp)",
+        "4:9: unknown-type: Tol is not an enum, a record or a scalar (Tool, Verdict, Source, Timestamp, NonEmptyString)",
       ],
-      ["2:9: unknown-type: Tool is not an enum, a record or a scalar (Source, Timestamp)"],
+      [
+        "2:9: unknown-type: Tool is not an enum, a record or a scalar (Source, Timestamp, NonEmptyString)",
+      ],
     ]);
   });
 

@@ -61,3 +61,50 @@ describe("Timestamp", () => {
     ]);
   });
 });
+
+describe("NonEmptyString", () => {
+  it("types a record's field", () => {
+    const source = "record Source {\n  frame: NonEmptyString\n}\n";
+    expect([
+      problems(source),
+      parse(source).records[0]?.fields.map((field) => [field.name, field.type.name]),
+    ]).toEqual([[], [["frame", "NonEmptyString"]]]);
+  });
+
+  it("is built in, so its name cannot be declared", () => {
+    expect(problems("dimension NonEmptyString = yes | no\n")).toEqual([
+      "1:11: reserved-name: NonEmptyString is a built-in scalar; choose another name",
+    ]);
+  });
+
+  it("is only for records: no state or dimension can have one", () => {
+    expect([
+      problems("type Link {\n  states frame: NonEmptyString\n}\n"),
+      problems("environment Device = NonEmptyString\n"),
+    ]).toEqual([
+      ["2:17: unknown-enum: NonEmptyString is a scalar, not an enum"],
+      ["1:22: unknown-dimension: NonEmptyString is a scalar, not a dimension"],
+    ]);
+  });
+
+  it("holds at least one character, with spaces inside allowed", () => {
+    expect(data("NonEmptyString", "R353q", "a frame", "8056e176")).toEqual([]);
+  });
+
+  it("reports a value that is empty, has spaces at an end, or has a control character", () => {
+    const message = (index: number, value: string) =>
+      `invalid-value: $[${index}].value: ${JSON.stringify(value)} is not a NonEmptyString: at least one character, with no spaces at either end and no control characters`;
+    expect(data("NonEmptyString", "", " R353q", "R353q ", "R35\n3q")).toEqual([
+      message(0, ""),
+      message(1, " R353q"),
+      message(2, "R353q "),
+      message(3, "R35\n3q"),
+    ]);
+  });
+
+  it("reports a value that is not a string", () => {
+    expect(data("NonEmptyString", null)).toEqual([
+      "wrong-kind: $[0].value: expected a NonEmptyString (a string), found null",
+    ]);
+  });
+});

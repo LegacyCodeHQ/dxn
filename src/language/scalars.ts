@@ -1,3 +1,4 @@
+import { isName } from "../compiler/shape.js";
 import { isTimestamp } from "../compiler/verification.js";
 
 // A built-in type whose values are not listed, only checked. Scalars type a
@@ -14,6 +15,11 @@ export const scalars: Scalar[] = [
     name: "Timestamp",
     valid: isTimestamp,
     definition: "an ISO 8601 date and time with a time zone, e.g. 2026-10-31T08:50:05Z",
+  },
+  {
+    name: "NonEmptyString",
+    valid: isName,
+    definition: "at least one character, with no spaces at either end and no control characters",
   },
 ];
 

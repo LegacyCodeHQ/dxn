@@ -399,13 +399,15 @@ Some data can never be an enum: the moment evidence was recorded, for
 instance, is one of endlessly many. A **scalar** is a built-in type whose
 values are checked rather than listed:
 
-| Scalar      | A valid value                                                           |
-| ----------- | ----------------------------------------------------------------------- |
-| `Timestamp` | an ISO 8601 date and time with a time zone, e.g. `2026-10-31T08:50:05Z` |
+| Scalar           | A valid value                                                                  |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `Timestamp`      | an ISO 8601 date and time with a time zone, e.g. `2026-10-31T08:50:05Z`        |
+| `NonEmptyString` | at least one character, with no spaces at either end and no control characters |
 
 ```
 record Evidence {
   at: Timestamp
+  fingerprint: NonEmptyString
 }
 ```
 
