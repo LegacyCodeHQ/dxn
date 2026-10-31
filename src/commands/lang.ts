@@ -1,9 +1,9 @@
 import { readFileSync, statSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import type { ParseResult } from "../language/ast.js";
 import { states as evaluateStates } from "../language/evaluate.js";
-import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
+import { folderOf, storedFiles } from "../language/store.js";
 import { validate } from "../language/validate.js";
 import { drawTable, NONE } from "../tables.js";
 import { type Command, type Context, command } from "./context.js";
@@ -38,11 +38,12 @@ Subcommands:
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
                                      as JSON, or a Markdown table with --table
-  validate <file> <record> <data>    Check a JSON file, a list of records, against
-                                     a record of the file: every field given, each
-                                     of its type, and no others. Print how many
-                                     records it checked, or every problem with its
-                                     line, column and JSON path
+  validate <file>                    Check the stored records: each record's data is
+                                     every JSON file in a folder named after it in
+                                     kebab-case, next to the file, each a list of
+                                     records with every field given, each of its
+                                     type, and no others. Print what it checked, or
+                                     every problem with its line, column and path
 `;
 
 // What a file declares, without positions, which are for diagnostics: each
@@ -140,31 +141,38 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
 });
 
 const validateCommand: Command = command(usage, (args, { io, cwd }) => {
-  const [file, recordName, data, ...rest] = args;
-  if (file === undefined || recordName === undefined || data === undefined || rest.length > 0) {
-    io.stderr(`dimensions: give a file, a record and a JSON file to check\n\n${usage}`);
+  const [file, ...rest] = args;
+  if (file === undefined || rest.length > 0) {
+    io.stderr(`dimensions: give one file, whose stored records to check\n\n${usage}`);
     return 2;
   }
   const parsed = read(file, cwd, io);
   if (typeof parsed === "number") return parsed;
-  const names = new Names(parsed);
-  if (names.kindOf(recordName) !== "record") {
-    io.stderr(`dimensions: ${names.not(recordName, "record")}\n`);
-    return 1;
+  const directory = resolve(cwd, dirname(file));
+  const stored: { record: string; folder: string; files: number; records: number }[] = [];
+  let failed = false;
+  const seen = new Set<string>();
+  for (const { name } of parsed.records) {
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const files = storedFiles(directory, name);
+    if (files === undefined) continue;
+    const folder = folderOf(name);
+    let records = 0;
+    for (const data of files) {
+      const shown = join(dirname(file), folder, data);
+      const source = readFileSync(join(directory, folder, data), "utf8");
+      const problems = validate(parsed, name, source);
+      for (const { line, column, code, path: at, message } of problems) {
+        io.stderr(`${shown}:${line}:${column}: ${code}: ${at}: ${message}\n`);
+      }
+      if (problems.length > 0) failed = true;
+      else records += (JSON.parse(source) as unknown[]).length;
+    }
+    stored.push({ record: name, folder, files: files.length, records });
   }
-  const path = resolve(cwd, data);
-  if (statSync(path, { throwIfNoEntry: false })?.isFile() !== true) {
-    io.stderr(`dimensions: file not found: ${JSON.stringify(data)}\n`);
-    return 1;
-  }
-  const source = readFileSync(path, "utf8");
-  const problems = validate(parsed, recordName, source);
-  for (const { line, column, code, path: at, message } of problems) {
-    io.stderr(`${data}:${line}:${column}: ${code}: ${at}: ${message}\n`);
-  }
-  if (problems.length > 0) return 1;
-  const records = (JSON.parse(source) as unknown[]).length;
-  io.stdout(`${JSON.stringify({ file, record: recordName, data, records })}\n`);
+  if (failed) return 1;
+  io.stdout(`${JSON.stringify({ file, stored })}\n`);
   return 0;
 });
 

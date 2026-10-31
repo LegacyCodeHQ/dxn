@@ -422,32 +422,61 @@ Scalars only type a record's fields. A state or a dimension cannot have one:
 their values must be listed, so a type's combinations can always be counted.
 A scalar's name is built in, so a file cannot declare it.
 
-### Checking data against a record
+### Where records are stored, and checking them
 
-Records are stored as JSON: a list of them, one object each, with a key for
-every field. A record's declaration is the schema, and `lang validate` checks
-the data against it:
+A record's data is stored by convention, so no declaration has to say where:
+**a record is stored in a folder named after it, next to the file that
+declares it.** The folder's name is the record's name in kebab-case, with no
+plural: `Evidence` is stored in `evidence/`, `DesignReview` in
+`design-review/`. Every `.json` file in the folder holds a list of the record,
+so the data can be split across as many files as you like:
 
-```bash
-dimensions lang validate evidence.dim Evidence records.json
 ```
+evidence.dim                # declares record Evidence
+evidence/
+  article-page.json         # [ {…}, {…} ]
+  home-page.json
+```
+
+A record with no folder is not stored: `Source` above only ever appears
+inside `Evidence`, so it needs none.
+
+Each stored record is an object with a key for every field: a record field
+holds an object, an enum field one of the enum's values as a string, and a
+scalar field a string that is a valid value of the scalar.
 
 ```json
 [
-  { "source": { "tool": "pen-dev", "verdict": "passed" } },
-  { "source": { "tool": "figma", "verdict": "passed" } }
+  {
+    "actor": "design-agent",
+    "at": "2026-10-31T08:50:05Z",
+    "source": { "file": "design/website.pen", "frame": "R353q" },
+    "fingerprint": "8056e176dcb1b7aa7e3c6ce6aee142848862fa5a"
+  }
 ]
 ```
 
-```
-records.json:3:25: unknown-value: $[1].source.tool: "figma" is not a value of Tool (pen-dev, code)
+`lang validate` checks every stored record against its declaration:
+
+```bash
+dimensions lang validate evidence.dim
 ```
 
-Every field must be given, each of its type, and no others; a record field
-holds an object, and an enum field one of the enum's values as a string. Each
-problem has its line and column and its JSON path, so a person or an agent
-can go straight to it. When the data is valid, the command prints how many
-records it checked.
+```
+evidence/article-page.json:9:14: unknown-value: $[1].actor: "designer" is not a value of Actor (design-agent)
+evidence/article-page.json:11:25: invalid-value: $[1].source.file: "/Users/me/website.pen" is not a RelativePath: a path from the repository root: parts split by /, none of them empty, . or .., and none with a \ or spaces at either end
+```
+
+Every field must be given, each of its type, and no others. Each problem has
+its file, line and column, and its JSON path, so a person or an agent can go
+straight to it. When everything is valid, the command prints what it checked:
+
+```json
+{
+  "file": "evidence.dim",
+  "stored": [{ "record": "Evidence", "folder": "evidence", "files": 1, "records": 2 }]
+}
+```
 
 Records are the first step toward evidence that the language itself checks:
 the next steps are fields of text, times and hashes, and a field that refers
@@ -580,7 +609,7 @@ comment     = "#" to the end of the line
 | `recursive-record`                                                            | error    | a record contains itself                                                 |
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name                               |
 
-Checking data with `lang validate` reports these, after any problem with the
+Checking stored records with `lang validate` reports these, after any problem with the
 JSON itself:
 
 | Code            | When                                                                   |

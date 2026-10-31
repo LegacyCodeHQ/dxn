@@ -1,5 +1,5 @@
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { capture } from "../support/cli.js";
 import { cleanup, writeProject } from "../support/project.js";
@@ -155,49 +155,79 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 });
 
 describe("lang validate", () => {
-  const schema = "enum Tool = pen-dev | code\nrecord Source {\n  tool: Tool\n}\n";
-  const project = (data: string) => {
+  const schema = `enum Tool = pen-dev | code
+record Source {
+  tool: Tool
+}
+record Evidence {
+  at: Timestamp
+}
+`;
+  // A folder with the schema in it, and these files, by path from it.
+  const project = (files: Record<string, string>, at = "evidence.dim") => {
     const root = writeProject({});
-    writeFileSync(join(root, "evidence.dim"), schema);
-    writeFileSync(join(root, "records.json"), data);
+    mkdirSync(join(root, dirname(at)), { recursive: true });
+    writeFileSync(join(root, at), schema);
+    for (const [path, content] of Object.entries(files)) {
+      mkdirSync(join(root, dirname(path)), { recursive: true });
+      writeFileSync(join(root, path), content);
+    }
     return (...args: string[]) => capture(["lang", "validate", ...args], root);
   };
 
-  it("checks a JSON list of records against a record, and says how many it checked", () => {
-    const result = project('[{ "tool": "code" }, { "tool": "pen-dev" }]')(
-      "evidence.dim",
-      "Source",
-      "records.json",
-    );
-    expect([result.code, JSON.parse(result.stdout)]).toEqual([
+  it("checks every JSON file in each record's folder, and says what it checked", () => {
+    const run = project({
+      "source/designs.json": '[{ "tool": "pen-dev" }, { "tool": "code" }]',
+      "source/code.json": '[{ "tool": "code" }]',
+      "source/notes.md": "not data",
+      "source/old/ignored.json": "not checked",
+    });
+    const result = run("evidence.dim");
+    expect([result.code, result.stderr, JSON.parse(result.stdout)]).toEqual([
       0,
-      { file: "evidence.dim", record: "Source", data: "records.json", records: 2 },
+      "",
+      {
+        file: "evidence.dim",
+        stored: [{ record: "Source", folder: "source", files: 2, records: 3 }],
+      },
     ]);
   });
 
-  it("reports every problem in the data with its line, column and path, and fails", () => {
-    const result = project('[{ "tool": "figma" }, {}]')("evidence.dim", "Source", "records.json");
-    expect([result.code, result.stderr, result.stdout]).toEqual([
+  it("leaves out a record with no folder: it is not stored", () => {
+    const result = project({})("evidence.dim");
+    expect([result.code, JSON.parse(result.stdout).stored]).toEqual([0, []]);
+  });
+
+  it("reports every problem in every file, with the file's path, and fails", () => {
+    const result = project({
+      "source/a.json": '[{ "tool": "figma" }]',
+      "evidence/b.json": '[{ "at": "yesterday" }]',
+      "evidence/c.json": '{ "at": "2026-10-31T08:50:05Z" }',
+    })("evidence.dim");
+    expect([result.code, result.stderr.split("\n"), result.stdout]).toEqual([
       1,
       [
-        'records.json:1:12: unknown-value: $[0].tool: "figma" is not a value of Tool (pen-dev, code)',
-        "records.json:1:23: missing-field: $[1]: Source is missing tool",
+        'source/a.json:1:12: unknown-value: $[0].tool: "figma" is not a value of Tool (pen-dev, code)',
+        'evidence/b.json:1:10: invalid-value: $[0].at: "yesterday" is not a Timestamp: an ISO 8601 date and time with a time zone, e.g. 2026-10-31T08:50:05Z',
+        "evidence/c.json:1:1: wrong-kind: $: expected a list of Evidence records, found an object",
         "",
-      ].join("\n"),
+      ],
       "",
     ]);
   });
 
-  it("refuses a name that is not a record, a missing file, and the wrong arguments", () => {
-    const run = project("[]");
-    expect([
-      run("evidence.dim", "Tool", "records.json").stderr,
-      run("evidence.dim", "Source", "missing.json").stderr,
-      run("evidence.dim", "Source").code,
-    ]).toEqual([
-      "dimensions: Tool is an enum, not a record\n",
-      'dimensions: file not found: "missing.json"\n',
-      2,
-    ]);
+  it("looks for the folders next to the file", () => {
+    const result = project(
+      { "model/source/a.json": '[{ "tool": "lisp" }]', "source/b.json": '[{ "tool": "lisp" }]' },
+      "model/evidence.dim",
+    )("model/evidence.dim");
+    expect(result.stderr).toBe(
+      'model/source/a.json:1:12: unknown-value: $[0].tool: "lisp" is not a value of Tool (pen-dev, code)\n',
+    );
+  });
+
+  it("needs one file", () => {
+    const run = project({});
+    expect([run().code, run("evidence.dim", "Source", "records.json").code]).toEqual([2, 2]);
   });
 });
