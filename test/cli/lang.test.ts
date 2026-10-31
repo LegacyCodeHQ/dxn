@@ -13,6 +13,15 @@ function file(source: string) {
 }
 
 describe("lang check", () => {
+  it("prints the modifiers a file declares, with the profiles they are on and what they set", () => {
+    const run = file(
+      "dimension Pointer = mouse | touch\nenvironment Device = Pointer\nprofile tablet: Device { Pointer = touch }\nmodifier trackpad on tablet { Pointer = mouse }\n",
+    );
+    expect(JSON.parse(run("check", "wordmark.dxn").stdout).modifiers).toEqual([
+      { name: "trackpad", on: ["tablet"], values: { Pointer: "mouse" } },
+    ]);
+  });
+
   it("prints the records a file declares, with their fields", () => {
     const run = file("enum Tool = pen-dev | code\nrecord Source {\n  tool: Tool\n}\n");
     const result = run("check", "wordmark.dxn");
@@ -67,6 +76,7 @@ describe("lang check", () => {
         ],
         environments: [],
         profiles: [],
+        modifiers: [],
         records: [],
       },
     ]);

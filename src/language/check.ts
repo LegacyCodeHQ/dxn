@@ -22,6 +22,7 @@ export function check(file: ParseResult): void {
   checkTypes(file, names, report);
   checkEnvironments(file, names, report);
   checkProfiles(file, names, report);
+  checkModifiers(file, names, report);
   checkRecords(file, names, report);
 }
 
@@ -33,6 +34,7 @@ function checkDeclared(file: ParseResult, report: Report): void {
     ...file.types,
     ...file.environments,
     ...file.profiles,
+    ...file.modifiers,
     ...file.records,
   ].sort((a, b) => a.line - b.line || a.column - b.column);
   const declared = new Map<string, Located>();
@@ -263,6 +265,67 @@ function checkProfiles(file: ParseResult, names: Names, report: Report): void {
         `${profile.name} does not give ${missing.join(", ")}, which ${environment.name} requires`,
         profile,
       );
+    }
+  }
+}
+
+// Modifiers: on profiles that exist, each once; setting dimensions of the
+// profiles' environment, each once, with one of their values; and changing
+// something on each profile, or the profile it makes already exists.
+function checkModifiers(file: ParseResult, names: Names, report: Report): void {
+  const environment = file.environments.find(
+    ({ name }) => name === file.profiles[0]?.environment.name,
+  );
+  for (const modifier of file.modifiers) {
+    const listed = new Set<string>();
+    for (const profile of modifier.on) {
+      if (!names.is(profile.name, "profile")) {
+        report("unknown-profile", names.not(profile.name, "profile"), profile);
+      } else if (listed.has(profile.name)) {
+        report(
+          "duplicate-profile",
+          `${profile.name} is already listed in ${modifier.name}`,
+          profile,
+        );
+      }
+      listed.add(profile.name);
+    }
+    if (environment === undefined) continue;
+    const dimensions = environment.dimensions.map(({ name }) => name);
+    const set = new Map<string, string>();
+    for (const { dimension, value } of modifier.values) {
+      if (!dimensions.includes(dimension.name)) {
+        report(
+          "unknown-dimension",
+          `${dimension.name} is not a dimension of ${environment.name} (${dimensions.join(", ")})`,
+          dimension,
+        );
+      } else if (set.has(dimension.name)) {
+        report(
+          "duplicate-dimension",
+          `${dimension.name} is already set by ${modifier.name}`,
+          dimension,
+        );
+      } else {
+        set.set(dimension.name, value.name);
+        checkChosen([value], dimension.name, names, report, modifier.name);
+      }
+    }
+    if (set.size === 0 || modifier.broken) continue;
+    for (const on of modifier.on) {
+      const profile = file.profiles.find(({ name }) => name === on.name);
+      if (profile === undefined) continue;
+      const has = (name: string) =>
+        profile.values.find(({ dimension }) => dimension.name === name)?.value.name;
+      if ([...set].every(([name, value]) => has(name) === value)) {
+        const already = [...set].map(([name, value]) => `${name} = ${value}`).join(", ");
+        report(
+          "unchanged-profile",
+          `${modifier.name} changes nothing on ${profile.name}, which already has ${already}`,
+          on,
+          "warning",
+        );
+      }
     }
   }
 }

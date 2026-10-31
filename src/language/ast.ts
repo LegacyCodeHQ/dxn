@@ -61,6 +61,13 @@ export interface Profile extends Declaration {
   values: Assignment[];
 }
 
+// A modifier: an accessory that fits some profiles and sets some of their
+// dimensions, making a profile "<profile>+<modifier>" for each.
+export interface Modifier extends Declaration {
+  on: Located[];
+  values: Assignment[];
+}
+
 // A dimension: what the environment varies by, with its own values. Its
 // values cascade down the tree, which an enum's do not.
 export type Dimension = Enum;
@@ -94,6 +101,7 @@ export interface ParseResult {
   types: Type[];
   environments: Environment[];
   profiles: Profile[];
+  modifiers: Modifier[];
   records: RecordDeclaration[];
   diagnostics: Diagnostic[];
 }

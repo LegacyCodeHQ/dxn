@@ -1,7 +1,15 @@
 import type { Declaration, ParseResult } from "./ast.js";
 import { scalars } from "./scalars.js";
 
-export type Kind = "enum" | "dimension" | "type" | "environment" | "profile" | "record" | "scalar";
+export type Kind =
+  | "enum"
+  | "dimension"
+  | "type"
+  | "environment"
+  | "profile"
+  | "modifier"
+  | "record"
+  | "scalar";
 
 export const article = (word: string) => (/^[AEIOUaeiou]/.test(word) ? "an" : "a");
 
@@ -19,13 +27,14 @@ export class Names {
   }
 
   private lists(): [Kind, Declaration[]][] {
-    const { enums, dimensions, types, environments, profiles, records } = this.file;
+    const { enums, dimensions, types, environments, profiles, modifiers, records } = this.file;
     return [
       ["enum", enums],
       ["dimension", dimensions],
       ["type", types],
       ["environment", environments],
       ["profile", profiles],
+      ["modifier", modifiers],
       ["record", records],
     ];
   }

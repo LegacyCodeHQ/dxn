@@ -724,8 +724,9 @@ time: see docs/language/guide.md. A .dxn file declares enums, each a named
 set of values; dimensions, each listing the values the environment varies
 by; types with the dimensions they need, their states, and rules for when
 a state's value exists; environments, each a product of dimensions;
-profiles, each an instance of an environment; and records, each a named
-group of typed fields. A # starts a comment, to the end of the line:
+profiles, each an instance of an environment; modifiers, accessories that
+change some profiles; and records, each a named group of typed fields. A #
+starts a comment, to the end of the line:
 
   # The wordmark's hover only exists with a mouse.
   enum Hover = rest | hovered

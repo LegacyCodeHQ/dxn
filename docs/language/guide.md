@@ -384,6 +384,44 @@ profile laptop: Device { Pointer = mouse }
 | laptop  | mouse   | dark  | ✓           | ✓              | ✓           | ✓              |
 ```
 
+## Modifiers: accessories that change a profile
+
+Some devices change with an accessory. A tablet is a touch screen without a
+keyboard, until it gets a keyboard with a trackpad: then it has a mouse and a
+keyboard, and the wordmark can be hovered and focused on it. That is not a new
+device, and it fits more than one: it is a **modifier**.
+
+```
+modifier magic-keyboard on tablet {
+  Pointer = mouse, Keyboard = keyboard
+}
+```
+
+A modifier's name is lowercase, like a profile's. After `on` come the
+profiles it fits, split by commas, and in braces the dimensions it sets, as in
+a profile; the dimensions it does not set keep the profile's values. For each
+profile it is on, it makes one more, named `<profile>+<modifier>`, and the
+matrix has a row for it:
+
+```
+| profile               | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |
+| --------------------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |
+| phone                 | touch   | no-keyboard | ✓           | —              | ✓              | —              |
+| tablet                | touch   | no-keyboard | ✓           | —              | ✓              | —              |
+| laptop                | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
+| tablet+magic-keyboard | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
+```
+
+A context names such a profile the same way:
+`"profile": "tablet+magic-keyboard"`. A modifier sets dimensions of the
+profiles' environment, each once, with one of their values, and is on
+profiles that exist. One that changes nothing on a profile it is on is a
+warning, since that profile already exists:
+
+```
+warning: unchanged-profile: magic changes nothing on laptop, which already has Keyboard = keyboard
+```
+
 ## Records: plain data
 
 Everything so far describes the matrix: what an element's states are, and
@@ -660,8 +698,6 @@ or under discussion but not part of it yet; see [design.md](design.md):
 - **A runtime.** Evidence today is recorded by the actors that draw and
   build. A runtime would check the real system itself, driving a browser or a
   device into each combination and recording what it shows.
-- **Modifiers.** Accessories that change some profiles' values, like an iPad
-  with a Magic Keyboard.
 - **Kits.** Domain words that alias the core, such as a UI kit, so the same
   language can describe other domains. `Actor` in the records above is already
   the pattern: the core knows nothing about any actor or tool; a file or a kit
@@ -689,16 +725,17 @@ rendering in the code, look the same.
 | record      | `Evidence`                    | capital letter                                      |
 | state       | `hover`                       | lowercase letter                                    |
 | profile     | `laptop`                      | lowercase letter                                    |
+| modifier    | `magic-keyboard`              | lowercase letter                                    |
 | field       | `source`                      | lowercase letter                                    |
 | value       | `rest`, `no-keyboard`, `19px` | a letter or digit, then letters, digits and hyphens |
 
-Every enum, dimension, type, environment, profile and record shares one namespace:
+Every enum, dimension, type, environment, profile, modifier and record shares one namespace:
 each name is declared once in a file.
 
 ### Grammar
 
 ```
-file        = { blank-line | comment | enum | dimension | type | environment | profile | record }
+file        = { blank-line | comment | enum | dimension | type | environment | profile | modifier | record }
 enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | states | rule } "}"
@@ -708,6 +745,7 @@ rule        = state-name "=" value "only" "when" condition newline
 condition   = Name ( "=" value | "in" "(" value { "," value } ")" )
 environment = "environment" Name "=" Name { "x" [newline] Name } newline
 profile     = "profile" profile-name ":" Name "{" { assignment ( "," | newline ) } "}"
+modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile-name } "{" { assignment ( "," | newline ) } "}"
 assignment  = Name "=" value
 record      = "record" Name [ "with" "context" ] "{" { blank-line | field-name ":" Name newline } "}"
 comment     = "#" to the end of the line
@@ -719,13 +757,13 @@ comment     = "#" to the end of the line
 | ----------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
 | `syntax-error`                                                                | error    | the text does not follow the grammar                                                             |
 | `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name` | error    | the name does not start with a capital letter                                                    |
-| `state-name`, `profile-name`, `field-name`                                    | error    | the name does not start with a lowercase letter                                                  |
+| `state-name`, `profile-name`, `modifier-name`, `field-name`                   | error    | the name does not start with a lowercase letter                                                  |
 | `duplicate-name`                                                              | error    | a name is declared twice in the file                                                             |
 | `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension or condition                                         |
 | `duplicate-state`                                                             | error    | a type has two states with one name                                                              |
 | `states-twice`                                                                | error    | a type has two `states` lines                                                                    |
 | `duplicate-rule`                                                              | error    | a state value has two rules                                                                      |
-| `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment or a profile                         |
+| `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment, a profile or a modifier             |
 | `unknown-enum`                                                                | error    | a state's values come from something that is not an enum                                         |
 | `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                                            |
 | `unknown-state`                                                               | error    | a rule names a state the type does not have                                                      |
@@ -734,6 +772,9 @@ comment     = "#" to the end of the line
 | `unknown-environment`                                                         | error    | a profile's environment is not one                                                               |
 | `incomplete-profile`                                                          | error    | a profile leaves out a dimension of its environment                                              |
 | `mixed-profiles`                                                              | error    | profiles are instances of different environments                                                 |
+| `unknown-profile`                                                             | error    | a modifier is on a profile that is not one                                                       |
+| `duplicate-profile`                                                           | error    | a modifier lists a profile twice                                                                 |
+| `unchanged-profile`                                                           | warning  | a modifier changes nothing on a profile it is on                                                 |
 | `duplicate-field`                                                             | error    | a record has two fields with one name                                                            |
 | `unknown-type`                                                                | error    | a field's type is not an enum, a record or a scalar                                              |
 | `recursive-record`                                                            | error    | a record contains itself                                                                         |

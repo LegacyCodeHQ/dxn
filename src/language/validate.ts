@@ -3,6 +3,7 @@ import { type JsonNode, parseJson } from "../compiler/json.js";
 import type { ParseResult, RecordDeclaration } from "./ast.js";
 import { states as evaluate } from "./evaluate.js";
 import { article, Names } from "./names.js";
+import { profilesOf } from "./profiles.js";
 import { scalar } from "./scalars.js";
 
 // How a JSON value reads in a message.
@@ -97,7 +98,7 @@ export function validate(file: ParseResult, recordName: string, source: string):
       ? choose(
           "a profile",
           "profile",
-          file.profiles.map(({ name }) => name),
+          profilesOf(file).map(({ name }) => name),
           childPath(path, "profile"),
           member("profile")?.value,
         )

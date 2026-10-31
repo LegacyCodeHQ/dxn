@@ -1,4 +1,5 @@
 import type { ParseResult } from "./ast.js";
+import { profilesOf } from "./profiles.js";
 
 // What a type's states are under each combination of the dimensions its
 // rules use: one row per combination, in the order the dimensions are first
@@ -26,20 +27,19 @@ export function states(file: ParseResult, typeName: string): TypeStates {
   const dimensions = type.needs.map(({ name }) => name);
   // With profiles, a row per profile, with the values it gives; the
   // dimensions it does not give still go through every value.
+  const profiles = profilesOf(file);
   const given = new Set(
     file.environments
-      .filter(({ name }) => file.profiles.some(({ environment }) => environment.name === name))
+      .filter(({ name }) => profiles.some(({ environment }) => environment === name))
       .flatMap((environment) => environment.dimensions.map(({ name }) => name)),
   );
   const starts: { profile?: string; when: Record<string, string> }[] =
-    file.profiles.length === 0
+    profiles.length === 0
       ? [{ when: {} }]
-      : file.profiles.map((profile) => ({
+      : profiles.map((profile) => ({
           profile: profile.name,
           when: Object.fromEntries(
-            profile.values
-              .filter(({ dimension }) => dimensions.includes(dimension.name))
-              .map(({ dimension, value }) => [dimension.name, value.name]),
+            Object.entries(profile.values).filter(([name]) => dimensions.includes(name)),
           ),
         }));
   let combinations = starts;

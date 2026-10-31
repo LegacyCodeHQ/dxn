@@ -18,8 +18,9 @@ time: see docs/language/guide.md. A .dxn file declares enums, each a named
 set of values; dimensions, each listing the values the environment varies
 by; types with the dimensions they need, their states, and rules for when
 a state's value exists; environments, each a product of dimensions;
-profiles, each an instance of an environment; and records, each a named
-group of typed fields. A # starts a comment, to the end of the line:
+profiles, each an instance of an environment; modifiers, accessories that
+change some profiles; and records, each a named group of typed fields. A #
+starts a comment, to the end of the line:
 
   # The wordmark's hover only exists with a mouse.
   enum Hover = rest | hovered
@@ -85,12 +86,19 @@ const check: Command = command(usage, (args, { io, cwd }) => {
   }
   const parsed = read(file, cwd, io);
   if (typeof parsed === "number") return parsed;
-  const { enums, dimensions, types, environments, profiles, records } = parsed;
+  const { enums, dimensions, types, environments, profiles, modifiers, records } = parsed;
   const output = {
     file,
     ...(plain({ enums, dimensions, types, environments }) as object),
     profiles: profiles.map(({ values, ...profile }) => ({
       ...(plain(profile) as object),
+      values: Object.fromEntries(
+        values.map(({ dimension, value }) => [dimension.name, value.name]),
+      ),
+    })),
+    modifiers: modifiers.map(({ name, on, values }) => ({
+      name,
+      on: on.map((profile) => profile.name),
       values: Object.fromEntries(
         values.map(({ dimension, value }) => [dimension.name, value.name]),
       ),

@@ -2,7 +2,7 @@
 // at a time. A file declares enums, dimensions, types, environments and
 // profiles:
 //
-//   file        = { blank-line | enum | dimension | type | environment | profile | record }
+//   file        = { blank-line | enum | dimension | type | environment | profile | modifier | record }
 //   enum        = "enum" name "=" value { "|" [newline] value } newline
 //   dimension   = "dimension" name "=" value { "|" [newline] value } newline
 //   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | states | rule } "}"
@@ -12,6 +12,7 @@
 //   condition   = name ( "=" value | "in" "(" value { "," value } ")" )
 //   environment = "environment" name "=" name { "x" [newline] name } newline
 //   profile     = "profile" profile-name ":" name "{" { assignment ( "," | newline ) } "}"
+//   modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile-name } "{" { assignment ( "," | newline ) } "}"
 //   assignment  = name "=" value
 //   record      = "record" name [ "with" "context" ] "{" { blank-line | field-name ":" name newline } "}"
 //   name        = capital letter, then letters and digits
@@ -21,7 +22,16 @@
 // A mistake is reported where it is, and reading skips to the next line that
 // starts a declaration. Then check.ts checks what was read.
 
-import type { Condition, Declaration, Enum, Located, ParseResult, Rule, State } from "./ast.js";
+import type {
+  Assignment,
+  Condition,
+  Declaration,
+  Enum,
+  Located,
+  ParseResult,
+  Rule,
+  State,
+} from "./ast.js";
 import { check } from "./check.js";
 import { describe, located, scan, type Token, type TokenKind } from "./scan.js";
 
@@ -40,6 +50,7 @@ export function parse(source: string): ParseResult {
     types: [],
     environments: [],
     profiles: [],
+    modifiers: [],
     records: [],
     diagnostics: [],
   };
@@ -247,13 +258,31 @@ export function parse(source: string): ParseResult {
     const environment = word('an environment name after ":"');
     const profile = keep(result.profiles, { ...named, environment, values: [] });
     expect("{", '"{" after the environment name');
-    braces(profile.name, () => {
+    assignments(profile.name, profile.values);
+  };
+
+  // "{ <Dimension> = <value>, ... }": a value for each dimension, split by
+  // commas or lines.
+  const assignments = (owner: string, into: Assignment[]) => {
+    braces(owner, () => {
       const dimension = word('a dimension or "}"');
       expect("=", `"=" after ${JSON.stringify(dimension.name)}`);
-      profile.values.push({ dimension, value: word('a value after "="') });
+      into.push({ dimension, value: word('a value after "="') });
       if (peek().kind === ",") next();
       else end(["newline", "}"], '",", the end of the line or "}"');
     });
+  };
+
+  // A modifier: "modifier <name> on <profile>, ... { <Dimension> = <value>, ... }".
+  const modifierDeclaration = () => {
+    next();
+    const named = name("modifier", 'a modifier name after "modifier"', lowercase);
+    const modifier = keep(result.modifiers, { ...named, on: [], values: [] });
+    keyword("on", `"on" after ${JSON.stringify(named.name)}`);
+    const profile = (after: string) => word(`a profile after ${after}`);
+    modifier.on.push(...list(",", '"on"', profile, ["{"], '"{"'));
+    expect("{", '"{" after the profiles');
+    assignments(modifier.name, modifier.values);
   };
 
   // A record: "record <Name> [with context] { <field>: <Type> ... }", a field
@@ -283,6 +312,7 @@ export function parse(source: string): ParseResult {
     type: typeDeclaration,
     environment: environmentDeclaration,
     profile: profileDeclaration,
+    modifier: modifierDeclaration,
     record: recordDeclaration,
   };
   // A line that starts a declaration.
@@ -300,7 +330,10 @@ export function parse(source: string): ParseResult {
     try {
       const declaration = token.kind === "word" ? declarations[token.text] : undefined;
       if (declaration === undefined) {
-        fail(token, '"enum", "dimension", "type", "environment", "profile" or "record"');
+        fail(
+          token,
+          '"enum", "dimension", "type", "environment", "profile", "modifier" or "record"',
+        );
       }
       declaration?.();
     } catch (error) {
