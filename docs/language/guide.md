@@ -1380,7 +1380,7 @@ each name is declared once in a file.
 ### Grammar
 
 ```
-file        = { blank-line | comment | enum | dimension | type | environment | profile | modifier | record }
+file        = { blank-line | comment | enum | dimension | type | environment | profile | modifier | record | expect }
 enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" field { "," [newline] field } ]
@@ -1408,6 +1408,7 @@ record      = "record" Name [ "with" "context" ] "{" { blank-line | record-field
 record-field = field-name ":" Name { "." Name } [ "=" "when" field-name "{" { blank-line | branch } "}" ] newline
 expect      = "expect" string "{" "in" path [ "and" "below" ] [ "when" pairs ] [ "on" event ] ( ( "then" | "some" ) pairs | "absent" ) "}"
 pairs       = key "=" value { "," key "=" value }       # key: profile, a dimension, a state, or a parent's state
+                                                        # a profile's value may be <profile> "+" <modifier>
 comment     = "#" to the end of the line
 ```
 
@@ -1416,8 +1417,9 @@ comment     = "#" to the end of the line
 | Code                                                                          | Severity | When                                                                                             |
 | ----------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
 | `syntax-error`                                                                | error    | the text does not follow the grammar                                                             |
-| `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name` | error    | the name does not start with a capital letter                                                    |
+| `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name` | error    | the name does not start with a capital letter, or has more than letters and digits               |
 | `state-name`, `profile-name`, `modifier-name`, `field-name`, `child-name`     | error    | the name does not start with a lowercase letter                                                  |
+| `action-name`                                                                 | error    | an action's name does not start with a lowercase letter                                          |
 | `duplicate-name`                                                              | error    | a name is declared twice in the file, or an expectation's title                                  |
 | `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension, condition or `when`                                 |
 | `duplicate-state`                                                             | error    | a type has two states with one name                                                              |
@@ -1425,11 +1427,12 @@ comment     = "#" to the end of the line
 | `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment, a profile or a modifier             |
 | `unknown-enum`                                                                | error    | a state's values come from something that is not an enum                                         |
 | `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                                            |
-| `unknown-state`                                                               | error    | a rule, a child's condition or an action names a state the type does not have                    |
+| `unknown-state`                                                               | error    | a rule, a child's condition, a binding, a `provides` or an action names a state it does not have |
 | `unknown-value`                                                               | error    | a value is not one of its enum's or dimension's                                                  |
 | `unneeded-dimension`                                                          | error    | a rule, a `when`, a child condition or an event uses a dimension its type does not need          |
 | `incomplete-when`                                                             | error    | a `when` leaves out a value of its dimension                                                     |
-| `rule-on-derived`                                                             | error    | a rule is on a state that a `when` decides                                                       |
+| `rule-on-derived`                                                             | error    | a rule is on a state that a `when` or a value decides, or that is received                       |
+| `unknown-field`                                                               | error    | a derived field's `when` is on a field the record does not have                                  |
 | `unknown-environment`                                                         | error    | a profile's environment is not one                                                               |
 | `incomplete-profile`                                                          | error    | a profile leaves out a dimension of its environment                                              |
 | `mixed-profiles`                                                              | error    | profiles are instances of different environments                                                 |

@@ -1,37 +1,5 @@
 // A hand-written parser for the dxn language, which grows one concept
-// at a time. A file declares enums, dimensions, types, environments and
-// profiles:
-//
-//   file        = { blank-line | enum | dimension | type | environment | profile | modifier | record }
-//   enum        = "enum" name "=" value { "|" [newline] value } newline
-//   dimension   = "dimension" name "=" value { "|" [newline] value } newline
-//   type        = "type" name [ "needs" name { "," [newline] name } ] [ "receives" field { "," [newline] field } ]
-//                 "{" { blank-line | state | rule | enum | type | has | provides } "}"
-//   provides    = "provides" state-name newline
-//   action      = "action" action-name ":" state-name value "->" value newline
-//   on          = "on" event ":" name { "." name } [ "," "focus" name { "." name } ] newline
-//   event       = "click" name { "." name } | "key" name | "pointer" "outside" | name ( "=" value | "in" "(" value { "," value } ")" )
-//   has         = "has" child-name ":" name { "." name } [ bindings ] [ "only" "when" condition ] newline
-//   bindings    = "{" { state-name "=" state-name ( "," | newline ) } "}"
-//   state       = "state" field { "," [newline] field } newline
-//               | "state" field "=" "when" name "{" { blank-line | branch } "}" newline
-//               | "state" field "=" value newline
-//   branch      = value { "," value } "->" value newline
-//   field       = state-name ":" name { "." name }
-//   rule        = state-name "=" value "only" "when" condition newline
-//   condition   = name ( "=" value | "in" "(" value { "," value } ")" )
-//   environment = "environment" name "=" name { "x" [newline] name } newline
-//   profile     = "profile" profile-name ":" name "{" { assignment ( "," | newline ) } "}"
-//   modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile-name } "{" { assignment ( "," | newline ) } "}"
-//   assignment  = name "=" value
-//   record      = "record" name [ "with" "context" ] "{" { blank-line | field } "}"
-//   field       = field-name ":" name { "." name } [ "=" "when" field-name "{" { blank-line | branch } "}" ] newline
-//   name        = capital letter, then letters and digits
-//   value       = a letter or digit, then letters, digits and hyphens
-//   expect      = "expect" string "{" "in" path [ "and" "below" ] [ "when" pairs ]
-//                 ( ( "then" | "some" ) pairs | "absent" ) "}"
-//   pairs       = name { "." name } "=" value { "," name { "." name } "=" value }
-//   comment     = "#" to the end of the line, skipped like a space
+// at a time. Its grammar is in docs/language/guide.md, under Reference.
 //
 // A mistake is reported where it is, and reading skips to the next line that
 // starts a declaration. Then check.ts checks what was read.
