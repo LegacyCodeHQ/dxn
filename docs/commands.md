@@ -29,12 +29,27 @@ asks which.
 
 ## Contents
 
-- Project: [init](#init), [validate](#validate), [status](#status)
+- Project: [workflow](#workflow), [init](#init), [validate](#validate), [status](#status)
 - Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions)
 - Record: [verify](#verify), [unverify](#unverify)
 - Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [override](#override)
 
 ## Project
+
+### workflow
+
+```text
+Usage: dimensions workflow
+
+Prints the step-by-step guide to building a model, from an empty folder to
+verified checks, as Markdown. Needs no project.
+```
+
+Prints `docs/workflow.md`, which is built into the program, so the guide is there even when the tool ships as one binary with no docs folder.
+
+```bash
+dimensions workflow
+```
 
 ### init
 

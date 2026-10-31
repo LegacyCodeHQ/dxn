@@ -21,6 +21,7 @@ import { stateGroup } from "./commands/state-group.js";
 import { type } from "./commands/type.js";
 import { validate } from "./commands/validate.js";
 import { unverify, verify } from "./commands/verify.js";
+import { workflow } from "./commands/workflow.js";
 import type { Io } from "./io.js";
 import { parseGlobal } from "./project.js";
 import { version } from "./version.js";
@@ -30,6 +31,7 @@ export type { Io } from "./io.js";
 const usage = `Usage: dimensions <command> [options]
 
 Project
+  workflow            Print the step-by-step guide to building a model; start here
   init                Create a .dimensions project in the working directory
   validate            Compile the project and report every error
   status [<node-id>]  Report each required check as passed, failed or missing
@@ -72,11 +74,11 @@ Model
 
   help [<command>]    Show this overview, or a command's usage
 
-Run "dimensions help <command>" (or "dimensions <command> --help") for a command's
-options. The docs/ folder of the dimensions package shows how to build a model
-step by step (workflow.md), and explains the concepts (concepts.md), every
-command (commands.md), every diagnostic code (diagnostics.md) and the JSON
-output (output.md).
+To build a model, start with "dimensions workflow": it prints the step-by-step
+guide as Markdown. Run "dimensions help <command>" (or "dimensions <command>
+--help") for a command's options. The docs/ folder of the dimensions package
+also explains the concepts, every command, every diagnostic code and the JSON
+output.
 
 Options:
   --dir <directory>   Use this project directory instead of the nearest .dimensions
@@ -86,6 +88,7 @@ Options:
 `;
 
 const commands: Record<string, Command> = {
+  workflow,
   init,
   validate,
   show,

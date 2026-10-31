@@ -14,6 +14,7 @@ Everything is a CLI call that prints JSON, run inside a project (the nearest
 `.dimensions/` folder, or `--dir`). To learn a project before changing it:
 
 ```bash
+dimensions workflow                # the step-by-step guide to building a model
 dimensions --help                  # every command
 dimensions help contexts           # one command's usage; no project needed
 dimensions validate                # does the project compile? errors: file:line:col: code: message
@@ -39,9 +40,9 @@ editing the files: they refuse any change that would break the project, and
 `--dry-run` shows what they would write. Exit code 1 means the project
 refused, 2 means the command line is wrong.
 
-To build a model from an empty folder, follow
-[workflow.md](docs/workflow.md): dimensions, then profiles, declarations, the
-tree, variation, behavior, rules, review and verification, with every command.
+To build a model from an empty folder, run `dimensions workflow`: it prints
+the step-by-step guide ([workflow.md](docs/workflow.md)) as Markdown, from the
+program itself, so it works wherever the tool is installed.
 
 The [docs](docs/) explain the rest:
 
