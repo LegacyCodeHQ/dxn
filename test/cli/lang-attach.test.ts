@@ -375,6 +375,18 @@ describe("the tool convention", () => {
     );
   });
 
+  it("counts a pen-dev entry as gone once its file is, rather than its tool's", () => {
+    const { root, run } = tooled();
+    run(...record("design-agent", "design/toolbar.pen", "toggle"));
+    rmSync(join(root, "design", "toolbar.pen"));
+    const result = capture(["lang", "status", "spec/toolbar.dxn"], root);
+    expect([result.code, result.stderr, result.stdout.split("\n")[0]]).toEqual([
+      0,
+      "",
+      "spec/toolbar.dxn: Evidence for 0 of 12 combinations; 1 gone",
+    ]);
+  });
+
   it("reports, in lang status, a stored entry whose file is not its tool's", () => {
     const { root, run } = tooled();
     run(...record("reviewer", "design/toolbar.png", "toggle"));

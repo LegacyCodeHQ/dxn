@@ -632,7 +632,10 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     entries.forEach((entry, index) => {
       const where = (entry.source as { file?: string } | undefined)?.file;
       if (fieldValue(declared, entry, "tool") !== "pen-dev" || where === undefined) return;
-      if (fingerprints.isPen(join(repository, where))) return;
+      // A file that is not there is gone, which status counts.
+      const full = join(repository, where);
+      if (statSync(full, { throwIfNoEntry: false }) === undefined) return;
+      if (fingerprints.isPen(full)) return;
       const element = root?.kind === "array" ? root.elements[index] : undefined;
       const sourceNode =
         element?.kind === "object"
