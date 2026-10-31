@@ -78,17 +78,20 @@ dimensions validate
 ### status
 
 ```text
-Usage: dimensions status [<node-id>]
+Usage: dimensions status [<node-id>] [--actor <name>]
 
 Reports every check each typed node requires, in every context it exists in,
-as passed, failed or missing.
+as passed, failed or missing. With --actor, reports instead every context of
+every node (or of the one named) as present, stale or missing: whether the
+actor has evidence for it, and whether its file has changed since.
 ```
 
-Prints, as JSON, a summary of passed, failed and missing checks, plus one item per required check per context. Pass a node id to cover only its subtree.
+Prints, as JSON, a summary of passed, failed and missing checks, plus one item per required check per context. Pass a node id to cover only that node. With `--actor`, the summary counts present, stale and missing evidence instead, with one item per context of each node: what that actor has not done yet.
 
 ```bash
 dimensions status
 dimensions status toolbar
+dimensions status --actor design-agent
 ```
 
 ## Explore
@@ -236,19 +239,22 @@ dimensions transitions menu
 ### evidence
 
 ```text
-Usage: dimensions evidence <node-id> --actor <name> [--root <root-id>] [--table]
+Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>] [--table]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
 file and frame it points to, the file's revision then, and whether the file
-has changed since (stale). --table prints a Markdown table, a row per context
-and a column for the actor, where — means no evidence.
+has changed since (stale). <name>=<value> filters keep only the contexts with
+that dimension value, state, shared node state or profile. --table prints a
+Markdown table, a row per context and a column for the actor, where — means no
+evidence.
 ```
 
 Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it: `at`, `source`, `revision` and `stale`. A context with no evidence is what is missing. An entry is stale when the file it points to has changed since it was recorded; that is not an error. `attach` records entries and `detach` removes them; see [concepts.md](concepts.md#actors-and-evidence).
 
 ```bash
 dimensions evidence toolbar --actor design-agent --table
+dimensions evidence menu --actor design-agent profile=phone
 ```
 
 ## Record

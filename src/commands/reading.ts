@@ -669,24 +669,19 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
   print(io, { node: id, views: kept });
 });
 
-const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [--root <root-id>] [--table]
+const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>] [--table]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
 file and frame it points to, the file's revision then, and whether the file
-has changed since (stale). --table prints a Markdown table, a row per context
-and a column for the actor, where — means no evidence.
+has changed since (stale). <name>=<value> filters keep only the contexts with
+that dimension value, state, shared node state or profile. --table prints a
+Markdown table, a row per context and a column for the actor, where — means no
+evidence.
 `;
 
-export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["node-id"], {
-    actor: { type: "string" },
-    root: { type: "string" },
-    table: { type: "boolean" },
-  });
-  const [id] = positionals as [string];
-  const actor = values.actor;
-  if (actor === undefined) throw new UsageError("--actor is required");
+// The declared actor a command names, or a refusal.
+function requireActor(resolver: Resolver, actor: string): void {
   const actors = Object.keys(resolver.project.actors?.actors ?? {});
   if (actors.length === 0) {
     throw new Refusal('no actors; add one with "dimensions actor add <name>"');
@@ -694,33 +689,67 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
   if (!actors.includes(actor)) {
     throw new Refusal(`actor not found: ${JSON.stringify(actor)} (${choices(actors)})`);
   }
+}
+
+// The actor's evidence for a node in one context of a root.
+function evidenceFor(
+  resolver: Resolver,
+  root: string,
+  id: string,
+  actor: string,
+  context: NodeContext,
+) {
+  return (resolver.project.evidence?.[root]?.evidence ?? [])
+    .filter(
+      (entry) =>
+        entry.node === id &&
+        entry.actor === actor &&
+        Object.keys(entry.context).length === Object.keys(context).length &&
+        Object.entries(context).every(([name, value]) => entry.context[name] === value),
+    )
+    .map(({ at, source, revision }) => ({
+      at,
+      source,
+      revision,
+      stale: resolver.project.revisions?.[source.file] !== revision,
+    }));
+}
+
+export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
+  const { values, positionals } = parse(
+    args,
+    ["node-id"],
+    {
+      actor: { type: "string" },
+      root: { type: "string" },
+      table: { type: "boolean" },
+    },
+    true,
+  );
+  const [id, ...filterArgs] = positionals as [string, ...string[]];
+  const actor = values.actor;
+  if (actor === undefined) throw new UsageError("--actor is required");
+  requireActor(resolver, actor);
   requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
   const roots = values.root === undefined ? resolver.roots(id) : [values.root];
-  const rows = roots.flatMap((root) =>
-    resolver.contexts(id, root).map((context) => {
-      const profiles = resolver.profilesOf(context);
-      return {
-        root,
-        ...(resolver.profiles.size === 0 ? {} : { profiles }),
-        context,
-        evidence: (resolver.project.evidence?.[root]?.evidence ?? [])
-          .filter(
-            (entry) =>
-              entry.node === id &&
-              entry.actor === actor &&
-              Object.keys(entry.context).length === Object.keys(context).length &&
-              Object.entries(context).every(([name, value]) => entry.context[name] === value),
-          )
-          .map(({ at, source, revision }) => ({
-            at,
-            source,
-            revision,
-            stale: resolver.project.revisions?.[source.file] !== revision,
-          })),
-      };
-    }),
+  const all = roots.flatMap((root) =>
+    resolver.contexts(id, root).map((context) => ({ root, context })),
   );
+  const keep = filter(
+    resolver,
+    filterArgs,
+    all.map(({ context }) => context),
+    values.root,
+  );
+  const rows = all
+    .filter(({ context }) => keep(context))
+    .map(({ root, context }) => ({
+      root,
+      ...(resolver.profiles.size === 0 ? {} : { profiles: resolver.profilesOf(context) }),
+      context,
+      evidence: evidenceFor(resolver, root, id, actor, context),
+    }));
   if (values.table === true) {
     const names = [...new Set(rows.flatMap(({ context }) => Object.keys(context)))];
     const profiled = resolver.profiles.size > 0;
@@ -825,16 +854,49 @@ export const transitions = readCommand(transitionsUsage, (resolver, args, io) =>
   print(io, { node: id, transitions: resolver.node(id)?.transitions ?? [] });
 });
 
-const statusUsage = `Usage: dimensions status [<node-id>]
+const statusUsage = `Usage: dimensions status [<node-id>] [--actor <name>]
 
 Reports every check each typed node requires, in every context it exists in,
-as passed, failed or missing.
+as passed, failed or missing. With --actor, reports instead every context of
+every node (or of the one named) as present, stale or missing: whether the
+actor has evidence for it, and whether its file has changed since.
 `;
 
 export const status = readCommand(statusUsage, (resolver, args, io) => {
-  const [only] = parse(args, [], {}, true).positionals;
+  const { values, positionals } = parse(args, [], { actor: { type: "string" } }, true);
+  const [only] = positionals;
   if (only !== undefined) requireNodeId(resolver, only);
   const { project } = resolver;
+  if (values.actor !== undefined) {
+    const actor = values.actor;
+    requireActor(resolver, actor);
+    const items = project.roots.flatMap((root) =>
+      (only === undefined ? nodesIn(resolver, root.id) : [only])
+        .filter((id) => resolver.roots(id).includes(root.id))
+        .flatMap((id) =>
+          resolver.contexts(id, root.id).map((context) => {
+            const found = evidenceFor(resolver, root.id, id, actor, context);
+            return {
+              root: root.id,
+              node: id,
+              context,
+              evidence:
+                found.length === 0
+                  ? "missing"
+                  : found.some(({ stale }) => !stale)
+                    ? "present"
+                    : "stale",
+            };
+          }),
+        ),
+    );
+    const count = (state: string) => items.filter((item) => item.evidence === state).length;
+    print(io, {
+      summary: { present: count("present"), stale: count("stale"), missing: count("missing") },
+      items,
+    });
+    return;
+  }
   const items: ({
     root: string;
     node: string;
