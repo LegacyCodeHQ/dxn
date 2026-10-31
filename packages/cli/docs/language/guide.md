@@ -378,6 +378,40 @@ link.dxn:7:3: warning: vacuous-condition: Pointer = mouse or Pointer = touch is 
 Each state value has at most one rule, so there is a single place to read
 where it exists. A second rule for the same value is an error.
 
+A condition can also compare another of the type's own states, where two
+states are not independent: a disabled button is never hovered.
+
+```
+dimension Pointer = mouse | touch
+enum Enabled = enabled | disabled
+enum Hover = rest | hovered
+
+type Button needs Pointer {
+  state enabled: Enabled
+  state hover: Hover
+  hover = hovered only when Pointer = mouse and enabled = enabled
+}
+```
+
+The matrix then has a row for each value of a state another depends on, so
+every row still reads one state at a time:
+
+```
+| Pointer | enabled: enabled | enabled: disabled | hover: rest | hover: hovered |
+| ------- | ---------------- | ----------------- | ----------- | -------------- |
+| mouse   | ✓                | —                 | ✓           | ✓              |
+| mouse   | —                | ✓                 | ✓           | —              |
+| touch   | ✓                | —                 | ✓           | —              |
+| touch   | —                | ✓                 | ✓           | —              |
+```
+
+A state can depend on one that depends on another, but no state can depend
+on itself, directly or through others:
+
+```
+button.dxn:7:29: rule-cycle: focus depends on hover, which depends on focus; no state can depend on itself
+```
+
 ## When: a state the world decides
 
 Hover is a state the reader changes: both values happen, and rules only say
@@ -1494,7 +1528,7 @@ field       = state-name ":" Name { "." Name }
 rule        = state-name "=" value "only" "when" condition newline
 condition   = term { "and" term } | term { "or" term }          # and and or mix only in brackets
 term        = comparison | "(" condition ")"
-comparison  = name ( "=" value | "in" "(" value { "," value } ")" )   # a rule's on a dimension; a child's on a state too
+comparison  = name ( "=" value | "in" "(" value { "," value } ")" )   # on a dimension the type needs, or one of its states
 environment = "environment" Name "=" Name { "x" [newline] Name } newline
 profile     = "profile" profile-name ":" Name "{" { assignment ( "," | newline ) } "}"
 modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile-name } "{" { assignment ( "," | newline ) } "}"
@@ -1530,6 +1564,7 @@ comment     = "#" to the end of the line
 | `impossible-condition`                                                        | error    | a rule's or a child's condition is never true                                                    |
 | `vacuous-condition`                                                           | warning  | a rule's or a child's condition is always true                                                   |
 | `rule-on-derived`                                                             | error    | a rule is on a state that a `when` or a value decides, or that is received                       |
+| `rule-cycle`                                                                  | error    | a state depends on itself through rules' conditions on other states                              |
 | `unknown-field`                                                               | error    | a derived field's `when` is on a field the record does not have                                  |
 | `unknown-environment`                                                         | error    | a profile's environment is not one                                                               |
 | `incomplete-profile`                                                          | error    | a profile leaves out a dimension of its environment                                              |

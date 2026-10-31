@@ -115,36 +115,72 @@ export function states(file: ParseResult, typeName: string): TypeStates {
       })),
     );
   }
+  // The states a rule depends on, which the rows are split by: each state's
+  // values follow from those of the states before it.
+  const depends = new Map(
+    type.states.map((state) => [
+      state.name,
+      type.rules
+        .filter((rule) => rule.state.name === state.name)
+        .flatMap((rule) => subjects(rule.when).map(({ name }) => name))
+        .filter((name) => type.states.some((other) => other.name === name)),
+    ]),
+  );
+  const deciding = new Set([...depends.values()].flat());
+  const order: State[] = [];
+  const visit = (state: State, seen: Set<string>) => {
+    if (order.includes(state) || seen.has(state.name)) return;
+    seen.add(state.name);
+    for (const name of depends.get(state.name) ?? []) {
+      const before = type.states.find((other) => other.name === name);
+      if (before !== undefined) visit(before, seen);
+    }
+    order.push(state);
+  };
+  for (const state of type.states) visit(state, new Set());
+  // A state's values in a combination, with the values of the states before
+  // it: those whose rules hold there.
+  const valuesIn = (
+    state: State,
+    chosen: Record<string, string>,
+    settled: Record<string, string[]>,
+  ) =>
+    state.fixed !== undefined
+      ? [state.fixed.name]
+      : state.derived === undefined
+        ? valuesOf(state.enum.name).filter((value) =>
+            type.rules
+              .filter((rule) => rule.state.name === state.name && rule.value.name === value)
+              .every((rule) => holds(rule.when, (name) => chosen[name] ?? settled[name]?.[0])),
+          )
+        : // A derived state has the one value its when gives here.
+          state.derived.branches
+            .filter(({ values }) =>
+              values.some(({ name }) => name === chosen[state.derived?.dimension.name ?? ""]),
+            )
+            .map(({ result }) => result.name);
   return {
     type: type.name,
     dimensions,
-    rows: combinations.map(({ profiles: named, when: chosen }) =>
-      withChildren({
-        ...(named === undefined ? {} : { profiles: named }),
-        when: Object.fromEntries(dimensions.map((name) => [name, chosen[name] as string])),
-        states: Object.fromEntries(
-          type.states.map((state) => [
-            state.name,
-            state.fixed !== undefined
-              ? [state.fixed.name]
-              : state.derived === undefined
-                ? valuesOf(state.enum.name).filter((value) =>
-                    type.rules
-                      .filter((rule) => rule.state.name === state.name && rule.value.name === value)
-                      .every((rule) => holds(rule.when, (name) => chosen[name])),
-                  )
-                : // A derived state has the one value its when gives here.
-                  state.derived.branches
-                    .filter(({ values }) =>
-                      values.some(
-                        ({ name }) => name === chosen[state.derived?.dimension.name ?? ""],
-                      ),
-                    )
-                    .map(({ result }) => result.name),
-          ]),
-        ),
-      }),
-    ),
+    rows: combinations.flatMap(({ profiles: named, when: chosen }) => {
+      let settled: Record<string, string[]>[] = [{}];
+      for (const state of order) {
+        settled = settled.flatMap((before) => {
+          const values = valuesIn(state, chosen, before);
+          // One row for each value of a state another depends on.
+          return deciding.has(state.name) && values.length > 0
+            ? values.map((value) => ({ ...before, [state.name]: [value] }))
+            : [{ ...before, [state.name]: values }];
+        });
+      }
+      return settled.map((own) =>
+        withChildren({
+          ...(named === undefined ? {} : { profiles: named }),
+          when: Object.fromEntries(dimensions.map((name) => [name, chosen[name] as string])),
+          states: Object.fromEntries(type.states.map(({ name }) => [name, own[name] ?? []])),
+        }),
+      );
+    }),
   };
 }
 
@@ -198,13 +234,15 @@ export function inPlace(file: ParseResult, path: string): InPlace {
     );
   }
   const evaluated = new Map<string, TypeStates>();
-  const rowOf = (type: Type, world: (typeof worlds)[number]) => {
+  // A type's rows in a world: one, or one for each value of a state another
+  // depends on.
+  const rowsOf = (type: Type, world: (typeof worlds)[number]) => {
     let alone = evaluated.get(type.name);
     if (alone === undefined) {
       alone = states(file, type.name);
       evaluated.set(type.name, alone);
     }
-    return alone.rows.find(
+    return alone.rows.filter(
       (row) =>
         (world.profiles === undefined ||
           row.profiles?.includes(world.profiles[0] as string) === true) &&
@@ -218,9 +256,18 @@ export function inPlace(file: ParseResult, path: string): InPlace {
     fixed: Record<string, string>,
     parents: Record<string, string>,
   ) => {
+    const { type } = chain[level] as Step;
+    for (const row of rowsOf(type, world)) walkRow(world, level, fixed, parents, row);
+  };
+  const walkRow = (
+    world: (typeof worlds)[number],
+    level: number,
+    given: Record<string, string>,
+    parents: Record<string, string>,
+    row: TypeStates["rows"][number],
+  ) => {
     const { type, prefix } = chain[level] as Step;
-    const row = rowOf(type, world);
-    if (row === undefined) return;
+    let fixed = given;
     // A received state has the value its provider has here.
     for (const { name } of type.states.filter((state) => state.received)) {
       const key = place.providerKey(level, name);

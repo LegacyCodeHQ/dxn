@@ -266,20 +266,21 @@ export function validate(file: ParseResult, recordName: string, source: string):
       (profile === undefined || row.profiles?.includes(profile) === true) &&
       expected.every((name) => row.when[name] === chosen[name]);
     // Each state value must exist in that combination: of the type, or of
-    // the child, there.
-    let available: Record<string, string[]> | undefined;
+    // the child, there; in one of its rows, when they are split by a state
+    // another depends on.
+    let rows: Record<string, string[]>[];
     let where = world;
     if (place !== undefined) {
       const settled = Object.entries(parents)
         .map(([name, value]) => `${name} = ${value}`)
         .join(", ");
       where = `${world} with ${settled}`;
-      const row = inPlace(file, label).rows.find(
+      const there = inPlace(file, label).rows.filter(
         (candidate) =>
           inWorld(candidate) &&
           Object.entries(parents).every(([name, value]) => candidate.parents[name] === value),
       );
-      if (row === undefined) {
+      if (there.length === 0) {
         const parentsAt = member("parents")?.value;
         diagnostics.report(
           "unknown-value",
@@ -289,13 +290,17 @@ export function validate(file: ParseResult, recordName: string, source: string):
         );
         return;
       }
-      available = row.states;
+      rows = there.map(({ states }) => states);
     } else {
-      available = evaluate(file, owner.name).rows.find(inWorld)?.states;
+      rows = evaluate(file, owner.name)
+        .rows.filter(inWorld)
+        .map(({ states }) => states);
     }
     for (const { name, value, at, start } of pending) {
-      const values = available?.[name] ?? [];
-      if (!values.includes(value)) {
+      const values = [...new Set(rows.flatMap((states) => states[name] ?? []))];
+      const fitting = rows.filter((states) => states[name]?.includes(value) === true);
+      if (fitting.length > 0) rows = fitting;
+      else {
         diagnostics.report(
           "unknown-value",
           `${JSON.stringify(value)} is not a value of ${name} on ${where} (${values.join(", ")})`,

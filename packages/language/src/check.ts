@@ -685,11 +685,42 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         rule.when,
         needed,
         declare,
-        false,
+        true,
         rule.state,
         { never: `${rule.value.name} exists nowhere`, always: "the rule restricts nothing" },
         start,
       );
+    }
+    // No state depends on itself, through its rules' conditions on other
+    // states: each dependency is reported where it would close a cycle.
+    const depends = new Map<string, string[]>();
+    const path = (from: string, to: string, seen = new Set<string>()): string[] | undefined => {
+      if (from === to) return [to];
+      if (seen.has(from)) return undefined;
+      seen.add(from);
+      for (const next of depends.get(from) ?? []) {
+        const rest = path(next, to, seen);
+        if (rest !== undefined) return [from, ...rest];
+      }
+      return undefined;
+    };
+    for (const rule of type.rules) {
+      for (const subject of subjects(rule.when)) {
+        if (!type.states.some(({ name }) => name === subject.name)) continue;
+        const back = path(subject.name, rule.state.name);
+        if (back !== undefined) {
+          const chain = [rule.state.name, ...back];
+          const said = chain
+            .slice(1)
+            .map((name, index) =>
+              index === 0 ? ` depends on ${name}` : `, which depends on ${name}`,
+            )
+            .join("");
+          report("rule-cycle", `${chain[0]}${said}; no state can depend on itself`, subject);
+          continue;
+        }
+        depends.set(rule.state.name, [...(depends.get(rule.state.name) ?? []), subject.name]);
+      }
     }
     checkChildren(type, needed, declare);
     checkActions(type, needed, declare);

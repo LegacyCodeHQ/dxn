@@ -42,6 +42,10 @@ export function renameInSource(
     for (const rule of type.rules) {
       const state = type.states.find(({ name }) => name === rule.state.name);
       if (state?.enum.name === enumName && rule.value.name === from) named.push(rule.value);
+      for (const { subject, values } of comparisons(rule.when)) {
+        const on = type.states.find(({ name }) => name === subject.name);
+        if (on?.enum.name === enumName) named.push(...values.filter(({ name }) => name === from));
+      }
     }
     for (const action of type.actions) {
       const state = type.states.find(({ name }) => name === action.state.name);
