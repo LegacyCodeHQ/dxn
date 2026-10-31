@@ -10,6 +10,7 @@ that draws frames for it. Actors are declared in actors.json.
 Subcommands:
   list                               List every actor
   add <name>                         Declare an actor, such as design-agent
+  remove <name>                      Remove an actor that no evidence or record names
 `;
 
 const add = editCommand(usage, (workspace, args) => {
@@ -28,4 +29,15 @@ const add = editCommand(usage, (workspace, args) => {
   workspace.touch("actors.json");
 });
 
-export const actor: Command = group(usage, { list: actorList, add });
+const remove = editCommand(usage, (workspace, args) => {
+  const [name] = parse(args, ["name"], {}).positionals as [string];
+  const file = workspace.read("actors.json");
+  const actors = isObject(file?.actors) ? file.actors : {};
+  if (file === undefined || !(name in actors)) {
+    throw new Refusal(`actor not found: ${name}`);
+  }
+  delete actors[name];
+  workspace.touch("actors.json");
+});
+
+export const actor: Command = group(usage, { list: actorList, add, remove });

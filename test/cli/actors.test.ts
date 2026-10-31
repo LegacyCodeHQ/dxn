@@ -34,6 +34,14 @@ describe("actors", () => {
     });
   });
 
+  it("are removed by name", () => {
+    const { run, read } = cliProject(withActor);
+    run("actor", "add", "visual-reviewer");
+    expect(run("actor", "remove", "visual-reviewer").code).toBe(0);
+    expect(read("actors.json").actors).toEqual({ "design-agent": {} });
+    expect(run("actor", "remove", "nobody").stderr).toBe("dimensions: actor not found: nobody\n");
+  });
+
   it("are added once", () => {
     const { run } = cliProject(withActor);
     expect(run("actor", "add", "design-agent").stderr).toBe(

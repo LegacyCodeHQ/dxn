@@ -157,3 +157,23 @@ describe("modifier commands", () => {
     expect(read("profiles.json").modifiers).toBeUndefined();
   });
 });
+
+describe("profile remove", () => {
+  it("takes the profile out of modifiers, and removes a modifier left on none", () => {
+    const { run, read } = cliProject({
+      ...toolbarFiles,
+      "profiles.json": {
+        version: 1,
+        profiles,
+        modifiers: {
+          "magic-keyboard": magicKeyboard,
+          pencil: { on: ["tablet-portrait"], sets: { pointer: "mouse" } },
+        },
+      },
+    });
+    expect(run("profile", "remove", "tablet-portrait").code).toBe(0);
+    expect(read("profiles.json").modifiers).toEqual({
+      "magic-keyboard": { on: ["tablet-landscape"], sets: magicKeyboard.sets },
+    });
+  });
+});

@@ -558,7 +558,7 @@ Subcommands:
   remove <name>                      Remove a profile
 ```
 
-Edits `profiles.json`: the combinations of dimension values that exist. `profile list` prints them, with a profile for each modifier on each profile it is on. Profiles may share a combination. Add profiles that belong together in one command: once profiles exist only their combinations do, so adding one at a time can break expectations that need the others.
+Edits `profiles.json`: the combinations of dimension values that exist. `profile list` prints them, with a profile for each modifier on each profile it is on. Profiles may share a combination. Removing a profile takes it out of every modifier's `on`, and removes a modifier left on none. Add profiles that belong together in one command: once profiles exist only their combinations do, so adding one at a time can break expectations that need the others.
 
 ```bash
 dimensions profile list
@@ -664,6 +664,7 @@ that draws frames for it. Actors are declared in actors.json.
 Subcommands:
   list                               List every actor
   add <name>                         Declare an actor, such as design-agent
+  remove <name>                      Remove an actor that no evidence or record names
 ```
 
 Edits `actors.json`: the roles that do work against the model. An actor is a role, not a person: `design-agent`, not someone's name. `actor list` prints them; `evidence` queries what an actor has recorded.

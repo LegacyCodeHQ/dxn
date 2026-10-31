@@ -66,6 +66,16 @@ const remove = editCommand(usage, (workspace, args) => {
     throw new Refusal(`profile not found: ${name}`);
   }
   delete all[name];
+  // Modifiers are no longer on it; one left on no profile goes too.
+  const file = workspace.read("profiles.json");
+  if (isObject(file?.modifiers)) {
+    for (const [modifier, item] of Object.entries(file.modifiers)) {
+      if (!isObject(item) || !Array.isArray(item.on)) continue;
+      item.on = item.on.filter((profile) => profile !== name);
+      if ((item.on as unknown[]).length === 0) delete file.modifiers[modifier];
+    }
+    if (Object.keys(file.modifiers).length === 0) delete file.modifiers;
+  }
 });
 
 export const profile: Command = group(usage, { list: profileListCommand, add, remove });
