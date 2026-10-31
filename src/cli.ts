@@ -2,6 +2,7 @@ import { attribute } from "./commands/attribute.js";
 import { check } from "./commands/checks.js";
 import type { Command } from "./commands/context.js";
 import { dimension } from "./commands/dimension.js";
+import { expectation } from "./commands/expectation.js";
 import { fragment } from "./commands/fragment.js";
 import { init } from "./commands/init.js";
 import { node } from "./commands/node.js";
@@ -71,6 +72,8 @@ Model
                       List, add and remove the combinations of values that exist
   override <subcommand>
                       Change states and values for a dimension value or combination
+  expectation <subcommand>
+                      List, add and remove the rules the model must follow
 
   help [<command>]    Show this overview, or a command's usage
 
@@ -108,6 +111,7 @@ const commands: Record<string, Command> = {
   dimension,
   profile,
   override,
+  expectation,
   verify,
   unverify,
 };

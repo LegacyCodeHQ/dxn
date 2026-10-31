@@ -247,7 +247,7 @@ const text = (value: Cell): string =>
             .join(", ");
 
 // A Markdown table with its columns padded to their widest cell.
-function markdown(header: string[], body: string[][]): string[] {
+export function markdown(header: string[], body: string[][]): string[] {
   const widths = header.map((title, index) =>
     Math.max(title.length, ...body.map((line) => (line[index] as string).length)),
   );

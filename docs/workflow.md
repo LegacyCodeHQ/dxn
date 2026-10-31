@@ -134,59 +134,25 @@ dimensions node transition add menu widen --from open --to closed --on resize --
 ## 8. Rules: what must hold
 
 Write down the requirements as rules, so no later change can quietly break
-them. Expectations are written by hand in `.dimensions/expectations.json`:
-
-```json expectations.json
-{
-  "version": 1,
-  "expectations": [
-    {
-      "title": "Touch screens never show hover",
-      "node": "toolbar",
-      "subtree": true,
-      "root": "article-page",
-      "when": { "pointer": "touch" },
-      "then": { "hover": "rest" }
-    },
-    {
-      "title": "Without a keyboard nothing shows a focus ring",
-      "node": "toolbar",
-      "subtree": true,
-      "root": "article-page",
-      "when": { "keyboard": "no-keyboard" },
-      "then": { "focus": "blurred" }
-    },
-    {
-      "title": "A desktop link can be hovered and focused at once",
-      "node": "blog-link",
-      "root": "article-page",
-      "when": { "profile": "desktop" },
-      "some": { "hover": "hovered", "focus": "focused" }
-    },
-    {
-      "title": "The menu panel only exists while the menu is open",
-      "node": "menu-panel",
-      "root": "article-page",
-      "when": { "menu": "closed" },
-      "exists": false
-    },
-    {
-      "title": "Escape closes the menu and returns focus to its button",
-      "node": "menu",
-      "when": { "menu": "open" },
-      "on": { "event": "keydown", "key": "Escape" },
-      "then": { "menu": "closed", "focus": "menu-button" }
-    }
-  ]
-}
-```
+them. Each `expectation add` is checked like any other edit: a rule that fails,
+or that tests nothing, is refused.
 
 ```bash
+dimensions expectation add "Touch screens never show hover" --node toolbar --subtree --root article-page --when pointer=touch --then hover=rest
+dimensions expectation add "Without a keyboard nothing shows a focus ring" --node toolbar --subtree --root article-page --when keyboard=no-keyboard --then focus=blurred
+dimensions expectation add "A desktop link can be hovered and focused at once" --node blog-link --root article-page --when profile=desktop --some hover=hovered --some focus=focused
+dimensions expectation add "The menu panel only exists while the menu is open" --node menu-panel --root article-page --when menu=closed --absent
+dimensions expectation add "Escape closes the menu and returns focus to its button" --node menu --when menu=open --on keydown --key Escape --then menu=closed --then focus=menu-button
 dimensions validate
 ```
 
+The rules are kept in `.dimensions/expectations.json`; `expectation list` shows
+them and `expectation remove <title>` removes one.
+
 Every rule has a `title`, a `node`, an optional selection and filter, and
-exactly one assertion:
+exactly one assertion. These are the keys in `expectations.json`, and the
+`expectation add` options that write them (`--exists` and `--absent` write
+`exists`):
 
 | Key       | Meaning                                                                                                                                                                                                       |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

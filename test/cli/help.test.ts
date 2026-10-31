@@ -116,6 +116,8 @@ describe("help", () => {
                             List, add and remove the combinations of values that exist
         override <subcommand>
                             Change states and values for a dimension value or combination
+        expectation <subcommand>
+                            List, add and remove the rules the model must follow
 
         help [<command>]    Show this overview, or a command's usage
 

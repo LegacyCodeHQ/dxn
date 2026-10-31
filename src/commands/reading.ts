@@ -2,11 +2,18 @@ import { compileDirectory } from "../compiler/compile.js";
 import type { Io } from "../io.js";
 import { printDiagnostics, requireProject } from "../project.js";
 import { choices, contextFilter, QueryError, sharedStates, subtreeContexts } from "../queries.js";
-import { contextKey, type Context as NodeContext, ProfileError, Resolver } from "../resolve.js";
+import {
+  contextKey,
+  type Context as NodeContext,
+  ProfileError,
+  Resolver,
+  type ViewNode,
+} from "../resolve.js";
 import { buildStateTree, drawStateTree, type Entry, treeNames } from "../state-tree.js";
 import {
   drawNodeTables,
   drawPresenceMatrix,
+  markdown,
   nodeTables,
   presenceMatrix,
   TableError,
@@ -300,6 +307,14 @@ export function fillProfile(
     throw error;
   }
 }
+
+export const expectationList = readCommand(
+  "Usage: dimensions expectation list\n",
+  (resolver, args, io) => {
+    parse(args, [], {});
+    print(io, { expectations: resolver.project.expectations?.expectations ?? [] });
+  },
+);
 
 export const profileListCommand = readCommand(
   "Usage: dimensions profile list\n",
@@ -598,33 +613,65 @@ function filter(
   }
 }
 
-const viewsUsage = `Usage: dimensions views <node-id> [<name>=<value>...] [--root <root-id>]
+const viewsUsage = `Usage: dimensions views <node-id> [<name>=<value>...] [--root <root-id>] [--table]
 
 Lists every distinct view of the node's subtree: each combination of the
 dimensions that apply in it, and the states of shared nodes wherever those
 nodes are present. Each view is one diagram to draw. <name>=<value> filters
 keep only the views with that dimension value, shared node state or profile.
+--table prints them as a Markdown table, a row per view.
 `;
 
 export const views = readCommand(viewsUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } }, true);
+  const { values, positionals } = parse(
+    args,
+    ["node-id"],
+    { root: { type: "string" }, table: { type: "boolean" } },
+    true,
+  );
   const [id, ...rest] = positionals as [string, ...string[]];
   requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
   const all = resolver.views(id, values.root);
-  print(io, { node: id, views: all.filter(filter(resolver, rest, all, values.root)) });
+  const kept = all.filter(filter(resolver, rest, all, values.root));
+  if (values.table === true) {
+    // A column for the profile each view matches, then one per name.
+    const names = [...new Set(kept.flatMap((view) => Object.keys(view)))];
+    const profiled = names.some((name) => resolver.profiled.has(name));
+    const profileOf = (view: NodeContext) =>
+      [...resolver.profiles].find(([, profile]) =>
+        Object.keys(view)
+          .filter((name) => resolver.profiled.has(name))
+          .every((name) => profile[name] === view[name]),
+      )?.[0] ?? "—";
+    const lines = markdown(
+      [...(profiled ? ["profile"] : []), ...names],
+      kept.map((view) => [
+        ...(profiled ? [profileOf(view)] : []),
+        ...names.map((name) => view[name] ?? "—"),
+      ]),
+    );
+    io.stdout(`${lines.join("\n")}\n`);
+    return;
+  }
+  print(io, { node: id, views: kept });
 });
 
 const viewUsage = `Usage: dimensions view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
-                      [--root <root-id>]
+                      [--root <root-id>] [--tree]
 
 Prints the tree present in one view, with each node's states and values.
 Dimensions left out take their default; each shared node in the view needs
-its state.
+its state. --tree prints it as indented text instead of JSON.
 `;
 
 export const view = readCommand(viewUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } }, true);
+  const { values, positionals } = parse(
+    args,
+    ["node-id"],
+    { root: { type: "string" }, tree: { type: "boolean" } },
+    true,
+  );
   const [id, ...rest] = positionals as [string, ...string[]];
   requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
@@ -664,6 +711,10 @@ export const view = readCommand(viewUsage, (resolver, args, io) => {
   const tree = resolver.view(id, context, values.root);
   if (tree === undefined) {
     throw new Refusal(`"${id}" does not exist when ${describe(context)}`);
+  }
+  if (values.tree === true) {
+    io.stdout(drawView(tree));
+    return;
   }
   print(io, { node: id, context, tree });
 });
@@ -771,3 +822,31 @@ export const tree = readCommand(treeUsage, (resolver, args, io) => {
   parse(args, [], {});
   print(io, { roots: resolver.project.roots, fragments: resolver.project.fragments });
 });
+
+// A view's tree as indented text: each node with its shared state or the
+// values of its state groups.
+function drawView(root: ViewNode): string {
+  const label = (item: ViewNode) => {
+    const details =
+      item.state !== undefined
+        ? `${item.id}=${item.state}`
+        : item.stateGroups !== undefined
+          ? Object.entries(item.stateGroups)
+              .map(([group, states]) => `${group}: ${states.join("|")}`)
+              .join(" · ")
+          : item.states !== undefined && item.states.length > 0
+            ? `states: ${item.states.join("|")}`
+            : "";
+    return details === "" ? item.id : `${item.id}  ${details}`;
+  };
+  const lines = [label(root)];
+  const walk = (items: ViewNode[], indent: string) => {
+    items.forEach((item, index) => {
+      const last = index === items.length - 1;
+      lines.push(`${indent}${last ? "└── " : "├── "}${label(item)}`);
+      walk(item.children ?? [], `${indent}${last ? "    " : "│   "}`);
+    });
+  };
+  walk(root.children ?? [], "");
+  return `${lines.join("\n")}\n`;
+}

@@ -32,7 +32,7 @@ asks which.
 - Project: [workflow](#workflow), [init](#init), [validate](#validate), [status](#status)
 - Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions)
 - Record: [verify](#verify), [unverify](#unverify)
-- Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [override](#override)
+- Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [override](#override), [expectation](#expectation)
 
 ## Project
 
@@ -164,12 +164,13 @@ dimensions contexts toolbar --subtree --table --by breakpoint
 ### views
 
 ```text
-Usage: dimensions views <node-id> [<name>=<value>...] [--root <root-id>]
+Usage: dimensions views <node-id> [<name>=<value>...] [--root <root-id>] [--table]
 
 Lists every distinct view of the node's subtree: each combination of the
 dimensions that apply in it, and the states of shared nodes wherever those
 nodes are present. Each view is one diagram to draw. <name>=<value> filters
 keep only the views with that dimension value, shared node state or profile.
+--table prints them as a Markdown table, a row per view.
 ```
 
 Prints every distinct view of a node's subtree as JSON. Each view is one diagram to draw: a value per dimension, and a state per shared node where it is present.
@@ -177,23 +178,25 @@ Prints every distinct view of a node's subtree as JSON. Each view is one diagram
 ```bash
 dimensions views toolbar
 dimensions views toolbar breakpoint=sm
+dimensions views toolbar --table
 ```
 
 ### view
 
 ```text
 Usage: dimensions view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
-                      [--root <root-id>]
+                      [--root <root-id>] [--tree]
 
 Prints the tree present in one view, with each node's states and values.
 Dimensions left out take their default; each shared node in the view needs
-its state.
+its state. --tree prints it as indented text instead of JSON.
 ```
 
 Prints the tree present in one view as JSON, with each node's states and values.
 
 ```bash
 dimensions view toolbar breakpoint=base menu=open
+dimensions view toolbar profile=phone menu=open --tree
 ```
 
 ### axes
@@ -522,4 +525,38 @@ Edits `overrides/<dimension>.json`, or `overrides/<a>+<b>.json` for a combinatio
 dimensions override states pointer=touch --type toolbar-link --remove hovered
 dimensions override states breakpoint=sm,pointer=touch --node menu-button --remove focused
 dimensions override set keyboard=no-keyboard --type toolbar-link design rest=missing
+```
+
+### expectation
+
+```text
+Usage: dimensions expectation <subcommand>
+
+An expectation is a rule the model must follow, in expectations.json. The
+compiler checks every rule on every command, so adding one that fails, or that
+tests nothing, is refused.
+
+Subcommands:
+  list                               List every rule
+  add <title> --node <id> [--subtree] [--root <id>] [--when <name>=<value>[|<value>]]...
+      (--then <name>=<value>[|<value>]... | --some <name>=<value>... | --exists | --absent)
+      [--attribute <name>=<value>[|<value>]]...
+      [--on <event> [--key <key>] [--target <id>] [--outside <id>] [--reach <dimension>=<value>]...]
+                                     Add a rule. --then: every kept context has these
+                                     values; --some: at least one does; --exists or
+                                     --absent: the node is there wherever --when holds,
+                                     or nowhere. --attribute checks attribute values
+                                     with --then or --some. --on makes a transition rule:
+                                     its --when names the state before, its --then the
+                                     state after and focus.
+  remove <title>                     Remove a rule
+```
+
+Edits `expectations.json`: the rules the model must follow. Each rule is compiled like any other edit, so one that fails, or that tests nothing, is refused.
+
+```bash
+dimensions expectation add "Touch never hovers" --node toolbar --subtree --when pointer=touch --then hover=rest
+dimensions expectation add "The panel is only there while open" --node menu-panel --when menu=closed --absent
+dimensions expectation list
+dimensions expectation remove "Touch never hovers"
 ```
