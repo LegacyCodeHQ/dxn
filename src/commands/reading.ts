@@ -715,7 +715,7 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
 });
 
 const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>]
-                          [--table] [--by profile]
+                          [--missing] [--table] [--by profile]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
@@ -725,7 +725,8 @@ that dimension value, state, shared node state or profile. --table prints a
 Markdown table, a row per context and a column for the actor, where — means no
 evidence. Rows come in profile order. --by profile makes a row per profile
 instead: the states the node has there, and how many of its contexts have
-evidence that is present, stale or missing.
+evidence that is present, stale or missing. --missing keeps only the contexts
+still to cover: those without evidence, or whose evidence is stale.
 `;
 
 // Whether a context has the actor's evidence: present when some entry's file
@@ -789,6 +790,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       root: { type: "string" },
       table: { type: "boolean" },
       by: { type: "string" },
+      missing: { type: "boolean" },
     },
     true,
   );
@@ -811,7 +813,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
     all.map(({ context }) => context),
     values.root,
   );
-  const rows = all
+  const everyRow = all
     .filter(({ context }) => keep(context))
     .map(({ root, context }) => ({
       root,
@@ -824,6 +826,10 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
         resolver.profileRank(resolver.profilesOf(a.context)) -
         resolver.profileRank(resolver.profilesOf(b.context)),
     );
+  const rows =
+    values.missing === true
+      ? everyRow.filter(({ evidence }) => evidenceState(evidence) !== "present")
+      : everyRow;
   if (values.by === "profile") {
     // A row per combination of profiles, in profile order.
     const names = [...new Set(rows.flatMap(({ context }) => Object.keys(context)))].filter(
@@ -853,10 +859,14 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
         missing: count("missing"),
       };
     });
+    // Where the node does not exist, even before --missing keeps fewer.
+    const existing = new Set(
+      everyRow.map(({ context }) => JSON.stringify(resolver.profilesOf(context))),
+    );
     const notPresent = resolver
       .combinations()
       .map(({ names: combination }) => combination)
-      .filter((combination) => !groups.has(JSON.stringify(combination)))
+      .filter((combination) => !existing.has(JSON.stringify(combination)))
       .sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b));
     if (values.table !== true) {
       print(io, { node: id, actor, by: "profile", rows: grouped, notPresent });

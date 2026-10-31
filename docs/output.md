@@ -390,6 +390,8 @@ With `--by profile`, there is a row per profile (or profiles sharing a
 combination), in profile order: the states the node has there, and how many
 of its contexts have evidence that is present, stale or missing.
 `notPresent` lists the profiles the node does not exist on.
+With `--missing`, only contexts without evidence, or with stale evidence, are
+kept: the rows and `states` then show what is still to cover.
 
 ```json
 {

@@ -240,7 +240,7 @@ dimensions transitions menu
 
 ```text
 Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>]
-                          [--table] [--by profile]
+                          [--missing] [--table] [--by profile]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
@@ -250,7 +250,8 @@ that dimension value, state, shared node state or profile. --table prints a
 Markdown table, a row per context and a column for the actor, where — means no
 evidence. Rows come in profile order. --by profile makes a row per profile
 instead: the states the node has there, and how many of its contexts have
-evidence that is present, stale or missing.
+evidence that is present, stale or missing. --missing keeps only the contexts
+still to cover: those without evidence, or whose evidence is stale.
 ```
 
 Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it: `at`, `source`, `revision` and `stale`. A context with no evidence is what is missing. An entry is stale when the file it points to has changed since it was recorded; that is not an error. `attach` records entries and `detach` removes them; see [concepts.md](concepts.md#actors-and-evidence).
@@ -259,6 +260,7 @@ Prints each context of the node as JSON, with the root, the profile it matches a
 dimensions evidence toolbar --actor design-agent --table
 dimensions evidence menu --actor design-agent profile=phone
 dimensions evidence menu-button --actor design-agent --table --by profile
+dimensions evidence menu-button --actor design-agent --missing --table --by profile
 ```
 
 ## Record

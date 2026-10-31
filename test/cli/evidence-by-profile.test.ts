@@ -113,3 +113,37 @@ describe("evidence --table", () => {
     ]);
   });
 });
+
+describe("evidence --missing", () => {
+  it("keeps only the contexts without evidence that is present", () => {
+    const result = json(evidence("--missing"));
+    expect(result.contexts).toHaveLength(11);
+    expect(
+      result.contexts.some(
+        ({ context }: { context: { breakpoint: string; menu: string } }) =>
+          context.breakpoint === "base" && context.menu === "closed",
+      ),
+    ).toBe(false);
+  });
+
+  it("counts stale evidence as missing, since it needs another look", () => {
+    const { run, root } = project();
+    writeFileSync(join(root, design), "redrawn");
+    expect(
+      json(run("evidence", "menu-button", "--actor", "design-agent", "--missing")).contexts,
+    ).toHaveLength(12);
+  });
+
+  it("with --by profile, lists per profile the states still to cover", () => {
+    expect(evidence("--missing", "--by", "profile", "--table").stdout.split("\n")).toEqual([
+      "| profile                        | hover         | focus            | menu         | contexts | present | stale | missing |",
+      "| ------------------------------ | ------------- | ---------------- | ------------ | -------- | ------- | ----- | ------- |",
+      "| phone                          | rest          | blurred          | open         | 1        | 0       | 0     | 1       |",
+      "| tablet-portrait                | rest          | blurred          | closed, open | 2        | 0       | 0     | 2       |",
+      "| tablet-portrait+magic-keyboard | rest, hovered | blurred, focused | closed, open | 8        | 0       | 0     | 8       |",
+      "",
+      "Not present: tablet-landscape, laptop / tablet-landscape+magic-keyboard, desktop",
+      "",
+    ]);
+  });
+});
