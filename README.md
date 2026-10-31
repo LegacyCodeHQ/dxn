@@ -38,8 +38,13 @@ editing the files: they refuse any change that would break the project, and
 `--dry-run` shows what they would write. Exit code 1 means the project
 refused, 2 means the command line is wrong.
 
+To build a model from an empty folder, follow
+[workflow.md](docs/workflow.md): dimensions, then profiles, declarations, the
+tree, variation, behavior, rules, review and verification, with every command.
+
 The [docs](docs/) explain the rest:
 
+- [workflow.md](docs/workflow.md): building a model step by step
 - [concepts.md](docs/concepts.md): nodes, types, state groups, dimensions,
   overrides, shared states, transitions, verification and expectations, using
   a real toolbar as the example

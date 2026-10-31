@@ -119,9 +119,10 @@ describe("help", () => {
         help [<command>]    Show this overview, or a command's usage
 
       Run "dimensions help <command>" (or "dimensions <command> --help") for a command's
-      options. The docs/ folder of the dimensions package explains the concepts
-      (concepts.md), every command (commands.md), every diagnostic code
-      (diagnostics.md) and the JSON output (output.md).
+      options. The docs/ folder of the dimensions package shows how to build a model
+      step by step (workflow.md), and explains the concepts (concepts.md), every
+      command (commands.md), every diagnostic code (diagnostics.md) and the JSON
+      output (output.md).
 
       Options:
         --dir <directory>   Use this project directory instead of the nearest .dimensions
