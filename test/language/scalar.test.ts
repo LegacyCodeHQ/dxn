@@ -140,7 +140,7 @@ describe("RelativePath", () => {
     ).toEqual([]);
   });
 
-  it("reports a path that is absolute, uses \\, or has an empty, . or .. part", () => {
+  it("reports a path that is absolute, uses \\, or has an empty, . or .. part, or a drive", () => {
     const paths = [
       "",
       "/Users/me/website.pen",
@@ -150,11 +150,13 @@ describe("RelativePath", () => {
       "design//website.pen",
       "design/",
       "design/ website.pen",
+      "C:/design/website.pen",
+      "c:website.pen",
     ];
     expect(data("RelativePath", ...paths)).toEqual(
       paths.map(
         (path, index) =>
-          `invalid-value: $[${index}].value: ${JSON.stringify(path)} is not a RelativePath: a path from the repository root: parts split by /, none of them empty, . or .., and none with a \\ or spaces at either end`,
+          `invalid-value: $[${index}].value: ${JSON.stringify(path)} is not a RelativePath: a path from the repository root: parts split by /, none of them empty, . or .., and none with a \\ or spaces at either end, nor starting with a drive such as C:`,
       ),
     );
   });
