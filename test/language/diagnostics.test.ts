@@ -55,4 +55,24 @@ describe("diagnostics", () => {
       ],
     ]);
   });
+
+  it("skip to the next declaration after a mistake, wherever it is", () => {
+    expect([
+      problems("type {\n  states hover: Hover\n}\nenum Hover = rest\n"),
+      problems(
+        "dimension Pointer = mouse\nenvironment Device = Pointer\nprofile laptop Device {\n  Pointer = mouse\n}\n",
+      ),
+      problems("enum Hover = rest\ntype Wordmark\n  states hover: Hover\n}\n"),
+    ]).toEqual([
+      [
+        '1:6: syntax-error: expected a type name after "type", found "{"',
+        // Hover is still declared, after the skipped type.
+      ],
+      ['3:16: syntax-error: expected ":" after "laptop", found "Device"'],
+      ['2:14: syntax-error: expected "{" after the type name, found the end of the line'],
+    ]);
+    expect(parse("type {\n}\nenum Hover = rest\n").enums.map(({ name }) => name)).toEqual([
+      "Hover",
+    ]);
+  });
 });

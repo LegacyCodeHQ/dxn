@@ -260,14 +260,6 @@ export function parse(source: string): ParseResult {
     }
   };
 
-  // After a mistake in braces: skip past the closing brace, unless the
-  // mistake was the closing brace.
-  const skipBody = () => {
-    if (tokens[position - 1]?.kind === "}") return;
-    while (peek().kind !== "}" && peek().kind !== "end") next();
-    if (peek().kind === "}") next();
-  };
-
   const skipNewlines = () => {
     while (peek().kind === "newline") next();
   };
@@ -396,8 +388,7 @@ export function parse(source: string): ParseResult {
     }
   };
 
-  // A profile: "profile <name>: <Environment> { <Dimension> = <value>, ... }". A
-  // mistake inside skips to the closing brace.
+  // A profile: "profile <name>: <Environment> { <Dimension> = <value>, ... }".
   const profileDeclaration = (): void => {
     next(); // "profile"
     const nameToken = next();
@@ -422,49 +413,42 @@ export function parse(source: string): ParseResult {
       environmentColumn: typeToken.column,
       values: [],
     });
-    try {
-      const open = next();
-      if (open.kind !== "{") fail(open, '"{" after the environment name');
-      for (;;) {
-        skipNewlines();
-        const token = peek();
-        if (token.kind === "}") {
-          next();
-          return;
-        }
-        if (token.kind === "end") fail(token, `"}" to close ${profile.name}`);
-        const dimensionToken = next();
-        if (dimensionToken.kind !== "word") fail(dimensionToken, 'a dimension or "}"');
-        const equals = next();
-        if (equals.kind !== "=") fail(equals, `"=" after ${JSON.stringify(dimensionToken.text)}`);
-        const valueToken = next();
-        if (valueToken.kind !== "word") fail(valueToken, 'a value after "="');
-        profile.values.push({
-          dimension: dimensionToken.text,
-          value: valueToken.text,
-          line: dimensionToken.line,
-          column: dimensionToken.column,
-          valueLine: valueToken.line,
-          valueColumn: valueToken.column,
-        });
-        const after = peek();
-        if (after.kind === ",") {
-          next();
-          continue;
-        }
-        if (after.kind !== "newline" && after.kind !== "}") {
-          fail(after, `",", the end of the line or "}" after ${JSON.stringify(valueToken.text)}`);
-        }
+    const open = next();
+    if (open.kind !== "{") fail(open, '"{" after the environment name');
+    for (;;) {
+      skipNewlines();
+      const token = peek();
+      if (token.kind === "}") {
+        next();
+        return;
       }
-    } catch (error) {
-      if (!(error instanceof ParseFailure)) throw error;
-      skipBody();
-      throw error;
+      if (token.kind === "end") fail(token, `"}" to close ${profile.name}`);
+      const dimensionToken = next();
+      if (dimensionToken.kind !== "word") fail(dimensionToken, 'a dimension or "}"');
+      const equals = next();
+      if (equals.kind !== "=") fail(equals, `"=" after ${JSON.stringify(dimensionToken.text)}`);
+      const valueToken = next();
+      if (valueToken.kind !== "word") fail(valueToken, 'a value after "="');
+      profile.values.push({
+        dimension: dimensionToken.text,
+        value: valueToken.text,
+        line: dimensionToken.line,
+        column: dimensionToken.column,
+        valueLine: valueToken.line,
+        valueColumn: valueToken.column,
+      });
+      const after = peek();
+      if (after.kind === ",") {
+        next();
+        continue;
+      }
+      if (after.kind !== "newline" && after.kind !== "}") {
+        fail(after, `",", the end of the line or "}" after ${JSON.stringify(valueToken.text)}`);
+      }
     }
   };
 
-  // A type: its name, then its states inside braces. A mistake inside skips
-  // to the closing brace, so the rest of the file is still read.
+  // A type: its name, then its states and rules inside braces.
   const typeDeclaration = (): void => {
     next(); // "type"
     const nameToken = next();
@@ -483,48 +467,42 @@ export function parse(source: string): ParseResult {
         type,
       );
     }
-    try {
-      const open = next();
-      if (open.kind !== "{") fail(open, '"{" after the type name');
-      let listed = false;
-      for (;;) {
-        skipNewlines();
-        const token = peek();
-        if (token.kind === "}") {
-          next();
-          return;
-        }
-        if (token.kind === "end") fail(token, `"}" to close ${type.name}`);
-        if (token.kind === "word" && token.text !== "states") {
-          type.rules.push(rule());
-          continue;
-        }
-        if (token.kind !== "word") fail(token, '"states", a rule or "}"');
+    const open = next();
+    if (open.kind !== "{") fail(open, '"{" after the type name');
+    let listed = false;
+    for (;;) {
+      skipNewlines();
+      const token = peek();
+      if (token.kind === "}") {
         next();
-        if (listed) {
-          report(
-            "states-twice",
-            `${type.name} lists its states twice; put them on one states line`,
-            { name: token.text, line: token.line, column: token.column },
-          );
-        }
-        listed = true;
-        type.states.push(field());
-        while (peek().kind === ",") {
-          next();
-          if (peek().kind === "newline") next();
-          type.states.push(field());
-        }
-        const after = peek();
-        if (after.kind !== "newline" && after.kind !== "}") {
-          const last = type.states[type.states.length - 1] as State;
-          fail(after, `"," or the end of the line after ${JSON.stringify(last.enum)}`);
-        }
+        return;
       }
-    } catch (error) {
-      if (!(error instanceof ParseFailure)) throw error;
-      skipBody();
-      throw error;
+      if (token.kind === "end") fail(token, `"}" to close ${type.name}`);
+      if (token.kind === "word" && token.text !== "states") {
+        type.rules.push(rule());
+        continue;
+      }
+      if (token.kind !== "word") fail(token, '"states", a rule or "}"');
+      next();
+      if (listed) {
+        report("states-twice", `${type.name} lists its states twice; put them on one states line`, {
+          name: token.text,
+          line: token.line,
+          column: token.column,
+        });
+      }
+      listed = true;
+      type.states.push(field());
+      while (peek().kind === ",") {
+        next();
+        if (peek().kind === "newline") next();
+        type.states.push(field());
+      }
+      const after = peek();
+      if (after.kind !== "newline" && after.kind !== "}") {
+        const last = type.states[type.states.length - 1] as State;
+        fail(after, `"," or the end of the line after ${JSON.stringify(last.enum)}`);
+      }
     }
   };
 
@@ -553,8 +531,13 @@ export function parse(source: string): ParseResult {
       // Set by the declaration as it reads, which TypeScript does not see here.
       const kept = current as Declaration | undefined;
       if (kept !== undefined) kept.broken = true;
-      // Skip to the next line and carry on, so one mistake does not hide others.
-      while (peek().kind !== "newline" && peek().kind !== "end") next();
+      // Skip to the next line that starts a declaration and carry on, so one
+      // mistake does not hide others, nor cause more.
+      const starts = (token: Token) =>
+        token.kind === "word" &&
+        Object.hasOwn(declarations, token.text) &&
+        tokens[position - 1]?.kind === "newline";
+      while (peek().kind !== "end" && !starts(peek())) next();
     }
   }
   check(result);
