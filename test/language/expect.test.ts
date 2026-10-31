@@ -136,6 +136,25 @@ describe("expect", () => {
     ]);
   });
 
+  it("reports a value its key does not have, which would pick or assert nothing", () => {
+    const rule = (body: string) => `${model}expect "Mistyped" {\n${body}\n}\n`;
+    assert([
+      problems(rule("  in Page.toolbar.menu.panel\n  when toolbar.menu.menu = clsoed\n  absent")),
+      problems(rule("  in Page.toolbar and below\n  when Pointer = tuch\n  then hover = rest")),
+      problems(rule("  in Page.toolbar.link\n  some hover = hoverd")),
+    ]).toEqual([
+      [
+        '33:8: expectation-empty: Mistyped tests nothing: "clsoed" is not a value of toolbar.menu.menu (closed, open)',
+      ],
+      [
+        '33:8: expectation-empty: Mistyped tests nothing: "tuch" is not a value of Pointer (mouse, touch)',
+      ],
+      [
+        '33:8: expectation-empty: Mistyped tests nothing: "hoverd" is not a value of hover (rest, hovered)',
+      ],
+    ]);
+  });
+
   it("picks a profile in a row it shares with others that have its values", () => {
     const merged = model.replace(
       "profile desktop: Device { Pointer = mouse, Keyboard = keyboard }",

@@ -99,6 +99,29 @@ function checkOne(
     return empty(`no element in ${path} has ${missing?.key.name ?? "every key it names"}`);
   }
   // A profile is any of a row's: profiles with the same values share one.
+  // Each value must be one its key can have: a mistyped one would pick or
+  // assert nothing.
+  const valuesOf = (element: string, key: string): string[] => {
+    if (/^[A-Z]/.test(key)) {
+      return file.dimensions.find(({ name }) => name === key)?.values.map(({ name }) => name) ?? [];
+    }
+    const place = placement(file, element);
+    const state =
+      place.parents.find((parent) => parent.key === key)?.state ??
+      place.target.states.find(({ name }) => name === key);
+    return (
+      file.enums.find(({ name }) => name === state?.enum.name)?.values.map(({ name }) => name) ?? []
+    );
+  };
+  for (const { key, value } of keys) {
+    if (key.name === "profile") continue;
+    const values = valuesOf(applicable[0] as string, key.name);
+    if (!values.includes(value.name)) {
+      return empty(
+        `${JSON.stringify(value.name)} is not a value of ${key.name} (${values.join(", ")})`,
+      );
+    }
+  }
   const matches = (combination: Combination, pairs: Expectation["when"]) =>
     pairs.every(({ key, value }) =>
       key.name === "profile"
