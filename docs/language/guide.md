@@ -186,6 +186,10 @@ dimension Pointer = mouse | touch
 dimension Keyboard = keyboard | no-keyboard
 ```
 
+A dimension is something the world varies by, such as the screen size or the
+kind of pointer, not a size: its values are names, like `sm`, never
+measurements.
+
 A dimension is written like an enum: a capitalized name and its values. The
 difference is what it means. An enum's values belong to an element: the
 wordmark _is_ hovered. A dimension's values belong to the surroundings: the
