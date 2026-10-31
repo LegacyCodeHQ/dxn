@@ -1443,6 +1443,7 @@ comment     = "#" to the end of the line
 | `binding-mismatch`                                                            | error    | a binding's two states take their values from different enums                                    |
 | `bound-derived`                                                               | error    | a binding sets a child's state that a `when` or a value decides, or that it receives             |
 | `duplicate-provides`                                                          | error    | a type provides a state twice                                                                    |
+| `provides-received`                                                           | error    | a type provides a state it receives, not one of its own                                          |
 | `duplicate-action`                                                            | error    | a type has two actions with one name                                                             |
 | `bound-action`                                                                | error    | a binding sets a child's state that one of the child's actions changes                           |
 | `action-on-derived`                                                           | error    | an action changes a state that a `when` or a value decides, or that is received                  |

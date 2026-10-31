@@ -63,9 +63,11 @@ describe("a provided state", () => {
     expect([
       problems(site.replace("provides current", "provides curent")),
       problems(site.replace("provides current", "provides current\n  provides current")),
+      problems(site.replace("  has blog: Link", "  provides current\n  has blog: Link")),
     ]).toEqual([
       ["16:12: unknown-state: curent is not a state of ArticlePage (current)"],
       ["17:12: duplicate-provides: current is already provided by ArticlePage"],
+      ["7:12: provides-received: Links receives current; it can only provide a state of its own"],
     ]);
   });
 

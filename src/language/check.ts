@@ -626,7 +626,13 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     const provided = new Set<string>();
     for (const name of type.provides) {
       const own = type.states.filter(({ received }) => received === undefined);
-      if (!own.some((state) => state.name === name.name)) {
+      if (type.states.some((state) => state.received && state.name === name.name)) {
+        report(
+          "provides-received",
+          `${type.name} receives ${name.name}; it can only provide a state of its own`,
+          name,
+        );
+      } else if (!own.some((state) => state.name === name.name)) {
         const states = own.map((state) => state.name);
         report(
           "unknown-state",
