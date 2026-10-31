@@ -235,3 +235,17 @@ describe("renames update every reference", () => {
     expect(expectation().when.breakpoint).toBe("wide");
   });
 });
+
+describe("renames of a shared node's states", () => {
+  it("rename the keys of its overrides file", () => {
+    const { run, read } = cliProject({
+      ...files,
+      "overrides/menu.json": {
+        version: 1,
+        overrides: { open: { nodes: { button: { states: { remove: ["hovered"] } } } } },
+      },
+    });
+    expect(run("state-group", "rename-value", "openness", "open", "expanded").code).toBe(0);
+    expect(Object.keys(read("overrides/menu.json").overrides as object)).toEqual(["expanded"]);
+  });
+});

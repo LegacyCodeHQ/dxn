@@ -37,6 +37,7 @@ export function checkVerificationFile(
   combinations: CombinationStates[],
   rootId: string,
   profiles: ProfilesSymbol,
+  sharedOverrides: Map<string, DimensionInfo>,
 ): void {
   const document = expectObject(diagnostics, root, "$");
   if (document === undefined) {
@@ -66,6 +67,7 @@ export function checkVerificationFile(
       element,
       path,
       profiles,
+      sharedOverrides,
     );
     if (key === undefined) {
       return;
@@ -94,6 +96,7 @@ function checkRecord(
   item: JsonNode,
   path: string,
   profiles: ProfilesSymbol,
+  sharedOverrides: Map<string, DimensionInfo>,
 ): string | undefined {
   const record = expectObject(diagnostics, item, path);
   if (record === undefined) {
@@ -155,6 +158,7 @@ function checkRecord(
         object,
         `${path}.context`,
         profiles,
+        sharedOverrides,
       );
     }
   }
@@ -278,6 +282,7 @@ function checkContext(
   context: ObjectNode,
   path: string,
   profiles: ProfilesSymbol,
+  sharedOverrides: Map<string, DimensionInfo>,
 ): string | undefined {
   const applicable = [...dimensions]
     .filter(([, { symbol }]) => symbol.scope.has(nodeId))
@@ -317,7 +322,7 @@ function checkContext(
     }
     values.set(name, entry.value.value);
   }
-  const { states, removed } = statesInContext(
+  let { states, removed } = statesInContext(
     base,
     dimensions,
     combinations,
@@ -377,6 +382,21 @@ function checkContext(
     values.set(ancestor, entry.value.value);
   }
 
+  // The states of shared nodes above this one can change its own states too.
+  const overridden = shared.filter(
+    (ancestor) => sharedOverrides.has(ancestor) && values.has(ancestor),
+  );
+  if (overridden.length > 0) {
+    ({ states, removed } = statesInContext(
+      base,
+      new Map([...dimensions, ...sharedOverrides]),
+      combinations,
+      [...applicable, ...overridden],
+      values,
+      type,
+      nodeId,
+    ));
+  }
   const allowed = [...applicable, ...groupNames, ...shared];
   for (const { key } of context.members) {
     if (!allowed.includes(key.value)) {

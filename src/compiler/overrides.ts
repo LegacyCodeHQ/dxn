@@ -55,9 +55,10 @@ export function checkOverridesFile(
   tree: TreeSymbols,
   dimension: DimensionSymbol & { name: string },
   source: OverrideSource,
+  allowOnly = true,
 ): { states: OverrideStates; only: Map<string, Set<string>> } {
   const changes: OverrideStates = new Map();
-  const { byValue, only: onlyNode } = checkFileShape(root, diagnostics, true);
+  const { byValue, only: onlyNode } = checkFileShape(root, diagnostics, allowOnly);
   const only =
     onlyNode === undefined
       ? new Map<string, Set<string>>()
@@ -292,6 +293,16 @@ function isValue(
   path: string,
 ): boolean {
   if (dimension.values !== undefined && !dimension.values.has(key.value)) {
+    if (dimension.shared !== undefined) {
+      report(
+        diagnostics,
+        "unknown-state",
+        `${JSON.stringify(key.value)} is not a state of ${dimension.shared} (${[...dimension.values].join(", ")})`,
+        path,
+        key,
+      );
+      return false;
+    }
     report(
       diagnostics,
       "unknown-dimension-value",
@@ -330,7 +341,7 @@ function newEntry(
 function checkValueOverrides(
   diagnostics: Diagnostics,
   tree: TreeSymbols,
-  dimension: { scope: Set<string>; scopeComplete: boolean },
+  dimension: { scope: Set<string>; scopeComplete: boolean; shared?: string },
   item: JsonNode,
   path: string,
   start: Start,
@@ -392,7 +403,9 @@ function checkValueOverrides(
       report(
         diagnostics,
         "node-out-of-scope",
-        `node ${id} is not in this dimension's appliesTo`,
+        dimension.shared === undefined
+          ? `node ${id} is not in this dimension's appliesTo`
+          : `node ${id} is not below ${dimension.shared}`,
         nodePath,
         key,
       );

@@ -204,6 +204,15 @@ const renameValue = edit((workspace, args) => {
     if (changed) workspace.touch(file);
   }
   editRecords(workspace, (record) => swapIn(record.context, keysFor(record.node)));
+  // A shared node's overrides file is keyed by its states.
+  for (const id of sharedUsing) {
+    const file = `overrides/${id}.json`;
+    const overrides = workspace.read(file)?.overrides;
+    if (isObject(overrides) && from in overrides) {
+      renameKey(overrides, from, to);
+      workspace.touch(file);
+    }
+  }
   editExpectations(workspace, (expectation) =>
     expectationValues(expectation)
       .map((values) => swapIn(values, [name, ...sharedUsing]))

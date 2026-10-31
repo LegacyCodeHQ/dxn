@@ -242,10 +242,55 @@ export function compileDirectory(directory: string): DirectoryResult {
 
   const overrides: [string, ParsedFile][] = [];
   const entries: OverrideEntry[] = [];
+  // Shared node id -> its states as override keys, for overrides/<id>.json.
+  const shared = new Map<string, DimensionInfo>();
   const overrideNames = listJson(directory, "overrides", problems);
   for (const name of overrideNames.filter((name) => !name.includes("+"))) {
     const path = `overrides/${name}.json`;
     const dimension = dimensions.get(name);
+    const sharedType = symbols.nodeTypes.get(name);
+    if (
+      dimension === undefined &&
+      sharedType !== undefined &&
+      symbols.sharedTypes.has(sharedType)
+    ) {
+      // overrides/<shared-node>.json: what changes below a shared node in each
+      // of its states.
+      const file = readJson(directory, path);
+      if (file === undefined || "code" in file) {
+        if (file !== undefined) problems.push(file);
+        continue;
+      }
+      parsed.push(file);
+      const below = new Set<string>();
+      const visit = (id: string) => {
+        for (const child of symbols.children.get(id) ?? []) {
+          if (below.has(child)) continue;
+          below.add(child);
+          visit(child);
+        }
+      };
+      visit(name);
+      const symbol: DimensionSymbol = {
+        values: symbols.types.get(sharedType) ?? new Set(),
+        scope: below,
+        scopeComplete: true,
+        shared: name,
+      };
+      if (file.root !== undefined) {
+        const checked = checkOverridesFile(
+          file.root,
+          file.diagnostics,
+          symbols,
+          { ...symbol, name },
+          { file: path, entries },
+          false,
+        );
+        shared.set(name, { symbol, overrides: checked.states });
+      }
+      overrides.push([name, file]);
+      continue;
+    }
     if (dimension === undefined) {
       problems.push(
         fileDiagnostic(
@@ -347,7 +392,7 @@ export function compileDirectory(directory: string): DirectoryResult {
     walk(overridesNode, 0, [], "$.overrides");
   }
 
-  checkConflicts(entries, symbols, dimensions);
+  checkConflicts(entries, symbols, new Map([...dimensions, ...shared]));
   checkTransitions(symbols, dimensions);
 
   const rootIds = new Set(nodes.map((file) => file.file.slice("roots/".length, -".json".length)));
@@ -375,6 +420,7 @@ export function compileDirectory(directory: string): DirectoryResult {
         combinationStates,
         name,
         profiles,
+        shared,
       );
     }
     verification.push([name, file]);

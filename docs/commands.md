@@ -501,7 +501,8 @@ dimensions profile remove tablet-portrait
 Usage: dimensions override <subcommand>
 
 <context> is <dimension>=<value>, or several joined by commas for a
-combination, e.g. breakpoint=sm,pointer=touch.
+combination, e.g. breakpoint=sm,pointer=touch; or a shared node's state,
+e.g. form=incomplete, which changes the nodes below that shared node.
 
 Subcommands:
   states <context> (--type <t> | --node <id>) [--add <state>]... [--remove <state>]...

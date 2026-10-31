@@ -64,6 +64,9 @@ export interface DimensionSymbol {
   only?: Map<string, Set<string>>;
   scope: Set<string>;
   scopeComplete: boolean;
+  // For the overrides of a shared node's states: that node's id. Its states
+  // are the values, and its scope is what is below it.
+  shared?: string;
 }
 
 // States in effect, and the states an override removed. contested holds states

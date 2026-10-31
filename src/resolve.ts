@@ -286,7 +286,13 @@ export class Resolver {
       );
 
     const type = node.type === undefined ? undefined : this.project.types.types?.[node.type];
-    const levels = this.levels(id, node.type, context);
+    // The states of shared nodes above it pick overrides, as dimension values do.
+    const sharedStates = Object.fromEntries(
+      this.sharedAncestors(lineage)
+        .filter((ancestor) => given[ancestor] !== undefined && this.project.overrides[ancestor])
+        .map((ancestor) => [ancestor, given[ancestor] as string]),
+    );
+    const levels = this.levels(id, node.type, { ...context, ...sharedStates });
     const typeGroups = node.type === undefined ? {} : this.groupsOf(node.type);
     const states = new Set(Object.values(typeGroups).flat());
     for (const override of levels) {

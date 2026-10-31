@@ -144,6 +144,10 @@ const rename = editCommand(usage, (workspace, args) => {
     }
   }
   renameNodeReferences(workspace, id, next);
+  // A shared node's overrides file is named after it.
+  if (workspace.exists(`overrides/${id}.json`)) {
+    workspace.move(`overrides/${id}.json`, `overrides/${next}.json`);
+  }
 });
 
 const remove = editCommand(usage, (workspace, args) => {

@@ -262,6 +262,22 @@ Set overrides with `dimensions override states pointer=touch --type
 toolbar-link --remove hovered`. For a combination, write
 `breakpoint=sm,pointer=touch`.
 
+A **shared node's state** can be an override's key too, so a node's states can
+depend on another node's state. A sign-in button is disabled until the form is
+complete:
+
+```json
+// overrides/form.json: form is a shared node with states incomplete, complete
+{ "version": 1, "overrides": {
+  "incomplete": { "nodes": { "submit": { "states": { "remove": ["enabled"] } } } },
+  "complete":   { "nodes": { "submit": { "states": { "remove": ["disabled"] } } } } } }
+```
+
+The file is named after the shared node, its keys are that node's states, and
+it changes only the nodes below it. It has no `only`: use `onlyWhen` for what
+exists. Write it with `dimensions override states form=incomplete --node
+submit --remove enabled`.
+
 ## Shared states and onlyWhen
 
 Some states change what exists below a node, not just how the node looks.

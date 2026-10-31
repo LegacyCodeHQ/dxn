@@ -80,8 +80,8 @@ its overrides in that order.
 ### `undeclared-dimension`
 
 `overrides/<name>.json` (or a part of a combination file name) names a
-dimension that has no `dimensions/<name>.json`. Add the dimension, or rename
-or remove the overrides file.
+dimension that has no `dimensions/<name>.json`, and no shared node has that
+id. Add the dimension, or rename or remove the overrides file.
 
 ### `unknown-root`
 
@@ -391,7 +391,8 @@ of one of the profiles (`profile list` shows them), or remove the override.
 
 An override or `only` entry targets a node that the dimension doesn't apply
 to. Apply the dimension to the node or an ancestor (`dimension apply`), or
-remove the entry.
+remove the entry. In a shared node's overrides file, the node isn't below
+that shared node.
 
 ### `override-without-type`
 
