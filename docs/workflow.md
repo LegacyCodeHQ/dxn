@@ -20,6 +20,7 @@ of combinations.
 8. [Rules: what must hold](#8-rules-what-must-hold)
 9. [Review: look at each view](#9-review-look-at-each-view)
 10. [Verify: record what was checked](#10-verify-record-what-was-checked)
+11. [Evidence: what an actor made for each context](#11-evidence-what-an-actor-made-for-each-context)
 
 Every editing command compiles the project with the change before it writes
 anything, and refuses a change that would break it. Add `--dry-run` to see
@@ -204,4 +205,31 @@ check in every context as passed, failed or missing: what is left to check.
 dimensions actor add visual-reviewer
 dimensions verify blog-link --check visual --result passed --actor visual-reviewer profile=desktop hover=rest focus=blurred selection=selected
 dimensions status blog-link
+```
+
+## 11. Evidence: what an actor made for each context
+
+An actor such as a design agent makes evidence: frames in a design file that
+show a node in one context. The specification stays the source of truth; the
+design is evidence for it. Here the design file is `design/toolbar.pen`, next
+to `.dimensions`:
+
+```text ../design/toolbar.pen
+The toolbar, drawn in a design tool.
+```
+
+Attach a frame to each context it shows. The context must be complete, as
+`evidence` lists it; a profile fills in its dimensions. `evidence` shows each
+context of a node with the frame that covers it, or `—` where none does, and
+`status --actor` counts what is present, stale (the file changed since) or
+missing across the whole model. After the design changes, attach the frame
+again to record the new revision.
+
+```bash
+dimensions actor add design-agent
+dimensions evidence menu --actor design-agent --table
+dimensions attach menu --actor design-agent --file design/toolbar.pen --frame phone-closed profile=phone menu=closed
+dimensions attach menu --actor design-agent --file design/toolbar.pen --frame phone-open profile=phone menu=open
+dimensions evidence menu --actor design-agent profile=phone
+dimensions status --actor design-agent
 ```

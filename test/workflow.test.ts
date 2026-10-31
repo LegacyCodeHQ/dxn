@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { capture } from "./support/cli.js";
 import { cleanup, writeProject } from "./support/project.js";
@@ -8,7 +8,8 @@ afterAll(cleanup);
 
 // The steps of docs/workflow.md, in order: each `dimensions ...` line of a
 // bash block is a command, and a block such as ```json expectations.json is
-// a file the reader writes into .dimensions/.
+// a file the reader writes into .dimensions/ (or next to it, for a name that
+// starts with ../, such as a design file).
 type Step = { command: string[] } | { file: string; content: string };
 
 function steps(): Step[] {
@@ -38,8 +39,9 @@ describe("docs/workflow.md", () => {
     const failed: string[] = [];
     for (const step of steps()) {
       if ("file" in step) {
-        mkdirSync(join(root, ".dimensions"), { recursive: true });
-        writeFileSync(join(root, ".dimensions", step.file), step.content);
+        const path = join(root, ".dimensions", step.file);
+        mkdirSync(dirname(path), { recursive: true });
+        writeFileSync(path, step.content);
         continue;
       }
       const result = capture(step.command, root);

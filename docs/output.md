@@ -326,6 +326,63 @@ profiles they match.
 }
 ```
 
+A modifier on a profile is listed as a profile of its own, named
+`<profile>+<modifier>`, with the modifier's values applied.
+
+## modifier list
+
+```json
+{
+  "modifiers": [
+    {
+      "name": "magic-keyboard",
+      "on": ["tablet-portrait", "tablet-landscape"],
+      "sets": { "keyboard": "keyboard", "pointer": "mouse" }
+    }
+  ]
+}
+```
+
+## actor list
+
+```json
+{ "actors": [{ "name": "design-agent" }, { "name": "visual-reviewer" }] }
+```
+
+## evidence
+
+```json
+{
+  "node": "menu",
+  "actor": "design-agent",
+  "contexts": [
+    {
+      "root": "article-page",
+      "profiles": ["phone"],
+      "context": {
+        "breakpoint": "base",
+        "keyboard": "no-keyboard",
+        "pointer": "touch",
+        "menu": "closed"
+      },
+      "evidence": [
+        {
+          "at": "2026-10-31T12:00:00Z",
+          "source": { "file": "design/website.pen", "frame": "vbGba" },
+          "revision": "824028d8f908241af9555729993799556d69f07f",
+          "stale": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+There is one item per context of the node, on each root. `profiles` names
+every profile with that combination, and is left out when there are no
+profiles. `evidence` is empty where the actor has none; `stale` is true when
+the file's git revision now differs from the one recorded.
+
 ## views
 
 ```json
@@ -400,5 +457,30 @@ Each transition is written as it is in the file. See
 There is one item per required check, per context the node exists in, on
 each root, and one per required check per transition of a shared node.
 `result` is `passed`, `failed` or `missing`. A transition's item has
-`transition` instead of `context`. To see who verified a context and when,
+`transition` instead of `context`. To see which actor verified a context and when,
 read `verification/<root-id>.json`.
+
+With `--actor`, the summary and items are about evidence instead of checks:
+
+```json
+{
+  "summary": { "present": 2, "stale": 0, "missing": 41 },
+  "items": [
+    {
+      "root": "article-page",
+      "node": "menu",
+      "context": {
+        "breakpoint": "base",
+        "keyboard": "no-keyboard",
+        "pointer": "touch",
+        "menu": "closed"
+      },
+      "evidence": "present"
+    }
+  ]
+}
+```
+
+There is one item per context of each node (or of the node named), on each
+root. `evidence` is `present`, `stale` when every entry's file has changed
+since, or `missing`.
