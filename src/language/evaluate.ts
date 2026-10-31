@@ -342,8 +342,20 @@ export function placement(file: ParseResult, path: string): Placement {
       add(keyAt(level, name), state);
     }
   });
+  // A root's states are keyed by their own names, as the element's own are:
+  // one of each with one name could not be told apart. A received state is
+  // the provider's, so it may share it.
+  const target = (steps.at(-1) as Placement["steps"][number]).type;
+  const shadowed = target.states.find(
+    ({ name, received: own }) => !own && parents.some(({ key }) => key === name),
+  );
+  if (shadowed !== undefined && target !== root) {
+    throw new Error(
+      `${target.name} has a state ${shadowed.name}, and so does ${root.name} above it; rename one, so that each can be told apart`,
+    );
+  }
   return {
-    target: (steps.at(-1) as Placement["steps"][number]).type,
+    target,
     steps,
     dimensions: [...new Set(steps.flatMap(({ type }) => type.needs.map(({ name }) => name)))],
     parents,

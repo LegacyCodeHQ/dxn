@@ -108,4 +108,19 @@ describe("evaluating a child in place", () => {
     );
     expect(() => inPlace(toolbar, "Toolbr.menu")).toThrow("no type Toolbr");
   });
+
+  it("refuses a child whose own state has the name of a parent's state it is under", () => {
+    const shadowed = parse(`enum Mode = a | b
+type Inner {
+  state mode: Mode
+}
+type Root {
+  state mode: Mode
+  has inner: Inner only when mode = a
+}
+`);
+    expect(() => inPlace(shadowed, "Root.inner")).toThrow(
+      "Inner has a state mode, and so does Root above it; rename one, so that each can be told apart",
+    );
+  });
 });
