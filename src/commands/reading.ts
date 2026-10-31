@@ -205,11 +205,7 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
         // Values of a dimension the profiles cover that no profile uses.
         ...(() => {
           if (!resolver.profiled.has(name)) return {};
-          const used = new Set(
-            [...resolver.profiles.values()].flatMap((combinations) =>
-              combinations.map((profile) => profile[name]),
-            ),
-          );
+          const used = new Set([...resolver.profiles.values()].map((profile) => profile[name]));
           const unused = dimension.values.filter((value) => !used.has(value));
           return unused.length === 0 ? {} : { inNoProfile: unused };
         })(),
@@ -296,19 +292,10 @@ export const axes = readCommand(axesUsage, (resolver, args, io) => {
   });
 });
 
-// Every profile, by name, with its dimension values, or its combinations
-// when it has several.
-function profileList(
-  resolver: Resolver,
-): ({ name: string } & (
-  | { values: Record<string, string> }
-  | { combinations: Record<string, string>[] }
-))[] {
-  return [...resolver.profiles].map(([name, combinations]) =>
-    combinations.length === 1
-      ? { name, values: combinations[0] as Record<string, string> }
-      : { name, combinations },
-  );
+// Every profile, by name, with its dimension values; a modifier on a profile
+// makes one named <profile>+<modifier>.
+function profileList(resolver: Resolver): { name: string; values: Record<string, string> }[] {
+  return [...resolver.profiles].map(([name, values]) => ({ name, values }));
 }
 
 // The profiled dimensions' values from the one profile that fits, or a
@@ -332,6 +319,18 @@ export const expectationList = readCommand(
   (resolver, args, io) => {
     parse(args, [], {});
     print(io, { expectations: resolver.project.expectations?.expectations ?? [] });
+  },
+);
+
+export const modifierList = readCommand(
+  "Usage: dimensions modifier list\n",
+  (resolver, args, io) => {
+    parse(args, [], {});
+    print(io, {
+      modifiers: Object.entries(resolver.project.profiles?.modifiers ?? {}).map(
+        ([name, { on, sets }]) => ({ name, on, sets }),
+      ),
+    });
   },
 );
 

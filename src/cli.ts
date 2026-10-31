@@ -6,6 +6,7 @@ import { dimension } from "./commands/dimension.js";
 import { expectation } from "./commands/expectation.js";
 import { fragment } from "./commands/fragment.js";
 import { init } from "./commands/init.js";
+import { modifier } from "./commands/modifier.js";
 import { node } from "./commands/node.js";
 import { override } from "./commands/override.js";
 import { profile } from "./commands/profile.js";
@@ -74,6 +75,8 @@ Model
                       List and add dimensions, their values, default and scope
   profile <subcommand>
                       List, add and remove the combinations of values that exist
+  modifier <subcommand>
+                      List, add and remove accessories that change some profiles' values
   override <subcommand>
                       Change states and values for a dimension value or combination
   expectation <subcommand>
@@ -116,6 +119,7 @@ const commands: Record<string, Command> = {
   fragment,
   dimension,
   profile,
+  modifier,
   override,
   expectation,
   actor,

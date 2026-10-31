@@ -52,11 +52,8 @@ describe("profiles.json", () => {
     ]);
   });
 
-  it("may share a combination, but never list one twice", () => {
+  it("may share a combination", () => {
     expect(diagnose(project({ phone, laptop, ipad: { ...phone } }))).toEqual([]);
-    expect(diagnose(project({ phone, laptop, ipad: [phone, { ...phone }] }))).toEqual([
-      p("duplicate-profile", "$.profiles.ipad[1]"),
-    ]);
   });
 
   it("cover only dimensions without a default, reported where the profiles are", () => {

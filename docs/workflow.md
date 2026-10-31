@@ -51,11 +51,12 @@ have no default, because profiles fill them in.
 ## 3. Profiles: the combinations that exist
 
 On their own, the dimensions make 16 combinations, many of which no user has.
-Name the setups that exist. Portrait and landscape tablets are two profiles,
-because they show different toolbars. A setup that can be in several
-combinations lists them with `|`, such as an iPad with a keyboard and trackpad
-held either way: `profile add ipad-keyboard "breakpoint=sm|lg" pointer=mouse
-keyboard=keyboard`. Profiles may share a combination.
+Name the ones that exist. Each profile is exactly one combination: portrait and
+landscape tablets are two, because they show different toolbars. An accessory
+that changes some profiles' values, such as a keyboard with a trackpad on a
+tablet, is a modifier: `modifier add magic-keyboard --on
+tablet-portrait,tablet-landscape pointer=mouse keyboard=keyboard` makes the
+profiles `tablet-portrait+magic-keyboard` and `tablet-landscape+magic-keyboard`.
 
 ```bash
 dimensions profile add phone breakpoint=base pointer=touch keyboard=no-keyboard tablet-portrait breakpoint=sm pointer=touch keyboard=no-keyboard tablet-landscape breakpoint=lg pointer=touch keyboard=no-keyboard laptop breakpoint=lg pointer=mouse keyboard=keyboard desktop breakpoint=xl pointer=mouse keyboard=keyboard

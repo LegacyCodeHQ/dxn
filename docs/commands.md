@@ -32,7 +32,7 @@ asks which.
 - Project: [workflow](#workflow), [init](#init), [validate](#validate), [status](#status)
 - Explore: [tree](#tree), [show](#show), [contexts](#contexts), [views](#views), [view](#view), [axes](#axes), [transitions](#transitions), [evidence](#evidence)
 - Record: [verify](#verify), [unverify](#unverify)
-- Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [override](#override), [expectation](#expectation), [actor](#actor)
+- Model: [node](#node), [fragment](#fragment), [type](#type), [state-group](#state-group), [attribute](#attribute), [check](#check), [dimension](#dimension), [profile](#profile), [modifier](#modifier), [override](#override), [expectation](#expectation), [actor](#actor)
 
 ## Project
 
@@ -496,29 +496,52 @@ dimensions dimension add pointer --values mouse,touch --applies-to toolbar --def
 ```text
 Usage: dimensions profile <subcommand>
 
-A profile is a setup that exists, such as phone (breakpoint=base,
-pointer=touch, keyboard=no-keyboard): one combination of dimension values, or
-several for a setup that can be in more than one, such as an iPad with a
-keyboard in either orientation (breakpoint=sm|lg). Profiles may share a
+A profile is a combination of dimension values that exists, such as phone
+(breakpoint=base, pointer=touch, keyboard=no-keyboard). Profiles may share a
 combination. Once profiles exist, only their combinations do, and commands fill
 those dimensions in from the one combination that fits what you give.
+Accessories that change some profiles' values are modifiers; see
+"dimensions modifier".
 
 Subcommands:
   list                               List every profile and its values
-  add <name> <dimension>=<value>[|<value>]... [<name> <dimension>=<value>...]
+  add <name> <dimension>=<value>... [<name> <dimension>=<value>...]
                                      Add one or more profiles in profiles.json; add
-                                     profiles that belong together in one step.
-                                     Values joined with | give a combination for each
+                                     profiles that belong together in one step
   remove <name>                      Remove a profile
 ```
 
-Edits `profiles.json`: the setups that exist, each one combination of dimension values or a list of them. `profile list` prints them, with `values` for a profile with one combination and `combinations` for one with several. Profiles may share a combination; a profile that lists one twice is refused. Add profiles that belong together in one command: once profiles exist only their combinations do, so adding one at a time can break expectations that need the others.
+Edits `profiles.json`: the combinations of dimension values that exist. `profile list` prints them, with a profile for each modifier on each profile it is on. Profiles may share a combination. Add profiles that belong together in one command: once profiles exist only their combinations do, so adding one at a time can break expectations that need the others.
 
 ```bash
 dimensions profile list
 dimensions profile add phone breakpoint=base pointer=touch keyboard=no-keyboard desktop breakpoint=xl pointer=mouse keyboard=keyboard
-dimensions profile add ipad-keyboard "breakpoint=sm|lg" pointer=mouse keyboard=keyboard
 dimensions profile remove tablet-portrait
+```
+
+### modifier
+
+```text
+Usage: dimensions modifier <subcommand>
+
+A modifier is an accessory that changes some of a profile's values, such as a
+keyboard with a trackpad on a tablet (pointer=mouse, keyboard=keyboard). It is
+on the profiles it names, and makes a profile <profile>+<modifier> for each,
+which filters and tables name like any other.
+
+Subcommands:
+  list                               List every modifier
+  add <name> --on <profile>,... <dimension>=<value>...
+                                     Add a modifier in profiles.json
+  remove <name>                      Remove a modifier
+```
+
+Edits `modifiers` in `profiles.json`: accessories that change some profiles' values. A modifier is on the profiles it names, sets only dimensions the profiles give, and must change something on each. Each makes a profile `<profile>+<modifier>`.
+
+```bash
+dimensions modifier add magic-keyboard --on tablet-portrait,tablet-landscape pointer=mouse keyboard=keyboard
+dimensions modifier list
+dimensions modifier remove magic-keyboard
 ```
 
 ### override

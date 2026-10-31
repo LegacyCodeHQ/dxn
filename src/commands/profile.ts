@@ -5,19 +5,18 @@ import { profileListCommand } from "./reading.js";
 
 const usage = `Usage: dimensions profile <subcommand>
 
-A profile is a setup that exists, such as phone (breakpoint=base,
-pointer=touch, keyboard=no-keyboard): one combination of dimension values, or
-several for a setup that can be in more than one, such as an iPad with a
-keyboard in either orientation (breakpoint=sm|lg). Profiles may share a
+A profile is a combination of dimension values that exists, such as phone
+(breakpoint=base, pointer=touch, keyboard=no-keyboard). Profiles may share a
 combination. Once profiles exist, only their combinations do, and commands fill
 those dimensions in from the one combination that fits what you give.
+Accessories that change some profiles' values are modifiers; see
+"dimensions modifier".
 
 Subcommands:
   list                               List every profile and its values
-  add <name> <dimension>=<value>[|<value>]... [<name> <dimension>=<value>...]
+  add <name> <dimension>=<value>... [<name> <dimension>=<value>...]
                                      Add one or more profiles in profiles.json; add
-                                     profiles that belong together in one step.
-                                     Values joined with | give a combination for each
+                                     profiles that belong together in one step
   remove <name>                      Remove a profile
 `;
 
@@ -56,20 +55,7 @@ const add = editCommand(usage, (workspace, args) => {
     if (name in all || adding.filter(([other]) => other === name).length > 1) {
       throw new Refusal(`profile "${name}" already exists`);
     }
-    // Values joined with | give a combination for each of them.
-    let combinations: Json[] = [{}];
-    for (const [dimension, value] of Object.entries(values).sort(([a], [b]) => (a < b ? -1 : 1))) {
-      const options = String(value).split("|");
-      if (options.includes("")) {
-        throw new UsageError(
-          `expected <dimension>=<value>[|<value>...], got ${JSON.stringify(`${dimension}=${value}`)}`,
-        );
-      }
-      combinations = combinations.flatMap((combination) =>
-        options.map((option) => ({ ...combination, [dimension]: option })),
-      );
-    }
-    all[name] = combinations.length === 1 ? (combinations[0] as Json) : combinations;
+    all[name] = Object.fromEntries(Object.entries(values).sort(([a], [b]) => (a < b ? -1 : 1)));
   }
 });
 

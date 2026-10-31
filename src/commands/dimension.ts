@@ -172,10 +172,14 @@ const renameValue = editCommand(usage, (workspace, args) => {
   editRecords(workspace, (record) => swapIn(record.context));
   const profiles = workspace.read("profiles.json")?.profiles;
   if (isObject(profiles)) {
-    for (const profile of Object.values(profiles)) {
-      for (const values of Array.isArray(profile) ? profile : [profile]) {
-        if (swapIn(values)) workspace.touch("profiles.json");
-      }
+    for (const values of Object.values(profiles)) {
+      if (swapIn(values)) workspace.touch("profiles.json");
+    }
+  }
+  const modifiers = workspace.read("profiles.json")?.modifiers;
+  if (isObject(modifiers)) {
+    for (const item of Object.values(modifiers)) {
+      if (isObject(item) && swapIn(item.sets)) workspace.touch("profiles.json");
     }
   }
   editExpectations(workspace, (expectation) =>

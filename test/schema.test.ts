@@ -550,17 +550,21 @@ const withPointer = {
 };
 const profilesFile = (profiles: unknown) => ({ version: 1, profiles });
 
+const touchPhone = { phone: { pointer: "touch" } };
+const withModifier = (modifier: unknown) => ({
+  ...profilesFile(touchPhone),
+  modifiers: { trackpad: modifier },
+});
+
 agree("profiles", (doc) => ({ ...withPointer, "profiles.json": doc }), {
   valid: [
     ["no profiles", profilesFile({})],
     ["two profiles", profilesFile({ phone: { pointer: "touch" }, laptop: { pointer: "mouse" } })],
     [
-      "a profile with several combinations, one shared",
-      profilesFile({
-        laptop: { pointer: "mouse" },
-        any: [{ pointer: "mouse" }, { pointer: "touch" }],
-      }),
+      "two profiles sharing a combination",
+      profilesFile({ phone: { pointer: "touch" }, tablet: { pointer: "touch" } }),
     ],
+    ["a modifier", withModifier({ on: ["phone"], sets: { pointer: "mouse" } })],
     ["a $schema reference", { $schema: "x", ...profilesFile({}) }],
   ],
   structural: [
@@ -570,21 +574,28 @@ agree("profiles", (doc) => ({ ...withPointer, "profiles.json": doc }), {
     ["unsupported-version", { version: 2, profiles: {} }],
     ["wrong-type", profilesFile([])],
     ["wrong-type", profilesFile({ phone: "touch" })],
+    ["wrong-type", profilesFile({ phone: [{ pointer: "touch" }] })],
     ["wrong-type", profilesFile({ phone: { pointer: 1 } })],
     ["empty-values", profilesFile({ phone: {} })],
-    ["empty-values", profilesFile({ phone: [] })],
-    ["empty-values", profilesFile({ phone: [{}] })],
-    ["wrong-type", profilesFile({ phone: ["touch"] })],
     ["empty-string", profilesFile({ phone: { pointer: " " } })],
+    ["wrong-type", { ...profilesFile(touchPhone), modifiers: [] }],
+    ["missing-key", withModifier({ on: ["phone"] })],
+    ["unknown-key", withModifier({ on: ["phone"], sets: { pointer: "mouse" }, extra: 1 })],
+    ["empty-values", withModifier({ on: [], sets: { pointer: "mouse" } })],
+    ["empty-values", withModifier({ on: ["phone"], sets: {} })],
   ],
   crossReference: [
     ["undeclared-dimension", profilesFile({ phone: { theme: "dark" } })],
     ["unknown-dimension-value", profilesFile({ phone: { pointer: "pen" } })],
-    ["duplicate-profile", profilesFile({ ipad: [{ pointer: "touch" }, { pointer: "touch" }] })],
     [
       "incomplete-profile",
       profilesFile({ phone: { pointer: "touch", size: "sm" }, laptop: { pointer: "mouse" } }),
     ],
+    ["unknown-profile", withModifier({ on: ["watch"], sets: { pointer: "mouse" } })],
+    ["undeclared-dimension", withModifier({ on: ["phone"], sets: { theme: "dark" } })],
+    ["unknown-dimension-value", withModifier({ on: ["phone"], sets: { pointer: "pen" } })],
+    ["unprofiled-dimension", withModifier({ on: ["phone"], sets: { size: "lg" } })],
+    ["modifier-changes-nothing", withModifier({ on: ["phone"], sets: { pointer: "touch" } })],
   ],
 });
 

@@ -361,15 +361,22 @@ After `node rename`, references are updated automatically.
 
 ### `incomplete-profile`
 
-A profile, or one of its combinations, leaves out a dimension that other
-profiles give. Every combination gives one value for each dimension the
-profiles cover, so add the missing value.
+A profile leaves out a dimension that other profiles give. Every profile gives
+one value for each dimension the profiles cover, so add the missing value.
 
-### `duplicate-profile`
+### `unknown-profile`
 
-A profile lists the same combination twice. Remove one. Different profiles may
-share a combination: an iPad with a keyboard in landscape is `lg`, `mouse`,
-`keyboard`, like a laptop, and both profiles can list it.
+A modifier is on a profile that `profiles.json` does not have.
+
+### `unprofiled-dimension`
+
+A modifier sets a dimension that the profiles do not give. A modifier changes
+profiles' values, so it can only set the dimensions they cover.
+
+### `modifier-changes-nothing`
+
+A modifier sets only values a profile it is on already has, so it would add
+nothing there. Take that profile out of its `on`.
 
 ### `profiled-default`
 

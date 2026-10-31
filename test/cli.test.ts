@@ -76,6 +76,8 @@ describe("dimensions cli", () => {
                             List and add dimensions, their values, default and scope
         profile <subcommand>
                             List, add and remove the combinations of values that exist
+        modifier <subcommand>
+                            List, add and remove accessories that change some profiles' values
         override <subcommand>
                             Change states and values for a dimension value or combination
         expectation <subcommand>
@@ -152,6 +154,8 @@ describe("dimensions cli", () => {
                             List and add dimensions, their values, default and scope
         profile <subcommand>
                             List, add and remove the combinations of values that exist
+        modifier <subcommand>
+                            List, add and remove accessories that change some profiles' values
         override <subcommand>
                             Change states and values for a dimension value or combination
         expectation <subcommand>
@@ -231,6 +235,8 @@ describe("dimensions cli", () => {
                             List and add dimensions, their values, default and scope
         profile <subcommand>
                             List, add and remove the combinations of values that exist
+        modifier <subcommand>
+                            List, add and remove accessories that change some profiles' values
         override <subcommand>
                             Change states and values for a dimension value or combination
         expectation <subcommand>

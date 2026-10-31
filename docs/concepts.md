@@ -163,9 +163,8 @@ them, `--count` counts them, and `--tree` draws them as a merged tree.
 
 On their own, dimensions combine freely: 4 breakpoints × 2 pointers × 2
 keyboard values make 16 combinations, many of which no real user has, such as
-a phone-sized screen with a mouse. A **profile** names a setup that does
-exist: one combination, or a list of them for a setup that can be in several.
-Profiles live in `profiles.json`, for the whole project:
+a phone-sized screen with a mouse. A **profile** names one combination that
+does exist. Profiles live in `profiles.json`, for the whole project:
 
 ```json
 {
@@ -175,26 +174,34 @@ Profiles live in `profiles.json`, for the whole project:
     "tablet-portrait": { "breakpoint": "sm", "pointer": "touch", "keyboard": "no-keyboard" },
     "tablet-landscape": { "breakpoint": "lg", "pointer": "touch", "keyboard": "no-keyboard" },
     "laptop": { "breakpoint": "lg", "pointer": "mouse", "keyboard": "keyboard" },
-    "desktop": { "breakpoint": "xl", "pointer": "mouse", "keyboard": "keyboard" },
-    "ipad-keyboard": [
-      { "breakpoint": "sm", "pointer": "mouse", "keyboard": "keyboard" },
-      { "breakpoint": "lg", "pointer": "mouse", "keyboard": "keyboard" }
-    ]
+    "desktop": { "breakpoint": "xl", "pointer": "mouse", "keyboard": "keyboard" }
+  },
+  "modifiers": {
+    "magic-keyboard": {
+      "on": ["tablet-portrait", "tablet-landscape"],
+      "sets": { "pointer": "mouse", "keyboard": "keyboard" }
+    }
   }
 }
 ```
 
-- A profile is a setup people have. Portrait and landscape tablets are two
-  profiles, because they show different toolbars and are checked separately.
-  An iPad with a keyboard and trackpad can be held either way, so it lists both
-  combinations.
-- Profiles may share a combination: an iPad with a keyboard in landscape is
+- Each profile is exactly one combination. Portrait and landscape tablets are
+  two profiles, because they show different toolbars and are checked
+  separately.
+- A **modifier** is an accessory that changes some of a profile's values, such
+  as a keyboard with a trackpad on a tablet. It is on the profiles it names,
+  sets only dimensions the profiles give, and must change something on each.
+  Each makes a profile named `<profile>+<modifier>`, such as
+  `tablet-portrait+magic-keyboard`, which filters, tables and expectations use
+  like any other. `profile=tablet-portrait` is the tablet without it.
+- Profiles may share a combination: a landscape tablet with a magic keyboard is
   `lg`, `mouse`, `keyboard`, like a laptop. Tables and views name every profile
-  on a row (`laptop / ipad-keyboard`), and evidence for that combination counts
-  for both, because it belongs to the combination, not the name.
-- Every combination gives a value for the same dimensions, and a profile lists
-  each of its combinations once. A combination override must be at a
-  combination a profile has, since it could never apply otherwise.
+  on a row (`laptop / tablet-landscape+magic-keyboard`), and evidence for that
+  combination counts for both, because it belongs to the combination, not the
+  name.
+- Every profile gives a value for the same dimensions. A combination override
+  must be at a combination a profile has, since it could never apply
+  otherwise.
 - Profiles build on dimensions, never the other way round: a dimension is
   valid with or without profiles. A value no profile uses is simply unused,
   and `dimension list` shows it under `inNoProfile`.
@@ -205,16 +212,16 @@ Profiles live in `profiles.json`, for the whole project:
   the one combination that fits what you give, and ask when that is not one:
   `show blog-link profile=laptop` and `show blog-link breakpoint=xl` both
   work, `show blog-link pointer=touch` asks which of three profiles you mean,
-  `show blog-link profile=ipad-keyboard` asks for `breakpoint=<sm|lg>`, and
-  `breakpoint=xl pointer=touch` is refused because no profile has it.
+  and `breakpoint=xl pointer=touch` is refused because no profile has it.
 
 Filters take `profile=<name>` too, in `contexts` and in expectations. Manage
 profiles with `dimensions profile list`, `profile add` and `profile remove`.
 `profile add` takes several profiles at once (`profile add phone breakpoint=base
 … desktop breakpoint=xl …`): add profiles that belong together in one step,
-because the first profile alone leaves out every other combination. Values
-joined with `|` give a combination for each: `profile add ipad-keyboard
-"breakpoint=sm|lg" pointer=mouse keyboard=keyboard`.
+because the first profile alone leaves out every other combination. Manage
+modifiers with `dimensions modifier list`, `modifier add magic-keyboard --on
+tablet-portrait,tablet-landscape pointer=mouse keyboard=keyboard` and
+`modifier remove`.
 
 ## Presence: only
 

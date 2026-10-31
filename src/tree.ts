@@ -199,9 +199,10 @@ export interface ActorsFile {
 // profiles.json: the combinations of dimension values that exist, by name.
 export interface ProfilesFile {
   version: number;
-  // Profile name -> dimension -> value, or a list of those for a profile
-  // that can be in several combinations.
-  profiles: Record<string, Record<string, string> | Record<string, string>[]>;
+  // Profile name -> dimension -> value.
+  profiles: Record<string, Record<string, string>>;
+  // Modifier name -> the profiles it is on and the values it sets there.
+  modifiers?: Record<string, { on: string[]; sets: Record<string, string> }>;
 }
 
 // expectations.json: how many contexts each filter must select.

@@ -236,9 +236,8 @@ export function compileDirectory(
       root?.kind === "object" && root.members.some(({ key }) => key.value === "default");
     if (!hasDefault || profilesFile === undefined || "code" in profilesFile) continue;
     for (const { key: profile, value } of profileMembers) {
-      const first = value.kind === "array" ? value.elements[0] : value;
       const entry =
-        first?.kind === "object" ? first.members.find(({ key }) => key.value === name) : undefined;
+        value.kind === "object" ? value.members.find(({ key }) => key.value === name) : undefined;
       if (entry === undefined) continue;
       report(
         profilesFile.diagnostics,
