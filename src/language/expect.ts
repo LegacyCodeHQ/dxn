@@ -98,13 +98,25 @@ function checkOne(
     const missing = keys.find(({ key }) => !elements.some((element) => has(element, key.name)));
     return empty(`no element in ${path} has ${missing?.key.name ?? "every key it names"}`);
   }
+  // A profile is any of a row's: profiles with the same values share one.
   const matches = (combination: Combination, pairs: Expectation["when"]) =>
-    pairs.every(({ key, value }) => valueAt(combination, key.name) === value.name);
+    pairs.every(({ key, value }) =>
+      key.name === "profile"
+        ? (combination.profiles ?? []).includes(value.name)
+        : valueAt(combination, key.name) === value.name,
+    );
+  const named = expectation.when.find(({ key }) => key.name === "profile")?.value.name;
   // Where a combination is: "<path> on <profile>, <Dimension> <value> with
   // <parent> = <value>".
   const where = (element: string, combination: Combination) => {
     const world = [
-      ...(combination.profiles === undefined ? [] : [combination.profiles[0] as string]),
+      ...(combination.profiles === undefined
+        ? []
+        : [
+            named !== undefined && combination.profiles.includes(named)
+              ? named
+              : (combination.profiles[0] as string),
+          ]),
       ...Object.entries(combination.dimensions).map(([name, value]) => `${name} ${value}`),
     ].join(", ");
     const parents = Object.entries(combination.parents)

@@ -136,6 +136,24 @@ describe("expect", () => {
     ]);
   });
 
+  it("picks a profile in a row it shares with others that have its values", () => {
+    const merged = model.replace(
+      "profile desktop: Device { Pointer = mouse, Keyboard = keyboard }",
+      "profile desktop: Device { Pointer = mouse, Keyboard = keyboard }\nprofile laptop: Device { Pointer = mouse, Keyboard = keyboard }",
+    );
+    const rule = (assertion: string) =>
+      `${merged}expect "A laptop link" {\n  in Page.toolbar.link\n  when profile = laptop\n  ${assertion}\n}\n`;
+    assert([
+      problems(rule("some hover = hovered, focus = focused")),
+      problems(rule("then hover = rest")),
+      problems(rule("absent")),
+    ]).toEqual([
+      [],
+      ["34:8: expectation-failed: A laptop link: Page.toolbar.link on laptop has hover = hovered"],
+      ["34:8: expectation-failed: A laptop link: Page.toolbar.link is there on laptop"],
+    ]);
+  });
+
   it("reports an element below it that cannot be placed, rather than failing", () => {
     const unprovided = `enum S = a | b
 type L receives c: S {
