@@ -408,6 +408,31 @@ export class Resolver {
     return { present, states: [...states], groups, attributes: values };
   }
 
+  // What a node looks like in one complete context: the value each of its
+  // attributes has for the states the context names, one per group. Two
+  // contexts look alike when their looks are equal; a node without
+  // attributes looks the same everywhere, and its look is empty.
+  look(id: string, context: Context, root?: string): Record<string, string> {
+    const resolved = this.resolve(id, context, this.lineage(id, root));
+    const type = this.nodes.get(id)?.type;
+    const groups = type === undefined ? [] : Object.keys(this.groupsOf(type));
+    const names = groups.length === 0 ? ["state"] : groups;
+    const look: Record<string, string> = {};
+    for (const [attribute, byState] of Object.entries(resolved.attributes)) {
+      const values = [
+        ...new Set(
+          names
+            .map((group) => context[group])
+            .filter((state): state is string => state !== undefined)
+            .map((state) => byState[state])
+            .filter((value): value is string => value !== undefined),
+        ),
+      ];
+      if (values.length > 0) look[attribute] = values.join("/");
+    }
+    return look;
+  }
+
   // A type's state groups and the values it uses from each; a plain states
   // list is the group "state".
   groupsOf(typeName: string): Record<string, string[]> {

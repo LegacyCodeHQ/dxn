@@ -717,7 +717,7 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
 });
 
 const evidenceUsage = `Usage: dimensions evidence <node-id> [--actor <name>] [<name>=<value>...] [--root <root-id>]
-                          [--subtree] [--missing] [--table] [--by profile|frame]
+                          [--subtree] [--missing] [--table] [--by profile|frame|look]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it (--actor may be left out when only one
@@ -730,7 +730,9 @@ evidence. Rows come in profile order. --by profile makes a row per profile
 instead: the states the node has there, and how many of its contexts have
 evidence that is present, stale or missing. --by frame makes a row per frame
 the actor pointed to: the contexts it covers, which the design draws as one
-look, with when they were recorded and how many are stale. --missing keeps only the contexts
+look, with when they were recorded and how many are stale. --by look makes a
+row per look the model defines, from the node's attributes: the contexts that
+look alike, the frames that cover them, and how many still miss evidence. --missing keeps only the contexts
 still to cover: those without evidence, or whose evidence is stale.
 --subtree covers every node under the one named instead: a row per node, with
 its type (— when it has none, so untyped nodes show up), and a column per
@@ -1028,8 +1030,8 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
     true,
   );
   const [id, ...filterArgs] = positionals as [string, ...string[]];
-  if (values.by !== undefined && values.by !== "profile" && values.by !== "frame") {
-    throw new Refusal('--by takes "profile" or "frame" here');
+  if (values.by !== undefined && !["profile", "frame", "look"].includes(values.by)) {
+    throw new Refusal('--by takes "profile", "frame" or "look" here');
   }
   const actor = chooseEvidenceActor(resolver, values.actor);
   const kind = requireEvidenceActor(resolver, actor);
@@ -1083,6 +1085,70 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
         ),
       ]),
     );
+  if (values.by === "look") {
+    const looks = new Map<string, { look: Record<string, string>; members: typeof rows }>();
+    for (const row of rows) {
+      const look = resolver.look(id, row.context, row.root);
+      const key = JSON.stringify(look);
+      const group = looks.get(key) ?? { look, members: [] };
+      group.members.push(row);
+      looks.set(key, group);
+    }
+    const attributes = [...new Set([...looks.values()].flatMap(({ look }) => Object.keys(look)))];
+    if (attributes.length === 0) {
+      throw new Refusal(
+        `${id} has no attributes, so every context looks alike; give its type attributes to tell its looks apart`,
+      );
+    }
+    const grouped = [...looks.values()].map(({ look, members }) => {
+      const profiles: string[][] = [];
+      for (const { context } of members) {
+        const names = resolver.profilesOf(context);
+        if (!profiles.some((known) => JSON.stringify(known) === JSON.stringify(names))) {
+          profiles.push(names);
+        }
+      }
+      const frames = new Map<string, { file: string; frame: string; name?: string }>();
+      for (const { evidence } of members) {
+        for (const { source } of evidence) {
+          const name = resolver.project.frameNames?.[`${source.file}#${source.frame}`];
+          frames.set(`${source.file}#${source.frame}`, {
+            file: source.file,
+            frame: source.frame,
+            ...(name === undefined ? {} : { name }),
+          });
+        }
+      }
+      const count = (state: string) =>
+        members.filter(({ evidence }) => evidenceState(evidence) === state).length;
+      return {
+        attributes: look,
+        profiles: profiles.sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b)),
+        contexts: members.length,
+        frames: [...frames.values()],
+        present: count("present"),
+        stale: count("stale"),
+        missing: count("missing"),
+      };
+    });
+    if (values.table !== true) {
+      print(io, { node: id, actor, kind, by: "look", looks: grouped });
+      return;
+    }
+    io.stdout(
+      drawTable(
+        [...attributes, "profiles", "contexts", "frames", "missing"],
+        grouped.map((row) => [
+          ...attributes.map((name) => row.attributes[name] ?? NONE),
+          row.profiles.map(profileLabel).join(", ") || NONE,
+          String(row.contexts),
+          row.frames.map(({ file, frame }) => frameLabel(file, frame)).join(", ") || NONE,
+          String(row.contexts - row.present),
+        ]),
+      ),
+    );
+    return;
+  }
   if (values.by === "frame") {
     const grouped = frameGroups(
       resolver,

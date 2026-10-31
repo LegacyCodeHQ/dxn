@@ -240,7 +240,7 @@ dimensions transitions menu
 
 ```text
 Usage: dimensions evidence <node-id> [--actor <name>] [<name>=<value>...] [--root <root-id>]
-                          [--subtree] [--missing] [--table] [--by profile|frame]
+                          [--subtree] [--missing] [--table] [--by profile|frame|look]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it (--actor may be left out when only one
@@ -253,7 +253,9 @@ evidence. Rows come in profile order. --by profile makes a row per profile
 instead: the states the node has there, and how many of its contexts have
 evidence that is present, stale or missing. --by frame makes a row per frame
 the actor pointed to: the contexts it covers, which the design draws as one
-look, with when they were recorded and how many are stale. --missing keeps only the contexts
+look, with when they were recorded and how many are stale. --by look makes a
+row per look the model defines, from the node's attributes: the contexts that
+look alike, the frames that cover them, and how many still miss evidence. --missing keeps only the contexts
 still to cover: those without evidence, or whose evidence is stale.
 --subtree covers every node under the one named instead: a row per node, with
 its type (— when it has none, so untyped nodes show up), and a column per
@@ -269,6 +271,7 @@ dimensions evidence menu --actor design-agent profile=phone
 dimensions evidence menu-button --actor design-agent --table --by profile
 dimensions evidence menu-button --actor design-agent --missing --table --by profile
 dimensions evidence menu-button --actor design-agent --table --by frame
+dimensions evidence wordmark --by look --table
 dimensions evidence toolbar --subtree --actor design-agent --missing --table
 ```
 

@@ -597,4 +597,13 @@ Several entries can point to the same frame. That says the design draws those
 contexts as one look: the closed menu button on a phone and on a tablet, say.
 `dimensions evidence menu-button --actor design-agent --by frame` lists each
 frame with the contexts it covers. It is the actor's claim, recorded with its
-provenance; nothing yet checks it against the model.
+provenance, and the model checks it: a node's **look** in a context is the
+value each of its attributes has for the states the context names. Two
+contexts with equal looks look alike, so one frame may show both; a frame that
+covers contexts whose looks differ is an error, `different-looks`. A wordmark
+that is small on laptops and large on desktops cannot share a frame across
+them, while its rest and hovered states can, if hover changes no attribute.
+`dimensions evidence wordmark --by look --table` lists the looks the model
+defines, the contexts of each, the frames that cover them and how many still
+miss evidence: what to draw, one frame per look. A node whose type declares no
+attributes has one look everywhere, so nothing is checked until it has some.

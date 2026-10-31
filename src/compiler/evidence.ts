@@ -91,6 +91,7 @@ export function checkEvidence(
         fingerprints: result.fingerprints,
         frameNames: result.frameNames,
         measure,
+        looks: new Map(),
       };
       checkFile(diagnostics, parsed.root, context);
     }
@@ -110,6 +111,9 @@ interface Scope {
   fingerprints: Record<string, string | null>;
   frameNames: Record<string, string>;
   measure: Fingerprints;
+  // "<node>|<file>#<frame>" -> the look of the first context that frame
+  // covers for that node, so the others can be compared with it.
+  looks: Map<string, Record<string, string>>;
 }
 
 function checkFile(diagnostics: Diagnostics, root: JsonNode, scope: Scope): void {
@@ -145,7 +149,7 @@ function checkEntry(
   diagnostics: Diagnostics,
   item: JsonNode,
   path: string,
-  { resolver, root, actors, repository, fingerprints, frameNames, measure }: Scope,
+  { resolver, root, actors, repository, fingerprints, frameNames, measure, looks }: Scope,
 ): string | undefined {
   const entry = expectObject(diagnostics, item, path);
   if (entry === undefined) return undefined;
@@ -292,6 +296,29 @@ function checkEntry(
     }
   }
 
+  // One frame shows one look: the contexts it covers must look alike.
+  if (valid && id !== undefined && where !== undefined && contextObject !== undefined) {
+    const look = resolver.look(id, context, root);
+    const key = `${id}|${where}`;
+    const first = looks.get(key);
+    if (first === undefined) {
+      looks.set(key, look);
+    } else {
+      const names = [...new Set([...Object.keys(first), ...Object.keys(look)])];
+      const differs = names.find((name) => first[name] !== look[name]);
+      if (differs !== undefined) {
+        const frameName = where.slice(where.indexOf("#") + 1);
+        report(
+          diagnostics,
+          "different-looks",
+          `frame ${JSON.stringify(frameName)} covers ${id} contexts that look different: ${differs} is ${first[differs] ?? "unset"} in one and ${look[differs] ?? "unset"} in another`,
+          `${path}.context`,
+          contextObject,
+        );
+        valid = false;
+      }
+    }
+  }
   if (!valid || actor?.kind !== "string") return undefined;
   const ordered = Object.fromEntries(Object.entries(context).sort(([a], [b]) => (a < b ? -1 : 1)));
   return JSON.stringify([id, ordered, actor.value, where]);

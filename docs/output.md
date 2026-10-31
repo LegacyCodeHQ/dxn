@@ -417,6 +417,10 @@ provenance. `name` is the frame's name, for a pen.dev file. `withoutEvidence` co
 }
 ```
 
+With `--by look`, there is a row per look: the node's `attributes` there, the
+`profiles` and number of `contexts` that look like it, the `frames` that cover
+them, and how many have evidence that is `present`, `stale` or `missing`.
+
 With `--subtree`, there is a row per node under the one named, with its type
 (`null` when it has none), and a cell per column, where `columns` lists the
 profiles of each. A cell counts the node's contexts on those profiles: with
