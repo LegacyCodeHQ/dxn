@@ -1,4 +1,5 @@
 import type { Child, ParseResult, State, Type } from "./ast.js";
+import { conditionText, holds, subjects } from "./condition.js";
 import { profilesOf } from "./profiles.js";
 
 // What a type's states are under each combination of the dimensions its
@@ -19,7 +20,9 @@ export interface TypeStates {
   }[];
 }
 
-export type Presence = boolean | Record<string, string[]>;
+// A child is there, not there, there for some values of one state, or, when
+// it depends on several, where its condition holds.
+export type Presence = boolean | Record<string, string[]> | string;
 
 // Evaluates a type of a parsed file, which must have no problems. A value of
 // a state exists in a row unless a rule limits it to dimension values the row
@@ -35,14 +38,45 @@ export function states(file: ParseResult, typeName: string): TypeStates {
   const withChildren = (row: TypeStates["rows"][number]): TypeStates["rows"][number] => {
     if (type.children.length === 0) return row;
     const presence = (child: (typeof type.children)[number]): Presence => {
-      if (child.when === undefined) return true;
-      const wanted = child.when.values.map(({ name }) => name);
-      const on = child.when.on.name;
-      const state = row.states[on];
-      if (state === undefined) return wanted.includes(row.when[on] ?? "");
-      const there = state.filter((value) => wanted.includes(value));
+      const when = child.when;
+      if (when === undefined) return true;
+      // The states it compares, each with the values it has here; a
+      // dimension has the row's value.
+      const free = subjects(when)
+        .map(({ name }) => name)
+        .filter((name) => row.states[name] !== undefined);
+      let combinations: Record<string, string>[] = [{}];
+      for (const name of free) {
+        combinations = combinations.flatMap((combination) =>
+          (row.states[name] ?? []).map((value) => ({ ...combination, [name]: value })),
+        );
+      }
+      const there = combinations.filter((combination) =>
+        holds(when, (name) => combination[name] ?? row.when[name]),
+      );
       if (there.length === 0) return false;
-      return there.length === state.length ? true : { [on]: there };
+      if (there.length === combinations.length) return true;
+      // The states that still decide here: those whose value changes whether
+      // it holds, with the others' values the same.
+      const key = (combination: Record<string, string>, without: string) =>
+        JSON.stringify(free.filter((name) => name !== without).map((name) => combination[name]));
+      const deciding = free.filter((name) => {
+        const outcomes = new Map<string, boolean>();
+        for (const combination of combinations) {
+          const holding = there.includes(combination);
+          const earlier = outcomes.get(key(combination, name));
+          if (earlier !== undefined && earlier !== holding) return true;
+          outcomes.set(key(combination, name), holding);
+        }
+        return false;
+      });
+      // On one state, for which of its values; on several, the condition.
+      const [only] = deciding;
+      return deciding.length === 1 && only !== undefined
+        ? {
+            [only]: [...new Set(there.map((combination) => combination[only] as string))],
+          }
+        : conditionText(when);
     };
     return {
       ...row,
@@ -97,11 +131,7 @@ export function states(file: ParseResult, typeName: string): TypeStates {
                 ? valuesOf(state.enum.name).filter((value) =>
                     type.rules
                       .filter((rule) => rule.state.name === state.name && rule.value.name === value)
-                      .every((rule) =>
-                        rule.when.values.some(
-                          ({ name }) => name === chosen[rule.when.dimension.name],
-                        ),
-                      ),
+                      .every((rule) => holds(rule.when, (name) => chosen[name])),
                   )
                 : // A derived state has the one value its when gives here.
                   state.derived.branches
@@ -218,7 +248,11 @@ export function inPlace(file: ParseResult, path: string): InPlace {
       return;
     }
     const deciding =
-      next.when !== undefined && /^[a-z]/.test(next.when.on.name) ? [next.when.on.name] : [];
+      next.when === undefined
+        ? []
+        : subjects(next.when)
+            .map(({ name }) => name)
+            .filter((name) => /^[a-z]/.test(name));
     // The states that decide the next child, that it is given, or that a type
     // further down receives from here.
     const provided = place.received.filter(({ from }) => from === level).map(({ name }) => name);
@@ -232,10 +266,11 @@ export function inPlace(file: ParseResult, path: string): InPlace {
       );
     }
     for (const combination of combinations) {
-      if (next.when !== undefined) {
-        const on = next.when.on.name;
-        const value = /^[a-z]/.test(on) ? combination[on] : world.when[on];
-        if (!next.when.values.some(({ name }) => name === value)) continue;
+      if (
+        next.when !== undefined &&
+        !holds(next.when, (name) => (/^[a-z]/.test(name) ? combination[name] : world.when[name]))
+      ) {
+        continue;
       }
       const given = Object.fromEntries(
         (next.bindings ?? []).map(({ state, from, map }) => {
@@ -336,7 +371,11 @@ export function placement(file: ParseResult, path: string): Placement {
     const next = steps[level + 1]?.child;
     if (next === undefined) return;
     const deciding =
-      next.when !== undefined && /^[a-z]/.test(next.when.on.name) ? [next.when.on.name] : [];
+      next.when === undefined
+        ? []
+        : subjects(next.when)
+            .map(({ name }) => name)
+            .filter((name) => /^[a-z]/.test(name));
     const relevant = new Set([...deciding, ...(next.bindings ?? []).map(({ from }) => from.name)]);
     for (const name of relevant) {
       const state = type.states.find((candidate) => candidate.name === name);

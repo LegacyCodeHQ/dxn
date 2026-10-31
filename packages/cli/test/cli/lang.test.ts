@@ -90,7 +90,7 @@ describe("lang check", () => {
                 {
                   state: "hover",
                   value: "hovered",
-                  when: { dimension: "Pointer", values: ["mouse"] },
+                  when: { kind: "compare", subject: "Pointer", values: ["mouse"] },
                 },
               ],
             },
@@ -506,6 +506,21 @@ record Part {
         },
       ]);
     });
+  });
+});
+
+describe("lang states, with a child on several states", () => {
+  it("shows where the child is by its condition", () => {
+    const root = writeProject({});
+    writeFileSync(
+      join(root, "menu.dxn"),
+      "dimension Breakpoint = base | lg\nenum State = closed | open\nenum Size = small | big\ntype Panel {}\ntype Menu needs Breakpoint {\n  state menu: State, size: Size\n  has panel: Panel only when menu = open and (size = big or Breakpoint = lg)\n}\n",
+    );
+    const lines = capture(["lang", "states", "menu.dxn", "Menu"], root).stdout.split("\n");
+    expect(lines.slice(2, 4).map((line) => line.split("|").at(-2)?.trim())).toEqual([
+      "menu = open and (size = big or Breakpoint = lg)",
+      "menu = open",
+    ]);
   });
 });
 

@@ -1,5 +1,6 @@
 import type {
   Child,
+  Condition,
   Derived,
   Event,
   Field,
@@ -10,6 +11,7 @@ import type {
   State,
   Type,
 } from "./ast.js";
+import { comparisons, conditionText, coverage, subjects } from "./condition.js";
 import { among, article, Names } from "./names.js";
 import { scalar } from "./scalars.js";
 import { around } from "./scope.js";
@@ -429,31 +431,98 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       }
       checkBindings(type, child);
       if (child.when === undefined) continue;
-      const { on, values } = child.when;
-      if (/^[a-z]/.test(on.name)) {
-        const state = type.states.find(({ name }) => name === on.name);
+      checkCondition(type, child.when, needed, declare, true, child, {
+        never: `${child.name} is never there`,
+        always: `${child.name} is always there`,
+      });
+    }
+  };
+  // A condition: each comparison on a dimension the type needs, or, where
+  // states may be compared, one of its states, with values of it; each
+  // subject compared once in an "and"; and, when that is all so, true in some
+  // combinations of its subjects, but not in all.
+  const checkCondition = (
+    type: Type,
+    condition: Condition,
+    needed: Set<string>,
+    declare: string,
+    states: boolean,
+    at: Located,
+    then: { never: string; always: string },
+    // Where its owner's problems start: with any, it is not checked as a
+    // whole.
+    before = file.diagnostics.length,
+  ) => {
+    for (const { subject, values } of comparisons(condition)) {
+      if (states && /^[a-z]/.test(subject.name)) {
+        const state = type.states.find(({ name }) => name === subject.name);
         if (state === undefined) {
-          const states = type.states.map(({ name }) => name);
+          const all = type.states.map(({ name }) => name);
           report(
             "unknown-state",
-            `${on.name} is not a state of ${type.name}${among(states, "it has none")}`,
-            on,
+            `${subject.name} is not a state of ${type.name}${among(all, "it has none")}`,
+            subject,
           );
-          continue;
+        } else {
+          checkChosen(values, state.enum.name, names, report, "the condition", state.name);
         }
-        checkChosen(values, state.enum.name, names, report, "the condition", state.name);
-      } else if (!names.is(on.name, "dimension")) {
-        report("unknown-dimension", names.not(on.name, "dimension"), on);
+      } else if (!names.is(subject.name, "dimension")) {
+        report("unknown-dimension", names.not(subject.name, "dimension"), subject);
       } else {
-        if (!needed.has(on.name)) {
+        // A broken type's needs may not all have been read.
+        if (!needed.has(subject.name) && !type.broken) {
           report(
             "unneeded-dimension",
-            `${type.name} does not need ${on.name}; declare ${declare}`,
-            on,
+            `${type.name} does not need ${subject.name}; declare ${declare}`,
+            subject,
           );
         }
-        checkChosen(values, on.name, names, report, "the condition");
+        checkChosen(values, subject.name, names, report, "the condition");
       }
+    }
+    const repeated = (part: Condition) => {
+      if (part.kind === "compare") return;
+      const seen = new Set<string>();
+      for (const term of part.terms) {
+        if (term.kind !== "compare" || part.kind !== "and") continue;
+        if (seen.has(term.subject.name)) {
+          report(
+            "repeated-comparison",
+            `${term.subject.name} is already compared in this and; give its values once, with in (…)`,
+            term.subject,
+          );
+        }
+        seen.add(term.subject.name);
+      }
+      part.terms.forEach(repeated);
+    };
+    repeated(condition);
+    if (file.diagnostics.length > before || type.broken) return;
+    // The values each subject can have; a broken declaration's may not all
+    // have been read.
+    const declarationOf = (subject: string) => {
+      const name = /^[a-z]/.test(subject)
+        ? type.states.find((state) => state.name === subject)?.enum.name
+        : subject;
+      return [...file.enums, ...file.dimensions].find((declaration) => declaration.name === name);
+    };
+    if (subjects(condition).some(({ name }) => declarationOf(name)?.broken)) return;
+    const valuesOf = (subject: string) =>
+      declarationOf(subject)?.values.map(({ name }) => name) ?? [];
+    const holding = coverage(condition, valuesOf);
+    if (holding === "never") {
+      report(
+        "impossible-condition",
+        `${conditionText(condition)} is never true, so ${then.never}`,
+        at,
+      );
+    } else if (holding === "always") {
+      report(
+        "vacuous-condition",
+        `${conditionText(condition)} is always true, so ${then.always}`,
+        at,
+        "warning",
+      );
     }
   };
   // A derived state: on a dimension the type needs, covering each of its
@@ -525,9 +594,11 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     const used = [
       ...new Set(
         [
-          ...type.rules.map(({ when }) => when.dimension.name),
+          ...type.rules.flatMap(({ when }) => subjects(when).map(({ name }) => name)),
           ...type.states.flatMap(({ derived }) => (derived ? [derived.dimension.name] : [])),
-          ...type.children.flatMap(({ when }) => (when ? [when.on.name] : [])),
+          ...type.children.flatMap(({ when }) =>
+            when ? subjects(when).map(({ name }) => name) : [],
+          ),
           ...type.triggers.flatMap(({ event }) =>
             event.kind === "dimension" ? [event.dimension.name] : [],
           ),
@@ -574,6 +645,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     const stateNames = type.states.map(({ name }) => name);
     const conditioned = new Map<string, Rule>();
     for (const rule of type.rules) {
+      const start = file.diagnostics.length;
       const state = type.states.find(({ name }) => name === rule.state.name);
       if (state?.derived !== undefined || state?.fixed !== undefined || state?.received) {
         const why = state.received
@@ -608,20 +680,16 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       } else {
         conditioned.set(key, rule);
       }
-      const { dimension, values: chosen } = rule.when;
-      if (!names.is(dimension.name, "dimension")) {
-        report("unknown-dimension", names.not(dimension.name, "dimension"), dimension);
-        continue;
-      }
-      // A broken type's needs may not all have been read.
-      if (!needed.has(dimension.name) && !type.broken) {
-        report(
-          "unneeded-dimension",
-          `${type.name} does not need ${dimension.name}; declare ${declare}`,
-          dimension,
-        );
-      }
-      checkChosen(chosen, dimension.name, names, report, "the condition");
+      checkCondition(
+        type,
+        rule.when,
+        needed,
+        declare,
+        false,
+        rule.state,
+        { never: `${rule.value.name} exists nowhere`, always: "the rule restricts nothing" },
+        start,
+      );
     }
     checkChildren(type, needed, declare);
     checkActions(type, needed, declare);

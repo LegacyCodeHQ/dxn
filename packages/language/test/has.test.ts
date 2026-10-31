@@ -37,7 +37,7 @@ describe("has", () => {
       menu?.children.map(({ name, type, when }) => [
         name,
         type.name,
-        when === undefined ? null : [when.on.name, when.values.map(({ name }) => name)],
+        when?.kind === "compare" ? [when.subject.name, when.values.map(({ name }) => name)] : null,
       ]),
     ]).toEqual([
       [],

@@ -338,6 +338,43 @@ type BlogLink needs Breakpoint {
 }
 ```
 
+A condition can join comparisons with `and`, where all of them hold, or with
+`or`, where one does. Each comparison is on a dimension the type needs:
+
+```
+dimension Breakpoint = base | sm | lg | xl
+dimension Pointer = mouse | touch
+enum Hover = rest | hovered
+
+type BlogLink needs Breakpoint, Pointer {
+  state hover: Hover
+  hover = hovered only when Pointer = mouse and Breakpoint in (lg, xl)
+}
+```
+
+`and` and `or` mix only in brackets, so the order is always written, never
+left to a rule of precedence. Without them, the error gives both ways to
+bracket it:
+
+```
+link.dxn:7:65: syntax-error: "and" and "or" need brackets to mix: write "(Pointer = mouse and Breakpoint = lg) or Breakpoint = xl" or "Pointer = mouse and (Breakpoint = lg or Breakpoint = xl)"
+```
+
+Brackets nest, and a pair around a whole condition, or around one comparison,
+changes nothing. There is no `not`: every dimension's values are listed, so
+`not Pointer = touch` is always `Pointer = mouse`, or an `in` of the others.
+
+A condition is checked as a whole too. In one `and`, each dimension is
+compared once: `Pointer = mouse and Pointer = touch` is a
+`repeated-comparison`, since its values can be given once, with `in`. One
+that is never true is an error, since the value would exist nowhere; one that
+is always true is a warning, since the rule restricts nothing:
+
+```
+link.dxn:7:3: impossible-condition: (Pointer = mouse and Breakpoint = lg) and (Pointer = touch and Breakpoint = lg) is never true, so hovered exists nowhere
+link.dxn:7:3: warning: vacuous-condition: Pointer = mouse or Pointer = touch is always true, so the rule restricts nothing
+```
+
 Each state value has at most one rule, so there is a single place to read
 where it exists. A second rule for the same value is an error.
 
@@ -440,7 +477,10 @@ Each `has` line names a child, lowercase like a state, and gives its type. A
 child is always there unless `only when` says where: on one of the type's own
 states (`layout = compact`, `menu = open`), or on a dimension it needs
 (`Breakpoint in (lg, xl)`). The case of the name tells which: a lowercase name
-is a state, a capitalized one a dimension. A child's own children come from
+is a state, a capitalized one a dimension. Its condition is written as a
+rule's, with `and`, `or` and brackets, and can compare states and dimensions
+together: `only when menu = open and Breakpoint = base`. A child that is never
+there is an error, and one that is always there a warning. A child's own children come from
 its type, so the tree nests as deep as the types do.
 
 The matrix shows where each child is:
@@ -466,6 +506,9 @@ it is there:
 | ------------ | ---------- | ---------- | ----------- |
 | ✓            | ✓          | ✓          | menu = open |
 ```
+
+Where it depends on several free states, the cell gives its condition:
+`menu = open and (size = big or Breakpoint = lg)`.
 
 A child's name is unique in its type, among its children and its states; its
 type must be a type; and a type cannot contain itself, directly or through
@@ -1449,7 +1492,9 @@ state       = "state" field { "," [newline] field } newline
 branch      = value { "," value } "->" value       # a when's branches are split by commas or lines
 field       = state-name ":" Name { "." Name }
 rule        = state-name "=" value "only" "when" condition newline
-condition   = Name ( "=" value | "in" "(" value { "," value } ")" )
+condition   = term { "and" term } | term { "or" term }          # and and or mix only in brackets
+term        = comparison | "(" condition ")"
+comparison  = name ( "=" value | "in" "(" value { "," value } ")" )   # a rule's on a dimension; a child's on a state too
 environment = "environment" Name "=" Name { "x" [newline] Name } newline
 profile     = "profile" profile-name ":" Name "{" { assignment ( "," | newline ) } "}"
 modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile-name } "{" { assignment ( "," | newline ) } "}"
@@ -1481,6 +1526,9 @@ comment     = "#" to the end of the line
 | `unknown-value`                                                               | error    | a value is not one of its enum's or dimension's                                                  |
 | `unneeded-dimension`                                                          | error    | a rule, a `when`, a child condition or an event uses a dimension its type does not need          |
 | `incomplete-when`                                                             | error    | a `when` leaves out a value of its dimension                                                     |
+| `repeated-comparison`                                                         | error    | a dimension or state is compared twice in one `and`                                              |
+| `impossible-condition`                                                        | error    | a rule's or a child's condition is never true                                                    |
+| `vacuous-condition`                                                           | warning  | a rule's or a child's condition is always true                                                   |
 | `rule-on-derived`                                                             | error    | a rule is on a state that a `when` or a value decides, or that is received                       |
 | `unknown-field`                                                               | error    | a derived field's `when` is on a field the record does not have                                  |
 | `unknown-environment`                                                         | error    | a profile's environment is not one                                                               |

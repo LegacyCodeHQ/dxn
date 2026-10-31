@@ -315,6 +315,7 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const presence = (value: Presence | undefined) => {
     if (value === undefined || value === false) return NONE;
     if (value === true) return "✓";
+    if (typeof value === "string") return value;
     return Object.entries(value)
       .map(([state, values]) =>
         values.length === 1 ? `${state} = ${values[0]}` : `${state} in (${values.join(", ")})`,

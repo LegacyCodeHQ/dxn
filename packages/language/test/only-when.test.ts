@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { Condition } from "../src/ast.js";
+import { comparisons } from "../src/condition.js";
 import { parse } from "../src/parse.js";
 import { errors, problems } from "./support/language.js";
 
@@ -27,8 +29,8 @@ describe("only when", () => {
       types[0]?.rules.map(({ state, value, when }) => [
         state.name,
         value.name,
-        when.dimension.name,
-        when.values.map(({ name }) => name),
+        when.kind === "compare" ? when.subject.name : when.kind,
+        when.kind === "compare" ? when.values.map(({ name }) => name) : [],
       ]),
     ).toEqual([
       ["hover", "hovered", "Pointer", ["mouse"]],
@@ -38,7 +40,8 @@ describe("only when", () => {
       state: { name: "hover", line: 7, column: 3 },
       value: { name: "hovered", line: 7, column: 11 },
       when: {
-        dimension: { name: "Pointer", line: 7, column: 29 },
+        kind: "compare",
+        subject: { name: "Pointer", line: 7, column: 29 },
         values: [{ name: "mouse", line: 7, column: 39 }],
       },
     });
@@ -54,7 +57,9 @@ type BlogLink needs Breakpoint {
 `;
     expect([
       problems(source),
-      parse(source).types[0]?.rules[0]?.when.values.map(({ name }) => name),
+      comparisons(parse(source).types[0]?.rules[0]?.when as Condition).flatMap(({ values }) =>
+        values.map(({ name }) => name),
+      ),
     ]).toEqual([[], ["lg", "xl"]]);
   });
 

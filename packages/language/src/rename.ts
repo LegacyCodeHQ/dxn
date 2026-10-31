@@ -1,4 +1,5 @@
 import type { Located, ParseResult } from "./ast.js";
+import { comparisons } from "./condition.js";
 import { placement } from "./evaluate.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { Names } from "./names.js";
@@ -48,9 +49,9 @@ export function renameInSource(
       named.push(...[action.from, action.to].filter(({ name }) => name === from));
     }
     for (const child of type.children) {
-      const on = type.states.find(({ name }) => name === child.when?.on.name);
-      if (on?.enum.name === enumName) {
-        named.push(...(child.when?.values.filter(({ name }) => name === from) ?? []));
+      for (const { subject, values } of child.when === undefined ? [] : comparisons(child.when)) {
+        const on = type.states.find(({ name }) => name === subject.name);
+        if (on?.enum.name === enumName) named.push(...values.filter(({ name }) => name === from));
       }
       const inner = file.types.find(({ name }) => name === child.type.name);
       for (const { state, from: source, map } of child.bindings ?? []) {

@@ -42,11 +42,11 @@ export interface Derived {
   branches: { values: Located[]; result: Located }[];
 }
 
-// A condition on a dimension: it has one of these values.
-export interface Condition {
-  dimension: Located;
-  values: Located[];
-}
+// A condition: a state or a dimension has one of these values, or several
+// such comparisons, all of which hold, with "and", or one, with "or".
+export type Condition =
+  | { kind: "compare"; subject: Located; values: Located[] }
+  | { kind: "and" | "or"; terms: Condition[] };
 
 // A rule: the state's value exists only when the condition holds.
 export interface Rule {
@@ -103,7 +103,7 @@ export interface Trigger extends Located {
 // a lowercase name is a state, a capitalized one a dimension.
 export interface Child extends Located {
   type: Located;
-  when?: { on: Located; values: Located[] };
+  when?: Condition;
   // The child's states the type sets, each from one of its own states, whose
   // values come from the same enum.
   // With a map, the child's state takes the value its branch gives for the

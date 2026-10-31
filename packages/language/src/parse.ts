@@ -21,6 +21,7 @@ import type {
   Type,
 } from "./ast.js";
 import { check } from "./check.js";
+import { conditionText } from "./condition.js";
 import { expectations } from "./expect.js";
 import { describe, located, scan, type Token, type TokenKind } from "./scan.js";
 import { scope } from "./scope.js";
@@ -205,15 +206,66 @@ export function parse(source: string): ParseResult {
     const value = word('a value after "="');
     keyword("only", `"only" after ${JSON.stringify(value.name)}`);
     keyword("when", '"when" after "only"');
-    const { on, values } = condition("a dimension");
-    const when: Condition = { dimension: on, values };
-    return { state, value, when };
+    return { state, value, when: condition("a dimension") };
   };
 
-  // A condition, after "only when": "<name> = <value>", or with
-  // "in (<value>, ...)" for several values, to the end of the line.
-  const condition = (subject: string) => {
-    const on = word(`${subject} after "when"`);
+  // A condition, after "only when", to the end of the line: comparisons
+  // joined by "and" or by "or", and both only with brackets, so the order is
+  // always written.
+  const condition = (subject: string): Condition => {
+    const read = junction(subject, '"when"');
+    if (!["newline", "}"].includes(peek().kind)) {
+      fail(peek(), `"and", "or" or the end of the line after ${JSON.stringify(previous().text)}`);
+    }
+    return read;
+  };
+  const junction = (subject: string, after: string): Condition => {
+    const terms = [term(subject, after)];
+    const operators: Token[] = [];
+    while (peek().kind === "word" && (peek().text === "and" || peek().text === "or")) {
+      const operator = next();
+      operators.push(operator);
+      terms.push(term(subject, JSON.stringify(operator.text)));
+    }
+    const first = operators[0];
+    if (first === undefined) return terms[0] as Condition;
+    const mixed = operators.findIndex(({ text }) => text !== first.text);
+    if (mixed !== -1) {
+      // Both ways to bracket it: what comes before the other operator, or
+      // what comes after the one before it.
+      const written = (from: number, to: number) =>
+        terms
+          .slice(from, to + 1)
+          .map((each, index) =>
+            index === 0
+              ? conditionText(each, true)
+              : `${operators[from + index - 1]?.text} ${conditionText(each, true)}`,
+          )
+          .join(" ");
+      const other = operators[mixed] as Token;
+      const last = terms.length - 1;
+      result.diagnostics.push({
+        severity: "error",
+        code: "syntax-error",
+        message: `"and" and "or" need brackets to mix: write "(${written(0, mixed)}) ${other.text} ${written(mixed + 1, last)}" or "${written(0, mixed - 1)} ${first.text} (${written(mixed, last)})"`,
+        line: other.line,
+        column: other.column,
+      });
+      throw new ParseFailure();
+    }
+    return { kind: first.text as "and" | "or", terms };
+  };
+  const term = (subject: string, after: string): Condition => {
+    if (peek().kind === "(") {
+      next();
+      const inner = junction(subject, '"("');
+      expect(")", `")" after ${JSON.stringify(previous().text)}`);
+      return inner;
+    }
+    return comparison(subject, after);
+  };
+  const comparison = (subject: string, after: string): Condition => {
+    const on = word(`${subject} after ${after}`);
     const values: Located[] = [];
     const operator = next();
     const conditionValue = (after: string) => word(`a value after ${after}`);
@@ -233,10 +285,7 @@ export function parse(source: string): ParseResult {
     } else {
       fail(operator, `"=" or "in" after ${JSON.stringify(on.name)}`);
     }
-    if (!["newline", "}"].includes(peek().kind)) {
-      fail(peek(), "the end of the line after the condition");
-    }
-    return { on, values };
+    return { kind: "compare", subject: on, values };
   };
 
   // "when <subject> { <value>, ... -> <value> ... }", after the "=" of a

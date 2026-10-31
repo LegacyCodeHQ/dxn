@@ -26,7 +26,7 @@ describe("diagnostics", () => {
   it("report a declaration that does not parse once, not again where it is used", () => {
     expect([
       problems(
-        "enum Hover = rest hovered\ndimension Pointer = mouse\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
+        "enum Hover = rest hovered\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
       ),
       problems(
         "enum Hover = rest | hovered\ndimension Pointer = mouse touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = touch\n}\nenvironment Device = Pointer\n",
