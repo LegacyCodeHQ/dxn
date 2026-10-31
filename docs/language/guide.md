@@ -282,7 +282,7 @@ A need that nothing uses yet is allowed, but you will get a warning, so a
 stale need does not linger unnoticed:
 
 ```
-wordmark.dxn:4:21: warning: unused-need: Wordmark needs Breakpoint, but no rule uses it
+wordmark.dxn:4:21: warning: unused-need: Wordmark needs Breakpoint, but nothing in it uses it
 ```
 
 A warning does not fail the check: the file is still usable.

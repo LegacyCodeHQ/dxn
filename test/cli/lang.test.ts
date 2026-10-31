@@ -36,7 +36,7 @@ describe("lang check", () => {
     expect([result.code, result.stdout, result.stderr]).toEqual([
       0,
       "wordmark.dxn: 1 enum, 1 dimension, 1 type\n",
-      "wordmark.dxn:3:21: warning: unused-need: Wordmark needs Breakpoint, but no rule uses it\n",
+      "wordmark.dxn:3:21: warning: unused-need: Wordmark needs Breakpoint, but nothing in it uses it\n",
     ]);
   });
 
@@ -131,7 +131,7 @@ describe("lang check", () => {
             column: 21,
             severity: "warning",
             code: "unused-need",
-            message: "Wordmark needs Breakpoint, but no rule uses it",
+            message: "Wordmark needs Breakpoint, but nothing in it uses it",
           },
         ],
       ]);

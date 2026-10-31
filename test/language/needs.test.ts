@@ -21,7 +21,7 @@ describe("needs", () => {
     const source = `${declarations}type Wordmark needs Pointer,\n    Keyboard {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n`;
     const { types } = parse(source);
     expect([problems(source), types[0]?.needs]).toEqual([
-      ["6:5: warning: unused-need: Wordmark needs Keyboard, but no rule uses it"],
+      ["6:5: warning: unused-need: Wordmark needs Keyboard, but nothing in it uses it"],
       [
         { name: "Pointer", line: 5, column: 21 },
         { name: "Keyboard", line: 6, column: 5 },
@@ -59,7 +59,7 @@ describe("needs", () => {
         '7:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Pointer"',
       ],
       [
-        "5:21: warning: unused-need: Wordmark needs Breakpoint, but no rule uses it",
+        "5:21: warning: unused-need: Wordmark needs Breakpoint, but nothing in it uses it",
         '7:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Breakpoint, Pointer, Keyboard"',
         '8:26: unneeded-dimension: Wordmark does not need Keyboard; declare "type Wordmark needs Breakpoint, Pointer, Keyboard"',
       ],

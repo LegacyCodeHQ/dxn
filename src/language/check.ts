@@ -540,7 +540,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         if (names.is(need.name, "dimension") && !used.includes(need.name)) {
           report(
             "unused-need",
-            `${type.name} needs ${need.name}, but no rule uses it`,
+            `${type.name} needs ${need.name}, but nothing in it uses it`,
             need,
             "warning",
           );
