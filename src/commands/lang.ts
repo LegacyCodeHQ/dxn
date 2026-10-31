@@ -26,7 +26,7 @@ starts a comment, to the end of the line:
   enum Hover = rest | hovered
   dimension Pointer = mouse | touch
   type Wordmark needs Pointer {
-    states hover: Hover
+    state hover: Hover
     hover = hovered only when Pointer = mouse
   }
   environment Device = Pointer

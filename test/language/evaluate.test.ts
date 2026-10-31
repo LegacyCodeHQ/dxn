@@ -7,7 +7,7 @@ dimension Keyboard = keyboard | no-keyboard
 enum Hover = rest | hovered
 enum Focus = blurred | focused
 type Wordmark needs Pointer, Keyboard {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
   hover = hovered only when Pointer = mouse
   focus = focused only when Keyboard = keyboard
 }
@@ -44,7 +44,7 @@ describe("evaluating a type's states", () => {
     const source = `dimension Breakpoint = base | sm | lg | xl
 enum Hover = rest | hovered
 type BlogLink needs Breakpoint {
-  states hover: Hover
+  state hover: Hover
   hover = hovered only when Breakpoint in (lg, xl)
 }
 `;
@@ -94,7 +94,7 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 dimension Theme = light | dark
 enum Hover = rest | hovered
 type Link needs Pointer, Theme {
-  states hover: Hover
+  state hover: Hover
   hover = hovered only when Pointer = mouse
   hover = rest only when Theme = light
 }

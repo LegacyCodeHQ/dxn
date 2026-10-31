@@ -5,8 +5,8 @@
 //   file        = { blank-line | enum | dimension | type | environment | profile | modifier | record }
 //   enum        = "enum" name "=" value { "|" [newline] value } newline
 //   dimension   = "dimension" name "=" value { "|" [newline] value } newline
-//   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | states | rule } "}"
-//   states      = "states" field { "," [newline] field } newline
+//   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | state | rule } "}"
+//   state       = "state" field { "," [newline] field } newline
 //   field       = state-name ":" name
 //   rule        = state-name "=" value "only" "when" condition newline
 //   condition   = name ( "=" value | "in" "(" value { "," value } ")" )
@@ -204,7 +204,8 @@ export function parse(source: string): ParseResult {
     return { state, value, when };
   };
 
-  // A type: "type <Name> needs <Dimension>, ... { states <field>, ... <rule> ... }".
+  // A type: "type <Name> needs <Dimension>, ... { state <field>, ... <rule> ... }",
+  // with as many state lines as it needs.
   const typeDeclaration = () => {
     next();
     const named = name("type", 'a type name after "type"', capitalized);
@@ -216,25 +217,17 @@ export function parse(source: string): ParseResult {
       type.needs.push(...list(",", '"needs"', dimension, ["{"], '"{"'));
     }
     expect("{", '"{" after the type name');
-    let listed = false;
     braces(type.name, (token) => {
-      if (token.kind !== "word") fail(token, '"states", a rule or "}"');
-      if (token.text !== "states") {
+      if (token.kind !== "word") fail(token, '"state", a rule or "}"');
+      // "states hover: Hover" is the old keyword; a rule on a state named
+      // states has "=" next instead.
+      if (token.text === "states" && tokens[position + 2]?.kind === ":") fail(token, '"state"');
+      if (token.text !== "state") {
         type.rules.push(rule());
         return;
       }
       next();
-      if (listed) {
-        result.diagnostics.push({
-          severity: "error",
-          code: "states-twice",
-          message: `${type.name} lists its states twice; put them on one states line`,
-          line: token.line,
-          column: token.column,
-        });
-      }
-      listed = true;
-      type.states.push(...list(",", '"states"', field, ["newline", "}"]));
+      type.states.push(...list(",", '"state"', field, ["newline", "}"]));
     });
   };
 

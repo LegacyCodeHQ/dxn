@@ -10,7 +10,7 @@ enum Hover = rest |   # a value may follow on the next line
   hovered
 type Wordmark needs Pointer {
   # touch has no hover
-  states hover: Hover
+  state hover: Hover
   hover = hovered only when Pointer = mouse # only with a mouse
 }
 `;

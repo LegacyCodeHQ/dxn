@@ -77,7 +77,7 @@ enum Ring  = none | focus
 enum Color = primary | accent
 
 type Wordmark {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
 
   hover = hovered  only when Pointer = mouse
   focus = focused  only when Keyboard = keyboard
@@ -165,15 +165,15 @@ its states, each a field whose values come from an enum. `only when`,
 `look` and initial values come later, each as its own concept.
 
 ```ebnf
-type   = "type" name "{" { blank-line | states } "}" ;
-states = "states" field { "," [ newline ] field } newline ;
+type   = "type" name "{" { blank-line | state } "}" ;
+state = "state" field { "," [ newline ] field } newline ;
 field  = state-name ":" name ;
 state-name = lowercase-letter { letter | digit | "-" } ;
 ```
 
 ```
 type Wordmark {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
 }
 
 type Toolbar {}
@@ -197,7 +197,6 @@ Each scope keeps its names once:
 | `type-name`       | a type name that does not start with a capital letter    |
 | `state-name`      | a state name that does not start with a lowercase letter |
 | `duplicate-state` | a state listed twice in one type                         |
-| `states-twice`    | a type with more than one `states` line                  |
 | `unknown-enum`    | a state whose values name no enum, or name a type        |
 
 ### only when
@@ -207,21 +206,21 @@ exists only where a dimension has certain values. It brings the language's
 first expressions: a dimension equal to a value, or in a list of values.
 
 ```ebnf
-type      = "type" name "{" { blank-line | states | rule } "}" ;
+type      = "type" name "{" { blank-line | state | rule } "}" ;
 rule      = state-name "=" value "only" "when" condition newline ;
 condition = name ( "=" value | "in" "(" value { "," value } ")" ) ;
 ```
 
 ```
 type Wordmark {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
 
   hover = hovered  only when Pointer = mouse
   focus = focused  only when Keyboard = keyboard
 }
 
 type BlogLink {
-  states hover: Hover
+  state hover: Hover
   hover = hovered  only when Breakpoint in (lg, xl)
 }
 ```
@@ -321,7 +320,7 @@ values.
 | ------------------ | -------------------------------------------------------------- | --------------------------------------------------- | -------- |
 | `enum`             | a finite set of values                                         | state groups, dimension values, attribute values    | Decided  |
 | `type`             | a definition with states, a look and inputs                    | types in `types.json`                               | Decided  |
-| `states`           | a type's own fields                                            | state groups on a type                              | Decided  |
+| `state`            | a type's own fields                                            | state groups on a type                              | Decided  |
 | `look`             | values computed from inputs and states                         | attributes and their overrides                      | Proposed |
 | `match`            | an exhaustive choice by value                                  | per-state tables, overrides per value               | Proposed |
 | `when`             | a default with exceptions                                      | overrides per value or combination                  | Proposed |
@@ -373,7 +372,7 @@ node Toolbar {
 }
 
 type Wordmark {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
   hover = hovered only when Pointer = mouse
 }
 ```

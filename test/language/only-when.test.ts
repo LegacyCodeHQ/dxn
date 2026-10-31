@@ -7,7 +7,7 @@ dimension Keyboard = keyboard | no-keyboard
 enum Hover = rest | hovered
 enum Focus = blurred | focused
 type Wordmark needs Pointer, Keyboard {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
 `;
 
 // The wordmark with these rules, from line 7 on.
@@ -48,7 +48,7 @@ describe("only when", () => {
     const source = `dimension Breakpoint = base | sm | lg | xl
 enum Hover = rest | hovered
 type BlogLink needs Breakpoint {
-  states hover: Hover
+  state hover: Hover
   hover = hovered only when Breakpoint in (lg, xl)
 }
 `;

@@ -91,9 +91,9 @@ record Evidence { source: Source }
   it("is not an enum: a state cannot take its values from a record", () => {
     expect(
       problems(
-        `${enums}record Source {\n  tool: Tool\n}\ntype Link {\n  states source: Source\n}\n`,
+        `${enums}record Source {\n  tool: Tool\n}\ntype Link {\n  state source: Source\n}\n`,
       ),
-    ).toEqual(["7:18: unknown-enum: Source is a record, not an enum"]);
+    ).toEqual(["7:17: unknown-enum: Source is a record, not an enum"]);
   });
 
   it("says what it expected when the syntax is wrong", () => {

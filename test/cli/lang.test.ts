@@ -15,7 +15,7 @@ function file(source: string) {
 describe("lang check", () => {
   it("says what a file declares, in one line, counting each kind it has", () => {
     const run = file(
-      "enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  states hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile tablet: Device { Pointer = touch }\nmodifier trackpad on tablet { Pointer = mouse }\nrecord Note {\n  hover: Hover\n}\n",
+      "enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile tablet: Device { Pointer = touch }\nmodifier trackpad on tablet { Pointer = mouse }\nrecord Note {\n  hover: Hover\n}\n",
     );
     const result = run("check", "wordmark.dxn");
     expect([result.code, result.stdout, result.stderr]).toEqual([
@@ -30,7 +30,7 @@ describe("lang check", () => {
 
   it("prints warnings, and still succeeds", () => {
     const run = file(
-      "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  states hover: Hover\n}\n",
+      "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  state hover: Hover\n}\n",
     );
     const result = run("check", "wordmark.dxn");
     expect([result.code, result.stdout, result.stderr]).toEqual([
@@ -65,7 +65,7 @@ describe("lang check", () => {
   describe("with --json", () => {
     it("prints what the file declares, and no problems", () => {
       const run = file(
-        "enum Hover = rest | hovered\nenum Size = 19px | 20px | 22px\ndimension Breakpoint = base | lg\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  states hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
+        "enum Hover = rest | hovered\nenum Size = 19px | 20px | 22px\ndimension Breakpoint = base | lg\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
       );
       const result = run("check", "wordmark.dxn", "--json");
       expect([result.code, result.stderr, JSON.parse(result.stdout)]).toEqual([
@@ -117,7 +117,7 @@ describe("lang check", () => {
 
     it("puts warnings among the problems, and nothing on stderr", () => {
       const run = file(
-        "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  states hover: Hover\n}\n",
+        "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  state hover: Hover\n}\n",
       );
       const result = run("check", "wordmark.dxn", "--json");
       expect([result.code, result.stderr, JSON.parse(result.stdout).problems]).toEqual([
@@ -174,7 +174,7 @@ dimension Keyboard = keyboard | no-keyboard
 enum Hover = rest | hovered
 enum Focus = blurred | focused
 type Wordmark needs Pointer, Keyboard {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
   hover = hovered only when Pointer = mouse
   focus = focused only when Keyboard = keyboard
 }
@@ -431,7 +431,7 @@ record Part {
 describe("lang rename", () => {
   const schema = `enum Actor = design-agent | reviewer
 type Card {
-  states owner: Actor
+  state owner: Actor
 }
 record Evidence with context {
   actor: Actor

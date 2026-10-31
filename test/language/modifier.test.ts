@@ -19,7 +19,7 @@ const magic = `${device}modifier magic-keyboard on tablet-portrait, tablet-lands
 `;
 const wordmark = `enum Hover = rest | hovered
 type Wordmark needs Pointer {
-  states hover: Hover
+  state hover: Hover
   hover = hovered only when Pointer = mouse
 }
 `;

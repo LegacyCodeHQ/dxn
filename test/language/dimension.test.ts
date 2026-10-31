@@ -47,8 +47,8 @@ describe("dimension", () => {
 
   it("is not an enum: a state cannot take its values from a dimension", () => {
     expect(
-      problems("dimension Hover = rest | hovered\ntype Wordmark {\n  states hover: Hover\n}\n"),
-    ).toEqual(["3:17: unknown-enum: Hover is a dimension, not an enum"]);
+      problems("dimension Hover = rest | hovered\ntype Wordmark {\n  state hover: Hover\n}\n"),
+    ).toEqual(["3:16: unknown-enum: Hover is a dimension, not an enum"]);
   });
 
   it("says what it expected when a value is missing", () => {

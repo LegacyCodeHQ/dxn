@@ -12,13 +12,13 @@ enum Hover = rest | hovered
 // The wordmark with these needs and rules, from line 7 on.
 const wordmark = (needs: string, ...rules: string[]) =>
   `${declarations}type Wordmark${needs} {
-  states hover: Hover
+  state hover: Hover
 ${rules.map((rule) => `  ${rule}\n`).join("")}}
 `;
 
 describe("needs", () => {
   it("lists the dimensions a type depends on, with where each is", () => {
-    const source = `${declarations}type Wordmark needs Pointer,\n    Keyboard {\n  states hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n`;
+    const source = `${declarations}type Wordmark needs Pointer,\n    Keyboard {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n`;
     const { types } = parse(source);
     expect([problems(source), types[0]?.needs]).toEqual([
       ["6:5: warning: unused-need: Wordmark needs Keyboard, but no rule uses it"],

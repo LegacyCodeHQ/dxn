@@ -7,7 +7,7 @@ enum Hover = rest | hovered   # the pointer's
 enum Other = hovered | idle
 dimension Mode = hovered | quiet
 type Wordmark needs Mode {
-  states hover: Hover, other: Other
+  state hover: Hover, other: Other
   hover = hovered only when Mode = hovered
   other = hovered only when Mode = quiet
 }

@@ -33,10 +33,10 @@ describe("Timestamp", () => {
 
   it("is only for records: no state or dimension can have one", () => {
     expect([
-      problems("type Link {\n  states at: Timestamp\n}\n"),
+      problems("type Link {\n  state at: Timestamp\n}\n"),
       problems("environment Device = Timestamp\n"),
     ]).toEqual([
-      ["2:14: unknown-enum: Timestamp is a scalar, not an enum"],
+      ["2:13: unknown-enum: Timestamp is a scalar, not an enum"],
       ["1:22: unknown-dimension: Timestamp is a scalar, not a dimension"],
     ]);
   });
@@ -79,10 +79,10 @@ describe("NonEmptyString", () => {
 
   it("is only for records: no state or dimension can have one", () => {
     expect([
-      problems("type Link {\n  states frame: NonEmptyString\n}\n"),
+      problems("type Link {\n  state frame: NonEmptyString\n}\n"),
       problems("environment Device = NonEmptyString\n"),
     ]).toEqual([
-      ["2:17: unknown-enum: NonEmptyString is a scalar, not an enum"],
+      ["2:16: unknown-enum: NonEmptyString is a scalar, not an enum"],
       ["1:22: unknown-dimension: NonEmptyString is a scalar, not a dimension"],
     ]);
   });
@@ -126,10 +126,10 @@ describe("RelativePath", () => {
 
   it("is only for records: no state or dimension can have one", () => {
     expect([
-      problems("type Link {\n  states file: RelativePath\n}\n"),
+      problems("type Link {\n  state file: RelativePath\n}\n"),
       problems("environment Device = RelativePath\n"),
     ]).toEqual([
-      ["2:16: unknown-enum: RelativePath is a scalar, not an enum"],
+      ["2:15: unknown-enum: RelativePath is a scalar, not an enum"],
       ["1:22: unknown-dimension: RelativePath is a scalar, not a dimension"],
     ]);
   });

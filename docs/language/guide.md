@@ -132,13 +132,22 @@ enum Hover = rest | hovered
 enum Focus = blurred | focused
 
 type Wordmark {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
 }
 ```
 
-A type is the kind of element you are describing. Its `states` line lists its
-state fields: each has a lowercase name, a colon, and the enum its values come
-from. The line can carry on after a comma.
+A type is the kind of element you are describing. Each `state` line declares
+one or more of its state fields, split by commas: each has a lowercase name, a
+colon, and the enum its values come from. A type has as many `state` lines as
+it needs, so a state can have a line, and a comment, of its own:
+
+```
+type Link {
+  state hover: Hover, focus: Focus
+  # the current page's link is selected
+  state selection: Selection
+}
+```
 
 A type's states are independent of each other, so the wordmark above can be
 in any of the four combinations of hover and focus. You can ask the tool for
@@ -195,7 +204,7 @@ type, with **needs**:
 
 ```
 type Wordmark needs Pointer, Keyboard {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
 }
 ```
 
@@ -238,7 +247,7 @@ enum Hover = rest | hovered
 enum Focus = blurred | focused
 
 type Wordmark needs Pointer, Keyboard {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
   hover = hovered only when Pointer = mouse
   focus = focused only when Keyboard = keyboard
 }
@@ -257,7 +266,7 @@ dimension Breakpoint = base | sm | lg | xl
 enum Hover = rest | hovered
 
 type BlogLink needs Breakpoint {
-  states hover: Hover
+  state hover: Hover
   hover = hovered only when Breakpoint in (lg, xl)
 }
 ```
@@ -267,7 +276,7 @@ where it exists. A second rule for the same value is an error.
 
 ## Evaluating: the matrix
 
-This is where the language pays off. Ask for the wordmark's states again:
+This is where the language pays off. Ask for the wordmark's state again:
 
 ```bash
 dxn lang states wordmark.dxn Wordmark
@@ -325,7 +334,7 @@ enum Hover = rest | hovered
 enum Focus = blurred | focused
 
 type Wordmark needs Pointer, Keyboard {
-  states hover: Hover, focus: Focus
+  state hover: Hover, focus: Focus
   hover = hovered only when Pointer = mouse
   focus = focused only when Keyboard = keyboard
 }
@@ -375,7 +384,7 @@ enum Hover = rest | hovered
 enum Tone = plain | inverted
 
 type Wordmark needs Pointer, Theme {
-  states hover: Hover, tone: Tone
+  state hover: Hover, tone: Tone
   hover = hovered only when Pointer = mouse
   tone = inverted only when Theme = dark
 }
@@ -696,7 +705,7 @@ did not parse are not reported again:
 ```
 enum Hover = rest hovered
 type Wordmark {
-  states hover: Hover
+  state hover: Hover
 }
 ```
 
@@ -766,8 +775,8 @@ each name is declared once in a file.
 file        = { blank-line | comment | enum | dimension | type | environment | profile | modifier | record }
 enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
-type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | states | rule } "}"
-states      = "states" field { "," [newline] field } newline
+type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | state | rule } "}"
+state       = "state" field { "," [newline] field } newline
 field       = state-name ":" Name
 rule        = state-name "=" value "only" "when" condition newline
 condition   = Name ( "=" value | "in" "(" value { "," value } ")" )
@@ -789,7 +798,6 @@ comment     = "#" to the end of the line
 | `duplicate-name`                                                              | error    | a name is declared twice in the file                                                             |
 | `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension or condition                                         |
 | `duplicate-state`                                                             | error    | a type has two states with one name                                                              |
-| `states-twice`                                                                | error    | a type has two `states` lines                                                                    |
 | `duplicate-rule`                                                              | error    | a state value has two rules                                                                      |
 | `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment, a profile or a modifier             |
 | `unknown-enum`                                                                | error    | a state's values come from something that is not an enum                                         |

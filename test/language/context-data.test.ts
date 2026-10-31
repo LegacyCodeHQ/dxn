@@ -7,7 +7,7 @@ dimension Theme = light | dark
 enum Hover = rest | hovered
 enum Actor = design-agent
 type Wordmark needs Pointer, Theme {
-  states hover: Hover
+  state hover: Hover
   hover = hovered only when Pointer = mouse
 }
 record Evidence with context {
