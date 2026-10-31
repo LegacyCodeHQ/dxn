@@ -10,6 +10,7 @@
 //   bindings    = "{" { state-name "=" state-name ( "," | newline ) } "}"
 //   state       = "state" field { "," [newline] field } newline
 //               | "state" field "=" "when" name "{" { blank-line | branch } "}" newline
+//               | "state" field "=" value newline
 //   branch      = value { "," value } "->" value newline
 //   field       = state-name ":" name { "." name }
 //   rule        = state-name "=" value "only" "when" condition newline
@@ -334,8 +335,15 @@ export function parse(source: string): ParseResult {
       const first = field();
       if (peek().kind === "=") {
         next();
-        const { on, branches } = whenBlock(first.name, "dimension");
-        first.derived = { dimension: on, branches };
+        const after = peek();
+        if (after.kind === "word" && after.text !== "when" && tokens[position + 1]?.kind !== "{") {
+          // A fixed state: "= <value>".
+          first.fixed = word('a value or "when" after "="');
+          end(["newline", "}"], "the end of the line");
+        } else {
+          const { on, branches } = whenBlock(first.name, "dimension");
+          first.derived = { dimension: on, branches };
+        }
         type.states.push(first);
         return;
       }

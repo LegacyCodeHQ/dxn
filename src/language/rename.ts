@@ -43,6 +43,7 @@ export function renameInSource(
     }
     for (const state of type.states) {
       if (state.enum.name !== enumName) continue;
+      if (state.fixed?.name === from) named.push(state.fixed);
       for (const { result } of state.derived?.branches ?? []) {
         if (result.name === from) named.push(result);
       }

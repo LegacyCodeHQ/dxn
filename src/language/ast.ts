@@ -29,6 +29,8 @@ export interface State extends Located {
   // A derived state: its value decided by a dimension's value, one branch
   // for each group of the dimension's values.
   derived?: Derived;
+  // A fixed state: always this one value.
+  fixed?: Located;
 }
 
 // "when <Dimension> { <value>, ... -> <value> ... }".

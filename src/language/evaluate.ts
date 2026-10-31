@@ -91,22 +91,26 @@ export function states(file: ParseResult, typeName: string): TypeStates {
         states: Object.fromEntries(
           type.states.map((state) => [
             state.name,
-            state.derived === undefined
-              ? valuesOf(state.enum.name).filter((value) =>
-                  type.rules
-                    .filter((rule) => rule.state.name === state.name && rule.value.name === value)
-                    .every((rule) =>
-                      rule.when.values.some(
-                        ({ name }) => name === chosen[rule.when.dimension.name],
+            state.fixed !== undefined
+              ? [state.fixed.name]
+              : state.derived === undefined
+                ? valuesOf(state.enum.name).filter((value) =>
+                    type.rules
+                      .filter((rule) => rule.state.name === state.name && rule.value.name === value)
+                      .every((rule) =>
+                        rule.when.values.some(
+                          ({ name }) => name === chosen[rule.when.dimension.name],
+                        ),
                       ),
-                    ),
-                )
-              : // A derived state has the one value its when gives here.
-                state.derived.branches
-                  .filter(({ values }) =>
-                    values.some(({ name }) => name === chosen[state.derived?.dimension.name ?? ""]),
                   )
-                  .map(({ result }) => result.name),
+                : // A derived state has the one value its when gives here.
+                  state.derived.branches
+                    .filter(({ values }) =>
+                      values.some(
+                        ({ name }) => name === chosen[state.derived?.dimension.name ?? ""],
+                      ),
+                    )
+                    .map(({ result }) => result.name),
           ]),
         ),
       }),

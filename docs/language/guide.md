@@ -373,7 +373,19 @@ toolbar.dxn:7:31: incomplete-when: when Breakpoint does not cover xl
 
 The dimension must be one the type needs, as for a rule. A derived state is
 declared on a `state` line of its own, and has no `only when` rules: its
-`when` already decides it. A stored context still gives its value, which
+`when` already decides it.
+
+A state can also be **fixed**: one value, always. The article page is the
+blog's page, so which section is current is decided once:
+
+```
+type ArticlePage {
+  state current: Section = blog
+}
+```
+
+Like a derived state, a fixed state has no rules, and a parent cannot bind
+it. A stored context still gives its value, which
 must be the one the `when` gives there.
 
 ## Has: what a type contains
@@ -1189,6 +1201,7 @@ has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when
 bindings    = "{" { state-name "=" state-name ( "," | newline ) } "}"
 state       = "state" field { "," [newline] field } newline
             | "state" field "=" "when" Name "{" { blank-line | branch } "}" newline
+            | "state" field "=" value newline
 branch      = value { "," value } "->" value newline
 field       = state-name ":" Name { "." Name }
 rule        = state-name "=" value "only" "when" condition newline

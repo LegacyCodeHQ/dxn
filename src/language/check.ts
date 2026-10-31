@@ -159,10 +159,11 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         );
       }
       if (target === undefined || source === undefined) continue;
-      if (target.derived !== undefined) {
+      if (target.derived !== undefined || target.fixed !== undefined) {
+        const by = target.fixed === undefined ? "its when" : "its value";
         report(
           "bound-derived",
-          `${target.name} is decided by its when; it cannot also be bound`,
+          `${target.name} is decided by ${by}; it cannot also be bound`,
           state,
         );
       } else if (target.enum.name !== source.enum.name) {
@@ -315,15 +316,26 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         report("unknown-enum", names.not(state.enum.name, "enum"), state.enum);
       }
       if (state.derived !== undefined) checkDerived(state, type.name, needed, declare);
+      if (state.fixed !== undefined) {
+        const values = names.values(state.enum.name);
+        if (values !== undefined && !values.includes(state.fixed.name)) {
+          report(
+            "unknown-value",
+            `${JSON.stringify(state.fixed.name)} is not a value of ${state.name} (${values.join(", ")})`,
+            state.fixed,
+          );
+        }
+      }
     }
     const stateNames = type.states.map(({ name }) => name);
     const conditioned = new Map<string, Rule>();
     for (const rule of type.rules) {
       const state = type.states.find(({ name }) => name === rule.state.name);
-      if (state?.derived !== undefined) {
+      if (state?.derived !== undefined || state?.fixed !== undefined) {
+        const by = state.fixed === undefined ? "its when" : "its value";
         report(
           "rule-on-derived",
-          `${state.name} is decided by its when; it cannot also have a rule`,
+          `${state.name} is decided by ${by}; it cannot also have a rule`,
           rule.state,
         );
       }
