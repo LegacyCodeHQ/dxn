@@ -697,7 +697,10 @@ function checkEnvironments(file: ParseResult, names: Names, report: Report): voi
 // Profiles: instances of a declared environment, all of the same one, each
 // giving every dimension of it once, with one of its values.
 function checkProfiles(file: ParseResult, names: Names, report: Report): void {
-  const first = file.profiles[0];
+  // The first whose environment is one: another's is reported already.
+  const first = file.profiles.find(({ environment }) =>
+    file.environments.some(({ name }) => name === environment.name),
+  );
   for (const profile of file.profiles) {
     const named = profile.environment.name;
     const environment = file.environments.find(({ name }) => name === named);

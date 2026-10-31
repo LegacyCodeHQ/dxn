@@ -169,11 +169,15 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
       problems(
         `${pointing}profile phone: Device { Pointer = touch }\nprofile tablet: Device { Pointer = touch }\n`,
       ),
+      problems(
+        `${pointing}profile phone: Nowhere { Pointer = touch }\nprofile tablet: Device { Pointer = touch }\n`,
+      ),
     ]).toEqual([
       [
         "7:9: mixed-profiles: desk is an Input, but phone is a Device; all profiles share one environment",
       ],
       [],
+      ["5:16: unknown-environment: Nowhere is not an environment (Device)"],
     ]);
   });
 
