@@ -182,19 +182,67 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
   });
 });
 
-const axesUsage = `Usage: dimensions axes <node-id> [--root <root-id>]
+const axesUsage = `Usage: dimensions axes <node-id> [<name>=<value>...] [--root <root-id>]
 
 Lists what view and show accept for the node: the dimensions that apply in
 its subtree, with their values and defaults, and the shared nodes above or in
 it, with their states and the dimension values where each exists.
+<name>=<value> filters describe only the views with that dimension value,
+shared node state or profile.
 `;
 
 export const axes = readCommand(axesUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } });
-  const [id] = positionals as [string];
+  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } }, true);
+  const [id, ...rest] = positionals as [string, ...string[]];
   requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
   const found = resolver.axes(id, values.root);
+  if (rest.length > 0) {
+    // Describe only the views the filters keep.
+    const all = resolver.views(id, values.root);
+    const matching = all.filter(filter(resolver, rest, all, values.root));
+    const seen = (name: string, options: string[]) =>
+      options.filter((option) => matching.some((view) => view[name] === option));
+    print(io, {
+      node: id,
+      dimensions: found.dimensions.map((name) => {
+        const dimension = resolver.project.dimensions[name];
+        const kept = seen(name, dimension?.values ?? []);
+        return {
+          name,
+          values: kept,
+          ...(dimension?.default !== undefined && kept.includes(dimension.default)
+            ? { default: dimension.default }
+            : {}),
+        };
+      }),
+      shared: found.shared.flatMap((node) => {
+        const states = seen(node, sharedStates(resolver, node));
+        if (states.length === 0) return [];
+        const existsWhen: Record<string, string[]> = {};
+        for (const name of found.dimensions) {
+          const everywhere = seen(name, resolver.project.dimensions[name]?.values ?? []);
+          const where = everywhere.filter((value) =>
+            matching.some((view) => view[name] === value && view[node] !== undefined),
+          );
+          if (where.length < everywhere.length) existsWhen[name] = where;
+        }
+        return [{ node, states, ...(Object.keys(existsWhen).length === 0 ? {} : { existsWhen }) }];
+      }),
+      ...(resolver.profiles.size === 0
+        ? {}
+        : {
+            profiles: profileList(resolver).filter(({ values: profile }) =>
+              matching.some((view) =>
+                Object.keys(view)
+                  .filter((name) => resolver.profiled.has(name))
+                  .every((name) => profile[name] === view[name]),
+              ),
+            ),
+          }),
+    });
+    return;
+  }
   print(io, {
     node: id,
     dimensions: found.dimensions.map((name) => {
@@ -485,19 +533,21 @@ function filter(
   }
 }
 
-const viewsUsage = `Usage: dimensions views <node-id> [--root <root-id>]
+const viewsUsage = `Usage: dimensions views <node-id> [<name>=<value>...] [--root <root-id>]
 
 Lists every distinct view of the node's subtree: each combination of the
 dimensions that apply in it, and the states of shared nodes wherever those
-nodes are present. Each view is one diagram to draw.
+nodes are present. Each view is one diagram to draw. <name>=<value> filters
+keep only the views with that dimension value, shared node state or profile.
 `;
 
 export const views = readCommand(viewsUsage, (resolver, args, io) => {
-  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } });
-  const [id] = positionals as [string];
+  const { values, positionals } = parse(args, ["node-id"], { root: { type: "string" } }, true);
+  const [id, ...rest] = positionals as [string, ...string[]];
   requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
-  print(io, { node: id, views: resolver.views(id, values.root) });
+  const all = resolver.views(id, values.root);
+  print(io, { node: id, views: all.filter(filter(resolver, rest, all, values.root)) });
 });
 
 const viewUsage = `Usage: dimensions view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]

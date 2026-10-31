@@ -284,6 +284,11 @@ When the project has profiles, `axes` also lists them, as `profile list` does:
 
 Profiles are sorted by name. A dimension that profiles cover has no `default`.
 
+With filters, as in `axes toolbar profile=phone`, `axes` describes only the
+views the filters keep: each dimension lists the values those views have, a
+shared node appears only if it exists in one of them, and `profiles` lists the
+profiles they match.
+
 ## profile list
 
 ```json

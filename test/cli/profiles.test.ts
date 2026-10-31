@@ -120,6 +120,64 @@ describe("profiles limit the combinations", () => {
   });
 });
 
+describe("views and axes filter", () => {
+  it("to one breakpoint, profile or shared state", () => {
+    const { run } = cliProject(files);
+    const views = (...args: string[]) => {
+      const result = run("views", "toolbar", ...args);
+      return result.code === 0 ? json(result).views : result.stderr;
+    };
+    expect([
+      views("breakpoint=sm"),
+      views("profile=desktop"),
+      views("menu=open"),
+      views("breakpoint=md"),
+    ]).toEqual([
+      [
+        { breakpoint: "sm", keyboard: "no-keyboard", pointer: "touch", menu: "closed" },
+        { breakpoint: "sm", keyboard: "no-keyboard", pointer: "touch", menu: "open" },
+      ],
+      [{ breakpoint: "xl", keyboard: "keyboard", pointer: "mouse" }],
+      [
+        { breakpoint: "base", keyboard: "no-keyboard", pointer: "touch", menu: "open" },
+        { breakpoint: "sm", keyboard: "no-keyboard", pointer: "touch", menu: "open" },
+      ],
+      'dimensions: "md" is not a value of breakpoint (base, sm, lg, xl)\n',
+    ]);
+  });
+
+  it("so axes says what a view accepts there", () => {
+    const { run } = cliProject(files);
+    const axes = (...args: string[]) => {
+      const { node: _, ...rest } = json(run("axes", "toolbar", ...args));
+      return rest;
+    };
+    expect([axes("breakpoint=lg"), axes("profile=phone")]).toEqual([
+      {
+        dimensions: [
+          { name: "breakpoint", values: ["lg"] },
+          { name: "keyboard", values: ["keyboard", "no-keyboard"] },
+          { name: "pointer", values: ["mouse", "touch"] },
+        ],
+        shared: [],
+        profiles: [
+          { name: "laptop", values: profiles.laptop },
+          { name: "tablet-landscape", values: profiles["tablet-landscape"] },
+        ],
+      },
+      {
+        dimensions: [
+          { name: "breakpoint", values: ["base"] },
+          { name: "keyboard", values: ["no-keyboard"] },
+          { name: "pointer", values: ["touch"] },
+        ],
+        shared: [{ node: "menu", states: ["closed", "open"] }],
+        profiles: [{ name: "phone", values: profiles.phone }],
+      },
+    ]);
+  });
+});
+
 describe("show and view fill in from a profile", () => {
   it("when exactly one profile fits, and ask otherwise", () => {
     const { run } = cliProject(files);

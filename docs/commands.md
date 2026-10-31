@@ -140,17 +140,19 @@ dimensions contexts menu --tree --transitions
 ### views
 
 ```text
-Usage: dimensions views <node-id> [--root <root-id>]
+Usage: dimensions views <node-id> [<name>=<value>...] [--root <root-id>]
 
 Lists every distinct view of the node's subtree: each combination of the
 dimensions that apply in it, and the states of shared nodes wherever those
-nodes are present. Each view is one diagram to draw.
+nodes are present. Each view is one diagram to draw. <name>=<value> filters
+keep only the views with that dimension value, shared node state or profile.
 ```
 
 Prints every distinct view of a node's subtree as JSON. Each view is one diagram to draw: a value per dimension, and a state per shared node where it is present.
 
 ```bash
 dimensions views toolbar
+dimensions views toolbar breakpoint=sm
 ```
 
 ### view
@@ -173,17 +175,20 @@ dimensions view toolbar breakpoint=base menu=open
 ### axes
 
 ```text
-Usage: dimensions axes <node-id> [--root <root-id>]
+Usage: dimensions axes <node-id> [<name>=<value>...] [--root <root-id>]
 
 Lists what view and show accept for the node: the dimensions that apply in
 its subtree, with their values and defaults, and the shared nodes above or in
 it, with their states and the dimension values where each exists.
+<name>=<value> filters describe only the views with that dimension value,
+shared node state or profile.
 ```
 
 Prints what view and show accept for a node, as JSON: the dimensions that apply in its subtree, and the shared nodes with their states and where they exist. Read this first to learn which `<name>=<value>` arguments make sense.
 
 ```bash
 dimensions axes toolbar
+dimensions axes toolbar profile=phone
 ```
 
 ### transitions
