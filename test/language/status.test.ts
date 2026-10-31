@@ -83,4 +83,33 @@ describe("coverage", () => {
       },
     ]);
   });
+
+  it("counts a combination as stale or gone when its only entries are", () => {
+    const entry = (profile: string, menu: string, hover: string, frame: string) => ({
+      ...toggle(profile, menu, hover),
+      source: { file: "design.pen", frame },
+      fingerprint: "then",
+    });
+    const report = coverage(
+      file,
+      "Evidence",
+      [
+        JSON.stringify([
+          entry("phone", "closed", "rest", "fresh"),
+          entry("phone", "open", "rest", "changed"),
+          entry("laptop", "open", "rest", "deleted"),
+          entry("laptop", "open", "rest", "changed"),
+        ]),
+      ],
+      ({ frame }) => (frame === "fresh" ? "present" : frame === "changed" ? "stale" : "gone"),
+    );
+    const toggles = report.paths[2];
+    expect([
+      toggles?.present,
+      toggles?.stale.length,
+      toggles?.gone.length,
+      toggles?.missing.length,
+    ]).toEqual([1, 2, 0, 3]);
+    expect([report.present, report.stale, report.gone]).toEqual([1, 2, 0]);
+  });
 });

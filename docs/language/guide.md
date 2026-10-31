@@ -961,22 +961,33 @@ dxn lang status toolbar.dxn
 ```
 toolbar.dxn: Evidence for 38 of 75 combinations
 
-| path                    | combinations | with evidence | missing |
-| ----------------------- | ------------ | ------------- | ------- |
-| Toolbar                 | 6            | 0             | 6       |
-| Toolbar.wordmark        | 15           | 15            | 0       |
-| Toolbar.links           | 3            | 0             | 3       |
-| Toolbar.links.blog      | 18           | 9             | 9       |
-| Toolbar.menu            | 6            | 2             | 4       |
-| Toolbar.menu.toggle     | 12           | 12            | 0       |
-| Toolbar.menu.panel      | 3            | 0             | 3       |
-| Toolbar.menu.panel.blog | 12           | 0             | 12      |
+| path                    | combinations | present | stale | gone | missing |
+| ----------------------- | ------------ | ------- | ----- | ---- | ------- |
+| Toolbar                 | 6            | 0       | 0     | 0    | 6       |
+| Toolbar.wordmark        | 15           | 15      | 0     | 0    | 0       |
+| Toolbar.links           | 3            | 0       | 0     | 0    | 3       |
+| Toolbar.links.blog      | 18           | 9       | 0     | 0    | 9       |
+| Toolbar.menu            | 6            | 2       | 0     | 0    | 4       |
+| Toolbar.menu.toggle     | 12           | 12      | 0     | 0    | 0       |
+| Toolbar.menu.panel      | 3            | 0       | 0     | 0    | 3       |
+| Toolbar.menu.panel.blog | 12           | 0       | 0     | 0    | 12      |
 ```
 
 A tree starts at each type that no type contains, and every child below it
 is an element, by its path. Profiles that share a row count as one: evidence
-on `laptop` covers a tablet with the magic keyboard too. With `--missing`, it
-lists each combination without evidence, in the words a context would use:
+on `laptop` covers a tablet with the magic keyboard too.
+
+Each entry is also checked against its frame. By convention, a record with a
+`fingerprint` field next to a `source { file, frame }` is fingerprinted: an
+entry is **present** while its frame's fingerprint is the one recorded,
+**stale** once the frame has changed, and **gone** once the file or the frame
+is. A combination is as its best entry is, or **missing** without one. A
+record without those fields is counted as recorded, and the first line says
+that staleness is not checked, so it never passes silently. Attaching the
+frame again records its fingerprint now, and the entry is present again.
+
+With `--missing`, it lists each combination that is not present, under
+Missing, Stale and Gone, in the words a context would use:
 
 ```
 Missing:

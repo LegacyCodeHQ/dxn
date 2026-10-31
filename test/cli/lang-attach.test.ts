@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { capture } from "../support/cli.js";
@@ -236,5 +236,62 @@ describe("lang attach", () => {
       run("spec/toolbar.dxn").code,
       run("spec/toolbar.dxn", "Toolbar.menu.toggle", "profile=phone").code,
     ]).toEqual([2, 2]);
+  });
+});
+
+describe("lang status, with fingerprints", () => {
+  const recorded = () => {
+    const { root, run } = project();
+    run(...attach("profile=phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"));
+    const status = (...args: string[]) =>
+      capture(["lang", "status", "spec/toolbar.dxn", ...args], root);
+    return { root, status };
+  };
+
+  it("counts an entry as present while its frame is as it was recorded", () => {
+    const { status } = recorded();
+    expect(status().stdout.split("\n")[0]).toBe(
+      "spec/toolbar.dxn: Evidence for 2 of 12 combinations",
+    );
+  });
+
+  it("counts an entry as stale once its frame has changed, and lists it with --missing", () => {
+    const { root, status } = recorded();
+    writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
+    const lines = status("--missing").stdout.split("\n");
+    expect([
+      lines[0],
+      lines.find((line) => line.startsWith("| Toolbar.menu.toggle")),
+      lines.slice(lines.indexOf("Stale:"), lines.indexOf("Stale:") + 3),
+    ]).toEqual([
+      "spec/toolbar.dxn: Evidence for 0 of 12 combinations; 2 stale",
+      "| Toolbar.menu.toggle | 6            | 0       | 2     | 0    | 4       |",
+      [
+        "Stale:",
+        "  Toolbar.menu.toggle on phone with menu.menu = closed: hover = rest, expanded = closed",
+        "  Toolbar.menu.toggle on phone with menu.menu = open: hover = rest, expanded = open",
+      ],
+    ]);
+  });
+
+  it("counts an entry as gone once its file is", () => {
+    const { root, status } = recorded();
+    rmSync(join(root, "design", "toolbar.png"));
+    expect(status().stdout.split("\n")[0]).toBe(
+      "spec/toolbar.dxn: Evidence for 0 of 12 combinations; 2 gone",
+    );
+  });
+
+  it("says when a record has no fingerprint to check", () => {
+    const root = writeProject({});
+    writeFileSync(join(root, "plain.dxn"), "type Card {}\nrecord Note with context {}\n");
+    mkdirSync(join(root, "note"));
+    writeFileSync(
+      join(root, "note", "a.json"),
+      '[{ "context": { "type": "Card", "dimensions": {}, "states": {} } }]',
+    );
+    expect(capture(["lang", "status", "plain.dxn"], root).stdout.split("\n")[0]).toBe(
+      "plain.dxn: Note for 1 of 1 combination; Note has no fingerprint field next to a source { file, frame }, so staleness is not checked",
+    );
   });
 });

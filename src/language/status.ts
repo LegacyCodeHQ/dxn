@@ -15,8 +15,23 @@ export interface Coverage {
   record: string;
   combinations: number;
   present: number;
-  paths: { path: string; combinations: number; present: number; missing: Combination[] }[];
+  stale: number;
+  gone: number;
+  paths: {
+    path: string;
+    combinations: number;
+    present: number;
+    // The combinations whose entries all have a frame that changed since, or
+    // that is no more; and those with no entry at all.
+    stale: Combination[];
+    gone: Combination[];
+    missing: Combination[];
+  }[];
 }
+
+// Whether an entry's frame is as it was recorded, changed since, or no more.
+export type Freshness = "present" | "stale" | "gone";
+export type Check = (entry: { file: string; frame: string; fingerprint: string }) => Freshness;
 
 // Every element of the file's trees, by its path: each type that no type
 // contains, then each of its children, theirs, and so on.
@@ -39,19 +54,39 @@ export function treePaths(file: ParseResult): string[] {
 
 // How much of the trees a record with context covers: every combination of
 // every element, in place, and which a stored record is about. Profiles that
-// share a row count as one. The file and the data must have no problems.
-export function coverage(file: ParseResult, record: string, sources: string[]): Coverage {
+// share a row count as one. With a check, each entry is present, stale or
+// gone by its frame, and a combination is as its best entry is. The file and
+// the data must have no problems.
+export function coverage(
+  file: ParseResult,
+  record: string,
+  sources: string[],
+  check?: Check,
+): Coverage {
   const environment = file.environments.find(
     ({ name }) => name === file.profiles[0]?.environment.name,
   );
   const given = environment?.dimensions.map(({ name }) => name) ?? [];
   const contexts = sources.flatMap((source) =>
-    (JSON.parse(source) as { context: Record<string, unknown> }[]).map(({ context }) => ({
+    (
+      JSON.parse(source) as {
+        context: Record<string, unknown>;
+        source?: { file?: string; frame?: string };
+        fingerprint?: string;
+      }[]
+    ).map(({ context, source: where, fingerprint }) => ({
       path: (context.path ?? context.type) as string,
       profile: context.profile as string | undefined,
       dimensions: (context.dimensions ?? {}) as Record<string, string>,
       parents: (context.parents ?? {}) as Record<string, string>,
       states: (context.states ?? {}) as Record<string, string>,
+      freshness:
+        check === undefined ||
+        where?.file === undefined ||
+        where.frame === undefined ||
+        fingerprint === undefined
+          ? ("present" as Freshness)
+          : check({ file: where.file, frame: where.frame, fingerprint }),
     })),
   );
   const same = (a: Record<string, string>, b: Record<string, string>) =>
@@ -78,28 +113,43 @@ export function coverage(file: ParseResult, record: string, sources: string[]): 
         });
       }
     }
-    const covered = (combination: Combination) =>
-      contexts.some(
-        (context) =>
-          context.path === path &&
-          (combination.profiles === undefined ||
-            combination.profiles.includes(context.profile ?? "")) &&
-          same(context.dimensions, combination.dimensions) &&
-          same(context.parents, combination.parents) &&
-          same(context.states, combination.states),
+    // A combination is as its best entry is: present, else stale, else gone.
+    const state = (combination: Combination): Freshness | "missing" => {
+      const found = contexts
+        .filter(
+          (context) =>
+            context.path === path &&
+            (combination.profiles === undefined ||
+              combination.profiles.includes(context.profile ?? "")) &&
+            same(context.dimensions, combination.dimensions) &&
+            same(context.parents, combination.parents) &&
+            same(context.states, combination.states),
+        )
+        .map(({ freshness }) => freshness);
+      return (
+        (["present", "stale", "gone"] as const).find((best) => found.includes(best)) ?? "missing"
       );
-    const missing = combinations.filter((combination) => !covered(combination));
+    };
+    const states = combinations.map((combination) => ({ combination, state: state(combination) }));
+    const those = (wanted: Freshness | "missing") =>
+      states.filter(({ state: found }) => found === wanted).map(({ combination }) => combination);
     return {
       path,
       combinations: combinations.length,
-      present: combinations.length - missing.length,
-      missing,
+      present: those("present").length,
+      stale: those("stale"),
+      gone: those("gone"),
+      missing: those("missing"),
     };
   });
+  const total = (of: (path: (typeof paths)[number]) => number) =>
+    paths.reduce((sum, path) => sum + of(path), 0);
   return {
     record,
-    combinations: paths.reduce((total, { combinations }) => total + combinations, 0),
-    present: paths.reduce((total, { present }) => total + present, 0),
+    combinations: total(({ combinations }) => combinations),
+    present: total(({ present }) => present),
+    stale: total(({ stale }) => stale.length),
+    gone: total(({ gone }) => gone.length),
     paths,
   };
 }

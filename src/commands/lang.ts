@@ -14,7 +14,7 @@ import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
 import { profilesOf } from "../language/profiles.js";
 import { isValue, renameInData, renameInSource } from "../language/rename.js";
-import { type Combination, coverage } from "../language/status.js";
+import { type Check, type Combination, coverage } from "../language/status.js";
 import { folderOf, storedFiles } from "../language/store.js";
 import { validate } from "../language/validate.js";
 import { drawTable, NONE } from "../tables.js";
@@ -529,15 +529,43 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   if (uncontexted.length > 0) return report.refuse(...uncontexted);
   const data = storedData(parsed, file, cwd);
   if (!checkStored(parsed, data, report)) return report.fail();
+  // Whether an entry's frame is as recorded: its fingerprint now, against
+  // the one stored.
+  const repository = repositoryOf(file, cwd);
+  const fingerprints = new Fingerprints();
+  const check: Check = ({ file: where, frame, fingerprint }) => {
+    const full = join(repository, where);
+    if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) return "gone";
+    const now = fingerprints.of(full, frame);
+    if (now === undefined) return "gone";
+    return now === fingerprint ? "present" : "stale";
+  };
+  // By convention, a record is fingerprinted when it has a fingerprint field
+  // next to a source { file, frame }.
+  const fingerprinted = (name: string) => {
+    const declared = parsed.records.find((candidate) => candidate.name === name);
+    const source = parsed.records.find(
+      ({ name: inner }) =>
+        inner === declared?.fields.find(({ name: field }) => field === "source")?.type.name,
+    );
+    return (
+      declared?.fields.some(({ name: field }) => field === "fingerprint") === true &&
+      ["file", "frame"].every(
+        (field) => source?.fields.some(({ name: own }) => own === field) === true,
+      )
+    );
+  };
   const records = parsed.records
     .filter(({ context }) => context)
-    .map(({ name }) =>
-      coverage(
+    .map(({ name }) => ({
+      ...coverage(
         parsed,
         name,
         data.filter(({ record }) => record === name).map(({ source }) => source),
+        fingerprinted(name) ? check : undefined,
       ),
-    );
+      fingerprinted: fingerprinted(name),
+    }));
   // A combination, as its path and where it is: "<path> on <profiles>,
   // <Dimension> <value> with <parent> = <value>: <state> = <value>".
   const describe = (path: string, combination: Combination) => {
@@ -553,21 +581,40 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       .join(", ");
     return `${path}${world === "" ? "" : ` on ${world}`}${parents === "" ? "" : ` with ${parents}`}${states === "" ? "" : `: ${states}`}`;
   };
-  const blocks = records.map(({ record, combinations, present, paths }) => {
+  const blocks = records.map((coverage) => {
+    const { record, combinations, present, stale, gone, paths } = coverage;
     const table = drawTable(
-      ["path", "combinations", "with evidence", "missing"],
-      paths.map(({ path, combinations: all, present: with_ }) => [
-        path,
-        String(all),
-        String(with_),
-        String(all - with_),
+      ["path", "combinations", "present", "stale", "gone", "missing"],
+      paths.map((path) => [
+        path.path,
+        String(path.combinations),
+        String(path.present),
+        String(path.stale.length),
+        String(path.gone.length),
+        String(path.missing.length),
       ]),
     );
-    const missing = paths.flatMap(({ path, missing: absent }) =>
-      absent.map((combination) => `  ${describe(path, combination)}\n`),
-    );
-    return `${file}: ${record} for ${present} of ${count(combinations, "combination")}\n\n${table}${
-      listMissing && missing.length > 0 ? `\nMissing:\n${missing.join("")}` : ""
+    // Each combination that is not present, under what it is.
+    const listed = (heading: string, of: "missing" | "stale" | "gone") => {
+      const lines = paths.flatMap((path) =>
+        path[of].map((combination) => `  ${describe(path.path, combination)}\n`),
+      );
+      return lines.length === 0 ? "" : `\n${heading}:\n${lines.join("")}`;
+    };
+    const notes = [
+      ...(stale > 0 ? [`${stale} stale`] : []),
+      ...(gone > 0 ? [`${gone} gone`] : []),
+      ...(coverage.fingerprinted
+        ? []
+        : [
+            `${record} has no fingerprint field next to a source { file, frame }, so staleness is not checked`,
+          ]),
+    ];
+    const summary = `${file}: ${record} for ${present} of ${count(combinations, "combination")}${notes.map((note) => `; ${note}`).join("")}`;
+    return `${summary}\n\n${table}${
+      listMissing
+        ? `${listed("Missing", "missing")}${listed("Stale", "stale")}${listed("Gone", "gone")}`
+        : ""
     }`;
   });
   const text = blocks.length === 0 ? `${file}: no records with context\n` : blocks.join("\n");

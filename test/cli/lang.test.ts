@@ -701,12 +701,12 @@ record Evidence with context {}
     expect([result.code, result.stdout]).toEqual([
       0,
       [
-        "toolbar.dxn: Evidence for 2 of 5 combinations",
+        "toolbar.dxn: Evidence for 2 of 5 combinations; Evidence has no fingerprint field next to a source { file, frame }, so staleness is not checked",
         "",
-        "| path         | combinations | with evidence | missing |",
-        "| ------------ | ------------ | ------------- | ------- |",
-        "| Toolbar      | 2            | 0             | 2       |",
-        "| Toolbar.link | 3            | 2             | 1       |",
+        "| path         | combinations | present | stale | gone | missing |",
+        "| ------------ | ------------ | ------- | ----- | ---- | ------- |",
+        "| Toolbar      | 2            | 0       | 0     | 0    | 2       |",
+        "| Toolbar.link | 3            | 2       | 0     | 0    | 1       |",
         "",
       ].join("\n"),
     ]);
