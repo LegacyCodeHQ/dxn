@@ -203,10 +203,12 @@ export function inPlace(file: ParseResult, path: string): InPlace {
       const given = fixed[name];
       return given === undefined ? values : values.filter((value) => value === given);
     };
+    // A state left with no value, given one its rules remove: the type
+    // cannot be here, nor anything below it.
+    const own = Object.fromEntries(type.states.map(({ name }) => [name, available(name)]));
+    if (Object.values(own).some((values) => values.length === 0)) return;
     const next = chain[level + 1]?.child;
     if (next === undefined) {
-      const own = Object.fromEntries(type.states.map(({ name }) => [name, available(name)]));
-      if (Object.values(own).some((values) => values.length === 0)) return;
       rows.push({
         ...(world.profiles === undefined ? {} : { profiles: world.profiles }),
         when: Object.fromEntries(dimensions.map((name) => [name, world.when[name] as string])),

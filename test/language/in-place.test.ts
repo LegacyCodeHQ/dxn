@@ -109,6 +109,36 @@ describe("evaluating a child in place", () => {
     expect(() => inPlace(toolbar, "Toolbr.menu")).toThrow("no type Toolbr");
   });
 
+  it("has no rows below a child where the child cannot be, as it is bound", () => {
+    const bound = parse(`dimension Pointer = mouse | touch
+enum Hover = rest | hovered
+type Leaf {}
+type Mid needs Pointer {
+  state hover: Hover
+  hover = hovered only when Pointer = mouse
+  has leaf: Leaf
+}
+type Root {
+  state h: Hover
+  has mid: Mid { hover = h }
+}
+`);
+    const worlds = (path: string) =>
+      inPlace(bound, path).rows.map(({ when, parents }) => [when.Pointer, parents.h]);
+    expect([worlds("Root.mid"), worlds("Root.mid.leaf")]).toEqual([
+      [
+        ["mouse", "rest"],
+        ["mouse", "hovered"],
+        ["touch", "rest"],
+      ],
+      [
+        ["mouse", "rest"],
+        ["mouse", "hovered"],
+        ["touch", "rest"],
+      ],
+    ]);
+  });
+
   it("refuses a child whose own state has the name of a parent's state it is under", () => {
     const shadowed = parse(`enum Mode = a | b
 type Inner {
