@@ -99,6 +99,21 @@ describe("evidence --subtree", () => {
     ).toContain("| menu-panel    | —    | 0/1 · 1 stale |");
   });
 
+  it("counts a node that no dimension applies to on every profile", () => {
+    const { run } = project();
+    const lines = run(
+      "evidence",
+      "page",
+      "--subtree",
+      "--actor",
+      "design-agent",
+      "--table",
+    ).stdout.split("\n");
+    expect(lines[2]).toBe(
+      "| page          | —    | 0/1   | 0/1             | 0/1              | 0/1    | 0/1     |",
+    );
+  });
+
   it("names the profiles of each column in JSON", () => {
     expect(json(subtree()).columns).toEqual([
       ["phone"],

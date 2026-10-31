@@ -920,8 +920,9 @@ function evidenceSubtree(
         const here = rows.filter(
           (row) =>
             row.node === node &&
-            (names.length === 0 ||
-              JSON.stringify(resolver.profilesOf(row.context)) === JSON.stringify(names)),
+            // A context in all of the column's profiles; one no profiled
+            // dimension applies to is in every profile, so in every column.
+            names.every((name) => resolver.inProfile(name, row.context)),
         );
         if (here.length === 0) return null;
         const count = (state: string) =>
