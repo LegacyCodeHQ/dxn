@@ -10,6 +10,7 @@ export type TokenKind =
   | ","
   | "("
   | ")"
+  | "->"
   | "newline"
   | "end"
   | "other";
@@ -60,6 +61,12 @@ export function scan(source: string): Token[] {
       tokens.push({ kind: "word", text, line, column });
       column += text.length;
       index = end;
+      continue;
+    }
+    if (char === "-" && source[index + 1] === ">") {
+      tokens.push({ kind: "->", text: "->", line, column });
+      index += 2;
+      column += 2;
       continue;
     }
     const kind: TokenKind = "=|{}:,()".includes(char) ? (char as TokenKind) : "other";

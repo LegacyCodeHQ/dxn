@@ -17,7 +17,8 @@ function replace(source: string, edits: { start: number; end: number; text: stri
 }
 
 // Renames a value of an enum in the file that declares it: in the enum's
-// declaration, and in every rule on a state of that enum. A file without
+// declaration, in every rule on a state of that enum, and in the branches of
+// every derived state of that enum. A file without
 // problems.
 export function renameInSource(
   file: ParseResult,
@@ -38,6 +39,12 @@ export function renameInSource(
     for (const rule of type.rules) {
       const state = type.states.find(({ name }) => name === rule.state.name);
       if (state?.enum.name === enumName && rule.value.name === from) named.push(rule.value);
+    }
+    for (const state of type.states) {
+      if (state.enum.name !== enumName) continue;
+      for (const { result } of state.derived?.branches ?? []) {
+        if (result.name === from) named.push(result);
+      }
     }
   }
   return replace(

@@ -21,6 +21,15 @@ export interface Enum extends Declaration {
 // A state of a type: its name, and the enum its values come from.
 export interface State extends Located {
   enum: Located;
+  // A derived state: its value decided by a dimension's value, one branch
+  // for each group of the dimension's values.
+  derived?: Derived;
+}
+
+// "when <Dimension> { <value>, ... -> <value> ... }".
+export interface Derived {
+  dimension: Located;
+  branches: { values: Located[]; result: Located }[];
 }
 
 // A condition on a dimension: it has one of these values.

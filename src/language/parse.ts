@@ -7,6 +7,8 @@
 //   dimension   = "dimension" name "=" value { "|" [newline] value } newline
 //   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | state | rule } "}"
 //   state       = "state" field { "," [newline] field } newline
+//               | "state" field "=" "when" name "{" { blank-line | branch } "}" newline
+//   branch      = value { "," value } "->" value newline
 //   field       = state-name ":" name
 //   rule        = state-name "=" value "only" "when" condition newline
 //   condition   = name ( "=" value | "in" "(" value { "," value } ")" )
@@ -227,7 +229,41 @@ export function parse(source: string): ParseResult {
         return;
       }
       next();
-      type.states.push(...list(",", '"state"', field, ["newline", "}"]));
+      const first = field();
+      if (peek().kind === "=") {
+        next();
+        keyword("when", '"when" after "="');
+        first.derived = { dimension: word('a dimension after "when"'), branches: [] };
+        expect("{", `"{" after ${JSON.stringify(first.derived.dimension.name)}`);
+        const derived = first.derived;
+        braces(`the when of ${first.name}`, () => {
+          const values = [word("a value of the dimension")];
+          while (peek().kind === ",") {
+            next();
+            values.push(word('a value after ","'));
+          }
+          end(["->"], '"," or "->"');
+          next();
+          derived.branches.push({ values, result: word('a value after "->"') });
+          end(["newline", "}"], "the end of the line");
+        });
+        end(["newline", "}"], "the end of the line");
+        type.states.push(first);
+        return;
+      }
+      type.states.push(first);
+      while (peek().kind === ",") {
+        next();
+        if (peek().kind === "newline") next();
+        type.states.push(field());
+      }
+      if (peek().kind === "=") {
+        fail(
+          peek(),
+          `"," or the end of the line after ${JSON.stringify(previous().text)} (a state with when has a line of its own)`,
+        );
+      }
+      end(["newline", "}"], '"," or the end of the line');
     });
   };
 

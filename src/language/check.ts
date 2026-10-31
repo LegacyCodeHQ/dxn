@@ -1,4 +1,12 @@
-import type { Field, Located, ParseResult, RecordDeclaration, Rule } from "./ast.js";
+import type {
+  Derived,
+  Field,
+  Located,
+  ParseResult,
+  RecordDeclaration,
+  Rule,
+  State,
+} from "./ast.js";
 import { among, article, Names } from "./names.js";
 import { scalar } from "./scalars.js";
 
@@ -82,6 +90,60 @@ function checkValues(file: ParseResult, report: Report): void {
 // needed dimension and its values, and one rule for each state value. A need
 // no rule uses is a warning.
 function checkTypes(file: ParseResult, names: Names, report: Report): void {
+  // A derived state: on a dimension the type needs, covering each of its
+  // values once, each branch giving a value of the state's enum.
+  const checkDerived = (state: State, type: string, needed: Set<string>, declare: string) => {
+    const { dimension, branches } = state.derived as Derived;
+    if (!names.is(dimension.name, "dimension")) {
+      report("unknown-dimension", names.not(dimension.name, "dimension"), dimension);
+    } else {
+      if (!needed.has(dimension.name)) {
+        report(
+          "unneeded-dimension",
+          `${type} does not need ${dimension.name}; declare ${declare}`,
+          dimension,
+        );
+      }
+      const allowed = names.values(dimension.name);
+      if (allowed !== undefined) {
+        const covered = new Set<string>();
+        for (const value of branches.flatMap(({ values }) => values)) {
+          if (!allowed.includes(value.name)) {
+            report(
+              "unknown-value",
+              `${JSON.stringify(value.name)} is not a value of ${dimension.name} (${allowed.join(", ")})`,
+              value,
+            );
+          } else if (covered.has(value.name)) {
+            report(
+              "duplicate-value",
+              `${JSON.stringify(value.name)} is already covered by the when`,
+              value,
+            );
+          }
+          covered.add(value.name);
+        }
+        const missing = allowed.filter((value) => !covered.has(value));
+        if (missing.length > 0) {
+          report(
+            "incomplete-when",
+            `when ${dimension.name} does not cover ${missing.join(", ")}`,
+            dimension,
+          );
+        }
+      }
+    }
+    const results = names.values(state.enum.name);
+    for (const { result } of branches) {
+      if (results !== undefined && !results.includes(result.name)) {
+        report(
+          "unknown-value",
+          `${JSON.stringify(result.name)} is not a value of ${state.name} (${results.join(", ")})`,
+          result,
+        );
+      }
+    }
+  };
   for (const type of file.types) {
     const needed = new Set<string>();
     for (const need of type.needs) {
@@ -92,12 +154,14 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       }
       needed.add(need.name);
     }
-    // The dimensions its rules use, in the order first used.
+    // The dimensions its rules and its derived states use, in the order
+    // first used.
     const used = [
       ...new Set(
-        type.rules
-          .map(({ when }) => when.dimension.name)
-          .filter((name) => names.is(name, "dimension")),
+        [
+          ...type.rules.map(({ when }) => when.dimension.name),
+          ...type.states.flatMap(({ derived }) => (derived ? [derived.dimension.name] : [])),
+        ].filter((name) => names.is(name, "dimension")),
       ),
     ];
     const declare = `"type ${type.name} needs ${[...new Set([...needed, ...used])].join(", ")}"`;
@@ -122,11 +186,19 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       if (!names.is(state.enum.name, "enum")) {
         report("unknown-enum", names.not(state.enum.name, "enum"), state.enum);
       }
+      if (state.derived !== undefined) checkDerived(state, type.name, needed, declare);
     }
     const stateNames = type.states.map(({ name }) => name);
     const conditioned = new Map<string, Rule>();
     for (const rule of type.rules) {
       const state = type.states.find(({ name }) => name === rule.state.name);
+      if (state?.derived !== undefined) {
+        report(
+          "rule-on-derived",
+          `${state.name} is decided by its when; it cannot also have a rule`,
+          rule.state,
+        );
+      }
       // A broken type's states may not all have been read.
       if (state === undefined && !type.broken) {
         report(

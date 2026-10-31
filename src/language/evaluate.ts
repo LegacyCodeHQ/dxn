@@ -14,7 +14,7 @@ export interface TypeStates {
 
 // Evaluates a type of a parsed file, which must have no problems. A value of
 // a state exists in a row unless a rule limits it to dimension values the row
-// does not have.
+// does not have; a derived state has the one value its when gives.
 export function states(file: ParseResult, typeName: string): TypeStates {
   if (file.diagnostics.some(({ severity }) => severity === "error")) {
     throw new Error("cannot evaluate a file with problems");
@@ -73,13 +73,20 @@ export function states(file: ParseResult, typeName: string): TypeStates {
       states: Object.fromEntries(
         type.states.map((state) => [
           state.name,
-          valuesOf(state.enum.name).filter((value) =>
-            type.rules
-              .filter((rule) => rule.state.name === state.name && rule.value.name === value)
-              .every((rule) =>
-                rule.when.values.some(({ name }) => name === chosen[rule.when.dimension.name]),
-              ),
-          ),
+          state.derived === undefined
+            ? valuesOf(state.enum.name).filter((value) =>
+                type.rules
+                  .filter((rule) => rule.state.name === state.name && rule.value.name === value)
+                  .every((rule) =>
+                    rule.when.values.some(({ name }) => name === chosen[rule.when.dimension.name]),
+                  ),
+              )
+            : // A derived state has the one value its when gives here.
+              state.derived.branches
+                .filter(({ values }) =>
+                  values.some(({ name }) => name === chosen[state.derived?.dimension.name ?? ""]),
+                )
+                .map(({ result }) => result.name),
         ]),
       ),
     })),

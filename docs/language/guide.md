@@ -278,6 +278,53 @@ type BlogLink needs Breakpoint {
 Each state value has at most one rule, so there is a single place to read
 where it exists. A second rule for the same value is an error.
 
+## When: a state the world decides
+
+Hover is a state the reader changes: both values happen, and rules only say
+where each can. Some states are not like that. The toolbar is compact on
+narrow screens and lays its links out in line on wide ones: nobody switches
+it, and at each screen size it is exactly one. That is a **derived** state,
+and a `when` says what it is:
+
+```
+dimension Breakpoint = base | sm | lg | xl
+enum Layout = compact | inline
+
+# The toolbar is compact on narrow screens, and lays its links out in line
+# on wide ones.
+type Toolbar needs Breakpoint {
+  state layout: Layout = when Breakpoint {
+    base, sm -> compact
+    lg, xl -> inline
+  }
+}
+```
+
+Each line of the `when` lists some of the dimension's values and, after
+`->`, the state's value for them. Every value of the dimension is covered,
+exactly once, so the state has exactly one value in each row:
+
+```
+| Breakpoint | layout: compact | layout: inline |
+| ---------- | --------------- | -------------- |
+| base       | ✓               | —              |
+| sm         | ✓               | —              |
+| lg         | —               | ✓              |
+| xl         | —               | ✓              |
+```
+
+There is no `else`: a value left out is reported, not quietly given a
+default.
+
+```
+toolbar.dxn:7:31: incomplete-when: when Breakpoint does not cover xl
+```
+
+The dimension must be one the type needs, as for a rule. A derived state is
+declared on a `state` line of its own, and has no `only when` rules: its
+`when` already decides it. A stored context still gives its value, which
+must be the one the `when` gives there.
+
 ## Evaluating: the matrix
 
 This is where the language pays off. Ask for the wordmark's state again:
@@ -781,6 +828,8 @@ enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | state | rule } "}"
 state       = "state" field { "," [newline] field } newline
+            | "state" field "=" "when" Name "{" { blank-line | branch } "}" newline
+branch      = value { "," value } "->" value newline
 field       = state-name ":" Name
 rule        = state-name "=" value "only" "when" condition newline
 condition   = Name ( "=" value | "in" "(" value { "," value } ")" )
@@ -800,7 +849,7 @@ comment     = "#" to the end of the line
 | `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name` | error    | the name does not start with a capital letter                                                    |
 | `state-name`, `profile-name`, `modifier-name`, `field-name`                   | error    | the name does not start with a lowercase letter                                                  |
 | `duplicate-name`                                                              | error    | a name is declared twice in the file                                                             |
-| `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension or condition                                         |
+| `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension, condition or `when`                                 |
 | `duplicate-state`                                                             | error    | a type has two states with one name                                                              |
 | `duplicate-rule`                                                              | error    | a state value has two rules                                                                      |
 | `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment, a profile or a modifier             |
@@ -808,7 +857,9 @@ comment     = "#" to the end of the line
 | `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                                            |
 | `unknown-state`                                                               | error    | a rule names a state the type does not have                                                      |
 | `unknown-value`                                                               | error    | a value is not one of its enum's or dimension's                                                  |
-| `unneeded-dimension`                                                          | error    | a rule uses a dimension its type does not need                                                   |
+| `unneeded-dimension`                                                          | error    | a rule or a `when` uses a dimension its type does not need                                       |
+| `incomplete-when`                                                             | error    | a `when` leaves out a value of its dimension                                                     |
+| `rule-on-derived`                                                             | error    | a rule is on a state that a `when` decides                                                       |
 | `unknown-environment`                                                         | error    | a profile's environment is not one                                                               |
 | `incomplete-profile`                                                          | error    | a profile leaves out a dimension of its environment                                              |
 | `mixed-profiles`                                                              | error    | profiles are instances of different environments                                                 |
