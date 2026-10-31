@@ -990,10 +990,16 @@ or under discussion but not part of it yet; see [design.md](design.md):
   of a type in a page, it waits for nodes.
 - **More renames.** `lang rename` renames an enum's value. Renaming a field,
   a record (and its folder), or an enum, dimension or type is still to come.
-- **Provides and cascade.** Today, profiles are the only things that give
-  dimensions their values. Next, an element in a page will _provide_ a
-  dimension, and every element inside it that _needs_ it will receive the
-  value. That is dependency injection: `needs` is already its first half.
+- **Provided and received state.** A state lives in the lowest type that all
+  its users share, as the menu's does, so the toggle and the panel both
+  follow it. A state whose users are far below, like the page you are on,
+  which decides whether the blog link is selected, lives in the page: the page
+  _provides_ it, the types that need it _receive_ it, and the types between
+  do not pass it on. A binding then maps it to each child's own state, such
+  as `selection = when current { blog -> selected, home -> unselected }`.
+  This waits for a second page, or for the theme, which the reader can switch,
+  to show its shape; matching a received state by its name is the leading
+  choice.
 - **A runtime.** Evidence today is recorded by the actors that draw and
   build. A runtime would check the real system itself, driving a browser or a
   device into each combination and recording what it shows.
