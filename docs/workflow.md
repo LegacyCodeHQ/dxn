@@ -200,7 +200,14 @@ dimensions views toolbar profile=phone
 dimensions view toolbar profile=phone menu=open
 dimensions axes toolbar breakpoint=lg
 dimensions contexts blog-link --tree
+dimensions contexts blog-link --table
+dimensions contexts toolbar --subtree --table
 ```
+
+`--table` prints Markdown tables: for a node, one per state group with a row
+per profile; for a subtree, which nodes exist in which profiles. `--by
+breakpoint` puts a dimension on the rows instead, and `--json` gives the same
+tables as data.
 
 ## 10. Verify: record what was checked
 

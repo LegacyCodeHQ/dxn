@@ -24,6 +24,7 @@ dimensions type list               # each type's states, checks and values
 dimensions check list              # declared checks and the types that require them
 dimensions axes toolbar            # what view and show accept for a node
 dimensions contexts toolbar --subtree --tree   # every combination, merged, for reading
+dimensions contexts blog-link --table          # a Markdown table per state group, a row per profile
 dimensions views toolbar           # one entry per diagram to draw
 dimensions show blog-link pointer=touch        # one node in one context
 dimensions status                  # each required check: passed, failed or missing

@@ -4,6 +4,14 @@ import { printDiagnostics, requireProject } from "../project.js";
 import { choices, contextFilter, QueryError, sharedStates, subtreeContexts } from "../queries.js";
 import { contextKey, type Context as NodeContext, ProfileError, Resolver } from "../resolve.js";
 import { buildStateTree, drawStateTree, type Entry, treeNames } from "../state-tree.js";
+import {
+  drawNodeTables,
+  drawPresenceMatrix,
+  nodeTables,
+  presenceMatrix,
+  TableError,
+  tableAxis,
+} from "../tables.js";
 import { type Command, type Context, command } from "./context.js";
 import { list, parse, Refusal, UsageError } from "./edit.js";
 
@@ -396,7 +404,8 @@ export const show = readCommand(showUsage, (resolver, args, io) => {
 });
 
 const contextsUsage = `Usage: dimensions contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]
-                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
+                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]
+                          | --table [--by profile|a,b] [--json]]
 
 Lists every context the node exists in, in each root that contains it.
 --subtree lists every part of the node's subtree instead, with the fragment
@@ -406,7 +415,12 @@ prints counts instead of the contexts. --tree prints them as a merged tree:
 sibling branches with identical subtrees share a line, and dimensions that
 change nothing are left out. --by a,b puts those levels first, --only a,b
 keeps only those levels, --transitions lists each part's transitions under
-it, and --json prints the tree as JSON for tools.
+it, and --json prints the tree as JSON for tools. --table prints Markdown
+tables instead: for a node, one per state group, with a row per profile (or
+per combination when there are no profiles) and a column per value; with
+--subtree, which nodes exist in which profiles. --by profile or --by a,b
+picks the rows; a cell names the profiles when they differ. --json prints the
+tables as JSON.
 `;
 
 export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
@@ -421,22 +435,39 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
       only: { type: "string" },
       json: { type: "boolean" },
       transitions: { type: "boolean" },
+      table: { type: "boolean" },
       root: { type: "string" },
     },
     true,
   );
-  if (values.count === true && values.tree === true) {
-    throw new UsageError("give --count or --tree, not both");
+  const shapes = [values.count, values.tree, values.table].filter((flag) => flag === true);
+  if (shapes.length > 1) {
+    throw new UsageError("give one of --count, --tree and --table");
   }
   if (
     values.tree !== true &&
-    (values.by !== undefined ||
-      values.only !== undefined ||
-      values.json === true ||
-      values.transitions === true)
+    values.table !== true &&
+    (values.by !== undefined || values.json === true)
   ) {
-    throw new UsageError("--by, --only, --json and --transitions need --tree");
+    throw new UsageError("--by and --json need --tree or --table");
   }
+  if (values.tree !== true && (values.only !== undefined || values.transitions === true)) {
+    throw new UsageError("--only and --transitions need --tree");
+  }
+  // Prints tables, as Markdown or JSON.
+  const axis = (dimensions: string[], subject: string) => {
+    try {
+      return tableAxis(
+        resolver,
+        dimensions,
+        values.by === undefined ? undefined : list(values.by),
+        subject,
+      );
+    } catch (error) {
+      if (error instanceof TableError) throw new Refusal(error.message);
+      throw error;
+    }
+  };
   // Draws the entries as a merged state tree, as text or JSON.
   const showTree = (entries: Entry[]) => {
     const names = treeNames(entries);
@@ -471,6 +502,17 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     );
     const kept = nodes.map((node) => ({ id: node.id, contexts: node.contexts.filter(keep) }));
     const root = values.root === undefined ? {} : { root: values.root };
+    if (values.table === true) {
+      const matrix = presenceMatrix(
+        resolver,
+        id,
+        kept,
+        axis(resolver.axes(id, values.root).dimensions, id),
+      );
+      if (values.json === true) print(io, matrix);
+      else io.stdout(drawPresenceMatrix(matrix));
+      return;
+    }
     if (values.tree === true) {
       showTree(
         kept.flatMap((node) => node.contexts.map((context) => ({ node: node.id, context }))),
@@ -501,6 +543,17 @@ export const contexts = readCommand(contextsUsage, (resolver, args, io) => {
     values.root,
   );
   const kept = all.filter(({ context }) => keep(context));
+  if (values.table === true) {
+    const tables = nodeTables(
+      resolver,
+      id,
+      kept.map(({ context }) => context),
+      axis(resolver.dimensions(id), id),
+    );
+    if (values.json === true) print(io, tables);
+    else io.stdout(drawNodeTables(tables));
+    return;
+  }
   if (values.tree === true) {
     // The root is a level of its own only when the node is on several.
     const several = new Set(kept.map(({ root }) => root)).size > 1;

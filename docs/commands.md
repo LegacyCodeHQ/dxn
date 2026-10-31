@@ -114,7 +114,8 @@ dimensions show menu-blog-link breakpoint=base menu=open
 
 ```text
 Usage: dimensions contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]
-                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]]
+                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]
+                          | --table [--by profile|a,b] [--json]]
 
 Lists every context the node exists in, in each root that contains it.
 --subtree lists every part of the node's subtree instead, with the fragment
@@ -124,7 +125,12 @@ prints counts instead of the contexts. --tree prints them as a merged tree:
 sibling branches with identical subtrees share a line, and dimensions that
 change nothing are left out. --by a,b puts those levels first, --only a,b
 keeps only those levels, --transitions lists each part's transitions under
-it, and --json prints the tree as JSON for tools.
+it, and --json prints the tree as JSON for tools. --table prints Markdown
+tables instead: for a node, one per state group, with a row per profile (or
+per combination when there are no profiles) and a column per value; with
+--subtree, which nodes exist in which profiles. --by profile or --by a,b
+picks the rows; a cell names the profiles when they differ. --json prints the
+tables as JSON.
 ```
 
 Lists the contexts a node exists in: each one gives a value per dimension, a value per state group (or `state`), and the state of each shared node above it. This is the list of things to design or check. Filters accept dimension values, state group values and shared node states. The tree form is the quickest overview for a person.
@@ -135,6 +141,8 @@ dimensions contexts toolbar --subtree --root article-page pointer=touch hover=ho
 dimensions contexts wordmark --tree
 dimensions contexts toolbar --subtree --tree --by breakpoint
 dimensions contexts menu --tree --transitions
+dimensions contexts blog-link --table
+dimensions contexts toolbar --subtree --table --by breakpoint
 ```
 
 ### views

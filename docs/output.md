@@ -260,6 +260,30 @@ A level's `count` covers all of its `values` together. `children` is left out
 at the last level, and `transitions` is there only with `--transitions` on a
 shared node.
 
+## contexts --table
+
+`--table` prints Markdown: a `###` heading per table, then a padded table.
+`✓` means the value (or node) is there in every profile of the row, `—` in
+none, and a list of profiles means only in those. For one node there is a
+table per state group, then `Not present: …` (rows where the node does not
+exist) and `Only when …` (states of a shared node it needs). With `--subtree`
+there is one presence matrix, a row per node.
+
+With `--json`, the same tables as data:
+
+```json
+{ "node": "blog-link", "by": ["profile"],
+  "tables": [ { "group": "hover",
+                "rows": [ { "row": "tablet-landscape", "values": { "rest": true, "hovered": false } } ] } ],
+  "notPresent": ["phone", "tablet-portrait"] }
+
+{ "node": "toolbar", "by": ["breakpoint"], "columns": ["base", "sm", "lg", "xl"],
+  "rows": [ { "node": "menu-panel", "cells": [{ "menu": ["open"] }, { "menu": ["open"] }, false, false] } ] }
+```
+
+A cell is `true`, `false`, a list of the profiles (or combinations) where it
+holds, or, in the matrix, the shared states a node needs.
+
 ## axes
 
 ```json
