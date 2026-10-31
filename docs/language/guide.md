@@ -1134,6 +1134,57 @@ prints every file it would write, in full.
 With these, evidence is checked by the language itself: its shape, its
 values, and that the combination it is about exists.
 
+## Expectations: rules the model must follow
+
+Some things must stay true however the model changes: touch screens never
+show hover; the menu's panel only exists while the menu is open. An
+**expectation** writes such a rule down, and `lang check` checks it against
+the tree in place, every time:
+
+```
+expect "Touch screens never show hover" {
+  in ArticlePage.toolbar and below
+  when Pointer = touch
+  then hover = rest
+}
+
+expect "A desktop link can be hovered and focused at once" {
+  in ArticlePage.toolbar.links.blog
+  when profile = desktop
+  some hover = hovered, focus = focused
+}
+
+expect "The menu panel only exists while the menu is open" {
+  in ArticlePage.toolbar.menu.panel
+  when toolbar.menu.menu = closed
+  absent
+}
+```
+
+The title is the rule in words, in quotes, once in the file. `in` names the
+element by its path; with `and below`, every element under it too, each that
+has every key the rule names. `when` picks its combinations by the keys a
+context has: `profile`, a dimension, one of its states, or a parent's state
+by its key in place. Then one assertion:
+
+- **then**: every combination picked has these values;
+- **some**: at least one has all of these values at once;
+- **absent**: the element is not there in any of them.
+
+A change that breaks a rule is an error, with one combination that breaks
+it:
+
+```
+toolbar.dxn:144:8: expectation-failed: Touch screens never show hover: ArticlePage.toolbar.wordmark on phone has hover = hovered
+```
+
+A rule that picks nothing would always pass, so it is an error too: a
+profile that is not one, a key no element has, a path that leads nowhere.
+
+```
+expectation-empty: Nothing tests nothing: no element in ArticlePage.toolbar.links has colour
+```
+
 ## When something is wrong
 
 Every problem is reported as `file:line:column: code: message`, in the order
@@ -1268,6 +1319,8 @@ modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile
 assignment  = Name "=" value
 record      = "record" Name [ "with" "context" ] "{" { blank-line | record-field } "}"
 record-field = field-name ":" Name { "." Name } [ "=" "when" field-name "{" { blank-line | branch } "}" ] newline
+expect      = "expect" string "{" "in" path [ "and" "below" ] [ "when" pairs ] ( ( "then" | "some" ) pairs | "absent" ) "}"
+pairs       = key "=" value { "," key "=" value }       # key: profile, a dimension, a state, or a parent's state
 comment     = "#" to the end of the line
 ```
 
@@ -1278,7 +1331,7 @@ comment     = "#" to the end of the line
 | `syntax-error`                                                                | error    | the text does not follow the grammar                                                             |
 | `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name` | error    | the name does not start with a capital letter                                                    |
 | `state-name`, `profile-name`, `modifier-name`, `field-name`, `child-name`     | error    | the name does not start with a lowercase letter                                                  |
-| `duplicate-name`                                                              | error    | a name is declared twice in the file                                                             |
+| `duplicate-name`                                                              | error    | a name is declared twice in the file, or an expectation's title                                  |
 | `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension, condition or `when`                                 |
 | `duplicate-state`                                                             | error    | a type has two states with one name                                                              |
 | `duplicate-rule`                                                              | error    | a state value has two rules                                                                      |
@@ -1305,6 +1358,8 @@ comment     = "#" to the end of the line
 | `binding-mismatch`                                                            | error    | a binding's two states take their values from different enums                                    |
 | `bound-derived`                                                               | error    | a binding sets a child's state that a `when` or a value decides, or that it receives             |
 | `duplicate-provides`                                                          | error    | a type provides a state twice                                                                    |
+| `expectation-failed`                                                          | error    | the model breaks an expectation; the message gives a combination that breaks it                  |
+| `expectation-empty`                                                           | error    | an expectation picks nothing, so it would always pass                                            |
 | `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
 | `nested-context`                                                              | error    | a record's field is a record with context, which would be a second context                       |
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |

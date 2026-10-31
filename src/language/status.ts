@@ -59,6 +59,32 @@ export function treePaths(file: ParseResult): string[] {
   return paths;
 }
 
+// An element's combinations in place, each with one value for each state:
+// its rows of lang states, split.
+export function expand(file: ParseResult, path: string, given: string[]): Combination[] {
+  const combinations: Combination[] = [];
+  for (const row of inPlace(file, path).rows) {
+    let expanded: Record<string, string>[] = [{}];
+    for (const [name, values] of Object.entries(row.states)) {
+      expanded = expanded.flatMap((states) =>
+        values.map((value) => ({ ...states, [name]: value })),
+      );
+    }
+    const dimensions = Object.fromEntries(
+      Object.entries(row.when).filter(([name]) => !given.includes(name)),
+    );
+    for (const states of expanded) {
+      combinations.push({
+        ...(row.profiles === undefined ? {} : { profiles: row.profiles }),
+        dimensions,
+        parents: row.parents,
+        states,
+      });
+    }
+  }
+  return combinations;
+}
+
 // How much of the trees a record with context covers: every combination of
 // every element, in place, and which a stored record is about. Profiles that
 // share a row count as one. With a check, each entry is present, stale or
@@ -111,26 +137,7 @@ export function coverage(
     Object.keys(a).length === Object.keys(b).length &&
     Object.entries(a).every(([name, value]) => b[name] === value);
   const paths = treePaths(file).map((path) => {
-    const combinations: Combination[] = [];
-    for (const row of inPlace(file, path).rows) {
-      let expanded: Record<string, string>[] = [{}];
-      for (const [name, values] of Object.entries(row.states)) {
-        expanded = expanded.flatMap((states) =>
-          values.map((value) => ({ ...states, [name]: value })),
-        );
-      }
-      const dimensions = Object.fromEntries(
-        Object.entries(row.when).filter(([name]) => !given.includes(name)),
-      );
-      for (const states of expanded) {
-        combinations.push({
-          ...(row.profiles === undefined ? {} : { profiles: row.profiles }),
-          dimensions,
-          parents: row.parents,
-          states,
-        });
-      }
-    }
+    const combinations = expand(file, path, given);
     // A combination is as its best entry is: present, else stale, else gone.
     const state = (combination: Combination): Freshness | "missing" => {
       const found = contexts

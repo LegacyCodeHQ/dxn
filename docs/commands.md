@@ -726,8 +726,9 @@ by; types with the dimensions they need, their states, rules for when a
 state's value exists, a when for a state the world decides, and the
 children they have; environments, each a product of dimensions; profiles,
 each an instance of an environment; modifiers, accessories that change
-some profiles; and records, each a named group of typed fields. A # starts
-a comment, to the end of the line:
+some profiles; records, each a named group of typed fields; and
+expectations, rules checked against the tree in place. A # starts a
+comment, to the end of the line:
 
   # The wordmark's hover only exists with a mouse.
   enum Hover = rest | hovered

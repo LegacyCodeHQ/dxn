@@ -129,6 +129,17 @@ export interface RecordDeclaration extends Declaration {
   fields: Field[];
 }
 
+// An expectation: a rule the model must follow, by its title, about an
+// element in place, or it and every element below it.
+export interface Expectation extends Declaration {
+  title: string;
+  path: Located;
+  below: boolean;
+  when: { key: Located; value: Located }[];
+  assertion: "then" | "some" | "absent";
+  values: { key: Located; value: Located }[];
+}
+
 export interface Diagnostic {
   // An error makes a file unusable; a warning does not.
   severity: "error" | "warning";
@@ -146,5 +157,6 @@ export interface ParseResult {
   profiles: Profile[];
   modifiers: Modifier[];
   records: RecordDeclaration[];
+  expectations: Expectation[];
   diagnostics: Diagnostic[];
 }

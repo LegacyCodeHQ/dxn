@@ -25,6 +25,9 @@
 //   field       = field-name ":" name { "." name } [ "=" "when" field-name "{" { blank-line | branch } "}" ] newline
 //   name        = capital letter, then letters and digits
 //   value       = a letter or digit, then letters, digits and hyphens
+//   expect      = "expect" string "{" "in" path [ "and" "below" ] [ "when" pairs ]
+//                 ( ( "then" | "some" ) pairs | "absent" ) "}"
+//   pairs       = name { "." name } "=" value { "," name { "." name } "=" value }
 //   comment     = "#" to the end of the line, skipped like a space
 //
 // A mistake is reported where it is, and reading skips to the next line that
@@ -36,6 +39,7 @@ import type {
   Condition,
   Declaration,
   Enum,
+  Expectation,
   Field,
   Located,
   ParseResult,
@@ -44,6 +48,7 @@ import type {
   Type,
 } from "./ast.js";
 import { check } from "./check.js";
+import { expectations } from "./expect.js";
 import { describe, located, scan, type Token, type TokenKind } from "./scan.js";
 import { scope } from "./scope.js";
 
@@ -64,6 +69,7 @@ export function parse(source: string): ParseResult {
     profiles: [],
     modifiers: [],
     records: [],
+    expectations: [],
     diagnostics: [],
   };
   let position = 0;
@@ -479,6 +485,73 @@ export function parse(source: string): ParseResult {
     });
   };
 
+  // An expectation: 'expect "<title>" { in <path> [and below]  when <key> =
+  // <value>, ...  then|some <key> = <value>, ... | absent }'.
+  const expectDeclaration = () => {
+    next();
+    const title = next();
+    if (title.kind !== "string") fail(title, 'a title, in quotes, after "expect"');
+    const expectation: Expectation = {
+      ...located(title),
+      title: title.text,
+      path: located(title),
+      below: false,
+      when: [],
+      assertion: "then",
+      values: [],
+    };
+    keep(result.expectations, expectation);
+    expect("{", '"{" after the title');
+    const pairs = () => {
+      const read: { key: Located; value: Located }[] = [];
+      for (;;) {
+        const key = qualified("a state, a dimension or profile");
+        expect("=", `"=" after ${JSON.stringify(key.name)}`);
+        read.push({ key, value: word('a value after "="') });
+        if (peek().kind !== ",") break;
+        next();
+      }
+      end(["newline", "}"], '"," or the end of the line');
+      return read;
+    };
+    let placed = false;
+    let asserted = false;
+    for (;;) {
+      while (peek().kind === "newline") next();
+      const token = peek();
+      if (token.kind === "}") {
+        if (!placed) fail(token, `"in" in ${JSON.stringify(title.text)}`);
+        if (!asserted) fail(token, `"then", "some" or "absent" in ${JSON.stringify(title.text)}`);
+        next();
+        return;
+      }
+      if (token.kind !== "word") fail(token, '"in", "when", "then", "some", "absent" or "}"');
+      next();
+      if (token.text === "in") {
+        expectation.path = qualified('a path after "in"');
+        if (peek().kind === "word" && peek().text === "and") {
+          next();
+          keyword("below", '"below" after "and"');
+          expectation.below = true;
+        }
+        end(["newline", "}"], "the end of the line");
+        placed = true;
+      } else if (token.text === "when") {
+        expectation.when.push(...pairs());
+      } else if (token.text === "then" || token.text === "some") {
+        expectation.assertion = token.text;
+        expectation.values = pairs();
+        asserted = true;
+      } else if (token.text === "absent") {
+        expectation.assertion = "absent";
+        end(["newline", "}"], "the end of the line");
+        asserted = true;
+      } else {
+        fail(token, '"in", "when", "then", "some", "absent" or "}"');
+      }
+    }
+  };
+
   const declarations: { [keyword: string]: () => void } = {
     enum: () => valuesDeclaration("enum", result.enums),
     dimension: () => valuesDeclaration("dimension", result.dimensions),
@@ -487,6 +560,7 @@ export function parse(source: string): ParseResult {
     profile: profileDeclaration,
     modifier: modifierDeclaration,
     record: recordDeclaration,
+    expect: expectDeclaration,
   };
   // A line that starts a declaration, at the start of the line: one inside a
   // type is indented.
@@ -508,7 +582,7 @@ export function parse(source: string): ParseResult {
       if (declaration === undefined) {
         fail(
           token,
-          '"enum", "dimension", "type", "environment", "profile", "modifier" or "record"',
+          '"enum", "dimension", "type", "environment", "profile", "modifier", "record" or "expect"',
         );
       }
       declaration?.();
@@ -524,6 +598,9 @@ export function parse(source: string): ParseResult {
   }
   scope(result);
   check(result);
+  // Expectations are checked against the tree in place, which needs a file
+  // without other problems.
+  if (!result.diagnostics.some(({ severity }) => severity === "error")) expectations(result);
   result.diagnostics.sort((a, b) => a.line - b.line || a.column - b.column);
   return result;
 }

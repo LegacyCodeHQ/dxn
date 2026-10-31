@@ -36,6 +36,20 @@ export function check(file: ParseResult): void {
   checkModifiers(file, names, report);
   checkRecords(file, names, report);
   checkContainment(file, names, report);
+  // Expectations: each title once.
+  const titles = new Map<string, number>();
+  for (const expectation of file.expectations) {
+    const earlier = titles.get(expectation.title);
+    if (earlier !== undefined) {
+      report(
+        "duplicate-name",
+        `the expectation ${JSON.stringify(expectation.title)} is already at line ${earlier}`,
+        expectation,
+      );
+    } else {
+      titles.set(expectation.title, expectation.line);
+    }
+  }
 }
 
 // No type contains itself through its children: it would be a tree without

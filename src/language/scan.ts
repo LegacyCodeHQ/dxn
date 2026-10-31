@@ -12,6 +12,8 @@ export type TokenKind =
   | ")"
   | "->"
   | "."
+  | "string"
+  | "unclosed"
   | "newline"
   | "end"
   | "other";
@@ -64,6 +66,18 @@ export function scan(source: string): Token[] {
       index = end;
       continue;
     }
+    // A quoted string, to its closing quote on the same line.
+    if (char === '"') {
+      let end = index + 1;
+      while (end < source.length && source[end] !== '"' && source[end] !== "\n") end += 1;
+      const closed = source[end] === '"';
+      const text = source.slice(index + 1, end);
+      tokens.push({ kind: closed ? "string" : "unclosed", text, line, column });
+      const length = end - index + (closed ? 1 : 0);
+      index += length;
+      column += length;
+      continue;
+    }
     if (char === "-" && source[index + 1] === ">") {
       tokens.push({ kind: "->", text: "->", line, column });
       index += 2;
@@ -83,6 +97,7 @@ export function scan(source: string): Token[] {
 export function describe(token: Token): string {
   if (token.kind === "newline") return "the end of the line";
   if (token.kind === "end") return "the end of the file";
+  if (token.kind === "unclosed") return "an unclosed quote";
   return JSON.stringify(token.text);
 }
 

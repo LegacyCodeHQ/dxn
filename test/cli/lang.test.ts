@@ -99,6 +99,7 @@ describe("lang check", () => {
           profiles: [],
           modifiers: [],
           records: [],
+          expectations: [],
           problems: [],
         },
       ]);
