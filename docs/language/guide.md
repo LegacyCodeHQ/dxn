@@ -1232,7 +1232,9 @@ The title is the rule in words, in quotes, once in the file. `in` names the
 element by its path; with `and below`, every element under it too, each that
 has every key the rule names. `when` picks its combinations by the keys a
 context has: `profile`, a dimension, one of its states, or a parent's state
-by its key in place. Then one assertion:
+by its key in place. A profile a modifier makes is named as `lang states`
+names it: `when profile = tablet-portrait+magic-keyboard`. Then one
+assertion:
 
 - **then**: every combination picked has these values;
 - **some**: at least one has all of these values at once;

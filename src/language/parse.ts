@@ -605,8 +605,14 @@ export function parse(source: string): ParseResult {
       for (;;) {
         const key = qualified("a state, a dimension or profile");
         expect("=", `"=" after ${JSON.stringify(key.name)}`);
-        // A path, for where focus goes.
-        read.push({ key, value: qualified('a value after "="') });
+        // A path, for where focus goes; a profile a modifier makes, as
+        // "<profile>+<modifier>".
+        const value = qualified('a value after "="');
+        while (key.name === "profile" && peek().text === "+") {
+          next();
+          value.name += `+${word('a modifier after "+"').name}`;
+        }
+        read.push({ key, value });
         if (peek().kind !== ",") break;
         next();
       }

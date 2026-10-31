@@ -1,4 +1,4 @@
-import { expect as assert, describe, it } from "vitest";
+import { expect as assert, describe, expect, it } from "vitest";
 import { parse } from "../../src/language/parse.js";
 import { errors, problems } from "../support/language.js";
 
@@ -132,6 +132,17 @@ describe("expect", () => {
       ],
       [
         "34:8: expectation-empty: Nothing tests nothing: lnk is not a child of Toolbar (link, menu)",
+      ],
+    ]);
+  });
+
+  it("picks a profile a modifier makes, by its name and the modifier's", () => {
+    const rule = (profile: string) =>
+      `${model}modifier mouse on phone {\n  Pointer = mouse\n}\nexpect "Hover with a mouse" {\n  in Page.toolbar.link\n  when profile = ${profile}\n  some hover = hovered\n}\n`;
+    expect([problems(rule("phone+mouse")), problems(rule("phone"))]).toEqual([
+      [],
+      [
+        "36:8: expectation-failed: Hover with a mouse: no combination of Page.toolbar.link on phone has hover = hovered",
       ],
     ]);
   });
