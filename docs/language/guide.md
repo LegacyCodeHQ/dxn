@@ -478,6 +478,35 @@ straight to it. When everything is valid, the command prints what it checked:
 }
 ```
 
+### Renaming a value
+
+An enum's values are stored as text, so renaming one by hand leaves every
+stored record that used it invalid. `lang rename` renames it everywhere at
+once: in the enum, in the rules on states of that enum, and in every stored
+record's fields of that enum, nested ones included.
+
+```bash
+dimensions lang rename evidence.dim Actor.design-agent designer
+```
+
+```json
+{
+  "file": "evidence.dim",
+  "enum": "Actor",
+  "from": "design-agent",
+  "to": "designer",
+  "written": ["evidence.dim", "evidence/article-page.json"],
+  "records": 38
+}
+```
+
+It only touches the value where it means that enum's value: the same text in
+another enum, a dimension, or a string field stays as it is, and so does the
+rest of each file, comments and spacing included. It refuses a new name that
+is already a value or is not written like one, and it changes nothing while
+the file or its stored records have problems, so a rename never mixes with
+them. Add `--dry-run` to see every file it would write, without writing.
+
 Records are the first step toward evidence that the language itself checks:
 the next steps are fields of text, times and hashes, and a field that refers
 to one combination of a type.

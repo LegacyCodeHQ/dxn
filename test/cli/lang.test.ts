@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { capture } from "../support/cli.js";
@@ -229,5 +229,111 @@ record Evidence {
   it("needs one file", () => {
     const run = project({});
     expect([run().code, run("evidence.dim", "Source", "records.json").code]).toEqual([2, 2]);
+  });
+});
+
+describe("lang rename", () => {
+  const schema = `enum Actor = design-agent | reviewer
+record Evidence {
+  actor: Actor
+}
+`;
+  const project = (data: string) => {
+    const root = writeProject({});
+    writeFileSync(join(root, "evidence.dim"), schema);
+    mkdirSync(join(root, "evidence"));
+    writeFileSync(join(root, "evidence", "page.json"), data);
+    const run = (...args: string[]) => capture(["lang", "rename", ...args], root);
+    const read = (path: string) => readFileSync(join(root, path), "utf8");
+    return { run, read };
+  };
+  const stored = '[{ "actor": "design-agent" }, { "actor": "reviewer" }]\n';
+
+  it("renames an enum value in the file and in every stored record, and says what changed", () => {
+    const { run, read } = project(stored);
+    const result = run("evidence.dim", "Actor.design-agent", "designer");
+    expect([
+      result.code,
+      JSON.parse(result.stdout),
+      read("evidence.dim"),
+      read("evidence/page.json"),
+    ]).toEqual([
+      0,
+      {
+        file: "evidence.dim",
+        enum: "Actor",
+        from: "design-agent",
+        to: "designer",
+        written: ["evidence.dim", "evidence/page.json"],
+        records: 1,
+      },
+      schema.replace("design-agent", "designer"),
+      '[{ "actor": "designer" }, { "actor": "reviewer" }]\n',
+    ]);
+  });
+
+  it("prints what it would write with --dry-run, and writes nothing", () => {
+    const { read } = project(stored);
+    const root = writeProject({});
+    writeFileSync(join(root, "evidence.dim"), schema);
+    mkdirSync(join(root, "evidence"));
+    writeFileSync(join(root, "evidence", "page.json"), stored);
+    const result = capture(
+      ["--dry-run", "lang", "rename", "evidence.dim", "Actor.design-agent", "designer"],
+      root,
+    );
+    expect([
+      result.code,
+      JSON.parse(result.stdout),
+      readFileSync(join(root, "evidence.dim"), "utf8"),
+    ]).toEqual([
+      0,
+      {
+        dryRun: true,
+        written: {
+          "evidence.dim": schema.replace("design-agent", "designer"),
+          "evidence/page.json": '[{ "actor": "designer" }, { "actor": "reviewer" }]\n',
+        },
+      },
+      schema,
+    ]);
+    expect(read("evidence.dim")).toBe(schema);
+  });
+
+  it("refuses what it cannot rename, and writes nothing", () => {
+    const { run, read } = project(stored);
+    expect([
+      run("evidence.dim", "Actr.design-agent", "designer").stderr,
+      run("evidence.dim", "Evidence.design-agent", "designer").stderr,
+      run("evidence.dim", "Actor.designer", "maker").stderr,
+      run("evidence.dim", "Actor.design-agent", "reviewer").stderr,
+      run("evidence.dim", "Actor.design-agent", "design agent").stderr,
+      read("evidence.dim"),
+    ]).toEqual([
+      "dimensions: Actr is not an enum (Actor)\n",
+      "dimensions: Evidence is a record, not an enum\n",
+      'dimensions: "designer" is not a value of Actor (design-agent, reviewer)\n',
+      'dimensions: "reviewer" is already a value of Actor\n',
+      'dimensions: "design agent" is not a value: a letter or digit, then letters, digits and hyphens\n',
+      schema,
+    ]);
+  });
+
+  it("refuses while the stored records have problems, so a rename never mixes with them", () => {
+    const { run, read } = project('[{ "actor": "maker" }]\n');
+    const result = run("evidence.dim", "Actor.design-agent", "designer");
+    expect([result.code, result.stderr, read("evidence.dim")]).toEqual([
+      1,
+      'evidence/page.json:1:13: unknown-value: $[0].actor: "maker" is not a value of Actor (design-agent, reviewer)\n',
+      schema,
+    ]);
+  });
+
+  it("needs a file, an enum's value and its new name", () => {
+    const { run } = project(stored);
+    expect([
+      run("evidence.dim", "Actor.design-agent").code,
+      run("evidence.dim", "Actor", "x").code,
+    ]).toEqual([2, 2]);
   });
 });

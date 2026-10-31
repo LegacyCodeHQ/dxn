@@ -752,6 +752,9 @@ Subcommands:
                                      records with every field given, each of its
                                      type, and no others. Print what it checked, or
                                      every problem with its line, column and path
+  rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
+                                     stored record, once both check; with --dry-run,
+                                     print what it would write
 ```
 
 Checks a file written in the dimensions language, which is being designed one concept at a time in [language/design.md](language/design.md). It prints what the file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. So far a file declares enums, dimensions, types with their states and the rules for when a state's value exists, environments and profiles; the codes are listed in [language/design.md](language/design.md#grammar).

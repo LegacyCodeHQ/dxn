@@ -1,8 +1,10 @@
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import type { ParseResult } from "../language/ast.js";
 import { states as evaluateStates } from "../language/evaluate.js";
+import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
+import { isValue, renameInData, renameInSource } from "../language/rename.js";
 import { folderOf, storedFiles } from "../language/store.js";
 import { validate } from "../language/validate.js";
 import { drawTable, NONE } from "../tables.js";
@@ -44,6 +46,9 @@ Subcommands:
                                      records with every field given, each of its
                                      type, and no others. Print what it checked, or
                                      every problem with its line, column and path
+  rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
+                                     stored record, once both check; with --dry-run,
+                                     print what it would write
 `;
 
 // What a file declares, without positions, which are for diagnostics: each
@@ -140,6 +145,47 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   return 0;
 });
 
+// A stored data file of a record: its path as shown, and its content.
+interface Stored {
+  record: string;
+  folder: string;
+  shown: string;
+  path: string;
+  source: string;
+}
+
+// Every stored data file of the file's records, by convention: the JSON files
+// in each record's folder, next to the file.
+function storedData(parsed: ParseResult, file: string, cwd: string): Stored[] {
+  const directory = resolve(cwd, dirname(file));
+  const seen = new Set<string>();
+  const stored: Stored[] = [];
+  for (const { name } of parsed.records) {
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const folder = folderOf(name);
+    for (const data of storedFiles(directory, name) ?? []) {
+      const path = join(directory, folder, data);
+      const shown = join(dirname(file), folder, data);
+      stored.push({ record: name, folder, shown, path, source: readFileSync(path, "utf8") });
+    }
+  }
+  return stored;
+}
+
+// Checks stored data against the file, reporting every problem; whether all of
+// it is valid.
+function checkStored(parsed: ParseResult, stored: Stored[], io: Context["io"]): boolean {
+  let valid = true;
+  for (const { record, shown, source } of stored) {
+    for (const { line, column, code, path, message } of validate(parsed, record, source)) {
+      io.stderr(`${shown}:${line}:${column}: ${code}: ${path}: ${message}\n`);
+      valid = false;
+    }
+  }
+  return valid;
+}
+
 const validateCommand: Command = command(usage, (args, { io, cwd }) => {
   const [file, ...rest] = args;
   if (file === undefined || rest.length > 0) {
@@ -148,31 +194,107 @@ const validateCommand: Command = command(usage, (args, { io, cwd }) => {
   }
   const parsed = read(file, cwd, io);
   if (typeof parsed === "number") return parsed;
+  const data = storedData(parsed, file, cwd);
+  if (!checkStored(parsed, data, io)) return 1;
   const directory = resolve(cwd, dirname(file));
-  const stored: { record: string; folder: string; files: number; records: number }[] = [];
-  let failed = false;
-  const seen = new Set<string>();
-  for (const { name } of parsed.records) {
-    if (seen.has(name)) continue;
-    seen.add(name);
-    const files = storedFiles(directory, name);
-    if (files === undefined) continue;
-    const folder = folderOf(name);
-    let records = 0;
-    for (const data of files) {
-      const shown = join(dirname(file), folder, data);
-      const source = readFileSync(join(directory, folder, data), "utf8");
-      const problems = validate(parsed, name, source);
-      for (const { line, column, code, path: at, message } of problems) {
-        io.stderr(`${shown}:${line}:${column}: ${code}: ${at}: ${message}\n`);
-      }
-      if (problems.length > 0) failed = true;
-      else records += (JSON.parse(source) as unknown[]).length;
-    }
-    stored.push({ record: name, folder, files: files.length, records });
-  }
-  if (failed) return 1;
+  const stored = parsed.records
+    .filter(({ name }, index) => parsed.records.findIndex((other) => other.name === name) === index)
+    .filter(({ name }) => storedFiles(directory, name) !== undefined)
+    .map(({ name }) => {
+      const files = data.filter(({ record }) => record === name);
+      return {
+        record: name,
+        folder: folderOf(name),
+        files: files.length,
+        records: files.reduce(
+          (total, { source }) => total + (JSON.parse(source) as unknown[]).length,
+          0,
+        ),
+      };
+    });
   io.stdout(`${JSON.stringify({ file, stored })}\n`);
+  return 0;
+});
+
+const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
+  const [file, target, to, ...rest] = args;
+  const dot = target?.indexOf(".") ?? -1;
+  if (
+    file === undefined ||
+    target === undefined ||
+    to === undefined ||
+    rest.length > 0 ||
+    dot < 1
+  ) {
+    io.stderr(`dimensions: give a file, <Enum>.<value> and the value's new name\n\n${usage}`);
+    return 2;
+  }
+  const enumName = target.slice(0, dot);
+  const from = target.slice(dot + 1);
+  const parsed = read(file, cwd, io);
+  if (typeof parsed === "number") return parsed;
+  const names = new Names(parsed);
+  const values = names.values(enumName) ?? [];
+  const refusal =
+    names.kindOf(enumName) !== "enum"
+      ? names.not(enumName, "enum")
+      : !values.includes(from)
+        ? `${JSON.stringify(from)} is not a value of ${enumName} (${values.join(", ")})`
+        : values.includes(to)
+          ? `${JSON.stringify(to)} is already a value of ${enumName}`
+          : !isValue(to)
+            ? `${JSON.stringify(to)} is not a value: a letter or digit, then letters, digits and hyphens`
+            : undefined;
+  if (refusal !== undefined) {
+    io.stderr(`dimensions: ${refusal}\n`);
+    return 1;
+  }
+  const stored = storedData(parsed, file, cwd);
+  if (!checkStored(parsed, stored, io)) return 1;
+  const path = resolve(cwd, file);
+  const source = renameInSource(parsed, readFileSync(path, "utf8"), enumName, from, to);
+  const written = [{ shown: file, path, source }];
+  let records = 0;
+  for (const data of stored) {
+    const renamed = renameInData(parsed, data.record, data.source, enumName, from, to);
+    if (renamed.changed === 0) continue;
+    records += renamed.changed;
+    written.push({ shown: data.shown, path: data.path, source: renamed.source });
+  }
+  // The renamed file and data must check, before anything is written.
+  const after = parse(source);
+  const writtenData = new Map(written.map((item) => [item.path, item.source]));
+  const afterStored = stored.map((data) => ({
+    ...data,
+    source: writtenData.get(data.path) ?? data.source,
+  }));
+  if (
+    after.diagnostics.some(({ severity }) => severity === "error") ||
+    !checkStored(after, afterStored, io)
+  ) {
+    io.stderr("dimensions: the rename would leave problems; nothing was written\n");
+    return 1;
+  }
+  if (dryRun) {
+    io.stdout(
+      `${JSON.stringify({
+        dryRun: true,
+        written: Object.fromEntries(written.map(({ shown, source }) => [shown, source])),
+      })}\n`,
+    );
+    return 0;
+  }
+  for (const item of written) writeFileSync(item.path, item.source);
+  io.stdout(
+    `${JSON.stringify({
+      file,
+      enum: enumName,
+      from,
+      to,
+      written: written.map(({ shown }) => shown),
+      records,
+    })}\n`,
+  );
   return 0;
 });
 
@@ -180,4 +302,5 @@ export const lang: Command = group(usage, {
   check,
   states: statesCommand,
   validate: validateCommand,
+  rename: renameCommand,
 });
