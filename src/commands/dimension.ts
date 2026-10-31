@@ -4,6 +4,7 @@ import {
   editCommand,
   editExpectations,
   editRecords,
+  expectationValues,
   group,
   isObject,
   list,
@@ -11,6 +12,7 @@ import {
   Refusal,
   renameKey,
   reorder,
+  swapValues,
   treeNodes,
   UsageError,
 } from "./edit.js";
@@ -171,7 +173,11 @@ const renameValue = editCommand(usage, (workspace, args) => {
       if (swapIn(values)) workspace.touch("profiles.json");
     }
   }
-  editExpectations(workspace, (expectation) => swapIn(expectation.where));
+  editExpectations(workspace, (expectation) =>
+    expectationValues(expectation)
+      .map((values) => swapValues(values, [name], from, to))
+      .includes(true),
+  );
   for (const [file, item] of treeNodes(workspace)) {
     for (const transition of Array.isArray(item.transitions) ? item.transitions : []) {
       const values =

@@ -515,16 +515,26 @@ The expectation's `root` doesn't contain its node.
 
 ### `unknown-name`
 
-A key in `where` is neither a dimension, a state group, `state`, nor a shared
-node that applies to the node.
+A key in `when`, `then` or `some` is neither a dimension, a state group,
+`state`, a shared node that applies to the node, nor `profile` (when there are
+profiles). `exists` looks only at dimensions, profiles and shared nodes, so a
+state group in its `when` is also this error.
 
-### `invalid-count`
+### `several-assertions`
 
-`count` is not a whole number of 0 or more.
+An expectation has more than one of `then`, `some` and `exists`. Each
+expectation makes one assertion; split it into two.
+
+### `empty-expectation`
+
+The expectation selects no contexts, so it tests nothing and would pass
+whatever the model said. For example, a rule about tablets with a keyboard
+when no profile has touch with a keyboard. Fix its `when`, or remove it.
 
 ### `expectation-failed`
 
-The model has a different number of contexts than the expectation says. The
-message gives both numbers. Either the model is wrong (fix the types,
-dimensions or overrides) or the expectation is. Run the same filter with
-`dimensions contexts <node> ... --count` to compare.
+The model breaks the rule. The message names one context that breaks it, by
+profile where it matches one, for example "home-link at tablet-landscape
+(hover=hovered, focus=blurred) breaks hover=rest". Either the model is wrong
+(fix the types, dimensions, overrides or profiles) or the expectation is.
+`dimensions show` or `contexts` with the same values shows that context.

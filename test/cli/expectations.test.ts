@@ -4,7 +4,8 @@ import { cliProject } from "../support/workspace.js";
 
 afterAll(cleanup);
 
-// A toolbar whose link loses hover on touch.
+// A toolbar with two links: the blog link exists only with a mouse, and
+// touch removes hover from every link.
 const files = {
   "types.json": {
     version: 1,
@@ -16,7 +17,10 @@ const files = {
     fragment: {
       id: "toolbar",
       title: "Toolbar",
-      children: [{ id: "blog-link", title: "Blog link", type: "link" }],
+      children: [
+        { id: "blog-link", title: "Blog link", type: "link" },
+        { id: "home-link", title: "Home link", type: "link" },
+      ],
     },
   },
   "roots/article-page.json": rootFile({
@@ -32,125 +36,178 @@ const files = {
   },
   "overrides/pointer.json": {
     version: 1,
+    only: { "blog-link": ["mouse"] },
     overrides: { touch: { types: { link: { states: { remove: ["hovered"] } } } } },
   },
 };
 
 const expectations = (list: unknown[]) => ({ version: 1, expectations: list });
+const noHoverOnTouch = {
+  title: "Touch screens never show hover",
+  node: "toolbar",
+  subtree: true,
+  when: { pointer: "touch" },
+  then: { hover: "rest" },
+};
 
-describe("expectations checked by validate", () => {
-  it("pass when each count matches the contexts the filters select", () => {
-    const { run } = cliProject({
-      ...files,
-      "expectations.json": expectations([
-        {
-          title: "Touch screens never show hover",
-          node: "toolbar",
-          subtree: true,
-          root: "article-page",
-          where: { pointer: "touch", hover: "hovered" },
-          count: 0,
-        },
-        { title: "A mouse can hover", node: "blog-link", where: { pointer: "mouse" }, count: 4 },
-        { title: "Every combination", node: "toolbar", subtree: true, count: 8 },
-      ]),
-    });
-    expect(run("validate")).toMatchInlineSnapshot(`
-      {
-        "code": 0,
-        "stderr": "",
-        "stdout": "{"project":"<tmp>/.dimensions","errors":0}
-      ",
-      }
-    `);
+// Each problem validate reports, without its file position.
+function problems(extra: Record<string, unknown>, list: unknown[]): string[] {
+  const { run } = cliProject({ ...files, ...extra, "expectations.json": expectations(list) });
+  return run("validate")
+    .stderr.split("\n")
+    .filter((line) => line !== "")
+    .map((line) => line.replace(/^.*?:\d+:\d+: /, ""));
+}
+
+describe("then: every selected context has these values", () => {
+  it("passes when the rule holds", () => {
+    expect(problems({}, [noHoverOnTouch])).toEqual([]);
   });
 
-  it("fail with the title, the expected and the actual count", () => {
-    const { run } = cliProject({
-      ...files,
-      "overrides/pointer.json": { version: 1, overrides: {} },
-      "expectations.json": expectations([
+  it("fails with one context that breaks it", () => {
+    expect(
+      problems(
         {
-          title: "Touch screens never show hover",
+          "overrides/pointer.json": { version: 1, only: { "blog-link": ["mouse"] }, overrides: {} },
+        },
+        [noHoverOnTouch],
+      ),
+    ).toEqual([
+      "expectation-failed: Touch screens never show hover: home-link (hover=hovered, focus=blurred, pointer=touch) breaks hover=rest",
+    ]);
+  });
+});
+
+describe("then with a list", () => {
+  it("allows any of the listed values", () => {
+    const rule = (allowed: string[]) => ({ ...noHoverOnTouch, then: { focus: allowed } });
+    expect(problems({}, [rule(["blurred", "focused"])])).toEqual([]);
+    expect(problems({}, [rule(["blurred"])])).toEqual([
+      "expectation-failed: Touch screens never show hover: home-link (hover=rest, focus=focused, pointer=touch) breaks focus=blurred",
+    ]);
+    expect(problems({}, [rule(["blurred", "pressed"])])).toEqual([
+      'unknown-value: "pressed" is not a value of focus (blurred, focused)',
+    ]);
+  });
+});
+
+describe("some: at least one selected context has these values", () => {
+  const atOnce = (pointer: string) => ({
+    title: "A link can be hovered and focused at once",
+    node: "home-link",
+    when: { pointer },
+    some: { hover: "hovered", focus: "focused" },
+  });
+
+  it("passes when one does, and fails naming what none has", () => {
+    expect(problems({}, [atOnce("mouse")])).toEqual([]);
+    expect(problems({}, [atOnce("touch")])).toEqual([
+      "expectation-failed: A link can be hovered and focused at once: no context of home-link (pointer=touch) has hover=hovered, focus=focused",
+    ]);
+  });
+});
+
+describe("exists: whether the node is there", () => {
+  const blogLink = (pointer: string, exists: boolean) => ({
+    title: `The blog link ${exists ? "is" : "is not"} there with ${pointer}`,
+    node: "blog-link",
+    when: { pointer },
+    exists,
+  });
+
+  it("passes when it holds in every matching combination", () => {
+    expect(problems({}, [blogLink("touch", false), blogLink("mouse", true)])).toEqual([]);
+  });
+
+  it("fails naming a combination where it does not", () => {
+    expect(problems({}, [blogLink("touch", true), blogLink("mouse", false)])).toEqual([
+      "expectation-failed: The blog link is there with touch: blog-link does not exist (pointer=touch)",
+      "expectation-failed: The blog link is not there with mouse: blog-link exists (pointer=mouse)",
+    ]);
+  });
+});
+
+describe("an expectation", () => {
+  it("that selects nothing tests nothing, so it is an error", () => {
+    expect(
+      problems({}, [
+        {
+          title: "Blog link at rest on touch",
           node: "blog-link",
-          where: { pointer: "touch", hover: "hovered" },
-          count: 0,
+          when: { pointer: "touch" },
+          then: { hover: "rest" },
         },
       ]),
-    });
-    expect(run("validate")).toMatchInlineSnapshot(`
-      {
-        "code": 1,
-        "stderr": "<tmp>/.dimensions/expectations.json:11:16: expectation-failed: Touch screens never show hover: expected 0 contexts, found 2
-      ",
-        "stdout": "{"project":"<tmp>/.dimensions","errors":1}
-      ",
-      }
-    `);
+    ).toEqual([
+      "empty-expectation: Blog link at rest on touch: selects no contexts of blog-link (pointer=touch)",
+    ]);
   });
 
-  it("report unknown nodes, roots, names and values where they are written", () => {
-    const { run } = cliProject({
-      ...files,
-      "expectations.json": expectations([
-        { title: "Unknown node", node: "nope", count: 0 },
-        { title: "Unknown root", node: "blog-link", root: "home", count: 0 },
-        { title: "Unknown name", node: "blog-link", where: { keyboard: "none" }, count: 0 },
-        { title: "Unknown value", node: "blog-link", where: { pointer: "pen" }, count: 0 },
+  it("makes exactly one assertion", () => {
+    expect(
+      problems({}, [
+        { title: "None", node: "home-link" },
+        { title: "Two", node: "home-link", then: { hover: "rest" }, exists: true },
       ]),
-    });
-    expect(run("validate").stderr).toMatchInlineSnapshot(`
-      "<tmp>/.dimensions/expectations.json:6:15: unknown-node: node "nope" does not exist
-      <tmp>/.dimensions/expectations.json:12:15: node-outside-root: node "blog-link" is not in root "home"
-      <tmp>/.dimensions/expectations.json:19:9: unknown-name: "keyboard" is not a dimension, state group or shared node here (focus, hover, pointer)
-      <tmp>/.dimensions/expectations.json:27:20: unknown-value: "pen" is not a value of pointer (mouse, touch)
-      "
-    `);
+    ).toEqual([
+      'missing-key: give one assertion: "then", "some" or "exists"',
+      'several-assertions: an expectation makes one assertion: "then", "some" or "exists", not "then" and "exists"',
+    ]);
   });
 
-  it("check the file's shape", () => {
-    const snapshot: unknown[] = [];
-    const shape = (doc: unknown) =>
-      cliProject({ ...files, "expectations.json": doc }).run("validate").stderr;
-    snapshot.push(shape([]));
-    snapshot.push(shape({ version: 1 }));
-    snapshot.push(shape(expectations([{ node: "blog-link" }])));
-    snapshot.push(
-      shape(expectations([{ title: "", node: "blog-link", count: -1, extra: 1, where: [] }])),
-    );
-    snapshot.push(shape("{"));
-    expect(snapshot).toMatchInlineSnapshot(`
-      [
-        "<tmp>/.dimensions/expectations.json:1:1: wrong-type: expected an object, found an array
-      ",
-        "<tmp>/.dimensions/expectations.json:1:1: missing-key: missing required key "expectations"
-      ",
-        "<tmp>/.dimensions/expectations.json:4:5: missing-key: missing required key "title"
-      <tmp>/.dimensions/expectations.json:4:5: missing-key: missing required key "count"
-      ",
-        "<tmp>/.dimensions/expectations.json:8:7: unknown-key: unknown key "extra"
-      <tmp>/.dimensions/expectations.json:5:16: empty-string: must not be empty or blank
-      <tmp>/.dimensions/expectations.json:9:16: wrong-type: expected an object, found an array
-      <tmp>/.dimensions/expectations.json:7:16: invalid-count: count must be a whole number, 0 or more
-      ",
-        "<tmp>/.dimensions/expectations.json:1:2: unexpected-end: unexpected end of input
-      ",
-      ]
-    `);
+  it("names dimensions, state groups, shared nodes and profiles it can test", () => {
+    expect(
+      problems({}, [
+        {
+          title: "Unknown name",
+          node: "home-link",
+          when: { keyboard: "none" },
+          then: { hover: "rest" },
+        },
+        { title: "Unknown value", node: "home-link", then: { hover: "pressed" } },
+        { title: "A state in exists", node: "home-link", when: { hover: "rest" }, exists: true },
+      ]),
+    ).toEqual([
+      'unknown-name: "keyboard" is not a dimension, state group or shared node here (focus, hover, pointer)',
+      'unknown-value: "pressed" is not a value of hover (rest, hovered)',
+      'unknown-name: "hover" is a state group; exists looks only at dimensions, profiles and shared nodes',
+    ]);
   });
 
-  it("are skipped when the project itself has errors", () => {
-    const { run } = cliProject({
-      ...files,
-      "types.json": { version: 2 },
-      "expectations.json": expectations([{ title: "x", node: "nope", count: 0 }]),
-    });
-    expect(run("validate").stderr).toMatchInlineSnapshot(`
-      "<tmp>/.dimensions/types.json:2:14: unsupported-version: unsupported version 2
-      <tmp>/.dimensions/fragments/toolbar.json:10:17: undefined-type: type "link" is not defined
-      <tmp>/.dimensions/overrides/pointer.json:6:9: undefined-type: type "link" is not defined
-      "
-    `);
+  it("no longer takes count or where", () => {
+    expect(
+      problems({}, [{ title: "Old", node: "home-link", where: { pointer: "touch" }, count: 2 }]),
+    ).toEqual([
+      'unknown-key: unknown key "where"',
+      'unknown-key: unknown key "count"',
+      'missing-key: give one assertion: "then", "some" or "exists"',
+    ]);
+  });
+
+  it("reports unknown nodes and roots where they are written", () => {
+    expect(
+      problems({}, [
+        { title: "Unknown node", node: "nope", exists: true },
+        { title: "Unknown root", node: "home-link", root: "home", exists: true },
+      ]),
+    ).toEqual([
+      'unknown-node: node "nope" does not exist',
+      'node-outside-root: node "home-link" is not in root "home"',
+    ]);
+  });
+
+  it("checks the file's shape", () => {
+    expect(
+      problems({}, [
+        { title: "", node: "home-link", then: [], extra: 1 },
+        { title: "Exists", node: "home-link", exists: "yes" },
+      ]),
+    ).toEqual([
+      'unknown-key: unknown key "extra"',
+      "empty-string: must not be empty or blank",
+      "wrong-type: expected an object, found an array",
+      "wrong-type: expected a boolean, found a string",
+    ]);
   });
 });
 
@@ -158,9 +215,9 @@ describe("expectations in the compiler", () => {
   const passing = expectations([
     {
       title: "Touch screens never show hover",
-      node: "blog-link",
-      where: { pointer: "touch", hover: "hovered" },
-      count: 0,
+      node: "home-link",
+      when: { pointer: "touch" },
+      then: { hover: "rest" },
     },
   ]);
 
@@ -181,7 +238,7 @@ describe("expectations in the compiler", () => {
       "overrides/pointer.json": { version: 1, overrides: {} },
       "expectations.json": passing,
     });
-    const result = run("show", "blog-link");
+    const result = run("show", "home-link");
     expect([result.code, result.stderr.includes("expectation-failed")]).toEqual([1, true]);
   });
 

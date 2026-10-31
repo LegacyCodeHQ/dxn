@@ -86,8 +86,8 @@ const files = {
         title: "The item, hovered in the open menu on a wide screen",
         node: "item",
         root: "page",
-        where: { menu: "open", hover: "hovered", breakpoint: "lg" },
-        count: 1,
+        when: { menu: "open", breakpoint: "lg" },
+        some: { hover: "hovered" },
       },
     ],
   },
@@ -115,7 +115,8 @@ interface Record_ {
 interface Expectation {
   node: string;
   root?: string;
-  where: Record<string, string>;
+  when: Record<string, string>;
+  some: Record<string, string>;
 }
 
 function renamed(...argv: string[]) {
@@ -164,11 +165,7 @@ describe("renames update every reference", () => {
       ["item", { nav: "open", hover: "hovered" }],
       ["nav", undefined],
     ]);
-    expect(expectation().where).toEqual({
-      nav: "open",
-      hover: "hovered",
-      breakpoint: "lg",
-    });
+    expect(expectation().when).toEqual({ nav: "open", breakpoint: "lg" });
   });
 
   it("node rename: include states and an expectation's node", () => {
@@ -208,7 +205,7 @@ describe("renames update every reference", () => {
     ]);
     expect(menu().children[1]?.onlyWhen).toEqual({ menu: ["expanded"] });
     expect(records()[1]?.context?.menu).toBe("expanded");
-    expect(expectation().where.menu).toBe("expanded");
+    expect(expectation().when.menu).toBe("expanded");
   });
 
   it("state-group rename-value: include states, records and expectations", () => {
@@ -222,7 +219,7 @@ describe("renames update every reference", () => {
     expect([result.code, validate.code]).toEqual([0, 0]);
     expect(includeStates()).toEqual({ item: { hover: ["over"] } });
     expect(records()[1]?.context?.hover).toBe("over");
-    expect(expectation().where.hover).toBe("over");
+    expect(expectation().some.hover).toBe("over");
   });
 
   it("dimension rename-value: a transition's when and expectations", () => {
@@ -235,6 +232,6 @@ describe("renames update every reference", () => {
     );
     expect([result.code, validate.code]).toEqual([0, 0]);
     expect(menu().transitions[2]?.when).toEqual({ breakpoint: ["wide"] });
-    expect(expectation().where.breakpoint).toBe("wide");
+    expect(expectation().when.breakpoint).toBe("wide");
   });
 });

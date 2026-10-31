@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { childPath, Diagnostics, type FileDiagnostic } from "./compiler/diagnostic.js";
+import type { JsonNode } from "./compiler/json.js";
 import { parseJson } from "./compiler/json.js";
 import { readSource } from "./compiler/read.js";
 import {
@@ -12,15 +13,16 @@ import {
   keys,
   report,
 } from "./compiler/shape.js";
-import { contextFilter, QueryError, subtreeContexts } from "./queries.js";
-import type { Resolver } from "./resolve.js";
+import { contextFilter, QueryError, sharedStates, subtreeContexts } from "./queries.js";
+import type { Context, Resolver } from "./resolve.js";
 
 const file = "expectations.json";
 
-// expectations.json: what the model should say, checked by validate once the
-// project compiles. Each expectation selects contexts like `contexts` does
-// (a node, optionally its whole subtree, in a root, filtered with where) and
-// states how many there must be.
+// expectations.json: what the model should say, checked once the rest of the
+// project compiles. Each expectation selects contexts like `contexts` does (a
+// node, optionally its whole subtree, in a root, filtered with when) and makes
+// one assertion: then (every one has these values), some (at least one has
+// them) or exists (the node is there, or not, wherever when holds).
 export function checkExpectations(project: string, resolver: Resolver): FileDiagnostic[] {
   const read = readSource(join(project, file));
   if (!read.ok) {
@@ -69,14 +71,15 @@ function checkFile(
       diagnostics,
       expectation,
       path,
-      ["title", "node", "subtree", "root", "where", "count"],
-      { required: ["title", "node", "count"] },
+      ["title", "node", "subtree", "root", "when", "then", "some", "exists"],
+      { required: ["title", "node"] },
     );
     let valid = true;
 
     const title = fields.get("title");
-    if (title !== undefined && !expectNonEmptyString(diagnostics, title, `${path}.title`))
+    if (title === undefined || !expectNonEmptyString(diagnostics, title, `${path}.title`))
       valid = false;
+    const named = title?.kind === "string" ? title.value : "expectation";
 
     const node = fields.get("node");
     let id: string | undefined;
@@ -114,72 +117,327 @@ function checkFile(
       root = rootNode.value;
     }
 
-    const where: [string, string][] = [];
-    const whereNode = fields.get("where");
-    const whereObject =
-      whereNode === undefined ? undefined : expectObject(diagnostics, whereNode, `${path}.where`);
-    if (whereNode !== undefined && whereObject === undefined) valid = false;
-    for (const { key, value } of whereObject?.members ?? []) {
-      if (expectName(diagnostics, value, childPath(`${path}.where`, key.value))) {
-        where.push([key.value, value.value]);
-      } else {
-        valid = false;
-      }
-    }
+    const when = values(diagnostics, fields.get("when"), `${path}.when`, false);
+    if (when === undefined) valid = false;
 
-    const count = fields.get("count");
-    let expected: number | undefined;
-    if (count !== undefined && expectKind(diagnostics, count, `${path}.count`, "number")) {
-      if (!Number.isInteger(count.value) || count.value < 0) {
-        report(
-          diagnostics,
-          "invalid-count",
-          "count must be a whole number, 0 or more",
-          `${path}.count`,
-          count,
-        );
-      } else {
-        expected = count.value;
-      }
-    }
-
-    if (!valid || id === undefined || expected === undefined || count === undefined) return;
-    const contexts =
-      subtree?.kind === "boolean" && subtree.value
-        ? subtreeContexts(resolver, id, root).flatMap((part) => part.contexts)
-        : root === undefined
-          ? resolver.roots(id).flatMap((inRoot) => resolver.contexts(id, inRoot))
-          : resolver.contexts(id, root);
-    let keep: (context: (typeof contexts)[number]) => boolean;
-    try {
-      keep = contextFilter(resolver, where, contexts, root);
-    } catch (error) {
-      if (!(error instanceof QueryError)) throw error;
-      const [name] = where.find(([candidate, value]) =>
-        error.field === "name"
-          ? error.message.startsWith(`"${candidate}"`)
-          : error.message.startsWith(`"${value}"`),
-      ) ?? [""];
-      const entry = whereObject?.members.find((member) => member.key.value === name);
-      const at = error.field === "name" ? entry?.key : entry?.value;
+    // Exactly one assertion.
+    const assertions = assertionKeys.filter((key) => fields.has(key));
+    if (assertions.length === 0) {
       report(
         diagnostics,
-        error.field === "name" ? "unknown-name" : "unknown-value",
-        error.message,
-        childPath(`${path}.where`, name),
-        at ?? whereNode ?? expectation,
+        "missing-key",
+        'give one assertion: "then", "some" or "exists"',
+        path,
+        expectation,
       );
       return;
     }
-    const actual = contexts.filter(keep).length;
-    if (actual !== expected) {
+    if (assertions.length > 1) {
+      report(
+        diagnostics,
+        "several-assertions",
+        `an expectation makes one assertion: "then", "some" or "exists", not ${assertions.map((key) => JSON.stringify(key)).join(" and ")}`,
+        path,
+        expectation,
+      );
+      return;
+    }
+    const kind = assertions[0] as (typeof assertionKeys)[number];
+    const assertionNode = fields.get(kind) as JsonNode;
+    const assertionPath = `${path}.${kind}`;
+    let asserted: [string, string[]][] | undefined;
+    let exists: boolean | undefined;
+    if (kind === "exists") {
+      if (expectKind(diagnostics, assertionNode, assertionPath, "boolean")) {
+        exists = assertionNode.value;
+      } else {
+        valid = false;
+      }
+    } else {
+      asserted = values(diagnostics, assertionNode, assertionPath, true);
+      if (asserted === undefined) valid = false;
+    }
+
+    if (!valid || id === undefined || when === undefined) return;
+    const whenNode = fields.get("when");
+    const describeWhen =
+      when.length === 0 ? "" : ` (${when.map(([name, [value]]) => `${name}=${value}`).join(", ")})`;
+
+    if (kind === "exists") {
+      checkExists(diagnostics, resolver, {
+        id,
+        root,
+        when,
+        exists: exists as boolean,
+        named,
+        describeWhen,
+        whenNode,
+        path,
+        assertionNode,
+        assertionPath,
+        expectation,
+      });
+      return;
+    }
+
+    // The contexts the expectation is about, with the node each belongs to.
+    const all: { node: string; context: Context }[] =
+      subtree?.kind === "boolean" && subtree.value
+        ? subtreeContexts(resolver, id, root).flatMap((part) =>
+            part.contexts.map((context) => ({ node: part.id, context })),
+          )
+        : (root === undefined ? resolver.roots(id) : [root]).flatMap((inRoot) =>
+            resolver.contexts(id, inRoot).map((context) => ({ node: id as string, context })),
+          );
+    const contexts = all.map(({ context }) => context);
+    const filter = (pairs: [string, string][], at: JsonNode | undefined, atPath: string) => {
+      try {
+        return contextFilter(resolver, pairs, contexts, root);
+      } catch (error) {
+        if (!(error instanceof QueryError)) throw error;
+        report(
+          diagnostics,
+          error.field === "name" ? "unknown-name" : "unknown-value",
+          error.message,
+          atPath,
+          at ?? expectation,
+        );
+        return undefined;
+      }
+    };
+    const keep = filter(
+      when.map(([name, [value]]) => [name, value as string]),
+      whenNode,
+      `${path}.when`,
+    );
+    const pairs = (asserted ?? []).flatMap(([name, list]) =>
+      list.map((value) => [name, value] as [string, string]),
+    );
+    if (keep === undefined || filter(pairs, assertionNode, assertionPath) === undefined) return;
+
+    const matches = (context: Context, name: string, list: string[]) =>
+      list.some((value) =>
+        name === "profile"
+          ? (contextFilter(resolver, [[name, value]], contexts, root) as (c: Context) => boolean)(
+              context,
+            )
+          : context[name] === value,
+      );
+    const selected = all.filter(({ context }) => keep(context));
+    const relevant = selected.filter(({ context }) =>
+      (asserted ?? []).some(([name]) => name === "profile" || context[name] !== undefined),
+    );
+    if (relevant.length === 0) {
+      report(
+        diagnostics,
+        "empty-expectation",
+        `${named}: selects no contexts of ${id}${describeWhen}`,
+        whenNode === undefined ? path : `${path}.when`,
+        whenNode ?? expectation,
+      );
+      return;
+    }
+    if (kind === "then") {
+      for (const { node: owner, context } of relevant) {
+        const broken = (asserted ?? []).find(
+          ([name, list]) =>
+            (name === "profile" || context[name] !== undefined) && !matches(context, name, list),
+        );
+        if (broken !== undefined) {
+          report(
+            diagnostics,
+            "expectation-failed",
+            `${named}: ${describeContext(resolver, owner, context)} breaks ${broken[0]}=${broken[1].join("|")}`,
+            assertionPath,
+            assertionNode,
+          );
+          return;
+        }
+      }
+      return;
+    }
+    const found = relevant.some(({ context }) =>
+      (asserted ?? []).every(([name, list]) => matches(context, name, list)),
+    );
+    if (!found) {
       report(
         diagnostics,
         "expectation-failed",
-        `${title?.kind === "string" ? title.value : "expectation"}: expected ${expected} context${expected === 1 ? "" : "s"}, found ${actual}`,
-        `${path}.count`,
-        count,
+        `${named}: no context of ${id}${describeWhen} has ${pairs.map(([name, value]) => `${name}=${value}`).join(", ")}`,
+        assertionPath,
+        assertionNode,
       );
     }
   });
+}
+
+const assertionKeys = ["then", "some", "exists"] as const;
+
+// A { name: value } object; with lists, a value may also be a list of values.
+function values(
+  diagnostics: Diagnostics,
+  item: JsonNode | undefined,
+  path: string,
+  lists: boolean,
+): [string, string[]][] | undefined {
+  if (item === undefined) return [];
+  const object = expectObject(diagnostics, item, path);
+  if (object === undefined) return undefined;
+  const result: [string, string[]][] = [];
+  let valid = true;
+  for (const { key, value } of object.members) {
+    const valuePath = childPath(path, key.value);
+    if (lists && value.kind === "array") {
+      const list: string[] = [];
+      value.elements.forEach((element, index) => {
+        if (expectName(diagnostics, element, `${valuePath}[${index}]`)) list.push(element.value);
+        else valid = false;
+      });
+      if (list.length > 0) result.push([key.value, list]);
+      continue;
+    }
+    if (expectName(diagnostics, value, valuePath)) result.push([key.value, [value.value]]);
+    else valid = false;
+  }
+  return valid ? result : undefined;
+}
+
+// A context as people read it: the node, the profile it matches (when there
+// are profiles), and the other values.
+function describeContext(resolver: Resolver, node: string, context: Context): string {
+  const profiled = Object.keys(context).filter((name) => resolver.profiled.has(name));
+  const profile =
+    profiled.length === 0
+      ? undefined
+      : [...resolver.profiles].find(([, values]) =>
+          profiled.every((name) => values[name] === context[name]),
+        )?.[0];
+  const rest = Object.entries(context)
+    .filter(([name]) => profile === undefined || !resolver.profiled.has(name))
+    .map(([name, value]) => `${name}=${value}`);
+  return `${node}${profile === undefined ? "" : ` at ${profile}`}${rest.length === 0 ? "" : ` (${rest.join(", ")})`}`;
+}
+
+// exists: whether the node is present in every combination of its dimensions
+// and its shared ancestors' states that matches when (true), or in none.
+function checkExists(
+  diagnostics: Diagnostics,
+  resolver: Resolver,
+  e: {
+    id: string;
+    root: string | undefined;
+    when: [string, string[]][];
+    exists: boolean;
+    named: string;
+    describeWhen: string;
+    whenNode: JsonNode | undefined;
+    path: string;
+    assertionNode: JsonNode;
+    assertionPath: string;
+    expectation: JsonNode;
+  },
+): void {
+  const dimensions = resolver.dimensions(e.id);
+  const roots = e.root !== undefined ? [e.root] : resolver.roots(e.id);
+  const lineages = (roots.length === 0 ? [undefined] : roots).map((root) => ({
+    root,
+    lineage: resolver.lineage(e.id, root),
+  }));
+  const shared = [...new Set(lineages.flatMap(({ lineage }) => resolver.sharedAncestors(lineage)))];
+
+  // Names exists can look at: the node's dimensions, profiles and shared nodes.
+  for (const [name, [value]] of e.when) {
+    const at =
+      e.whenNode?.kind === "object"
+        ? e.whenNode.members.find((m) => m.key.value === name)
+        : undefined;
+    const fail = (code: string, message: string, item: JsonNode | undefined) => {
+      report(diagnostics, code, message, childPath(`${e.path}.when`, name), item ?? e.expectation);
+    };
+    if (resolver.project.types.stateGroups?.[name] !== undefined || name === "state") {
+      fail(
+        "unknown-name",
+        `"${name}" is a state group; exists looks only at dimensions, profiles and shared nodes`,
+        at?.key,
+      );
+      return;
+    }
+    const allowed =
+      name === "profile" && resolver.profiles.size > 0
+        ? [...resolver.profiles.keys()]
+        : dimensions.includes(name)
+          ? (resolver.project.dimensions[name]?.values ?? [])
+          : shared.includes(name)
+            ? sharedStates(resolver, name)
+            : undefined;
+    if (allowed === undefined) {
+      const names = [...dimensions, ...shared, ...(resolver.profiles.size > 0 ? ["profile"] : [])];
+      fail(
+        "unknown-name",
+        `"${name}" is not a dimension, profile or shared node of ${e.id} (${names.join(", ")})`,
+        at?.key,
+      );
+      return;
+    }
+    if (!allowed.includes(value as string)) {
+      fail(
+        "unknown-value",
+        `"${value}" is not a value of ${name} (${allowed.join(", ")})`,
+        at?.value,
+      );
+      return;
+    }
+  }
+
+  const matchesWhen = (candidate: Context) =>
+    e.when.every(([name, [value]]) => {
+      if (name !== "profile") return candidate[name] === value;
+      const profile = resolver.profiles.get(value as string) ?? {};
+      return Object.keys(candidate)
+        .filter((key) => resolver.profiled.has(key))
+        .every((key) => profile[key] === candidate[key]);
+    });
+  for (const { root, lineage } of lineages) {
+    let candidates: Context[] = [{}];
+    for (const name of dimensions) {
+      const options = resolver.project.dimensions[name]?.values ?? [];
+      candidates = candidates.flatMap((c) => options.map((value) => ({ ...c, [name]: value })));
+    }
+    candidates = candidates.filter((c) => resolver.fitsProfile(c));
+    for (const ancestor of resolver.sharedAncestors(lineage)) {
+      candidates = candidates.flatMap((c) => {
+        const resolved = resolver.resolve(ancestor, c, resolver.lineage(ancestor, root));
+        return resolved.present
+          ? resolved.states.map((state) => ({ ...c, [ancestor]: state }))
+          : [c];
+      });
+    }
+    const matching = candidates.filter(matchesWhen);
+    if (matching.length === 0) {
+      report(
+        diagnostics,
+        "empty-expectation",
+        `${e.named}: selects no contexts of ${e.id}${e.describeWhen}`,
+        e.whenNode === undefined ? e.path : `${e.path}.when`,
+        e.whenNode ?? e.expectation,
+      );
+      return;
+    }
+    const wrong = matching.find(
+      (candidate) => resolver.resolve(e.id, candidate, lineage).present !== e.exists,
+    );
+    if (wrong !== undefined) {
+      const at = Object.entries(wrong)
+        .map(([name, value]) => `${name}=${value}`)
+        .join(", ");
+      report(
+        diagnostics,
+        "expectation-failed",
+        `${e.named}: ${e.id} ${e.exists ? "does not exist" : "exists"}${at === "" ? "" : ` (${at})`}`,
+        e.assertionPath,
+        e.assertionNode,
+      );
+      return;
+    }
+  }
 }

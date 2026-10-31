@@ -4,6 +4,7 @@ import {
   editCommand,
   editExpectations,
   editRecords,
+  expectationValues,
   group,
   isObject,
   list,
@@ -12,6 +13,7 @@ import {
   Refusal,
   renameKey,
   reorder,
+  swapValues,
   treeNodes,
   typesFile,
   typesOrder,
@@ -176,17 +178,7 @@ const renameValue = edit((workspace, args) => {
   // The context keys that hold this group's values.
   const keysFor = (node: unknown) =>
     nodesUsing.has(node as string) ? [name, ...sharedUsing] : [...sharedUsing];
-  const swapIn = (context: unknown, keys: string[]) => {
-    if (!isObject(context)) return false;
-    let changed = false;
-    for (const key of keys) {
-      if (context[key] === from) {
-        context[key] = to;
-        changed = true;
-      }
-    }
-    return changed;
-  };
+  const swapIn = (context: unknown, keys: string[]) => swapValues(context, keys, from, to);
   for (const [file, item] of treeNodes(workspace)) {
     let changed = false;
     if (sharedUsing.has(item.id as string) && Array.isArray(item.transitions)) {
@@ -212,7 +204,11 @@ const renameValue = edit((workspace, args) => {
     if (changed) workspace.touch(file);
   }
   editRecords(workspace, (record) => swapIn(record.context, keysFor(record.node)));
-  editExpectations(workspace, (expectation) => swapIn(expectation.where, [name, ...sharedUsing]));
+  editExpectations(workspace, (expectation) =>
+    expectationValues(expectation)
+      .map((values) => swapIn(values, [name, ...sharedUsing]))
+      .includes(true),
+  );
 });
 
 export const stateGroup: Command = group(usage, {

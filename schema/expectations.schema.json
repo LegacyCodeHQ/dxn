@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "dimensions expectations",
-  "description": "Editor aid for expectations.json: how many contexts each filter must select. The dimensions compiler is the authority: it also checks that nodes and roots exist, that each where name is a dimension, state group or shared node of the node with one of its values, and that each count matches, which this schema cannot express.",
+  "description": "Editor aid for expectations.json: rules the model must follow. Each expectation selects contexts of a node (optionally its subtree, in one root, filtered with when) and makes exactly one assertion: then (every selected context has these values), some (at least one does) or exists (the node is there, or not, wherever when holds). The dimensions compiler is the authority: it also checks that nodes and roots exist, that names and values belong to the node, that an expectation selects some contexts, and that it holds, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "expectations"],
@@ -35,7 +35,7 @@
     "expectation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["title", "node", "count"],
+      "required": ["title", "node"],
       "properties": {
         "title": {
           "description": "What the expectation says, shown when it fails.",
@@ -53,18 +53,54 @@
           "description": "Count only in this root; without it, in every root that contains the node.",
           "$ref": "#/$defs/name"
         },
-        "where": {
-          "description": "Dimension, state group or shared node -> the value to keep.",
+        "when": {
+          "description": "Dimension, state group, shared node or profile -> the value to keep.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/name"
           }
         },
-        "count": {
-          "description": "How many contexts the filter must select.",
-          "type": "integer",
-          "minimum": 0
+        "then": {
+          "description": "Every selected context has these values.",
+          "$ref": "#/$defs/values"
+        },
+        "some": {
+          "description": "At least one selected context has all these values.",
+          "$ref": "#/$defs/values"
+        },
+        "exists": {
+          "description": "Whether the node is there in every combination where when holds (true) or in none (false).",
+          "type": "boolean"
         }
+      },
+      "oneOf": [
+        {
+          "required": ["then"]
+        },
+        {
+          "required": ["some"]
+        },
+        {
+          "required": ["exists"]
+        }
+      ]
+    },
+    "values": {
+      "description": "Dimension, state group, shared node or profile -> one value, or a list of allowed values.",
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/name"
+          },
+          {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/name"
+            }
+          }
+        ]
       }
     }
   }

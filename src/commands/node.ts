@@ -4,6 +4,7 @@ import {
   editCommand,
   editExpectations,
   editRecords,
+  expectationValues,
   group,
   isObject,
   isSharedNode,
@@ -419,7 +420,10 @@ function renameNodeReferences(workspace: Workspace, from: string, to: string): v
     return renameContextKey(record.context) || named;
   });
   editExpectations(workspace, (expectation) => {
-    let changed = renameContextKey(expectation.where);
+    let changed = false;
+    for (const values of expectationValues(expectation)) {
+      if (renameContextKey(values)) changed = true;
+    }
     for (const key of ["node", "root"]) {
       if (expectation[key] === from) {
         expectation[key] = to;

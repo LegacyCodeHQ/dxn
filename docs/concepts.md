@@ -390,23 +390,37 @@ missing.
 
 ## Expectations
 
-`expectations.json` states how many contexts a filter must find. The
-compiler checks them once the rest of the project compiles, so a modeling
-mistake shows up as an error, and an edit that would break one is refused:
+`expectations.json` states rules the model must follow. The compiler checks
+them once the rest of the project compiles, so a modeling mistake shows up as
+an error, and an edit that would break one is refused.
+
+Each expectation has a `title`, a `node` (optionally with its `subtree`, in
+one `root`), an optional `when` filter, and exactly one assertion:
 
 ```json
-{
-  "title": "Touch screens never show hover",
-  "node": "toolbar",
-  "subtree": true,
-  "root": "article-page",
-  "where": { "pointer": "touch", "hover": "hovered" },
-  "count": 0
-}
+{ "title": "Touch screens never show hover",
+  "node": "toolbar", "subtree": true,
+  "when": { "pointer": "touch" }, "then": { "hover": "rest" } }
+
+{ "title": "A desktop link can be hovered and focused at once",
+  "node": "blog-link", "when": { "profile": "desktop" },
+  "some": { "hover": "hovered", "focus": "focused" } }
+
+{ "title": "The menu panel only exists while the menu is open",
+  "node": "menu-panel", "when": { "menu": "closed" }, "exists": false }
 ```
 
-`where` filters work like `contexts` filters: dimension values, state group
-values and shared node states.
+- `then`: every selected context has these values. A value can also be a list
+  of allowed values, such as `{ "state": ["normal", "selected"] }`. Contexts
+  without the name (a node with no hover) aren't affected.
+- `some`: at least one selected context has all these values.
+- `exists`: the node is there in every combination of its dimensions and
+  shared ancestors' states where `when` holds (`true`), or in none (`false`).
+
+`when`, `then` and `some` name dimensions, state groups, shared nodes and
+`profile`, as `contexts` filters do. A failing expectation names one context
+that breaks it, and an expectation that selects nothing is an error too,
+because it would test nothing.
 
 ## Views and axes
 

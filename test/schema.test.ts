@@ -450,22 +450,40 @@ agree("verification", (doc) => ({ ...checked, "verification/page.json": doc }), 
 });
 
 const expectation = (fields: Record<string, unknown> = {}) => ({
-  title: "Every state of the blog link",
+  title: "The blog link can be hovered",
   node: "blog-link",
-  count: 3,
+  some: { state: "hovered" },
   ...fields,
 });
 const expectationsFile = (...entries: unknown[]) => ({ version: 1, expectations: entries });
 
-agree("expectations", (doc) => ({ ...tree, "expectations.json": doc }), {
+const withOnlyMouse = {
+  ...tree,
+  "dimensions/pointer.json": pointer,
+  "overrides/pointer.json": { version: 1, only: { "blog-link": ["mouse"] }, overrides: {} },
+};
+
+agree("expectations", (doc) => ({ ...withOnlyMouse, "expectations.json": doc }), {
   valid: [
     ["no expectations", expectationsFile()],
-    ["an expectation", expectationsFile(expectation())],
+    ["a some assertion", expectationsFile(expectation())],
     [
-      "a subtree in a root",
-      expectationsFile(expectation({ node: "toolbar", subtree: true, root: "page", count: 5 })),
+      "a then assertion over a subtree in a root",
+      expectationsFile(
+        expectation({
+          some: undefined,
+          node: "toolbar",
+          subtree: true,
+          root: "page",
+          when: { state: "hovered" },
+          then: { state: "hovered" },
+        }),
+      ),
     ],
-    ["a filter", expectationsFile(expectation({ where: { state: "hovered" }, count: 1 }))],
+    [
+      "an exists assertion",
+      expectationsFile(expectation({ some: undefined, when: { pointer: "mouse" }, exists: true })),
+    ],
     ["a $schema reference", { $schema: "x", ...expectationsFile() }],
   ],
   structural: [
@@ -475,21 +493,31 @@ agree("expectations", (doc) => ({ ...tree, "expectations.json": doc }), {
     ["unsupported-version", { version: 2, expectations: [] }],
     ["wrong-type", { version: 1, expectations: {} }],
     ["wrong-type", expectationsFile(1)],
-    ["missing-key", expectationsFile({ node: "blog-link", count: 3 })],
-    ["unknown-key", expectationsFile(expectation({ page: "page" }))],
+    ["missing-key", expectationsFile({ node: "blog-link", exists: true })],
+    ["missing-key", expectationsFile({ title: "No assertion", node: "blog-link" })],
+    ["several-assertions", expectationsFile(expectation({ exists: true }))],
+    ["unknown-key", expectationsFile(expectation({ count: 1 }))],
     ["empty-string", expectationsFile(expectation({ title: " " }))],
     ["wrong-type", expectationsFile(expectation({ subtree: "yes" }))],
-    ["wrong-type", expectationsFile(expectation({ where: [] }))],
-    ["wrong-type", expectationsFile(expectation({ where: { state: 1 } }))],
-    ["invalid-count", expectationsFile(expectation({ count: -1 }))],
-    ["invalid-count", expectationsFile(expectation({ count: 1.5 }))],
+    ["wrong-type", expectationsFile(expectation({ when: [] }))],
+    ["wrong-type", expectationsFile(expectation({ some: { state: 1 } }))],
+    ["wrong-type", expectationsFile(expectation({ some: undefined, exists: "yes" }))],
   ],
   crossReference: [
     ["unknown-node", expectationsFile(expectation({ node: "nope" }))],
     ["node-outside-root", expectationsFile(expectation({ root: "footer-link" }))],
-    ["unknown-name", expectationsFile(expectation({ where: { pointer: "mouse" } }))],
-    ["unknown-value", expectationsFile(expectation({ where: { state: "pressed" } }))],
-    ["expectation-failed", expectationsFile(expectation({ count: 5 }))],
+    ["unknown-name", expectationsFile(expectation({ when: { keyboard: "none" } }))],
+    ["unknown-value", expectationsFile(expectation({ some: { state: "pressed" } }))],
+    [
+      "expectation-failed",
+      expectationsFile(expectation({ some: undefined, then: { state: "normal" } })),
+    ],
+    [
+      "empty-expectation",
+      expectationsFile(
+        expectation({ when: { pointer: "touch" }, some: undefined, then: { state: "normal" } }),
+      ),
+    ],
   ],
 });
 

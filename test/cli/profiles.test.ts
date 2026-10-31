@@ -183,8 +183,8 @@ describe("filters by profile", () => {
           {
             title: "A laptop link has every state",
             node: "blog-link",
-            where: { profile: "laptop" },
-            count: 4,
+            when: { profile: "laptop" },
+            some: { hover: "hovered", focus: "focused" },
           },
         ],
       },

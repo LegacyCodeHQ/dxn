@@ -238,6 +238,31 @@ export function editExpectations(
   if (changed) workspace.touch("expectations.json");
 }
 
+// An expectation's name -> value objects: when, then and some.
+export function expectationValues(expectation: Json): Json[] {
+  return ["when", "then", "some"]
+    .map((key) => expectation[key])
+    .filter((value): value is Json => isObject(value));
+}
+
+// Replaces from with to in a name -> value object, for the given names,
+// including inside lists of values. Returns whether anything changed.
+export function swapValues(item: unknown, names: string[], from: string, to: string): boolean {
+  if (!isObject(item)) return false;
+  let changed = false;
+  for (const name of names) {
+    const value = item[name];
+    if (value === from) {
+      item[name] = to;
+      changed = true;
+    } else if (Array.isArray(value) && value.includes(from)) {
+      item[name] = value.map((each) => (each === from ? to : each));
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 // Every record in the verification files, each marking its file changed when
 // visit returns true.
 export function editRecords(workspace: Workspace, visit: (record: Json) => boolean): void {
