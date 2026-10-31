@@ -212,7 +212,14 @@ dimensions status blog-link
 
 An actor such as a design agent makes evidence: frames in a design file that
 show a node in one context. The specification stays the source of truth; the
-design is evidence for it. Here the design file is `design/toolbar.png`, next
+design is evidence for it.
+
+Whoever changes the design records its evidence, in the same step. An agent
+that draws or edits frames is acting as the design agent: before it hands back,
+it attaches each frame it made to the contexts the frame shows, and checks
+`evidence <node> --by look`, where every look should have its frame and nothing
+should be conflicting. A design change without its evidence leaves the model
+and the design out of step until someone else guesses what the change meant. Here the design file is `design/toolbar.png`, next
 to `.dimensions`:
 
 ```text ../design/toolbar.png
