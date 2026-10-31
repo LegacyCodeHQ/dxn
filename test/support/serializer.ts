@@ -7,8 +7,8 @@ import type { SnapshotSerializer } from "vitest";
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const roots = [...new Set([realpathSync(tmpdir()), tmpdir()])].sort((a, b) => b.length - a.length);
 const temporary = new RegExp(
-  // mkdtemp's prefix (dimensions-, dimensions-query-, ...) and six random characters.
-  `(?:${roots.map(escapeRegExp).join("|")})/dimensions(?:-[a-z]+)*-[A-Za-z0-9]{6}`,
+  // mkdtemp's prefix (dxn-, dxn-commit-, ...) and six random characters.
+  `(?:${roots.map(escapeRegExp).join("|")})/dxn(?:-[a-z]+)*-[A-Za-z0-9]{6}`,
   "g",
 );
 

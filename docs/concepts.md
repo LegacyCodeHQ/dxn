@@ -1,6 +1,6 @@
 # Concepts
 
-dimensions models work as a tree of **nodes**, says which **states** each node
+dxn models work as a tree of **nodes**, says which **states** each node
 can be in and under which **dimensions** (breakpoint, pointer, …), and records
 whether each resulting combination has been checked. Everything lives in JSON
 files in a `.dxn/` folder. The CLI edits them safely and answers

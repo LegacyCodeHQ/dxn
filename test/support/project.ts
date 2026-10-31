@@ -16,7 +16,7 @@ export function cleanup(): void {
 }
 
 export function writeProject(files: Files): string {
-  const directory = mkdtempSync(join(tmpdir(), "dimensions-"));
+  const directory = mkdtempSync(join(tmpdir(), "dxn-"));
   directories.push(directory);
   for (const [name, content] of Object.entries(files)) {
     const path = join(directory, name);

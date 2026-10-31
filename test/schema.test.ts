@@ -636,7 +636,7 @@ agree("actors", (doc) => ({ ...tree, "actors.json": doc }), {
 
 // Evidence points to files in the repository: the folder above the project,
 // which for these projects is the system's temporary folder.
-const designFile = "dimensions-schema-design.png";
+const designFile = "dxn-schema-design.png";
 writeFileSync(join(tmpdir(), designFile), "drawn");
 afterAll(() => rmSync(join(tmpdir(), designFile), { force: true }));
 const evidenceFile = (evidence: unknown[]) => ({ version: 1, evidence });

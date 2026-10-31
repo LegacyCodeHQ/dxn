@@ -1,6 +1,6 @@
 # dxn: a language for design and dimensions
 
-This document designs a typed language for the ideas dimensions models today
+This document designs a typed language for the ideas dxn models today
 in JSON: trees of nodes, their states, the dimensions they vary with, what
 they look like, and the evidence that the design and the code match. It grows
 one modeled element at a time, starting with the leaves.
@@ -22,7 +22,7 @@ Each section marks its status:
   rules checked exhaustively, and each look matched to one frame.
 - Have a domain-free **core**, with **kits** that alias it for a domain: a UI
   kit, and later others such as project management.
-- Compile to the model dimensions already has, so every check, query and
+- Compile to the model dxn already has, so every check, query and
   piece of evidence keeps working.
 
 ## Approach
