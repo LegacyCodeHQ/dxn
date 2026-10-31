@@ -13,6 +13,7 @@ import {
   keys,
   report,
 } from "./compiler/shape.js";
+import { uses } from "./compiler/transitions.js";
 import { contextFilter, QueryError, sharedStates, subtreeContexts } from "./queries.js";
 import type { Context, Resolver } from "./resolve.js";
 
@@ -71,7 +72,7 @@ function checkFile(
       diagnostics,
       expectation,
       path,
-      ["title", "node", "subtree", "root", "when", "then", "some", "exists"],
+      ["title", "node", "subtree", "root", "when", "on", "then", "some", "exists"],
       { required: ["title", "node"] },
     );
     let valid = true;
@@ -145,7 +146,26 @@ function checkFile(
     const kind = assertions[0] as (typeof assertionKeys)[number];
     const assertionNode = fields.get(kind) as JsonNode;
     const assertionPath = `${path}.${kind}`;
+    const onNode = fields.get("on");
+    if (onNode !== undefined) {
+      if (kind !== "then") {
+        report(diagnostics, "unknown-key", '"on" goes only with "then"', `${path}.on`, onNode);
+        return;
+      }
+      if (!valid || id === undefined) return;
+      checkTransitionRule(diagnostics, resolver, {
+        id,
+        named,
+        path,
+        whenNode: fields.get("when"),
+        onNode,
+        thenNode: assertionNode,
+        expectation,
+      });
+      return;
+    }
     let asserted: [string, string[]][] | undefined;
+    let attributes: [string, string[]][] = [];
     let exists: boolean | undefined;
     if (kind === "exists") {
       if (expectKind(diagnostics, assertionNode, assertionPath, "boolean")) {
@@ -154,8 +174,10 @@ function checkFile(
         valid = false;
       }
     } else {
-      asserted = values(diagnostics, assertionNode, assertionPath, true);
-      if (asserted === undefined) valid = false;
+      const parsed = assertion(diagnostics, resolver, assertionNode, assertionPath);
+      if (parsed === undefined) valid = false;
+      asserted = parsed?.pairs;
+      attributes = parsed?.attributes ?? [];
     }
 
     if (!valid || id === undefined || when === undefined) return;
@@ -181,14 +203,33 @@ function checkFile(
     }
 
     // The contexts the expectation is about, with the node each belongs to.
-    const all: { node: string; context: Context }[] =
+    const all: { node: string; context: Context; root: string | undefined }[] =
       subtree?.kind === "boolean" && subtree.value
         ? subtreeContexts(resolver, id, root).flatMap((part) =>
-            part.contexts.map((context) => ({ node: part.id, context })),
+            part.contexts.map((context) => ({ node: part.id, context, root })),
           )
         : (root === undefined ? resolver.roots(id) : [root]).flatMap((inRoot) =>
-            resolver.contexts(id, inRoot).map((context) => ({ node: id as string, context })),
+            resolver
+              .contexts(id, inRoot)
+              .map((context) => ({ node: id as string, context, root: inRoot })),
           );
+    // Why a context's states break the attribute values asserted, if they do.
+    const attributeProblem = (owner: string, context: Context, inRoot: string | undefined) => {
+      const resolved = resolver.resolve(owner, context, resolver.lineage(owner, inRoot));
+      const states = Object.keys(resolved.groups)
+        .map((group) => context[group])
+        .filter((state): state is string => state !== undefined);
+      for (const [attribute, allowed] of attributes) {
+        for (const state of states) {
+          const value = resolved.attributes[attribute]?.[state];
+          if (value === undefined)
+            return `${attribute}=${allowed.join("|")}: ${attribute} is not set for ${state}`;
+          if (!allowed.includes(value))
+            return `${attribute}=${allowed.join("|")}: ${state} has ${attribute}=${value}`;
+        }
+      }
+      return undefined;
+    };
     const contexts = all.map(({ context }) => context);
     const filter = (pairs: [string, string][], at: JsonNode | undefined, atPath: string) => {
       try {
@@ -224,8 +265,13 @@ function checkFile(
           : context[name] === value,
       );
     const selected = all.filter(({ context }) => keep(context));
-    const relevant = selected.filter(({ context }) =>
-      (asserted ?? []).some(([name]) => name === "profile" || context[name] !== undefined),
+    const hasStates = (owner: string, context: Context, inRoot: string | undefined) =>
+      Object.keys(resolver.resolve(owner, context, resolver.lineage(owner, inRoot)).groups).length >
+      0;
+    const relevant = selected.filter(
+      ({ node: owner, context, root: inRoot }) =>
+        (asserted ?? []).some(([name]) => name === "profile" || context[name] !== undefined) ||
+        (attributes.length > 0 && hasStates(owner, context, inRoot)),
     );
     if (relevant.length === 0) {
       report(
@@ -238,16 +284,22 @@ function checkFile(
       return;
     }
     if (kind === "then") {
-      for (const { node: owner, context } of relevant) {
+      for (const { node: owner, context, root: inRoot } of relevant) {
         const broken = (asserted ?? []).find(
           ([name, list]) =>
             (name === "profile" || context[name] !== undefined) && !matches(context, name, list),
         );
-        if (broken !== undefined) {
+        const problem =
+          broken !== undefined
+            ? `${broken[0]}=${broken[1].join("|")}`
+            : attributes.length > 0 && hasStates(owner, context, inRoot)
+              ? attributeProblem(owner, context, inRoot)
+              : undefined;
+        if (problem !== undefined) {
           report(
             diagnostics,
             "expectation-failed",
-            `${named}: ${describeContext(resolver, owner, context)} breaks ${broken[0]}=${broken[1].join("|")}`,
+            `${named}: ${describeContext(resolver, owner, context)} breaks ${problem}`,
             assertionPath,
             assertionNode,
           );
@@ -256,14 +308,19 @@ function checkFile(
       }
       return;
     }
-    const found = relevant.some(({ context }) =>
-      (asserted ?? []).every(([name, list]) => matches(context, name, list)),
+    const found = relevant.some(
+      ({ node: owner, context, root: inRoot }) =>
+        (asserted ?? []).every(([name, list]) => matches(context, name, list)) &&
+        (attributes.length === 0 || attributeProblem(owner, context, inRoot) === undefined),
     );
     if (!found) {
       report(
         diagnostics,
         "expectation-failed",
-        `${named}: no context of ${id}${describeWhen} has ${pairs.map(([name, value]) => `${name}=${value}`).join(", ")}`,
+        `${named}: no context of ${id}${describeWhen} has ${[
+          ...pairs.map(([name, value]) => `${name}=${value}`),
+          ...attributes.map(([name, list]) => `${name}=${list.join("|")}`),
+        ].join(", ")}`,
         assertionPath,
         assertionNode,
       );
@@ -436,6 +493,246 @@ function checkExists(
         `${e.named}: ${e.id} ${e.exists ? "does not exist" : "exists"}${at === "" ? "" : ` (${at})`}`,
         e.assertionPath,
         e.assertionNode,
+      );
+      return;
+    }
+  }
+}
+
+// then or some: name -> value (or values), and attributes -> name -> value.
+function assertion(
+  diagnostics: Diagnostics,
+  resolver: Resolver,
+  item: JsonNode,
+  path: string,
+): { pairs: [string, string[]][]; attributes: [string, string[]][] } | undefined {
+  const object = expectObject(diagnostics, item, path);
+  if (object === undefined) return undefined;
+  const rest = object.members.filter(({ key }) => key.value !== "attributes");
+  const pairs = values(diagnostics, { ...object, members: rest }, path, true);
+  const attributesMember = object.members.find(({ key }) => key.value === "attributes");
+  if (attributesMember === undefined)
+    return pairs === undefined ? undefined : { pairs, attributes: [] };
+  const attributesPath = `${path}.attributes`;
+  const attributes = values(diagnostics, attributesMember.value, attributesPath, true);
+  if (pairs === undefined || attributes === undefined) return undefined;
+  const declared = resolver.project.types.attributes ?? {};
+  const byName = expectObject(diagnostics, attributesMember.value, attributesPath);
+  for (const [name, list] of attributes) {
+    const member = byName?.members.find(({ key }) => key.value === name);
+    const declaration = declared[name];
+    if (declaration === undefined) {
+      report(
+        diagnostics,
+        "undeclared-attribute",
+        `attribute ${JSON.stringify(name)} is not declared`,
+        childPath(attributesPath, name),
+        member?.key ?? attributesMember.value,
+      );
+      return undefined;
+    }
+    const unknown = list.find((value) => !declaration.values.includes(value));
+    if (unknown !== undefined) {
+      report(
+        diagnostics,
+        "unknown-value",
+        `"${unknown}" is not a value of ${name} (${declaration.values.join(", ")})`,
+        childPath(attributesPath, name),
+        member?.value ?? attributesMember.value,
+      );
+      return undefined;
+    }
+  }
+  return { pairs, attributes };
+}
+
+// A transition rule: when the shared node is in a state, on an event, then
+// it is in another state and focus is on a node.
+function checkTransitionRule(
+  diagnostics: Diagnostics,
+  resolver: Resolver,
+  r: {
+    id: string;
+    named: string;
+    path: string;
+    whenNode: JsonNode | undefined;
+    onNode: JsonNode;
+    thenNode: JsonNode;
+    expectation: JsonNode;
+  },
+): void {
+  const states = sharedStates(resolver, r.id);
+  const fail = (code: string, message: string, at: string, item: JsonNode | undefined) => {
+    report(diagnostics, code, message, at, item ?? r.expectation);
+  };
+
+  // when: only the node's own state, the state before.
+  const when = values(diagnostics, r.whenNode, `${r.path}.when`, false);
+  if (when === undefined) return;
+  let from: string | undefined;
+  for (const [name, [value]] of when) {
+    const at = childPath(`${r.path}.when`, name);
+    if (name !== r.id) {
+      fail(
+        "unknown-name",
+        `"${name}" is not ${r.id}'s state; a transition rule's when names only ${r.id}`,
+        at,
+        r.whenNode,
+      );
+      return;
+    }
+    if (!states.includes(value as string)) {
+      fail(
+        "unknown-value",
+        `"${value}" is not a state of ${r.id} (${states.join(", ")})`,
+        at,
+        r.whenNode,
+      );
+      return;
+    }
+    from = value;
+  }
+
+  // on: the event and the fields that event uses; a resize names dimension values.
+  const on = expectObject(diagnostics, r.onNode, `${r.path}.on`);
+  if (on === undefined) return;
+  const onPath = `${r.path}.on`;
+  const fields = new Map(on.members.map(({ key, value }) => [key.value, { key, value }]));
+  const event = fields.get("event");
+  if (event === undefined) {
+    fail("missing-key", 'missing required key "event"', onPath, r.onNode);
+    return;
+  }
+  if (!expectName(diagnostics, event.value, `${onPath}.event`)) return;
+  const eventName = event.value.value;
+  const fieldsFor = uses[eventName];
+  if (fieldsFor === undefined) {
+    fail(
+      "unknown-event",
+      `${JSON.stringify(eventName)} is not a supported event (${Object.keys(uses).join(", ")})`,
+      `${onPath}.event`,
+      event.value,
+    );
+    return;
+  }
+  const given = new Map<string, string[]>();
+  for (const [name, { key, value }] of fields) {
+    if (name === "event") continue;
+    const at = childPath(onPath, name);
+    const isDimension = eventName === "resize" && resolver.project.dimensions[name] !== undefined;
+    if (!isDimension && !fieldsFor.includes(name)) {
+      fail(
+        "unknown-key",
+        `${JSON.stringify(name)} does not apply to a ${eventName} event`,
+        at,
+        key,
+      );
+      return;
+    }
+    const list =
+      value.kind === "array"
+        ? value.elements
+            .filter((element) => element.kind === "string")
+            .map((element) => element.value as string)
+        : value.kind === "string"
+          ? [value.value]
+          : undefined;
+    if (list === undefined || list.length === 0) {
+      expectName(diagnostics, value, at);
+      return;
+    }
+    if (
+      (name === "target" || name === "outside") &&
+      resolver.node(list[0] as string) === undefined
+    ) {
+      fail("unknown-node", `node ${JSON.stringify(list[0])} does not exist`, at, value);
+      return;
+    }
+    given.set(name, list);
+  }
+
+  // then: the node's state after, and where focus ends up.
+  const then = values(diagnostics, r.thenNode, `${r.path}.then`, false);
+  if (then === undefined) return;
+  let to: string | undefined;
+  let focus: string | undefined;
+  for (const [name, [value]] of then) {
+    const at = childPath(`${r.path}.then`, name);
+    if (name === r.id) {
+      if (!states.includes(value as string)) {
+        fail(
+          "unknown-value",
+          `"${value}" is not a state of ${r.id} (${states.join(", ")})`,
+          at,
+          r.thenNode,
+        );
+        return;
+      }
+      to = value;
+    } else if (name === "focus") {
+      if (resolver.node(value as string) === undefined) {
+        fail("unknown-node", `node ${JSON.stringify(value)} does not exist`, at, r.thenNode);
+        return;
+      }
+      focus = value;
+    } else {
+      fail(
+        "unknown-name",
+        `"${name}" is not something a transition sets; give ${r.id}=<state> or focus=<node>`,
+        at,
+        r.thenNode,
+      );
+      return;
+    }
+  }
+
+  const transitions = (resolver.node(r.id)?.transitions ?? []).filter(
+    (transition) =>
+      transition.on === eventName &&
+      (from === undefined || transition.from === from) &&
+      [...given].every(([name, list]) => {
+        if (name === "key" || name === "target" || name === "outside") {
+          return transition[name] === list[0];
+        }
+        const reached = transition.when?.[name] ?? [];
+        return list.every((value) => reached.includes(value));
+      }),
+  );
+  if (transitions.length === 0) {
+    const what = [...given]
+      .map(([name, list]) =>
+        name === "key"
+          ? list[0]
+          : name === "target"
+            ? `on ${list[0]}`
+            : name === "outside"
+              ? `outside ${list[0]}`
+              : `to ${name}=${list.join("|")}`,
+      )
+      .join(" ");
+    fail(
+      "empty-expectation",
+      `${r.named}: ${r.id} has no transition${from === undefined ? "" : ` from ${from}`} on ${eventName}${what === "" ? "" : ` ${what}`}`,
+      onPath,
+      r.onNode,
+    );
+    return;
+  }
+  for (const transition of transitions) {
+    const problem =
+      to !== undefined && transition.to !== to
+        ? `leads to ${transition.to}, not ${to}`
+        : focus !== undefined && transition.focus === undefined
+          ? `does not move focus (focus=${focus})`
+          : focus !== undefined && transition.focus !== focus
+            ? `moves focus to ${transition.focus}, not ${focus}`
+            : undefined;
+    if (problem !== undefined) {
+      fail(
+        "expectation-failed",
+        `${r.named}: transition ${transition.id} ${problem}`,
+        `${r.path}.then`,
+        r.thenNode,
       );
       return;
     }

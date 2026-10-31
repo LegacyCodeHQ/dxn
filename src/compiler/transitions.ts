@@ -15,7 +15,7 @@ const events: Record<string, string> = {
 const fields = ["id", "from", "to", "on", "key", "target", "outside", "when", "focus"];
 
 // The event fields each event uses; focus goes with any of them.
-const uses: Record<string, string[]> = {
+export const uses: Record<string, string[]> = {
   click: ["target"],
   keydown: ["key"],
   pointerdown: ["target", "outside"],

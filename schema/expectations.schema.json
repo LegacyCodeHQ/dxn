@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "dimensions expectations",
-  "description": "Editor aid for expectations.json: rules the model must follow. Each expectation selects contexts of a node (optionally its subtree, in one root, filtered with when) and makes exactly one assertion: then (every selected context has these values), some (at least one does) or exists (the node is there, or not, wherever when holds). The dimensions compiler is the authority: it also checks that nodes and roots exist, that names and values belong to the node, that an expectation selects some contexts, and that it holds, which this schema cannot express.",
+  "description": "Editor aid for expectations.json: rules the model must follow. Each expectation selects contexts of a node (optionally its subtree, in one root, filtered with when) and makes exactly one assertion: then (every selected context has these values), some (at least one does) or exists (the node is there, or not, wherever when holds). A transition rule adds on: when the node is in a state, on an event, then it is in another state and focus is on a node. The dimensions compiler is the authority: it also checks that nodes and roots exist, that names and values belong to the node, that an expectation selects some contexts, and that it holds, which this schema cannot express.",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "expectations"],
@@ -71,6 +71,30 @@
         "exists": {
           "description": "Whether the node is there in every combination where when holds (true) or in none (false).",
           "type": "boolean"
+        },
+        "on": {
+          "description": "For a transition rule: the event, with the fields it uses (key, target, outside, or for a resize the dimension values it reaches). Goes only with then, which names the shared node's state after and where focus ends up.",
+          "type": "object",
+          "required": ["event"],
+          "properties": {
+            "event": {
+              "$ref": "#/$defs/name"
+            }
+          },
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/name"
+              },
+              {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/name"
+                }
+              }
+            ]
+          }
         }
       },
       "oneOf": [
@@ -86,8 +110,27 @@
       ]
     },
     "values": {
-      "description": "Dimension, state group, shared node or profile -> one value, or a list of allowed values.",
+      "description": "Dimension, state group, shared node or profile -> one value, or a list of allowed values; attributes -> attribute -> value or values, checked for every state in each context.",
       "type": "object",
+      "properties": {
+        "attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/name"
+              },
+              {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/$defs/name"
+                }
+              }
+            ]
+          }
+        }
+      },
       "additionalProperties": {
         "oneOf": [
           {

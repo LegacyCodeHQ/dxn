@@ -441,7 +441,7 @@ one node or outside one, so keep one of them.
 ### `unknown-event`
 
 `on` isn't one of the supported events: `click`, `keydown`, `pointerdown`,
-`resize`.
+`resize`. In a transition rule, it is the `event` in `on`.
 
 ### `target-absent`
 
@@ -527,8 +527,8 @@ expectation makes one assertion; split it into two.
 
 ### `empty-expectation`
 
-The expectation selects no contexts, so it tests nothing and would pass
-whatever the model said. For example, a rule about tablets with a keyboard
+The expectation selects no contexts, or a transition rule matches no
+transition, so it tests nothing and would pass whatever the model said. For example, a rule about tablets with a keyboard
 when no profile has touch with a keyboard. Fix its `when`, or remove it.
 
 ### `expectation-failed`

@@ -417,6 +417,37 @@ one `root`), an optional `when` filter, and exactly one assertion:
 - `exists`: the node is there in every combination of its dimensions and
   shared ancestors' states where `when` holds (`true`), or in none (`false`).
 
+`then` and `some` can also name `attributes`, checked for every state in each
+context. A state with no value for the attribute breaks the rule:
+
+```json
+{
+  "title": "Every state on touch has a ready design",
+  "node": "blog-link",
+  "when": { "pointer": "touch" },
+  "then": { "attributes": { "design": "ready" } }
+}
+```
+
+A **transition rule** adds `on`: when a shared node is in a state, on an
+event, then it is in another state and focus is on a node. `on` names the
+event and the fields it uses (`key`, `target`, `outside`, or for a resize the
+dimension values it reaches); `when` names only the node's state before, and
+`then` only its state after and `focus`:
+
+```json
+{
+  "title": "Escape closes the menu and returns focus to its button",
+  "node": "menu",
+  "when": { "menu": "open" },
+  "on": { "event": "keydown", "key": "Escape" },
+  "then": { "menu": "closed", "focus": "menu-button" }
+}
+```
+
+Every transition that matches must lead there, and a rule that matches no
+transition is an error.
+
 `when`, `then` and `some` name dimensions, state groups, shared nodes and
 `profile`, as `contexts` filters do. A failing expectation names one context
 that breaks it, and an expectation that selects nothing is an error too,

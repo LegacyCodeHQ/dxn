@@ -502,6 +502,11 @@ agree("expectations", (doc) => ({ ...withOnlyMouse, "expectations.json": doc }),
     ["wrong-type", expectationsFile(expectation({ when: [] }))],
     ["wrong-type", expectationsFile(expectation({ some: { state: 1 } }))],
     ["wrong-type", expectationsFile(expectation({ some: undefined, exists: "yes" }))],
+    ["wrong-type", expectationsFile(expectation({ some: { attributes: [] } }))],
+    [
+      "missing-key",
+      expectationsFile(expectation({ some: undefined, on: {}, then: { focus: "logo" } })),
+    ],
   ],
   crossReference: [
     ["unknown-node", expectationsFile(expectation({ node: "nope" }))],
@@ -511,6 +516,20 @@ agree("expectations", (doc) => ({ ...withOnlyMouse, "expectations.json": doc }),
     [
       "expectation-failed",
       expectationsFile(expectation({ some: undefined, then: { state: "normal" } })),
+    ],
+    [
+      "expectation-failed",
+      expectationsFile(expectation({ some: { attributes: { design: "available" } } })),
+    ],
+    [
+      "empty-expectation",
+      expectationsFile(
+        expectation({
+          some: undefined,
+          on: { event: "click", target: "logo" },
+          then: { focus: "logo" },
+        }),
+      ),
     ],
     [
       "empty-expectation",
