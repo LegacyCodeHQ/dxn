@@ -57,11 +57,15 @@ counted, and recorded evidence says which cases the real system shows.
 ## Your first file
 
 A dxn file is plain text, and its name ends in `.dxn`. The `lang check`
-command reads one, reports any problems, and otherwise prints what it
-declares as JSON:
+command reads one, reports any problems, and otherwise says in one line what
+it declares:
 
 ```bash
 dxn lang check wordmark.dxn
+```
+
+```
+wordmark.dxn: 2 enums, 1 type
 ```
 
 It needs no project, so you can try everything in this guide in an empty
@@ -69,10 +73,15 @@ folder. Four commands work on a file, each introduced where it is needed:
 
 | Command                                   | What it does                                                |
 | ----------------------------------------- | ----------------------------------------------------------- |
-| `lang check <file>`                       | reports every problem, or prints what the file declares     |
-| `lang states <file> <Type> [--table]`     | evaluates a type: its states in each profile or combination |
+| `lang check <file>`                       | reports every problem, or says what the file declares       |
+| `lang states <file> <Type>`               | evaluates a type: its states in each profile or combination |
 | `lang validate <file>`                    | checks every stored record against its declaration          |
 | `lang rename <file> <Enum>.<value> <new>` | renames an enum's value in the file and its stored records  |
+
+Each prints a readable answer for you. A tool or an agent adds `--json` to any
+of them, and gets one JSON document instead: the answer with its `problems`,
+the file and its problems when it fails, or `{ "error": … }` when the command
+refuses.
 
 A `#` starts a comment, which runs to the end of the line. Use comments for
 the _why_ that the declarations cannot say:
@@ -136,7 +145,7 @@ in any of the four combinations of hover and focus. You can ask the tool for
 them:
 
 ```bash
-dxn lang states wordmark.dxn Wordmark --table
+dxn lang states wordmark.dxn Wordmark
 ```
 
 ```
@@ -261,7 +270,7 @@ where it exists. A second rule for the same value is an error.
 This is where the language pays off. Ask for the wordmark's states again:
 
 ```bash
-dxn lang states wordmark.dxn Wordmark --table
+dxn lang states wordmark.dxn Wordmark
 ```
 
 ```
@@ -279,7 +288,7 @@ table is the matrix the introduction talked about: every case the wordmark
 has to handle, worked out from four lines of rules. A designer can draw from
 it, a developer can build from it, and nobody has to guess which cases exist.
 
-Without `--table`, the command prints the same matrix as JSON, for tools and
+With `--json`, the command prints the same matrix as JSON, for tools and
 agents.
 
 ## Environments: the shape of a device
@@ -608,13 +617,11 @@ evidence/wordmark.json:21:14: unknown-value: $[1].actor: "designer" is not a val
 
 Every field must be given, each of its type, and no others. Each problem has
 its file, line and column, and its JSON path, so a person or an agent can go
-straight to it. When everything is valid, the command prints what it checked:
+straight to it. When everything is valid, the command says what it checked,
+a line for each stored record:
 
-```json
-{
-  "file": "evidence.dxn",
-  "stored": [{ "record": "Evidence", "folder": "evidence", "files": 1, "records": 2 }]
-}
+```
+evidence.dxn: Evidence, 2 records in 1 file in evidence/
 ```
 
 ### Renaming a value
@@ -629,15 +636,8 @@ every context.
 dxn lang rename evidence.dxn Actor.design-agent designer
 ```
 
-```json
-{
-  "file": "evidence.dxn",
-  "enum": "Actor",
-  "from": "design-agent",
-  "to": "designer",
-  "written": ["evidence.dxn", "evidence/wordmark.json"],
-  "records": 2
-}
+```
+Renamed Actor.design-agent to designer in evidence.dxn, evidence/wordmark.json (2 values)
 ```
 
 It only touches the value where it means that enum's value: the same text in
@@ -645,7 +645,9 @@ another enum, a dimension, or a string field stays as it is, and so does the
 rest of each file, comments and spacing included. It refuses a new name that
 is already a value or is not written like one, and it changes nothing while
 the file or its stored records have problems, so a rename never mixes with
-them. Add `--dry-run` to see every file it would write, without writing.
+them. Add `--dry-run` to see what it would rename, without writing:
+`Would rename Actor.design-agent to designer in …`; with `--json` as well, it
+prints every file it would write, in full.
 
 With these, evidence is checked by the language itself: its shape, its
 values, and that the combination it is about exists.
@@ -664,6 +666,27 @@ There are two kinds:
   1, and nothing is evaluated, validated or renamed.
 - A **warning** has `warning:` before its code. The file is still usable, and
   the command still succeeds.
+
+With `--json`, problems are not printed as lines but listed in the one JSON
+document, each with its `file`, `line`, `column`, `severity`, `code` and
+`message`, and its `path` in stored data:
+
+```json
+{
+  "file": "evidence.dxn",
+  "problems": [
+    {
+      "file": "evidence/wordmark.json",
+      "line": 21,
+      "column": 14,
+      "severity": "error",
+      "code": "unknown-value",
+      "path": "$[1].actor",
+      "message": "\"designer\" is not a value of Actor (design-agent)"
+    }
+  ]
+}
+```
 
 A mistake in one declaration does not cause a cascade of others. The tool
 reports the mistake, keeps whatever it read of that declaration, and carries

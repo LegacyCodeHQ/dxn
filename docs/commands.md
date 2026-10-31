@@ -739,14 +739,14 @@ starts a comment, to the end of the line:
   profile laptop: Device { Pointer = mouse }
 
 Subcommands:
-  check <file>                       Parse and check a file; print what it declares
-                                     as JSON, or every problem it has. Warnings
+  check <file>                       Parse and check a file; say what it declares,
+                                     or report every problem it has. Warnings
                                      are printed, but do not fail. Needs no
                                      project.
-  states <file> <type> [--table]     Evaluate a type: the states it has in each
+  states <file> <type>               Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
-                                     as JSON, or a Markdown table with --table
+                                     as a Markdown table
   validate <file>                    Check the stored records: each record's data is
                                      every JSON file in a folder named after it in
                                      kebab-case, next to the file, each a list of
@@ -755,14 +755,21 @@ Subcommands:
                                      every problem with its line, column and path
   rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
                                      stored record, once both check; with --dry-run,
-                                     print what it would write
+                                     say what it would write
+
+Options:
+  --json                             Print one JSON document, for tools: the result
+                                     and any warnings as "problems"; on a failure,
+                                     the file and its problems; on a refusal,
+                                     {"error": "<message>"}
 ```
 
-Works on files written in dxn, the language of design and dimensions, which grows one concept at a time; [language/guide.md](language/guide.md) teaches it and lists every diagnostic code. `check` prints what a file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. `states` evaluates a type's states in each profile or combination. `validate` checks every stored record, the JSON files in a kebab-case folder named after each record, next to the file; a problem in stored data also has its JSON path. `rename` renames an enum's value in the file and in every stored record.
+Works on files written in dxn, the language of design and dimensions, which grows one concept at a time; [language/guide.md](language/guide.md) teaches it and lists every diagnostic code. Each prints a readable answer by default, and one JSON document with `--json`. `check` says what a file declares, in one line, or prints each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. `states` prints a type's states in each profile or combination as a Markdown table. `validate` checks every stored record, the JSON files in a kebab-case folder named after each record, next to the file; a problem in stored data also has its JSON path. `rename` renames an enum's value in the file and in every stored record.
 
 ```bash
 dxn lang check wordmark.dxn
-dxn lang states wordmark.dxn Wordmark --table
+dxn lang states wordmark.dxn Wordmark
 dxn lang validate evidence.dxn
 dxn lang rename evidence.dxn Actor.design-agent designer
+dxn lang check wordmark.dxn --json
 ```
