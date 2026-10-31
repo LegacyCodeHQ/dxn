@@ -920,6 +920,42 @@ a line for each stored record:
 evidence.dxn: Evidence, 2 records in 1 file in evidence/
 ```
 
+### Status: what has evidence, and what is missing
+
+With evidence recorded for children, `lang status` says how much of the
+model it covers: every combination of every element in the file's trees, in
+place, and which of them a stored record is about.
+
+```bash
+dxn lang status toolbar.dxn
+```
+
+```
+toolbar.dxn: Evidence for 38 of 75 combinations
+
+| path                    | combinations | with evidence | missing |
+| ----------------------- | ------------ | ------------- | ------- |
+| Toolbar                 | 6            | 0             | 6       |
+| Toolbar.wordmark        | 15           | 15            | 0       |
+| Toolbar.links           | 3            | 0             | 3       |
+| Toolbar.links.blog      | 18           | 9             | 9       |
+| Toolbar.menu            | 6            | 2             | 4       |
+| Toolbar.menu.toggle     | 12           | 12            | 0       |
+| Toolbar.menu.panel      | 3            | 0             | 3       |
+| Toolbar.menu.panel.blog | 12           | 0             | 12      |
+```
+
+A tree starts at each type that no type contains, and every child below it
+is an element, by its path. Profiles that share a row count as one: evidence
+on `laptop` covers a tablet with the magic keyboard too. With `--missing`, it
+lists each combination without evidence, in the words a context would use:
+
+```
+Missing:
+  Toolbar.menu on tablet-portrait with layout = compact: menu = closed
+  Toolbar.menu.panel on phone with layout = compact, menu.menu = open
+```
+
 ### Renaming a value
 
 An enum's values are stored as text, so renaming one by hand leaves every

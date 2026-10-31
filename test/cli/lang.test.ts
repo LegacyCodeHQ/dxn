@@ -668,3 +668,68 @@ record Evidence with context {
     });
   });
 });
+
+describe("lang status", () => {
+  const schema = `dimension Pointer = mouse | touch
+enum Hover = rest | hovered
+type Toolbar {
+  has link: Link
+}
+type Link needs Pointer {
+  state hover: Hover
+  hover = hovered only when Pointer = mouse
+}
+environment Device = Pointer
+profile phone: Device { Pointer = touch }
+profile laptop: Device { Pointer = mouse }
+record Evidence with context {}
+`;
+  const project = (data: string) => {
+    const root = writeProject({});
+    writeFileSync(join(root, "toolbar.dxn"), schema);
+    mkdirSync(join(root, "evidence"));
+    writeFileSync(join(root, "evidence", "toolbar.json"), data);
+    return (...args: string[]) => capture(["lang", "status", ...args], root);
+  };
+  const link = (profile: string, hover: string) =>
+    `{ "context": { "path": "Toolbar.link", "profile": "${profile}", "dimensions": {}, "parents": {}, "states": { "hover": "${hover}" } } }`;
+
+  it("says how many combinations of each element have evidence", () => {
+    const result = project(`[${link("phone", "rest")}, ${link("laptop", "hovered")}]`)(
+      "toolbar.dxn",
+    );
+    expect([result.code, result.stdout]).toEqual([
+      0,
+      [
+        "toolbar.dxn: Evidence for 2 of 5 combinations",
+        "",
+        "| path         | combinations | with evidence | missing |",
+        "| ------------ | ------------ | ------------- | ------- |",
+        "| Toolbar      | 2            | 0             | 2       |",
+        "| Toolbar.link | 3            | 2             | 1       |",
+        "",
+      ].join("\n"),
+    ]);
+  });
+
+  it("lists what is missing with --missing, and gives it all as JSON with --json", () => {
+    const run = project(`[${link("phone", "rest")}, ${link("laptop", "hovered")}]`);
+    const missing = run("toolbar.dxn", "--missing").stdout.split("\n");
+    expect(missing.slice(-5)).toEqual([
+      "Missing:",
+      "  Toolbar on phone",
+      "  Toolbar on laptop",
+      "  Toolbar.link on laptop: hover = rest",
+      "",
+    ]);
+    const json = JSON.parse(run("toolbar.dxn", "--json").stdout);
+    expect([json.records[0].record, json.records[0].combinations, json.records[0].present]).toEqual(
+      ["Evidence", 5, 2],
+    );
+  });
+
+  it("reports the stored records' problems first, and counts nothing", () => {
+    const result = project(`[${link("phone", "hovered")}]`)("toolbar.dxn");
+    expect([result.code, result.stdout]).toEqual([1, ""]);
+  });
+});

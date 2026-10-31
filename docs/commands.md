@@ -757,6 +757,10 @@ Subcommands:
                                      records with every field given, each of its
                                      type, and no others. Print what it checked, or
                                      every problem with its line, column and path
+  status <file> [--missing]          Count, for each record with context, the
+                                     combinations of every element in the file's
+                                     trees, in place, and those a stored record is
+                                     about; with --missing, list the others
   rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
                                      stored record, once both check; with --dry-run,
                                      say what it would write

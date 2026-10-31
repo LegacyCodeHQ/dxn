@@ -10,6 +10,7 @@ import {
 import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
 import { isValue, renameInData, renameInSource } from "../language/rename.js";
+import { type Combination, coverage } from "../language/status.js";
 import { folderOf, storedFiles } from "../language/store.js";
 import { validate } from "../language/validate.js";
 import { drawTable, NONE } from "../tables.js";
@@ -56,6 +57,10 @@ Subcommands:
                                      records with every field given, each of its
                                      type, and no others. Print what it checked, or
                                      every problem with its line, column and path
+  status <file> [--missing]          Count, for each record with context, the
+                                     combinations of every element in the file's
+                                     trees, in place, and those a stored record is
+                                     about; with --missing, list the others
   rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
                                      stored record, once both check; with --dry-run,
                                      say what it would write
@@ -496,9 +501,72 @@ const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   );
 });
 
+const statusCommand: Command = command(usage, (args, { io, cwd }) => {
+  const {
+    json,
+    rest: [file, ...rest],
+  } = options(args.filter((arg) => arg !== "--missing"));
+  const listMissing = args.includes("--missing");
+  if (file === undefined || rest.length > 0) {
+    io.stderr(`dxn: give one file, whose evidence to count\n\n${usage}`);
+    return 2;
+  }
+  const report = new Reporter(io, json, file);
+  const parsed = read(file, cwd, report);
+  if (typeof parsed === "number") return parsed;
+  const uncontexted = storedWithoutContext(parsed, file, cwd);
+  if (uncontexted.length > 0) return report.refuse(...uncontexted);
+  const data = storedData(parsed, file, cwd);
+  if (!checkStored(parsed, data, report)) return report.fail();
+  const records = parsed.records
+    .filter(({ context }) => context)
+    .map(({ name }) =>
+      coverage(
+        parsed,
+        name,
+        data.filter(({ record }) => record === name).map(({ source }) => source),
+      ),
+    );
+  // A combination, as its path and where it is: "<path> on <profiles>,
+  // <Dimension> <value> with <parent> = <value>: <state> = <value>".
+  const describe = (path: string, combination: Combination) => {
+    const world = [
+      ...(combination.profiles ?? []),
+      ...Object.entries(combination.dimensions).map(([name, value]) => `${name} ${value}`),
+    ].join(", ");
+    const parents = Object.entries(combination.parents)
+      .map(([name, value]) => `${name} = ${value}`)
+      .join(", ");
+    const states = Object.entries(combination.states)
+      .map(([name, value]) => `${name} = ${value}`)
+      .join(", ");
+    return `${path}${world === "" ? "" : ` on ${world}`}${parents === "" ? "" : ` with ${parents}`}${states === "" ? "" : `: ${states}`}`;
+  };
+  const blocks = records.map(({ record, combinations, present, paths }) => {
+    const table = drawTable(
+      ["path", "combinations", "with evidence", "missing"],
+      paths.map(({ path, combinations: all, present: with_ }) => [
+        path,
+        String(all),
+        String(with_),
+        String(all - with_),
+      ]),
+    );
+    const missing = paths.flatMap(({ path, missing: absent }) =>
+      absent.map((combination) => `  ${describe(path, combination)}\n`),
+    );
+    return `${file}: ${record} for ${present} of ${count(combinations, "combination")}\n\n${table}${
+      listMissing && missing.length > 0 ? `\nMissing:\n${missing.join("")}` : ""
+    }`;
+  });
+  const text = blocks.length === 0 ? `${file}: no records with context\n` : blocks.join("\n");
+  return report.succeed({ file, records }, text);
+});
+
 export const lang: Command = group(usage, {
   check,
   states: statesCommand,
   validate: validateCommand,
   rename: renameCommand,
+  status: statusCommand,
 });
