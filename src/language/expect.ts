@@ -65,6 +65,15 @@ function checkOne(
   );
   if (elements.length === 0)
     return empty(`${path} is not in a tree from a type that nothing contains`);
+  // Every element below must be placeable too: one that is not, such as one
+  // receiving a state nothing above it provides, cannot be evaluated.
+  for (const element of elements) {
+    try {
+      placement(file, element);
+    } catch (error) {
+      return empty(`${element}: ${(error as Error).message}`);
+    }
+  }
   // A key's value in a combination: the profile, a dimension, a parent's
   // state or one of the element's own.
   const valueAt = (combination: Combination, key: string): string | undefined => {

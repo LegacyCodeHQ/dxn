@@ -136,6 +136,24 @@ describe("expect", () => {
     ]);
   });
 
+  it("reports an element below it that cannot be placed, rather than failing", () => {
+    const unprovided = `enum S = a | b
+type L receives c: S {
+  state h: S
+}
+type P {
+  has l: L
+}
+expect "Every h is a" {
+  in P and below
+  then h = a
+}
+`;
+    assert(problems(unprovided)).toEqual([
+      "8:8: expectation-empty: Every h is a tests nothing: P.l: c is received by L, but nothing above it provides it",
+    ]);
+  });
+
   it("has a title, once, a place, and one assertion", () => {
     assert([
       problems(`${model}expect Touch {\n  in Page.toolbar\n  absent\n}\n`),
