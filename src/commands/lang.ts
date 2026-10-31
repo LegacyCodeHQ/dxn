@@ -2,7 +2,9 @@ import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ParseResult } from "../language/ast.js";
 import { states as evaluateStates } from "../language/evaluate.js";
+import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
+import { validate } from "../language/validate.js";
 import { drawTable, NONE } from "../tables.js";
 import { type Command, type Context, command } from "./context.js";
 import { group } from "./edit.js";
@@ -36,6 +38,11 @@ Subcommands:
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
                                      as JSON, or a Markdown table with --table
+  validate <file> <record> <data>    Check a JSON file, a list of records, against
+                                     a record of the file: every field given, each
+                                     of its type, and no others. Print how many
+                                     records it checked, or every problem with its
+                                     line, column and JSON path
 `;
 
 // What a file declares, without positions, which are for diagnostics: each
@@ -132,4 +139,37 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   return 0;
 });
 
-export const lang: Command = group(usage, { check, states: statesCommand });
+const validateCommand: Command = command(usage, (args, { io, cwd }) => {
+  const [file, recordName, data, ...rest] = args;
+  if (file === undefined || recordName === undefined || data === undefined || rest.length > 0) {
+    io.stderr(`dimensions: give a file, a record and a JSON file to check\n\n${usage}`);
+    return 2;
+  }
+  const parsed = read(file, cwd, io);
+  if (typeof parsed === "number") return parsed;
+  const names = new Names(parsed);
+  if (names.kindOf(recordName) !== "record") {
+    io.stderr(`dimensions: ${names.not(recordName, "record")}\n`);
+    return 1;
+  }
+  const path = resolve(cwd, data);
+  if (statSync(path, { throwIfNoEntry: false })?.isFile() !== true) {
+    io.stderr(`dimensions: file not found: ${JSON.stringify(data)}\n`);
+    return 1;
+  }
+  const source = readFileSync(path, "utf8");
+  const problems = validate(parsed, recordName, source);
+  for (const { line, column, code, path: at, message } of problems) {
+    io.stderr(`${data}:${line}:${column}: ${code}: ${at}: ${message}\n`);
+  }
+  if (problems.length > 0) return 1;
+  const records = (JSON.parse(source) as unknown[]).length;
+  io.stdout(`${JSON.stringify({ file, record: recordName, data, records })}\n`);
+  return 0;
+});
+
+export const lang: Command = group(usage, {
+  check,
+  states: statesCommand,
+  validate: validateCommand,
+});

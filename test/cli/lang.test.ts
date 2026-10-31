@@ -153,3 +153,51 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
     );
   });
 });
+
+describe("lang validate", () => {
+  const schema = "enum Tool = pen-dev | code\nrecord Source {\n  tool: Tool\n}\n";
+  const project = (data: string) => {
+    const root = writeProject({});
+    writeFileSync(join(root, "evidence.dim"), schema);
+    writeFileSync(join(root, "records.json"), data);
+    return (...args: string[]) => capture(["lang", "validate", ...args], root);
+  };
+
+  it("checks a JSON list of records against a record, and says how many it checked", () => {
+    const result = project('[{ "tool": "code" }, { "tool": "pen-dev" }]')(
+      "evidence.dim",
+      "Source",
+      "records.json",
+    );
+    expect([result.code, JSON.parse(result.stdout)]).toEqual([
+      0,
+      { file: "evidence.dim", record: "Source", data: "records.json", records: 2 },
+    ]);
+  });
+
+  it("reports every problem in the data with its line, column and path, and fails", () => {
+    const result = project('[{ "tool": "figma" }, {}]')("evidence.dim", "Source", "records.json");
+    expect([result.code, result.stderr, result.stdout]).toEqual([
+      1,
+      [
+        'records.json:1:12: unknown-value: $[0].tool: "figma" is not a value of Tool (pen-dev, code)',
+        "records.json:1:23: missing-field: $[1]: Source is missing tool",
+        "",
+      ].join("\n"),
+      "",
+    ]);
+  });
+
+  it("refuses a name that is not a record, a missing file, and the wrong arguments", () => {
+    const run = project("[]");
+    expect([
+      run("evidence.dim", "Tool", "records.json").stderr,
+      run("evidence.dim", "Source", "missing.json").stderr,
+      run("evidence.dim", "Source").code,
+    ]).toEqual([
+      "dimensions: Tool is an enum, not a record\n",
+      'dimensions: file not found: "missing.json"\n',
+      2,
+    ]);
+  });
+});

@@ -746,6 +746,11 @@ Subcommands:
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
                                      as JSON, or a Markdown table with --table
+  validate <file> <record> <data>    Check a JSON file, a list of records, against
+                                     a record of the file: every field given, each
+                                     of its type, and no others. Print how many
+                                     records it checked, or every problem with its
+                                     line, column and JSON path
 ```
 
 Checks a file written in the dimensions language, which is being designed one concept at a time in [language/design.md](language/design.md). It prints what the file declares as JSON, or each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1. So far a file declares enums, dimensions, types with their states and the rules for when a state's value exists, environments and profiles; the codes are listed in [language/design.md](language/design.md#grammar).

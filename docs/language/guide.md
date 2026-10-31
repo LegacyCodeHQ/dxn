@@ -393,6 +393,33 @@ down.
 recursive-record: Evidence contains itself: Evidence.source is a Source, and Source.back is an Evidence
 ```
 
+### Checking data against a record
+
+Records are stored as JSON: a list of them, one object each, with a key for
+every field. A record's declaration is the schema, and `lang validate` checks
+the data against it:
+
+```bash
+dimensions lang validate evidence.dim Evidence records.json
+```
+
+```json
+[
+  { "source": { "tool": "pen-dev", "verdict": "passed" } },
+  { "source": { "tool": "figma", "verdict": "passed" } }
+]
+```
+
+```
+records.json:3:25: unknown-value: $[1].source.tool: "figma" is not a value of Tool (pen-dev, code)
+```
+
+Every field must be given, each of its type, and no others; a record field
+holds an object, and an enum field one of the enum's values as a string. Each
+problem has its line and column and its JSON path, so a person or an agent
+can go straight to it. When the data is valid, the command prints how many
+records it checked.
+
 Records are the first step toward evidence that the language itself checks:
 the next steps are fields of text, times and hashes, and a field that refers
 to one combination of a type.
@@ -512,4 +539,14 @@ comment     = "#" to the end of the line
 | `duplicate-field`                                                             | error    | a record has two fields with one name                                    |
 | `unknown-type`                                                                | error    | a field's type is not an enum or a record                                |
 | `recursive-record`                                                            | error    | a record contains itself                                                 |
-| `unused-need`                                                                 | warning  | a type needs a dimension that no rule uses                               |
+
+Checking data with `lang validate` reports these, after any problem with the
+JSON itself:
+
+| Code            | When                                                                   |
+| --------------- | ---------------------------------------------------------------------- |
+| `wrong-kind`    | a value is not the kind its place needs: a list, an object or a string |
+| `missing-field` | a record leaves out one of its fields                                  |
+| `unknown-field` | a record has a field its declaration does not                          |
+| `unknown-value` | an enum field's value is not one of the enum's                         |
+| `unused-need`   | warning                                                                | a type needs a dimension that no rule uses |
