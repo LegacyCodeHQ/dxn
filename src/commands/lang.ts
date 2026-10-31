@@ -43,8 +43,7 @@ function read(file: string, cwd: string, io: Context["io"]): ParseResult | numbe
   }
   const parsed = parse(readFileSync(path, "utf8"));
   if (parsed.diagnostics.length > 0) {
-    const sorted = [...parsed.diagnostics].sort((a, b) => a.line - b.line || a.column - b.column);
-    for (const { line, column, code, message } of sorted) {
+    for (const { line, column, code, message } of parsed.diagnostics) {
       io.stderr(`${file}:${line}:${column}: ${code}: ${message}\n`);
     }
     return 1;

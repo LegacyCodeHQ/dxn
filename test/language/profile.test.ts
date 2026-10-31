@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../../src/language/parse.js";
+import { problems } from "../support/language.js";
 
 const dimensions = `dimension Breakpoint = base | sm | lg | xl
 dimension Pointer = mouse | touch
@@ -8,12 +9,6 @@ dimension Keyboard = keyboard | no-keyboard
 const device = `${dimensions}environment Device = Breakpoint × Pointer × Keyboard\n`;
 // A one-dimension environment, so each problem below stands alone.
 const pointing = `${dimensions}environment Device = Pointer\n`;
-
-// Each diagnostic as "line:column: code: message", in source order.
-const problems = (source: string) =>
-  parse(source)
-    .diagnostics.sort((a, b) => a.line - b.line || a.column - b.column)
-    .map(({ line, column, code, message }) => `${line}:${column}: ${code}: ${message}`);
 
 describe("environment", () => {
   it("is a product of dimensions, written with × or *", () => {

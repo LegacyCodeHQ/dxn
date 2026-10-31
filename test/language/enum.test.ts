@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../../src/language/parse.js";
+import { problems } from "../support/language.js";
 
 const wordmark = `enum Hover      = rest | hovered
 enum Focus      = blurred | focused
@@ -10,12 +11,6 @@ enum Size       = 19px | 20px | 22px
 enum Ring       = none | focus
 enum Color      = primary | accent
 `;
-
-// Each diagnostic as "line:column: code: message".
-const problems = (source: string) =>
-  parse(source).diagnostics.map(
-    ({ line, column, code, message }) => `${line}:${column}: ${code}: ${message}`,
-  );
 
 describe("enum", () => {
   it("declares a named, finite set of values", () => {

@@ -1,13 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../../src/language/parse.js";
+import { problems } from "../support/language.js";
 
 const enums = "enum Hover = rest | hovered\nenum Focus = blurred | focused\n";
-
-// Each diagnostic as "line:column: code: message", in source order.
-const problems = (source: string) =>
-  parse(source)
-    .diagnostics.sort((a, b) => a.line - b.line || a.column - b.column)
-    .map(({ line, column, code, message }) => `${line}:${column}: ${code}: ${message}`);
 
 const shape = (source: string) =>
   parse(source).types.map(({ name, states }) => ({

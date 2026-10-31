@@ -541,6 +541,7 @@ export function parse(source: string): ParseResult {
     }
   }
   check(result);
+  result.diagnostics.sort((a, b) => a.line - b.line || a.column - b.column);
   return result;
 }
 

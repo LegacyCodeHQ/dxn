@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../../src/language/parse.js";
-
-const problems = (source: string) =>
-  parse(source)
-    .diagnostics.sort((a, b) => a.line - b.line || a.column - b.column)
-    .map(({ line, column, code, message }) => `${line}:${column}: ${code}: ${message}`);
+import { problems } from "../support/language.js";
 
 describe("diagnostics", () => {
   it("say when nothing of a kind is declared, instead of an empty list", () => {
@@ -74,5 +70,13 @@ describe("diagnostics", () => {
     expect(parse("type {\n}\nenum Hover = rest\n").enums.map(({ name }) => name)).toEqual([
       "Hover",
     ]);
+  });
+
+  it("come in source order", () => {
+    expect(
+      parse("type Wordmark {\n  states hover: Hover\n}\nenum Size =\n").diagnostics.map(
+        ({ line, code }) => `${line}: ${code}`,
+      ),
+    ).toEqual(["2: unknown-enum", "4: syntax-error"]);
   });
 });
