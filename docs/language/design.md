@@ -68,9 +68,9 @@ because attributes can only be set per state. The language removes that.
 ```
 enum Hover      = rest | hovered
 enum Focus      = blurred | focused
-enum Breakpoint = base | sm | lg | xl
-enum Pointer    = mouse | touch
-enum Keyboard   = keyboard | no-keyboard
+dimension Breakpoint = base | sm | lg | xl
+dimension Pointer    = mouse | touch
+dimension Keyboard   = keyboard | no-keyboard
 
 enum Size  = 19px | 20px | 22px
 enum Ring  = none | focus
@@ -79,11 +79,11 @@ enum Color = primary | accent
 type Wordmark {
   states hover: Hover, focus: Focus
 
-  hover = hovered  only when pointer = mouse
-  focus = focused  only when keyboard = keyboard
+  hover = hovered  only when Pointer = mouse
+  focus = focused  only when Keyboard = keyboard
 
   look {
-    size  = match breakpoint { base => 19px, sm => 20px, lg | xl => 22px }
+    size  = match Breakpoint { base => 19px, sm => 20px, lg | xl => 22px }
     ring  = match focus      { blurred => none, focused => focus }
     color = match hover      { rest => primary, hovered => accent }
   }
@@ -124,37 +124,39 @@ value = ( letter | digit ) { letter | digit | "-" } ;
 ### dimension
 
 **Decided and implemented.** A dimension is what the environment varies by,
-such as the breakpoint. It has a type, the enum its values come from, as a
-state does:
+such as the breakpoint. It lists its own values, in one place:
 
 ```ebnf
-dimension      = "dimension" dimension-name ":" name newline ;
-dimension-name = lowercase-letter { letter | digit | "-" } ;
+dimension = "dimension" name "=" value { "|" [ newline ] value } newline ;
 ```
 
 ```
-enum Breakpoint = base | sm | lg | xl
-dimension breakpoint: Breakpoint
+dimension Breakpoint = base | sm | lg | xl
+dimension Pointer    = mouse | touch
+dimension Keyboard   = keyboard | no-keyboard
 ```
 
-A dimension is not a type: it has one. An enum is a sum type, a value being
-exactly one of its alternatives, which is why a dimension holds one value in
-each situation. A type with states is a product type, a value being a
-combination of its states, so it cannot be a dimension's type.
+A dimension and an enum are both named sets of values; the difference is
+what their values do. A dimension's value cascades down the tree, to
+everything below where it is provided; an enum's values are only what a state
+can be. So there is one way to declare each, and no choice between them:
 
-What a dimension adds over an enum is that its value cascades down the tree,
-to everything below where it is provided. Cascading and providing come later,
-with nodes; for now a dimension is only declared.
+- the environment varies by it: a `dimension`, such as `Breakpoint`;
+- a state takes its values: an `enum`, such as `Hover`.
 
-Dimension names share the file's namespace with enum and type names, so
-`dimension breakpoint` and `enum Breakpoint` are two names, while a second
-`breakpoint` is not.
+A dimension does not name an enum for its values, and a state cannot take its
+values from a dimension. Its name is capitalized, as enum and type names are,
+and shares the file's namespace with them.
 
-| Code             | Means                                                        |
-| ---------------- | ------------------------------------------------------------ |
-| `dimension-name` | a dimension name that does not start with a lowercase letter |
-| `unknown-enum`   | a type that names no enum, or names a type with states       |
-| `duplicate-name` | a name already declared in the file                          |
+Cascading and providing come later, with nodes; for now a dimension is only
+declared.
+
+| Code              | Means                                                      |
+| ----------------- | ---------------------------------------------------------- |
+| `dimension-name`  | a dimension name that does not start with a capital letter |
+| `duplicate-name`  | a name already declared in the file                        |
+| `duplicate-value` | a value listed twice in one dimension                      |
+| `unknown-enum`    | a state whose values name a dimension                      |
 
 ### type
 
@@ -219,8 +221,8 @@ provides them. The two are different statements:
 
 - `provides` says where the value comes from: here, one per profile.
 - A type's inputs say what it uses. They are **inferred** from its body: the
-  wordmark matches on `breakpoint` and limits its states by `pointer` and
-  `keyboard`, so it needs all three. An optional `needs` line states them, and
+  wordmark matches on `Breakpoint` and limits its states by `Pointer` and
+  `Keyboard`, so it needs all three. An optional `needs` line states them, and
   the checker holds it to the body.
 
 Provided values **cascade**: every descendant receives them, until a node
@@ -229,7 +231,7 @@ resolved statically, so the tool can always answer where a node's input comes
 from.
 
 ```
-node ArticlePage provides breakpoint, pointer, keyboard from profiles {
+node ArticlePage provides Breakpoint, Pointer, Keyboard from profiles {
   Toolbar
 }
 ```
@@ -252,12 +254,12 @@ descendants inherit the condition.
 
 ```
 node Toolbar {
-  Links only when breakpoint in (lg, xl) { BlogLink }
+  Links only when Breakpoint in (lg, xl) { BlogLink }
 }
 
 type Wordmark {
   states hover: Hover, focus: Focus
-  hover = hovered only when pointer = mouse
+  hover = hovered only when Pointer = mouse
 }
 ```
 
@@ -272,7 +274,7 @@ to choose exactly one branch: no gaps, no overlaps.
 ```
 node Toolbar {
   Wordmark
-  match breakpoint {
+  match Breakpoint {
     base | sm => Menu provides menu: MenuState {
                    MenuButton
                    MenuPanel only when menu = open { MenuLink }
@@ -298,8 +300,8 @@ every value:
 type Wordmark {
   look {
     size = 19px
-    when breakpoint = sm        { size = 20px }
-    when breakpoint in (lg, xl) { size = 22px }
+    when Breakpoint = sm        { size = 20px }
+    when Breakpoint in (lg, xl) { size = 22px }
   }
 }
 ```
@@ -308,7 +310,7 @@ At a usage site, for one placement, which wins over the type:
 
 ```
 node Footer {
-  Wordmark { when breakpoint = xl { size = 24px } }
+  Wordmark { when Breakpoint = xl { size = 24px } }
 }
 ```
 

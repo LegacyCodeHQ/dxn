@@ -8,12 +8,11 @@ const usage = `Usage: dimensions lang <subcommand>
 
 The dimensions language, which is being designed one concept at a time: see
 docs/language/design.md. So far a file declares enums, each a named set of
-values, dimensions, each with an enum for its type, and types with their
-states:
+values; dimensions, each listing the values the environment varies by; and
+types with their states:
 
   enum Hover = rest | hovered
-  enum Breakpoint = base | sm | lg | xl
-  dimension breakpoint: Breakpoint
+  dimension Breakpoint = base | sm | lg | xl
   type Wordmark {
     states hover: Hover
   }
@@ -51,7 +50,10 @@ const check: Command = command(usage, (args, { io, cwd }) => {
           name,
           values: values.map((value) => value.name),
         })),
-        dimensions: dimensions.map(({ name, type }) => ({ name, type })),
+        dimensions: dimensions.map(({ name, values }) => ({
+          name,
+          values: values.map((value) => value.name),
+        })),
         types: types.map(({ name, states }) => ({
           name,
           states: states.map((state) => ({ name: state.name, enum: state.enum })),

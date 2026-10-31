@@ -2,7 +2,7 @@
 // a time; so far a file declares enums, dimensions and types:
 //
 //   file   = { blank-line | enum | dimension | type }
-//   dimension = "dimension" dimension-name ":" name newline
+//   dimension = "dimension" name "=" value { "|" [newline] value } newline
 //   enum   = "enum" name "=" value { "|" [newline] value } newline
 //   type   = "type" name "{" { blank-line | states } "}"
 //   states = "states" field { "," [newline] field } newline
@@ -34,13 +34,9 @@ export interface Type extends Located {
   states: State[];
 }
 
-// A dimension: what the environment varies by, and the enum its values come
-// from.
-export interface Dimension extends Located {
-  type: string;
-  typeLine: number;
-  typeColumn: number;
-}
+// A dimension: what the environment varies by, with its own values. Its
+// values cascade down the tree, which an enum's do not.
+export type Dimension = Enum;
 
 export interface Diagnostic {
   code: string;
@@ -147,20 +143,23 @@ export function parse(source: string): ParseResult {
     return { name: token.text, line: token.line, column: token.column };
   };
 
-  const enumDeclaration = (): Enum => {
-    next(); // "enum"
+  // An enum or a dimension: the keyword, a capitalized name, "=" and its
+  // values. The two differ only in what their values do later: a dimension's
+  // cascade down the tree.
+  const valuesDeclaration = (keyword: "enum" | "dimension"): Enum => {
+    next(); // the keyword
     const nameToken = next();
-    if (nameToken.kind !== "word") fail(nameToken, 'an enum name after "enum"');
+    if (nameToken.kind !== "word") fail(nameToken, `a ${keyword} name after "${keyword}"`);
     const name: Located = { name: nameToken.text, line: nameToken.line, column: nameToken.column };
     if (!/^[A-Z][A-Za-z0-9]*$/.test(name.name)) {
       report(
-        "enum-name",
-        `enum names start with a capital letter: ${JSON.stringify(name.name)}`,
+        `${keyword}-name`,
+        `${keyword} names start with a capital letter: ${JSON.stringify(name.name)}`,
         name,
       );
     }
     const equals = next();
-    if (equals.kind !== "=") fail(equals, '"=" after the enum name');
+    if (equals.kind !== "=") fail(equals, `"=" after the ${keyword} name`);
     const values = [value('"="')];
     for (;;) {
       const token = peek();
@@ -203,36 +202,6 @@ export function parse(source: string): ParseResult {
       column: nameToken.column,
       enumLine: enumToken.line,
       enumColumn: enumToken.column,
-    };
-  };
-
-  // A dimension: its name, ":" and the enum its values come from.
-  const dimensionDeclaration = (): Dimension => {
-    next(); // "dimension"
-    const nameToken = next();
-    if (nameToken.kind !== "word") fail(nameToken, 'a dimension name after "dimension"');
-    if (!/^[a-z]/.test(nameToken.text)) {
-      report(
-        "dimension-name",
-        `dimension names start with a lowercase letter: ${JSON.stringify(nameToken.text)}`,
-        { name: nameToken.text, line: nameToken.line, column: nameToken.column },
-      );
-    }
-    const colon = next();
-    if (colon.kind !== ":") fail(colon, `":" after ${JSON.stringify(nameToken.text)}`);
-    const typeToken = next();
-    if (typeToken.kind !== "word") fail(typeToken, 'an enum name after ":"');
-    const after = peek();
-    if (after.kind !== "newline" && after.kind !== "end") {
-      fail(after, `the end of the line after ${JSON.stringify(typeToken.text)}`);
-    }
-    return {
-      name: nameToken.text,
-      type: typeToken.text,
-      line: nameToken.line,
-      column: nameToken.column,
-      typeLine: typeToken.line,
-      typeColumn: typeToken.column,
     };
   };
 
@@ -314,13 +283,13 @@ export function parse(source: string): ParseResult {
     }
     try {
       if (token.kind === "word" && token.text === "dimension") {
-        result.dimensions.push(dimensionDeclaration());
+        result.dimensions.push(valuesDeclaration("dimension"));
         continue;
       }
       if (token.kind !== "word" || token.text !== "enum") {
         fail(token, '"enum", "type" or "dimension"');
       }
-      result.enums.push(enumDeclaration());
+      result.enums.push(valuesDeclaration("enum"));
     } catch (error) {
       if (!(error instanceof ParseFailure)) throw error;
       // Skip to the next line and carry on, so one mistake does not hide others.
@@ -353,7 +322,7 @@ function check(result: ParseResult): void {
       declared.set(declaration.name, declaration);
     }
   }
-  for (const declaration of result.enums) {
+  for (const declaration of [...result.enums, ...result.dimensions]) {
     const seen = new Set<string>();
     for (const item of declaration.values) {
       if (seen.has(item.name)) {
@@ -368,6 +337,7 @@ function check(result: ParseResult): void {
   }
   const enumNames = result.enums.map(({ name }) => name);
   const typeNames = new Set(result.types.map(({ name }) => name));
+  const dimensionNames = new Set(result.dimensions.map(({ name }) => name));
   // Where a state or dimension names the enum its values come from.
   const checkEnum = (name: string, at: { line: number; column: number }) => {
     if (enumNames.includes(name)) return;
@@ -375,13 +345,12 @@ function check(result: ParseResult): void {
       "unknown-enum",
       typeNames.has(name)
         ? `${name} is a type, not an enum`
-        : `${name} is not an enum (${enumNames.join(", ")})`,
+        : dimensionNames.has(name)
+          ? `${name} is a dimension, not an enum`
+          : `${name} is not an enum (${enumNames.join(", ")})`,
       at,
     );
   };
-  for (const dimension of result.dimensions) {
-    checkEnum(dimension.type, { line: dimension.typeLine, column: dimension.typeColumn });
-  }
   for (const type of result.types) {
     const seen = new Set<string>();
     for (const state of type.states) {

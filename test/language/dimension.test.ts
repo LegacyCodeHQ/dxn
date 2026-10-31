@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../../src/language/parse.js";
 
-const enums = "enum Breakpoint = base | sm | lg | xl\nenum Pointer = mouse | touch\n";
-
 // Each diagnostic as "line:column: code: message", in source order.
 const problems = (source: string) =>
   parse(source)
@@ -10,45 +8,58 @@ const problems = (source: string) =>
     .map(({ line, column, code, message }) => `${line}:${column}: ${code}: ${message}`);
 
 describe("dimension", () => {
-  it("declares a name and its type, an enum", () => {
-    const source = `${enums}dimension breakpoint: Breakpoint\ndimension pointer: Pointer\n`;
-    const { dimensions, diagnostics } = parse(source);
+  it("declares a name and its values, in one place", () => {
+    const { dimensions, diagnostics } = parse(
+      "dimension Breakpoint = base | sm | lg | xl\ndimension Pointer = mouse | touch\n",
+    );
     expect(diagnostics).toEqual([]);
-    expect(dimensions).toEqual([
-      { name: "breakpoint", type: "Breakpoint", line: 3, column: 11, typeLine: 3, typeColumn: 23 },
-      { name: "pointer", type: "Pointer", line: 4, column: 11, typeLine: 4, typeColumn: 20 },
+    expect(dimensions.map(({ name, values }) => [name, values.map(({ name }) => name)])).toEqual([
+      ["Breakpoint", ["base", "sm", "lg", "xl"]],
+      ["Pointer", ["mouse", "touch"]],
+    ]);
+    expect([dimensions[0]?.line, dimensions[0]?.column, dimensions[0]?.values[1]]).toEqual([
+      1,
+      11,
+      { name: "sm", line: 1, column: 31 },
     ]);
   });
 
-  it("is declared once, with a lowercase name", () => {
-    expect([
-      problems(`${enums}dimension breakpoint: Breakpoint\ndimension breakpoint: Pointer\n`),
-      problems(`${enums}dimension Width: Breakpoint\n`),
-    ]).toEqual([
-      ["4:11: duplicate-name: breakpoint is already declared at line 3"],
-      ['3:11: dimension-name: dimension names start with a lowercase letter: "Width"'],
+  it("continues onto the next line after a |", () => {
+    const { dimensions, diagnostics } = parse("dimension Breakpoint = base | sm |\n  lg | xl\n");
+    expect([diagnostics, dimensions[0]?.values.map(({ name }) => name)]).toEqual([
+      [],
+      ["base", "sm", "lg", "xl"],
     ]);
   });
 
-  it("takes its values from an enum, not a type with states", () => {
+  it("has a capitalized name, declared once in the file, and each value once", () => {
     expect([
-      problems(`${enums}dimension breakpoint: Brekpoint\n`),
-      problems(`${enums}type Toolbar {}\ndimension breakpoint: Toolbar\n`),
+      problems("dimension breakpoint = base | sm\n"),
+      problems("enum Breakpoint = base | sm\ndimension Breakpoint = base | sm\n"),
+      problems("dimension Pointer = mouse | touch | mouse\n"),
     ]).toEqual([
-      ["3:23: unknown-enum: Brekpoint is not an enum (Breakpoint, Pointer)"],
-      ["4:23: unknown-enum: Toolbar is a type, not an enum"],
+      ['1:11: dimension-name: dimension names start with a capital letter: "breakpoint"'],
+      ["2:11: duplicate-name: Breakpoint is already declared at line 1"],
+      ['1:37: duplicate-value: "mouse" appears twice in Pointer'],
     ]);
   });
 
-  it("says what it expected when the syntax is wrong", () => {
-    expect([
-      problems(`${enums}dimension breakpoint Breakpoint\n`),
-      problems(`${enums}dimension breakpoint:\n`),
-      problems(`${enums}dimension breakpoint: Breakpoint Pointer\n`),
-    ]).toEqual([
-      ['3:22: syntax-error: expected ":" after "breakpoint", found "Breakpoint"'],
-      ['3:22: syntax-error: expected an enum name after ":", found the end of the line'],
-      ['3:34: syntax-error: expected the end of the line after "Breakpoint", found "Pointer"'],
+  it("lists its own values: there is no form that names an enum", () => {
+    expect(problems("enum Size = sm | lg\ndimension Breakpoint: Size\n")).toEqual([
+      '2:21: syntax-error: expected "=" after the dimension name, found ":"',
+    ]);
+  });
+
+  it("is not an enum: a state cannot take its values from a dimension", () => {
+    expect(
+      problems("dimension Hover = rest | hovered\ntype Wordmark {\n  states hover: Hover\n}\n"),
+    ).toEqual(["3:17: unknown-enum: Hover is a dimension, not an enum"]);
+  });
+
+  it("says what it expected when a value is missing", () => {
+    expect([problems("dimension Pointer =\n"), problems("dimension Pointer = mouse |\n")]).toEqual([
+      ['1:20: syntax-error: expected a value after "=", found the end of the line'],
+      ['2:1: syntax-error: expected a value after "|", found the end of the file'],
     ]);
   });
 });
