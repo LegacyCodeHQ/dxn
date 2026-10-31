@@ -9,6 +9,7 @@ import type {
 } from "./ast.js";
 import { among, article, Names } from "./names.js";
 import { scalar } from "./scalars.js";
+import { around } from "./scope.js";
 
 type Report = (
   code: string,
@@ -47,19 +48,19 @@ function checkDeclared(file: ParseResult, report: Report): void {
   ].sort((a, b) => a.line - b.line || a.column - b.column);
   const declared = new Map<string, Located>();
   for (const declaration of declarations) {
-    if (scalar(declaration.name) !== undefined) {
-      report(
-        "reserved-name",
-        `${declaration.name} is a built-in scalar; choose another name`,
-        declaration,
-      );
+    const written = declaration.short ?? declaration.name;
+    if (scalar(written) !== undefined) {
+      report("reserved-name", `${written} is a built-in scalar; choose another name`, declaration);
       continue;
     }
-    const earlier = declared.get(declaration.name);
+    // Inside a type, a name cannot repeat one from around it either.
+    const earlier =
+      declared.get(declaration.name) ??
+      (declaration.scope === undefined ? undefined : around(file, declaration).get(written));
     if (earlier !== undefined) {
       report(
         "duplicate-name",
-        `${declaration.name} is already declared at line ${earlier.line}`,
+        `${written} is already declared at line ${earlier.line}`,
         declaration,
       );
     } else {

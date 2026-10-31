@@ -5,11 +5,11 @@
 //   file        = { blank-line | enum | dimension | type | environment | profile | modifier | record }
 //   enum        = "enum" name "=" value { "|" [newline] value } newline
 //   dimension   = "dimension" name "=" value { "|" [newline] value } newline
-//   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | state | rule } "}"
+//   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | state | rule | enum | type } "}"
 //   state       = "state" field { "," [newline] field } newline
 //               | "state" field "=" "when" name "{" { blank-line | branch } "}" newline
 //   branch      = value { "," value } "->" value newline
-//   field       = state-name ":" name
+//   field       = state-name ":" name { "." name }
 //   rule        = state-name "=" value "only" "when" condition newline
 //   condition   = name ( "=" value | "in" "(" value { "," value } ")" )
 //   environment = "environment" name "=" name { "x" [newline] name } newline
@@ -33,9 +33,11 @@ import type {
   ParseResult,
   Rule,
   State,
+  Type,
 } from "./ast.js";
 import { check } from "./check.js";
 import { describe, located, scan, type Token, type TokenKind } from "./scan.js";
+import { scope } from "./scope.js";
 
 class ParseFailure extends Error {}
 
@@ -147,10 +149,23 @@ export function parse(source: string): ParseResult {
 
   // The declaration being read, kept as soon as it has a name.
   let current: Declaration | undefined;
+  // A declaration inside a type is kept in it, and does not stand for the
+  // type when it breaks.
+  let nested = false;
   const keep = <T extends Declaration>(list: T[], declaration: T): T => {
     list.push(declaration);
-    current = declaration;
+    if (!nested) current = declaration;
     return declaration;
+  };
+  // A name, or a name inside a type: "<Name>.<Name>...".
+  const qualified = (expected: string): Located => {
+    const first = word(expected);
+    let text = first.name;
+    while (peek().kind === ".") {
+      next();
+      text += `.${word('a name after "."').name}`;
+    }
+    return { ...first, name: text };
   };
 
   // An enum or a dimension: "<keyword> <Name> = <value> | <value> ...". The
@@ -170,7 +185,7 @@ export function parse(source: string): ParseResult {
   const field = (): State => {
     const named = name("state", "a state name", lowercase);
     expect(":", `":" after ${JSON.stringify(named.name)}`);
-    return { ...named, enum: word('an enum name after ":"') };
+    return { ...named, enum: qualified('an enum name after ":"') };
   };
 
   // A rule: "<state> = <value> only when <Dimension> = <value>", or with
@@ -208,10 +223,17 @@ export function parse(source: string): ParseResult {
 
   // A type: "type <Name> needs <Dimension>, ... { state <field>, ... <rule> ... }",
   // with as many state lines as it needs.
-  const typeDeclaration = () => {
+  const typeDeclaration = (into: Type[] = result.types) => {
     next();
     const named = name("type", 'a type name after "type"', capitalized);
-    const type = keep(result.types, { ...named, needs: [], states: [], rules: [] });
+    const type = keep(into, {
+      ...named,
+      needs: [],
+      states: [],
+      rules: [],
+      enums: [],
+      types: [],
+    });
     const after = peek();
     if (after.kind === "word" && after.text === "needs") {
       next();
@@ -221,6 +243,15 @@ export function parse(source: string): ParseResult {
     expect("{", '"{" after the type name');
     braces(type.name, (token) => {
       if (token.kind !== "word") fail(token, '"state", a rule or "}"');
+      // An enum or a type inside it.
+      if (token.text === "enum" || token.text === "type") {
+        const outer = nested;
+        nested = true;
+        if (token.text === "enum") valuesDeclaration("enum", type.enums);
+        else typeDeclaration(type.types);
+        nested = outer;
+        return;
+      }
       // "states hover: Hover" is the old keyword; a rule on a state named
       // states has "=" next instead.
       if (token.text === "states" && tokens[position + 2]?.kind === ":") fail(token, '"state"');
@@ -330,7 +361,7 @@ export function parse(source: string): ParseResult {
     braces(record.name, () => {
       const field = name("field", "a field name", lowercase);
       expect(":", `":" after ${JSON.stringify(field.name)}`);
-      record.fields.push({ ...field, type: word('a type after ":"') });
+      record.fields.push({ ...field, type: qualified('a type after ":"') });
       end(["newline", "}"], "the end of the line");
     });
   };
@@ -338,16 +369,18 @@ export function parse(source: string): ParseResult {
   const declarations: { [keyword: string]: () => void } = {
     enum: () => valuesDeclaration("enum", result.enums),
     dimension: () => valuesDeclaration("dimension", result.dimensions),
-    type: typeDeclaration,
+    type: () => typeDeclaration(),
     environment: environmentDeclaration,
     profile: profileDeclaration,
     modifier: modifierDeclaration,
     record: recordDeclaration,
   };
-  // A line that starts a declaration.
+  // A line that starts a declaration, at the start of the line: one inside a
+  // type is indented.
   const starts = (token: Token) =>
     token.kind === "word" &&
     Object.hasOwn(declarations, token.text) &&
+    token.column === 1 &&
     tokens[position - 1]?.kind === "newline";
   while (peek().kind !== "end") {
     const token = peek();
@@ -356,6 +389,7 @@ export function parse(source: string): ParseResult {
       continue;
     }
     current = undefined;
+    nested = false;
     try {
       const declaration = token.kind === "word" ? declarations[token.text] : undefined;
       if (declaration === undefined) {
@@ -375,6 +409,7 @@ export function parse(source: string): ParseResult {
       while (peek().kind !== "end" && !starts(peek())) next();
     }
   }
+  scope(result);
   check(result);
   result.diagnostics.sort((a, b) => a.line - b.line || a.column - b.column);
   return result;

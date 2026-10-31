@@ -12,6 +12,11 @@ export interface Located {
 // nothing is checked against it.
 export interface Declaration extends Located {
   broken?: true;
+  // For a declaration inside a type: the type it is in, by its full name. Its
+  // own name is then its full name, "<Type>.<Name>", and short its name as
+  // written.
+  scope?: string;
+  short?: string;
 }
 
 export interface Enum extends Declaration {
@@ -50,6 +55,10 @@ export interface Type extends Declaration {
   needs: Located[];
   states: State[];
   rules: Rule[];
+  // The enums and types declared inside it, seen from inside by their names
+  // and from outside by "<Type>.<Name>".
+  enums: Enum[];
+  types: Type[];
 }
 
 // An environment: a product of dimensions, whose instances are profiles.

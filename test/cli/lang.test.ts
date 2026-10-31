@@ -502,6 +502,17 @@ record Evidence with context {
     ]);
   });
 
+  it("renames a value of an enum inside a type, by its full name", () => {
+    const root = writeProject({});
+    const source = "type Menu {\n  enum State = closed | open\n  state menu: State\n}\n";
+    writeFileSync(join(root, "menu.dxn"), source);
+    const result = capture(["lang", "rename", "menu.dxn", "Menu.State.open", "shown"], root);
+    expect([result.code, readFileSync(join(root, "menu.dxn"), "utf8")]).toEqual([
+      0,
+      source.replace("closed | open", "closed | shown"),
+    ]);
+  });
+
   it("needs a file, an enum's value and its new name", () => {
     const { run } = project(stored);
     expect([

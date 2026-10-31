@@ -1,6 +1,6 @@
 import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import type { ParseResult } from "../language/ast.js";
+import type { ParseResult, Type } from "../language/ast.js";
 import { states as evaluateStates } from "../language/evaluate.js";
 import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
@@ -64,10 +64,20 @@ Options:
 function plain(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(plain);
   if (typeof value !== "object" || value === null) return value;
-  const { line, column, ...rest } = value as Record<string, unknown>;
+  const { line, column, scope, short, ...rest } = value as Record<string, unknown>;
   const fields = Object.keys(rest);
   if (line !== undefined && fields.length === 1 && fields[0] === "name") return rest.name;
   return Object.fromEntries(Object.entries(rest).map(([key, item]) => [key, plain(item)]));
+}
+
+// A type, with its nested enums and types only when it has any.
+function nestedOnly(type: Type): unknown {
+  const { enums, types, ...rest } = type;
+  return {
+    ...rest,
+    ...(enums.length > 0 ? { enums } : {}),
+    ...(types.length > 0 ? { types: types.map(nestedOnly) } : {}),
+  };
 }
 
 // A problem in a file or in its stored data, as text or as JSON.
@@ -167,7 +177,13 @@ const check: Command = command(usage, (args, { io, cwd }) => {
   const { enums, dimensions, types, environments, profiles, modifiers, records } = parsed;
   const output = {
     file,
-    ...(plain({ enums, dimensions, types, environments }) as object),
+    // Declarations inside a type are listed in it, not with the file's own.
+    ...(plain({
+      enums: enums.filter(({ scope }) => scope === undefined),
+      dimensions,
+      types: types.filter(({ scope }) => scope === undefined).map(nestedOnly),
+      environments,
+    }) as object),
     profiles: profiles.map(({ values, ...profile }) => ({
       ...(plain(profile) as object),
       values: Object.fromEntries(
@@ -344,7 +360,7 @@ const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
     json,
     rest: [file, target, to, ...rest],
   } = options(args);
-  const dot = target?.indexOf(".") ?? -1;
+  const dot = target?.lastIndexOf(".") ?? -1;
   if (
     file === undefined ||
     target === undefined ||

@@ -174,6 +174,57 @@ wordmark.dxn:3:24: state-name: state names start with a lowercase letter: "Focus
 wordmark.dxn:3:31: unknown-enum: Focus is not an enum (Hover)
 ```
 
+## Nested declarations: what belongs to a type
+
+Some enums and types only make sense inside one type: a menu's open or closed
+state, or the button that opens it. Listing them all at the top of the file
+hides which type they belong to. They can be declared inside it instead:
+
+```
+enum Hover = rest | hovered
+
+type Menu {
+  enum State = closed | open
+  state menu: State
+
+  type Toggle {
+    state hover: Hover
+    state expanded: State
+  }
+}
+
+type Toolbar {
+  state menu: Menu.State
+}
+```
+
+Inside `Menu`, its enum is just `State`, and a type nested in it, like
+`Toggle`, sees it by that name too: a declaration sees everything declared
+around it, and at the top of the file. Outside, each is named after the type
+it is in: `Menu.State`, `Menu.Toggle`. `Hover` stays at the top, because
+several types use it.
+
+```bash
+dxn lang states menu.dxn Menu.Toggle
+```
+
+```
+| hover: rest | hover: hovered | expanded: closed | expanded: open |
+| ----------- | -------------- | ---------------- | -------------- |
+| ✓           | ✓              | ✓                | ✓              |
+```
+
+A nested name is not visible from a sibling, only from inside its own type:
+
+```
+menu.dxn:5:15: unknown-enum: State is not an enum (Menu.State)
+```
+
+And it cannot repeat a name from around it, so a bare name always means one
+thing: an `enum Hover` inside `Menu`, with `Hover` at the top, is a
+`duplicate-name`. A type sees what is declared around it, but not the states
+of the types around it: those it has to be given.
+
 ## Dimensions: what the world varies by
 
 A hovered state only makes sense with a mouse, and a focused one only with a
@@ -817,6 +868,10 @@ rendering in the code, look the same.
 | field       | `source`                      | lowercase letter                                    |
 | value       | `rest`, `no-keyboard`, `19px` | a letter or digit, then letters, digits and hyphens |
 
+An enum or a type can be declared inside a type, and is then named after it
+from outside: `Menu.State`, `Menu.Toggle`. A name is looked up first in the
+type it is used in, then in the types around it, then at the top of the file.
+
 Every enum, dimension, type, environment, profile, modifier and record shares one namespace:
 each name is declared once in a file.
 
@@ -826,18 +881,18 @@ each name is declared once in a file.
 file        = { blank-line | comment | enum | dimension | type | environment | profile | modifier | record }
 enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
-type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | state | rule } "}"
+type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | state | rule | enum | type } "}"
 state       = "state" field { "," [newline] field } newline
             | "state" field "=" "when" Name "{" { blank-line | branch } "}" newline
 branch      = value { "," value } "->" value newline
-field       = state-name ":" Name
+field       = state-name ":" Name { "." Name }
 rule        = state-name "=" value "only" "when" condition newline
 condition   = Name ( "=" value | "in" "(" value { "," value } ")" )
 environment = "environment" Name "=" Name { "x" [newline] Name } newline
 profile     = "profile" profile-name ":" Name "{" { assignment ( "," | newline ) } "}"
 modifier    = "modifier" modifier-name "on" profile-name { "," [newline] profile-name } "{" { assignment ( "," | newline ) } "}"
 assignment  = Name "=" value
-record      = "record" Name [ "with" "context" ] "{" { blank-line | field-name ":" Name newline } "}"
+record      = "record" Name [ "with" "context" ] "{" { blank-line | field-name ":" Name { "." Name } newline } "}"
 comment     = "#" to the end of the line
 ```
 
