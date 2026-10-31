@@ -5,7 +5,8 @@
 //   file        = { blank-line | enum | dimension | type | environment | profile | modifier | record }
 //   enum        = "enum" name "=" value { "|" [newline] value } newline
 //   dimension   = "dimension" name "=" value { "|" [newline] value } newline
-//   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | state | rule | enum | type } "}"
+//   type        = "type" name [ "needs" name { "," [newline] name } ] "{" { blank-line | state | rule | enum | type | has } "}"
+//   has         = "has" child-name ":" name { "." name } [ "only" "when" condition ] newline
 //   state       = "state" field { "," [newline] field } newline
 //               | "state" field "=" "when" name "{" { blank-line | branch } "}" newline
 //   branch      = value { "," value } "->" value newline
@@ -26,6 +27,7 @@
 
 import type {
   Assignment,
+  Child,
   Condition,
   Declaration,
   Enum,
@@ -196,29 +198,54 @@ export function parse(source: string): ParseResult {
     const value = word('a value after "="');
     keyword("only", `"only" after ${JSON.stringify(value.name)}`);
     keyword("when", '"when" after "only"');
-    const when: Condition = { dimension: word('a dimension after "when"'), values: [] };
+    const { on, values } = condition("a dimension");
+    const when: Condition = { dimension: on, values };
+    return { state, value, when };
+  };
+
+  // A condition, after "only when": "<name> = <value>", or with
+  // "in (<value>, ...)" for several values, to the end of the line.
+  const condition = (subject: string) => {
+    const on = word(`${subject} after "when"`);
+    const values: Located[] = [];
     const operator = next();
     const conditionValue = (after: string) => word(`a value after ${after}`);
     if (operator.kind === "=") {
-      when.values.push(conditionValue('"="'));
+      values.push(conditionValue('"="'));
     } else if (operator.kind === "word" && operator.text === "in") {
       expect("(", '"(" after "in"');
-      when.values.push(conditionValue('"("'));
+      values.push(conditionValue('"("'));
       for (;;) {
         const token = next();
         if (token.kind === ")") break;
         if (token.kind !== ",") {
-          fail(token, `"," or ")" after ${JSON.stringify(when.values.at(-1)?.name)}`);
+          fail(token, `"," or ")" after ${JSON.stringify(values.at(-1)?.name)}`);
         }
-        when.values.push(conditionValue('","'));
+        values.push(conditionValue('","'));
       }
     } else {
-      fail(operator, `"=" or "in" after ${JSON.stringify(when.dimension.name)}`);
+      fail(operator, `"=" or "in" after ${JSON.stringify(on.name)}`);
     }
     if (!["newline", "}"].includes(peek().kind)) {
       fail(peek(), "the end of the line after the condition");
     }
-    return { state, value, when };
+    return { on, values };
+  };
+
+  // A child: "has <name>: <Type>", and "only when <condition>" when it is not
+  // always there.
+  const child = (): Child => {
+    const named = name("child", "a child name", lowercase);
+    expect(":", `":" after ${JSON.stringify(named.name)}`);
+    const placed: Child = { ...named, type: qualified('a type after ":"') };
+    if (peek().kind === "word" && peek().text === "only") {
+      next();
+      keyword("when", '"when" after "only"');
+      placed.when = condition("a state or a dimension");
+    } else {
+      end(["newline", "}"], '"only when" or the end of the line');
+    }
+    return placed;
   };
 
   // A type: "type <Name> needs <Dimension>, ... { state <field>, ... <rule> ... }",
@@ -233,6 +260,7 @@ export function parse(source: string): ParseResult {
       rules: [],
       enums: [],
       types: [],
+      children: [],
     });
     const after = peek();
     if (after.kind === "word" && after.text === "needs") {
@@ -243,6 +271,11 @@ export function parse(source: string): ParseResult {
     expect("{", '"{" after the type name');
     braces(type.name, (token) => {
       if (token.kind !== "word") fail(token, '"state", a rule or "}"');
+      if (token.text === "has") {
+        next();
+        type.children.push(child());
+        return;
+      }
       // An enum or a type inside it.
       if (token.text === "enum" || token.text === "type") {
         const outer = nested;

@@ -1,7 +1,7 @@
 import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import type { ParseResult, Type } from "../language/ast.js";
-import { states as evaluateStates } from "../language/evaluate.js";
+import { states as evaluateStates, type Presence } from "../language/evaluate.js";
 import { Names } from "../language/names.js";
 import { parse } from "../language/parse.js";
 import { isValue, renameInData, renameInSource } from "../language/rename.js";
@@ -17,11 +17,11 @@ dxn, the language of design and dimensions, which grows one concept at a
 time: see docs/language/guide.md. A .dxn file declares enums, each a named
 set of values; dimensions, each listing the values the environment varies
 by; types with the dimensions they need, their states, rules for when a
-state's value exists, and a when for a state the world decides;
-environments, each a product of dimensions; profiles, each an instance of
-an environment; modifiers, accessories that change some profiles; and
-records, each a named group of typed fields. A # starts a comment, to the
-end of the line:
+state's value exists, a when for a state the world decides, and the
+children they have; environments, each a product of dimensions; profiles,
+each an instance of an environment; modifiers, accessories that change
+some profiles; and records, each a named group of typed fields. A # starts
+a comment, to the end of the line:
 
   # The wordmark's hover only exists with a mouse.
   enum Hover = rest | hovered
@@ -70,13 +70,15 @@ function plain(value: unknown): unknown {
   return Object.fromEntries(Object.entries(rest).map(([key, item]) => [key, plain(item)]));
 }
 
-// A type, with its nested enums and types only when it has any.
+// A type, with its nested enums and types, and its children, only when it
+// has any.
 function nestedOnly(type: Type): unknown {
-  const { enums, types, ...rest } = type;
+  const { enums, types, children, ...rest } = type;
   return {
     ...rest,
     ...(enums.length > 0 ? { enums } : {}),
     ...(types.length > 0 ? { types: types.map(nestedOnly) } : {}),
+    ...(children.length > 0 ? { children } : {}),
   };
 }
 
@@ -243,6 +245,17 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
     valuesOf(state.enum.name).map((value) => [state.name, value] as const),
   );
   const profiled = evaluated.rows.some((row) => row.profiles !== undefined);
+  const children = stateType?.children.map(({ name }) => name) ?? [];
+  // Where a child is: there, not there, or for which values of a state.
+  const presence = (value: Presence | undefined) => {
+    if (value === undefined || value === false) return NONE;
+    if (value === true) return "✓";
+    return Object.entries(value)
+      .map(([state, values]) =>
+        values.length === 1 ? `${state} = ${values[0]}` : `${state} in (${values.join(", ")})`,
+      )
+      .join(", ");
+  };
   return report.succeed(
     evaluated,
     drawTable(
@@ -250,11 +263,13 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
         ...(profiled ? ["profiles"] : []),
         ...evaluated.dimensions,
         ...columns.map(([state, value]) => `${state}: ${value}`),
+        ...children.map((child) => `has ${child}`),
       ],
       evaluated.rows.map((row) => [
         ...(profiled ? [row.profiles?.join(", ") ?? NONE] : []),
         ...evaluated.dimensions.map((dimension) => row.when[dimension] ?? NONE),
         ...columns.map(([state, value]) => (row.states[state]?.includes(value) ? "✓" : NONE)),
+        ...children.map((child) => presence(row.children?.[child])),
       ]),
     ),
   );

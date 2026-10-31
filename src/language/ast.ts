@@ -59,6 +59,16 @@ export interface Type extends Declaration {
   // and from outside by "<Type>.<Name>".
   enums: Enum[];
   types: Type[];
+  // The elements it contains.
+  children: Child[];
+}
+
+// A child of a type: its name, its type, and, when it is not always there,
+// the state of the type or the dimension it needs that decides where it is:
+// a lowercase name is a state, a capitalized one a dimension.
+export interface Child extends Located {
+  type: Located;
+  when?: { on: Located; values: Located[] };
 }
 
 // An environment: a product of dimensions, whose instances are profiles.

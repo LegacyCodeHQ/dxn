@@ -49,6 +49,7 @@ export function scope(file: ParseResult): void {
   };
   for (const type of file.types) {
     for (const state of type.states) resolve(state.enum, type.name);
+    for (const child of type.children) resolve(child.type, type.name);
   }
 }
 

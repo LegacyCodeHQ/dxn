@@ -376,6 +376,78 @@ declared on a `state` line of its own, and has no `only when` rules: its
 `when` already decides it. A stored context still gives its value, which
 must be the one the `when` gives there.
 
+## Has: what a type contains
+
+An element is often made of others. The toolbar holds the wordmark, and, by
+its layout, either the links or a menu; the menu holds its toggle, and a panel
+while it is open. A type says what it contains with **has**:
+
+```
+dimension Breakpoint = base | sm | lg | xl
+enum Layout = compact | inline
+
+type Wordmark {}
+type Links {}
+
+type Menu {
+  enum State = closed | open
+  state menu: State
+
+  type Toggle {}
+  type Panel {}
+
+  has toggle: Toggle
+  has panel: Panel only when menu = open
+}
+
+type Toolbar needs Breakpoint {
+  state layout: Layout = when Breakpoint {
+    base, sm -> compact
+    lg, xl -> inline
+  }
+  has wordmark: Wordmark
+  has links: Links only when layout = inline
+  has menu: Menu only when layout = compact
+}
+```
+
+Each `has` line names a child, lowercase like a state, and gives its type. A
+child is always there unless `only when` says where: on one of the type's own
+states (`layout = compact`, `menu = open`), or on a dimension it needs
+(`Breakpoint in (lg, xl)`). The case of the name tells which: a lowercase name
+is a state, a capitalized one a dimension. A child's own children come from
+its type, so the tree nests as deep as the types do.
+
+The matrix shows where each child is:
+
+```bash
+dxn lang states toolbar.dxn Toolbar
+```
+
+```
+| Breakpoint | layout: compact | layout: inline | has wordmark | has links | has menu |
+| ---------- | --------------- | -------------- | ------------ | --------- | -------- |
+| base       | ✓               | —              | ✓            | —         | ✓        |
+| sm         | ✓               | —              | ✓            | —         | ✓        |
+| lg         | —               | ✓              | ✓            | ✓         | —        |
+| xl         | —               | ✓              | ✓            | ✓         | —        |
+```
+
+Where a child depends on a free state, the cell says for which of its values
+it is there:
+
+```
+| menu: closed | menu: open | has toggle | has panel   |
+| ------------ | ---------- | ---------- | ----------- |
+| ✓            | ✓          | ✓          | menu = open |
+```
+
+A child's name is unique in its type, among its children and its states; its
+type must be a type; and a type cannot contain itself, directly or through
+its children, since the tree would have no end. Like everything a type uses,
+a condition sees only the type's own states and the dimensions it needs, not
+the states of the types around it.
+
 ## Evaluating: the matrix
 
 This is where the language pays off. Ask for the wordmark's state again:
@@ -881,7 +953,8 @@ each name is declared once in a file.
 file        = { blank-line | comment | enum | dimension | type | environment | profile | modifier | record }
 enum        = "enum" Name "=" value { "|" [newline] value } newline
 dimension   = "dimension" Name "=" value { "|" [newline] value } newline
-type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | state | rule | enum | type } "}"
+type        = "type" Name [ "needs" Name { "," [newline] Name } ] "{" { blank-line | state | rule | enum | type | has } "}"
+has         = "has" child-name ":" Name { "." Name } [ "only" "when" condition ] newline
 state       = "state" field { "," [newline] field } newline
             | "state" field "=" "when" Name "{" { blank-line | branch } "}" newline
 branch      = value { "," value } "->" value newline
@@ -902,7 +975,7 @@ comment     = "#" to the end of the line
 | ----------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
 | `syntax-error`                                                                | error    | the text does not follow the grammar                                                             |
 | `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name` | error    | the name does not start with a capital letter                                                    |
-| `state-name`, `profile-name`, `modifier-name`, `field-name`                   | error    | the name does not start with a lowercase letter                                                  |
+| `state-name`, `profile-name`, `modifier-name`, `field-name`, `child-name`     | error    | the name does not start with a lowercase letter                                                  |
 | `duplicate-name`                                                              | error    | a name is declared twice in the file                                                             |
 | `duplicate-value`                                                             | error    | a value appears twice in an enum, dimension, condition or `when`                                 |
 | `duplicate-state`                                                             | error    | a type has two states with one name                                                              |
@@ -910,7 +983,7 @@ comment     = "#" to the end of the line
 | `duplicate-dimension`                                                         | error    | a dimension appears twice in a type's needs, an environment, a profile or a modifier             |
 | `unknown-enum`                                                                | error    | a state's values come from something that is not an enum                                         |
 | `unknown-dimension`                                                           | error    | a name used as a dimension is not one                                                            |
-| `unknown-state`                                                               | error    | a rule names a state the type does not have                                                      |
+| `unknown-state`                                                               | error    | a rule or a child's condition names a state the type does not have                               |
 | `unknown-value`                                                               | error    | a value is not one of its enum's or dimension's                                                  |
 | `unneeded-dimension`                                                          | error    | a rule or a `when` uses a dimension its type does not need                                       |
 | `incomplete-when`                                                             | error    | a `when` leaves out a value of its dimension                                                     |
@@ -922,8 +995,10 @@ comment     = "#" to the end of the line
 | `duplicate-profile`                                                           | error    | a modifier lists a profile twice                                                                 |
 | `unchanged-profile`                                                           | warning  | a modifier changes nothing on a profile it is on                                                 |
 | `duplicate-field`                                                             | error    | a record has two fields with one name                                                            |
-| `unknown-type`                                                                | error    | a field's type is not an enum, a record or a scalar                                              |
+| `unknown-type`                                                                | error    | a field's type is not an enum, a record or a scalar, or a child's type is not a type             |
 | `recursive-record`                                                            | error    | a record contains itself                                                                         |
+| `duplicate-child`                                                             | error    | a type has two children, or a child and a state, with one name                                   |
+| `recursive-type`                                                              | error    | a type contains itself through its children                                                      |
 | `nested-context`                                                              | error    | a record's field is a record with context, which would be a second context                       |
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |
 | `unused-need`                                                                 | warning  | a type needs a dimension that no rule uses                                                       |

@@ -6,6 +6,7 @@ import type {
   RecordDeclaration,
   Rule,
   State,
+  Type,
 } from "./ast.js";
 import { among, article, Names } from "./names.js";
 import { scalar } from "./scalars.js";
@@ -33,6 +34,42 @@ export function check(file: ParseResult): void {
   checkProfiles(file, names, report);
   checkModifiers(file, names, report);
   checkRecords(file, names, report);
+  checkContainment(file, names, report);
+}
+
+// No type contains itself through its children: it would be a tree without
+// end.
+function checkContainment(file: ParseResult, names: Names, report: Report): void {
+  const byName = new Map<string, Type>();
+  for (const type of file.types) if (!byName.has(type.name)) byName.set(type.name, type);
+  // The children that lead from a type back to the target, if any do.
+  const path = (
+    from: Type,
+    target: string,
+    visited: Set<string>,
+  ): { type: string; child: Located; of: string }[] | undefined => {
+    for (const child of from.children) {
+      const inner =
+        names.kindOf(child.type.name) === "type" ? byName.get(child.type.name) : undefined;
+      if (inner === undefined) continue;
+      const step = { type: from.name, child, of: inner.name };
+      if (inner.name === target) return [step];
+      if (visited.has(inner.name)) continue;
+      visited.add(inner.name);
+      const rest = path(inner, target, visited);
+      if (rest !== undefined) return [step, ...rest];
+    }
+    return undefined;
+  };
+  for (const type of byName.values()) {
+    const steps = path(type, type.name, new Set());
+    const first = steps?.[0];
+    if (steps === undefined || first === undefined) continue;
+    const through = steps
+      .map(({ type: owner, child, of }) => `${owner}.${child.name} is ${article(of)} ${of}`)
+      .join(", and ");
+    report("recursive-type", `${type.name} contains itself: ${through}`, first.child);
+  }
 }
 
 // The file: each name declared once, and none a built-in scalar's.
@@ -91,6 +128,48 @@ function checkValues(file: ParseResult, report: Report): void {
 // needed dimension and its values, and one rule for each state value. A need
 // no rule uses is a warning.
 function checkTypes(file: ParseResult, names: Names, report: Report): void {
+  // A type's children: each named once, among its children and its states,
+  // of a type, and there only when one of its states, or a dimension it
+  // needs, has one of the values given.
+  const checkChildren = (type: Type, needed: Set<string>, declare: string) => {
+    const taken = new Map<string, string>(type.states.map(({ name }) => [name, "state"]));
+    for (const child of type.children) {
+      const earlier = taken.get(child.name);
+      if (earlier !== undefined) {
+        report("duplicate-child", `${child.name} is already a ${earlier} of ${type.name}`, child);
+      }
+      taken.set(child.name, "child");
+      if (!names.is(child.type.name, "type")) {
+        report("unknown-type", names.not(child.type.name, "type"), child.type);
+      }
+      if (child.when === undefined) continue;
+      const { on, values } = child.when;
+      if (/^[a-z]/.test(on.name)) {
+        const state = type.states.find(({ name }) => name === on.name);
+        if (state === undefined) {
+          const states = type.states.map(({ name }) => name);
+          report(
+            "unknown-state",
+            `${on.name} is not a state of ${type.name}${among(states, "it has none")}`,
+            on,
+          );
+          continue;
+        }
+        checkChosen(values, state.enum.name, names, report, "the condition", state.name);
+      } else if (!names.is(on.name, "dimension")) {
+        report("unknown-dimension", names.not(on.name, "dimension"), on);
+      } else {
+        if (!needed.has(on.name)) {
+          report(
+            "unneeded-dimension",
+            `${type.name} does not need ${on.name}; declare ${declare}`,
+            on,
+          );
+        }
+        checkChosen(values, on.name, names, report, "the condition");
+      }
+    }
+  };
   // A derived state: on a dimension the type needs, covering each of its
   // values once, each branch giving a value of the state's enum.
   const checkDerived = (state: State, type: string, needed: Set<string>, declare: string) => {
@@ -162,6 +241,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         [
           ...type.rules.map(({ when }) => when.dimension.name),
           ...type.states.flatMap(({ derived }) => (derived ? [derived.dimension.name] : [])),
+          ...type.children.flatMap(({ when }) => (when ? [when.on.name] : [])),
         ].filter((name) => names.is(name, "dimension")),
       ),
     ];
@@ -242,16 +322,20 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       }
       checkChosen(chosen, dimension.name, names, report, "the condition");
     }
+    checkChildren(type, needed, declare);
   }
 }
 
-// Values chosen from a dimension: each one of its values, and once.
+// Values chosen from a dimension, or from a state's enum: each one of its
+// values, and once.
 function checkChosen(
   chosen: Located[],
   dimension: string,
   names: Names,
   report: Report,
   where: string,
+  // What the values are of, in messages: a state's name, for its enum's values.
+  of = dimension,
 ): void {
   const allowed = names.values(dimension);
   if (allowed === undefined) return;
@@ -260,7 +344,7 @@ function checkChosen(
     if (!allowed.includes(item.name)) {
       report(
         "unknown-value",
-        `${JSON.stringify(item.name)} is not a value of ${dimension} (${allowed.join(", ")})`,
+        `${JSON.stringify(item.name)} is not a value of ${of} (${allowed.join(", ")})`,
         item,
       );
     } else if (seen.has(item.name)) {

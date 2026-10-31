@@ -196,6 +196,45 @@ type Wordmark needs Pointer, Keyboard {
     ]);
   });
 
+  it("shows where each child is: there, not there, or for which values of a state", () => {
+    const run = file(`dimension Breakpoint = base | lg
+enum Layout = compact | inline
+type Links {}
+type Menu {
+  enum State = closed | open
+  state menu: State
+  type Panel {}
+  has panel: Panel only when menu in (open)
+}
+type Toolbar needs Breakpoint {
+  state layout: Layout = when Breakpoint {
+    base -> compact
+    lg -> inline
+  }
+  has links: Links only when layout = inline
+  has menu: Menu only when layout = compact
+}
+`);
+    expect([
+      run("states", "wordmark.dxn", "Toolbar").stdout,
+      run("states", "wordmark.dxn", "Menu").stdout,
+    ]).toEqual([
+      [
+        "| Breakpoint | layout: compact | layout: inline | has links | has menu |",
+        "| ---------- | --------------- | -------------- | --------- | -------- |",
+        "| base       | ✓               | —              | —         | ✓        |",
+        "| lg         | —               | ✓              | ✓         | —        |",
+        "",
+      ].join("\n"),
+      [
+        "| menu: closed | menu: open | has panel   |",
+        "| ------------ | ---------- | ----------- |",
+        "| ✓            | ✓          | menu = open |",
+        "",
+      ].join("\n"),
+    ]);
+  });
+
   it("names the profiles of each row when there are profiles", () => {
     const withProfiles = `dimension Breakpoint = base | lg
 ${wordmark}environment Device = Breakpoint x Pointer x Keyboard

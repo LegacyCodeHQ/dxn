@@ -723,11 +723,11 @@ dxn, the language of design and dimensions, which grows one concept at a
 time: see docs/language/guide.md. A .dxn file declares enums, each a named
 set of values; dimensions, each listing the values the environment varies
 by; types with the dimensions they need, their states, rules for when a
-state's value exists, and a when for a state the world decides;
-environments, each a product of dimensions; profiles, each an instance of
-an environment; modifiers, accessories that change some profiles; and
-records, each a named group of typed fields. A # starts a comment, to the
-end of the line:
+state's value exists, a when for a state the world decides, and the
+children they have; environments, each a product of dimensions; profiles,
+each an instance of an environment; modifiers, accessories that change
+some profiles; and records, each a named group of typed fields. A # starts
+a comment, to the end of the line:
 
   # The wordmark's hover only exists with a mouse.
   enum Hover = rest | hovered
