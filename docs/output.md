@@ -416,6 +416,34 @@ provenance. `withoutEvidence` counts the contexts no frame covers.
 }
 ```
 
+With `--subtree`, there is a row per node under the one named, with its type
+(`null` when it has none), and a cell per column, where `columns` lists the
+profiles of each. A cell counts the node's contexts on those profiles: with
+current evidence, stale, and in all; it is `null` where the node does not
+exist. With `--by frame` too, `frames` lists each frame under the node with
+the `nodes` it covers.
+
+```json
+{
+  "node": "toolbar",
+  "actor": "design-agent",
+  "subtree": true,
+  "columns": [["phone"], ["tablet-portrait"]],
+  "rows": [
+    {
+      "node": "toolbar",
+      "type": null,
+      "cells": [{ "present": 0, "stale": 0, "total": 1 }, { "present": 0, "stale": 0, "total": 1 }]
+    },
+    {
+      "node": "menu-button",
+      "type": "menu-button",
+      "cells": [{ "present": 2, "stale": 0, "total": 2 }, null]
+    }
+  ]
+}
+```
+
 With `--missing`, only contexts without evidence, or with stale evidence, are
 kept: the rows and `states` then show what is still to cover.
 

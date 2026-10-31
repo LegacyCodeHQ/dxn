@@ -240,7 +240,7 @@ dimensions transitions menu
 
 ```text
 Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>]
-                          [--missing] [--table] [--by profile|frame]
+                          [--subtree] [--missing] [--table] [--by profile|frame]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
@@ -254,6 +254,10 @@ evidence that is present, stale or missing. --by frame makes a row per frame
 the actor pointed to: the contexts it covers, which the design draws as one
 look, with when they were recorded and how many are stale. --missing keeps only the contexts
 still to cover: those without evidence, or whose evidence is stale.
+--subtree covers every node under the one named instead: a row per node, with
+its type (— when it has none, so untyped nodes show up), and a column per
+profile, each cell the contexts with current evidence out of all, and how
+many are stale; with --by frame, a row per frame with the nodes it covers.
 ```
 
 Prints each context of the node as JSON, with the root, the profile it matches and the actor's evidence for it: `at`, `source`, `revision` and `stale`. A context with no evidence is what is missing. An entry is stale when the file it points to has changed since it was recorded; that is not an error. `attach` records entries and `detach` removes them; see [concepts.md](concepts.md#actors-and-evidence).
@@ -264,6 +268,7 @@ dimensions evidence menu --actor design-agent profile=phone
 dimensions evidence menu-button --actor design-agent --table --by profile
 dimensions evidence menu-button --actor design-agent --missing --table --by profile
 dimensions evidence menu-button --actor design-agent --table --by frame
+dimensions evidence toolbar --subtree --actor design-agent --missing --table
 ```
 
 ## Record

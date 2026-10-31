@@ -716,7 +716,7 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
 });
 
 const evidenceUsage = `Usage: dimensions evidence <node-id> --actor <name> [<name>=<value>...] [--root <root-id>]
-                          [--missing] [--table] [--by profile|frame]
+                          [--subtree] [--missing] [--table] [--by profile|frame]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it in evidence/<root-id>.json: when, the
@@ -730,6 +730,10 @@ evidence that is present, stale or missing. --by frame makes a row per frame
 the actor pointed to: the contexts it covers, which the design draws as one
 look, with when they were recorded and how many are stale. --missing keeps only the contexts
 still to cover: those without evidence, or whose evidence is stale.
+--subtree covers every node under the one named instead: a row per node, with
+its type (— when it has none, so untyped nodes show up), and a column per
+profile, each cell the contexts with current evidence out of all, and how
+many are stale; with --by frame, a row per frame with the nodes it covers.
 `;
 
 // Whether a context has the actor's evidence: present when some entry's file
@@ -784,6 +788,172 @@ function evidenceFor(
     }));
 }
 
+// The frames evidence points to, in the order first met: each with the
+// nodes and contexts that share it, when they were recorded, the file's
+// revisions then, the profiles they are on, and how many are stale.
+function frameGroups(
+  resolver: Resolver,
+  rows: { node: string; context: NodeContext; evidence: ReturnType<typeof evidenceFor> }[],
+) {
+  const frames = new Map<
+    string,
+    {
+      file: string;
+      frame: string;
+      nodes: string[];
+      at: Set<string>;
+      revisions: Set<string>;
+      members: NodeContext[];
+      stale: number;
+    }
+  >();
+  for (const row of rows) {
+    for (const { at, source, revision, stale } of row.evidence) {
+      const key = JSON.stringify([source.file, source.frame]);
+      const group = frames.get(key) ?? {
+        file: source.file,
+        frame: source.frame,
+        nodes: [],
+        at: new Set<string>(),
+        revisions: new Set<string>(),
+        members: [],
+        stale: 0,
+      };
+      if (!group.nodes.includes(row.node)) group.nodes.push(row.node);
+      group.at.add(at);
+      group.revisions.add(revision);
+      group.members.push(row.context);
+      if (stale) group.stale += 1;
+      frames.set(key, group);
+    }
+  }
+  return [...frames.values()].map((group) => {
+    const profiles: string[][] = [];
+    for (const context of group.members) {
+      const names = resolver.profilesOf(context);
+      if (!profiles.some((known) => JSON.stringify(known) === JSON.stringify(names))) {
+        profiles.push(names);
+      }
+    }
+    return {
+      file: group.file,
+      frame: group.frame,
+      nodes: group.nodes,
+      at: [...group.at].sort(),
+      revisions: [...group.revisions],
+      profiles: profiles.sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b)),
+      members: group.members,
+      stale: group.stale,
+    };
+  });
+}
+
+// The cell for a frame: the file's name and the frame id.
+const frameLabel = (file: string, frame: string) => `${file.split("/").pop()}#${frame}`;
+
+// evidence --subtree: a row per node under the one named and a column per
+// profile, each cell the contexts with current evidence out of all; or, with
+// --by frame, a row per frame with the nodes it covers.
+function evidenceSubtree(
+  resolver: Resolver,
+  io: Io,
+  id: string,
+  actor: string,
+  roots: string[],
+  filterArgs: string[],
+  options: { table?: boolean; by?: string; missing?: boolean; root?: string },
+): void {
+  const nodes = resolver.subtree(id);
+  const found = nodes.flatMap((node) =>
+    roots
+      .filter((root) => resolver.roots(node).includes(root))
+      .flatMap((root) => resolver.contexts(node, root).map((context) => ({ node, root, context }))),
+  );
+  const keep = filter(
+    resolver,
+    filterArgs,
+    found.map(({ context }) => context),
+    options.root,
+  );
+  const rows = found
+    .filter(({ context }) => keep(context))
+    .map((row) => ({
+      ...row,
+      evidence: evidenceFor(resolver, row.root, row.node, actor, row.context),
+    }));
+  if (options.by === "frame") {
+    const grouped = frameGroups(resolver, rows).map(({ members, ...group }) => ({
+      ...group,
+      actor,
+      contexts: members.length,
+    }));
+    const withoutEvidence = rows.filter(({ evidence }) => evidence.length === 0).length;
+    if (options.table !== true) {
+      print(io, { node: id, actor, subtree: true, by: "frame", frames: grouped, withoutEvidence });
+      return;
+    }
+    const table = drawTable(
+      ["frame", "nodes", "profiles", "contexts", "stale"],
+      grouped.map((row) => [
+        frameLabel(row.file, row.frame),
+        row.nodes.join(", "),
+        row.profiles.map(profileLabel).join(", ") || NONE,
+        String(row.contexts),
+        String(row.stale),
+      ]),
+    );
+    io.stdout(table);
+    return;
+  }
+  const columns =
+    resolver.profiles.size === 0
+      ? [[]]
+      : resolver
+          .combinations()
+          .map(({ names }) => names)
+          .sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b));
+  const table = nodes
+    .map((node) => ({
+      node,
+      type: resolver.node(node)?.type ?? null,
+      cells: columns.map((names) => {
+        const here = rows.filter(
+          (row) =>
+            row.node === node &&
+            (names.length === 0 ||
+              JSON.stringify(resolver.profilesOf(row.context)) === JSON.stringify(names)),
+        );
+        if (here.length === 0) return null;
+        const count = (state: string) =>
+          here.filter(({ evidence }) => evidenceState(evidence) === state).length;
+        return { present: count("present"), stale: count("stale"), total: here.length };
+      }),
+    }))
+    .filter(
+      ({ cells }) =>
+        options.missing !== true ||
+        cells.some((cell) => cell !== null && cell.present < cell.total),
+    );
+  if (options.table !== true) {
+    print(io, { node: id, actor, subtree: true, columns, rows: table });
+    return;
+  }
+  io.stdout(
+    drawTable(
+      ["node", "type", ...columns.map((names) => profileLabel(names) || "contexts")],
+      table.map((row) => [
+        row.node,
+        row.type ?? NONE,
+        ...row.cells.map((cell) =>
+          cell === null
+            ? NONE
+            : `${cell.present}/${cell.total}${cell.stale > 0 ? ` · ${cell.stale} stale` : ""}`,
+        ),
+      ]),
+    ),
+  );
+}
+
 export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
   const { values, positionals } = parse(
     args,
@@ -794,6 +964,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       table: { type: "boolean" },
       by: { type: "string" },
       missing: { type: "boolean" },
+      subtree: { type: "boolean" },
     },
     true,
   );
@@ -807,6 +978,13 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
   requireNodeId(resolver, id);
   requireRoot(resolver, id, values.root);
   const roots = values.root === undefined ? resolver.roots(id) : [values.root];
+  if (values.subtree === true) {
+    if (values.by === "profile") {
+      throw new Refusal("--subtree already has a column per profile; leave out --by profile");
+    }
+    evidenceSubtree(resolver, io, id, actor, roots, filterArgs, values);
+    return;
+  }
   const all = roots.flatMap((root) =>
     resolver.contexts(id, root).map((context) => ({ root, context })),
   );
@@ -848,52 +1026,15 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       ]),
     );
   if (values.by === "frame") {
-    const frames = new Map<
-      string,
-      {
-        file: string;
-        frame: string;
-        at: Set<string>;
-        revisions: Set<string>;
-        members: { context: NodeContext; stale: boolean }[];
-      }
-    >();
-    for (const row of rows) {
-      for (const { at, source, revision, stale } of row.evidence) {
-        const key = JSON.stringify([source.file, source.frame]);
-        const group = frames.get(key) ?? {
-          file: source.file,
-          frame: source.frame,
-          at: new Set<string>(),
-          revisions: new Set<string>(),
-          members: [],
-        };
-        group.at.add(at);
-        group.revisions.add(revision);
-        group.members.push({ context: row.context, stale });
-        frames.set(key, group);
-      }
-    }
-    const grouped = [...frames.values()].map((group) => {
-      const profiles: string[][] = [];
-      for (const { context } of group.members) {
-        const names = resolver.profilesOf(context);
-        if (!profiles.some((known) => JSON.stringify(known) === JSON.stringify(names))) {
-          profiles.push(names);
-        }
-      }
-      return {
-        file: group.file,
-        frame: group.frame,
-        actor,
-        at: [...group.at].sort(),
-        revisions: [...group.revisions],
-        profiles: profiles.sort((a, b) => resolver.profileRank(a) - resolver.profileRank(b)),
-        states: statesOf(group.members.map(({ context }) => context)),
-        contexts: group.members.length,
-        stale: group.members.filter(({ stale }) => stale).length,
-      };
-    });
+    const grouped = frameGroups(
+      resolver,
+      rows.map((row) => ({ ...row, node: id })),
+    ).map(({ nodes: _, members, ...group }) => ({
+      ...group,
+      actor,
+      states: statesOf(members),
+      contexts: members.length,
+    }));
     const withoutEvidence = rows.filter(({ evidence }) => evidence.length === 0).length;
     if (values.table !== true) {
       print(io, { node: id, actor, by: "frame", frames: grouped, withoutEvidence });
@@ -902,7 +1043,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
     const table = drawTable(
       ["frame", "profiles", ...unprofiled, "contexts", "stale"],
       grouped.map((row) => [
-        `${row.file.split("/").pop()}#${row.frame}`,
+        frameLabel(row.file, row.frame),
         row.profiles.map(profileLabel).join(", ") || NONE,
         ...unprofiled.map((name) => (row.states[name] ?? []).join(", ")),
         String(row.contexts),
