@@ -27,6 +27,9 @@ export interface EvidenceResult {
   fingerprints: Record<string, string | null>;
   // "<file>#<frame>" -> the frame's name, where the file names it.
   frameNames: Record<string, string>;
+  // "<node>|<file>#<frame>" for each frame whose entries for that node cover
+  // contexts the model says look different.
+  conflicts: string[];
 }
 
 const entryKeys = ["node", "context", "actor", "at", "source", "fingerprint"];
@@ -44,7 +47,13 @@ export function checkEvidence(
   repository: string,
   resolver: Resolver,
 ): EvidenceResult {
-  const result: EvidenceResult = { diagnostics: [], files: {}, fingerprints: {}, frameNames: {} };
+  const result: EvidenceResult = {
+    diagnostics: [],
+    files: {},
+    fingerprints: {},
+    frameNames: {},
+    conflicts: [],
+  };
   const measure = new Fingerprints();
   const folder = join(directory, "evidence");
   if (statSync(folder, { throwIfNoEntry: false })?.isDirectory() !== true) return result;
@@ -91,9 +100,12 @@ export function checkEvidence(
         fingerprints: result.fingerprints,
         frameNames: result.frameNames,
         measure,
-        looks: new Map(),
+        looks: new Map<string, Set<string>>(),
       };
       checkFile(diagnostics, parsed.root, context);
+      for (const [key, seen] of context.looks) {
+        if (seen.size > 1 && !result.conflicts.includes(key)) result.conflicts.push(key);
+      }
     }
     result.diagnostics.push(...diagnostics.items.map((item) => ({ file, ...item })));
     if (diagnostics.items.length === 0) {
@@ -111,9 +123,9 @@ interface Scope {
   fingerprints: Record<string, string | null>;
   frameNames: Record<string, string>;
   measure: Fingerprints;
-  // "<node>|<file>#<frame>" -> the look of the first context that frame
-  // covers for that node, so the others can be compared with it.
-  looks: Map<string, Record<string, string>>;
+  // "<node>|<file>#<frame>" -> the looks of the contexts that frame covers
+  // for that node, each as JSON.
+  looks: Map<string, Set<string>>;
 }
 
 function checkFile(diagnostics: Diagnostics, root: JsonNode, scope: Scope): void {
@@ -296,28 +308,13 @@ function checkEntry(
     }
   }
 
-  // One frame shows one look: the contexts it covers must look alike.
+  // One frame shows one look: collect each frame's looks, so a frame whose
+  // contexts look different can be marked conflicting.
   if (valid && id !== undefined && where !== undefined && contextObject !== undefined) {
-    const look = resolver.look(id, context, root);
     const key = `${id}|${where}`;
-    const first = looks.get(key);
-    if (first === undefined) {
-      looks.set(key, look);
-    } else {
-      const names = [...new Set([...Object.keys(first), ...Object.keys(look)])];
-      const differs = names.find((name) => first[name] !== look[name]);
-      if (differs !== undefined) {
-        const frameName = where.slice(where.indexOf("#") + 1);
-        report(
-          diagnostics,
-          "different-looks",
-          `frame ${JSON.stringify(frameName)} covers ${id} contexts that look different: ${differs} is ${first[differs] ?? "unset"} in one and ${look[differs] ?? "unset"} in another`,
-          `${path}.context`,
-          contextObject,
-        );
-        valid = false;
-      }
-    }
+    const seen = looks.get(key) ?? new Set<string>();
+    seen.add(JSON.stringify(resolver.look(id, context, root)));
+    looks.set(key, seen);
   }
   if (!valid || actor?.kind !== "string") return undefined;
   const ordered = Object.fromEntries(Object.entries(context).sort(([a], [b]) => (a < b ? -1 : 1)));

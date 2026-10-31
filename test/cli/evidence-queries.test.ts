@@ -63,7 +63,7 @@ describe("status --actor", () => {
   it("reports each context of each node as present, stale or missing for the actor", () => {
     const { run, root } = project();
     const result = json(run("status", "menu-button", "--actor", "design-agent"));
-    expect(result.summary).toEqual({ present: 1, stale: 0, missing: 3 });
+    expect(result.summary).toEqual({ present: 1, stale: 0, conflicting: 0, missing: 3 });
     expect(result.items[0]).toEqual({
       root: "page",
       node: "menu-button",
@@ -81,6 +81,7 @@ describe("status --actor", () => {
     expect(json(run("status", "menu-button", "--actor", "design-agent")).summary).toEqual({
       present: 0,
       stale: 1,
+      conflicting: 0,
       missing: 3,
     });
   });

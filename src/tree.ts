@@ -171,6 +171,8 @@ export interface Project {
   fingerprints?: Record<string, string | null>;
   // "<file>#<frame>" -> the frame's name, where the file names it.
   frameNames?: Record<string, string>;
+  // "<node>|<file>#<frame>" for each frame whose contexts look different.
+  conflicts?: string[];
 }
 
 // evidence/<root-id>.json: what actors have recorded for nodes in that root.

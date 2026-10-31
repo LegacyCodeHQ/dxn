@@ -740,11 +740,25 @@ profile, each cell the contexts with current evidence out of all, and how
 many are stale; with --by frame, a row per frame with the nodes it covers.
 `;
 
-// Whether a context has the actor's evidence: present when some entry's file
-// is unchanged, stale when every entry's file has changed, or missing.
-function evidenceState(found: { stale: boolean }[]): "present" | "stale" | "missing" {
+// Whether a context has the actor's evidence: present when some entry is
+// current (its frame unchanged and showing one look), conflicting when an
+// entry's frame covers contexts that look different, stale when every entry's
+// frame has changed, or missing.
+function evidenceState(
+  found: { stale: boolean; conflicting?: boolean }[],
+): "present" | "stale" | "conflicting" | "missing" {
   if (found.length === 0) return "missing";
-  return found.some(({ stale }) => !stale) ? "present" : "stale";
+  if (found.some(({ stale, conflicting }) => !stale && conflicting !== true)) return "present";
+  return found.some(({ conflicting }) => conflicting === true) ? "conflicting" : "stale";
+}
+
+// The marks after a frame in a table: gone, stale or conflicting.
+function evidenceMarks(entry: { stale: boolean; gone?: boolean; conflicting?: boolean }): string {
+  const marks = [
+    ...(entry.gone === true ? ["gone"] : entry.stale ? ["stale"] : []),
+    ...(entry.conflicting === true ? ["conflicting"] : []),
+  ];
+  return marks.length === 0 ? "" : ` (${marks.join(", ")})`;
 }
 
 // The values a name can take in a node's contexts, in the order they are
@@ -819,12 +833,16 @@ function evidenceFor(
     )
     .map(({ at, source, fingerprint }) => {
       const now = resolver.project.fingerprints?.[`${source.file}#${source.frame}`];
+      const conflicting = resolver.project.conflicts?.includes(
+        `${id}|${source.file}#${source.frame}`,
+      );
       return {
         at,
         source,
         fingerprint,
         stale: now !== fingerprint,
         ...(now === null ? { gone: true } : {}),
+        ...(conflicting === true ? { conflicting: true } : {}),
       };
     });
 }
@@ -983,7 +1001,12 @@ function evidenceSubtree(
         if (here.length === 0) return null;
         const count = (state: string) =>
           here.filter(({ evidence }) => evidenceState(evidence) === state).length;
-        return { present: count("present"), stale: count("stale"), total: here.length };
+        return {
+          present: count("present"),
+          stale: count("stale"),
+          conflicting: count("conflicting"),
+          total: here.length,
+        };
       }),
     }))
     .filter(
@@ -1008,7 +1031,7 @@ function evidenceSubtree(
         ...row.cells.map((cell) =>
           cell === null
             ? NONE
-            : `${cell.present}/${cell.total}${cell.stale > 0 ? ` · ${cell.stale} stale` : ""}`,
+            : `${cell.present}/${cell.total}${cell.stale > 0 ? ` · ${cell.stale} stale` : ""}${cell.conflicting > 0 ? ` · ${cell.conflicting} conflicting` : ""}`,
         ),
       ]),
     ),
@@ -1108,14 +1131,18 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
           profiles.push(names);
         }
       }
-      const frames = new Map<string, { file: string; frame: string; name?: string }>();
+      const frames = new Map<
+        string,
+        { file: string; frame: string; name?: string; conflicting?: boolean }
+      >();
       for (const { evidence } of members) {
-        for (const { source } of evidence) {
+        for (const { source, conflicting } of evidence) {
           const name = resolver.project.frameNames?.[`${source.file}#${source.frame}`];
           frames.set(`${source.file}#${source.frame}`, {
             file: source.file,
             frame: source.frame,
             ...(name === undefined ? {} : { name }),
+            ...(conflicting === true ? { conflicting: true } : {}),
           });
         }
       }
@@ -1128,6 +1155,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
         frames: [...frames.values()],
         present: count("present"),
         stale: count("stale"),
+        conflicting: count("conflicting"),
         missing: count("missing"),
       };
     });
@@ -1142,7 +1170,12 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
           ...attributes.map((name) => row.attributes[name] ?? NONE),
           row.profiles.map(profileLabel).join(", ") || NONE,
           String(row.contexts),
-          row.frames.map(({ file, frame }) => frameLabel(file, frame)).join(", ") || NONE,
+          row.frames
+            .map(
+              ({ file, frame, conflicting }) =>
+                `${frameLabel(file, frame)}${conflicting === true ? " (conflicting)" : ""}`,
+            )
+            .join(", ") || NONE,
           String(row.contexts - row.present),
         ]),
       ),
@@ -1196,6 +1229,7 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
         contexts: members.length,
         present: count("present"),
         stale: count("stale"),
+        conflicting: count("conflicting"),
         missing: count("missing"),
       };
     });
@@ -1216,14 +1250,24 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
       io.stdout(NOTHING_MISSING);
       return;
     }
+    const conflicts = grouped.some((row) => row.conflicting > 0);
     const table = drawTable(
-      ["profile", ...names, "contexts", "present", "stale", "missing"],
+      [
+        "profile",
+        ...names,
+        "contexts",
+        "present",
+        "stale",
+        ...(conflicts ? ["conflicting"] : []),
+        "missing",
+      ],
       grouped.map((row) => [
         profileLabel(row.profiles) || NONE,
         ...names.map((name) => (row.states[name] ?? []).join(", ")),
         String(row.contexts),
         String(row.present),
         String(row.stale),
+        ...(conflicts ? [String(row.conflicting)] : []),
         String(row.missing),
       ]),
     );
@@ -1252,8 +1296,8 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
                 ? NONE
                 : found
                     .map(
-                      ({ source, stale, gone }) =>
-                        `${source.file.split("/").pop()}#${source.frame}${gone === true ? " (gone)" : stale ? " (stale)" : ""}`,
+                      (entry) =>
+                        `${entry.source.file.split("/").pop()}#${entry.source.frame}${evidenceMarks(entry)}`,
                     )
                     .join(", "),
             ];
@@ -1380,7 +1424,12 @@ export const status = readCommand(statusUsage, (resolver, args, io) => {
     print(io, {
       actor,
       kind,
-      summary: { present: count("present"), stale: count("stale"), missing: count("missing") },
+      summary: {
+        present: count("present"),
+        stale: count("stale"),
+        conflicting: count("conflicting"),
+        missing: count("missing"),
+      },
       items,
     });
     return;

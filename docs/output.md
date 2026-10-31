@@ -385,7 +385,9 @@ There is one item per context of the node, on each root. `profiles` names
 every profile with that combination, and is left out when there are no
 profiles. `evidence` is empty where the actor has none; `stale` is true when
 the frame's fingerprint now differs from the one recorded, and `gone` is true
-when the frame is no longer in the file.
+when the frame is no longer in the file. `conflicting` is true when the frame also covers
+contexts of the node that the model says look different; a conflicting entry
+does not count as current.
 
 With `--by profile`, there is a row per profile (or profiles sharing a
 combination), in profile order: the states the node has there, and how many
@@ -570,5 +572,6 @@ With `--actor`, the summary and items are about evidence instead of checks:
 ```
 
 There is one item per context of each node (or of the node named), on each
-root. `evidence` is `present`, `stale` when every entry's frame has changed
+root. `evidence` is `present`, `conflicting` when an entry's frame covers
+contexts that look different, `stale` when every entry's frame has changed
 since, or `missing`.

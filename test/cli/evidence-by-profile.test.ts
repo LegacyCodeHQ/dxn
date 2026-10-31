@@ -84,6 +84,7 @@ describe("evidence --by profile", () => {
       contexts: 8,
       present: 0,
       stale: 0,
+      conflicting: 0,
       missing: 8,
     });
     expect(result.notPresent).toEqual([

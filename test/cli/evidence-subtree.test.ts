@@ -87,8 +87,8 @@ describe("evidence --subtree", () => {
       node: "menu-panel",
       type: null,
       cells: [
-        { present: 0, stale: 1, total: 1 },
-        { present: 0, stale: 1, total: 1 },
+        { present: 0, stale: 1, conflicting: 0, total: 1 },
+        { present: 0, stale: 1, conflicting: 0, total: 1 },
         null,
         null,
         null,

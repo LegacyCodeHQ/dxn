@@ -547,16 +547,6 @@ that check: a design agent passing a visual review, say. Record it as an actor
 that may check it, or add the check with `dimensions actor set <name> --checks
 <check>,...`.
 
-### `different-looks`
-
-One frame covers contexts of a node that the model says look different: the
-node's attributes have different values in them, such as a wordmark that is
-small in one and large in another. A frame shows one look, so attach a frame
-for each look, or, if the design is right that they look alike, change the
-attributes. `dimensions evidence <node-id> --by look` lists the node's looks.
-A node whose type declares no attributes looks alike everywhere, so any frame
-may cover any of its contexts.
-
 ### `missing-source`
 
 The file an entry points to does not exist. Paths are relative to the folder

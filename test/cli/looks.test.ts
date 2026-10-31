@@ -70,15 +70,41 @@ describe("a frame", () => {
     expect(run("validate").code).toBe(0);
   });
 
-  it("may not cover contexts the model says look different", () => {
-    const { attach } = project();
+  it("covering contexts that look different is a conflict on its entries, not an error", () => {
+    const { attach, run } = project();
+    expect(attach("laptopRest", "profile=laptop|desktop", "hover=rest", "focus=blurred").code).toBe(
+      0,
+    );
+    expect(run("validate").code).toBe(0);
+    const entries = json(run("evidence", "wordmark")).contexts.flatMap(
+      ({ evidence }: { evidence: { conflicting?: boolean }[] }) => evidence,
+    );
+    expect(entries.map(({ conflicting }: { conflicting?: boolean }) => conflicting)).toEqual([
+      true,
+      true,
+    ]);
     expect(
-      attach("laptopRest", "profile=laptop|desktop", "hover=rest", "focus=blurred").stderr.replace(
-        /^.*?:\d+:\d+: /,
-        "",
-      ),
-    ).toBe(
-      'different-looks: frame "laptopRest" covers wordmark contexts that look different: size is small in one and large in another\n',
+      run("evidence", "wordmark", "profile=desktop", "hover=rest", "focus=blurred", "--table")
+        .stdout,
+    ).toContain("design.pen#laptopRest (conflicting)");
+  });
+});
+
+describe("a model change that makes a frame's contexts look different", () => {
+  it("is not refused; the frame's entries become conflicting and count as missing", () => {
+    const { attach, run } = project();
+    attach("laptopRest", "profile=laptop", "hover=rest|hovered", "focus=blurred");
+    expect(run("attribute", "add", "color", "--values", "primary,accent").code).toBe(0);
+    expect(run("type", "set", "link", "color", "rest=primary", "hovered=accent").code).toBe(0);
+    expect(json(run("status", "--actor", "design-agent")).summary).toMatchObject({
+      present: 0,
+      conflicting: 2,
+    });
+    expect(
+      json(run("evidence", "wordmark", "profile=laptop", "focus=blurred", "--missing")).contexts,
+    ).toHaveLength(2);
+    expect(run("evidence", "wordmark", "--by", "look", "--table").stdout).toContain(
+      "design.pen#laptopRest (conflicting)",
     );
   });
 });
@@ -105,6 +131,7 @@ describe("evidence --by look", () => {
       frames: [{ file: design, frame: "laptopRest", name: "laptopRest" }],
       present: 2,
       stale: 0,
+      conflicting: 0,
       missing: 3,
     });
   });

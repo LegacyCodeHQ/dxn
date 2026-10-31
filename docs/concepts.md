@@ -599,10 +599,14 @@ contexts as one look: the closed menu button on a phone and on a tablet, say.
 frame with the contexts it covers. It is the actor's claim, recorded with its
 provenance, and the model checks it: a node's **look** in a context is the
 value each of its attributes has for the states the context names. Two
-contexts with equal looks look alike, so one frame may show both; a frame that
-covers contexts whose looks differ is an error, `different-looks`. A wordmark
+contexts with equal looks look alike, so one frame may show both. A frame that
+covers contexts whose looks differ is **conflicting**: not an error, so a model
+change that makes looks differ is never refused, but every entry on that frame
+stops counting as current. `evidence` marks it `(conflicting)`, `status --actor`
+counts it, and `--missing` lists it, until the frame is split into one per
+look. A wordmark
 that is small on laptops and large on desktops cannot share a frame across
-them, while its rest and hovered states can, if hover changes no attribute.
+them without conflicting, while its rest and hovered states can, if hover changes no attribute.
 `dimensions evidence wordmark --by look --table` lists the looks the model
 defines, the contexts of each, the frames that cover them and how many still
 miss evidence: what to draw, one frame per look. A node whose type declares no

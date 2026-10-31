@@ -498,6 +498,7 @@ export function compileDirectory(
     project.evidence = evidence.files;
     project.fingerprints = evidence.fingerprints;
     project.frameNames = evidence.frameNames;
+    project.conflicts = evidence.conflicts;
   }
   const expectations = readJson(directory, "expectations.json");
   if (expectations !== undefined && !("code" in expectations)) {
