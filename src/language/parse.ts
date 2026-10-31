@@ -243,9 +243,23 @@ export function parse(source: string): ParseResult {
   const whenBlock = (owner: string, subject: "dimension" | "field") => {
     keyword("when", '"when" after "="');
     const on = word(`a ${subject} after "when"`);
-    const branches: { values: Located[]; result: Located }[] = [];
     expect("{", `"{" after ${JSON.stringify(on.name)}`);
-    braces(`the when of ${owner}`, () => {
+    const branches = branchList(owner, subject);
+    end(["newline", "}"], "the end of the line");
+    return { on, branches };
+  };
+
+  // A when's branches, after its "{", to its "}": "<value>, ... -> <value>",
+  // split by commas or lines.
+  const branchList = (owner: string, subject = "state") => {
+    const branches: { values: Located[]; result: Located }[] = [];
+    for (;;) {
+      while (peek().kind === "newline") next();
+      if (peek().kind === "}") {
+        next();
+        return branches;
+      }
+      if (peek().kind === "end") fail(peek(), `"}" to close the when of ${owner}`);
       const values = [word(`a value of the ${subject}`)];
       while (peek().kind === ",") {
         next();
@@ -254,10 +268,9 @@ export function parse(source: string): ParseResult {
       end(["->"], '"," or "->"');
       next();
       branches.push({ values, result: word('a value after "->"') });
-      end(["newline", "}"], "the end of the line");
-    });
-    end(["newline", "}"], "the end of the line");
-    return { on, branches };
+      if (peek().kind === ",") next();
+      else end(["newline", "}"], '",", the end of the line or "}"');
+    }
   };
 
   // A child: "has <name>: <Type>", then "{ <state> = <state>, ... }" for the
@@ -269,11 +282,22 @@ export function parse(source: string): ParseResult {
     const placed: Child = { ...named, type: qualified('a type after ":"') };
     if (peek().kind === "{") {
       next();
-      const bindings: { state: Located; from: Located }[] = [];
+      const bindings: NonNullable<Child["bindings"]> = [];
       braces(`the bindings of ${named.name}`, () => {
         const state = word('a state of the child or "}"');
         expect("=", `"=" after ${JSON.stringify(state.name)}`);
-        bindings.push({ state, from: word('a state after "="') });
+        if (
+          peek().kind === "word" &&
+          peek().text === "when" &&
+          tokens[position + 2]?.kind === "{"
+        ) {
+          next();
+          const from = word('a state after "when"');
+          next();
+          bindings.push({ state, from, map: branchList(state.name) });
+        } else {
+          bindings.push({ state, from: word('a state after "="') });
+        }
         if (peek().kind === ",") next();
         else end(["newline", "}"], '",", the end of the line or "}"');
       });

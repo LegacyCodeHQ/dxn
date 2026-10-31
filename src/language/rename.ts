@@ -41,6 +41,21 @@ export function renameInSource(
       const state = type.states.find(({ name }) => name === rule.state.name);
       if (state?.enum.name === enumName && rule.value.name === from) named.push(rule.value);
     }
+    for (const child of type.children) {
+      const inner = file.types.find(({ name }) => name === child.type.name);
+      for (const { state, from: source, map } of child.bindings ?? []) {
+        const subject = type.states.find(({ name }) => name === source.name);
+        const target = inner?.states.find(({ name }) => name === state.name);
+        for (const branch of map ?? []) {
+          if (subject?.enum.name === enumName) {
+            named.push(...branch.values.filter(({ name }) => name === from));
+          }
+          if (target?.enum.name === enumName && branch.result.name === from) {
+            named.push(branch.result);
+          }
+        }
+      }
+    }
     for (const state of type.states) {
       if (state.enum.name !== enumName) continue;
       if (state.fixed?.name === from) named.push(state.fixed);

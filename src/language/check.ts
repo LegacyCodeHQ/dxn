@@ -129,8 +129,51 @@ function checkValues(file: ParseResult, report: Report): void {
 // needed dimension and its values, and one rule for each state value. A need
 // no rule uses is a warning.
 function checkTypes(file: ParseResult, names: Names, report: Report): void {
+  // A when's branches: each value of its subject's enum covered once, each
+  // giving a value of the result's enum.
+  const checkBranches = (
+    branches: { values: Located[]; result: Located }[],
+    on: Located,
+    subject: string,
+    subjectEnum: string,
+    result: string,
+    resultEnum: string,
+  ) => {
+    const allowed = names.values(subjectEnum) ?? [];
+    const covered = new Set<string>();
+    for (const value of branches.flatMap(({ values }) => values)) {
+      if (!allowed.includes(value.name)) {
+        report(
+          "unknown-value",
+          `${JSON.stringify(value.name)} is not a value of ${subject} (${allowed.join(", ")})`,
+          value,
+        );
+      } else if (covered.has(value.name)) {
+        report(
+          "duplicate-value",
+          `${JSON.stringify(value.name)} is already covered by the when`,
+          value,
+        );
+      }
+      covered.add(value.name);
+    }
+    const missing = allowed.filter((value) => !covered.has(value));
+    if (missing.length > 0) {
+      report("incomplete-when", `when ${subject} does not cover ${missing.join(", ")}`, on);
+    }
+    const results = names.values(resultEnum) ?? [];
+    for (const branch of branches) {
+      if (!results.includes(branch.result.name)) {
+        report(
+          "unknown-value",
+          `${JSON.stringify(branch.result.name)} is not a value of ${result} (${results.join(", ")})`,
+          branch.result,
+        );
+      }
+    }
+  };
   // A child's bindings: each a state of the child, set once, from a state of
-  // the type, both with their values from one enum.
+  // the type, both with their values from one enum, or mapped by a when.
   const checkBindings = (type: Type, child: Child) => {
     const inner = file.types.find(({ name }) => name === child.type.name);
     const bound = new Set<string>();
@@ -159,6 +202,11 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         );
       }
       if (target === undefined || source === undefined) continue;
+      const map = child.bindings?.find((binding) => binding.state === state)?.map;
+      if (map !== undefined) {
+        checkBranches(map, from, source.name, source.enum.name, target.name, target.enum.name);
+        continue;
+      }
       if (target.derived !== undefined || target.fixed !== undefined || target.received) {
         const why = target.received
           ? "is received"

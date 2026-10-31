@@ -516,6 +516,23 @@ enum it expects; inside, a received state is used like one of its own, in
 conditions and bindings, but it has no rules and no parent can bind it. A
 type provides only its own states, each once.
 
+A received state often decides a child's own state rather than whether it is
+there: the blog link is always there, but selected only on the blog's pages.
+A binding can map one state onto another with a `when`, a branch for each of
+its values, split by commas or lines:
+
+```
+type Links receives current: Section {
+  has blog: ToolbarLink {
+    selection = when current { blog -> selected, home -> unselected }
+  }
+}
+```
+
+Like every `when`, it covers each value of the state it is on once, and each
+branch gives a value of the child's state. In place, the blog link is
+selected exactly where the page is the blog's.
+
 Where a received state comes from is known in place: the nearest type above
 on the path that provides it, with the same enum. In place, it is one of
 the parents' states, by its provider's name:
@@ -1184,9 +1201,6 @@ or under discussion but not part of it yet; see [design.md](design.md):
   of a type in a page, it waits for nodes.
 - **More renames.** `lang rename` renames an enum's value. Renaming a field,
   a record (and its folder), or an enum, dimension or type is still to come.
-- **Mapping a received state.** A binding that maps one state onto another,
-  such as `selection = when current { blog -> selected, home -> unselected }`,
-  so that each link's own state follows the page's.
 - **A runtime.** Evidence today is recorded by the actors that draw and
   build. A runtime would check the real system itself, driving a browser or a
   device into each combination and recording what it shows.
@@ -1238,11 +1252,13 @@ type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" f
               "{" { blank-line | state | rule | enum | type | has | provides } "}"
 provides    = "provides" state-name newline
 has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline
-bindings    = "{" { state-name "=" state-name ( "," | newline ) } "}"
+bindings    = "{" { binding ( "," | newline ) } "}"
+binding     = state-name "=" state-name
+            | state-name "=" "when" state-name "{" { branch ( "," | newline ) } "}"
 state       = "state" field { "," [newline] field } newline
-            | "state" field "=" "when" Name "{" { blank-line | branch } "}" newline
+            | "state" field "=" "when" Name "{" { branch ( "," | newline ) } "}" newline
             | "state" field "=" value newline
-branch      = value { "," value } "->" value newline
+branch      = value { "," value } "->" value       # a when's branches are split by commas or lines
 field       = state-name ":" Name { "." Name }
 rule        = state-name "=" value "only" "when" condition newline
 condition   = Name ( "=" value | "in" "(" value { "," value } ")" )

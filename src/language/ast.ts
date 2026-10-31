@@ -78,7 +78,9 @@ export interface Child extends Located {
   when?: { on: Located; values: Located[] };
   // The child's states the type sets, each from one of its own states, whose
   // values come from the same enum.
-  bindings?: { state: Located; from: Located }[];
+  // With a map, the child's state takes the value its branch gives for the
+  // type's state.
+  bindings?: { state: Located; from: Located; map?: { values: Located[]; result: Located }[] }[];
 }
 
 // An environment: a product of dimensions, whose instances are profiles.

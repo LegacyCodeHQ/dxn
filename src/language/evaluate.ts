@@ -236,10 +236,11 @@ export function inPlace(file: ParseResult, path: string): InPlace {
         if (!next.when.values.some(({ name }) => name === value)) continue;
       }
       const given = Object.fromEntries(
-        (next.bindings ?? []).map(({ state, from }) => [
-          state.name,
-          combination[from.name] as string,
-        ]),
+        (next.bindings ?? []).map(({ state, from, map }) => {
+          const value = combination[from.name] as string;
+          const mapped = map?.find(({ values }) => values.some(({ name }) => name === value));
+          return [state.name, mapped === undefined ? value : mapped.result.name];
+        }),
       );
       // A received state is named by its provider's key, already given.
       const received = new Set(

@@ -114,7 +114,9 @@ type Toolbar needs Breakpoint {
     ]).toEqual([
       ['4:26: syntax-error: expected "when" after "=", found "Breakpoint"'],
       ['5:14: syntax-error: expected "," or "->" after "sm", found "compact"'],
-      ['5:25: syntax-error: expected the end of the line after "compact", found "inline"'],
+      [
+        '5:25: syntax-error: expected ",", the end of the line or "}" after "compact", found "inline"',
+      ],
     ]);
   });
 
