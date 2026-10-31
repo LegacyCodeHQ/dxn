@@ -556,6 +556,9 @@ export function parse(source: string): ParseResult {
 // dimension names, each once; an enum holds each value once; a type holds each state
 // once, and each state's values come from a declared enum.
 function check(result: ParseResult): void {
+  // The names to choose from, after a name that is not one of them.
+  const among = (names: string[], none = "the file declares none") =>
+    names.length > 0 ? ` (${names.join(", ")})` : `; ${none}`;
   const push = (code: string, message: string, at: { line: number; column: number }) =>
     result.diagnostics.push({ code, message, line: at.line, column: at.column });
   const declarations = [
@@ -607,7 +610,7 @@ function check(result: ParseResult): void {
         ? `${name} is a type, not an enum`
         : dimensionNames.has(name)
           ? `${name} is a dimension, not an enum`
-          : `${name} is not an enum (${enumNames.join(", ")})`,
+          : `${name} is not an enum${among(enumNames)}`,
       at,
     );
   };
@@ -631,7 +634,7 @@ function check(result: ParseResult): void {
       if (state === undefined) {
         push(
           "unknown-state",
-          `${rule.state} is not a state of ${type.name} (${stateNames.join(", ")})`,
+          `${rule.state} is not a state of ${type.name}${among(stateNames, "it has none")}`,
           rule,
         );
       } else {
@@ -661,7 +664,7 @@ function check(result: ParseResult): void {
           "unknown-dimension",
           enumNames.includes(when.dimension)
             ? `${when.dimension} is an enum, not a dimension`
-            : `${when.dimension} is not a dimension (${[...dimensionNames].join(", ")})`,
+            : `${when.dimension} is not a dimension${among([...dimensionNames])}`,
           when,
         );
         continue;
@@ -690,7 +693,7 @@ function check(result: ParseResult): void {
   const describeDimension = (name: string) =>
     enumNames.includes(name)
       ? `${name} is an enum, not a dimension`
-      : `${name} is not a dimension (${[...dimensionNames].join(", ")})`;
+      : `${name} is not a dimension${among([...dimensionNames])}`;
   for (const environment of result.environments) {
     const seen = new Set<string>();
     for (const dimension of environment.dimensions) {
@@ -723,7 +726,7 @@ function check(result: ParseResult): void {
             ? `${named} is an enum, not an environment`
             : typeNames.has(named)
               ? `${named} is a type, not an environment`
-              : `${named} is not an environment (${result.environments.map(({ name }) => name).join(", ")})`,
+              : `${named} is not an environment${among(result.environments.map(({ name }) => name))}`,
         at,
       );
       continue;
