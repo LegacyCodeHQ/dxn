@@ -571,6 +571,21 @@ function storedWithoutContext(parsed: ParseResult, file: string, cwd: string): s
     );
 }
 
+// The stored records of the file's records, once each is a record with
+// context and all of them check; otherwise the exit code, with what is wrong
+// refused or reported.
+function loadStored(
+  parsed: ParseResult,
+  file: string,
+  cwd: string,
+  report: Reporter,
+): Stored[] | number {
+  const uncontexted = storedWithoutContext(parsed, file, cwd);
+  if (uncontexted.length > 0) return report.refuse(...uncontexted);
+  const stored = storedData(parsed, file, cwd);
+  return checkStored(parsed, stored, report) ? stored : report.fail();
+}
+
 // Checks stored data against the file, reporting every problem; whether all of
 // it is valid.
 function checkStored(parsed: ParseResult, stored: Stored[], report: Reporter): boolean {
@@ -632,10 +647,8 @@ const validateCommand: Command = command(usage, (args, { io, cwd }) => {
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
   if (typeof parsed === "number") return parsed;
-  const uncontexted = storedWithoutContext(parsed, file, cwd);
-  if (uncontexted.length > 0) return report.refuse(...uncontexted);
-  const data = storedData(parsed, file, cwd);
-  if (!checkStored(parsed, data, report)) return report.fail();
+  const data = loadStored(parsed, file, cwd, report);
+  if (typeof data === "number") return data;
   const directory = resolve(cwd, dirname(file));
   const stored = parsed.records
     .filter(({ name }, index) => parsed.records.findIndex((other) => other.name === name) === index)
@@ -695,10 +708,8 @@ const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
             ? `${JSON.stringify(to)} is not a value: a letter or digit, then letters, digits and hyphens`
             : undefined;
   if (refusal !== undefined) return report.refuse(refusal);
-  const uncontexted = storedWithoutContext(parsed, file, cwd);
-  if (uncontexted.length > 0) return report.refuse(...uncontexted);
-  const stored = storedData(parsed, file, cwd);
-  if (!checkStored(parsed, stored, report)) return report.fail();
+  const stored = loadStored(parsed, file, cwd, report);
+  if (typeof stored === "number") return stored;
   const path = resolve(cwd, file);
   const source = renameInSource(parsed, readFileSync(path, "utf8"), enumName, from, to);
   const written = [{ shown: file, path, source }];
@@ -752,10 +763,8 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
   if (typeof parsed === "number") return parsed;
-  const uncontexted = storedWithoutContext(parsed, file, cwd);
-  if (uncontexted.length > 0) return report.refuse(...uncontexted);
-  const data = storedData(parsed, file, cwd);
-  if (!checkStored(parsed, data, report)) return report.fail();
+  const data = loadStored(parsed, file, cwd, report);
+  if (typeof data === "number") return data;
   // Whether an entry's frame is as recorded: its fingerprint now, against
   // the one stored.
   const repository = repositoryOf(file, cwd);
@@ -975,10 +984,8 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
   if (typeof parsed === "number") return parsed;
-  const uncontexted = storedWithoutContext(parsed, file, cwd);
-  if (uncontexted.length > 0) return report.refuse(...uncontexted);
-  const data = storedData(parsed, file, cwd);
-  if (!checkStored(parsed, data, report)) return report.fail();
+  const data = loadStored(parsed, file, cwd, report);
+  if (typeof data === "number") return data;
   // The record: the one given, or the only one with context.
   const named = flags.get("--record")?.[0];
   const candidates = parsed.records.filter(
