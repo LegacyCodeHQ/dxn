@@ -153,6 +153,15 @@ export function parse(source: string): ParseResult {
     return items;
   };
 
+  // Whether every brace is closed, and none before it is opened.
+  let depth = 0;
+  let balanced = true;
+  for (const { kind } of tokens) {
+    if (kind === "{") depth++;
+    if (kind === "}" && --depth < 0) balanced = false;
+  }
+  if (depth !== 0) balanced = false;
+
   // The entries inside braces, each read from its first token, to the
   // closing brace; blank lines between them are skipped.
   const braces = (owner: string, entry: (token: Token) => void) => {
@@ -163,8 +172,11 @@ export function parse(source: string): ParseResult {
         next();
         return;
       }
-      // A declaration at the start of a line ends one left open.
-      if (token.kind === "end" || starts(token)) fail(token, `"}" to close ${owner}`);
+      // A declaration at the start of a line ends one left open; where every
+      // brace is closed, the braces say what is inside, wherever it starts.
+      if (token.kind === "end" || (!balanced && starts(token))) {
+        fail(token, `"}" to close ${owner}`);
+      }
       entry(token);
     }
   };

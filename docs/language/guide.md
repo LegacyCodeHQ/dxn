@@ -1627,6 +1627,9 @@ be an enum, so the state that uses it is fine. The same holds inside a type:
 a broken enum or type in it is not reported again where it is used. And a
 declaration left open, with its `}` missing, is reported where the next
 declaration starts, at the start of a line, which then reads as its own.
+Where every brace is closed, the braces say what is inside a type, so a
+declaration moved into one belongs to it even before it is indented, and
+`dxn fmt` indents it.
 
 ## What is still being designed
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { states } from "../src/evaluate.js";
+import { format } from "../src/format.js";
 import { parse } from "../src/parse.js";
 import { renameInSource } from "../src/rename.js";
 import { problems } from "./support/language.js";
@@ -99,6 +100,51 @@ record Snapshot {
     expect(renameInSource(parse(menu), menu, "Menu.State", "open", "shown")).toBe(
       menu.replace("closed | open", "closed | shown"),
     );
+  });
+
+  it("belong to the type whose braces hold them, even at the start of a line, and are indented when formatted", () => {
+    // Moved inside Toggle, and not indented yet.
+    const moved = `enum Interaction = idle | pressed
+
+type Toggle {
+enum Setting = off | on
+
+state setting: Setting, interaction: Interaction
+}
+
+type Tab {
+  state interaction: Interaction
+}
+`;
+    const { enums, types } = parse(moved);
+    expect([
+      problems(moved),
+      enums.map(({ name, scope }) => [name, scope]),
+      types.map(({ name, states: declared }) => [name, declared.map(({ name: state }) => state)]),
+      format(moved),
+    ]).toEqual([
+      [],
+      [
+        ["Interaction", undefined],
+        ["Toggle.Setting", "Toggle"],
+      ],
+      [
+        ["Toggle", ["setting", "interaction"]],
+        ["Tab", ["interaction"]],
+      ],
+      `enum Interaction = idle | pressed
+
+type Toggle {
+  enum Setting = off | on
+
+  state setting: Setting, interaction: Interaction
+}
+
+type Tab {
+  state interaction: Interaction
+}
+`,
+    ]);
   });
 
   it("say what they expected when the syntax is wrong", () => {
