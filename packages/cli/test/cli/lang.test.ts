@@ -186,12 +186,12 @@ type Wordmark needs Pointer, Keyboard {
     expect([result.code, result.stdout]).toEqual([
       0,
       [
-        "| Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |",
-        "| ------- | ----------- | ----------- | -------------- | -------------- | -------------- |",
-        "| mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |",
-        "| mouse   | no-keyboard | ✓           | ✓              | ✓              | —              |",
-        "| touch   | keyboard    | ✓           | —              | ✓              | ✓              |",
-        "| touch   | no-keyboard | ✓           | —              | ✓              | —              |",
+        "| Pointer | Keyboard    | hover         | focus            |",
+        "| ------- | ----------- | ------------- | ---------------- |",
+        "| mouse   | keyboard    | rest, hovered | blurred, focused |",
+        "| mouse   | no-keyboard | rest, hovered | blurred          |",
+        "| touch   | keyboard    | rest          | blurred, focused |",
+        "| touch   | no-keyboard | rest          | blurred          |",
         "",
       ].join("\n"),
     ]);
@@ -221,16 +221,16 @@ type Toolbar needs Breakpoint {
       run("states", "wordmark.dxn", "Menu").stdout,
     ]).toEqual([
       [
-        "| Breakpoint | layout: compact | layout: inline | has links | has menu |",
-        "| ---------- | --------------- | -------------- | --------- | -------- |",
-        "| base       | ✓               | —              | —         | ✓        |",
-        "| lg         | —               | ✓              | ✓         | —        |",
+        "| Breakpoint | layout  | has links | has menu |",
+        "| ---------- | ------- | --------- | -------- |",
+        "| base       | compact | —         | ✓        |",
+        "| lg         | inline  | ✓         | —        |",
         "",
       ].join("\n"),
       [
-        "| menu: closed | menu: open | has panel   |",
-        "| ------------ | ---------- | ----------- |",
-        "| ✓            | ✓          | menu = open |",
+        "| menu         | has panel   |",
+        "| ------------ | ----------- |",
+        "| closed, open | menu = open |",
         "",
       ].join("\n"),
     ]);
@@ -267,10 +267,12 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse }
       run("states", "wordmark.dxn", "Toolbar.menu.togle").stderr,
     ]).toEqual([
       [
-        "| profiles | Breakpoint | Pointer | layout  | menu.menu | hover: rest | hover: hovered | expanded: closed | expanded: open |",
-        "| -------- | ---------- | ------- | ------- | --------- | ----------- | -------------- | ---------------- | -------------- |",
-        "| phone    | base       | touch   | compact | closed    | ✓           | —              | ✓                | —              |",
-        "| phone    | base       | touch   | compact | open      | ✓           | —              | —                | ✓              |",
+        "In every row: phone, Breakpoint = base, Pointer = touch, layout = compact",
+        "",
+        "| menu.menu | hover | expanded |",
+        "| --------- | ----- | -------- |",
+        "| closed    | rest  | closed   |",
+        "| open      | rest  | open     |",
         "",
       ].join("\n"),
       "dxn: togle is not a child of Menu (toggle)\n",
@@ -286,10 +288,60 @@ profile studio: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `;
     expect(file(withProfiles)("states", "wordmark.dxn", "Wordmark").stdout).toBe(
       [
-        "| profiles       | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |",
-        "| -------------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |",
-        "| phone          | touch   | no-keyboard | ✓           | —              | ✓              | —              |",
-        "| laptop, studio | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |",
+        "| profiles       | Pointer | Keyboard    | hover         | focus            |",
+        "| -------------- | ------- | ----------- | ------------- | ---------------- |",
+        "| phone          | touch   | no-keyboard | rest          | blurred          |",
+        "| laptop, studio | mouse   | keyboard    | rest, hovered | blurred, focused |",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("shows one row for rows that read the same, and no profiles where none differ", () => {
+    const devices = `dimension Breakpoint = base | lg
+${wordmark}environment Device = Breakpoint x Pointer x Keyboard
+profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile tablet: Device { Breakpoint = lg, Pointer = touch, Keyboard = no-keyboard }
+profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+type Menu {
+  enum State = closed | open
+  state menu: State
+}
+`;
+    const run = file(devices);
+    expect([
+      run("states", "wordmark.dxn", "Wordmark").stdout,
+      run("states", "wordmark.dxn", "Menu").stdout,
+    ]).toEqual([
+      [
+        "| profiles      | Pointer | Keyboard    | hover         | focus            |",
+        "| ------------- | ------- | ----------- | ------------- | ---------------- |",
+        "| phone, tablet | touch   | no-keyboard | rest          | blurred          |",
+        "| laptop        | mouse   | keyboard    | rest, hovered | blurred, focused |",
+        "",
+      ].join("\n"),
+      ["| menu         |", "| ------------ |", "| closed, open |", ""].join("\n"),
+    ]);
+  });
+
+  it("shows a state another depends on next to the dimensions, as where a row is", () => {
+    const button = `dimension Pointer = mouse | touch
+enum Enabled = enabled | disabled
+enum Hover = rest | hovered
+type Button needs Pointer {
+  state hover: Hover
+  state enabled: Enabled
+  hover = hovered only when Pointer = mouse and enabled = enabled
+}
+`;
+    expect(file(button)("states", "wordmark.dxn", "Button").stdout).toBe(
+      [
+        "| Pointer | enabled  | hover         |",
+        "| ------- | -------- | ------------- |",
+        "| mouse   | enabled  | rest, hovered |",
+        "| mouse   | disabled | rest          |",
+        "| touch   | enabled  | rest          |",
+        "| touch   | disabled | rest          |",
         "",
       ].join("\n"),
     );

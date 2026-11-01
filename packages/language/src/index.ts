@@ -3,6 +3,8 @@
 
 // Reading a .dxn file into declarations.
 export type { ParseResult, RecordDeclaration, Type } from "./ast.js";
+// What a rule's or a child's condition compares.
+export { subjects } from "./condition.js";
 // What a tree of types is in place, and how its records are derived.
 export { fieldValue } from "./derive.js";
 // The JSON reader and diagnostics the language shares with the JSON prototype.

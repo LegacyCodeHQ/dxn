@@ -168,13 +168,13 @@ dxn lang states wordmark.dxn Wordmark
 ```
 
 ```
-| hover: rest | hover: hovered | focus: blurred | focus: focused |
-| ----------- | -------------- | -------------- | -------------- |
-| ✓           | ✓              | ✓              | ✓              |
+| hover         | focus            |
+| ------------- | ---------------- |
+| rest, hovered | blurred, focused |
 ```
 
-Every value is available, because nothing yet says otherwise. That is about
-to change.
+Each state has a column, listing the values it can have: every value, because
+nothing yet says otherwise. That is about to change.
 
 The checker holds you to what you declared. Misspell a state's enum, or name
 a state with a capital letter, and it says so, with the line and column:
@@ -219,9 +219,9 @@ dxn lang states menu.dxn Menu.Toggle
 ```
 
 ```
-| hover: rest | hover: hovered | expanded: closed | expanded: open |
-| ----------- | -------------- | ---------------- | -------------- |
-| ✓           | ✓              | ✓                | ✓              |
+| hover         | expanded     |
+| ------------- | ------------ |
+| rest, hovered | closed, open |
 ```
 
 A nested name is not visible from a sibling, only from inside its own type.
@@ -410,16 +410,17 @@ type Button needs Pointer {
 }
 ```
 
-The matrix then has a row for each value of a state another depends on, so
+The matrix then has a row for each value of a state another depends on, and
+shows that state next to the dimensions, since it says where the row is. So
 every row still reads one state at a time:
 
 ```
-| Pointer | enabled: enabled | enabled: disabled | hover: rest | hover: hovered |
-| ------- | ---------------- | ----------------- | ----------- | -------------- |
-| mouse   | ✓                | —                 | ✓           | ✓              |
-| mouse   | —                | ✓                 | ✓           | —              |
-| touch   | ✓                | —                 | ✓           | —              |
-| touch   | —                | ✓                 | ✓           | —              |
+| Breakpoint | layout  |
+| ---------- | ------- |
+| base       | compact |
+| sm         | compact |
+| lg         | inline  |
+| xl         | inline  |
 ```
 
 A state can depend on one that depends on another, but no state can depend
@@ -456,12 +457,12 @@ Each line of the `when` lists some of the dimension's values and, after
 exactly once, so the state has exactly one value in each row:
 
 ```
-| Breakpoint | layout: compact | layout: inline |
-| ---------- | --------------- | -------------- |
-| base       | ✓               | —              |
-| sm         | ✓               | —              |
-| lg         | —               | ✓              |
-| xl         | —               | ✓              |
+| Pointer | enabled  | hover         |
+| ------- | -------- | ------------- |
+| mouse   | enabled  | rest, hovered |
+| mouse   | disabled | rest          |
+| touch   | enabled  | rest          |
+| touch   | disabled | rest          |
 ```
 
 There is no `else`: a value left out is reported, not quietly given a
@@ -541,21 +542,21 @@ dxn lang states toolbar.dxn Toolbar
 ```
 
 ```
-| Breakpoint | layout: compact | layout: inline | has wordmark | has links | has menu |
-| ---------- | --------------- | -------------- | ------------ | --------- | -------- |
-| base       | ✓               | —              | ✓            | —         | ✓        |
-| sm         | ✓               | —              | ✓            | —         | ✓        |
-| lg         | —               | ✓              | ✓            | ✓         | —        |
-| xl         | —               | ✓              | ✓            | ✓         | —        |
+| Breakpoint | layout  | has wordmark | has links | has menu |
+| ---------- | ------- | ------------ | --------- | -------- |
+| base       | compact | ✓            | —         | ✓        |
+| sm         | compact | ✓            | —         | ✓        |
+| lg         | inline  | ✓            | ✓         | —        |
+| xl         | inline  | ✓            | ✓         | —        |
 ```
 
 Where a child depends on a free state, the cell says for which of its values
 it is there:
 
 ```
-| menu: closed | menu: open | has toggle | has panel   |
-| ------------ | ---------- | ---------- | ----------- |
-| ✓            | ✓          | ✓          | menu = open |
+| menu         | has toggle | has panel   |
+| ------------ | ---------- | ----------- |
+| closed, open | ✓          | menu = open |
 ```
 
 Where it depends on several free states, the cell gives its condition:
@@ -650,9 +651,9 @@ dxn lang states site.dxn ArticlePage.toolbar.links.blog
 ```
 
 ```
-| current | selection: unselected | selection: selected |
-| ------- | --------------------- | ------------------- |
-| blog    | —                     | ✓                   |
+| current | selection |
+| ------- | --------- |
+| blog    | selected  |
 ```
 
 On its own, a receiving type has the state free, with every value; and a
@@ -710,19 +711,22 @@ dxn lang states toolbar.dxn Toolbar.menu.toggle
 ```
 
 ```
-| profiles | Breakpoint | Pointer | Keyboard    | layout  | menu.menu | hover: rest | hover: hovered | focus: blurred | focus: focused | expanded: closed | expanded: open |
-| -------- | ---------- | ------- | ----------- | ------- | --------- | ----------- | -------------- | -------------- | -------------- | ---------------- | -------------- |
-| phone    | base       | touch   | no-keyboard | compact | closed    | ✓           | —              | ✓              | —              | ✓                | —              |
-| phone    | base       | touch   | no-keyboard | compact | open      | ✓           | —              | ✓              | —              | —                | ✓              |
+In every row: phone, Breakpoint = base, Pointer = touch, Keyboard = no-keyboard, layout = compact
+
+| menu.menu | hover | focus   | expanded |
+| --------- | ----- | ------- | -------- |
+| closed    | rest  | blurred | closed   |
+| open      | rest  | blurred | open     |
 ```
 
 For each profile, it walks down the path: the toolbar is `compact` on a phone,
 so the menu is there; the menu can be `closed` or `open`; and in each, the
 toggle is there, with `expanded` set to match. On a laptop the toolbar is
-`inline`, so there is no menu, and no toggle: no row. The columns before the
-child's own states are its parents' states that decide where it is, or that
-it is given, named by their path: `layout` is the toolbar's, `menu.menu` the
-menu's.
+`inline`, so there is no menu, and no toggle: no row. Its parents' states
+that decide where it is, or that it is given, are named by their path:
+`layout` is the toolbar's, `menu.menu` the menu's. What is the same in every
+row is said once, above the table: the toggle is only ever there on a phone,
+where the toolbar is `compact`; the rest varies, row by row.
 
 ## Evaluating: the matrix
 
@@ -733,22 +737,24 @@ dxn lang states wordmark.dxn Wordmark
 ```
 
 ```
-| Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |
-| ------- | ----------- | ----------- | -------------- | -------------- | -------------- |
-| mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
-| mouse   | no-keyboard | ✓           | ✓              | ✓              | —              |
-| touch   | keyboard    | ✓           | —              | ✓              | ✓              |
-| touch   | no-keyboard | ✓           | —              | ✓              | —              |
+| Pointer | Keyboard    | hover         | focus            |
+| ------- | ----------- | ------------- | ---------------- |
+| mouse   | keyboard    | rest, hovered | blurred, focused |
+| mouse   | no-keyboard | rest, hovered | blurred          |
+| touch   | keyboard    | rest          | blurred, focused |
+| touch   | no-keyboard | rest          | blurred          |
 ```
 
 There is one row for each combination of the dimensions the type needs, in
-the order it needs them, and a ✓ for each state value that exists there. This
-table is the matrix the introduction talked about: every case the wordmark
+the order it needs them, and each state's cell lists the values it has there.
+This table is the matrix the introduction talked about: every case the wordmark
 has to handle, worked out from four lines of rules. A designer can draw from
 it, a developer can build from it, and nobody has to guess which cases exist.
 
-With `--json`, the command prints the same matrix as JSON, for tools and
-agents.
+The table is drawn to be read: a key the same in every row is said once, above
+it, and where every row is on every profile, there is no profiles column.
+With `--json`, the command prints the full matrix as JSON instead, a row for
+each world, for tools and agents.
 
 ## Environments: the shape of a device
 
@@ -800,15 +806,15 @@ A profile's name is lowercase, because it is a single thing. After the colon
 comes the environment it is an instance of, then a value for each of that
 environment's dimensions, split by commas or lines.
 
-Now the matrix has one row per profile instead of one per combination (and
-one row for profiles with the same values, as the next section shows):
+Now the matrix has one row per profile instead of one per combination. Rows
+that read the same are one row, naming every profile in it: the wordmark does
+not need `Breakpoint`, so on a phone and on a tablet it is the same:
 
 ```
-| profiles | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |
-| -------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |
-| phone    | touch   | no-keyboard | ✓           | —              | ✓              | —              |
-| tablet   | touch   | no-keyboard | ✓           | —              | ✓              | —              |
-| laptop   | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
+| profiles      | Pointer | Keyboard    | hover         | focus            |
+| ------------- | ------- | ----------- | ------------- | ---------------- |
+| phone, tablet | touch   | no-keyboard | rest          | blurred          |
+| laptop        | mouse   | keyboard    | rest, hovered | blurred, focused |
 ```
 
 These are the cases that matter, named the way the team talks about them.
@@ -845,12 +851,12 @@ profile laptop: Device { Pointer = mouse }
 ```
 
 ```
-| profiles | Pointer | Theme | hover: rest | hover: hovered | tone: plain | tone: inverted |
-| -------- | ------- | ----- | ----------- | -------------- | ----------- | -------------- |
-| phone    | touch   | light | ✓           | —              | ✓           | —              |
-| phone    | touch   | dark  | ✓           | —              | ✓           | ✓              |
-| laptop   | mouse   | light | ✓           | ✓              | ✓           | —              |
-| laptop   | mouse   | dark  | ✓           | ✓              | ✓           | ✓              |
+| profiles | Pointer | Theme | hover         | tone            |
+| -------- | ------- | ----- | ------------- | --------------- |
+| phone    | touch   | light | rest          | plain           |
+| phone    | touch   | dark  | rest          | plain, inverted |
+| laptop   | mouse   | light | rest, hovered | plain           |
+| laptop   | mouse   | dark  | rest, hovered | plain, inverted |
 ```
 
 ## Modifiers: accessories that change a profile
@@ -873,11 +879,10 @@ profile it is on, it makes one more, named `<profile>+<modifier>`, and the
 matrix has a row for it:
 
 ```
-| profiles                      | Pointer | Keyboard    | hover: rest | hover: hovered | focus: blurred | focus: focused |
-| ----------------------------- | ------- | ----------- | ----------- | -------------- | -------------- | -------------- |
-| phone                         | touch   | no-keyboard | ✓           | —              | ✓              | —              |
-| tablet                        | touch   | no-keyboard | ✓           | —              | ✓              | —              |
-| laptop, tablet+magic-keyboard | mouse   | keyboard    | ✓           | ✓              | ✓              | ✓              |
+| profiles                      | Pointer | Keyboard    | hover         | focus            |
+| ----------------------------- | ------- | ----------- | ------------- | ---------------- |
+| phone, tablet                 | touch   | no-keyboard | rest          | blurred          |
+| laptop, tablet+magic-keyboard | mouse   | keyboard    | rest, hovered | blurred, focused |
 ```
 
 A tablet with the magic keyboard has the same values as the laptop, so the
