@@ -179,3 +179,29 @@ type Root {
     );
   });
 });
+
+describe("a child deep in a tree", () => {
+  // Types nested so deep, each with a state another of its states depends on,
+  // which gives each type a row for each of its values.
+  const nested = (depth: number) => {
+    let text = "enum E = v1 | v2 | v3\n";
+    for (let level = depth - 1; level >= 0; level--) {
+      const child = level < depth - 1 ? `  has c: L${level + 1}\n` : "";
+      text += `type L${level} {\n  state s0: E\n  state s1: E\n  s0 = v2 only when s1 = v1\n${child}}\n`;
+    }
+    return text;
+  };
+
+  it("has each of its rows once, whatever its parents' rows that do not decide it", () => {
+    const result = inPlace(parse(nested(6)), `L0${".c".repeat(5)}`);
+    const distinct = new Set(result.rows.map((row) => JSON.stringify(row)));
+    expect([result.rows.length, distinct.size]).toEqual([3, 3]);
+  });
+
+  it("is evaluated, with an expectation on every element below, in time that grows with its depth", () => {
+    const text = `${nested(12)}expect "Each level can be v3" {\n  in L0 and below\n  some s1 = v3\n}\n`;
+    const start = performance.now();
+    const file = parse(text);
+    expect([file.diagnostics, performance.now() - start < 100]).toEqual([[], true]);
+  });
+});

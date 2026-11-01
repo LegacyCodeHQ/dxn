@@ -245,12 +245,19 @@ export function inPlace(file: ParseResult, path: string): InPlace {
     );
   };
   const rows: InPlace["rows"] = [];
+  // A walk from a level in a world, with the same states given and the same
+  // parents, finds the same rows below: parents' rows that differ only in
+  // states that decide nothing below lead to it again, and it is walked once.
+  const walked = new Set<string>();
   const walk = (
     world: (typeof worlds)[number],
     level: number,
     fixed: Record<string, string>,
     parents: Record<string, string>,
   ) => {
+    const key = JSON.stringify([world, level, fixed, parents]);
+    if (walked.has(key)) return;
+    walked.add(key);
     const { type } = chain[level] as Step;
     for (const row of rowsOf(type, world)) walkRow(world, level, fixed, parents, row);
   };
