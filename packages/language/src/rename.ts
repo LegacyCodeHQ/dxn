@@ -1,4 +1,4 @@
-import type { Child, Located, ParseResult, State, Type } from "./ast.js";
+import { type Child, fixes, type Located, type ParseResult, type State, type Type } from "./ast.js";
 import { comparisons } from "./condition.js";
 import { type Placement, placement } from "./evaluate.js";
 import { childTypeAt } from "./expect.js";
@@ -85,9 +85,14 @@ export function renameInSource(
         if (on?.enum.name === enumName) named.push(...values.filter(({ name }) => name === from));
       }
       const inner = file.types.find(({ name }) => name === child.type.name);
-      for (const { state, from: source, map } of child.bindings ?? []) {
+      for (const binding of child.bindings ?? []) {
+        const { state, from: source, map } = binding;
         const subject = type.states.find(({ name }) => name === source.name);
         const target = inner?.states.find(({ name }) => name === state.name);
+        // A fixed binding writes a value of the child's state.
+        if (fixes(type, binding) && target?.enum.name === enumName && source.name === from) {
+          named.push(source);
+        }
         for (const branch of map ?? []) {
           if (subject?.enum.name === enumName) {
             named.push(...branch.values.filter(({ name }) => name === from));

@@ -247,6 +247,14 @@ describe("completions", () => {
     `);
   });
 
+  it("suggest, in a binding, the type's states and the values that fix the child's", () => {
+    expect(
+      at(
+        "type Toggle {\n  state hover: Hover\n}\ntype Menu {\n  state focus: Focus\n  has toggle: Toggle { hover = ‸ }\n}\n",
+      ),
+    ).toEqual(["focus state", "rest value", "hovered value"]);
+  });
+
   it("suggest what starts a declaration, at the start of a line", () => {
     const snapshot: unknown[] = [];
     snapshot.push(at("‸"));

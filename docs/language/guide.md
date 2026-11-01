@@ -621,6 +621,23 @@ once. A state the child decides itself cannot be set: one a `when` or a value
 decides, one it receives, or one its own actions change. The bindings come
 right after the child's type, before any `only when`.
 
+A binding can also **fix** a child's state to one of its values: wherever
+the parent places it, that state is always that value. A screen's tab bar is
+always on its own section:
+
+```
+type FeedScreen {
+  has tabs: TabBar { section = feed }
+}
+```
+
+`{ section = feed }` reads: the tab bar's `section` is always `feed`. A
+lowercase name after `=` is one of the parent's states when the parent has a
+state of that name, and otherwise a value of the child's state, which must be
+one of its values. A name that is both, a state of the parent and a value of
+the child's state, is reported, `ambiguous-binding`, rather than read one way
+or the other: rename one of them.
+
 ### Provided and received: a state from far above
 
 A state lives in the lowest type that all its users share: the menu's in the
@@ -1740,7 +1757,7 @@ events      = "event" event-name { "," event-name } newline
 provides    = "provides" state-name newline
 has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline
 bindings    = "{" { binding ( "," | newline ) } "}"
-binding     = state-name "=" state-name
+binding     = state-name "=" state-name                # or a value of the child's state, which fixes it
             | state-name "=" "when" state-name "{" { branch ( "," | newline ) } "}"
 state       = "state" field { "," [newline] field } newline
             | "state" field "=" "when" Name "{" { branch ( "," | newline ) } "}" newline
@@ -1806,6 +1823,7 @@ comment     = "#" to the end of the line
 | `recursive-type`                                                                                                             | error    | a type contains itself through its children                                                      |
 | `duplicate-binding`                                                                                                          | error    | a binding sets a child's state twice                                                             |
 | `binding-mismatch`                                                                                                           | error    | a binding's two states take their values from different enums                                    |
+| `ambiguous-binding`                                                                                                          | error    | a binding's right side is both a state of the type and a value of the child's state              |
 | `bound-derived`                                                                                                              | error    | a binding sets a child's state that a `when` or a value decides, or that it receives             |
 | `duplicate-provides`                                                                                                         | error    | a type provides a state twice                                                                    |
 | `provides-received`                                                                                                          | error    | a type provides a state it receives, not one of its own                                          |

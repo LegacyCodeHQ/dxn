@@ -1,4 +1,13 @@
-import type { Child, Condition, Declaration, Enum, Located, ParseResult, Type } from "./ast.js";
+import {
+  type Child,
+  type Condition,
+  type Declaration,
+  type Enum,
+  fixes,
+  type Located,
+  type ParseResult,
+  type Type,
+} from "./ast.js";
 import { type Placement, placement } from "./evaluate.js";
 import { parse } from "./parse.js";
 import { treePaths } from "./status.js";
@@ -225,8 +234,10 @@ function references(file: ParseResult): Reference[] {
       const inner = file.types.find(({ name }) => name === child.type.name);
       for (const binding of child.bindings ?? []) {
         if (inner !== undefined) own(inner, binding.state, "state");
-        // A binding takes its values from a state, or a dimension.
+        // A binding takes its values from a state, or a dimension; or is
+        // fixed to one of the child's state's values.
         if (/^[A-Z]/.test(binding.from.name)) declared(binding.from);
+        else if (fixes(type, binding)) value(binding.from, valuesOf(inner, binding.state.name));
         else own(type, binding.from, "state");
         for (const { values, result } of binding.map ?? []) {
           for (const branch of values) value(branch, valuesOf(type, binding.from.name));

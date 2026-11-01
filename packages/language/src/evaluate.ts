@@ -1,4 +1,4 @@
-import type { Branch, Child, ParseResult, State, Type } from "./ast.js";
+import { type Branch, type Child, fixes, type ParseResult, type State, type Type } from "./ast.js";
 import { conditionText, holds, subjects } from "./condition.js";
 import { among, valuesOf as declaredValues } from "./names.js";
 import { profilesOf } from "./profiles.js";
@@ -304,7 +304,13 @@ export function inPlace(file: ParseResult, path: string): InPlace {
     // further down receives from here.
     const provided = place.received.filter(({ from }) => from === level).map(({ name }) => name);
     const relevant = [
-      ...new Set([...deciding, ...(next.bindings ?? []).map(({ from }) => from.name), ...provided]),
+      ...new Set([
+        ...deciding,
+        ...(next.bindings ?? [])
+          .filter((binding) => !fixes(type, binding))
+          .map(({ from }) => from.name),
+        ...provided,
+      ]),
     ];
     let combinations: Record<string, string>[] = [{}];
     for (const name of relevant) {
@@ -320,8 +326,10 @@ export function inPlace(file: ParseResult, path: string): InPlace {
         continue;
       }
       const given = Object.fromEntries(
-        (next.bindings ?? []).map(({ state, from, map }) => {
-          const value = combination[from.name] as string;
+        (next.bindings ?? []).map((binding) => {
+          const { state, from, map } = binding;
+          // A fixed binding gives its value; any other, the type's state's.
+          const value = fixes(type, binding) ? from.name : (combination[from.name] as string);
           const mapped = map === undefined ? undefined : resultFor(map, value);
           return [state.name, mapped ?? value];
         }),
@@ -425,7 +433,12 @@ export function placement(file: ParseResult, path: string): Placement {
         : subjects(next.when)
             .map(({ name }) => name)
             .filter((name) => /^[a-z]/.test(name));
-    const relevant = new Set([...deciding, ...(next.bindings ?? []).map(({ from }) => from.name)]);
+    const relevant = new Set([
+      ...deciding,
+      ...(next.bindings ?? [])
+        .filter((binding) => !fixes(type, binding))
+        .map(({ from }) => from.name),
+    ]);
     for (const name of relevant) {
       const state = type.states.find((candidate) => candidate.name === name);
       if (state === undefined || state.received) continue;

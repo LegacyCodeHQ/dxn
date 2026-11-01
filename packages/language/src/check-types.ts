@@ -11,6 +11,7 @@ import type {
   Trigger,
   Type,
 } from "./ast.js";
+import { fixes } from "./ast.js";
 import { checkChosen, checkWhen, type Report } from "./check-values.js";
 import { comparisons, conditionText, coverage, subjects } from "./condition.js";
 import { among, enumOf, type Names } from "./names.js";
@@ -327,20 +328,46 @@ function checkChildren(checking: TypeContext): void {
 }
 
 // A child's bindings: each a state of the child, set once, from a state of
-// the type, both with their values from one enum, or mapped by a when.
+// the type, both with their values from one enum, or mapped by a when; or
+// fixed to one of the child's state's values, which is not also a state of
+// the type.
 function checkBindings(checking: TypeContext, child: Child): void {
   const { file, names, report, type } = checking;
   const inner = file.types.find(({ name }) => name === child.type.name);
   const bound = new Set<string>();
-  for (const { state, from } of child.bindings ?? []) {
+  for (const binding of child.bindings ?? []) {
+    const { state, from } = binding;
     if (bound.has(state.name)) {
       report("duplicate-binding", `${state.name} is already bound`, state);
       continue;
     }
     bound.add(state.name);
     const target = inner === undefined ? undefined : stateOf(checking, inner, state);
-    const source = stateOf(checking, type, from);
-    if (target === undefined || source === undefined) continue;
+    const values = target === undefined ? undefined : names.values(target.enum.name);
+    const owned = type.states.find(({ name }) => name === from.name);
+    if (owned !== undefined && binding.map === undefined && values?.includes(from.name)) {
+      report(
+        "ambiguous-binding",
+        `${from.name} is both a state of ${type.name} and a value of ${state.name}; rename one of them`,
+        from,
+      );
+      continue;
+    }
+    if (fixes(type, binding)) {
+      if (target === undefined || values === undefined) continue;
+      if (!values.includes(from.name) && !type.broken) {
+        const states = type.states.map(({ name }) => name);
+        const close = among(from.name, [...states, ...values]);
+        report(
+          "unknown-state",
+          `${from.name} is not a state of ${type.name}, nor a value of ${state.name} (${values.join(", ")})${close.startsWith(";") ? close : ""}`,
+          from,
+        );
+        continue;
+      }
+    }
+    const source = fixes(type, binding) ? undefined : stateOf(checking, type, from);
+    if (target === undefined || (source === undefined && !fixes(type, binding))) continue;
     // Mapped or not, a binding cannot set a state the child decides.
     const why = decidedBy(target);
     if (why !== undefined) {
@@ -368,7 +395,8 @@ function checkBindings(checking: TypeContext, child: Child): void {
         state,
       );
     }
-    const map = child.bindings?.find((binding) => binding.state === state)?.map;
+    const map = binding.map;
+    if (source === undefined) continue;
     if (map !== undefined) {
       checkWhen(
         map,

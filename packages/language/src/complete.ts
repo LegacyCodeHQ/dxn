@@ -153,12 +153,20 @@ export function completions(
   // A value: after a subject and "=", in "in (...)", or after "->".
   const compared = statement.match(/([A-Za-z0-9-]+)\s*=\s*$/);
   if (compared !== null) {
-    // A binding sets a child's state from one of the type's own.
+    // A binding sets a child's state from one of the type's own, or fixes it
+    // to one of its values.
     if (inside?.kind === "bindings" && typed !== undefined && !/when\s/.test(statement)) {
-      return names(
-        typed.states.map(({ name }) => name),
-        "state",
-      );
+      const child = typeNamed(file, inside.type);
+      return [
+        ...names(
+          typed.states.map(({ name }) => name),
+          "state",
+        ),
+        ...names(
+          child === undefined ? [] : valuesOf(file, child, compared[1] as string, inside),
+          "value",
+        ),
+      ];
     }
     return values(compared[1] as string);
   }

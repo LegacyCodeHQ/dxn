@@ -451,7 +451,7 @@ export function parse(source: string): ParseResult {
           next();
           bindings.push({ state, from, map: branchList(state.name) });
         } else {
-          bindings.push({ state, from: word('a state after "="') });
+          bindings.push({ state, from: word('a state or a value after "="') });
         }
         if (peek().kind === ",") next();
         else end(["newline", "}"], '",", the end of the line or "}"');

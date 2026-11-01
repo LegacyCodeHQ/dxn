@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { definition } from "../src/definition.js";
+import { inPlace } from "../src/evaluate.js";
 import { parse } from "../src/parse.js";
+import { renameInSource } from "../src/rename.js";
 import { problems } from "./support/language.js";
 
 const menu = (binding: string, extra = "") => `enum Hover = rest | hovered
@@ -40,7 +43,9 @@ describe("a binding", () => {
       problems(menu("{ expanded = layout }")),
     ]).toEqual([
       ["14:24: unknown-state: expnded is not a state of Menu.Toggle; did you mean expanded?"],
-      ["14:35: unknown-state: men is not a state of Menu; did you mean menu?"],
+      [
+        "14:35: unknown-state: men is not a state of Menu, nor a value of expanded (closed, open); did you mean menu?",
+      ],
       [
         "14:24: binding-mismatch: expanded's values come from Menu.State, but layout's from Layout; a binding needs one enum",
       ],
@@ -75,7 +80,43 @@ type Menu {
   it("says what it expected when the syntax is wrong", () => {
     expect([problems(menu("{ expanded menu }")), problems(menu("{ expanded = }"))]).toEqual([
       ['14:33: syntax-error: expected "=" after "expanded", found "menu"'],
-      ['14:35: syntax-error: expected a state after "=", found "}"'],
+      ['14:35: syntax-error: expected a state or a value after "=", found "}"'],
     ]);
+  });
+});
+
+describe("a fixed binding", () => {
+  it("sets a child's state to one of its values, wherever the child is", () => {
+    const source = menu("{ expanded = open }");
+    expect([
+      problems(source),
+      inPlace(parse(source), "Menu.toggle").rows.map(({ states }) => states.expanded),
+    ]).toEqual([[], [["open"]]]);
+  });
+
+  it("is a value of the child's state, and not also a state of the type", () => {
+    expect([
+      problems(menu("{ expanded = opn }")),
+      problems(menu("{ expanded = open }", ", open: Hover")),
+    ]).toEqual([
+      [
+        "14:35: unknown-state: opn is not a state of Menu, nor a value of expanded (closed, open); did you mean open?",
+      ],
+      [
+        "14:35: ambiguous-binding: open is both a state of Menu and a value of expanded; rename one of them",
+      ],
+    ]);
+  });
+
+  it("is renamed with the value, and leads to it", () => {
+    const source = menu("{ expanded = open }");
+    const lines = source.split("\n");
+    const line = lines.findIndex((text) => text.includes("expanded = open")) + 1;
+    const column = (lines[line - 1] ?? "").indexOf("open") + 1;
+    const to = definition(source, line, column)?.to;
+    expect([
+      renameInSource(parse(source), source, "Menu.State", "open", "shown").split("\n")[line - 1],
+      [to?.name, to?.line, to?.column],
+    ]).toEqual(["  has toggle: Toggle { expanded = shown }", ["open", 5, 25]]);
   });
 });

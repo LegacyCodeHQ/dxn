@@ -136,7 +136,25 @@ export interface Child extends Located {
   // The child's states the type sets, each from one of its own states:
   // without a map, both with their values from the same enum; with a map,
   // the child's state takes the value its branch gives for the type's state.
-  bindings?: { state: Located; from: Located; map?: Branch[] }[];
+  bindings?: Binding[];
+}
+
+// A child's state the type sets: from one of its own states, or a dimension;
+// mapped by a when; or fixed to one of the child's state's values.
+export interface Binding {
+  state: Located;
+  from: Located;
+  map?: Branch[];
+}
+
+// Whether a binding fixes its child's state to one of that state's values:
+// a lowercase name, with no when, that is not a state of the type.
+export function fixes(type: Type, { from, map }: Binding): boolean {
+  return (
+    map === undefined &&
+    /^[a-z]/.test(from.name) &&
+    !type.states.some(({ name }) => name === from.name)
+  );
 }
 
 // An environment: a product of dimensions, whose instances are profiles.
