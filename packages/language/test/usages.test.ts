@@ -24,7 +24,7 @@ type Menu {
 }
 
 environment Device = Pointer
-profile laptop: Device { Pointer = mouse }
+profile Laptop: Device { Pointer = mouse }
 `;
 
 const lines = source.split("\n");

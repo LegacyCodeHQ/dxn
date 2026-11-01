@@ -455,7 +455,7 @@ const tokenTypeOf: Record<string, string> = {
   field: "property",
   action: "method",
   event: "event",
-  profile: "variable",
+  profile: "class",
   modifier: "variable",
   actor: "class",
 };

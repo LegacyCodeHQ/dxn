@@ -10,7 +10,7 @@ describe("diagnostics", () => {
         "enum Hover = rest | hovered\ntype Wordmark {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
       ),
       problems("environment Device = Pointer\n"),
-      problems("profile laptop: Device { Pointer = mouse }\n"),
+      problems("profile Laptop: Device { Pointer = mouse }\n"),
       problems(
         "enum Hover = rest | hovered\ndimension Pointer = mouse\ntype Wordmark needs Pointer {\n  hover = hovered only when Pointer = mouse\n}\n",
       ),
@@ -76,13 +76,13 @@ describe("diagnostics", () => {
         "enum Hover = rest | hovered\ndimension Pointer = mouse touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = touch\n}\nenvironment Device = Pointer\n",
       ),
       problems(
-        "dimension Pointer = mouse\ndimension Keyboard = none\nenvironment Device = Pointer Keyboard\nprofile laptop: Device { Pointer = mouse, Keyboard = none }\n",
+        "dimension Pointer = mouse\ndimension Keyboard = none\nenvironment Device = Pointer Keyboard\nprofile Laptop: Device { Pointer = mouse, Keyboard = none }\n",
       ),
       problems(
         "enum Hover = rest | hovered\ndimension Pointer = mouse\ntype Wordmark {\n  hover = hovered only when Pointer = mouse\n  state hover Hover\n}\n",
       ),
       problems(
-        "dimension Pointer = mouse\nenvironment Device = Pointer\nprofile laptop: Device { Pointer = }\nprofile laptop: Device { Pointer = mouse }\n",
+        "dimension Pointer = mouse\nenvironment Device = Pointer\nprofile Laptop: Device { Pointer = }\nprofile Laptop: Device { Pointer = mouse }\n",
       ),
     ]).toEqual([
       ['1:19: syntax-error: expected "|" or the end of the line after "rest", found "hovered"'],
@@ -91,7 +91,7 @@ describe("diagnostics", () => {
       ['5:15: syntax-error: expected ":" after "hover", found "Hover"'],
       [
         '3:36: syntax-error: expected a value after "=", found "}"',
-        "4:9: duplicate-name: laptop is already declared at line 3",
+        "4:9: duplicate-name: Laptop is already declared at line 3",
       ],
     ]);
   });
@@ -118,7 +118,7 @@ describe("diagnostics", () => {
     expect([
       problems("type {\n  state hover: Hover\n}\nenum Hover = rest\n"),
       problems(
-        "dimension Pointer = mouse\nenvironment Device = Pointer\nprofile laptop Device {\n  Pointer = mouse\n}\n",
+        "dimension Pointer = mouse\nenvironment Device = Pointer\nprofile Laptop Device {\n  Pointer = mouse\n}\n",
       ),
       problems("enum Hover = rest\ntype Wordmark\n  state hover: Hover\n}\n"),
     ]).toEqual([
@@ -126,7 +126,7 @@ describe("diagnostics", () => {
         '1:6: syntax-error: expected a type name after "type", found "{"',
         // Hover is still declared, after the skipped type.
       ],
-      ['3:16: syntax-error: expected ":" after "laptop", found "Device"'],
+      ['3:16: syntax-error: expected ":" after "Laptop", found "Device"'],
       ['2:14: syntax-error: expected "{" after the type name, found the end of the line'],
     ]);
     expect(parse("type {\n}\nenum Hover = rest\n").enums.map(({ name }) => name)).toEqual([

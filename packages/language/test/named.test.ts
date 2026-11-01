@@ -21,8 +21,8 @@ type Menu {
 }
 
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
-modifier trackpad on phone { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
+modifier trackpad on Phone { Pointer = mouse }
 enum Actor = designer
 record Evidence {
   actor: Actor
@@ -57,7 +57,7 @@ describe("a declaration by its name", () => {
       "Menu.Toggle",
       "Menu.Toggle.hover",
       "Device",
-      "phone",
+      "Phone",
       "trackpad",
       "Evidence",
     ]) {
@@ -78,8 +78,8 @@ describe("a declaration by its name", () => {
         "15:8 type Toggle { [Toggle]",
         "16:11 state hover: Hover [hover]",
         "20:13 environment Device = Pointer [Device]",
-        "21:9 profile phone: Device { Pointer = touch } [phone]",
-        "22:10 modifier trackpad on phone { Pointer = mouse } [trackpad]",
+        "21:9 profile Phone: Device { Pointer = touch } [Phone]",
+        "22:10 modifier trackpad on Phone { Pointer = mouse } [trackpad]",
         "24:8 record Evidence { [Evidence]",
       ]
     `);
@@ -109,7 +109,7 @@ describe("a declaration by its name", () => {
       [
         "nothing is declared as Hovr; did you mean Hover?",
         "nothing is declared as Link.hovr; did you mean Link.hover?",
-        "nothing is declared as Nothing.here (Hover, Hover.rest, Hover.hovered, Actor, Actor.designer, Menu.State, Menu.State.closed, Menu.State.open, Pointer, Pointer.mouse, Pointer.touch, Link, Link.hover, Link.rest, Link.press, Menu, Menu.menu, Menu.close, Menu.Toggle, Menu.Toggle.hover, Device, phone, trackpad, Evidence, EvidenceRecorder)",
+        "nothing is declared as Nothing.here (Hover, Hover.rest, Hover.hovered, Actor, Actor.designer, Menu.State, Menu.State.closed, Menu.State.open, Pointer, Pointer.mouse, Pointer.touch, Link, Link.hover, Link.rest, Link.press, Menu, Menu.menu, Menu.close, Menu.Toggle, Menu.Toggle.hover, Device, Phone, trackpad, Evidence, EvidenceRecorder)",
         "no state is declared as Hover (Link.hover, Menu.menu, Menu.Toggle.hover)",
       ]
     `);

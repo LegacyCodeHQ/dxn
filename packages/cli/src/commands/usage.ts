@@ -43,7 +43,7 @@ export const commandList = `  check <file> [--expect <title>]    Parse and check
   rename <file> <name> <new>         Rename a declaration where the file uses it
                                      and where stored records name it, once both
                                      check: <name> as dxn writes it (Hover,
-                                     Hover.rest, Toolbar.layout, phone, ...;
+                                     Hover.rest, Toolbar.layout, Phone, ...;
                                      <kind>:<name> where one name names two), or
                                      <file>:<line>:<column> <new> by its place; a
                                      record's stored records move to the folder of
@@ -71,7 +71,7 @@ comment, to the end of the line:
     hover = hovered only when Pointer = mouse
   }
   environment Device = Pointer
-  profile laptop: Device { Pointer = mouse }
+  profile Laptop: Device { Pointer = mouse }
 
 Commands:
 ${commandList}

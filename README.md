@@ -18,8 +18,8 @@ type Wordmark needs Pointer {
   hover = hovered only when Pointer = mouse
 }
 environment Device = Pointer
-profile laptop: Device { Pointer = mouse }
-profile phone: Device { Pointer = touch }
+profile Laptop: Device { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
 ```
 
 ```bash
@@ -28,8 +28,8 @@ wordmark.dxn: 1 enum, 1 dimension, 1 type, 1 environment, 2 profiles
 $ dxn states wordmark.dxn Wordmark
 | profiles | Pointer | hover         |
 | -------- | ------- | ------------- |
-| laptop   | mouse   | rest, hovered |
-| phone    | touch   | rest          |
+| Laptop   | mouse   | rest, hovered |
+| Phone    | touch   | rest          |
 $ dxn cases wordmark.dxn Wordmark
 Wordmark: 3 cases
 

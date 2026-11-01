@@ -663,7 +663,7 @@ describe("the language server", () => {
     const uri = "file:///spec/button.dxn";
     const opened = published(editor);
     const text =
-      "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n  action focus-in: focus blurred -> focused\n}\nrecord Evidence {\n}\nactor Designer records Evidence\n";
+      "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n  action focus-in: focus blurred -> focused\n}\nrecord Evidence {\n}\nactor Designer records Evidence\nenvironment Device = Focus\nprofile Desk: Device { Focus = blurred }\n";
     await editor.sendNotification(DidOpenTextDocumentNotification.type, {
       textDocument: { uri, languageId: "dxn", version: 1, text },
     });
@@ -700,6 +700,12 @@ describe("the language server", () => {
       "Evidence struct declaration",
       "Designer class declaration",
       "Evidence struct",
+      "Device namespace declaration",
+      "Focus enum",
+      "Desk class declaration",
+      "Device namespace",
+      "Focus enum",
+      "blurred enumMember",
     ]);
   });
 

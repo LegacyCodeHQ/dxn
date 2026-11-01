@@ -156,10 +156,7 @@ const rules: Record<string, { pattern: RegExp; text: string }> = {
   actor: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   record: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   dimension: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
-  profile: {
-    pattern: /^[a-z][A-Za-z0-9-]*$/,
-    text: "a lowercase letter, then letters, digits and hyphens",
-  },
+  profile: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   type: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   child: {
     pattern: /^[a-z][A-Za-z0-9-]*$/,

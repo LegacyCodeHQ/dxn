@@ -2,7 +2,7 @@
   {
     "context": {
       "path": "Window",
-      "profile": "laptop",
+      "profile": "Laptop",
       "dimensions": {},
       "parents": {},
       "states": { "current": "general" }
@@ -13,7 +13,7 @@
   {
     "context": {
       "path": "Window.tabs.general",
-      "profile": "laptop",
+      "profile": "Laptop",
       "dimensions": {},
       "parents": { "current": "general" },
       "states": {
@@ -29,7 +29,7 @@
   {
     "context": {
       "path": "Window.tabs.general",
-      "profile": "phone+trackpad",
+      "profile": "Phone+trackpad",
       "dimensions": {},
       "parents": { "current": "general" },
       "states": {
@@ -40,12 +40,12 @@
       }
     },
     "actor": "Reviewer",
-    "note": "The selected tab, focused, on a phone with a trackpad."
+    "note": "The selected tab, focused, on a Phone with a trackpad."
   },
   {
     "context": {
       "path": "Window.help",
-      "profile": "laptop",
+      "profile": "Laptop",
       "dimensions": { "Theme": "dark" },
       "parents": {},
       "states": { "openness": "open" }
@@ -56,7 +56,7 @@
   {
     "context": {
       "path": "Window.help.text",
-      "profile": "laptop",
+      "profile": "Laptop",
       "dimensions": { "Theme": "dark" },
       "parents": { "help.openness": "open" },
       "states": { "shade": "deep" }
@@ -67,12 +67,12 @@
   {
     "context": {
       "path": "Window.help.toggle",
-      "profile": "phone",
+      "profile": "Phone",
       "dimensions": { "Theme": "light" },
       "parents": { "help.openness": "closed" },
       "states": { "hover": "rest", "expanded": "closed" }
     },
     "actor": "Reviewer",
-    "note": "The help's toggle, closed, on a phone."
+    "note": "The help's toggle, closed, on a Phone."
   }
 ]

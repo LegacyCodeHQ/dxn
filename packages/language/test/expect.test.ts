@@ -32,8 +32,8 @@ type Page {
 }
 
 environment Device = Pointer x Keyboard
-profile phone: Device { Pointer = touch, Keyboard = no-keyboard }
-profile desktop: Device { Pointer = mouse, Keyboard = keyboard }
+profile Phone: Device { Pointer = touch, Keyboard = no-keyboard }
+profile Desktop: Device { Pointer = mouse, Keyboard = keyboard }
 `;
 const rules = `
 expect "Touch screens never show hover" {
@@ -42,15 +42,15 @@ expect "Touch screens never show hover" {
   then hover = rest
 }
 
-expect "A desktop link can be hovered and focused at once" {
+expect "A Desktop link can be hovered and focused at once" {
   in Page.toolbar.link
-  when profile = desktop
+  when profile = Desktop
   some hover = hovered, focus = focused
 }
 
-expect "On a phone the menu link is only ever at rest and blurred" {
+expect "On a Phone the menu link is only ever at rest and blurred" {
   in Page.toolbar.menu.panel.blog
-  when profile = phone
+  when profile = Phone
   then hover = rest, focus = blurred
 }
 
@@ -76,9 +76,9 @@ describe("expect", () => {
       [],
       [
         ["Touch screens never show hover", "Page.toolbar", true, "then"],
-        ["A desktop link can be hovered and focused at once", "Page.toolbar.link", false, "some"],
+        ["A Desktop link can be hovered and focused at once", "Page.toolbar.link", false, "some"],
         [
-          "On a phone the menu link is only ever at rest and blurred",
+          "On a Phone the menu link is only ever at rest and blurred",
           "Page.toolbar.menu.panel.blog",
           false,
           "then",
@@ -102,30 +102,30 @@ describe("expect", () => {
         "has panel: Panel only when menu in (closed, open)",
       );
     assert(errors(broken)).toEqual([
-      "33:8: expectation-failed: Touch screens never show hover: Page.toolbar.link on phone has hover = hovered",
-      "45:8: expectation-failed: On a phone the menu link is only ever at rest and blurred: Page.toolbar.menu.panel.blog on phone with toolbar.menu.menu = closed has hover = hovered",
-      "51:8: expectation-failed: The menu panel only exists while the menu is open: Page.toolbar.menu.panel is there on phone with toolbar.menu.menu = closed",
+      "33:8: expectation-failed: Touch screens never show hover: Page.toolbar.link on Phone has hover = hovered",
+      "45:8: expectation-failed: On a Phone the menu link is only ever at rest and blurred: Page.toolbar.menu.panel.blog on Phone with toolbar.menu.menu = closed has hover = hovered",
+      "51:8: expectation-failed: The menu panel only exists while the menu is open: Page.toolbar.menu.panel is there on Phone with toolbar.menu.menu = closed",
     ]);
   });
 
   it("reports a some that no combination meets", () => {
     const never = (model + rules)
       .replace("some hover = hovered, focus = focused", "some hover = hovered, focus = blurred")
-      .replace("profile = desktop", "profile = phone");
+      .replace("profile = Desktop", "profile = Phone");
     assert(problems(never)).toEqual([
-      "40:8: expectation-failed: A desktop link can be hovered and focused at once: no combination of Page.toolbar.link on phone has hover = hovered, focus = blurred",
+      "40:8: expectation-failed: A Desktop link can be hovered and focused at once: no combination of Page.toolbar.link on Phone has hover = hovered, focus = blurred",
     ]);
   });
 
   it("reports a rule that tests nothing, which would always pass", () => {
     const rule = (body: string) => `${model}\nexpect "Nothing" {\n${body}\n}\n`;
     assert([
-      problems(rule("  in Page.toolbar.link\n  when profile = laptop\n  then hover = rest")),
+      problems(rule("  in Page.toolbar.link\n  when profile = Laptop\n  then hover = rest")),
       problems(rule("  in Page.toolbar.link\n  when Pointer = touch\n  then colour = red")),
       problems(rule("  in Page.toolbar.lnk\n  then hover = rest")),
     ]).toEqual([
       [
-        '34:8: expectation-empty: Nothing tests nothing: "laptop" is not a profile (phone, desktop)',
+        '34:8: expectation-empty: Nothing tests nothing: "Laptop" is not a profile (Phone, Desktop)',
       ],
       [
         "34:8: expectation-empty: Nothing tests nothing: no element in Page.toolbar.link has colour",
@@ -138,11 +138,11 @@ describe("expect", () => {
 
   it("picks a profile a modifier makes, by its name and the modifier's", () => {
     const rule = (profile: string) =>
-      `${model}modifier mouse on phone {\n  Pointer = mouse\n}\nexpect "Hover with a mouse" {\n  in Page.toolbar.link\n  when profile = ${profile}\n  some hover = hovered\n}\n`;
-    expect([problems(rule("phone+mouse")), problems(rule("phone"))]).toEqual([
+      `${model}modifier mouse on Phone {\n  Pointer = mouse\n}\nexpect "Hover with a mouse" {\n  in Page.toolbar.link\n  when profile = ${profile}\n  some hover = hovered\n}\n`;
+    expect([problems(rule("Phone+mouse")), problems(rule("Phone"))]).toEqual([
       [],
       [
-        "36:8: expectation-failed: Hover with a mouse: no combination of Page.toolbar.link on phone has hover = hovered",
+        "36:8: expectation-failed: Hover with a mouse: no combination of Page.toolbar.link on Phone has hover = hovered",
       ],
     ]);
   });
@@ -168,19 +168,19 @@ describe("expect", () => {
 
   it("picks a profile in a row it shares with others that have its values", () => {
     const merged = model.replace(
-      "profile desktop: Device { Pointer = mouse, Keyboard = keyboard }",
-      "profile desktop: Device { Pointer = mouse, Keyboard = keyboard }\nprofile laptop: Device { Pointer = mouse, Keyboard = keyboard }",
+      "profile Desktop: Device { Pointer = mouse, Keyboard = keyboard }",
+      "profile Desktop: Device { Pointer = mouse, Keyboard = keyboard }\nprofile Laptop: Device { Pointer = mouse, Keyboard = keyboard }",
     );
     const rule = (assertion: string) =>
-      `${merged}expect "A laptop link" {\n  in Page.toolbar.link\n  when profile = laptop\n  ${assertion}\n}\n`;
+      `${merged}expect "A Laptop link" {\n  in Page.toolbar.link\n  when profile = Laptop\n  ${assertion}\n}\n`;
     assert([
       problems(rule("some hover = hovered, focus = focused")),
       problems(rule("then hover = rest")),
       problems(rule("absent")),
     ]).toEqual([
       [],
-      ["34:8: expectation-failed: A laptop link: Page.toolbar.link on laptop has hover = hovered"],
-      ["34:8: expectation-failed: A laptop link: Page.toolbar.link is there on laptop"],
+      ["34:8: expectation-failed: A Laptop link: Page.toolbar.link on Laptop has hover = hovered"],
+      ["34:8: expectation-failed: A Laptop link: Page.toolbar.link is there on Laptop"],
     ]);
   });
 

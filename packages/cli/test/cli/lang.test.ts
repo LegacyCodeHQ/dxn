@@ -12,7 +12,7 @@ const file = (source: string) => inProject({ "wordmark.dxn": source });
 describe("dxn check", () => {
   it("says what a file declares, in one line, counting each kind it has", () => {
     const run = file(
-      "enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile tablet: Device { Pointer = touch }\nmodifier trackpad on tablet { Pointer = mouse }\nrecord Note {\n  hover: Hover\n}\n",
+      "enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile Tablet: Device { Pointer = touch }\nmodifier trackpad on Tablet { Pointer = mouse }\nrecord Note {\n  hover: Hover\n}\n",
     );
     const result = run("check", "wordmark.dxn");
     expect([result.code, result.stdout, result.stderr]).toEqual([
@@ -202,11 +202,11 @@ expect "The menu is always closed" {
 
     it("prints the modifiers and records a file declares", () => {
       const run = file(
-        "enum Tool = pen-dev | code\ndimension Pointer = mouse | touch\nenvironment Device = Pointer\nprofile tablet: Device { Pointer = touch }\nmodifier trackpad on tablet { Pointer = mouse }\nrecord Source {\n  tool: Tool\n}\n",
+        "enum Tool = pen-dev | code\ndimension Pointer = mouse | touch\nenvironment Device = Pointer\nprofile Tablet: Device { Pointer = touch }\nmodifier trackpad on Tablet { Pointer = mouse }\nrecord Source {\n  tool: Tool\n}\n",
       );
       const output = JSON.parse(run("check", "wordmark.dxn", "--json").stdout);
       expect([output.modifiers, output.records]).toEqual([
-        [{ name: "trackpad", on: ["tablet"], values: { Pointer: "mouse" } }],
+        [{ name: "trackpad", on: ["Tablet"], values: { Pointer: "mouse" } }],
         [{ name: "Source", context: false, fields: [{ name: "tool", type: "Tool" }] }],
       ]);
     });
@@ -366,15 +366,15 @@ type Toolbar needs Breakpoint {
   has menu: Menu only when layout = compact
 }
 environment Device = Breakpoint x Pointer
-profile phone: Device { Breakpoint = base, Pointer = touch }
-profile laptop: Device { Breakpoint = lg, Pointer = mouse }
+profile Phone: Device { Breakpoint = base, Pointer = touch }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse }
 `);
     expect([
       run("states", "wordmark.dxn", "Toolbar.menu.toggle").stdout,
       run("states", "wordmark.dxn", "Toolbar.menu.togle").stderr,
     ]).toEqual([
       [
-        "In every row: phone, Breakpoint = base, Pointer = touch, layout = compact",
+        "In every row: Phone, Breakpoint = base, Pointer = touch, layout = compact",
         "",
         "| menu.menu | hover | expanded |",
         "| --------- | ----- | -------- |",
@@ -389,16 +389,16 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse }
   it("names the profiles of each row when there are profiles", () => {
     const withProfiles = `dimension Breakpoint = base | lg
 ${wordmark}environment Device = Breakpoint x Pointer x Keyboard
-profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
-profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
-profile studio: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Studio: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `;
     expect(file(withProfiles)("states", "wordmark.dxn", "Wordmark").stdout).toBe(
       [
         "| profiles       | Pointer | Keyboard    | hover         | focus            |",
         "| -------------- | ------- | ----------- | ------------- | ---------------- |",
-        "| phone          | touch   | no-keyboard | rest          | blurred          |",
-        "| laptop, studio | mouse   | keyboard    | rest, hovered | blurred, focused |",
+        "| Phone          | touch   | no-keyboard | rest          | blurred          |",
+        "| Laptop, Studio | mouse   | keyboard    | rest, hovered | blurred, focused |",
         "",
       ].join("\n"),
     );
@@ -407,9 +407,9 @@ profile studio: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
   it("shows one row for rows that read the same, and no profiles where none differ", () => {
     const devices = `dimension Breakpoint = base | lg
 ${wordmark}environment Device = Breakpoint x Pointer x Keyboard
-profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
-profile tablet: Device { Breakpoint = lg, Pointer = touch, Keyboard = no-keyboard }
-profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile Tablet: Device { Breakpoint = lg, Pointer = touch, Keyboard = no-keyboard }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 type Menu {
   enum State = closed | open
   state menu: State
@@ -423,8 +423,8 @@ type Menu {
       [
         "| profiles      | Pointer | Keyboard    | hover         | focus            |",
         "| ------------- | ------- | ----------- | ------------- | ---------------- |",
-        "| phone, tablet | touch   | no-keyboard | rest          | blurred          |",
-        "| laptop        | mouse   | keyboard    | rest, hovered | blurred, focused |",
+        "| Phone, Tablet | touch   | no-keyboard | rest          | blurred          |",
+        "| Laptop        | mouse   | keyboard    | rest, hovered | blurred, focused |",
         "",
       ].join("\n"),
       ["| menu         |", "| ------------ |", "| closed, open |", ""].join("\n"),
@@ -673,8 +673,8 @@ type Button needs Pointer {
   alike Pointer
 }
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
-profile laptop: Device { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
+profile Laptop: Device { Pointer = mouse }
 type Page {
   has button: Button
 }
@@ -726,9 +726,9 @@ type Page {
         "",
         "| enabled  | hover   | profiles      |",
         "| -------- | ------- | ------------- |",
-        "| enabled  | rest    | phone, laptop |",
-        "| disabled | rest    | phone, laptop |",
-        "| enabled  | hovered | laptop        |",
+        "| enabled  | rest    | Phone, Laptop |",
+        "| disabled | rest    | Phone, Laptop |",
+        "| enabled  | hovered | Laptop        |",
         "",
       ].join("\n"),
       "Page.button: 3 cases of 5 combinations",
@@ -744,11 +744,11 @@ type Page {
         "",
         "| profiles | Pointer | enabled  | hover   |",
         "| -------- | ------- | -------- | ------- |",
-        "| phone    | touch   | enabled  | rest    |",
-        "| phone    | touch   | disabled | rest    |",
-        "| laptop   | mouse   | enabled  | rest    |",
-        "| laptop   | mouse   | enabled  | hovered |",
-        "| laptop   | mouse   | disabled | rest    |",
+        "| Phone    | touch   | enabled  | rest    |",
+        "| Phone    | touch   | disabled | rest    |",
+        "| Laptop   | mouse   | enabled  | rest    |",
+        "| Laptop   | mouse   | enabled  | hovered |",
+        "| Laptop   | mouse   | disabled | rest    |",
         "",
       ].join("\n"),
     );
@@ -1142,8 +1142,8 @@ type Link needs Pointer {
   hover = hovered only when Pointer = mouse
 }
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
-profile laptop: Device { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
+profile Laptop: Device { Pointer = mouse }
 record Evidence {}
 actor EvidenceRecorder records Evidence
 `;
@@ -1153,7 +1153,7 @@ actor EvidenceRecorder records Evidence
     `{ "context": { "path": "Toolbar.link", "profile": "${profile}", "dimensions": {}, "parents": {}, "states": { "hover": "${hover}" } }, "actor": "EvidenceRecorder" }`;
 
   it("says how many combinations of each element have evidence", () => {
-    const result = project(`[${link("phone", "rest")}, ${link("laptop", "hovered")}]`)(
+    const result = project(`[${link("Phone", "rest")}, ${link("Laptop", "hovered")}]`)(
       "toolbar.dxn",
     );
     expect([result.code, result.stdout]).toEqual([
@@ -1171,12 +1171,12 @@ actor EvidenceRecorder records Evidence
   });
 
   it("lists what is missing with --missing, and gives it all as JSON with --json", () => {
-    const run = project(`[${link("phone", "rest")}, ${link("laptop", "hovered")}]`);
+    const run = project(`[${link("Phone", "rest")}, ${link("Laptop", "hovered")}]`);
     const missing = run("toolbar.dxn", "--missing").stdout.split("\n");
     expect(missing.slice(-4)).toEqual([
       "Missing:",
       "  Toolbar",
-      "  Toolbar.link on laptop: hover = rest",
+      "  Toolbar.link on Laptop: hover = rest",
       "",
     ]);
     const json = JSON.parse(run("toolbar.dxn", "--json").stdout);
@@ -1186,7 +1186,7 @@ actor EvidenceRecorder records Evidence
   });
 
   it("reports the stored records' problems first, and counts nothing", () => {
-    const result = project(`[${link("phone", "hovered")}]`)("toolbar.dxn");
+    const result = project(`[${link("Phone", "hovered")}]`)("toolbar.dxn");
     expect([result.code, result.stdout]).toEqual([1, ""]);
   });
 });

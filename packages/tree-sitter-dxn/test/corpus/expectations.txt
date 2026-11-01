@@ -31,9 +31,9 @@ expect "Touch screens never show hover" {
 Some, with a profile a modifier makes
 ================================================================================
 
-expect "A tablet link can be hovered and focused at once" {
+expect "A Tablet link can be hovered and focused at once" {
   in ArticlePage.toolbar.links.blog
-  when profile = tablet+magic-keyboard, Theme = dark
+  when profile = Tablet+magic-keyboard, Theme = dark
   some hover = hovered, focus = focused
 }
 

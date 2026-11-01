@@ -77,12 +77,12 @@ describe("environment", () => {
 
 describe("profile", () => {
   it("is an instance of an environment: one value for each of its dimensions", () => {
-    const { profiles, diagnostics } = parse(`${device}profile phone: Device {
+    const { profiles, diagnostics } = parse(`${device}profile Phone: Device {
   Breakpoint = base
   Pointer = touch
   Keyboard = no-keyboard
 }
-profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `);
     expect(diagnostics).toEqual([]);
     expect(
@@ -93,7 +93,7 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
       ]),
     ).toEqual([
       [
-        "phone",
+        "Phone",
         "Device",
         [
           ["Breakpoint", "base"],
@@ -102,7 +102,7 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
         ],
       ],
       [
-        "laptop",
+        "Laptop",
         "Device",
         [
           ["Breakpoint", "lg"],
@@ -121,22 +121,24 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
     ]);
   });
 
-  it("has a lowercase name, declared once in the file", () => {
-    const phone = "profile phone: Device { Pointer = touch }\n";
+  it("has a capitalized name, as records, enums and types do, declared once in the file", () => {
+    const phone = "profile Phone: Device { Pointer = touch }\n";
     expect([
-      problems(`${pointing}${phone.replace("phone", "Phone")}`),
+      problems(`${pointing}${phone.replace("Phone", "phone")}`),
+      problems(`${pointing}${phone.replace("Phone", "Tablet-portrait")}`),
       problems(`${pointing}${phone}${phone}`),
     ]).toEqual([
-      ['5:9: profile-name: profile names start with a lowercase letter: "Phone"'],
-      ["6:9: duplicate-name: phone is already declared at line 5"],
+      ['5:9: profile-name: profile names start with a capital letter: "phone"'],
+      ['5:9: profile-name: profile names are letters and digits: "Tablet-portrait"'],
+      ["6:9: duplicate-name: Phone is already declared at line 5"],
     ]);
   });
 
   it("names a declared environment", () => {
     expect([
-      problems(`${pointing}profile phone: Devce { Pointer = touch }\n`),
-      problems(`${pointing}profile phone: Pointer { Pointer = touch }\n`),
-      problems(`${pointing}type Wordmark {}\nprofile phone: Wordmark { Pointer = touch }\n`),
+      problems(`${pointing}profile Phone: Devce { Pointer = touch }\n`),
+      problems(`${pointing}profile Phone: Pointer { Pointer = touch }\n`),
+      problems(`${pointing}type Wordmark {}\nprofile Phone: Wordmark { Pointer = touch }\n`),
     ]).toEqual([
       ["5:16: unknown-environment: Devce is not an environment; did you mean Device?"],
       ["5:16: unknown-environment: Pointer is a dimension, not an environment"],
@@ -146,35 +148,35 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 
   it("gives its environment's dimensions, each once, with their values", () => {
     expect([
-      problems(`${pointing}profile phone: Device { Pointr = touch }\n`),
-      problems(`${pointing}profile phone: Device { Pointer = tuch }\n`),
-      problems(`${pointing}profile phone: Device { Pointer = touch, Pointer = mouse }\n`),
-      problems(`${device}profile laptop: Device { Pointer = mouse }\n`),
+      problems(`${pointing}profile Phone: Device { Pointr = touch }\n`),
+      problems(`${pointing}profile Phone: Device { Pointer = tuch }\n`),
+      problems(`${pointing}profile Phone: Device { Pointer = touch, Pointer = mouse }\n`),
+      problems(`${device}profile Laptop: Device { Pointer = mouse }\n`),
     ]).toEqual([
       [
-        "5:9: incomplete-profile: phone does not give Pointer, which Device requires",
+        "5:9: incomplete-profile: Phone does not give Pointer, which Device requires",
         "5:25: unknown-dimension: Pointr is not a dimension of Device (Pointer)",
       ],
       ['5:35: unknown-value: "tuch" is not a value of Pointer (mouse, touch)'],
-      ["5:42: duplicate-dimension: Pointer is already given in phone"],
-      ["5:9: incomplete-profile: laptop does not give Breakpoint, Keyboard, which Device requires"],
+      ["5:42: duplicate-dimension: Pointer is already given in Phone"],
+      ["5:9: incomplete-profile: Laptop does not give Breakpoint, Keyboard, which Device requires"],
     ]);
   });
 
   it("shares one environment with every other profile, and may share a combination", () => {
     expect([
       problems(
-        `${pointing}environment Input = Keyboard\nprofile phone: Device { Pointer = touch }\nprofile desk: Input { Keyboard = keyboard }\n`,
+        `${pointing}environment Input = Keyboard\nprofile Phone: Device { Pointer = touch }\nprofile Desk: Input { Keyboard = keyboard }\n`,
       ),
       problems(
-        `${pointing}profile phone: Device { Pointer = touch }\nprofile tablet: Device { Pointer = touch }\n`,
+        `${pointing}profile Phone: Device { Pointer = touch }\nprofile Tablet: Device { Pointer = touch }\n`,
       ),
       problems(
-        `${pointing}profile phone: Nowhere { Pointer = touch }\nprofile tablet: Device { Pointer = touch }\n`,
+        `${pointing}profile Phone: Nowhere { Pointer = touch }\nprofile Tablet: Device { Pointer = touch }\n`,
       ),
     ]).toEqual([
       [
-        "7:9: mixed-profiles: desk is an Input, but phone is a Device; all profiles share one environment",
+        "7:9: mixed-profiles: Desk is an Input, but Phone is a Device; all profiles share one environment",
       ],
       [],
       ["5:16: unknown-environment: Nowhere is not an environment (Device)"],
@@ -183,13 +185,13 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 
   it("says what it expected when the syntax is wrong", () => {
     expect([
-      problems(`${pointing}profile phone Device { Pointer = touch }\n`),
-      problems(`${pointing}profile phone: Device { Pointer touch }\n`),
-      problems(`${pointing}profile phone: Device { Pointer = touch\n`),
+      problems(`${pointing}profile Phone Device { Pointer = touch }\n`),
+      problems(`${pointing}profile Phone: Device { Pointer touch }\n`),
+      problems(`${pointing}profile Phone: Device { Pointer = touch\n`),
     ]).toEqual([
-      ['5:15: syntax-error: expected ":" after "phone", found "Device"'],
+      ['5:15: syntax-error: expected ":" after "Phone", found "Device"'],
       ['5:33: syntax-error: expected "=" after "Pointer", found "touch"'],
-      ['6:1: syntax-error: expected "}" to close phone, found the end of the file'],
+      ['6:1: syntax-error: expected "}" to close Phone, found the end of the file'],
     ]);
   });
 });

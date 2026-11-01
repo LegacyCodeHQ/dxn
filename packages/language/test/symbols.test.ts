@@ -21,8 +21,8 @@ type Page receives shown: Hover {
 }
 
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
-modifier trackpad on phone {
+profile Phone: Device { Pointer = touch }
+modifier trackpad on Phone {
   Pointer = mouse
 }
 
@@ -64,7 +64,7 @@ describe("symbols", () => {
         "type Page 17-18 @17:6",
         "  state shown 17-17 @17:20",
         "environment Device 20-20 @20:13",
-        "profile phone 21-21 @21:9",
+        "profile Phone 21-21 @21:9",
         "modifier trackpad 22-24 @22:10",
         "record Evidence 26-28 @26:8",
         "  field hover 27-27 @27:3",

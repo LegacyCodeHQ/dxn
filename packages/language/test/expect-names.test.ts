@@ -32,12 +32,12 @@ type Page {
 }
 
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
-modifier trackpad on phone { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
+modifier trackpad on Phone { Pointer = mouse }
 
 expect "Escape closes the menu" {
   in Page.menu
-  when menu = open, profile = phone+trackpad
+  when menu = open, profile = Phone+trackpad
   on escape
   then menu = closed, toggle.focus = focused
 }
@@ -121,8 +121,8 @@ describe("names in an expectation", () => {
     snapshot.push(go("then menu = ", "closed"));
     snapshot.push(go("toggle.focus = ", "focused"));
     snapshot.push(go("when Pointer = ", "touch"));
-    snapshot.push(go("profile = ", "phone"));
-    snapshot.push(go("profile = phone+", "trackpad"));
+    snapshot.push(go("profile = ", "Phone"));
+    snapshot.push(go("profile = Phone+", "trackpad"));
     snapshot.push(go("  on ", "escape"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -130,8 +130,8 @@ describe("names in an expectation", () => {
         "4: enum Openness = closed | open",
         "3: enum Focus = blurred | focused",
         "1: dimension Pointer = mouse | touch",
-        "32: profile phone: Device { Pointer = touch }",
-        "33: modifier trackpad on phone { Pointer = mouse }",
+        "32: profile Phone: Device { Pointer = touch }",
+        "33: modifier trackpad on Phone { Pointer = mouse }",
         "19: event escape",
       ]
     `);
@@ -146,7 +146,7 @@ describe("names in an expectation", () => {
     snapshot.push(used("type Link needs Pointer {\n  state ", "hover"));
     snapshot.push(used("  state ", "hover"));
     snapshot.push(used("type Toggle needs Pointer {\n  event activate\n  state ", "hover"));
-    snapshot.push(used("profile ", "phone"));
+    snapshot.push(used("profile ", "Phone"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [

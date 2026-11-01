@@ -34,10 +34,10 @@ type Toolbar needs Breakpoint {
 }
 
 environment Device = Breakpoint x Pointer x Keyboard
-profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
-profile tablet-portrait: Device { Breakpoint = sm, Pointer = touch, Keyboard = no-keyboard }
-profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
-modifier magic-keyboard on tablet-portrait { Pointer = mouse, Keyboard = keyboard }
+profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile TabletPortrait: Device { Breakpoint = sm, Pointer = touch, Keyboard = no-keyboard }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+modifier magic-keyboard on TabletPortrait { Pointer = mouse, Keyboard = keyboard }
 `);
 
 // Each row as [profiles, the parents' states, the child's states].
@@ -48,32 +48,32 @@ describe("evaluating a child in place", () => {
   it("gives its combinations inside its parents: where each is there, with its bound states set", () => {
     expect(rows("Toolbar.menu.toggle")).toEqual([
       [
-        ["phone"],
+        ["Phone"],
         { layout: "compact", "menu.menu": "closed" },
         { hover: ["rest"], focus: ["blurred"], expanded: ["closed"] },
       ],
       [
-        ["phone"],
+        ["Phone"],
         { layout: "compact", "menu.menu": "open" },
         { hover: ["rest"], focus: ["blurred"], expanded: ["open"] },
       ],
       [
-        ["tablet-portrait"],
+        ["TabletPortrait"],
         { layout: "compact", "menu.menu": "closed" },
         { hover: ["rest"], focus: ["blurred"], expanded: ["closed"] },
       ],
       [
-        ["tablet-portrait"],
+        ["TabletPortrait"],
         { layout: "compact", "menu.menu": "open" },
         { hover: ["rest"], focus: ["blurred"], expanded: ["open"] },
       ],
       [
-        ["tablet-portrait+magic-keyboard"],
+        ["TabletPortrait+magic-keyboard"],
         { layout: "compact", "menu.menu": "closed" },
         { hover: ["rest", "hovered"], focus: ["blurred", "focused"], expanded: ["closed"] },
       ],
       [
-        ["tablet-portrait+magic-keyboard"],
+        ["TabletPortrait+magic-keyboard"],
         { layout: "compact", "menu.menu": "open" },
         { hover: ["rest", "hovered"], focus: ["blurred", "focused"], expanded: ["open"] },
       ],
@@ -91,9 +91,9 @@ describe("evaluating a child in place", () => {
 
   it("leaves out where a child is not there: the panel only while the menu is open", () => {
     expect(rows("Toolbar.menu.panel").map(([profiles, parents]) => [profiles, parents])).toEqual([
-      [["phone"], { layout: "compact", "menu.menu": "open" }],
-      [["tablet-portrait"], { layout: "compact", "menu.menu": "open" }],
-      [["tablet-portrait+magic-keyboard"], { layout: "compact", "menu.menu": "open" }],
+      [["Phone"], { layout: "compact", "menu.menu": "open" }],
+      [["TabletPortrait"], { layout: "compact", "menu.menu": "open" }],
+      [["TabletPortrait+magic-keyboard"], { layout: "compact", "menu.menu": "open" }],
     ]);
   });
 

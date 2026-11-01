@@ -27,8 +27,8 @@ type Toolbar {
 }
 
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
-profile laptop: Device { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
+profile Laptop: Device { Pointer = mouse }
 
 record Evidence {
   at: Timestamp
@@ -93,13 +93,13 @@ const attachAs = (actor: string, source: object, ...context: string[]) => [
 ];
 const attach = (...context: string[]) =>
   attachAs("DesignAgent", { file: "design/toolbar.png", frame: "phone-toggle" }, ...context);
-const closed = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
+const closed = ["profile=Phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
 
 describe("dxn attach", () => {
   it("records, as an actor, an entry for each listed combination that exists in place", () => {
     const { run, stored } = project();
     const result = run(
-      ...attach("profile=phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"),
+      ...attach("profile=Phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"),
     );
     expect([result.code, result.stdout, result.stderr]).toEqual([
       0,
@@ -115,7 +115,7 @@ describe("dxn attach", () => {
       {
         context: {
           path: "Toolbar.menu.toggle",
-          profile: "phone",
+          profile: "Phone",
           dimensions: {},
           parents: { "menu.menu": "closed" },
           states: { hover: "rest", expanded: "closed" },
@@ -127,7 +127,7 @@ describe("dxn attach", () => {
       {
         context: {
           path: "Toolbar.menu.toggle",
-          profile: "phone",
+          profile: "Phone",
           dimensions: {},
           parents: { "menu.menu": "open" },
           states: { hover: "rest", expanded: "open" },
@@ -229,10 +229,10 @@ describe("dxn attach", () => {
     const { root, run } = project();
     const refusal = (...args: string[]) => run(...args).stderr;
     expect([
-      refusal(...attach("profile=phone", "menu.menu=closed", "hover=rest")),
+      refusal(...attach("profile=Phone", "menu.menu=closed", "hover=rest")),
       refusal(...attach(...closed, "colour=red")),
-      refusal(...attach("profile=phone", "menu.menu=shut", "hover=rest", "expanded=closed")),
-      refusal(...attach("profile=phone", "menu.menu=closed", "hover=hovered", "expanded=closed")),
+      refusal(...attach("profile=Phone", "menu.menu=shut", "hover=rest", "expanded=closed")),
+      refusal(...attach("profile=Phone", "menu.menu=closed", "hover=hovered", "expanded=closed")),
       existsSync(join(root, "spec", "evidence")),
     ]).toEqual([
       "dxn: give expanded, as expanded=<value>, or several as expanded=<a>|<b>\n",
@@ -388,7 +388,7 @@ describe("dxn attach", () => {
 describe("dxn status, with fingerprints", () => {
   const recorded = () => {
     const { root, run } = project();
-    run(...attach("profile=phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"));
+    run(...attach("profile=Phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"));
     const status = (...args: string[]) => capture(["status", "spec/toolbar.dxn", ...args], root);
     return { root, run, status };
   };
@@ -431,8 +431,8 @@ describe("dxn status, with fingerprints", () => {
       "| Toolbar.menu.toggle | 6            | 0       | 2     | 0    | 4       |",
       [
         "Stale:",
-        "  Toolbar.menu.toggle on phone with menu.menu = closed: hover = rest, expanded = closed",
-        "  Toolbar.menu.toggle on phone with menu.menu = open: hover = rest, expanded = open",
+        "  Toolbar.menu.toggle on Phone with menu.menu = closed: hover = rest, expanded = closed",
+        "  Toolbar.menu.toggle on Phone with menu.menu = open: hover = rest, expanded = open",
       ],
     ]);
   });
@@ -452,7 +452,7 @@ describe("dxn status, with fingerprints", () => {
       attachAs(
         "DesignAgent",
         { file: "design/toolbar.pen", frame: "states", node: state },
-        "profile=phone",
+        "profile=Phone",
         `menu.menu=${state}`,
         "hover=rest",
         `expanded=${state}`,
@@ -500,7 +500,7 @@ describe("duplicate records", () => {
   // Two records attached, then the file's entries as written.
   const twice = () => {
     const { root, run } = project();
-    run(...attach("profile=phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"));
+    run(...attach("profile=Phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"));
     const path = join(root, "spec", "evidence", "toolbar.json");
     const entries = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>[];
     const validate = () => capture(["validate", "spec/toolbar.dxn"], root);

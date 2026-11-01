@@ -1,0 +1,15 @@
+dimension Pointer = mouse | touch
+environment Device = Pointer
+profile Phone: Device { Pointer = touch }
+#       ^ type
+modifier trackpad on Phone { Pointer = mouse }
+#                    ^ type
+type Menu {
+}
+expect "A phone" {
+  in Menu
+  when profile = Phone
+#                ^ type
+  some profile = Phone+trackpad
+#                ^ type
+}

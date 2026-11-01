@@ -666,7 +666,7 @@ export function parse(source: string): ParseResult {
   // A profile: "profile <name>: <Environment> { <Dimension> = <value>, ... }".
   const profileDeclaration = () => {
     next();
-    const named = name("profile", 'a profile name after "profile"', lowercase);
+    const named = name("profile", 'a profile name after "profile"', capitalized);
     expect(":", `":" after ${JSON.stringify(named.name)}`);
     const environment = word('an environment name after ":"');
     const profile = keep(result.profiles, { ...named, environment, values: [] });

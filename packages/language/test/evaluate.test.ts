@@ -72,17 +72,17 @@ type BlogLink needs Breakpoint {
   it("gives a row per profile when there are profiles, not every combination", () => {
     const source = `dimension Breakpoint = base | sm | lg | xl
 ${wordmark}environment Device = Breakpoint x Pointer x Keyboard
-profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
-profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `;
     expect(states(parse(source), "Wordmark").rows).toEqual([
       {
-        profiles: ["phone"],
+        profiles: ["Phone"],
         when: { Pointer: "touch", Keyboard: "no-keyboard" },
         states: { hover: ["rest"], focus: ["blurred"] },
       },
       {
-        profiles: ["laptop"],
+        profiles: ["Laptop"],
         when: { Pointer: "mouse", Keyboard: "keyboard" },
         states: { hover: ["rest", "hovered"], focus: ["blurred", "focused"] },
       },
@@ -99,7 +99,7 @@ type Link needs Pointer, Theme {
   hover = rest only when Theme = light
 }
 environment Device = Pointer
-profile laptop: Device { Pointer = mouse }
+profile Laptop: Device { Pointer = mouse }
 `;
     expect(
       states(parse(source), "Link").rows.map(({ profiles, when, states: available }) => [
@@ -108,23 +108,23 @@ profile laptop: Device { Pointer = mouse }
         available.hover,
       ]),
     ).toEqual([
-      [["laptop"], "light", ["rest", "hovered"]],
-      [["laptop"], "dark", ["hovered"]],
+      [["Laptop"], "light", ["rest", "hovered"]],
+      [["Laptop"], "dark", ["hovered"]],
     ]);
   });
 
   it("gives profiles with the same values one row, which names them all", () => {
     const source = `dimension Breakpoint = base | lg
 ${wordmark}environment Device = Breakpoint x Pointer x Keyboard
-profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
-profile tablet: Device { Breakpoint = lg, Pointer = touch, Keyboard = no-keyboard }
-profile studio: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
-profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Tablet: Device { Breakpoint = lg, Pointer = touch, Keyboard = no-keyboard }
+profile Studio: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
 `;
     expect(states(parse(source), "Wordmark").rows.map(({ profiles }) => profiles)).toEqual([
-      ["laptop", "studio"],
-      ["tablet"],
-      ["phone"],
+      ["Laptop", "Studio"],
+      ["Tablet"],
+      ["Phone"],
     ]);
   });
 

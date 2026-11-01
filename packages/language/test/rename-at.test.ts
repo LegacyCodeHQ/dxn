@@ -29,8 +29,8 @@ type Page {
 }
 
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
-modifier trackpad on phone { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
+modifier trackpad on Phone { Pointer = mouse }
 
 enum Actor = designer | agent
 record Evidence {
@@ -38,7 +38,7 @@ record Evidence {
 
 expect "A press takes the focus" {
   in Page.menu.link
-  when hover = hovered, profile = phone+trackpad
+  when hover = hovered, profile = Phone+trackpad
   on press
   then focus = focused
 }
@@ -49,7 +49,7 @@ const data = `[
   {
     "context": {
       "path": "Page.menu.link",
-      "profile": "phone",
+      "profile": "Phone",
       "dimensions": {},
       "parents": { "menu.menu": "open" },
       "states": { "hover": "rest", "focus": "blurred" }
@@ -97,7 +97,7 @@ describe("renaming in the editor", () => {
     snapshot.push(renamed("action ", "take-focus", "grab-focus"));
     snapshot.push(renamed("  event ", "press", "tap"));
     snapshot.push(renamed("environment ", "Device", "Screen"));
-    snapshot.push(renamed("profile = phone+", "trackpad", "mouse-pad"));
+    snapshot.push(renamed("profile = Phone+", "trackpad", "mouse-pad"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
@@ -122,11 +122,11 @@ describe("renaming in the editor", () => {
         ],
         [
           "environment Screen = Pointer",
-          "profile phone: Screen { Pointer = touch }",
+          "profile Phone: Screen { Pointer = touch }",
         ],
         [
-          "modifier mouse-pad on phone { Pointer = mouse }",
-          "when hover = hovered, profile = phone+mouse-pad",
+          "modifier mouse-pad on Phone { Pointer = mouse }",
+          "when hover = hovered, profile = Phone+mouse-pad",
         ],
       ]
     `);
@@ -180,7 +180,7 @@ describe("renaming in the editor", () => {
         [
           "state pointing: Hover, focus: Focus",
           "pointing = hovered only when Pointer = mouse",
-          "when pointing = hovered, profile = phone+trackpad",
+          "when pointing = hovered, profile = Phone+trackpad",
         ],
         [
           ""parents": { "menu.menu": "open" }",
@@ -306,12 +306,12 @@ describe("renaming in the editor", () => {
       {
         record: "Evidence",
         path: "evidence/evidence.json",
-        source: `[\n${record("phone")},\n${record("phone+trackpad")}\n]\n`,
+        source: `[\n${record("Phone")},\n${record("Phone+trackpad")}\n]\n`,
       },
     ];
     const snapshot: unknown[] = [];
     for (const [before, word, to] of [
-      ["profile ", "phone", "handset"],
+      ["profile ", "Phone", "Handset"],
       ["modifier ", "trackpad", "mouse-pad"],
     ] as const) {
       const result = renameAt(source, ...at(before, word), to, both);
@@ -331,21 +331,21 @@ describe("renaming in the editor", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
-          "profile handset: Device { Pointer = touch }",
-          "modifier trackpad on handset { Pointer = mouse }",
-          "when hover = hovered, profile = handset+trackpad",
+          "profile Handset: Device { Pointer = touch }",
+          "modifier trackpad on Handset { Pointer = mouse }",
+          "when hover = hovered, profile = Handset+trackpad",
         ],
         [
-          ""profile": "handset"",
-          ""profile": "handset+trackpad"",
+          ""profile": "Handset"",
+          ""profile": "Handset+trackpad"",
         ],
         [
-          "modifier mouse-pad on phone { Pointer = mouse }",
-          "when hover = hovered, profile = phone+mouse-pad",
+          "modifier mouse-pad on Phone { Pointer = mouse }",
+          "when hover = hovered, profile = Phone+mouse-pad",
         ],
         [
-          ""profile": "phone"",
-          ""profile": "phone+mouse-pad"",
+          ""profile": "Phone"",
+          ""profile": "Phone+mouse-pad"",
         ],
       ]
     `);
@@ -363,7 +363,7 @@ type Card needs Pointer, Theme {
   on Theme in (dark): glow -> on
 }
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
+profile Phone: Device { Pointer = touch }
 record Evidence {
 }
 expect "A dark card is deep" {
@@ -377,7 +377,7 @@ actor Designer records Evidence
   {
     "context": {
       "path": "Card",
-      "profile": "phone",
+      "profile": "Phone",
       "dimensions": { "Theme": "dark" },
       "parents": {},
       "states": { "shade": "deep", "glow": "off" }
@@ -444,14 +444,14 @@ actor Designer records Evidence
           "dimension Input = mouse | touch",
           "type Card needs Input, Theme {",
           "environment Device = Input",
-          "profile phone: Device { Input = touch }",
+          "profile Phone: Device { Input = touch }",
         ],
         [
           ""dimensions": { "Theme": "dark" }",
         ],
         [
           "dimension Pointer = mouse | finger",
-          "profile phone: Device { Pointer = finger }",
+          "profile Phone: Device { Pointer = finger }",
         ],
         [
           ""dimensions": { "Theme": "dark" }",
@@ -632,6 +632,7 @@ actor DesignReviewRecorder records DesignReview
     snapshot.push(renamed("enum ", "Focus", "Hover"));
     snapshot.push(renamed("", "type", "kind"));
     snapshot.push(renamed("actor ", "Designer", "designer"));
+    snapshot.push(renamed("profile ", "Phone", "phone"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         ""hover" is not an enum name: a capital letter, then letters and digits",
@@ -641,6 +642,7 @@ actor DesignReviewRecorder records DesignReview
         "the rename would leave a problem: Hover is already declared at line 2",
         "there is no name here to rename",
         ""designer" is not an actor name: a capital letter, then letters and digits",
+        ""phone" is not a profile name: a capital letter, then letters and digits",
       ]
     `);
   });

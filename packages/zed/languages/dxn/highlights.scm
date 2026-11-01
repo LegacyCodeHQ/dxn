@@ -121,18 +121,30 @@
 
 ; Profiles and modifiers
 
-(profile_declaration name: (identifier) @variable)
+(profile_declaration name: (identifier) @type)
 (modifier_declaration name: (identifier) @variable)
-(modifier_declaration profile: (identifier) @variable)
+(modifier_declaration profile: (identifier) @type)
+
+; Values
+
+(value) @constant
+
+; A profile an expectation names, on its own or with its modifiers, which
+; comes after values, so that it is a profile's and not a value's.
+
+(pair
+  key: (identifier) @_key
+  value: (value) @type
+  (#eq? @_key "profile"))
+(pair
+  key: (identifier) @_key
+  value: (profile_combination . (value) @type)
+  (#eq? @_key "profile"))
 
 ; Actors, and the record each records
 
 (actor_declaration name: (identifier) @type)
 (actor_declaration record: (identifier) @type)
-
-; Values
-
-(value) @constant
 
 ; Literals
 

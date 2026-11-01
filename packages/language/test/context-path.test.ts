@@ -35,8 +35,8 @@ type Toolbar needs Breakpoint {
 }
 
 environment Device = Breakpoint x Pointer x Keyboard
-profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
-profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 
 record Evidence {}
 actor EvidenceRecorder records Evidence
@@ -44,7 +44,7 @@ actor EvidenceRecorder records Evidence
 const schema = parse(source);
 const toggle = (overrides: Record<string, unknown> = {}) => ({
   path: "Toolbar.menu.toggle",
-  profile: "phone",
+  profile: "Phone",
   dimensions: {},
   parents: { layout: "compact", "menu.menu": "closed" },
   states: { hover: "rest", focus: "blurred", expanded: "closed" },
@@ -111,16 +111,16 @@ describe("a context for a child", () => {
       check(toggle({ parents: { layout: "inline", "menu.menu": "closed" } })),
       check(
         toggle({
-          profile: "laptop",
+          profile: "Laptop",
           states: { hover: "rest", focus: "blurred", expanded: "closed" },
         }),
       ),
     ]).toEqual([
       [
-        "unknown-value: $[0].context.parents: Toolbar.menu.toggle is not there on phone with layout = inline, menu.menu = closed",
+        "unknown-value: $[0].context.parents: Toolbar.menu.toggle is not there on Phone with layout = inline, menu.menu = closed",
       ],
       [
-        "unknown-value: $[0].context.parents: Toolbar.menu.toggle is not there on laptop with layout = compact, menu.menu = closed",
+        "unknown-value: $[0].context.parents: Toolbar.menu.toggle is not there on Laptop with layout = compact, menu.menu = closed",
       ],
     ]);
   });
@@ -129,14 +129,14 @@ describe("a context for a child", () => {
     expect(
       check(toggle({ states: { hover: "rest", focus: "blurred", expanded: "open" } })),
     ).toEqual([
-      'unknown-value: $[0].context.states.expanded: "open" is not a value of expanded on phone with layout = compact, menu.menu = closed (closed)',
+      'unknown-value: $[0].context.states.expanded: "open" is not a value of expanded on Phone with layout = compact, menu.menu = closed (closed)',
     ]);
   });
 
   it("names a type or a path, not both, and one of them", () => {
     expect([
       check({ ...toggle(), type: "Menu.Toggle" }),
-      check({ profile: "phone", dimensions: {}, states: {} }),
+      check({ profile: "Phone", dimensions: {}, states: {} }),
     ]).toEqual([
       ["unknown-field: $[0].context.type: context has both type and path; give one"],
       ["missing-field: $[0].context: context is missing type or path"],

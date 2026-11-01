@@ -19,8 +19,8 @@ type Menu {
 }
 
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
-modifier trackpad on phone { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
+modifier trackpad on Phone { Pointer = mouse }
 enum Actor = designer
 record Evidence {
   actor: Actor
@@ -28,7 +28,7 @@ record Evidence {
 
 expect "A pressed link is at rest" {
   in Menu.link
-  when profile = phone+trackpad
+  when profile = Phone+trackpad
   on press
   then hover = rest
 }
@@ -117,14 +117,14 @@ describe("semantic tokens", () => {
           "Pointer dimension",
         ],
         "19": [
-          "phone profile declaration",
+          "Phone profile declaration",
           "Device environment",
           "Pointer dimension",
           "touch value",
         ],
         "20": [
           "trackpad modifier declaration",
-          "phone profile",
+          "Phone profile",
           "Pointer dimension",
           "mouse value",
         ],
@@ -140,7 +140,7 @@ describe("semantic tokens", () => {
           "link child",
         ],
         "28": [
-          "phone profile",
+          "Phone profile",
           "trackpad modifier",
         ],
         "29": [

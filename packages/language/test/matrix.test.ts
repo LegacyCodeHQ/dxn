@@ -58,7 +58,7 @@ describe("a condition never true in one type", () => {
   it("is reported, and the types after it are still judged", () => {
     expect(
       problems(
-        "dimension Pointer = mouse | touch\nenum Hover = rest | hovered\ntype Link needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\ntype Card needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile phone: Device { Pointer = touch }\n",
+        "dimension Pointer = mouse | touch\nenum Hover = rest | hovered\ntype Link needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\ntype Card needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile Phone: Device { Pointer = touch }\n",
       ),
     ).toEqual([
       "5:3: impossible-condition: Pointer = mouse is never true, so hovered exists nowhere",

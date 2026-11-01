@@ -15,8 +15,8 @@ record Evidence {
 actor DesignAgent records Evidence
 `;
 const profiles = `environment Device = Pointer
-profile laptop: Device { Pointer = mouse }
-profile phone: Device { Pointer = touch }
+profile Laptop: Device { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
 `;
 
 // The problems in one stored Evidence record with this context, as
@@ -34,7 +34,7 @@ const on = (profile: string, theme: string, hover: string) => ({
 
 describe("a stored record's context", () => {
   it("names one combination of a type: its profile, the dimensions it does not give, and every state", () => {
-    expect([check(on("laptop", "dark", "hovered")), check(on("phone", "light", "rest"))]).toEqual([
+    expect([check(on("Laptop", "dark", "hovered")), check(on("Phone", "light", "rest"))]).toEqual([
       [],
       [],
     ]);
@@ -45,7 +45,7 @@ describe("a stored record's context", () => {
       validate(parse(model + profiles), "Evidence", '[{ "actor": "DesignAgent" }]').map(
         ({ code, message }) => `${code}: ${message}`,
       ),
-      check("laptop"),
+      check("Laptop"),
     ]).toEqual([
       ["missing-field: Evidence is missing context"],
       ["wrong-kind: $[0].context: expected a context (an object), found a string"],
@@ -54,8 +54,8 @@ describe("a stored record's context", () => {
 
   it("has a type, a profile, dimensions and states, and nothing else", () => {
     expect([
-      check({ type: "Wordmark", profile: "laptop", states: { hover: "rest" } }),
-      check({ ...on("laptop", "dark", "rest"), node: "wordmark" }),
+      check({ type: "Wordmark", profile: "Laptop", states: { hover: "rest" } }),
+      check({ ...on("Laptop", "dark", "rest"), node: "wordmark" }),
     ]).toEqual([
       ["missing-field: $[0].context: context is missing dimensions"],
       [
@@ -66,19 +66,19 @@ describe("a stored record's context", () => {
 
   it("names a type and a profile the file declares", () => {
     expect([
-      check({ ...on("laptop", "dark", "rest"), type: "Wordmrk" }),
+      check({ ...on("Laptop", "dark", "rest"), type: "Wordmrk" }),
       check(on("watch", "dark", "rest")),
     ]).toEqual([
       ['unknown-value: $[0].context.type: "Wordmrk" is not a type (Wordmark)'],
-      ['unknown-value: $[0].context.profile: "watch" is not a profile (laptop, phone)'],
+      ['unknown-value: $[0].context.profile: "watch" is not a profile (Laptop, Phone)'],
     ]);
   });
 
   it("gives each dimension the type needs that the profile does not, and only those", () => {
     expect([
-      check({ ...on("laptop", "dark", "rest"), dimensions: {} }),
-      check({ ...on("laptop", "dark", "rest"), dimensions: { Theme: "dark", Pointer: "mouse" } }),
-      check({ ...on("laptop", "dark", "rest"), dimensions: { Theme: "dim" } }),
+      check({ ...on("Laptop", "dark", "rest"), dimensions: {} }),
+      check({ ...on("Laptop", "dark", "rest"), dimensions: { Theme: "dark", Pointer: "mouse" } }),
+      check({ ...on("Laptop", "dark", "rest"), dimensions: { Theme: "dim" } }),
     ]).toEqual([
       ["missing-field: $[0].context.dimensions: context.dimensions is missing Theme"],
       [
@@ -90,10 +90,10 @@ describe("a stored record's context", () => {
 
   it("gives every state a value that exists in that combination", () => {
     expect([
-      check({ ...on("laptop", "dark", "rest"), states: {} }),
-      check({ ...on("laptop", "dark", "rest"), states: { hover: "rest", focus: "blurred" } }),
-      check(on("laptop", "dark", "hoverd")),
-      check(on("phone", "dark", "hovered")),
+      check({ ...on("Laptop", "dark", "rest"), states: {} }),
+      check({ ...on("Laptop", "dark", "rest"), states: { hover: "rest", focus: "blurred" } }),
+      check(on("Laptop", "dark", "hoverd")),
+      check(on("Phone", "dark", "hovered")),
     ]).toEqual([
       ["missing-field: $[0].context.states: context.states is missing hover"],
       ['unknown-field: $[0].context.states.focus: Wordmark has no state "focus" (hover)'],
@@ -101,7 +101,7 @@ describe("a stored record's context", () => {
         'unknown-value: $[0].context.states.hover: "hoverd" is not a value of hover (rest, hovered)',
       ],
       [
-        'unknown-value: $[0].context.states.hover: "hovered" is not a value of hover on phone, Theme dark (rest)',
+        'unknown-value: $[0].context.states.hover: "hovered" is not a value of hover on Phone, Theme dark (rest)',
       ],
     ]);
   });
@@ -124,7 +124,7 @@ describe("a stored record's context", () => {
         },
         model,
       ),
-      check({ ...on("laptop", "dark", "rest") }, model),
+      check({ ...on("Laptop", "dark", "rest") }, model),
     ]).toEqual([
       [],
       [
@@ -146,7 +146,7 @@ actor ReviewRecorder records Review`;
         "Review",
         JSON.stringify([
           {
-            context: on("laptop", "dark", "rest"),
+            context: on("Laptop", "dark", "rest"),
             actor: "ReviewRecorder",
             source: { actor: "design-agent" },
           },

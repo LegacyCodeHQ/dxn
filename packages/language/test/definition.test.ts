@@ -40,8 +40,8 @@ type Page {
 }
 
 environment Device = Breakpoint x Pointer
-profile phone: Device { Breakpoint = base, Pointer = touch }
-modifier trackpad on phone { Pointer = mouse }
+profile Phone: Device { Breakpoint = base, Pointer = touch }
+modifier trackpad on Phone { Pointer = mouse }
 
 record Source {
   section: Section
@@ -97,7 +97,7 @@ describe("definition", () => {
     snapshot.push(from("on escape: close, ", "link"));
     snapshot.push(from("on escape: close, link.", "take-focus"));
     snapshot.push(from("on link.", "activate"));
-    snapshot.push(from("modifier trackpad on ", "phone"));
+    snapshot.push(from("modifier trackpad on ", "Phone"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "take-focus",
@@ -105,7 +105,7 @@ describe("definition", () => {
         "link",
         "take-focus",
         "activate",
-        "phone",
+        "Phone",
       ]
     `);
   });
@@ -123,7 +123,7 @@ describe("definition", () => {
   });
 
   it("goes to an environment, a profile and their dimensions", () => {
-    expect(go("profile phone: ", "Device")).toEqual([
+    expect(go("profile Phone: ", "Device")).toEqual([
       "environment Device = Breakpoint x Pointer",
       "Device",
     ]);
@@ -135,9 +135,9 @@ describe("definition", () => {
       "dimension Pointer = mouse | touch",
       "Pointer",
     ]);
-    expect(go("modifier trackpad on ", "phone")).toEqual([
-      "profile phone: Device { Breakpoint = base, Pointer = touch }",
-      "phone",
+    expect(go("modifier trackpad on ", "Phone")).toEqual([
+      "profile Phone: Device { Breakpoint = base, Pointer = touch }",
+      "Phone",
     ]);
   });
 
@@ -208,7 +208,7 @@ describe("definition", () => {
     snapshot.push(go("when layout { compact -> ", "blurred"));
     // A profile's and a modifier's dimensions' values.
     snapshot.push(go("{ Breakpoint = ", "base"));
-    snapshot.push(go("trackpad on phone { Pointer = ", "mouse"));
+    snapshot.push(go("trackpad on Phone { Pointer = ", "mouse"));
     // A derived field's branches.
     snapshot.push(go("when kind { ", "draft"));
     snapshot.push(go("when kind { draft -> ", "home"));

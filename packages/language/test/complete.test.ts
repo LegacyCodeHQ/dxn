@@ -84,16 +84,16 @@ describe("completions", () => {
     snapshot.push(at("type Link needs ‸"));
     snapshot.push(at("type Link needs Pointer, ‸"));
     snapshot.push(at("environment Device = Breakpoint x ‸"));
-    snapshot.push(at("environment Device = Breakpoint x Pointer\nprofile phone: ‸"));
+    snapshot.push(at("environment Device = Breakpoint x Pointer\nprofile Phone: ‸"));
     snapshot.push(
-      at("environment Device = Breakpoint x Pointer\nprofile phone: Device { Breakpoint = base, ‸"),
+      at("environment Device = Breakpoint x Pointer\nprofile Phone: Device { Breakpoint = base, ‸"),
     );
     snapshot.push(
-      at("environment Device = Breakpoint x Pointer\nprofile phone: Device { Breakpoint = ‸"),
+      at("environment Device = Breakpoint x Pointer\nprofile Phone: Device { Breakpoint = ‸"),
     );
     snapshot.push(
       at(
-        "environment Device = Breakpoint x Pointer\nprofile phone: Device { Breakpoint = base, Pointer = touch }\nmodifier trackpad on ‸",
+        "environment Device = Breakpoint x Pointer\nprofile Phone: Device { Breakpoint = base, Pointer = touch }\nmodifier trackpad on ‸",
       ),
     );
     expect(snapshot).toMatchInlineSnapshot(`
@@ -119,7 +119,7 @@ describe("completions", () => {
           "lg value",
         ],
         [
-          "phone profile",
+          "Phone profile",
         ],
       ]
     `);
@@ -295,7 +295,7 @@ type Page {
   has menu: Menu
 }
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
+profile Phone: Device { Pointer = touch }
 `;
     const snapshot: unknown[] = [];
     snapshot.push(at(`${model}expect "x" {\n  ‸\n}\n`));
@@ -354,7 +354,7 @@ profile phone: Device { Pointer = touch }
           "open value",
         ],
         [
-          "phone profile",
+          "Phone profile",
         ],
         [
           "blurred value",

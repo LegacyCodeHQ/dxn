@@ -32,8 +32,8 @@ type Toolbar needs Breakpoint {
 }
 
 environment Device = Breakpoint x Pointer x Keyboard
-profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
-profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 
 --------------------------------------------------------------------------------
 

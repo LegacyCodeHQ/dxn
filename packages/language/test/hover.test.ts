@@ -29,8 +29,8 @@ type Menu {
 }
 
 environment Device = Pointer
-profile laptop: Device { Pointer = mouse }
-modifier tablet on laptop { Pointer = touch }
+profile Laptop: Device { Pointer = mouse }
+modifier Tablet on Laptop { Pointer = touch }
 
 # Where a drawing is.
 record Source {
@@ -66,8 +66,8 @@ describe("hover", () => {
     snapshot.push(over("has link: ", "Link"));
     snapshot.push(over("state menu: ", "Openness"));
     snapshot.push(over("section: ", "Section"));
-    snapshot.push(over("profile laptop: ", "Device"));
-    snapshot.push(over("modifier tablet on ", "laptop"));
+    snapshot.push(over("profile Laptop: ", "Device"));
+    snapshot.push(over("modifier Tablet on ", "Laptop"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "[Hover]
@@ -87,8 +87,8 @@ describe("hover", () => {
       enum Section = home | blog",
         "[Device]
       environment Device = Pointer",
-        "[laptop]
-      profile laptop: Device { Pointer = mouse }",
+        "[Laptop]
+      profile Laptop: Device { Pointer = mouse }",
       ]
     `);
   });
@@ -146,8 +146,8 @@ describe("hover", () => {
       ["type ", "Link"],
       ["record ", "Source"],
       ["environment ", "Device"],
-      ["profile ", "laptop"],
-      ["modifier ", "tablet"],
+      ["profile ", "Laptop"],
+      ["modifier ", "Tablet"],
       ["  event ", "press"],
       ["action ", "take-focus"],
       ["has ", "link"],

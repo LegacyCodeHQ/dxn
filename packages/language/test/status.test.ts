@@ -21,9 +21,9 @@ type Toolbar {
 }
 
 environment Device = Pointer
-profile phone: Device { Pointer = touch }
-profile laptop: Device { Pointer = mouse }
-profile studio: Device { Pointer = mouse }
+profile Phone: Device { Pointer = touch }
+profile Laptop: Device { Pointer = mouse }
+profile Studio: Device { Pointer = mouse }
 
 record Evidence {
   source: PenNode
@@ -43,7 +43,7 @@ const toggle = (profile: string, menu: string, hover: string) => ({
 describe("coverage", () => {
   it("counts every combination of every element in the tree, and those with evidence", () => {
     const report = coverage(file, "Evidence", [
-      JSON.stringify([toggle("phone", "closed", "rest"), toggle("studio", "open", "hovered")]),
+      JSON.stringify([toggle("Phone", "closed", "rest"), toggle("Studio", "open", "hovered")]),
     ]);
     expect(
       report.paths.map(({ path, combinations, present }) => [path, combinations, present]),
@@ -66,7 +66,7 @@ describe("coverage", () => {
       },
     });
     const report = coverage(file, "Evidence", [
-      JSON.stringify([menu("phone", "closed"), menu("laptop", "open")]),
+      JSON.stringify([menu("Phone", "closed"), menu("Laptop", "open")]),
     ]);
     const path = report.paths.find(({ path: at }) => at === "Toolbar.menu");
     expect([
@@ -78,29 +78,29 @@ describe("coverage", () => {
 
   it("lists each combination without evidence, as the context that would cover it", () => {
     const report = coverage(file, "Evidence", [
-      JSON.stringify([toggle("phone", "closed", "rest"), toggle("studio", "open", "hovered")]),
+      JSON.stringify([toggle("Phone", "closed", "rest"), toggle("Studio", "open", "hovered")]),
     ]);
     expect(report.paths[2]?.missing).toEqual([
       {
-        profiles: ["phone"],
+        profiles: ["Phone"],
         dimensions: {},
         parents: { "menu.menu": "open" },
         states: { hover: "rest", expanded: "open" },
       },
       {
-        profiles: ["laptop", "studio"],
+        profiles: ["Laptop", "Studio"],
         dimensions: {},
         parents: { "menu.menu": "closed" },
         states: { hover: "rest", expanded: "closed" },
       },
       {
-        profiles: ["laptop", "studio"],
+        profiles: ["Laptop", "Studio"],
         dimensions: {},
         parents: { "menu.menu": "closed" },
         states: { hover: "hovered", expanded: "closed" },
       },
       {
-        profiles: ["laptop", "studio"],
+        profiles: ["Laptop", "Studio"],
         dimensions: {},
         parents: { "menu.menu": "open" },
         states: { hover: "rest", expanded: "open" },
@@ -118,10 +118,10 @@ describe("coverage", () => {
       "Evidence",
       [
         JSON.stringify([
-          entry("phone", "closed", "rest", "fresh"),
-          entry("phone", "open", "rest", "changed"),
-          entry("laptop", "open", "rest", "deleted"),
-          entry("laptop", "open", "rest", "changed"),
+          entry("Phone", "closed", "rest", "fresh"),
+          entry("Phone", "open", "rest", "changed"),
+          entry("Laptop", "open", "rest", "deleted"),
+          entry("Laptop", "open", "rest", "changed"),
         ]),
       ],
       ({ frame }) => (frame === "fresh" ? "present" : frame === "changed" ? "stale" : "gone"),

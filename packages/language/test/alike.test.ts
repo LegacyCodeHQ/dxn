@@ -161,9 +161,9 @@ type Bar needs Screen {
   has menu: Menu
 }
 environment Device = Screen x Pointer
-profile phone: Device { Screen = small, Pointer = touch }
-profile tablet: Device { Screen = small, Pointer = mouse }
-profile laptop: Device { Screen = large, Pointer = mouse }
+profile Phone: Device { Screen = small, Pointer = touch }
+profile Tablet: Device { Screen = small, Pointer = mouse }
+profile Laptop: Device { Screen = large, Pointer = mouse }
 `;
     const listed = (target: string) => {
       const found = casesOf(parse(site), target, { alike: false });
@@ -186,10 +186,10 @@ profile laptop: Device { Screen = large, Pointer = mouse }
       [
         4,
         [
-          ["small closed", "phone, tablet"],
-          ["small open", "phone, tablet"],
-          ["large closed", "laptop"],
-          ["large open", "laptop"],
+          ["small closed", "Phone, Tablet"],
+          ["small open", "Phone, Tablet"],
+          ["large closed", "Laptop"],
+          ["large open", "Laptop"],
         ],
       ],
     ]);

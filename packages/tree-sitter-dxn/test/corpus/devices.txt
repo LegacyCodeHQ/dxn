@@ -18,8 +18,8 @@ environment Device = Breakpoint x Pointer x
 Profiles, with values split by commas or lines
 ================================================================================
 
-profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
-profile laptop: Device {
+profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile Laptop: Device {
   Breakpoint = lg
   Pointer = mouse
 }
@@ -53,7 +53,7 @@ profile laptop: Device {
 A modifier on several profiles
 ================================================================================
 
-modifier magic-keyboard on tablet, phone {
+modifier magic-keyboard on Tablet, Phone {
   Pointer = mouse, Keyboard = keyboard
 }
 

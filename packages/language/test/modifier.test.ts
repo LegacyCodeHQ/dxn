@@ -8,12 +8,12 @@ const device = `dimension Breakpoint = base | sm | lg
 dimension Pointer = mouse | touch
 dimension Keyboard = keyboard | no-keyboard
 environment Device = Breakpoint x Pointer x Keyboard
-profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
-profile tablet-portrait: Device { Breakpoint = sm, Pointer = touch, Keyboard = no-keyboard }
-profile tablet-landscape: Device { Breakpoint = lg, Pointer = touch, Keyboard = no-keyboard }
-profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile TabletPortrait: Device { Breakpoint = sm, Pointer = touch, Keyboard = no-keyboard }
+profile TabletLandscape: Device { Breakpoint = lg, Pointer = touch, Keyboard = no-keyboard }
+profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 `;
-const magic = `${device}modifier magic-keyboard on tablet-portrait, tablet-landscape {
+const magic = `${device}modifier magic-keyboard on TabletPortrait, TabletLandscape {
   Pointer = mouse, Keyboard = keyboard
 }
 `;
@@ -39,7 +39,7 @@ describe("modifier", () => {
       [
         [
           "magic-keyboard",
-          ["tablet-portrait", "tablet-landscape"],
+          ["TabletPortrait", "TabletLandscape"],
           [
             ["Pointer", "mouse"],
             ["Keyboard", "keyboard"],
@@ -57,11 +57,11 @@ describe("modifier", () => {
         states.hover,
       ]),
     ).toEqual([
-      [["phone"], "touch", ["rest"]],
-      [["tablet-portrait"], "touch", ["rest"]],
-      [["tablet-landscape"], "touch", ["rest"]],
-      [["laptop", "tablet-landscape+magic-keyboard"], "mouse", ["rest", "hovered"]],
-      [["tablet-portrait+magic-keyboard"], "mouse", ["rest", "hovered"]],
+      [["Phone"], "touch", ["rest"]],
+      [["TabletPortrait"], "touch", ["rest"]],
+      [["TabletLandscape"], "touch", ["rest"]],
+      [["Laptop", "TabletLandscape+magic-keyboard"], "mouse", ["rest", "hovered"]],
+      [["TabletPortrait+magic-keyboard"], "mouse", ["rest", "hovered"]],
     ]);
   });
 
@@ -76,14 +76,14 @@ actor EvidenceRecorder records Evidence`);
         },
       ]);
     expect([
-      validate(schema, "Evidence", context("tablet-portrait+magic-keyboard", "hovered")),
-      validate(schema, "Evidence", context("phone+magic-keyboard", "rest")).map(
+      validate(schema, "Evidence", context("TabletPortrait+magic-keyboard", "hovered")),
+      validate(schema, "Evidence", context("Phone+magic-keyboard", "rest")).map(
         ({ message }) => message,
       ),
     ]).toEqual([
       [],
       [
-        '"phone+magic-keyboard" is not a profile (phone, tablet-portrait, tablet-landscape, laptop, tablet-portrait+magic-keyboard, tablet-landscape+magic-keyboard)',
+        '"Phone+magic-keyboard" is not a profile (Phone, TabletPortrait, TabletLandscape, Laptop, TabletPortrait+magic-keyboard, TabletLandscape+magic-keyboard)',
       ],
     ]);
   });
@@ -99,30 +99,33 @@ actor EvidenceRecorder records Evidence`);
         },
       ]);
     expect([
-      validate(schema, "Evidence", context("laptop")),
-      validate(schema, "Evidence", context("tablet-landscape+magic-keyboard")),
+      validate(schema, "Evidence", context("Laptop")),
+      validate(schema, "Evidence", context("TabletLandscape+magic-keyboard")),
     ]).toEqual([[], []]);
   });
 
   it("has a lowercase name, declared once, on profiles that exist, each once", () => {
     expect([
-      problems(`${device}modifier Magic on phone {\n  Keyboard = keyboard\n}\n`),
-      problems(`${device}modifier laptop on phone {\n  Keyboard = keyboard\n}\n`),
-      problems(`${device}modifier magic on tablet {\n  Keyboard = keyboard\n}\n`),
-      problems(`${device}modifier magic on phone, phone {\n  Keyboard = keyboard\n}\n`),
+      problems(`${device}modifier Magic on Phone {\n  Keyboard = keyboard\n}\n`),
+      problems(`${device}modifier Laptop on Phone {\n  Keyboard = keyboard\n}\n`),
+      problems(`${device}modifier magic on Tablet {\n  Keyboard = keyboard\n}\n`),
+      problems(`${device}modifier magic on Phone, Phone {\n  Keyboard = keyboard\n}\n`),
     ]).toEqual([
       ['9:10: modifier-name: modifier names start with a lowercase letter: "Magic"'],
-      ["9:10: duplicate-name: laptop is already declared at line 8"],
       [
-        "9:19: unknown-profile: tablet is not a profile (phone, tablet-portrait, tablet-landscape, laptop)",
+        '9:10: modifier-name: modifier names start with a lowercase letter: "Laptop"',
+        "9:10: duplicate-name: Laptop is already declared at line 8",
       ],
-      ["9:26: duplicate-profile: phone is already listed in magic"],
+      [
+        "9:19: unknown-profile: Tablet is not a profile (Phone, TabletPortrait, TabletLandscape, Laptop)",
+      ],
+      ["9:26: duplicate-profile: Phone is already listed in magic"],
     ]);
   });
 
   it("sets dimensions of the profiles' environment, each once, with one of their values", () => {
     const set = (values: string) =>
-      problems(`${device}modifier magic on phone {\n  ${values}\n}\n`);
+      problems(`${device}modifier magic on Phone {\n  ${values}\n}\n`);
     expect([
       set("Theme = dark"),
       set("Keyboard = keyboard, Keyboard = keyboard"),
@@ -138,7 +141,7 @@ actor EvidenceRecorder records Evidence`);
 
   it("is checked against the environment, even when the first profile's is misspelled", () => {
     const source = magic
-      .replace("profile phone: Device", "profile phone: Devise")
+      .replace("profile Phone: Device", "profile Phone: Devise")
       .replace("  Pointer = mouse, Keyboard = keyboard\n}", "  Pointer = mouse, Colour = red\n}");
     expect(problems(source).map((problem) => problem.split(": ").slice(1).join(": "))).toEqual([
       "unknown-environment: Devise is not an environment; did you mean Device?",
@@ -148,19 +151,19 @@ actor EvidenceRecorder records Evidence`);
 
   it("warns when it changes nothing on a profile it is on: that profile already exists", () => {
     expect(
-      problems(`${device}modifier magic on laptop, phone {\n  Keyboard = keyboard\n}\n`),
+      problems(`${device}modifier magic on Laptop, Phone {\n  Keyboard = keyboard\n}\n`),
     ).toEqual([
-      "9:19: warning: unchanged-profile: magic changes nothing on laptop, which already has Keyboard = keyboard",
+      "9:19: warning: unchanged-profile: magic changes nothing on Laptop, which already has Keyboard = keyboard",
     ]);
   });
 
   it("says what it expected when the syntax is wrong", () => {
     expect([
-      problems(`${device}modifier magic phone {\n  Keyboard = keyboard\n}\n`),
-      problems(`${device}modifier magic on phone tablet-portrait {\n  Keyboard = keyboard\n}\n`),
+      problems(`${device}modifier magic Phone {\n  Keyboard = keyboard\n}\n`),
+      problems(`${device}modifier magic on Phone TabletPortrait {\n  Keyboard = keyboard\n}\n`),
     ]).toEqual([
-      ['9:16: syntax-error: expected "on" after "magic", found "phone"'],
-      ['9:25: syntax-error: expected "," or "{" after "phone", found "tablet-portrait"'],
+      ['9:16: syntax-error: expected "on" after "magic", found "Phone"'],
+      ['9:25: syntax-error: expected "," or "{" after "Phone", found "TabletPortrait"'],
     ]);
   });
 });

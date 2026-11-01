@@ -84,7 +84,7 @@ describe("dxn cli", () => {
         rename <file> <name> <new>         Rename a declaration where the file uses it
                                            and where stored records name it, once both
                                            check: <name> as dxn writes it (Hover,
-                                           Hover.rest, Toolbar.layout, phone, ...;
+                                           Hover.rest, Toolbar.layout, Phone, ...;
                                            <kind>:<name> where one name names two), or
                                            <file>:<line>:<column> <new> by its place; a
                                            record's stored records move to the folder of

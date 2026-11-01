@@ -79,11 +79,11 @@ type Window needs Width {
 }
 
 environment Device = Width x Pointer
-profile phone: Device { Width = narrow, Pointer = touch }
-profile laptop: Device { Width = wide, Pointer = mouse }
+profile Phone: Device { Width = narrow, Pointer = touch }
+profile Laptop: Device { Width = wide, Pointer = mouse }
 
-# A trackpad, for a phone in a case that has one.
-modifier trackpad on phone { Pointer = mouse }
+# A trackpad, for a Phone in a case that has one.
+modifier trackpad on Phone { Pointer = mouse }
 
 # Evidence: who looked at one element in one combination, stored in
 # evidence/, next to this file.
