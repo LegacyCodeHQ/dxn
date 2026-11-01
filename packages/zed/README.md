@@ -22,7 +22,7 @@ it with `make build`, then point Zed's settings at it:
 ```json
 {
   "lsp": {
-    "dxn-lsp": {
+    "dxn-language-server": {
       "binary": {
         "path": "node",
         "arguments": ["/path/to/dxn/packages/language-server/dist/main.js"]
