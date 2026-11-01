@@ -914,16 +914,18 @@ describe("the language server", () => {
       rmSync(folder, { recursive: true, force: true });
     }
   });
-  it("says, where it cannot count evidence, which problems in the stored records stop it", async () => {
+  it("counts the stored records without problems, and says which problems keep the others from counting", async () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-uncounted-"));
     try {
       const text =
         "enum Style = primary | secondary\ntype Button {\n  state style: Style\n}\nrecord PenEvidence {\n  source: PenNode\n}\nactor DesignAgent records PenEvidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
+      writeFileSync(join(folder, "design.txt"), "drawn\n");
+      const fingerprint = createHash("sha1").update("blob 6\0drawn\n").digest("hex");
       mkdirSync(join(folder, "pen-evidence"));
       // Evidence recorded before style's values were edited by hand.
       const entry = (style: string) =>
-        `  {\n    "context": { "type": "Button", "dimensions": {}, "states": { "style": "${style}" } },\n    "actor": "DesignAgent",\n    "source": { "file": "design.txt", "frame": "f", "fingerprint": "a1" }\n  }`;
+        `  {\n    "context": { "type": "Button", "dimensions": {}, "states": { "style": "${style}" } },\n    "actor": "DesignAgent",\n    "source": { "file": "design.txt", "frame": "f", "fingerprint": "${fingerprint}" }\n  }`;
       writeFileSync(
         join(folder, "pen-evidence", "button.json"),
         `[\n${entry("filled")},\n${entry("plain")},\n${entry("filled")},\n${entry("primary")}\n]\n`,
@@ -956,11 +958,16 @@ describe("the language server", () => {
         [
           [
             { line: 1, character: 13 },
-            "PenEvidence: 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
+            "PenEvidence 1 of 2 · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
           ],
         ],
         [
-          "PenEvidence is not counted until its stored records have no problems:",
+          "PenEvidence 1 of 2",
+          "",
+          "Missing:",
+          "- Button: style = secondary",
+          "",
+          "Not counted until their problems are fixed:",
           "",
           '- pen-evidence/button.json:3:75: $[0].context.states.style: "filled" is not a value of style (primary, secondary)',
           '- pen-evidence/button.json:8:75: $[1].context.states.style: "plain" is not a value of style (primary, secondary)',
@@ -987,7 +994,7 @@ describe("the language server", () => {
         range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
       });
       expect(again?.map(({ label }) => label)).toEqual([
-        "PenEvidence: 1 of 2 records still says style = plain, which Style no longer has (primary, secondary)",
+        "PenEvidence 1 of 2 · 1 of 2 records still says style = plain, which Style no longer has (primary, secondary)",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1062,7 +1069,51 @@ describe("the language server", () => {
           "- Button: style = primary, hover = hovered",
           "- Button: style = secondary, hover = hovered",
         ].join("\n"),
-        ["PenEvidence: 1 of 2 records still says press, a state Button no longer has"],
+        ["PenEvidence 1 of 4 · 1 of 2 records still says press, a state Button no longer has"],
+      ]);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
+  it("sets aside only the stored records with problems, and shows them where their element is written", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-apart-"));
+    try {
+      const text =
+        "enum Style = plain | bold\ntype Button {\n  state style: Style\n}\ntype Tab {\n  state style: Style\n}\ntype Bar {\n  has tab: Tab\n}\nrecord PenEvidence {\n  source: PenNode\n}\nactor DesignAgent records PenEvidence\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      writeFileSync(join(folder, "design.txt"), "drawn\n");
+      const fingerprint = createHash("sha1").update("blob 6\0drawn\n").digest("hex");
+      const entry = (path: string) =>
+        `{ "context": { "path": "${path}", "dimensions": {}, "parents": {}, "states": { "style": "plain" } }, "actor": "DesignAgent", "source": { "file": "design.txt", "frame": "f", "fingerprint": "${fingerprint}" } }`;
+      mkdirSync(join(folder, "pen-evidence"));
+      writeFileSync(join(folder, "pen-evidence", "button.json"), `[${entry("Button")}]`);
+      // Recorded when Tab was a tree of its own, before Bar held it.
+      writeFileSync(join(folder, "pen-evidence", "tab.json"), `[${entry("Tab")}]`);
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const editor = connect();
+      editors.push(editor);
+      await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+      });
+      const opened = published(editor);
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await opened;
+      const hints = await editor.sendRequest(InlayHintRequest.type, {
+        textDocument: { uri },
+        range: { start: { line: 0, character: 0 }, end: { line: 14, character: 0 } },
+      });
+      expect(hints?.map(({ position, label }) => [position.line, label])).toEqual([
+        [1, "PenEvidence 1 of 2"],
+        [
+          4,
+          'PenEvidence: 1 of 2 records with "Tab" is not a path: Tab is inside Bar; a path starts at a type nothing contains',
+        ],
+        [7, "PenEvidence 0 of 1"],
+        [8, "PenEvidence 0 of 2"],
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });

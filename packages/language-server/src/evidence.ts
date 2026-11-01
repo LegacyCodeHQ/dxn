@@ -5,6 +5,7 @@ import {
   duplicates,
   folderOf,
   freshness,
+  type Located,
   type ParseResult,
   type Progress,
   placement,
@@ -13,6 +14,7 @@ import {
   type StoredSource,
   storedFiles,
   treePaths,
+  treePlaces,
   validate,
 } from "@legacycodehq/dxn-language";
 import { type Diagnostic, DiagnosticSeverity, type Range } from "vscode-languageserver/node";
@@ -137,31 +139,78 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
   } catch {
     return undefined;
   }
-  // The records that cannot be counted, each with its problems: those
-  // whose stored records have errors. Outdated records, a warning, leave
-  // their record counted, and are counted apart.
+  // The stored records with errors, set apart, each about its element; and
+  // the records that cannot be counted at all, whose errors are not of one
+  // stored record or are about nothing written in the file. Outdated
+  // records, a warning, are counted apart by the language.
   const stopped = new Map<string, Problem[]>();
+  const apart = new Map<string, { at: Read; index: number; problems: Problem[] }>();
   for (const problem of found.problems) {
     if (problem.severity === "warning") continue;
-    stopped.set(problem.at.record, [...(stopped.get(problem.at.record) ?? []), problem]);
+    const index = problem.path.match(/^\$\[(\d+)\]/)?.[1];
+    if (index === undefined) {
+      stopped.set(problem.at.record, [...(stopped.get(problem.at.record) ?? []), problem]);
+      continue;
+    }
+    const key = `${problem.at.uri}#${index}`;
+    const entry = apart.get(key) ?? { at: problem.at, index: Number(index), problems: [] };
+    entry.problems.push(problem);
+    apart.set(key, entry);
   }
-  const counted = progress(
-    file,
-    found.read.filter(({ record }) => !stopped.has(record)),
-    freshness(repositoryOf(fileURLToPath(uri))),
-  );
-  return counted.flatMap((place) => {
+  // Where a set-apart record shows: where its element is written, an element
+  // of a tree, or a type that is no tree's root.
+  const places = new Map(treePlaces(file).map(({ path, at }) => [path, at]));
+  const whereFor = (element: string | undefined): Located | undefined =>
+    element === undefined
+      ? undefined
+      : (places.get(element) ?? file.types.find(({ name }) => name === element));
+  const shown = new Map<string, { at: Located; record: string; problems: Problem[] }>();
+  for (const { at, index, problems } of apart.values()) {
+    const where = whereFor(elementOf(at.source, index));
+    if (where === undefined) {
+      stopped.set(at.record, [...(stopped.get(at.record) ?? []), ...problems]);
+      continue;
+    }
+    const key = `${where.line}:${where.column}#${at.record}`;
+    const group = shown.get(key) ?? { at: where, record: at.record, problems: [] };
+    group.problems.push(...problems);
+    shown.set(key, group);
+  }
+  // The stored records to count: those of records that can be, without
+  // those set apart.
+  const sources = found.read
+    .filter(({ record }) => !stopped.has(record))
+    .map((read) => {
+      const skipped = new Set(
+        [...apart.values()].filter(({ at }) => at === read).map(({ index }) => index),
+      );
+      if (skipped.size === 0) return read;
+      const list = JSON.parse(read.source) as unknown[];
+      return { ...read, source: JSON.stringify(list.filter((_, index) => !skipped.has(index))) };
+    });
+  const counted = progress(file, sources, freshness(repositoryOf(fileURLToPath(uri))));
+  const readsOf = (record: string) => found.read.filter((read) => read.record === record);
+  // What is set apart at a place, for a record, by what the language says
+  // of it.
+  const apartAt = (line: number, column: number, record: string) => {
+    const group = shown.get(`${line}:${column}#${record}`);
+    if (group === undefined) return undefined;
+    shown.delete(`${line}:${column}#${record}`);
+    return stoppedBy(file, record, group.problems, readsOf(record));
+  };
+  const hints = counted.flatMap((place) => {
     const parts = place.records.map((each) => {
       const problems = stopped.get(each.record);
-      if (problems !== undefined) {
-        return stoppedBy(
-          file,
-          each.record,
-          problems,
-          found.read.filter(({ record }) => record === each.record),
-        );
-      }
-      return each.outdated.length === 0 ? countOf(each) : outdatedAt(each);
+      if (problems !== undefined)
+        return stoppedBy(file, each.record, problems, readsOf(each.record));
+      const count = each.outdated.length === 0 ? countOf(each) : outdatedAt(each);
+      const set = apartAt(place.line, place.column, each.record);
+      if (set === undefined) return count;
+      const without = set.label.slice(`${each.record}: `.length);
+      return {
+        label: `${count.label} · ${without}`,
+        details: `${count.details}\n\n${set.details}`,
+      };
     });
     if (parts.length === 0) return [];
     return [
@@ -173,6 +222,12 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
       },
     ];
   });
+  // Set-apart records about a type no tree has at its root, at the type.
+  for (const { at, record, problems } of shown.values()) {
+    const { label, details } = stoppedBy(file, record, problems, readsOf(record));
+    hints.push({ line: at.line, column: at.column, label, details });
+  }
+  return hints.sort((a, b) => a.line - b.line || a.column - b.column);
 }
 
 // A record's evidence at a place: its count, "PenEvidence 4 of 6, 1 stale",
@@ -272,7 +327,7 @@ function stoppedBy(
   return {
     label,
     details: [
-      `${record} is not counted until its stored records have no problems:`,
+      "Not counted until their problems are fixed:",
       "",
       ...problems.map(
         ({ at, line, column, path, message }) =>
