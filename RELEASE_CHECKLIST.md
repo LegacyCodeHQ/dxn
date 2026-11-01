@@ -1,8 +1,8 @@
 # Release checklist
 
-What stands between this repository and its first open-source release, as
-checked on 2026-11-01. Tick an item in the commit that does it, and add what
-a release turns up.
+What stands between this repository and the first open-source release of
+dxn and its editor extensions, as checked on 2026-11-01. Tick an item in the
+commit that does it, and add what a release turns up.
 
 ## Done
 
@@ -16,13 +16,13 @@ a release turns up.
 - [x] Only built code and the docs are published: `npm pack` for the CLI
   gives 20 files, 41 kB.
 - [x] A license is chosen: Apache-2.0, declared in every package.json.
+- [x] The repository is public on GitHub (LegacyCodeHQ/dxn), so Zed can
+  fetch the grammar the extension pins.
 
 ## Must have
 
 - [ ] **A LICENSE file at the root**, with the Apache-2.0 text. npm then
   includes it in each package.
-- [ ] **The repository is public** on GitHub (LegacyCodeHQ/dxn), once
-  everything above is in.
 
 ## Publishing
 
@@ -38,6 +38,74 @@ a release turns up.
 - [ ] **A release workflow** that publishes both packages from CI.
 - [ ] **An install section in the README** for users, before the
   development section.
+
+## Zed extension
+
+The extension in `packages/zed` gives highlighting, the outline and run
+buttons itself, and everything else through `dxn-language-server`, which it
+starts; the run buttons run `dxn`. Today it finds both on the `PATH`, where a
+developer links them with `npm link`; a user who installs it from Zed has
+neither. A Zed extension is WebAssembly and cannot hold a Node program, so it
+installs the server from npm, as the Svelte, Astro and Vue extensions do.
+
+### The language server, on npm
+
+- [ ] **One self-contained package:** bundle `@legacycodehq/dxn-language`
+  into `@legacycodehq/dxn-language-server`'s `dist/main.js`, so it is one
+  package with no workspace dependency. `npm pack` shows what it holds, and
+  `node dist/main.js --version` from the packed tarball, outside the
+  repository, still starts.
+- [ ] **Publishable:** `"private": true` removed, a first version in place of
+  `0.0.0`, and its README saying what it is and how an editor starts it.
+- [ ] **Published from CI,** with the CLI and the language, by the release
+  workflow above.
+
+### The extension installs the server
+
+- [ ] **`language_server_command` installs it:** with `zed_extension_api`'s
+  npm functions, the latest `@legacycodehq/dxn-language-server` into the
+  extension's own folder, run with Zed's Node; updated when a newer version is
+  out. The `lsp.dxn-language-server.binary` setting still wins, for working on
+  the server.
+- [ ] **A test for it,** like the ones for choosing the server today, and a
+  run in Zed with the linked server unlinked
+  (`npm unlink -g @legacycodehq/dxn-language-server`), so nothing on the
+  `PATH` hides a failure.
+
+### The run buttons
+
+- [ ] **They work without a developer's `dxn`:** the tasks in
+  `languages/dxn/tasks.json` run `npx --yes @legacycodehq/dxn …`, or the
+  extension's README says to install `@legacycodehq/dxn` first. Decide which,
+  and try it with the linked `dxn` unlinked
+  (`npm unlink -g @legacycodehq/dxn`).
+- [ ] **Zed reads the extension's `tasks.json`:** confirmed on 2026-11-01 for
+  a dev extension; check it again in an installed one.
+
+### Ready to submit
+
+- [ ] **A LICENSE file Zed's registry accepts,** where it looks for one: Zed
+  checks extensions for an accepted license (Apache-2.0 is one). Check the
+  current rule in Zed's extension docs, and add the file at the root and, if
+  needed, in `packages/zed`.
+- [ ] **The grammar pin is current:** `commit` in `extension.toml` is the
+  latest commit of `packages/tree-sitter-dxn`, pushed; `make zed` checks it
+  matches.
+- [ ] **`extension.toml` says what it does now:** its `description` lists
+  highlighting, errors, navigation, completion, rename and running types and
+  expectations; `version` is the release's; `authors` and `repository` are
+  right.
+- [ ] **The README is for users first:** installing from Zed's extensions
+  view, what it gives, and what to install (if the run buttons need `dxn`),
+  before the development sections.
+- [ ] **Tried from scratch** in the playground: `make check`, the extension
+  rebuilt, the linked server and CLI unlinked, every item in
+  `playground/README.md` for Zed.
+- [ ] **Submitted:** a pull request to `zed-industries/extensions` that adds
+  this repository as a submodule and an entry for `dxn` in its
+  `extensions.toml`, with `path = "packages/zed"` and the extension's
+  version. Its README says how; a release after this one bumps the version
+  in both places.
 
 ## Loose ends
 
