@@ -163,6 +163,88 @@ actor Designer records Evidence
     `);
   });
 
+  it("writes, for a type, only the page of the tree it is in, by its own name or inside one", () => {
+    const { run } = project(
+      `enum Openness = closed | open
+enum Style = filled | plain
+type Button {
+  state style: Style
+}
+type Card {
+  state open: Openness
+  has button: Button only when open = open
+}
+type Banner {
+}
+
+record Evidence {
+  source: PenNode
+}
+actor Designer records Evidence
+`,
+      "Card.button",
+      "open=open",
+    );
+    const written = (...args: string[]) =>
+      (
+        JSON.parse(run("review", "spec/button.dxn", ...args, "--json").stdout) as {
+          written: string[];
+        }
+      ).written;
+    expect([written(), written("Banner"), written("Button"), written("Card")]).toEqual([
+      [
+        "<cache>/review/<repository>/spec/evidence/card.md",
+        "<cache>/review/<repository>/spec/evidence/banner.md",
+      ],
+      ["<cache>/review/<repository>/spec/evidence/banner.md"],
+      ["<cache>/review/<repository>/spec/evidence/card.md"],
+      ["<cache>/review/<repository>/spec/evidence/card.md"],
+    ]);
+  });
+
+  it("writes, with --stale, a page of only what is stale or gone, which needs a decision", () => {
+    const { root, run, page } = project();
+    const before = run("review", "spec/button.dxn", "--stale");
+    const nothing = page("button.stale.md");
+    writeFileSync(join(root, "design", "button.pen"), pen("#000000"));
+    const after = run("review", "spec/button.dxn", "--stale");
+    expect([before.stdout, after.stdout]).toEqual([
+      "Wrote <cache>/review/<repository>/spec/evidence/button.stale.md\n",
+      "Wrote <cache>/review/<repository>/spec/evidence/button.stale.md\n",
+    ]);
+    expect([nothing, page("button.stale.md")]).toMatchInlineSnapshot(`
+      [
+        "# Button: stale and gone
+
+      Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
+
+      Evidence for 1 of 2 combinations.
+
+      Nothing is stale or gone.
+      ",
+        "# Button: stale and gone
+
+      Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
+
+      Evidence for 0 of 2 combinations; 1 stale.
+
+      | style | status | as recorded |
+      | --- | --- | --- |
+      | filled | **stale** | ![Button: style = filled](pictures/filled.png) |
+      ",
+      ]
+    `);
+  });
+
+  it("refuses a type the file does not declare", () => {
+    const { run } = project();
+    const result = run("review", "spec/button.dxn", "Buton");
+    expect([result.code, result.stderr]).toEqual([
+      1,
+      "dxn: Buton is not a type; did you mean Button?\n",
+    ]);
+  });
+
   it("prints, with --json, the pages it wrote", () => {
     const { run } = project();
     const result = run("review", "spec/button.dxn", "--json");
@@ -179,12 +261,12 @@ actor Designer records Evidence
 
   it("needs one file, and refuses while its stored records have problems", () => {
     const { root, run } = project();
-    const usage = run("review");
+    const usage = run("review", "spec/button.dxn", "Button", "Card");
     writeFileSync(join(root, "spec", "evidence", "button.json"), '[{ "actor": "Designer" }]\n');
     const broken = run("review", "spec/button.dxn");
     expect([usage.code, usage.stderr.split("\n")[0], broken.code]).toEqual([
       2,
-      "dxn: give one file, whose evidence to review",
+      "dxn: give one file, whose evidence to review, and a type to review only its tree",
       1,
     ]);
   });

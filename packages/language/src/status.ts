@@ -48,17 +48,17 @@ export function treePaths(file: ParseResult): string[] {
   return treePlaces(file).map(({ path }) => path);
 }
 
-// Every element of the file's trees, by its path, with where its name is
-// written: a type that no type contains, by its own name; a child, by the
-// name its parent gives it.
-export function treePlaces(file: ParseResult): { path: string; at: Located }[] {
+// Every element of the file's trees, by its path, with its type and where its
+// name is written: a type that no type contains, by its own name; a child, by
+// the name its parent gives it.
+export function treePlaces(file: ParseResult): { path: string; type: string; at: Located }[] {
   const contained = new Set(
     file.types.flatMap(({ children }) => children.map(({ type }) => type.name)),
   );
   const byName = new Map(file.types.map((type) => [type.name, type]));
-  const places: { path: string; at: Located }[] = [];
+  const places: { path: string; type: string; at: Located }[] = [];
   const walk = (type: Type, path: string, at: Located) => {
-    places.push({ path, at });
+    places.push({ path, type: type.name, at });
     for (const child of type.children) {
       const inner = byName.get(child.type.name);
       if (inner !== undefined) walk(inner, `${path}.${child.name}`, child);

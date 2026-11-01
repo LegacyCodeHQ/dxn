@@ -4,10 +4,12 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import {
   folderOf,
   freshness,
+  Names,
   placement,
   repositoryOf,
   reviewPages,
   treePaths,
+  treePlaces,
 } from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
 import { misused, options, Reporter, read } from "./report.js";
@@ -26,10 +28,15 @@ export function reviewFolder(cache: string, file: string, record: string): strin
 export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dryRun }) => {
   const {
     json,
-    rest: [file, ...rest],
-  } = options(args);
+    rest: [file, type, ...rest],
+  } = options(args.filter((arg) => arg !== "--stale"));
+  const stale = args.includes("--stale");
   if (file === undefined || rest.length > 0) {
-    return misused(io, json, "give one file, whose evidence to review");
+    return misused(
+      io,
+      json,
+      "give one file, whose evidence to review, and a type to review only its tree",
+    );
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
@@ -43,6 +50,14 @@ export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dr
       return report.refuse(`${path}: ${(error as Error).message}`);
     }
   }
+  // With a type, only the trees it is in: the one it is the root of, or
+  // those it is placed in.
+  let roots: string[] | undefined;
+  if (type !== undefined) {
+    const places = treePlaces(parsed).filter((place) => place.type === type);
+    if (places.length === 0) return report.refuse(new Names(parsed).not(type, "type"));
+    roots = [...new Set(places.map(({ path }) => path.split(".")[0] as string))];
+  }
   const full = resolve(cwd, file);
   const check = freshness(repositoryOf(full, cwd));
   const written: string[] = [];
@@ -55,8 +70,12 @@ export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dr
     // A picture, by its node's id, beside the page.
     const picture = (id: string) =>
       existsSync(join(folder, "pictures", `${id}.png`)) ? `pictures/${id}.png` : undefined;
-    for (const { root, markdown } of reviewPages(parsed, name, sources, check, picture, file)) {
-      const page = join(folder, `${folderOf(root)}.md`);
+    const pages = reviewPages(parsed, name, sources, check, picture, file, {
+      ...(roots === undefined ? {} : { roots }),
+      ...(stale ? { only: ["stale", "gone"] as const } : {}),
+    });
+    for (const { root, markdown } of pages) {
+      const page = join(folder, `${folderOf(root)}${stale ? ".stale" : ""}.md`);
       if (dryRun) io.stdout(`Would write ${page}\n`);
       else {
         mkdirSync(folder, { recursive: true });

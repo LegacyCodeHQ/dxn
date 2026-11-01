@@ -10,6 +10,14 @@ export interface ReviewPage {
   markdown: string;
 }
 
+// Which pages to write: those of the trees with these roots, every tree's
+// without; and only the combinations in these states, which need a decision,
+// every one without.
+export interface ReviewOptions {
+  roots?: string[];
+  only?: Judged["state"][];
+}
+
 // For each tree, a page of its combinations, each with its status as dxn
 // status judges it and the picture of what was recorded: an element's own
 // table, under its path when the tree has more than one. A row's picture is
@@ -23,6 +31,7 @@ export function reviewPages(
   check: Check | undefined,
   picture: (id: string) => string | undefined,
   from: string,
+  { roots, only }: ReviewOptions = {},
 ): ReviewPage[] {
   const field = file.records
     .find(({ name }) => name === record)
@@ -31,6 +40,7 @@ export function reviewPages(
   const trees = new Map<string, ReturnType<typeof judge>>();
   for (const element of judge(file, record, sources, check)) {
     const root = element.path.split(".")[0] as string;
+    if (roots !== undefined && !roots.includes(root)) continue;
     trees.set(root, [...(trees.get(root) ?? []), element]);
   }
   return [...trees].map(([root, elements]) => {
@@ -41,7 +51,16 @@ export function reviewPages(
       ...(count("stale") > 0 ? [`${count("stale")} stale`] : []),
       ...(count("gone") > 0 ? [`${count("gone")} gone`] : []),
     ].join("; ");
-    const sections = elements.map(({ path, combinations }) => {
+    // The elements with combinations to show, each with only those.
+    const shown = elements
+      .map(({ path, combinations }) => ({
+        path,
+        combinations: combinations.filter(
+          ({ state }) => only === undefined || only.includes(state),
+        ),
+      }))
+      .filter(({ combinations }) => combinations.length > 0);
+    const sections = shown.map(({ path, combinations }) => {
       const table = tableOf(file, path, combinations, every, (entry) => {
         const at = field === undefined ? undefined : (entry[field] as Record<string, unknown>);
         const id = (at?.node ?? at?.frame) as string | undefined;
@@ -49,16 +68,18 @@ export function reviewPages(
       });
       return elements.length === 1 ? table : `## ${path}\n\n${table}`;
     });
+    const which = only === undefined ? "" : `: ${only.join(" and ")}`;
+    const none = only === undefined ? [] : [`Nothing is ${only.join(" or ")}.`];
     return {
       root,
       markdown: [
-        `# ${root}`,
+        `# ${root}${which}`,
         "",
         `Written by \`dxn review\` from the stored ${record} of \`${from}\`; run it again rather than edit this page.`,
         "",
         `${summary}.`,
         "",
-        ...sections.flatMap((section) => [section, ""]),
+        ...(sections.length === 0 ? [...none, ""] : sections.flatMap((section) => [section, ""])),
       ].join("\n"),
     };
   });

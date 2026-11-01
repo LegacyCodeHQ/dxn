@@ -87,12 +87,15 @@ Commands:
                                      combinations of every element in the file's
                                      trees, in place, and those a stored record is
                                      about; with --missing, list the others
-  review <file>                      Write, for each tree and each record with a
+  review <file> [<type>] [--stale]   Write, for each tree and each record with a
                                      PenNode, a Markdown page of its combinations,
                                      each with its status and the picture of what
                                      was recorded, pictures/<node>.png beside the
                                      page; pages go in dxn's cache, outside the
-                                     repository, and are named as they are written
+                                     repository, and are named as they are
+                                     written; with a type, only the trees it is
+                                     in; with --stale, only what is stale or
+                                     gone, on a page of its own
   rename <file> <name> <new>         Rename a declaration where the file uses it
                                      and where stored records name it, once both
                                      check: <name> as dxn writes it (Hover,
@@ -204,8 +207,11 @@ dxn status toolbar.dxn
 
 Writes, for each tree and each record with a `PenNode`, a Markdown page to review its evidence by: a row for each combination, with its status as `dxn status` judges it, present, stale, gone or missing, and the picture of what was recorded. A stale row shows its drawing as it was when it was recorded, so it can be compared with the design as it is now. The pages go in dxn's cache, outside the repository: `~/Library/Caches/dxn/review/` on macOS, `~/.cache/dxn/review/` elsewhere, then the repository and the path of the record's folder in it. Each picture is `pictures/<node>.png` beside its page, or `pictures/<frame>.png` for a PenNode without a node; whoever attaches the evidence exports it there.
 
+With a type, it writes only the pages of the trees the type is in: the one it is the root of, or those a type contains it in. With `--stale`, each page holds only what is stale or gone, the combinations whose evidence needs a decision, and is written beside the full one as `<tree>.stale.md`.
+
 ```bash
 dxn review gazette.dxn
+dxn review gazette.dxn Button --stale
 ```
 
 ```

@@ -1,23 +1,41 @@
 [
   {
-    "label": "dxn states $ZED_CUSTOM_type",
+    "label": "State matrix: $ZED_CUSTOM_type",
     "command": "dxn",
     "args": ["states", "$ZED_RELATIVE_FILE", "$ZED_CUSTOM_type"],
     "cwd": "$ZED_WORKTREE_ROOT",
     "tags": ["dxn-type"]
   },
   {
-    "label": "dxn states $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
+    "label": "Recorded evidence: $ZED_CUSTOM_type",
+    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_type\" | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["dxn-type"]
+  },
+  {
+    "label": "Stale evidence: $ZED_CUSTOM_type",
+    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_type\" --stale | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["dxn-type"]
+  },
+  {
+    "label": "State matrix: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
     "command": "dxn",
     "args": ["states", "$ZED_RELATIVE_FILE", "$ZED_CUSTOM_parent.$ZED_CUSTOM_type"],
     "cwd": "$ZED_WORKTREE_ROOT",
     "tags": ["dxn-nested-type"]
   },
   {
-    "label": "dxn review $ZED_RELATIVE_FILE",
-    "command": "dxn review \"$ZED_RELATIVE_FILE\" | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
+    "label": "Recorded evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
+    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_parent.$ZED_CUSTOM_type\" | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
     "cwd": "$ZED_WORKTREE_ROOT",
-    "tags": ["dxn-type", "dxn-nested-type"]
+    "tags": ["dxn-nested-type"]
+  },
+  {
+    "label": "Stale evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
+    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_parent.$ZED_CUSTOM_type\" --stale | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["dxn-nested-type"]
   },
   {
     "label": "dxn check --expect $ZED_CUSTOM_title",

@@ -18,47 +18,82 @@ const tasks = JSON.parse(
   readFileSync(join(__dirname, "../../zed/languages/dxn/tasks.json"), "utf8"),
 ) as Task[];
 
+// What a run button offers, by the tag of where it is: each task's label.
+const offered = (tag: string) =>
+  tasks.filter(({ tags }) => tags.includes(tag)).map(({ label }) => label);
+
+// Runs a task as Zed does, the command and its arguments in single quotes for
+// the user's shell, with Zed's values for a file and a type, a dxn that says
+// it wrote two pages, and a zed that notes what it opens: what dxn was given,
+// and what zed opened.
+function runAsZed(task: Task): [number | null, string, string[]] {
+  const folder = mkdtempSync(join(tmpdir(), "dxn-task-"));
+  try {
+    const opened = join(folder, "opened");
+    const given = join(folder, "given");
+    const stub = (name: string, body: string) => {
+      writeFileSync(join(folder, name), `#!/bin/sh\n${body}\n`);
+      chmodSync(join(folder, name), 0o755);
+    };
+    stub(
+      "dxn",
+      `echo "$@" > "${given}"\necho "Wrote /cache/review/button.md"\necho "Wrote /cache/review/a card.md"`,
+    );
+    stub("zed", `echo "$1" >> "${opened}"`);
+    const value = (text: string) =>
+      text
+        .replaceAll("$ZED_RELATIVE_FILE", "spec/button.dxn")
+        .replaceAll("$ZED_CUSTOM_parent", "Menu")
+        .replaceAll("$ZED_CUSTOM_type", "Toggle")
+        .replaceAll("$ZED_WORKTREE_ROOT", folder);
+    const line = [task.command, ...(task.args ?? [])].map(value).join(" ");
+    const run = spawnSync("/bin/sh", ["-c", `sh -c '${line}'`], {
+      cwd: value(task.cwd),
+      env: { ...process.env, PATH: `${folder}:${process.env.PATH}` },
+      encoding: "utf8",
+    });
+    const read = (path: string) => {
+      try {
+        return readFileSync(path, "utf8");
+      } catch {
+        return "";
+      }
+    };
+    return [run.status, read(given), read(opened).split("\n").filter(Boolean)];
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+}
+
 describe("the run buttons' tasks", () => {
-  it("offer, beside each type, to review the file's evidence and open each page written", () => {
-    const review = tasks.find(({ label }) => label.startsWith("dxn review"));
-    expect(review?.tags).toEqual(["dxn-type", "dxn-nested-type"]);
-    // Run as Zed runs it, the command and its arguments in single quotes for
-    // the user's shell, with a dxn that writes two pages, and a zed that notes
-    // what it opens.
-    const folder = mkdtempSync(join(tmpdir(), "dxn-task-"));
-    try {
-      const opened = join(folder, "opened");
-      const given = join(folder, "given");
-      const stub = (name: string, body: string) => {
-        writeFileSync(join(folder, name), `#!/bin/sh\n${body}\n`);
-        chmodSync(join(folder, name), 0o755);
-      };
-      stub(
-        "dxn",
-        `echo "$@" > "${given}"\necho "Wrote /cache/review/button.md"\necho "Wrote /cache/review/a card.md"`,
-      );
-      stub("zed", `echo "$1" >> "${opened}"`);
-      const value = (text: string) =>
-        text
-          .replaceAll("$ZED_RELATIVE_FILE", "spec/button.dxn")
-          .replaceAll("$ZED_WORKTREE_ROOT", folder);
-      const line = [review?.command ?? "", ...(review?.args ?? [])].map(value).join(" ");
-      const run = spawnSync("/bin/sh", ["-c", `sh -c '${line}'`], {
-        cwd: value(review?.cwd ?? ""),
-        env: { ...process.env, PATH: `${folder}:${process.env.PATH}` },
-        encoding: "utf8",
-      });
-      expect([
-        run.status,
-        readFileSync(given, "utf8"),
-        readFileSync(opened, "utf8").split("\n"),
-      ]).toEqual([
-        0,
-        "review spec/button.dxn\n",
-        ["/cache/review/button.md", "/cache/review/a card.md", ""],
-      ]);
-    } finally {
-      rmSync(folder, { recursive: true, force: true });
-    }
+  it("offer, beside each type, its state matrix, its recorded evidence, and its stale evidence", () => {
+    expect([offered("dxn-type"), offered("dxn-nested-type")]).toEqual([
+      [
+        "State matrix: $ZED_CUSTOM_type",
+        "Recorded evidence: $ZED_CUSTOM_type",
+        "Stale evidence: $ZED_CUSTOM_type",
+      ],
+      [
+        "State matrix: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
+        "Recorded evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
+        "Stale evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
+      ],
+    ]);
+  });
+
+  it("review the type's tree, and open each page dxn wrote", () => {
+    const task = (label: string) => tasks.find((each) => each.label === label) as Task;
+    const pages = ["/cache/review/button.md", "/cache/review/a card.md"];
+    expect([
+      runAsZed(task("Recorded evidence: $ZED_CUSTOM_type")),
+      runAsZed(task("Stale evidence: $ZED_CUSTOM_type")),
+      runAsZed(task("Recorded evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type")),
+      runAsZed(task("Stale evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type")),
+    ]).toEqual([
+      [0, "review spec/button.dxn Toggle\n", pages],
+      [0, "review spec/button.dxn Toggle --stale\n", pages],
+      [0, "review spec/button.dxn Menu.Toggle\n", pages],
+      [0, "review spec/button.dxn Menu.Toggle --stale\n", pages],
+    ]);
   });
 });
