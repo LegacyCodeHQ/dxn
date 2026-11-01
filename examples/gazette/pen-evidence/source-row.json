@@ -1,0 +1,36 @@
+[
+  {
+    "context": {
+      "path": "SourceRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "following": "unfollowed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "Ygjhx",
+      "node": "dVO6Q",
+      "fingerprint": "71db10a0e18f8b53d525430dc400d5e912df0b40"
+    }
+  },
+  {
+    "context": {
+      "path": "SourceRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "following": "followed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "Ygjhx",
+      "node": "g4qhEs",
+      "fingerprint": "a9dce762df942dcfb25b0871e5cf07c356d888f5"
+    }
+  }
+]

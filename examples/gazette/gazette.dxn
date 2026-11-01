@@ -72,3 +72,16 @@ type ArticleRow {
   state reading: Reading, bookmark: Bookmark, thumbnail: Thumbnail
   state interaction: Touch
 }
+
+type SourceRow {
+  enum Following = unfollowed | followed
+
+  state following: Following
+
+  has toggle: Toggle {
+    setting = when following {
+      followed -> on
+      unfollowed -> off
+    }
+  }
+}

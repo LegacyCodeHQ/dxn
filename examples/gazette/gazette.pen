@@ -3140,6 +3140,126 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "z3uc6X",
+      "x": 2091,
+      "y": 0,
+      "name": "SourceRow",
+      "reusable": true,
+      "width": 390,
+      "fill": "$surface",
+      "stroke": "#1C1B1A1F",
+      "strokeWidth": {
+        "bottom": 1
+      },
+      "gap": 12,
+      "padding": [
+        12,
+        16
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "text",
+          "id": "X9f5RN",
+          "name": "Name",
+          "fill": "$text-primary",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "The Verge",
+          "fontFamily": "$font-ui",
+          "fontSize": 17,
+          "fontWeight": "normal"
+        },
+        {
+          "id": "eIuZR",
+          "type": "ref",
+          "ref": "DwjDq",
+          "name": "Follow"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Ygjhx",
+      "x": 0,
+      "y": 2990,
+      "name": "Source row states",
+      "clip": true,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "MFeeM",
+          "name": "unfollowed",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "sI6Zd",
+              "name": "Unfollowed label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Unfollowed",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "dVO6Q",
+              "type": "ref",
+              "ref": "z3uc6X",
+              "name": "following / unfollowed",
+              "descendants": {
+                "eIuZR": {
+                  "fill": "$toggle-off",
+                  "justifyContent": "start"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "l4HsuG",
+          "name": "followed",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "r9bvp",
+              "name": "Followed label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Followed",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "g4qhEs",
+              "type": "ref",
+              "ref": "z3uc6X",
+              "name": "following / followed",
+              "descendants": {
+                "eIuZR": {
+                  "fill": "$accent",
+                  "justifyContent": "end"
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {

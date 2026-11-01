@@ -74,7 +74,7 @@ Then the screens, from the components.
 - [x] Back button
 - [x] Navigation bar
 - [x] Article row
-- [ ] Source row
+- [x] Source row
 - [ ] Feed
 - [ ] Article
 - [ ] Saved
