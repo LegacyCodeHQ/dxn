@@ -508,10 +508,19 @@ export function parse(source: string): ParseResult {
           // Focus moves by an action of the child that takes it, not by a
           // word of the language's own.
           if (named.name === "focus" && peek().kind === "word") {
+            // The child's whole path, "<child>.<child>…", as written.
+            let target = peek().text;
+            for (
+              let at = position + 1;
+              tokens[at]?.kind === "." && tokens[at + 1]?.kind === "word";
+              at += 2
+            ) {
+              target += `.${tokens[at + 1]?.text}`;
+            }
             result.diagnostics.push({
               severity: "error",
               code: "syntax-error",
-              message: `"focus ${peek().text}" is not a change: move focus with an action of the child, such as ${peek().text}.take-focus`,
+              message: `"focus ${target}" is not a change: move focus with an action of the child, such as ${target}.take-focus`,
               line: named.line,
               column: named.column,
             });

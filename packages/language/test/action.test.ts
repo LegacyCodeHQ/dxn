@@ -133,6 +133,16 @@ describe("actions and on", () => {
     ).toEqual([
       '26:25: syntax-error: "focus toggle" is not a change: move focus with an action of the child, such as toggle.take-focus',
     ]);
+    assert(
+      problems(
+        model.replace(
+          "  on key Escape: close, toggle.take-focus",
+          "  on key Escape: close, focus panel.blog",
+        ),
+      ),
+    ).toEqual([
+      '26:25: syntax-error: "focus panel.blog" is not a change: move focus with an action of the child, such as panel.blog.take-focus',
+    ]);
   });
 
   it("reports nothing more about a path through a child whose type is not one", () => {
