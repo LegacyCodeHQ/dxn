@@ -78,6 +78,7 @@ export function serve(connection: Connection): void {
         hoverProvider: true,
         renameProvider: { prepareProvider: true },
         documentSymbolProvider: true,
+        codeLensProvider: { resolveProvider: false },
         semanticTokensProvider: {
           legend: { tokenTypes, tokenModifiers: ["declaration"] },
           full: true,
@@ -293,6 +294,29 @@ export function serve(connection: Connection): void {
       children: symbol.children.map(editor),
     });
     return symbols(document.getText(), parsed(document)).map(editor);
+  });
+  // What can be run from where it is declared: a type's states, by its full
+  // name, and an expectation, by its title. An editor that has the dxn.run
+  // command runs dxn with these arguments, and the file.
+  connection.onCodeLens(({ textDocument }) => {
+    const document = documents.get(textDocument.uri);
+    if (document === undefined) return null;
+    const lens = (symbol: Declared, title: string, args: string[]) => ({
+      range: rangeOf(symbol.at),
+      command: { title, command: "dxn.run", arguments: [textDocument.uri, args] },
+    });
+    const lenses = (list: Declared[], around: string[]): ReturnType<typeof lens>[] =>
+      list.flatMap((symbol) => {
+        if (symbol.kind === "expectation")
+          return [lens(symbol, "Run", ["check", "--expect", symbol.name])];
+        if (symbol.kind !== "type") return [];
+        const name = [...around, symbol.name];
+        return [
+          lens(symbol, "Run states", ["states", name.join(".")]),
+          ...lenses(symbol.children, name),
+        ];
+      });
+    return lenses(symbols(document.getText(), parsed(document)), []);
   });
   // What each name is, so an editor colours it by that, not by how it looks.
   connection.languages.semanticTokens.on(({ textDocument }) => {

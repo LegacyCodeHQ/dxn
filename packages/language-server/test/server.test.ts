@@ -5,6 +5,7 @@ import { PassThrough } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  CodeLensRequest,
   CompletionItemKind,
   CompletionRequest,
   createConnection,
@@ -675,6 +676,41 @@ describe("the language server", () => {
       "focus property",
       "blurred enumMember",
       "focused enumMember",
+    ]);
+  });
+
+  it("offers to run each type's states and each expectation, as code lenses", async () => {
+    const editor = connect();
+    editors.push(editor);
+    const initialized = await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    expect(initialized.capabilities.codeLensProvider).toEqual({ resolveProvider: false });
+    const uri = "file:///spec/menu.dxn";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: {
+        uri,
+        languageId: "dxn",
+        version: 1,
+        text: 'enum State = closed | open\ntype Menu {\n  state menu: State\n  type Toggle {\n    state expanded: State\n  }\n  has toggle: Toggle\n}\nexpect "The menu can be open" {\n  in Menu\n  some menu = open\n}\n',
+      },
+    });
+    await opened;
+    const lenses = await editor.sendRequest(CodeLensRequest.type, { textDocument: { uri } });
+    expect(
+      lenses?.map(({ range, command }) => [
+        range.start.line,
+        command?.title,
+        command?.command,
+        command?.arguments,
+      ]),
+    ).toEqual([
+      [1, "Run states", "dxn.run", [uri, ["states", "Menu"]]],
+      [3, "Run states", "dxn.run", [uri, ["states", "Menu.Toggle"]]],
+      [8, "Run", "dxn.run", [uri, ["check", "--expect", "The menu can be open"]]],
     ]);
   });
 });
