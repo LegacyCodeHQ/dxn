@@ -35,7 +35,10 @@ a time, without the tree Zed's grammar has.
 After each element of the file's trees, an inlay hint shows how many of its
 combinations have evidence, a record at a time, as `dxn status` counts them:
 `PenEvidence 4 of 6, 1 stale` after `type Button {`. Hovering over the
-element's name lists the combinations still missing, stale or gone. The count
+element's name lists the combinations still missing, stale or gone. A record
+whose stored records have problems, such as a value renamed by hand, is not
+counted: its hint says how many problems stop it, and the one most share, and
+the hover lists each, as `dxn validate` prints it. The count
 follows the stored records and the designs they point at as they change on
 disk.
 

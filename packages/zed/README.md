@@ -59,7 +59,10 @@ changing the setting, run `editor: restart language server`.
 After each element of the file's trees, the language server shows how many of
 its combinations have evidence, a record at a time, as `dxn status` counts
 them: `PenEvidence 4 of 6, 1 stale` after `type Button {`. Hovering over the
-element's name lists the combinations still missing, stale or gone. It shows
+element's name lists the combinations still missing, stale or gone. A record
+whose stored records have problems, such as a value renamed by hand, is not
+counted: its hint says how many problems stop it, and the one most share, and
+the hover lists each, as `dxn validate` prints it. It shows
 as an inlay hint, which Zed only shows when its settings turn them on:
 
 ```json

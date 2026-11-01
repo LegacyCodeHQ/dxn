@@ -914,4 +914,61 @@ describe("the language server", () => {
       rmSync(folder, { recursive: true, force: true });
     }
   });
+  it("says, where it cannot count evidence, which problems in the stored records stop it", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-uncounted-"));
+    try {
+      const text =
+        "enum Style = primary | secondary\ntype Button {\n  state style: Style\n}\nrecord PenEvidence {\n  source: PenNode\n}\nactor DesignAgent records PenEvidence\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      mkdirSync(join(folder, "pen-evidence"));
+      // Evidence recorded before style's values were edited by hand.
+      const entry = (style: string) =>
+        `  {\n    "context": { "type": "Button", "dimensions": {}, "states": { "style": "${style}" } },\n    "actor": "DesignAgent",\n    "source": { "file": "design.txt", "frame": "f", "fingerprint": "a1" }\n  }`;
+      writeFileSync(
+        join(folder, "pen-evidence", "button.json"),
+        `[\n${entry("filled")},\n${entry("plain")},\n${entry("filled")}\n]\n`,
+      );
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const editor = connect();
+      editors.push(editor);
+      await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+      });
+      const opened = published(editor);
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await opened;
+      const hints = await editor.sendRequest(InlayHintRequest.type, {
+        textDocument: { uri },
+        range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
+      });
+      const found = await editor.sendRequest(HoverRequest.type, {
+        textDocument: { uri },
+        position: { line: 1, character: 6 },
+      });
+      expect([
+        hints?.map(({ position, label }) => [position, label]),
+        (found?.contents as { value: string } | undefined)?.value,
+      ]).toEqual([
+        [
+          [
+            { line: 1, character: 13 },
+            'PenEvidence: 3 problems, "filled" is not a value of style (primary, secondary)',
+          ],
+        ],
+        [
+          "PenEvidence is not counted until its stored records have no problems:",
+          "",
+          '- pen-evidence/button.json:3:75: $[0].context.states.style: "filled" is not a value of style (primary, secondary)',
+          '- pen-evidence/button.json:8:75: $[1].context.states.style: "plain" is not a value of style (primary, secondary)',
+          '- pen-evidence/button.json:13:75: $[2].context.states.style: "filled" is not a value of style (primary, secondary)',
+        ].join("\n"),
+      ]);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
 });

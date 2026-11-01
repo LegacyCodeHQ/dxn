@@ -35,7 +35,7 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { diagnose } from "./diagnostics.js";
-import { counted, evidence, left, progressBeside } from "./evidence.js";
+import { evidence, hintsBeside } from "./evidence.js";
 import { rangeAt } from "./range.js";
 
 // Serves dxn to an editor over a connection: the problems in each open file,
@@ -145,17 +145,11 @@ export function serve(connection: Connection): void {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
     const lines = document.getText().split("\n");
-    return (progressBeside(document.uri, parsed(document)) ?? [])
-      .filter(
-        ({ line, records }) =>
-          records.length > 0 && line - 1 >= range.start.line && line - 1 <= range.end.line,
-      )
-      .map((place) => ({
-        position: {
-          line: place.line - 1,
-          character: (lines[place.line - 1] ?? "").trimEnd().length,
-        },
-        label: counted(place),
+    return (hintsBeside(document.uri, parsed(document)) ?? [])
+      .filter(({ line }) => line - 1 >= range.start.line && line - 1 <= range.end.line)
+      .map(({ line, label }) => ({
+        position: { line: line - 1, character: (lines[line - 1] ?? "").trimEnd().length },
+        label,
         paddingLeft: true,
       }));
   });
@@ -207,9 +201,8 @@ export function serve(connection: Connection): void {
     const text = document.getText().split("\n")[position.line] ?? "";
     const named = (column: number) =>
       text.slice(column - 1).match(/^[A-Za-z0-9-]+/)?.[0].length ?? 0;
-    const place = (progressBeside(document.uri, parsed(document)) ?? []).find(
-      ({ line, column, records }) =>
-        records.length > 0 &&
+    const place = (hintsBeside(document.uri, parsed(document)) ?? []).find(
+      ({ line, column }) =>
         line - 1 === position.line &&
         position.character >= column - 1 &&
         position.character <= column - 1 + named(column),
@@ -217,7 +210,7 @@ export function serve(connection: Connection): void {
     if (place !== undefined) {
       const start = { line: place.line - 1, character: place.column - 1 };
       return {
-        contents: { kind: "markdown", value: left(place) },
+        contents: { kind: "markdown", value: place.details },
         range: { start, end: { ...start, character: start.character + named(place.column) } },
       };
     }

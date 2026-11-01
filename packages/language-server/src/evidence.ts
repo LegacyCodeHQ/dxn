@@ -18,19 +18,35 @@ import {
 import { type Diagnostic, DiagnosticSeverity, type Range } from "vscode-languageserver/node";
 import { rangeAt } from "./range.js";
 
-// The problems in the stored records beside a file, as an editor shows them:
-// for each JSON file in each record's folder, by its URI, each problem over
-// the value it is at, and, once they all check, each record that repeats
-// another across them, as dxn validate finds them. Nothing for a file with
-// problems, which records cannot be checked against; none for a file that is
-// not on disk.
-export function evidence(uri: string, file: ParseResult): Map<string, Diagnostic[]> | undefined {
-  if (!uri.startsWith("file:")) return new Map();
+// A stored file beside a .dxn file: its record, the path dxn validate shows it
+// by, its URI and what it holds.
+interface Read extends StoredSource {
+  uri: string;
+}
+
+// A problem in a stored file, as dxn validate finds it.
+interface Problem {
+  at: Read;
+  line: number;
+  column: number;
+  code: string;
+  path: string;
+  message: string;
+}
+
+// The stored files beside a file, each record's, and the problems in them:
+// each against its declaration, and, once they all check, each record that
+// repeats another across them. Nothing for a file with problems, which
+// records cannot be checked against; none for a file that is not on disk.
+function checked(
+  uri: string,
+  file: ParseResult,
+): { read: Read[]; problems: Problem[] } | undefined {
+  if (!uri.startsWith("file:")) return { read: [], problems: [] };
   if (file.diagnostics.some(({ severity }) => severity === "error")) return undefined;
   const directory = dirname(fileURLToPath(uri));
-  const result = new Map<string, Diagnostic[]>();
-  // Each file read, by the path dxn validate shows it by, to find repeats in.
-  const read: (StoredSource & { uri: string })[] = [];
+  const read: Read[] = [];
+  const problems: Problem[] = [];
   for (const record of new Set(file.records.map(({ name }) => name))) {
     for (const name of storedFiles(directory, record) ?? []) {
       const path = join(directory, folderOf(record), name);
@@ -40,32 +56,43 @@ export function evidence(uri: string, file: ParseResult): Map<string, Diagnostic
       } catch {
         continue;
       }
-      const uri = pathToFileURL(path).href;
-      read.push({ record, shown: join(folderOf(record), name), source, uri });
-      result.set(
-        uri,
-        validate(file, record, source).map(({ line, column, code, path: at, message }) => ({
-          range: valueAt(source, line, column),
-          severity: DiagnosticSeverity.Error,
-          code,
-          source: "dxn",
-          message: `${at}: ${message}`,
-        })),
-      );
+      const at = {
+        record,
+        shown: join(folderOf(record), name),
+        source,
+        uri: pathToFileURL(path).href,
+      };
+      read.push(at);
+      for (const found of validate(file, record, source)) problems.push({ at, ...found });
     }
   }
-  if ([...result.values()].every((found) => found.length === 0)) {
+  if (problems.length === 0) {
     for (const { shown, line, column, path, message } of duplicates(read)) {
       const at = read.find((each) => each.shown === shown);
-      if (at === undefined) continue;
-      result.get(at.uri)?.push({
-        range: valueAt(at.source, line, column),
-        severity: DiagnosticSeverity.Error,
-        code: "duplicate-record",
-        source: "dxn",
-        message: `${path}: ${message}`,
-      });
+      if (at !== undefined) {
+        problems.push({ at, line, column, code: "duplicate-record", path, message });
+      }
     }
+  }
+  return { read, problems };
+}
+
+// The problems in the stored records beside a file, as an editor shows them:
+// for each JSON file in each record's folder, by its URI, each problem over
+// the value it is at. Nothing for a file with problems; none for a file that
+// is not on disk.
+export function evidence(uri: string, file: ParseResult): Map<string, Diagnostic[]> | undefined {
+  const found = checked(uri, file);
+  if (found === undefined) return undefined;
+  const result = new Map<string, Diagnostic[]>(found.read.map(({ uri: each }) => [each, []]));
+  for (const { at, line, column, code, path, message } of found.problems) {
+    result.get(at.uri)?.push({
+      range: valueAt(at.source, line, column),
+      severity: DiagnosticSeverity.Error,
+      code,
+      source: "dxn",
+      message: `${path}: ${message}`,
+    });
   }
   return result;
 }
@@ -86,63 +113,93 @@ function valueAt(source: string, line: number, column: number): Range {
   return rangeAt(source, line, column);
 }
 
-// How much of each element of a file's trees has evidence, where it is
-// written, as dxn status counts it: each stored PenNode checked against what
-// it points at now. Nothing for a file with problems, whose stored records
-// have problems, or whose trees cannot be placed; none for a file that is not
+// What to show of evidence where each element of a file's trees is written,
+// a record at a time: how much of it has evidence, as dxn status counts it,
+// each stored PenNode checked against what it points at now; and, for a
+// record whose stored records have problems, which stop it being counted. A
+// label for the place, and the details to show over it. Nothing for a file
+// with problems, or whose trees cannot be placed; none for a file that is not
 // on disk.
-export function progressBeside(uri: string, file: ParseResult): Progress[] | undefined {
+export interface Hint {
+  line: number;
+  column: number;
+  label: string;
+  details: string;
+}
+
+export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined {
   if (!uri.startsWith("file:")) return [];
-  const problems = evidence(uri, file);
-  if (problems === undefined || [...problems.values()].some((found) => found.length > 0)) {
-    return undefined;
-  }
+  const found = checked(uri, file);
+  if (found === undefined) return undefined;
   try {
     for (const path of treePaths(file)) placement(file, path);
   } catch {
     return undefined;
   }
-  const path = fileURLToPath(uri);
-  const directory = dirname(path);
-  const stored = [...new Set(file.records.map(({ name }) => name))].flatMap((record) =>
-    (storedFiles(directory, record) ?? []).flatMap((name) => {
-      try {
-        return [{ record, source: readFileSync(join(directory, folderOf(record), name), "utf8") }];
-      } catch {
-        return [];
-      }
-    }),
+  // The records that cannot be counted, each with its problems.
+  const stopped = new Map<string, Problem[]>();
+  for (const problem of found.problems) {
+    stopped.set(problem.at.record, [...(stopped.get(problem.at.record) ?? []), problem]);
+  }
+  const counted = progress(
+    file,
+    found.read.filter(({ record }) => !stopped.has(record)),
+    freshness(repositoryOf(fileURLToPath(uri))),
   );
-  return progress(file, stored, freshness(repositoryOf(path)));
+  return counted.flatMap((place) => {
+    const parts = place.records.map((each) => {
+      const problems = stopped.get(each.record);
+      return problems === undefined ? countOf(each) : stoppedBy(each.record, problems);
+    });
+    if (parts.length === 0) return [];
+    return [
+      {
+        line: place.line,
+        column: place.column,
+        label: parts.map(({ label }) => label).join(" · "),
+        details: parts.map(({ details }) => details).join("\n\n"),
+      },
+    ];
+  });
 }
 
-// What a place's evidence comes to, a record at a time: "PenEvidence 4 of 6,
-// 1 stale".
-export const counted = (place: Progress): string =>
-  place.records
-    .map(({ record, combinations, present, stale, gone }) =>
-      [
-        `${record} ${present} of ${combinations}`,
-        ...(stale > 0 ? [`${stale} stale`] : []),
-        ...(gone > 0 ? [`${gone} gone`] : []),
-      ].join(", "),
-    )
-    .join(" · ");
+// A record's evidence at a place: its count, "PenEvidence 4 of 6, 1 stale",
+// then the combinations missing, stale and gone, each listed.
+function countOf(each: Progress["records"][number]): { label: string; details: string } {
+  const { record, combinations, present, stale, gone, listed } = each;
+  const label = [
+    `${record} ${present} of ${combinations}`,
+    ...(stale > 0 ? [`${stale} stale`] : []),
+    ...(gone > 0 ? [`${gone} gone`] : []),
+  ].join(", ");
+  const lists = (
+    [
+      ["Missing", listed.missing],
+      ["Stale", listed.stale],
+      ["Gone", listed.gone],
+    ] as const
+  )
+    .filter(([, those]) => those.length > 0)
+    .map(([heading, those]) => `${heading}:\n${those.map((one) => `- ${one}`).join("\n")}`);
+  return { label, details: [label, ...lists].join("\n\n") };
+}
 
-// What is left at a place, a record at a time: its count, then the
-// combinations missing, stale and gone, each listed.
-export const left = (place: Progress): string =>
-  place.records
-    .map((each) => {
-      const lists = (
-        [
-          ["Missing", each.listed.missing],
-          ["Stale", each.listed.stale],
-          ["Gone", each.listed.gone],
-        ] as const
-      )
-        .filter(([, listed]) => listed.length > 0)
-        .map(([heading, listed]) => `${heading}:\n${listed.map((one) => `- ${one}`).join("\n")}`);
-      return [counted({ ...place, records: [each] }), ...lists].join("\n\n");
-    })
-    .join("\n\n");
+// A record that cannot be counted: how many problems stop it, and the one
+// most of them share; then each, as dxn validate prints it.
+function stoppedBy(record: string, problems: Problem[]): { label: string; details: string } {
+  const times = new Map<string, number>();
+  for (const { message } of problems) times.set(message, (times.get(message) ?? 0) + 1);
+  const [common] = [...times].sort((a, b) => b[1] - a[1])[0] ?? [""];
+  const count = problems.length === 1 ? "1 problem" : `${problems.length} problems`;
+  return {
+    label: `${record}: ${count}, ${common}`,
+    details: [
+      `${record} is not counted until its stored records have no problems:`,
+      "",
+      ...problems.map(
+        ({ at, line, column, path, message }) =>
+          `- ${at.shown}:${line}:${column}: ${path}: ${message}`,
+      ),
+    ].join("\n"),
+  };
+}
