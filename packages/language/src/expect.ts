@@ -303,7 +303,7 @@ function checkOne(
 }
 
 // The type of a child, by its path from a type.
-function childTypeAt(file: ParseResult, type: Type, path: string[]): Type | undefined {
+export function childTypeAt(file: ParseResult, type: Type, path: string[]): Type | undefined {
   let at: Type | undefined = type;
   for (const part of path) {
     const child: Child | undefined = at?.children.find(({ name }) => name === part);

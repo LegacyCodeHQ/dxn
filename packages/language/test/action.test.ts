@@ -253,6 +253,19 @@ type Menu {
     ]);
   });
 
+  it("is renamed in an expectation's key on a child's state", () => {
+    const source = `${model}
+expect "Escape returns focus to the button" {
+  in Page.toolbar.menu
+  when menu = open
+  on escape
+  then menu = closed, toggle.focus = focused
+}
+`;
+    const renamed = renameInSource(parse(source), source, "Focus", "focused", "ringed");
+    assert([renamed.includes("toggle.focus = ringed"), problems(renamed)]).toEqual([true, []]);
+  });
+
   it("can be the subject of an expectation: its state, and its children's, after the event", () => {
     const rule = (then: string) => `${model}
 expect "Escape closes the menu and returns focus to its button" {

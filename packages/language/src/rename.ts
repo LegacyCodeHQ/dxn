@@ -1,6 +1,7 @@
 import type { Located, ParseResult } from "./ast.js";
 import { comparisons } from "./condition.js";
 import { placement } from "./evaluate.js";
+import { childTypeAt } from "./expect.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { Names } from "./names.js";
 import { treePaths } from "./status.js";
@@ -117,9 +118,18 @@ export function renameInSource(
       elements.flatMap((element) => {
         try {
           const place = placement(file, element);
+          // A key with a path names a child's state, after an event.
+          const parts = key.split(".");
+          const child =
+            parts.length > 1
+              ? childTypeAt(file, place.target, parts.slice(0, -1))?.states.find(
+                  ({ name }) => name === parts.at(-1),
+                )
+              : undefined;
           const state =
             place.parents.find((parent) => parent.key === key)?.state ??
-            place.target.states.find(({ name }) => name === key);
+            place.target.states.find(({ name }) => name === key) ??
+            child;
           return state === undefined ? [] : [state.enum.name];
         } catch {
           return [];
