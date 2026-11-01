@@ -25,6 +25,7 @@ import type {
 import { check } from "./check.js";
 import { conditionText } from "./condition.js";
 import { expectations } from "./expect.js";
+import { conditionsInMatrix } from "./matrix.js";
 import { describe, located, scan, type Token, type TokenKind } from "./scan.js";
 import { scope } from "./scope.js";
 
@@ -880,9 +881,12 @@ export function parse(source: string): ParseResult {
   }
   scope(result);
   check(result);
-  // Expectations are checked against the tree in place, which needs a file
-  // without other problems.
-  if (!result.diagnostics.some(({ severity }) => severity === "error")) expectations(result);
+  // Conditions are checked against the combinations there really are, and
+  // expectations against the tree in place: both need a file without other
+  // problems.
+  const clean = () => !result.diagnostics.some(({ severity }) => severity === "error");
+  if (clean()) conditionsInMatrix(result);
+  if (clean()) expectations(result);
   result.diagnostics.sort((a, b) => a.line - b.line || a.column - b.column);
   return result;
 }

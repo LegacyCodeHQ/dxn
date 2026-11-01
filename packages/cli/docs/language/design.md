@@ -45,9 +45,6 @@ anything the core could not say.
   `escape`, for every type to use.
 - **Provided state, checked by `dxn check`.** A receiving type placed where
   nothing provides its state is found only when its path is evaluated.
-- **Conditions checked against the matrix.** A condition is judged over all
-  values of what it compares, not over the combinations the type really has,
-  so a value that can never exist through other rules is not reported.
 - **Evidence for a type across pages,** and evidence that contradicts what
   `alike` says.
 - **A runtime** that drives the running system into each combination and

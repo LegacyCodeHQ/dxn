@@ -174,6 +174,28 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     }
     return at;
   };
+  // What is known of where a trigger fires: its condition, and the values its
+  // dimension event changes to.
+  const firing = (trigger: Trigger): Condition[] => [
+    ...(trigger.when === undefined ? [] : [trigger.when]),
+    ...(trigger.event.kind === "dimension"
+      ? [
+          {
+            kind: "compare" as const,
+            subject: trigger.event.dimension,
+            values: trigger.event.values,
+          },
+        ]
+      : []),
+  ];
+  // The values a subject of a type's condition can have: a state's enum's,
+  // or a dimension's.
+  const valuesIn = (type: Type) => (subject: string) => {
+    const name = /^[a-z]/.test(subject)
+      ? type.states.find((state) => state.name === subject)?.enum.name
+      : subject;
+    return names.values(name ?? "") ?? [];
+  };
   // One change a trigger makes, checked: a named action, the type's own or a
   // child's by its path, or one of the type's own states changed in place to
   // one of its values. Where it is, and what it changes from and to.
@@ -376,10 +398,24 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         }
       });
       if (trigger.when !== undefined) {
+        const before = file.diagnostics.length;
         checkCondition(type, trigger.when, needed, declare, true, trigger, {
           never: "the trigger never fires",
           always: "the trigger always fires",
         });
+        // A dimension event fires only where the dimension has one of its
+        // values: a condition that never holds there never lets it fire.
+        if (
+          file.diagnostics.length === before &&
+          trigger.event.kind === "dimension" &&
+          coverage({ kind: "and", terms: firing(trigger) }, valuesIn(type)) === "never"
+        ) {
+          report(
+            "impossible-condition",
+            `${conditionText(trigger.when)} is never true on ${eventText(trigger.event)}, so the trigger never fires`,
+            trigger,
+          );
+        }
       }
       return changes.map(({ change, path }) => ({ trigger, change, path }));
     });
@@ -397,16 +433,21 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     };
     // Two triggers' conditions can both hold where they have values in
     // common; one without a condition holds everywhere.
-    const together = (a: Trigger, b: Trigger) => {
-      if (a.when === undefined || b.when === undefined) return true;
-      const both: Condition = { kind: "and", terms: [a.when, b.when] };
-      const valuesOf = (subject: string) => {
-        const name = /^[a-z]/.test(subject)
-          ? type.states.find((state) => state.name === subject)?.enum.name
-          : subject;
-        return names.values(name ?? "") ?? [];
-      };
-      return coverage(both, valuesOf) !== "never";
+    // Two triggers' changes can both apply where all that is known of when
+    // each fires can hold at once: its condition, the value its dimension
+    // event changes to, and, for its type's own state, a value both change
+    // from.
+    const together = (a: Trigger, b: Trigger, state?: { name: string; from: string[] }) => {
+      const terms: Condition[] = [...firing(a), ...firing(b)];
+      if (state !== undefined) {
+        terms.push({
+          kind: "compare",
+          subject: { name: state.name, line: 0, column: 0 },
+          values: state.from.map((name) => ({ name, line: 0, column: 0 })),
+        });
+      }
+      if (terms.length === 0) return true;
+      return coverage({ kind: "and", terms }, valuesIn(type)) !== "never";
     };
     const flat = resolved.flat();
     flat.forEach(({ trigger, change, path }, index) => {
@@ -421,16 +462,19 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           !overlap(earlier.trigger.event, trigger.event) ||
           other.state !== change.state ||
           common.length === 0 ||
-          !together(earlier.trigger, trigger)
+          !together(
+            earlier.trigger,
+            trigger,
+            path === "" ? { name: change.state, from: common } : undefined,
+          )
         ) {
           continue;
         }
         // Two named actions are the same only by name; a change in place is
-        // the same as any that changes the same values to the same value.
+        // the same as any that leads where it leads from the values both
+        // change from.
         const same =
-          other.named && change.named
-            ? other.label === change.label
-            : other.to === change.to && common.length === change.from.length;
+          other.named && change.named ? other.label === change.label : other.to === change.to;
         if (same) {
           report(
             "duplicate-trigger",

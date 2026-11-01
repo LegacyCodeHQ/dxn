@@ -373,7 +373,10 @@ A condition is checked as a whole too. In one `and`, each dimension is
 compared once: `Pointer = mouse and Pointer = touch` is a
 `repeated-comparison`, since its values can be given once, with `in`. One
 that is never true is an error, since the value would exist nowhere; one that
-is always true is a warning, since the rule restricts nothing:
+is always true is a warning, since the rule restricts nothing. Never and
+always are judged against the combinations the type really has: with its
+other rules, its fixed and derived states, and its profiles. A condition on
+`enabled = enabled` is never true where another rule leaves only `disabled`:
 
 ```
 link.dxn:7:3: impossible-condition: (Pointer = mouse and Breakpoint = lg) and (Pointer = touch and Breakpoint = lg) is never true, so hovered exists nowhere
