@@ -11,9 +11,11 @@ import {
   createMessageConnection,
   DefinitionRequest,
   DidChangeTextDocumentNotification,
+  DidChangeWatchedFilesNotification,
   DidCloseTextDocumentNotification,
   DidOpenTextDocumentNotification,
   DocumentSymbolRequest,
+  FileChangeType,
   HoverRequest,
   InitializeRequest,
   type MessageConnection,
@@ -21,6 +23,7 @@ import {
   PublishDiagnosticsNotification,
   type PublishDiagnosticsParams,
   ReferencesRequest,
+  RegistrationRequest,
   RenameRequest,
   ShowMessageNotification,
   StreamMessageReader,
@@ -532,5 +535,94 @@ describe("the language server", () => {
     });
     await reopened;
     expect(await hovered()).toBe("enum Focus = off | on");
+  });
+
+  it("shows the problems in the stored records beside a file, and checks them again as they change", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-evidence-"));
+    try {
+      const text =
+        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence with context {\n  actor: Actor\n}\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      mkdirSync(join(folder, "evidence"));
+      const record = (actor: string) =>
+        `[\n  {\n    "context": { "type": "Card", "dimensions": {}, "states": { "owner": "designer" } },\n    "actor": "${actor}"\n  }\n]\n`;
+      const stored = join(folder, "evidence", "card.json");
+      writeFileSync(stored, record("maker"));
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const data = pathToFileURL(stored).href;
+
+      const editor = connect();
+      editors.push(editor);
+      // The server asks to hear of changes to JSON files, where records are.
+      const watched = new Promise<unknown>((resolve) => {
+        editor.onRequest(RegistrationRequest.type, (params) => {
+          resolve(
+            params.registrations.map(({ method, registerOptions }) => [method, registerOptions]),
+          );
+        });
+      });
+      await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: { workspace: { didChangeWatchedFiles: { dynamicRegistration: true } } },
+      });
+      editor.sendNotification("initialized", {});
+      expect(await watched).toEqual([
+        ["workspace/didChangeWatchedFiles", { watchers: [{ globPattern: "**/*.json" }] }],
+      ]);
+
+      // Every notice the server publishes, by the file it is for.
+      const notices: PublishDiagnosticsParams[] = [];
+      editor.onNotification(PublishDiagnosticsNotification.type, (params) => {
+        notices.push(params);
+      });
+      const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
+      const about = (target: string) =>
+        notices
+          .filter((notice) => notice.uri === target)
+          .at(-1)
+          ?.diagnostics.map(({ range, code, message, source }) => [
+            range.start,
+            code,
+            message,
+            source,
+          ]);
+
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await settle();
+      expect(about(data)).toEqual([
+        [
+          { line: 3, character: 13 },
+          "unknown-value",
+          '$[0].actor: "maker" is not a value of Actor (designer, reviewer)',
+          "dxn",
+        ],
+      ]);
+
+      // Fixed on disk, as dxn attach or an edit outside the editor would.
+      writeFileSync(stored, record("reviewer"));
+      await editor.sendNotification(DidChangeWatchedFilesNotification.type, {
+        changes: [{ uri: data, type: FileChangeType.Changed }],
+      });
+      await settle();
+      expect(about(data)).toEqual([]);
+
+      // Broken again, then the file closed: its records' problems go with it.
+      writeFileSync(stored, record("maker"));
+      await editor.sendNotification(DidChangeWatchedFilesNotification.type, {
+        changes: [{ uri: data, type: FileChangeType.Changed }],
+      });
+      await settle();
+      expect(about(data)?.length).toBe(1);
+      await editor.sendNotification(DidCloseTextDocumentNotification.type, {
+        textDocument: { uri },
+      });
+      await settle();
+      expect(about(data)).toEqual([]);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
   });
 });

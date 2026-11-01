@@ -21,6 +21,7 @@ import {
 import {
   CompletionItemKind,
   type Connection,
+  DidChangeWatchedFilesNotification,
   type DocumentSymbol,
   MessageType,
   type Range,
@@ -31,6 +32,7 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { diagnose } from "./diagnostics.js";
+import { evidence } from "./evidence.js";
 import { rangeAt } from "./range.js";
 
 // Serves dxn to an editor over a connection: the problems in each open file,
@@ -57,7 +59,11 @@ export function serve(connection: Connection): void {
     parses.set(document.uri, { version: document.version, file });
     return file;
   };
+  // Whether the editor can tell of changes to files on disk, as dxn attach
+  // and edits outside the editor make to stored records.
+  let watches = false;
   connection.onInitialize(({ capabilities }) => {
+    watches = capabilities.workspace?.didChangeWatchedFiles?.dynamicRegistration === true;
     links = capabilities.textDocument?.definition?.linkSupport === true;
     const edits = capabilities.workspace?.workspaceEdit;
     moves =
@@ -77,14 +83,44 @@ export function serve(connection: Connection): void {
   });
   // Problems are of the version they are published for, so an editor can tell
   // ones that are late.
+  connection.onInitialized(() => {
+    if (!watches) return;
+    void connection.client.register(DidChangeWatchedFilesNotification.type, {
+      watchers: [{ globPattern: "**/*.json" }],
+    });
+  });
+  // The stored records each open file's problems were published for, so those
+  // no longer there, or the file's when it closes, are cleared.
+  const checked = new Map<string, Set<string>>();
+  const checkEvidence = (document: TextDocument) => {
+    const found = evidence(document.uri, parsed(document));
+    // A file with problems keeps what was found last, rather than flicker
+    // while it is typed.
+    if (found === undefined) return;
+    const before = checked.get(document.uri) ?? new Set<string>();
+    for (const uri of before) {
+      if (!found.has(uri)) connection.sendDiagnostics({ uri, diagnostics: [] });
+    }
+    for (const [uri, diagnostics] of found) connection.sendDiagnostics({ uri, diagnostics });
+    checked.set(document.uri, new Set(found.keys()));
+  };
   documents.onDidChangeContent(({ document }) => {
     const { uri, version } = document;
     const diagnostics = diagnose(document.getText(), parsed(document));
     connection.sendDiagnostics({ uri, version, diagnostics });
+    checkEvidence(document);
   });
   documents.onDidClose(({ document }) => {
     parses.delete(document.uri);
     connection.sendDiagnostics({ uri: document.uri, diagnostics: [] });
+    for (const uri of checked.get(document.uri) ?? []) {
+      connection.sendDiagnostics({ uri, diagnostics: [] });
+    }
+    checked.delete(document.uri);
+  });
+  // A stored record changed on disk: the open files' records are checked again.
+  connection.onDidChangeWatchedFiles(() => {
+    for (const document of documents.all()) checkEvidence(document);
   });
   connection.onDefinition(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
