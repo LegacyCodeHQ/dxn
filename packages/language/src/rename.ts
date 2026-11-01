@@ -330,3 +330,50 @@ export function renameChildInData(
   }
   return { source: replace(source, edits), changed: edits.length };
 }
+
+// Renames a type in stored records' contexts: the type a context's path
+// starts with, or its type, when it is that type or one declared inside it.
+// Data without problems.
+export function renameTypeInData(
+  source: string,
+  type: Type,
+  to: string,
+): { source: string; changed: number } {
+  const edits: { start: number; end: number; text: string }[] = [];
+  const from = type.name;
+  const renamed = type.scope === undefined ? to : `${type.scope}.${to}`;
+  // A type's full name, renamed when it is that type or inside it.
+  const rename = (name: string) =>
+    name === from || name.startsWith(`${from}.`)
+      ? `${renamed}${name.slice(from.length)}`
+      : undefined;
+  const context = (node: JsonNode) => {
+    if (node.kind !== "object") return;
+    const member = (name: string) => node.members.find(({ key }) => key.value === name)?.value;
+    const path = member("path");
+    if (path?.kind === "string") {
+      const segments = path.value.split(".");
+      const first = segments.findIndex((segment) => /^[a-z]/.test(segment));
+      const root = segments.slice(0, first === -1 ? segments.length : first).join(".");
+      const now = rename(root);
+      if (now !== undefined) {
+        const text = JSON.stringify(`${now}${path.value.slice(root.length)}`);
+        edits.push({ start: path.span.start, end: path.span.end, text });
+      }
+    }
+    const typeName = member("type");
+    const now = typeName?.kind === "string" ? rename(typeName.value) : undefined;
+    if (typeName !== undefined && now !== undefined) {
+      edits.push({ start: typeName.span.start, end: typeName.span.end, text: JSON.stringify(now) });
+    }
+  };
+  const { root } = parseJson(source);
+  if (root?.kind === "array") {
+    for (const element of root.elements) {
+      if (element.kind !== "object") continue;
+      const found = element.members.find(({ key }) => key.value === "context");
+      if (found !== undefined) context(found.value);
+    }
+  }
+  return { source: replace(source, edits), changed: edits.length };
+}

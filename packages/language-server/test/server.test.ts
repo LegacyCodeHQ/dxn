@@ -326,13 +326,16 @@ describe("the language server", () => {
         },
       ]);
 
-      // A type, which stored records name, is refused with the reason.
+      // A record, whose stored records are in a folder named after it, is
+      // refused with the reason.
       await expect(
         editor.sendRequest(PrepareRenameRequest.type, {
           textDocument: { uri },
-          position: { line: 1, character: 6 },
+          position: { line: 5, character: 9 },
         }),
-      ).rejects.toThrow("Link is a type, and stored records name it");
+      ).rejects.toThrow(
+        "Evidence is a record, and its stored records are in a folder named after it",
+      );
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }

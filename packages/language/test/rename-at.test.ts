@@ -240,6 +240,56 @@ describe("renaming in the editor", () => {
     `);
   });
 
+  it("renames a type where it is used, written in full too, and in stored records' paths", () => {
+    const snapshot: unknown[] = [];
+    for (const [before, word, to] of [
+      ["type ", "Link", "Item"],
+      ["type ", "Menu", "Nav"],
+      ["type ", "Page", "Screen"],
+    ] as const) {
+      const result = renameAt(source, ...at(before, word), to, stored);
+      if ("refusal" in result) throw new Error(result.refusal);
+      const after = edited(result.edits);
+      const lines = source.split("\n");
+      snapshot.push(
+        after
+          .split("\n")
+          .filter((line, index) => line !== lines[index])
+          .map((line) => line.trim()),
+      );
+      // A type that is not at the root of a stored path leaves the data alone.
+      const records = result.data[0]?.source ?? data;
+      snapshot.push(records.match(/"path": "[^"]*"/g));
+      expect(validate(parse(after), "Evidence", records)).toEqual([]);
+    }
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "type Item needs Pointer {",
+          "has link: Item only when menu = open",
+        ],
+        [
+          ""path": "Page.menu.link"",
+        ],
+        [
+          "type Nav {",
+          "state shown: Nav.Openness = open",
+          "has menu: Nav",
+        ],
+        [
+          ""path": "Page.menu.link"",
+        ],
+        [
+          "type Screen {",
+          "in Screen.menu.link",
+        ],
+        [
+          ""path": "Screen.menu.link"",
+        ],
+      ]
+    `);
+  });
+
   it("refuses, for now, a state that is provided or received, which is matched by its name", () => {
     const shared = `enum Section = home | blog
 type Link receives current: Section {
@@ -275,7 +325,6 @@ type Page {
     snapshot.push(renamed("enum Hover = rest | ", "hovered", "a b"));
     snapshot.push(renamed("enum Hover = ", "rest", "hovered"));
     snapshot.push(renamed("enum ", "Focus", "Hover"));
-    snapshot.push(renamed("type ", "Link", "Item"));
     snapshot.push(renamed("profile ", "phone", "handset"));
     snapshot.push(renamed("dimension ", "Pointer", "Input"));
     snapshot.push(renamed("dimension Pointer = ", "mouse", "cursor"));
@@ -288,7 +337,6 @@ type Page {
         ""a b" is not a value name: a letter or digit, then letters, digits and hyphens",
         "the rename would leave a problem: "hovered" appears twice in Hover",
         "the rename would leave a problem: Hover is already declared at line 2",
-        "Link is a type, and stored records name it; renaming it here is not supported yet",
         "phone is a profile, and stored records name it; renaming it here is not supported yet",
         "Pointer is a dimension, and stored records name it; renaming it here is not supported yet",
         "mouse is a value of the dimension Pointer, and stored records name it; renaming it here is not supported yet",

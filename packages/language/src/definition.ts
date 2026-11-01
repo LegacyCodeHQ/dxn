@@ -91,8 +91,20 @@ export function links(source: string, file: ParseResult = parse(source)): Link[]
     if (written === "") continue;
     const whole = { line: at.line, column: at.column, length: written.length };
     if (reference.declared !== undefined) {
-      const to = declared.get(reference.declared);
-      if (to !== undefined) result.push({ from: whole, to });
+      // A name written with the types it is in, "<Type>.<Name>": each type
+      // its part, and the declaration its last. The written parts are the
+      // last of its full name's.
+      const full = reference.declared.split(".");
+      const parts = written.split(".");
+      let column = at.column;
+      for (const [index, part] of parts.entries()) {
+        const name = full.slice(0, full.length - (parts.length - 1 - index)).join(".");
+        const to = declared.get(name);
+        if (to !== undefined) {
+          result.push({ from: { line: at.line, column, length: part.length }, to });
+        }
+        column += part.length + 1;
+      }
     }
     if (reference.of !== undefined) {
       const declaration = declared.get(reference.of) as Enum | undefined;
