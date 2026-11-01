@@ -133,6 +133,29 @@ describe("dxn attach", () => {
     ]);
   });
 
+  it("replaces an entry written by hand with its keys in another order", () => {
+    const { root, run, stored } = project();
+    const context = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
+    run(...attach(...context));
+    // The same entry, its keys and its context's keys written in reverse.
+    const path = join(root, "spec", "evidence", "toolbar.json");
+    const reversed = (value: unknown): unknown =>
+      value !== null && typeof value === "object" && !Array.isArray(value)
+        ? Object.fromEntries(
+            Object.entries(value)
+              .reverse()
+              .map(([key, inner]) => [key, reversed(inner)]),
+          )
+        : value;
+    writeFileSync(path, `${JSON.stringify(stored().map(reversed), null, 2)}\n`);
+    writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
+    const result = run(...attach(...context));
+    expect([result.stdout, stored().map(({ fingerprint }) => fingerprint)]).toEqual([
+      "Attached 1 record to spec/evidence/toolbar.json, replacing 1\n",
+      [hash("redrawn")],
+    ]);
+  });
+
   it("replaces an entry recorded again at another time, whatever at it is given", () => {
     const { run, stored } = project();
     const context = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];

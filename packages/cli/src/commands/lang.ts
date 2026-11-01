@@ -30,7 +30,7 @@ import {
   treePaths,
   validate,
 } from "@legacycodehq/dxn-language";
-import { Fingerprints } from "../fingerprint.js";
+import { canonical, Fingerprints } from "../fingerprint.js";
 import { drawTable, NONE } from "../tables.js";
 import { type Command, type Context, command } from "./context.js";
 
@@ -584,16 +584,6 @@ function checkStored(parsed: ParseResult, stored: Stored[], report: Reporter): b
 // fingerprint, which say when one was recorded, not what: each repeat is
 // reported, across the record's files. Whether there was one.
 function duplicates(stored: Stored[], report: Reporter): boolean {
-  const canonical = (value: unknown): unknown =>
-    Array.isArray(value)
-      ? value.map(canonical)
-      : typeof value === "object" && value !== null
-        ? Object.fromEntries(
-            Object.keys(value)
-              .sort()
-              .map((key) => [key, canonical((value as Record<string, unknown>)[key])]),
-          )
-        : value;
   const seen = new Map<string, { shown: string; index: number }>();
   let found = false;
   for (const { record, shown, source } of stored) {
@@ -1152,9 +1142,12 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
       entries: JSON.parse(stored.source) as Record<string, unknown>[],
     });
   }
+  // Key order does not count: an entry written by hand is the same entry.
+  const alike = (a: unknown, b: unknown) =>
+    JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
   const same = (entry: Record<string, unknown>, context: object) =>
-    JSON.stringify(entry.context) === JSON.stringify(context) &&
-    JSON.stringify(entry.source) === JSON.stringify(values.source) &&
+    alike(entry.context, context) &&
+    alike(entry.source, values.source) &&
     // When it was recorded does not make it another entry.
     [...fields.keys()]
       .filter((name) => name !== "at" && name !== "fingerprint")

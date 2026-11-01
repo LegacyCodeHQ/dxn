@@ -93,7 +93,7 @@ function readPen(path: string): PenDocument | undefined {
 }
 
 // The same value with object keys sorted, so key order does not count.
-function canonical(value: unknown): unknown {
+export function canonical(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonical);
   if (isObject(value)) {
     return Object.fromEntries(
