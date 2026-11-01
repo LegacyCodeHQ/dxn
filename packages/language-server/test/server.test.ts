@@ -336,20 +336,94 @@ describe("the language server", () => {
             resolve(message);
           });
         });
-      const record = shown(editor);
+      const keyword = shown(editor);
       expect(
         await editor.sendRequest(PrepareRenameRequest.type, {
           textDocument: { uri },
-          position: { line: 5, character: 9 },
+          position: { line: 1, character: 1 },
         }),
       ).toBeNull();
-      expect(await record).toBe(
-        "Evidence is a record, and its stored records are in a folder named after it; renaming it here is not supported yet",
-      );
+      expect(await keyword).toBe("there is no name here to rename");
       const name = shown(editor);
       expect(await editor.sendRequest(RenameRequest.type, { ...at, newName: "a b" })).toBeNull();
       expect(await name).toBe(
         '"a b" is not a value name: a letter or digit, then letters, digits and hyphens',
+      );
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
+  it("renames a record and moves its stored records' folder, where the editor can", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-rename-"));
+    try {
+      const text = "enum Actor = designer\nrecord Evidence with context {\n  actor: Actor\n}\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      mkdirSync(join(folder, "evidence"));
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const at = { textDocument: { uri }, position: { line: 1, character: 9 } };
+      const open = async (moves: boolean) => {
+        const editor = connect();
+        editors.push(editor);
+        await editor.sendRequest(InitializeRequest.type, {
+          processId: null,
+          rootUri: null,
+          capabilities: moves
+            ? {
+                workspace: {
+                  workspaceEdit: { documentChanges: true, resourceOperations: ["rename"] },
+                },
+              }
+            : {},
+        });
+        const opened = published(editor);
+        await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+          textDocument: { uri, languageId: "dxn", version: 3, text },
+        });
+        await opened;
+        return editor;
+      };
+
+      // An editor that can move it: the file's edits, then the folder's move.
+      const moving = await open(true);
+      expect(await moving.sendRequest(RenameRequest.type, { ...at, newName: "Proof" })).toEqual({
+        documentChanges: [
+          {
+            textDocument: { uri, version: 3 },
+            edits: [
+              {
+                range: { start: { line: 1, character: 7 }, end: { line: 1, character: 15 } },
+                newText: "Proof",
+              },
+            ],
+          },
+          {
+            kind: "rename",
+            oldUri: pathToFileURL(join(folder, "evidence")).href,
+            newUri: pathToFileURL(join(folder, "proof")).href,
+          },
+        ],
+      });
+
+      // An editor that cannot is told why, and nothing is renamed.
+      const still = await open(false);
+      const message = new Promise<string>((resolve) => {
+        still.onNotification(ShowMessageNotification.type, ({ message: text }) => resolve(text));
+      });
+      expect(await still.sendRequest(RenameRequest.type, { ...at, newName: "Proof" })).toBeNull();
+      expect(await message).toBe(
+        "the editor cannot move evidence/, where Evidence's stored records are, to proof/",
+      );
+
+      // Nor is a folder moved onto one that is there.
+      mkdirSync(join(folder, "proof"));
+      const blocked = await open(true);
+      const there = new Promise<string>((resolve) => {
+        blocked.onNotification(ShowMessageNotification.type, ({ message: text }) => resolve(text));
+      });
+      expect(await blocked.sendRequest(RenameRequest.type, { ...at, newName: "Proof" })).toBeNull();
+      expect(await there).toBe(
+        "proof/ is already next to the file; Evidence's stored records cannot move there",
       );
     } finally {
       rmSync(folder, { recursive: true, force: true });

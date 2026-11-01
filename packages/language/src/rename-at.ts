@@ -13,6 +13,7 @@ import {
   renameTypeInData,
 } from "./rename.js";
 import { treePaths } from "./status.js";
+import { folderOf } from "./store.js";
 
 // A stored data file of a record, by its path, and its content.
 export interface StoredFile {
@@ -32,7 +33,13 @@ export interface Edit {
 
 export type Renamed =
   | { refusal: string }
-  | { edits: Edit[]; data: { path: string; source: string }[] };
+  | {
+      edits: Edit[];
+      data: { path: string; source: string }[];
+      // For a record, the folder its stored records are in, by its old name
+      // and its new, next to the file.
+      folder?: { from: string; to: string };
+    };
 
 // What a declaration is, for renaming it: its kind, and for a value, the enum
 // or dimension it is of.
@@ -57,11 +64,10 @@ export function renameable(
 }
 
 // Renames the declaration whose name is at a line and a column of a source,
-// both from one, wherever it is used: the edits to the source, and the stored
-// data files that change, with their new content. Refused for a name that is
-// not one of its kind's, a rename that would leave problems, and, for now, the
-// names stored records hold other than an enum's values, states, children,
-// types, profiles, modifiers and dimensions.
+// both from one, wherever it is used: the edits to the source, the stored
+// data files that change, with their new content, and for a record, the
+// folder its stored records move to. Refused for a name that is not one of its
+// kind's, and a rename that would leave problems.
 export function renameAt(
   source: string,
   line: number,
@@ -118,11 +124,15 @@ export function renameAt(
       data.push({ path: item.path, source: renamed.source });
     }
   }
+  if (kind.kind === "record") {
+    return { edits, data, folder: { from: folderOf(name), to: folderOf(to) } };
+  }
   return { edits, data };
 }
 
 // How each kind that can be renamed is named.
 const rules: Record<string, { pattern: RegExp; text: string }> = {
+  record: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   dimension: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   profile: {
     pattern: /^[a-z][A-Za-z0-9-]*$/,
@@ -210,17 +220,6 @@ function target(
     );
   const name = (declared as { short?: string }).short ?? declared.name;
   const from = last(link?.from ?? span(declared));
-  if (rules[kind.kind] === undefined) {
-    const what =
-      kind.kind === "value"
-        ? `a value of the dimension ${kind.of?.name}`
-        : `${article(kind.kind)} ${kind.kind}`;
-    const why =
-      kind.kind === "record"
-        ? "its stored records are in a folder named after it"
-        : "stored records name it";
-    return { refusal: `${name} is ${what}, and ${why}; renaming it here is not supported yet` };
-  }
   return { kind, name, from, spans, declared, group };
 }
 

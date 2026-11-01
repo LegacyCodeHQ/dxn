@@ -564,6 +564,63 @@ expect "The link is selected on the blog" {
     `);
   });
 
+  it("renames a record where it is used, and names the folder its stored records move to", () => {
+    const records = `enum Actor = designer
+record Source {
+  file: RelativePath
+}
+record DesignReview with context {
+  actor: Actor
+  source: Source
+}
+`;
+    const lines = records.split("\n");
+    const where = (text: string, word: string): [number, number] => {
+      const line = lines.findIndex((each) => each.includes(text));
+      return [line + 1, (lines[line] ?? "").indexOf(text) + text.indexOf(word) + 2];
+    };
+    const snapshot: unknown[] = [];
+    for (const [text, word, to] of [
+      ["record Source", "Source", "Origin"],
+      ["source: Source", "Source", "Origin"],
+      ["record DesignReview", "DesignReview", "Critique"],
+    ] as const) {
+      const result = renameAt(records, ...where(text, word), to);
+      if ("refusal" in result) throw new Error(result.refusal);
+      snapshot.push(
+        result.edits.map(({ line }) => (lines[line - 1] ?? "").trim()),
+        result.folder,
+      );
+    }
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "record Source {",
+          "source: Source",
+        ],
+        {
+          "from": "source",
+          "to": "origin",
+        },
+        [
+          "record Source {",
+          "source: Source",
+        ],
+        {
+          "from": "source",
+          "to": "origin",
+        },
+        [
+          "record DesignReview with context {",
+        ],
+        {
+          "from": "design-review",
+          "to": "critique",
+        },
+      ]
+    `);
+  });
+
   it("refuses a name that is not one, one already declared, and what stored records name", () => {
     const snapshot: unknown[] = [];
     snapshot.push(renamed("enum ", "Hover", "hover"));
@@ -571,7 +628,6 @@ expect "The link is selected on the blog" {
     snapshot.push(renamed("enum Hover = rest | ", "hovered", "a b"));
     snapshot.push(renamed("enum Hover = ", "rest", "hovered"));
     snapshot.push(renamed("enum ", "Focus", "Hover"));
-    snapshot.push(renamed("record ", "Evidence", "Proof"));
     snapshot.push(renamed("", "type", "kind"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -580,7 +636,6 @@ expect "The link is selected on the blog" {
         ""a b" is not a value name: a letter or digit, then letters, digits and hyphens",
         "the rename would leave a problem: "hovered" appears twice in Hover",
         "the rename would leave a problem: Hover is already declared at line 2",
-        "Evidence is a record, and its stored records are in a folder named after it; renaming it here is not supported yet",
         "there is no name here to rename",
       ]
     `);

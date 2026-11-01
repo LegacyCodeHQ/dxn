@@ -1,10 +1,11 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   type CompletionKind,
   completions,
   definition,
+  type Edit,
   folderOf,
   hover,
   parse,
@@ -37,8 +38,14 @@ export function serve(connection: Connection): void {
   // Whether the editor takes a link, which names the text it goes from, so
   // that it underlines a whole name, hyphens and all, rather than its words.
   let links = false;
+  // Whether the editor can move a folder, as renaming a record moves its
+  // stored records'.
+  let moves = false;
   connection.onInitialize(({ capabilities }) => {
     links = capabilities.textDocument?.definition?.linkSupport === true;
+    const edits = capabilities.workspace?.workspaceEdit;
+    moves =
+      edits?.documentChanges === true && edits.resourceOperations?.includes("rename") === true;
     return {
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,
@@ -154,7 +161,42 @@ export function serve(connection: Connection): void {
         },
       ];
     }
-    return { changes };
+    // A record's stored records move to the folder named after its new name.
+    const { folder } = renamed;
+    const directory = textDocument.uri.startsWith("file:")
+      ? dirname(fileURLToPath(textDocument.uri))
+      : undefined;
+    if (folder === undefined || folder.from === folder.to || directory === undefined) {
+      return { changes };
+    }
+    const from = join(directory, folder.from);
+    const to = join(directory, folder.to);
+    if (!isFolder(from)) return { changes };
+    const record =
+      renamed.edits.length > 0 ? document.getText(rangeOf(renamed.edits[0] as Edit)) : "";
+    if (existsSync(to)) {
+      return refuse(
+        `${folder.to}/ is already next to the file; ${record}'s stored records cannot move there`,
+      );
+    }
+    if (!moves) {
+      return refuse(
+        `the editor cannot move ${folder.from}/, where ${record}'s stored records are, to ${folder.to}/`,
+      );
+    }
+    return {
+      documentChanges: [
+        {
+          textDocument: { uri: textDocument.uri, version: document.version },
+          edits: changes[textDocument.uri] ?? [],
+        },
+        {
+          kind: "rename" as const,
+          oldUri: pathToFileURL(from).href,
+          newUri: pathToFileURL(to).href,
+        },
+      ],
+    };
   });
   connection.onCompletion(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
@@ -213,3 +255,7 @@ function storedBeside(uri: string, text: string): StoredFile[] {
     }),
   );
 }
+
+// Whether a path is a folder.
+const isFolder = (path: string) =>
+  statSync(path, { throwIfNoEntry: false })?.isDirectory() === true;
