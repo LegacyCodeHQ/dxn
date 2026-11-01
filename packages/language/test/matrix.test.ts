@@ -54,6 +54,19 @@ type Button {
   });
 });
 
+describe("a condition never true in one type", () => {
+  it("is reported, and the types after it are still judged", () => {
+    expect(
+      problems(
+        "dimension Pointer = mouse | touch\nenum Hover = rest | hovered\ntype Link needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\ntype Card needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile phone: Device { Pointer = touch }\n",
+      ),
+    ).toEqual([
+      "5:3: impossible-condition: Pointer = mouse is never true, so hovered exists nowhere",
+      "9:3: impossible-condition: Pointer = mouse is never true, so hovered exists nowhere",
+    ]);
+  });
+});
+
 describe("two triggers of one event", () => {
   it("clash only where both can fire on one value, with their conditions and events", () => {
     expect([

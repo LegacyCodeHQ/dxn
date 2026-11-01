@@ -1,4 +1,4 @@
-import type { Condition, Located, ParseResult, Type } from "./ast.js";
+import type { Condition, Diagnostic, Located, ParseResult, Type } from "./ast.js";
 import { conditionText, coverage, holds } from "./condition.js";
 import { enumOf, valuesOf } from "./names.js";
 import { alone } from "./status.js";
@@ -10,6 +10,9 @@ import { alone } from "./status.js";
 // neither. The file must have no other problems.
 export function conditionsInMatrix(file: ParseResult): void {
   const valuesIn = (type: Type) => (subject: string) => valuesOf(file, enumOf(type, subject) ?? "");
+  // Every type is judged before any finding is recorded: a recorded error is
+  // a problem, and a file with problems cannot be evaluated.
+  const found: Diagnostic[] = [];
   for (const type of file.types) {
     // Every combination of the type: a value for each of its states, and for
     // each dimension it needs, with every rule applied.
@@ -24,7 +27,7 @@ export function conditionsInMatrix(file: ParseResult): void {
       const real = holding === 0 ? "never" : holding === combinations.length ? "always" : undefined;
       // What judging by values alone said is reported already.
       if (real === undefined || coverage(condition, valuesIn(type)) === real) return;
-      file.diagnostics.push({
+      found.push({
         severity: real === "never" ? "error" : "warning",
         code: real === "never" ? "impossible-condition" : "vacuous-condition",
         message: `${conditionText(condition)} is ${real === "never" ? "never" : "always"} true, so ${then[real]}`,
@@ -60,4 +63,5 @@ export function conditionsInMatrix(file: ParseResult): void {
       });
     }
   }
+  file.diagnostics.push(...found);
 }

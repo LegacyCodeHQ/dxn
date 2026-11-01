@@ -1,0 +1,41 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { completions } from "../src/complete.js";
+import { definition, usages } from "../src/definition.js";
+import { hover } from "../src/hover.js";
+import { parse } from "../src/parse.js";
+import { renameAt, renameable } from "../src/rename-at.js";
+import { symbols } from "../src/symbols.js";
+
+// An editor asks about a file while it is being typed, so it is unfinished
+// at every step: each feature answers at every point of it, and none throws.
+
+const sample = readFileSync(join(__dirname, "../../zed/test/highlight.dxn"), "utf8");
+
+describe("a file being typed", () => {
+  it("is parsed, and answered at the cursor, at every character of it", () => {
+    const failures: string[] = [];
+    for (let at = 0; at <= sample.length; at++) {
+      const text = sample.slice(0, at);
+      const lines = text.split("\n");
+      const line = lines.length;
+      const column = (lines.at(-1) ?? "").length + 1;
+      try {
+        const file = parse(text);
+        symbols(text, file);
+        for (const place of [column, Math.max(1, column - 1)]) {
+          definition(text, line, place, file);
+          usages(text, line, place, file);
+          hover(text, line, place, file);
+          completions(text, line, place, file);
+          renameable(text, line, place, file);
+          renameAt(text, line, place, "renamed", [], file);
+        }
+      } catch (error) {
+        failures.push(`${at}: ${(error as Error).message}`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+});
