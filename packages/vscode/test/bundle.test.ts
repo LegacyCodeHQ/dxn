@@ -55,12 +55,12 @@ describe("the built extension", () => {
   });
 
   it("runs the bundled dxn command, as a code lens does", () => {
-    const playground = join(__dirname, "../../../playground");
+    const settings = join(__dirname, "../../../examples/settings");
     const run = spawnSync(
       process.execPath,
       [join(out, "dxn.mjs"), "states", "settings.dxn", "Help.Toggle"],
       {
-        cwd: playground,
+        cwd: settings,
         encoding: "utf8",
       },
     );

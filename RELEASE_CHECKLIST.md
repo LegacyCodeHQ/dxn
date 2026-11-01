@@ -98,9 +98,9 @@ installs the server from npm, as the Svelte, Astro and Vue extensions do.
 - [ ] **The README is for users first:** installing from Zed's extensions
   view, what it gives, and what to install (if the run buttons need `dxn`),
   before the development sections.
-- [ ] **Tried from scratch** in the playground: `make check`, the extension
+- [ ] **Tried from scratch** in the settings example: `make check`, the extension
   rebuilt, the linked server and CLI unlinked, every item in
-  `playground/README.md` for Zed.
+  `examples/settings/README.md` for Zed.
 - [ ] **Submitted:** a pull request to `zed-industries/extensions` that adds
   this repository as a submodule and an entry for `dxn` in its
   `extensions.toml`, with `path = "packages/zed"` and the extension's
@@ -141,7 +141,7 @@ is packaging and publishing, not installing a server.
   `code --install-extension dxn-<version>.vsix` in a fresh profile
   (`code --profile dxn-release`), with nothing linked on the `PATH`
   (`npm unlink -g @legacycodehq/dxn @legacycodehq/dxn-language-server`).
-- [ ] **Every item in `playground/README.md`,** with the playground opened as
+- [ ] **Every item in `examples/settings/README.md`,** with the example opened as
   a folder, the code lenses too.
 - [ ] **In Cursor too,** which installs from Open VSX rather than the
   Marketplace.

@@ -1,4 +1,4 @@
-# A settings window, in dxn: the playground for trying the editor extensions.
+# A settings window, in dxn: the example for trying the editor extensions.
 # It uses every construct of the language at least once; see README.md.
 
 # What varies around the window: its width and the pointer, which the devices

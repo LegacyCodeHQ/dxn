@@ -1,13 +1,13 @@
-# Playground
+# Settings example
 
 A small dxn project to try the editor extensions in, for
-[Zed](../packages/zed) and [VS Code](../packages/vscode), and the `dxn`
+[Zed](../../packages/zed) and [VS Code](../../packages/vscode), and the `dxn`
 command. `settings.dxn` models a settings window and uses every construct of
 the language at least once; `evidence/` holds records stored against it.
 
-It is tracked in git, so try anything here: `git checkout playground` and
-`git clean -fd playground` put it back. A test keeps it free of problems, with
-records that check.
+It is tracked in git, so try anything here:
+`git checkout examples/settings` and `git clean -fd examples/settings` put it
+back. A test keeps it free of problems, with records that check.
 
 ## Opening it
 
@@ -16,7 +16,7 @@ records that check.
 - **VS Code:** open it with the extension loaded for development:
 
   ```bash
-  code --extensionDevelopmentPath=../packages/vscode .
+  code --extensionDevelopmentPath=../../packages/vscode .
   ```
 
 ## What to try

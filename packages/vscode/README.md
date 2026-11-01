@@ -41,9 +41,9 @@ the terminal panel, with the `dxn` command the extension bundles in
 
 Build it with `make build`, which bundles the extension and the server into
 `dist/`, then open a folder of `.dxn` files, such as the
-[playground](../../playground), as a folder, with this extension loaded for development. A folder, not a
-single file: VS Code then tells the server when stored records change on disk,
-as a rename makes them.
+[settings example](../../examples/settings), with this extension loaded for
+development. A folder, not a single file: VS Code then tells the server when
+stored records change on disk, as a rename makes them.
 
 ```bash
 code --extensionDevelopmentPath=/path/to/dxn/packages/vscode /path/to/project
