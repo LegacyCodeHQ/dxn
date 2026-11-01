@@ -1,9 +1,7 @@
-import { type Command, dispatch } from "./commands/context.js";
+import { dispatch } from "./commands/context.js";
 import { commandList, language } from "./commands/lang.js";
 import type { Io } from "./io.js";
 import { version } from "./version.js";
-
-export type { Io } from "./io.js";
 
 const usage = `Usage: dxn <command> [options]
 
@@ -23,8 +21,6 @@ Options:
   -V, --version                      Print version information as JSON
 `;
 
-const commands: Record<string, Command> = language;
-
 export function run(argv: string[], io: Io): number {
   const cwd = io.cwd ?? process.cwd();
   // --dry-run is accepted wherever it appears, before or after the command.
@@ -35,5 +31,5 @@ export function run(argv: string[], io: Io): number {
     io.stdout(`${JSON.stringify({ version })}\n`);
     return 0;
   }
-  return dispatch(args, { io, cwd, dryRun }, usage, commands);
+  return dispatch(args, { io, cwd, dryRun }, usage, language);
 }
