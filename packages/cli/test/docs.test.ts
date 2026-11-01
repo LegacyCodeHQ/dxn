@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { capture } from "./support/cli.js";
 
-const doc = (name: string) => readFileSync(new URL(`../docs/${name}`, import.meta.url), "utf8");
+const doc = (name: string) =>
+  readFileSync(new URL(`../../../docs/${name}`, import.meta.url), "utf8");
 
 // The commands the overview lists, help aside: it prints the overview itself.
 const commands = [...capture(["--help"]).stdout.matchAll(/^ {2}([a-z][a-z-]*)/gm)]

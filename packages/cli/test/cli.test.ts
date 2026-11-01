@@ -80,8 +80,8 @@ describe("dxn cli", () => {
         help [<command>]                   Show this overview, or a command's usage
 
       Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
-      and options. The docs/language/guide.md file of the dxn package explains the
-      language.
+      and options. The language is explained in docs/language/guide.md, in the dxn
+      repository.
 
       Options:
         --dry-run                          Print the files a command would write,
@@ -145,8 +145,8 @@ describe("dxn cli", () => {
         help [<command>]                   Show this overview, or a command's usage
 
       Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
-      and options. The docs/language/guide.md file of the dxn package explains the
-      language.
+      and options. The language is explained in docs/language/guide.md, in the dxn
+      repository.
 
       Options:
         --dry-run                          Print the files a command would write,
@@ -213,8 +213,8 @@ describe("dxn cli", () => {
         help [<command>]                   Show this overview, or a command's usage
 
       Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
-      and options. The docs/language/guide.md file of the dxn package explains the
-      language.
+      and options. The language is explained in docs/language/guide.md, in the dxn
+      repository.
 
       Options:
         --dry-run                          Print the files a command would write,

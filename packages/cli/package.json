@@ -10,8 +10,7 @@
   },
   "files": [
     "dist",
-    "!dist/tsconfig.build.tsbuildinfo",
-    "docs"
+    "!dist/tsconfig.build.tsbuildinfo"
   ],
   "engines": {
     "node": ">=22"
