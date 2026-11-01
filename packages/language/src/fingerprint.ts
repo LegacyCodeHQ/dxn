@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import type { Check } from "./status.js";
 
 // A fingerprint of what a frame of a file shows, so evidence knows when it
 // may look different. For a pen.dev file, the frame's subtree without its own
@@ -16,9 +18,9 @@ export class Fingerprints {
     return path.endsWith(".pen") && this.document(path) !== undefined;
   }
 
-  // With source "file", always the whole file; otherwise by what the file is.
-  of(path: string, frame: string, source?: string): string | undefined {
-    if (source === "file" || !path.endsWith(".pen")) return blobHash(path);
+  // Of a node of a pen.dev file, by its id; of any other file, as a whole.
+  of(path: string, frame: string): string | undefined {
+    if (!path.endsWith(".pen")) return blobHash(path);
     const document = this.document(path);
     if (document === undefined) return blobHash(path);
     const node = document.nodes.get(frame);
@@ -121,4 +123,30 @@ export function canonical(value: unknown): unknown {
 function blobHash(path: string): string {
   const content = readFileSync(path);
   return createHash("sha1").update(`blob ${content.length}\0`).update(content).digest("hex");
+}
+
+// The repository a path is in: the nearest folder above it with a .git;
+// otherwise, by default the folder it is in.
+export function repositoryOf(path: string, otherwise = dirname(resolve(path))): string {
+  for (let at = dirname(resolve(path)); ; at = dirname(at)) {
+    if (statSync(join(at, ".git"), { throwIfNoEntry: false }) !== undefined) return at;
+    if (dirname(at) === at) return otherwise;
+  }
+}
+
+// Whether what a stored PenNode points at, in a repository, is as recorded:
+// its fingerprint now, of its node or, without one, its frame, against the
+// one stored. A file that is not there, or a frame that no longer holds its
+// node, is gone.
+export function freshness(repository: string, fingerprints = new Fingerprints()): Check {
+  return ({ file, frame, node, fingerprint }) => {
+    const full = join(repository, file);
+    if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) return "gone";
+    if (node !== undefined && fingerprints.isPen(full) && !fingerprints.holds(full, frame, node)) {
+      return "gone";
+    }
+    const now = fingerprints.of(full, node ?? frame);
+    if (now === undefined) return "gone";
+    return now === fingerprint ? "present" : "stale";
+  };
 }

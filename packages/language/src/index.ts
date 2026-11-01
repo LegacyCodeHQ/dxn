@@ -27,6 +27,9 @@ export {
   placement,
   states,
 } from "./evaluate.js";
+// What a node of a design file shows, and whether stored evidence still
+// points at what it recorded.
+export { canonical, Fingerprints, freshness, repositoryOf } from "./fingerprint.js";
 // The one way a file is written, for dxn fmt and editors.
 export { format } from "./format.js";
 // What a name is, as its declaration is written, for editors.

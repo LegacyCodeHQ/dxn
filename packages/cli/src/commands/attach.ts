@@ -2,6 +2,8 @@ import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import {
   among,
+  canonical,
+  Fingerprints,
   folderOf,
   givenDimensions,
   inPlace,
@@ -10,12 +12,12 @@ import {
   placement,
   profilesOf,
   type RecordDeclaration,
+  repositoryOf,
   validate,
 } from "@legacycodehq/dxn-language";
-import { canonical, Fingerprints } from "../fingerprint.js";
 import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
-import { loadStored, repositoryOf } from "./stored.js";
+import { loadStored } from "./stored.js";
 import { usage } from "./usage.js";
 
 export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
@@ -186,7 +188,7 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
   }
   // The record's fields, as given; each PenNode's fingerprint is taken now,
   // of its node or, without one, its frame.
-  const repository = repositoryOf(file, cwd);
+  const repository = repositoryOf(resolve(cwd, file), cwd);
   const fingerprints = new Fingerprints();
   const values: Record<string, unknown> = { ...supplied };
   for (const field of record.fields.filter(({ type }) => type.name === "PenNode")) {

@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { Fingerprints } from "@legacycodehq/dxn-language";
 import { afterAll, describe, expect, it } from "vitest";
-import { Fingerprints } from "../../src/fingerprint.js";
 import { capture } from "../support/cli.js";
 import { cleanup, writeProject } from "../support/project.js";
 

@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import {
   folderOf,
@@ -94,13 +94,4 @@ function duplicates(stored: Stored[], report: Reporter): boolean {
     });
   }
   return found.length > 0;
-}
-
-// The repository a file is in: the nearest folder above it with a .git, or
-// the working directory.
-export function repositoryOf(file: string, cwd: string): string {
-  for (let at = dirname(resolve(cwd, file)); ; at = dirname(at)) {
-    if (statSync(join(at, ".git"), { throwIfNoEntry: false }) !== undefined) return at;
-    if (dirname(at) === at) return cwd;
-  }
 }

@@ -1,18 +1,17 @@
-import { statSync } from "node:fs";
-import { join } from "node:path";
+import { resolve } from "node:path";
 import {
-  type Check,
   type Combination,
   coverage,
+  freshness,
   placement,
   profilesOf,
+  repositoryOf,
   treePaths,
 } from "@legacycodehq/dxn-language";
-import { Fingerprints } from "../fingerprint.js";
 import { drawTable } from "../tables.js";
 import { type Command, command } from "./context.js";
 import { assignments, count, misused, options, Reporter, read } from "./report.js";
-import { loadStored, repositoryOf } from "./stored.js";
+import { loadStored } from "./stored.js";
 import { usage } from "./usage.js";
 
 export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
@@ -29,21 +28,8 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   if (typeof parsed === "number") return parsed;
   const data = loadStored(parsed, file, cwd, report);
   if (typeof data === "number") return data;
-  // Whether what an entry's PenNode points at is as recorded: its
-  // fingerprint now, of its node or, without one, its frame, against the one
-  // stored. A frame that no longer holds its node is gone.
-  const repository = repositoryOf(file, cwd);
-  const fingerprints = new Fingerprints();
-  const check: Check = ({ file: where, frame, node, fingerprint }) => {
-    const full = join(repository, where);
-    if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) return "gone";
-    if (node !== undefined && fingerprints.isPen(full) && !fingerprints.holds(full, frame, node)) {
-      return "gone";
-    }
-    const now = fingerprints.of(full, node ?? frame);
-    if (now === undefined) return "gone";
-    return now === fingerprint ? "present" : "stale";
-  };
+  // Whether what an entry's PenNode points at is as recorded.
+  const check = freshness(repositoryOf(resolve(cwd, file), cwd));
   // A record is checked for staleness when it has a PenNode.
   const fingerprinted = (name: string) =>
     parsed.records
