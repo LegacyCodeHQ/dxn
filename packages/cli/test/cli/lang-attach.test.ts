@@ -305,7 +305,7 @@ describe("dxn status, with fingerprints", () => {
       [toggle.combinations, toggle.present, toggle.stale, toggle.gone, toggle.missing],
       [toggle.listed.gone.length, toggle.listed.stale.length, toggle.listed.missing.length],
     ]).toEqual([
-      [12, 0, 0, 2, 10],
+      [9, 0, 0, 2, 7],
       [6, 0, 0, 2, 4],
       [2, 0, 4],
     ]);
@@ -314,7 +314,7 @@ describe("dxn status, with fingerprints", () => {
   it("counts an entry as present while its frame is as it was recorded", () => {
     const { status } = recorded();
     expect(status().stdout.split("\n")[0]).toBe(
-      "spec/toolbar.dxn: Evidence for 2 of 12 combinations",
+      "spec/toolbar.dxn: Evidence for 2 of 9 combinations",
     );
   });
 
@@ -327,7 +327,7 @@ describe("dxn status, with fingerprints", () => {
       lines.find((line) => line.startsWith("| Toolbar.menu.toggle")),
       lines.slice(lines.indexOf("Stale:"), lines.indexOf("Stale:") + 3),
     ]).toEqual([
-      "spec/toolbar.dxn: Evidence for 0 of 12 combinations; 2 stale",
+      "spec/toolbar.dxn: Evidence for 0 of 9 combinations; 2 stale",
       "| Toolbar.menu.toggle | 6            | 0       | 2     | 0    | 4       |",
       [
         "Stale:",
@@ -341,7 +341,7 @@ describe("dxn status, with fingerprints", () => {
     const { root, status } = recorded();
     rmSync(join(root, "design", "toolbar.png"));
     expect(status().stdout.split("\n")[0]).toBe(
-      "spec/toolbar.dxn: Evidence for 0 of 12 combinations; 2 gone",
+      "spec/toolbar.dxn: Evidence for 0 of 9 combinations; 2 gone",
     );
   });
 
@@ -429,7 +429,7 @@ describe("the tool convention", () => {
     expect([result.code, result.stderr, result.stdout.split("\n")[0]]).toEqual([
       0,
       "",
-      "spec/toolbar.dxn: Evidence for 0 of 12 combinations; 1 gone",
+      "spec/toolbar.dxn: Evidence for 0 of 9 combinations; 1 gone",
     ]);
   });
 

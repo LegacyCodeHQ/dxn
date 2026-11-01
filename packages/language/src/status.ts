@@ -85,6 +85,25 @@ export function expand(file: ParseResult, path: string, given: string[]): Combin
   return combinations;
 }
 
+// An element's combinations as contexts give them, those that differ only in
+// their profiles as one, with all their profiles: the profiles differ in
+// dimensions the element does not have. Two that differ in a dimension it
+// has, even one a profile gives, stay apart.
+function merged(file: ParseResult, path: string, given: string[]): Combination[] {
+  const full = expand(file, path, []);
+  const result: { key: string; combination: Combination }[] = [];
+  expand(file, path, given).forEach((combination, index) => {
+    const { profiles: _, ...rest } = full[index] as Combination;
+    const key = JSON.stringify(rest);
+    const same = result.find((each) => each.key === key);
+    if (same === undefined) result.push({ key, combination: { ...combination } });
+    else if (combination.profiles !== undefined) {
+      same.combination.profiles = [...(same.combination.profiles ?? []), ...combination.profiles];
+    }
+  });
+  return result.map(({ combination }) => combination);
+}
+
 // How much of the trees a record with context covers: every combination of
 // every element, in place, and which a stored record is about. Profiles that
 // share a row count as one. With a check, each entry is present, stale or
@@ -137,7 +156,7 @@ export function coverage(
     Object.keys(a).length === Object.keys(b).length &&
     Object.entries(a).every(([name, value]) => b[name] === value);
   const paths = treePaths(file).map((path) => {
-    const combinations = expand(file, path, given);
+    const combinations = merged(file, path, given);
     // A combination is as its best entry is: present, else stale, else gone.
     const state = (combination: Combination): Freshness | "missing" => {
       const found = contexts

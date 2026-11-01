@@ -1263,24 +1263,27 @@ dxn status toolbar.dxn
 ```
 
 ```
-toolbar.dxn: Evidence for 38 of 66 combinations
+toolbar.dxn: Evidence for 38 of 55 combinations
 
 | path                                | combinations | present | stale | gone | missing |
 | ----------------------------------- | ------------ | ------- | ----- | ---- | ------- |
-| ArticlePage                         | 6            | 0       | 0     | 0    | 6       |
-| ArticlePage.toolbar                 | 6            | 0       | 0     | 0    | 6       |
+| ArticlePage                         | 1            | 0       | 0     | 0    | 1       |
+| ArticlePage.toolbar                 | 4            | 0       | 0     | 0    | 4       |
 | ArticlePage.toolbar.wordmark        | 15           | 15      | 0     | 0    | 0       |
-| ArticlePage.toolbar.links           | 3            | 0       | 0     | 0    | 3       |
+| ArticlePage.toolbar.links           | 2            | 0       | 0     | 0    | 2       |
 | ArticlePage.toolbar.links.blog      | 9            | 9       | 0     | 0    | 0       |
-| ArticlePage.toolbar.menu            | 6            | 2       | 0     | 0    | 4       |
+| ArticlePage.toolbar.menu            | 4            | 2       | 0     | 0    | 2       |
 | ArticlePage.toolbar.menu.toggle     | 12           | 12      | 0     | 0    | 0       |
-| ArticlePage.toolbar.menu.panel      | 3            | 0       | 0     | 0    | 3       |
+| ArticlePage.toolbar.menu.panel      | 2            | 0       | 0     | 0    | 2       |
 | ArticlePage.toolbar.menu.panel.blog | 6            | 0       | 0     | 0    | 6       |
 ```
 
 A tree starts at each type that no type contains, and every child below it
-is an element, by its path. Profiles that share a row count as one: evidence
-on `laptop` covers a tablet with the magic keyboard too.
+is an element, by its path. Profiles that differ only in dimensions an
+element does not have count as one combination of it, as in `dxn cases`:
+the page has no dimensions, so it is one combination on every profile, and
+the menu is the same on a tablet with or without its keyboard. Evidence on
+any of a combination's profiles covers it.
 
 Each entry is also checked against its frame. By convention, a record with a
 `fingerprint` field next to a `source { file, frame }` is fingerprinted: an
@@ -1297,8 +1300,8 @@ Missing, Stale and Gone, in the words a context would use:
 
 ```
 Missing:
-  ArticlePage on phone: current = blog
-  ArticlePage.toolbar.menu on tablet-portrait with toolbar.layout = compact: menu = closed
+  ArticlePage: current = blog
+  ArticlePage.toolbar.menu on tablet-portrait, tablet-portrait+magic-keyboard with toolbar.layout = compact: menu = closed
 ```
 
 With `--json`, every count is a number, and each path lists the combinations
@@ -1633,9 +1636,6 @@ or under discussion but not part of it yet:
 - **Expectations on a parent's triggers,** and on a dimension event, which
   would also move the dimension to its new value. A child's state can be
   checked after an event, but not yet without one.
-- **Counting the same way everywhere.** `dxn cases` counts as one combination
-  what differs only in profiles; `dxn status` still counts each group of
-  profiles apart, so the two can give different totals for one element.
 - **Dimension keys below a path.** `when Pointer = touch` with `and below`
   applies only to the elements whose types need `Pointer`, even where every
   profile gives it.

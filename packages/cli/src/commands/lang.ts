@@ -846,9 +846,12 @@ const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     }));
   // A combination, as its path and where it is: "<path> on <profiles>,
   // <Dimension> <value> with <parent> = <value>: <state> = <value>".
+  // A combination that covers every profile is the same on all of them.
+  const everyProfile = profilesOf(parsed).map(({ name }) => name);
   const describe = (path: string, combination: Combination) => {
+    const covered = combination.profiles ?? [];
     const world = [
-      ...(combination.profiles ?? []),
+      ...(everyProfile.every((name) => covered.includes(name)) ? [] : covered),
       ...Object.entries(combination.dimensions).map(([name, value]) => `${name} ${value}`),
     ].join(", ");
     const parents = Object.entries(combination.parents)

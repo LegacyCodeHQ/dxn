@@ -45,11 +45,32 @@ describe("coverage", () => {
     expect(
       report.paths.map(({ path, combinations, present }) => [path, combinations, present]),
     ).toEqual([
-      ["Toolbar", 2, 0],
-      ["Toolbar.menu", 4, 0],
+      ["Toolbar", 1, 0],
+      ["Toolbar.menu", 2, 0],
       ["Toolbar.menu.toggle", 6, 2],
     ]);
-    expect([report.combinations, report.present]).toEqual([12, 2]);
+    expect([report.combinations, report.present]).toEqual([9, 2]);
+  });
+
+  it("counts as one what differs only in profiles, with evidence on any of them", () => {
+    const menu = (profile: string, state: string) => ({
+      context: {
+        path: "Toolbar.menu",
+        profile,
+        dimensions: {},
+        parents: {},
+        states: { menu: state },
+      },
+    });
+    const report = coverage(file, "Evidence", [
+      JSON.stringify([menu("phone", "closed"), menu("laptop", "open")]),
+    ]);
+    const path = report.paths.find(({ path: at }) => at === "Toolbar.menu");
+    expect([
+      path?.combinations,
+      path?.present,
+      path?.missing.map(({ profiles }) => profiles),
+    ]).toEqual([2, 2, []]);
   });
 
   it("lists each combination without evidence, as the context that would cover it", () => {

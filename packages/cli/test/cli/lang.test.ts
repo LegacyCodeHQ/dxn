@@ -917,11 +917,11 @@ record Evidence with context {}
     expect([result.code, result.stdout]).toEqual([
       0,
       [
-        "toolbar.dxn: Evidence for 2 of 5 combinations; Evidence has no fingerprint field next to a source { file, frame }, so staleness is not checked",
+        "toolbar.dxn: Evidence for 2 of 4 combinations; Evidence has no fingerprint field next to a source { file, frame }, so staleness is not checked",
         "",
         "| path         | combinations | present | stale | gone | missing |",
         "| ------------ | ------------ | ------- | ----- | ---- | ------- |",
-        "| Toolbar      | 2            | 0       | 0     | 0    | 2       |",
+        "| Toolbar      | 1            | 0       | 0     | 0    | 1       |",
         "| Toolbar.link | 3            | 2       | 0     | 0    | 1       |",
         "",
       ].join("\n"),
@@ -931,16 +931,15 @@ record Evidence with context {}
   it("lists what is missing with --missing, and gives it all as JSON with --json", () => {
     const run = project(`[${link("phone", "rest")}, ${link("laptop", "hovered")}]`);
     const missing = run("toolbar.dxn", "--missing").stdout.split("\n");
-    expect(missing.slice(-5)).toEqual([
+    expect(missing.slice(-4)).toEqual([
       "Missing:",
-      "  Toolbar on phone",
-      "  Toolbar on laptop",
+      "  Toolbar",
       "  Toolbar.link on laptop: hover = rest",
       "",
     ]);
     const json = JSON.parse(run("toolbar.dxn", "--json").stdout);
     expect([json.records[0].record, json.records[0].combinations, json.records[0].present]).toEqual(
-      ["Evidence", 5, 2],
+      ["Evidence", 4, 2],
     );
   });
 
