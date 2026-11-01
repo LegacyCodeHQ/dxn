@@ -1,6 +1,6 @@
 import type { Condition, Located, ParseResult, Type } from "./ast.js";
 import { conditionText, coverage, holds } from "./condition.js";
-import { states } from "./evaluate.js";
+import { alone } from "./status.js";
 
 // Checks each condition of a type against the combinations it really has:
 // what its rules, fixed and derived states and profiles leave, not every
@@ -21,13 +21,10 @@ export function conditionsInMatrix(file: ParseResult): void {
   for (const type of file.types) {
     // Every combination of the type: a value for each of its states, and for
     // each dimension it needs, with every rule applied.
-    const combinations = states(file, type.name).rows.flatMap((row) => {
-      let expanded: Record<string, string>[] = [{ ...row.when }];
-      for (const [name, values] of Object.entries(row.states)) {
-        expanded = expanded.flatMap((each) => values.map((value) => ({ ...each, [name]: value })));
-      }
-      return expanded;
-    });
+    const combinations = alone(file, type.name).map(({ dimensions, states: own }) => ({
+      ...dimensions,
+      ...own,
+    }));
     const judge = (condition: Condition, at: Located, then: { never: string; always: string }) => {
       const holding = combinations.filter((combination) =>
         holds(condition, (name) => combination[name]),

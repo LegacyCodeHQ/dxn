@@ -1,7 +1,7 @@
 import type { ParseResult } from "./ast.js";
 import { holds } from "./condition.js";
-import { placement, states } from "./evaluate.js";
-import { type Combination, expand } from "./status.js";
+import { placement } from "./evaluate.js";
+import { alone, type Combination, expand } from "./status.js";
 
 // What a type, or a child in place, has that can be told apart: each case,
 // by the values that tell it apart, with the combinations it covers.
@@ -29,22 +29,7 @@ export function cases(
     ? placement(file, target).target
     : file.types.find(({ name }) => name === target);
   if (type === undefined) throw new Error(`no type ${target}`);
-  const each: Combination[] = placed
-    ? expand(file, target, [])
-    : states(file, type.name).rows.flatMap((row) => {
-        let expanded: Record<string, string>[] = [{}];
-        for (const [name, values] of Object.entries(row.states)) {
-          expanded = expanded.flatMap((each) =>
-            values.map((value) => ({ ...each, [name]: value })),
-          );
-        }
-        return expanded.map((own) => ({
-          ...(row.profiles === undefined ? {} : { profiles: row.profiles }),
-          dimensions: row.when,
-          parents: {},
-          states: own,
-        }));
-      });
+  const each: Combination[] = placed ? expand(file, target, []) : alone(file, type.name);
   // Combinations that differ only in their profiles are one, with all of
   // their profiles: profiles differ in dimensions this one does not have.
   const combinations: Combination[] = [];

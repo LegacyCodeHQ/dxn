@@ -1,6 +1,6 @@
 import type { ParseResult, Type } from "./ast.js";
 import { fieldValue } from "./derive.js";
-import { inPlace } from "./evaluate.js";
+import { inPlace, states } from "./evaluate.js";
 import { environmentOf } from "./profiles.js";
 
 // One combination of an element in place: the profiles that share it, the
@@ -60,21 +60,38 @@ export function treePaths(file: ParseResult): string[] {
   return paths;
 }
 
+// A row's states, split: one value for each state, in every combination of
+// the values each can have.
+export function split(states: Record<string, string[]>): Record<string, string>[] {
+  let expanded: Record<string, string>[] = [{}];
+  for (const [name, values] of Object.entries(states)) {
+    expanded = expanded.flatMap((each) => values.map((value) => ({ ...each, [name]: value })));
+  }
+  return expanded;
+}
+
+// A type's combinations on its own, each with one value for each state: its
+// rows of dxn states, split, with no parents.
+export function alone(file: ParseResult, typeName: string): Combination[] {
+  return states(file, typeName).rows.flatMap((row) =>
+    split(row.states).map((own) => ({
+      ...(row.profiles === undefined ? {} : { profiles: row.profiles }),
+      dimensions: row.when,
+      parents: {},
+      states: own,
+    })),
+  );
+}
+
 // An element's combinations in place, each with one value for each state:
 // its rows of dxn states, split.
 export function expand(file: ParseResult, path: string, given: string[]): Combination[] {
   const combinations: Combination[] = [];
   for (const row of inPlace(file, path).rows) {
-    let expanded: Record<string, string>[] = [{}];
-    for (const [name, values] of Object.entries(row.states)) {
-      expanded = expanded.flatMap((states) =>
-        values.map((value) => ({ ...states, [name]: value })),
-      );
-    }
     const dimensions = Object.fromEntries(
       Object.entries(row.when).filter(([name]) => !given.includes(name)),
     );
-    for (const states of expanded) {
+    for (const states of split(row.states)) {
       combinations.push({
         ...(row.profiles === undefined ? {} : { profiles: row.profiles }),
         dimensions,
