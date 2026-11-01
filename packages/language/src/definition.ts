@@ -1,8 +1,9 @@
-import type { Child, Condition, Declaration, Located, ParseResult, Type } from "./ast.js";
+import type { Child, Condition, Declaration, Enum, Located, ParseResult, Type } from "./ast.js";
 import { parse } from "./parse.js";
 
 // A name as it is written in a file, and what it means: a declaration's own
-// name, or one of the type a path into its children leads to.
+// name, one of the type a path into its children leads to, or a value of an
+// enum or a dimension.
 interface Reference {
   at: Located;
   // A declaration, by its full name.
@@ -10,6 +11,8 @@ interface Reference {
   // A path from a type, through its children, to a state, an action or an
   // event of the type at its end, or to the last child.
   path?: { from: Type; to: "state" | "action" | "event" | "child" };
+  // A value, of an enum or a dimension by its full name.
+  of?: string;
 }
 
 // Where going to a definition goes from: a line and a column, both from one,
@@ -40,6 +43,13 @@ export function definition(
     }
     if (reference.declared !== undefined) {
       const to = declarations(file).get(reference.declared);
+      return to === undefined
+        ? undefined
+        : { from: { line, column: at.column, length: written.length }, to };
+    }
+    if (reference.of !== undefined) {
+      const declaration = declarations(file).get(reference.of) as Enum | undefined;
+      const to = declaration?.values?.find(({ name }) => name === at.name);
       return to === undefined
         ? undefined
         : { from: { line, column: at.column, length: written.length }, to };
@@ -112,7 +122,15 @@ function references(file: ParseResult): Reference[] {
   const declared = (at: Located) => result.push({ at, declared: at.name });
   const own = (from: Type, at: Located, to: "state" | "action" | "event" | "child") =>
     result.push({ at, path: { from, to } });
-  // In a condition, a capitalized name is a dimension, any other a state.
+  const value = (at: Located, of: string | undefined) => {
+    if (of !== undefined) result.push({ at, of });
+  };
+  // What the values of a state of a type, or of a dimension, come from: a
+  // capitalized name is a dimension, any other a state.
+  const valuesOf = (type: Type | undefined, subject: string) =>
+    /^[A-Z]/.test(subject) ? subject : type?.states.find(({ name }) => name === subject)?.enum.name;
+  // In a condition, a capitalized name is a dimension, any other a state; and
+  // the values it compares are that dimension's, or that state's enum's.
   const condition = (type: Type, when: Condition | undefined) => {
     if (when === undefined) return;
     if (when.kind !== "compare") {
@@ -121,15 +139,24 @@ function references(file: ParseResult): Reference[] {
     }
     if (/^[A-Z]/.test(when.subject.name)) declared(when.subject);
     else own(type, when.subject, "state");
+    for (const compared of when.values) value(compared, valuesOf(type, when.subject.name));
   };
   for (const type of file.types) {
     for (const need of type.needs) declared(need);
     for (const state of type.states) {
       declared(state.enum);
-      if (state.derived !== undefined) declared(state.derived.dimension);
+      if (state.fixed !== undefined) value(state.fixed, state.enum.name);
+      if (state.derived !== undefined) {
+        declared(state.derived.dimension);
+        for (const { values, result } of state.derived.branches) {
+          for (const branch of values) value(branch, state.derived.dimension.name);
+          value(result, state.enum.name);
+        }
+      }
     }
     for (const rule of type.rules) {
       own(type, rule.state, "state");
+      value(rule.value, valuesOf(type, rule.state.name));
       condition(type, rule.when);
     }
     for (const child of type.children) {
@@ -139,22 +166,39 @@ function references(file: ParseResult): Reference[] {
       for (const binding of child.bindings ?? []) {
         if (inner !== undefined) own(inner, binding.state, "state");
         own(type, binding.from, "state");
+        for (const { values, result } of binding.map ?? []) {
+          for (const branch of values) value(branch, valuesOf(type, binding.from.name));
+          value(result, valuesOf(inner, binding.state.name));
+        }
       }
     }
     for (const provided of type.provides) own(type, provided, "state");
-    for (const action of type.actions) own(type, action.state, "state");
+    for (const action of type.actions) {
+      own(type, action.state, "state");
+      value(action.from, valuesOf(type, action.state.name));
+      value(action.to, valuesOf(type, action.state.name));
+    }
     for (const trigger of type.triggers) {
       if (trigger.event.kind === "named") own(type, trigger.event.name, "event");
-      else declared(trigger.event.dimension);
+      else {
+        declared(trigger.event.dimension);
+        for (const to of trigger.event.values) value(to, trigger.event.dimension.name);
+      }
       for (const effect of trigger.does) {
         if (effect.kind === "action") own(type, effect.name, "action");
-        else own(type, effect.state, "state");
+        else {
+          own(type, effect.state, "state");
+          value(effect.to, valuesOf(type, effect.state.name));
+        }
       }
       condition(type, trigger.when);
     }
     for (const alike of type.alikes) {
       if (/^[A-Z]/.test(alike.subject.name)) declared(alike.subject);
       else own(type, alike.subject, "state");
+      for (const alikeValue of alike.values ?? []) {
+        value(alikeValue, valuesOf(type, alike.subject.name));
+      }
       condition(type, alike.when);
     }
   }
@@ -163,14 +207,28 @@ function references(file: ParseResult): Reference[] {
   }
   for (const profile of file.profiles) {
     declared(profile.environment);
-    for (const { dimension } of profile.values) declared(dimension);
+    for (const assignment of profile.values) {
+      declared(assignment.dimension);
+      value(assignment.value, assignment.dimension.name);
+    }
   }
   for (const modifier of file.modifiers) {
     for (const profile of modifier.on) declared(profile);
-    for (const { dimension } of modifier.values) declared(dimension);
+    for (const assignment of modifier.values) {
+      declared(assignment.dimension);
+      value(assignment.value, assignment.dimension.name);
+    }
   }
   for (const record of file.records) {
-    for (const field of record.fields) declared(field.type);
+    for (const field of record.fields) {
+      declared(field.type);
+      if (field.derived === undefined) continue;
+      const on = record.fields.find(({ name }) => name === field.derived?.on.name);
+      for (const { values, result } of field.derived.branches) {
+        for (const branch of values) value(branch, on?.type.name);
+        value(result, field.type.name);
+      }
+    }
   }
   return result;
 }

@@ -46,6 +46,19 @@ modifier trackpad on phone { Pointer = mouse }
 record Source {
   section: Section
 }
+enum Layout = compact | inline
+type Ring {
+  state focus: Focus
+}
+type Bar needs Breakpoint {
+  state layout: Layout = when Breakpoint { base -> compact, lg -> inline }
+  has ring: Ring { focus = when layout { compact -> blurred, inline -> focused } }
+}
+enum Kind = draft | final
+record Note {
+  kind: Kind
+  section: Section = when kind { draft -> home, final -> blog }
+}
 record Evidence {
   source: Source
 }
@@ -168,6 +181,117 @@ describe("definition", () => {
       "expanded",
     ]);
     expect(go("expanded = ", "menu")).toEqual(["state menu: Openness", "menu"]);
+  });
+
+  it("goes from a value to where its enum or dimension declares it", () => {
+    const snapshot: unknown[] = [];
+    // A rule's value, and the values its condition compares.
+    snapshot.push(go("hover = ", "hovered"));
+    snapshot.push(go("when Pointer = ", "mouse"));
+    snapshot.push(go("and focus = ", "blurred"));
+    // What is alike, and its condition.
+    snapshot.push(go("alike hover in (", "rest"));
+    snapshot.push(go("when focus = ", "focused"));
+    // An action's values, and a trigger's change in place.
+    snapshot.push(go("action take-focus: focus ", "blurred"));
+    snapshot.push(go("focus blurred -> ", "focused"));
+    snapshot.push(go("hover -> ", "rest"));
+    // A child's and a trigger's conditions, and a dimension event.
+    snapshot.push(go("only when menu = ", "open"));
+    snapshot.push(go("on Breakpoint in (", "lg"));
+    // A fixed state, and a derived state's branches.
+    snapshot.push(go("state current: Section = ", "blog"));
+    snapshot.push(go("when Breakpoint { ", "base"));
+    snapshot.push(go("when Breakpoint { base -> ", "compact"));
+    // A binding's map: the type's state's values, and the child's state's.
+    snapshot.push(go("when layout { ", "compact"));
+    snapshot.push(go("when layout { compact -> ", "blurred"));
+    // A profile's and a modifier's dimensions' values.
+    snapshot.push(go("{ Breakpoint = ", "base"));
+    snapshot.push(go("trackpad on phone { Pointer = ", "mouse"));
+    // A derived field's branches.
+    snapshot.push(go("when kind { ", "draft"));
+    snapshot.push(go("when kind { draft -> ", "home"));
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "enum Hover = rest | hovered",
+          "hovered",
+        ],
+        [
+          "dimension Pointer = mouse | touch",
+          "mouse",
+        ],
+        [
+          "enum Focus = blurred | focused",
+          "blurred",
+        ],
+        [
+          "enum Hover = rest | hovered",
+          "rest",
+        ],
+        [
+          "enum Focus = blurred | focused",
+          "focused",
+        ],
+        [
+          "enum Focus = blurred | focused",
+          "blurred",
+        ],
+        [
+          "enum Focus = blurred | focused",
+          "focused",
+        ],
+        [
+          "enum Hover = rest | hovered",
+          "rest",
+        ],
+        [
+          "enum Openness = closed | open",
+          "open",
+        ],
+        [
+          "dimension Breakpoint = base | lg",
+          "lg",
+        ],
+        [
+          "enum Section = home | blog",
+          "blog",
+        ],
+        [
+          "dimension Breakpoint = base | lg",
+          "base",
+        ],
+        [
+          "enum Layout = compact | inline",
+          "compact",
+        ],
+        [
+          "enum Layout = compact | inline",
+          "compact",
+        ],
+        [
+          "enum Focus = blurred | focused",
+          "blurred",
+        ],
+        [
+          "dimension Breakpoint = base | lg",
+          "base",
+        ],
+        [
+          "dimension Pointer = mouse | touch",
+          "mouse",
+        ],
+        [
+          "enum Kind = draft | final",
+          "draft",
+        ],
+        [
+          "enum Section = home | blog",
+          "home",
+        ],
+      ]
+    `);
   });
 
   it("goes nowhere from a declaration itself, a keyword, or a name that is not declared", () => {
