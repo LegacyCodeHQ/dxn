@@ -15,5 +15,22 @@
       "node": "k6kZKF",
       "fingerprint": "d07edf49eb61af668ce7c97f9169f3b06db84f9e"
     }
+  },
+  {
+    "context": {
+      "path": "FeedScreen",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "content": "empty"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "s0h2D",
+      "node": "tISdx",
+      "fingerprint": "51b902bfdd5db6300511699004e84183e3177001"
+    }
   }
 ]

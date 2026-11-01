@@ -3703,7 +3703,7 @@
                 {
                   "type": "frame",
                   "id": "mHQJt",
-                  "name": "Space",
+                  "name": "Message",
                   "width": "fill_container",
                   "height": "fill_container",
                   "layout": "vertical",
@@ -3713,7 +3713,15 @@
                     40
                   ],
                   "justifyContent": "center",
-                  "alignItems": "center"
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "U49hy",
+                      "type": "ref",
+                      "ref": "FBIeO",
+                      "name": "Follow"
+                    }
+                  ]
                 },
                 {
                   "id": "lLhIQ",
