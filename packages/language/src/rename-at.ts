@@ -1,8 +1,8 @@
-import type { Enum, Located, ParseResult, State, Type } from "./ast.js";
+import type { Child, Enum, Located, ParseResult, State, Type } from "./ast.js";
 import { covers, links, type Span, wordAt } from "./definition.js";
 import { article } from "./names.js";
 import { parse } from "./parse.js";
-import { isValue, renameInData, renameStateInData } from "./rename.js";
+import { isValue, renameChildInData, renameInData, renameStateInData } from "./rename.js";
 
 // A stored data file of a record, by its path, and its content.
 export interface StoredFile {
@@ -50,7 +50,7 @@ export function renameable(
 // both from one, wherever it is used: the edits to the source, and the stored
 // data files that change, with their new content. Refused for a name that is
 // not one of its kind's, a rename that would leave problems, and, for now, the
-// names stored records hold other than an enum's values and states.
+// names stored records hold other than an enum's values, states and children.
 export function renameAt(
   source: string,
   line: number,
@@ -82,7 +82,9 @@ export function renameAt(
         ? renameInData(file, item.record, item.source, kind.of.name, name, to)
         : kind.kind === "state"
           ? renameStateInData(file, item.source, found.declared as State, to)
-          : undefined;
+          : kind.kind === "child"
+            ? renameChildInData(file, item.source, found.declared as Child, to)
+            : undefined;
     if (renamed !== undefined && renamed.changed > 0) {
       data.push({ path: item.path, source: renamed.source });
     }
@@ -92,6 +94,10 @@ export function renameAt(
 
 // How each kind that can be renamed is named.
 const rules: Record<string, { pattern: RegExp; text: string }> = {
+  child: {
+    pattern: /^[a-z][A-Za-z0-9-]*$/,
+    text: "a lowercase letter, then letters, digits and hyphens",
+  },
   state: {
     pattern: /^[a-z][A-Za-z0-9-]*$/,
     text: "a lowercase letter, then letters, digits and hyphens",

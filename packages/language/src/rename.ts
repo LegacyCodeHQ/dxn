@@ -1,4 +1,4 @@
-import type { Located, ParseResult, State } from "./ast.js";
+import type { Child, Located, ParseResult, State, Type } from "./ast.js";
 import { comparisons } from "./condition.js";
 import { type Placement, placement } from "./evaluate.js";
 import { childTypeAt } from "./expect.js";
@@ -257,6 +257,67 @@ export function renameStateInData(
       const parts = key.value.split(".");
       const renamed = [...parts.slice(0, -1), to].join(".");
       edits.push({ start: key.span.start, end: key.span.end, text: JSON.stringify(renamed) });
+    }
+  };
+  const { root } = parseJson(source);
+  if (root?.kind === "array") {
+    for (const element of root.elements) {
+      if (element.kind !== "object") continue;
+      const found = element.members.find(({ key }) => key.value === "context");
+      if (found !== undefined) context(found.value);
+    }
+  }
+  return { source: replace(source, edits), changed: edits.length };
+}
+
+// Renames a child of a type in stored records' contexts: its part of a
+// context's path, and of the keys of the parents a context's element has,
+// wherever that part is that child. Data without problems.
+export function renameChildInData(
+  file: ParseResult,
+  source: string,
+  child: Child,
+  to: string,
+): { source: string; changed: number } {
+  const edits: { start: number; end: number; text: string }[] = [];
+  // The parts of a path of children from a type, that child's renamed; none
+  // when no part is.
+  const renamedFrom = (from: Type | undefined, parts: string[]) => {
+    let type = from;
+    let changed = false;
+    const result = parts.map((part) => {
+      const found: Child | undefined = type?.children.find(({ name }) => name === part);
+      const inner: string | undefined = found?.type.name;
+      type = file.types.find(({ name }) => name === inner);
+      if (found !== child) return part;
+      changed = true;
+      return to;
+    });
+    return changed ? result : undefined;
+  };
+  const context = (node: JsonNode) => {
+    if (node.kind !== "object") return;
+    const member = (name: string) => node.members.find(({ key }) => key.value === name)?.value;
+    const path = member("path");
+    if (path?.kind !== "string") return;
+    const segments = path.value.split(".");
+    const first = segments.findIndex((segment) => /^[a-z]/.test(segment));
+    if (first === -1) return;
+    const root = file.types.find(({ name }) => name === segments.slice(0, first).join("."));
+    const children = renamedFrom(root, segments.slice(first));
+    if (children !== undefined) {
+      const text = JSON.stringify([...segments.slice(0, first), ...children].join("."));
+      edits.push({ start: path.span.start, end: path.span.end, text });
+    }
+    // A parent's key is its path of children from the root, then its state.
+    const parents = member("parents");
+    if (parents?.kind !== "object") return;
+    for (const { key } of parents.members) {
+      const parts = key.value.split(".");
+      const renamed = renamedFrom(root, parts.slice(0, -1));
+      if (renamed === undefined) continue;
+      const text = JSON.stringify([...renamed, parts.at(-1)].join("."));
+      edits.push({ start: key.span.start, end: key.span.end, text });
     }
   };
   const { root } = parseJson(source);
