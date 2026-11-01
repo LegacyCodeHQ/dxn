@@ -175,11 +175,14 @@ function checkOne(
       trigger?.change !== undefined
         ? { state: trigger.change.state, to: trigger.change.to }
         : named;
-    // Where nothing fires, the element stays as it was: what the rule says
-    // must hold of it unchanged, with nowhere for focus to have gone.
+    // Where nothing fires, the element stays as it was. A rule that some
+    // combination matches looks for it among the others; one that every
+    // combination does must hold of it unchanged, with nowhere for focus to
+    // have gone.
     const unchanged =
-      values.every(({ key, value }) => valueAt(combination, key.name) === value.name) &&
-      !expectation.values.some(({ key }) => key.name === "focus");
+      expectation.assertion !== "then" ||
+      (values.every(({ key, value }) => valueAt(combination, key.name) === value.name) &&
+        !expectation.values.some(({ key }) => key.name === "focus"));
     if ((trigger === undefined || action === undefined) && unchanged) {
       return { combination, focus: undefined };
     }

@@ -383,6 +383,29 @@ type Page {
 }
 `;
 
+describe("an expectation on an event", () => {
+  it("finds some combination it changes, where nothing fires in others", () => {
+    const rule = (assertion: string) =>
+      `${pressing("on key Space: press -> pressed only when focus = focused")}
+expect "Space can press it" {
+  in Page.button
+  when press = released
+  on key Space
+  ${assertion}
+}
+`;
+    assert([
+      problems(rule("some press = pressed")),
+      problems(rule("then press = pressed")),
+    ]).toEqual([
+      [],
+      [
+        "18:8: expectation-failed: Space can press it: nothing happens on key Space to Page.button when press = released",
+      ],
+    ]);
+  });
+});
+
 describe("a change written in a trigger", () => {
   it("changes one of the type's own states to a value, with no action to name", () => {
     const source = pressing(
