@@ -1,6 +1,7 @@
 ; Where Zed shows a run button: on each type's name, with the name dxn states
-; takes, and on each expectation's title, which dxn check --expect takes; the
-; tasks in tasks.json run them.
+; takes, and where dxn review writes and opens the file's review pages; and on
+; each expectation's title, which dxn check --expect takes; the tasks in
+; tasks.json run them.
 
 ; A type at the top of the file: its own name.
 ((source_file

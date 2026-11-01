@@ -95,7 +95,11 @@ Zed 1.26 does not, by default:
 
 Each type has a run button beside its name, which runs `dxn states` for it in
 Zed's terminal: the table of the states it has in each combination. A type
-inside another runs by its full name, `<Type>.<Name>`. Each expectation has
+inside another runs by its full name, `<Type>.<Name>`. The same button offers
+`dxn review` for the file: it writes the pages to review the file's evidence
+by, in dxn's cache, and opens each in Zed with the `zed` command, which Zed
+installs with **cli: install**; **markdown: open preview to the side** then
+shows its pictures. Each expectation has
 one beside its title, which runs `dxn check --expect` for it: it says the
 expectation holds, or why it fails, and the button shows which. The button runs the
 `dxn` on the project's `PATH`; to use the one in this repository, build it with

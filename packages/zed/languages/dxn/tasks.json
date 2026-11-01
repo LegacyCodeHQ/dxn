@@ -14,6 +14,17 @@
     "tags": ["dxn-nested-type"]
   },
   {
+    "label": "dxn review $ZED_RELATIVE_FILE",
+    "command": "sh",
+    "args": [
+      "-c",
+      "dxn review \"$0\" | sed -n 's/^Wrote //p' | while IFS= read -r page; do zed \"$page\"; done",
+      "$ZED_RELATIVE_FILE"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["dxn-type", "dxn-nested-type"]
+  },
+  {
     "label": "dxn check --expect $ZED_CUSTOM_title",
     "command": "dxn",
     "args": ["check", "$ZED_RELATIVE_FILE", "--expect", "$ZED_CUSTOM_title"],
