@@ -15,7 +15,7 @@ help:
 	@echo "  coverage    - Run the test suite with coverage thresholds"
 	@echo "  grammar     - Check the tree-sitter grammar's generated parser and run its corpus tests"
 	@echo "  build       - Compile packages/*/src/ to packages/*/dist/, and add dist/main.js"
-	@echo "  smoke       - Run the built CLI once"
+	@echo "  smoke       - Run every built command, and dist/main.js, once"
 	@echo "  check       - Run the full quality gate (the pre-push hook)"
 	@echo "  check-fast  - Run the quality gate without coverage"
 	@echo "  qa          - Alias for check"
@@ -73,8 +73,9 @@ build:
 	mkdir -p dist
 	cp scripts/root-dist/main.js dist/main.js
 
+# Every command a package declares in its "bin", then the root's dist/main.js.
 smoke: build
-	node packages/cli/dist/main.js --version
+	node scripts/smoke/run.mjs
 	node dist/main.js --version
 
 check: lint-check references cycles security coverage grammar smoke
