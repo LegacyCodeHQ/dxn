@@ -101,13 +101,14 @@ export type Event =
   | { kind: "named"; name: Located }
   | { kind: "dimension"; dimension: Located; values: Located[] };
 
-// "on <event>: <change>, <change> … [only when <condition>]": what an event
-// changes, each change a named action or a change in place.
-// One change a trigger makes.
+// One change a trigger makes: a named action, or a change of a state in place
+// to one of its values.
 export type Effect =
   | { kind: "action"; name: Located }
   | { kind: "change"; state: Located; to: Located };
 
+// "on <event>: <change>, <change> … [only when <condition>]": what an event
+// changes, each change a named action or a change in place.
 export interface Trigger extends Located {
   event: Event;
   // What it does, in order: each a named action, its own or a child's by its
@@ -123,10 +124,9 @@ export interface Trigger extends Located {
 export interface Child extends Located {
   type: Located;
   when?: Condition;
-  // The child's states the type sets, each from one of its own states, whose
-  // values come from the same enum.
-  // With a map, the child's state takes the value its branch gives for the
-  // type's state.
+  // The child's states the type sets, each from one of its own states:
+  // without a map, both with their values from the same enum; with a map,
+  // the child's state takes the value its branch gives for the type's state.
   bindings?: { state: Located; from: Located; map?: { values: Located[]; result: Located }[] }[];
 }
 

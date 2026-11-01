@@ -330,9 +330,8 @@ function checkModifiers(file: ParseResult, names: Names, report: Report): void {
 
 // Records: lowercase fields, each once, each an enum, a record or a scalar,
 // none a record with its own context, nor named context in a record with
-// one; and no
-// record that contains itself, which could never be written down, since
-// every field is given.
+// one; and no record that contains itself, which could never be written
+// down, since every field is given.
 function checkRecords(file: ParseResult, names: Names, report: Report): void {
   for (const record of file.records) {
     const seen = new Set<string>();

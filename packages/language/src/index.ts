@@ -7,10 +7,12 @@ export type { ParseResult, RecordDeclaration, Type } from "./ast.js";
 export { type Cases, cases } from "./cases.js";
 // What a rule's or a child's condition compares.
 export { subjects } from "./condition.js";
-// What a tree of types is in place, and how its records are derived.
+// A field's value in a stored record, derived or as stored.
 export { fieldValue } from "./derive.js";
 // Diagnostics in stored data, by JSON path.
 export { Diagnostics } from "./diagnostic.js";
+// What a type's states are in each combination, and what a tree of types
+// is in place.
 export {
   type InPlace,
   inPlace,
@@ -24,8 +26,10 @@ export { parseJson } from "./json.js";
 export { Names } from "./names.js";
 export { parse } from "./parse.js";
 export { givenDimensions, profilesOf } from "./profiles.js";
-// Records stored as JSON beside a .dxn file.
+// Renaming an enum's value in a .dxn file and in its stored records.
 export { isValue, renameInData, renameInSource } from "./rename.js";
+// How many combinations of each element stored records are about.
 export { type Check, type Combination, coverage, treePaths } from "./status.js";
+// Records stored as JSON beside a .dxn file.
 export { folderOf, storedFiles } from "./store.js";
 export { validate } from "./validate.js";

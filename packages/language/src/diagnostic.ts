@@ -6,11 +6,6 @@ export interface Diagnostic {
   column: number;
 }
 
-export interface FileDiagnostic extends Diagnostic {
-  // Relative to the project directory, e.g. "roots/article-page.json".
-  file: string;
-}
-
 export class Diagnostics {
   readonly items: Diagnostic[] = [];
 
