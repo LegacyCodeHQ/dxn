@@ -1,8 +1,8 @@
-import type { Enum, Located, ParseResult } from "./ast.js";
+import type { Enum, Located, ParseResult, State, Type } from "./ast.js";
 import { covers, links, type Span, wordAt } from "./definition.js";
 import { article } from "./names.js";
 import { parse } from "./parse.js";
-import { isValue, renameInData } from "./rename.js";
+import { isValue, renameInData, renameStateInData } from "./rename.js";
 
 // A stored data file of a record, by its path, and its content.
 export interface StoredFile {
@@ -30,6 +30,8 @@ interface Kind {
   kind: string;
   of?: Enum;
   dimension?: boolean;
+  // For a state, the type it is of.
+  type?: Type;
 }
 
 // What can be renamed at a line and a column of a source, both from one: the
@@ -48,7 +50,7 @@ export function renameable(
 // both from one, wherever it is used: the edits to the source, and the stored
 // data files that change, with their new content. Refused for a name that is
 // not one of its kind's, a rename that would leave problems, and, for now, the
-// names stored records hold other than an enum's values.
+// names stored records hold other than an enum's values and states.
 export function renameAt(
   source: string,
   line: number,
@@ -74,10 +76,15 @@ export function renameAt(
   const left = problems(after).filter((problem) => !before.has(problem));
   if (left.length > 0) return { refusal: `the rename would leave a problem: ${left[0]}` };
   const data: { path: string; source: string }[] = [];
-  if (kind.kind === "value" && kind.of !== undefined) {
-    for (const item of stored) {
-      const renamed = renameInData(file, item.record, item.source, kind.of.name, name, to);
-      if (renamed.changed > 0) data.push({ path: item.path, source: renamed.source });
+  for (const item of stored) {
+    const renamed =
+      kind.kind === "value" && kind.of !== undefined
+        ? renameInData(file, item.record, item.source, kind.of.name, name, to)
+        : kind.kind === "state"
+          ? renameStateInData(file, item.source, found.declared as State, to)
+          : undefined;
+    if (renamed !== undefined && renamed.changed > 0) {
+      data.push({ path: item.path, source: renamed.source });
     }
   }
   return { edits, data };
@@ -85,6 +92,10 @@ export function renameAt(
 
 // How each kind that can be renamed is named.
 const rules: Record<string, { pattern: RegExp; text: string }> = {
+  state: {
+    pattern: /^[a-z][A-Za-z0-9-]*$/,
+    text: "a lowercase letter, then letters, digits and hyphens",
+  },
   enum: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   environment: {
     pattern: /^[A-Z][A-Za-z0-9]*$/,
@@ -120,7 +131,9 @@ function target(
   source: string,
   line: number,
   column: number,
-): { kind: Kind; name: string; from: Span; spans: Span[] } | { refusal: string } {
+):
+  | { kind: Kind; name: string; from: Span; spans: Span[]; declared: Located }
+  | { refusal: string } {
   const lines = source.split("\n");
   const kinds = kindsOf(file);
   const span = (at: Located): Span => ({
@@ -160,7 +173,20 @@ function target(
         : "stored records name it";
     return { refusal: `${name} is ${what}, and ${why}; renaming it here is not supported yet` };
   }
-  return { kind, name, from, spans };
+  // A provided state is received below by its name, and a received one is
+  // matched to the one provided above by its own.
+  const state = declared as State;
+  if (kind.kind === "state" && state.received) {
+    return {
+      refusal: `${name} is received by its name from a type above; renaming it here is not supported yet`,
+    };
+  }
+  if (kind.kind === "state" && kind.type?.provides.some((provided) => provided.name === name)) {
+    return {
+      refusal: `${name} is provided by its name to the types below; renaming it here is not supported yet`,
+    };
+  }
+  return { kind, name, from, spans, declared };
 }
 
 // Every declaration a name can be, with its kind.
@@ -178,7 +204,7 @@ function kindsOf(file: ParseResult): Map<Located, Kind> {
   }
   for (const type of file.types) {
     result.set(type, { kind: "type" });
-    for (const state of type.states) result.set(state, { kind: "state" });
+    for (const state of type.states) result.set(state, { kind: "state", type });
     for (const action of type.actions) result.set(action.name, { kind: "action" });
     for (const event of type.events) result.set(event, { kind: "event" });
     for (const child of type.children) result.set(child, { kind: "child" });

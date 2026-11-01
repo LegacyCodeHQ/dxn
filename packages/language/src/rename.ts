@@ -1,6 +1,6 @@
-import type { Located, ParseResult } from "./ast.js";
+import type { Located, ParseResult, State } from "./ast.js";
 import { comparisons } from "./condition.js";
-import { placement } from "./evaluate.js";
+import { type Placement, placement } from "./evaluate.js";
 import { childTypeAt } from "./expect.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { Names } from "./names.js";
@@ -216,5 +216,56 @@ export function renameInData(
   };
   const { root } = parseJson(source);
   if (root?.kind === "array") for (const element of root.elements) visit(element, record, true);
+  return { source: replace(source, edits), changed: edits.length };
+}
+
+// Renames a state of a type in stored records' contexts: its key among the
+// states of a context whose element is of that type, and the last part of its
+// key among the parents of one it places. Data without problems.
+export function renameStateInData(
+  file: ParseResult,
+  source: string,
+  state: State,
+  to: string,
+): { source: string; changed: number } {
+  const edits: { start: number; end: number; text: string }[] = [];
+  const context = (node: JsonNode) => {
+    if (node.kind !== "object") return;
+    const member = (name: string) => node.members.find(({ key }) => key.value === name)?.value;
+    const typeName = member("type");
+    const path = member("path");
+    let place: Placement | undefined;
+    try {
+      place = path?.kind === "string" ? placement(file, path.value) : undefined;
+    } catch {
+      return;
+    }
+    const type =
+      place?.target ??
+      file.types.find(({ name }) => typeName?.kind === "string" && name === typeName.value);
+    const states = member("states");
+    if (type !== undefined && states?.kind === "object") {
+      for (const { key } of states.members) {
+        if (type.states.find(({ name }) => name === key.value) !== state) continue;
+        edits.push({ start: key.span.start, end: key.span.end, text: JSON.stringify(to) });
+      }
+    }
+    const parents = member("parents");
+    if (place === undefined || parents?.kind !== "object") return;
+    for (const { key } of parents.members) {
+      if (place.parents.find((parent) => parent.key === key.value)?.state !== state) continue;
+      const parts = key.value.split(".");
+      const renamed = [...parts.slice(0, -1), to].join(".");
+      edits.push({ start: key.span.start, end: key.span.end, text: JSON.stringify(renamed) });
+    }
+  };
+  const { root } = parseJson(source);
+  if (root?.kind === "array") {
+    for (const element of root.elements) {
+      if (element.kind !== "object") continue;
+      const found = element.members.find(({ key }) => key.value === "context");
+      if (found !== undefined) context(found.value);
+    }
+  }
   return { source: replace(source, edits), changed: edits.length };
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
 import { renameInData, renameInSource } from "../src/rename.js";
 import { renameAt } from "../src/rename-at.js";
+import { validate } from "../src/validate.js";
 
 const source = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered
@@ -51,7 +52,7 @@ const data = `[
       "profile": "phone",
       "dimensions": {},
       "parents": { "menu.menu": "open" },
-      "states": { "hover": "hovered", "focus": "blurred" }
+      "states": { "hover": "rest", "focus": "blurred" }
     },
     "actor": "designer"
   }
@@ -132,22 +133,96 @@ describe("renaming in the editor", () => {
   });
 
   it("renames a value where it is used, and in stored records, as dxn rename does", () => {
-    const result = renameAt(source, ...at("enum Hover = rest | ", "hovered"), "over", stored);
+    const result = renameAt(source, ...at("enum Focus = ", "blurred"), "unfocused", stored);
     if ("refusal" in result) throw new Error(result.refusal);
     const file = parse(source);
-    expect(edited(result.edits)).toBe(renameInSource(file, source, "Hover", "hovered", "over"));
+    expect(edited(result.edits)).toBe(
+      renameInSource(file, source, "Focus", "blurred", "unfocused"),
+    );
     expect(result.data).toEqual([
       {
         path: "evidence/evidence.json",
-        source: renameInData(file, "Evidence", data, "Hover", "hovered", "over").source,
+        source: renameInData(file, "Evidence", data, "Focus", "blurred", "unfocused").source,
       },
     ]);
-    expect(result.data[0]?.source).toContain('"hover": "over"');
+    expect(result.data[0]?.source).toContain('"focus": "unfocused"');
   });
 
   it("leaves stored records that do not use the name alone", () => {
     const result = renameAt(source, ...at("action ", "take-focus"), "grab-focus", stored);
     expect("refusal" in result ? result.refusal : result.data).toEqual([]);
+  });
+
+  it("renames a state where it is used, and as a key in stored records' contexts", () => {
+    const snapshot: unknown[] = [];
+    for (const [before, word, to] of [
+      ["  state ", "hover", "pointing"],
+      ["  state ", "menu", "openness"],
+    ] as const) {
+      const result = renameAt(source, ...at(before, word), to, stored);
+      if ("refusal" in result) throw new Error(result.refusal);
+      const after = edited(result.edits);
+      const lines = source.split("\n");
+      snapshot.push(
+        after
+          .split("\n")
+          .filter((line, index) => line !== lines[index])
+          .map((line) => line.trim()),
+      );
+      // The stored records still check, against the renamed file.
+      const data = result.data[0]?.source ?? "";
+      snapshot.push(data.match(/"(parents|states)": \{[^}]*\}/g));
+      expect(validate(parse(after), "Evidence", data)).toEqual([]);
+    }
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "state pointing: Hover, focus: Focus",
+          "pointing = hovered only when Pointer = mouse",
+          "when pointing = hovered, profile = phone+trackpad",
+        ],
+        [
+          ""parents": { "menu.menu": "open" }",
+          ""states": { "pointing": "rest", "focus": "blurred" }",
+        ],
+        [
+          "state openness: Openness",
+          "has link: Link only when openness = open",
+        ],
+        [
+          ""parents": { "menu.openness": "open" }",
+          ""states": { "hover": "rest", "focus": "blurred" }",
+        ],
+      ]
+    `);
+  });
+
+  it("refuses, for now, a state that is provided or received, which is matched by its name", () => {
+    const shared = `enum Section = home | blog
+type Link receives current: Section {
+}
+type Page {
+  state current: Section = blog
+  provides current
+  has link: Link
+}
+`;
+    const offset = (text: string, word: string) => {
+      const lines = shared.split("\n");
+      const line = lines.findIndex((each) => each.includes(text));
+      return [line + 1, (lines[line] ?? "").indexOf(text) + text.indexOf(word) + 2] as const;
+    };
+    expect(
+      [
+        renameAt(shared, ...offset("receives current", "current"), "section"),
+        renameAt(shared, ...offset("state current", "current"), "section"),
+      ].map((result) => ("refusal" in result ? result.refusal : result)),
+    ).toMatchInlineSnapshot(`
+      [
+        "current is received by its name from a type above; renaming it here is not supported yet",
+        "current is provided by its name to the types below; renaming it here is not supported yet",
+      ]
+    `);
   });
 
   it("refuses a name that is not one, one already declared, and what stored records name", () => {
@@ -157,7 +232,6 @@ describe("renaming in the editor", () => {
     snapshot.push(renamed("enum Hover = rest | ", "hovered", "a b"));
     snapshot.push(renamed("enum Hover = ", "rest", "hovered"));
     snapshot.push(renamed("enum ", "Focus", "Hover"));
-    snapshot.push(renamed("  state ", "hover", "pointing"));
     snapshot.push(renamed("has ", "link", "item"));
     snapshot.push(renamed("type ", "Link", "Item"));
     snapshot.push(renamed("profile ", "phone", "handset"));
@@ -172,7 +246,6 @@ describe("renaming in the editor", () => {
         ""a b" is not a value name: a letter or digit, then letters, digits and hyphens",
         "the rename would leave a problem: "hovered" appears twice in Hover",
         "the rename would leave a problem: Hover is already declared at line 2",
-        "hover is a state, and stored records name it; renaming it here is not supported yet",
         "link is a child, and stored records name it; renaming it here is not supported yet",
         "Link is a type, and stored records name it; renaming it here is not supported yet",
         "phone is a profile, and stored records name it; renaming it here is not supported yet",

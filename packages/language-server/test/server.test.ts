@@ -326,13 +326,13 @@ describe("the language server", () => {
         },
       ]);
 
-      // A state, which stored records name, is refused with the reason.
+      // A type, which stored records name, is refused with the reason.
       await expect(
         editor.sendRequest(PrepareRenameRequest.type, {
           textDocument: { uri },
-          position: { line: 2, character: 9 },
+          position: { line: 1, character: 6 },
         }),
-      ).rejects.toThrow("hover is a state, and stored records name it");
+      ).rejects.toThrow("Link is a type, and stored records name it");
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }
