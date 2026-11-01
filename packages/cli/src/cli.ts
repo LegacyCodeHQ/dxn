@@ -1,8 +1,6 @@
 import { type Command, dispatch } from "./commands/context.js";
 import { language } from "./commands/lang.js";
-import { prototype } from "./commands/prototype.js";
 import type { Io } from "./io.js";
-import { parseGlobal } from "./project.js";
 import { version } from "./version.js";
 
 export type { Io } from "./io.js";
@@ -12,8 +10,7 @@ const usage = `Usage: dxn <command> [options]
 Commands:
   check <file>                       Parse and check a file; say what it declares,
                                      or report every problem it has. Warnings
-                                     are printed, but do not fail. Needs no
-                                     project.
+                                     are printed, but do not fail.
   states <file> <type>               Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
@@ -48,44 +45,30 @@ Commands:
                                      stored record, once both check; with --dry-run,
                                      say what it would write
 
-  prototype <command>                The JSON prototype's commands, kept until it
-                                     is retired
-
   help [<command>]                   Show this overview, or a command's usage
 
 Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
-and options, and "dxn prototype" for the prototype's commands. The
-docs/language/guide.md file of the dxn package explains the language.
+and options. The docs/language/guide.md file of the dxn package explains the
+language.
 
 Options:
-  --dir <directory>                  Use this project directory instead of the
-                                     nearest .dxn
   --dry-run                          Print the files a command would write,
                                      without writing them
   -h, --help                         Show this help
   -V, --version                      Print version information as JSON
 `;
 
-// The language's commands at the top, and the JSON prototype's under one
-// command of its own.
-const commands: Record<string, Command> = { ...language, prototype };
+const commands: Record<string, Command> = language;
 
 export function run(argv: string[], io: Io): number {
   const cwd = io.cwd ?? process.cwd();
-  const global = parseGlobal(argv, cwd);
-  if ("error" in global) {
-    io.stderr(`dxn: ${global.error}\n\n${usage}`);
-    return 2;
-  }
-  const [first] = global.args;
+  // --dry-run is accepted wherever it appears, before or after the command.
+  const dryRun = argv.includes("--dry-run");
+  const args = argv.filter((arg) => arg !== "--dry-run");
+  const [first] = args;
   if (first === "-V" || first === "--version") {
     io.stdout(`${JSON.stringify({ version })}\n`);
     return 0;
   }
-  return dispatch(
-    global.args,
-    { io, cwd, dir: global.dir, dryRun: global.dryRun },
-    usage,
-    commands,
-  );
+  return dispatch(args, { io, cwd, dryRun }, usage, commands);
 }

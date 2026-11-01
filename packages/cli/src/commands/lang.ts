@@ -30,7 +30,7 @@ import {
   treePaths,
   validate,
 } from "@legacycodehq/dxn-language";
-import { Fingerprints } from "../compiler/fingerprint.js";
+import { Fingerprints } from "../fingerprint.js";
 import { drawTable, NONE } from "../tables.js";
 import { type Command, type Context, command } from "./context.js";
 
@@ -60,8 +60,7 @@ comment, to the end of the line:
 Commands:
   check <file>                       Parse and check a file; say what it declares,
                                      or report every problem it has. Warnings
-                                     are printed, but do not fail. Needs no
-                                     project.
+                                     are printed, but do not fail.
   states <file> <type>               Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,

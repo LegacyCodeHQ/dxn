@@ -1,4 +1,4 @@
-.PHONY: help embed-docs install fmt fmt-check lint lint-check typecheck cycles security test coverage build smoke check check-fast qa setup-hooks clean
+.PHONY: help install fmt fmt-check lint lint-check typecheck cycles security test coverage build smoke check check-fast qa setup-hooks clean
 
 help:
 	@echo "Targets:"
@@ -12,7 +12,6 @@ help:
 	@echo "  security    - Audit production dependencies for known vulnerabilities"
 	@echo "  test        - Run both packages' test suites"
 	@echo "  coverage    - Run the test suite with coverage thresholds"
-	@echo "  embed-docs  - Copy packages/cli/docs/workflow.md into the program (after editing it)"
 	@echo "  build       - Compile packages/*/src/ to packages/*/dist/, and add dist/main.js"
 	@echo "  smoke       - Run the built CLI once"
 	@echo "  check       - Run the full quality gate (the pre-push hook)"
@@ -51,10 +50,6 @@ test:
 
 coverage:
 	npx vitest run --coverage
-
-embed-docs:
-	node scripts/embed-docs/embed.mjs
-	npx biome format --write packages/cli/src/generated/workflow.ts
 
 # The language, then the dxn command. dist/main.js at the root runs the built
 # command, for tooling that runs the CLI from the repository root.

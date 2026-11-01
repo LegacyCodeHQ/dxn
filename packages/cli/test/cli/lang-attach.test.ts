@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { Fingerprints } from "../../src/compiler/fingerprint.js";
+import { Fingerprints } from "../../src/fingerprint.js";
 import { capture } from "../support/cli.js";
 import { cleanup, writeProject } from "../support/project.js";
 

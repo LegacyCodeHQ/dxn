@@ -4,63 +4,20 @@ import { cleanup, writeProject } from "../support/project.js";
 
 afterAll(cleanup);
 
-// Help never needs a project, so run it where there is none.
+// Help needs no file, so run it in an empty directory.
 const outside = () => writeProject({});
 const help = (...argv: string[]) => capture(argv, outside());
 
 describe("help", () => {
-  it("prints a command's usage with --help or -h, without a project", () => {
-    const snapshot: unknown[] = [];
-    for (const argv of [
-      ["prototype", "contexts", "--help"],
-      ["prototype", "verify", "-h"],
-      ["prototype", "init", "--help"],
-    ]) {
-      const result = help(...argv);
-      snapshot.push([result.code, result.stderr, result.stdout.split("\n")[0]]);
-    }
-    expect(snapshot).toMatchInlineSnapshot(`
-      [
-        [
-          0,
-          "",
-          "Usage: dxn prototype contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]",
-        ],
-        [
-          0,
-          "",
-          "Usage: dxn prototype verify <node-id> --check <name> --result passed|failed --actor <role>",
-        ],
-        [
-          0,
-          "",
-          "Usage: dxn prototype init [--dir <directory>]",
-        ],
-      ]
-    `);
-  });
-
-  it("prints a command group's usage for the group and its subcommands", () => {
-    const snapshot: unknown[] = [];
-    snapshot.push(help("prototype", "node", "--help").stdout.split("\n")[0]);
-    snapshot.push(help("prototype", "node", "add", "--help").stdout.split("\n")[0]);
-    snapshot.push(help("prototype", "dimension", "add", "-h").code);
-    expect(snapshot).toMatchInlineSnapshot(`
-      [
-        "Usage: dxn prototype node <subcommand>",
-        "Usage: dxn prototype node <subcommand>",
-        0,
-      ]
-    `);
-  });
-
-  it("prints the same usage with help <command>", () => {
-    expect(help("prototype", "help", "contexts").stdout).toBe(
-      help("prototype", "contexts", "--help").stdout,
-    );
-    expect(help("prototype", "help", "node", "add").stdout).toBe(
-      help("prototype", "node", "--help").stdout,
-    );
+  it("prints a command's usage with --help, -h or help <command>", () => {
+    const usage = help("check", "--help");
+    expect([usage.code, usage.stderr, usage.stdout.split("\n")[0]]).toEqual([
+      0,
+      "",
+      "Usage: dxn <command> <file> [options]",
+    ]);
+    expect(help("states", "-h").stdout).toBe(usage.stdout);
+    expect(help("help", "cases").stdout).toBe(usage.stdout);
   });
 
   it("prints the overview with help alone, pointing to the docs", () => {
@@ -82,8 +39,7 @@ describe("help", () => {
       Commands:
         check <file>                       Parse and check a file; say what it declares,
                                            or report every problem it has. Warnings
-                                           are printed, but do not fail. Needs no
-                                           project.
+                                           are printed, but do not fail.
         states <file> <type>               Evaluate a type: the states it has in each
                                            profile, or without profiles under each
                                            combination of the dimensions it needs,
@@ -118,18 +74,13 @@ describe("help", () => {
                                            stored record, once both check; with --dry-run,
                                            say what it would write
 
-        prototype <command>                The JSON prototype's commands, kept until it
-                                           is retired
-
         help [<command>]                   Show this overview, or a command's usage
 
       Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
-      and options, and "dxn prototype" for the prototype's commands. The
-      docs/language/guide.md file of the dxn package explains the language.
+      and options. The docs/language/guide.md file of the dxn package explains the
+      language.
 
       Options:
-        --dir <directory>                  Use this project directory instead of the
-                                           nearest .dxn
         --dry-run                          Print the files a command would write,
                                            without writing them
         -h, --help                         Show this help
@@ -140,51 +91,18 @@ describe("help", () => {
     `);
   });
 
-  it("documents every command, and every command of the prototype", () => {
-    for (const prefix of [[], ["prototype"]]) {
-      const overview = help(...prefix, "--help").stdout;
-      const commands = [...overview.matchAll(/^ {2}([a-z][a-z-]*)/gm)].map(
-        (match) => match[1] as string,
-      );
-      for (const command of commands) {
-        const result = help(...prefix, command, "--help");
-        expect([command, result.code, result.stdout.startsWith("Usage: dxn")]).toEqual([
-          command,
-          0,
-          true,
-        ]);
-      }
+  it("documents every command", () => {
+    const overview = help("--help").stdout;
+    const commands = [...overview.matchAll(/^ {2}([a-z][a-z-]*)/gm)].map(
+      (match) => match[1] as string,
+    );
+    for (const command of commands) {
+      const result = help(command, "--help");
+      expect([command, result.code, result.stdout.startsWith("Usage: dxn")]).toEqual([
+        command,
+        0,
+        true,
+      ]);
     }
-  });
-});
-
-describe("usage text", () => {
-  it("names contexts by state group, as records and queries do", () => {
-    const snapshot: unknown[] = [];
-    for (const name of ["verify", "unverify"]) {
-      snapshot.push(
-        help("prototype", name, "--help")
-          .stdout.split("\n")
-          .filter((line) => line.includes("state")),
-      );
-    }
-    snapshot.push(help("prototype", "state-group", "--help").stdout.split("\n").slice(2, 5));
-    expect(snapshot).toMatchInlineSnapshot(`
-      [
-        [
-          "                                  [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]",
-          "each of the node's state groups (state=<state> for a plain states list, or",
-          "<node-id>=<state> for a shared node, as contexts names it) and the states of",
-        ],
-        [
-          "                                    [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]",
-        ],
-        [
-          "A state group is a named set of states that exclude each other, such as hover",
-          "(rest, hovered) or selection (unselected, selected). A type can use several",
-          "groups, which vary independently. Types use groups with "type add --groups" or",
-        ],
-      ]
-    `);
   });
 });

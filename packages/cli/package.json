@@ -1,7 +1,7 @@
 {
   "name": "@legacycodehq/dxn",
   "version": "0.0.0",
-  "description": "Track what has been specified, built and verified for a tree of nodes across dimensions.",
+  "description": "Check .dxn files, written in the dxn language of states and dimensions, and the evidence stored beside them.",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
@@ -11,8 +11,7 @@
   "files": [
     "dist",
     "!dist/tsconfig.build.tsbuildinfo",
-    "docs",
-    "schema"
+    "docs"
   ],
   "engines": {
     "node": ">=22"

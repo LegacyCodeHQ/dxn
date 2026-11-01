@@ -1,14 +1,10 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
-import { status } from "../src/commands/reading.js";
 import { capture } from "./support/cli.js";
 import { cleanup, writeProject } from "./support/project.js";
 
 afterAll(cleanup);
-
-const website = fileURLToPath(new URL("../examples/website", import.meta.url));
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
   version: string;
@@ -46,8 +42,7 @@ describe("dxn cli", () => {
       Commands:
         check <file>                       Parse and check a file; say what it declares,
                                            or report every problem it has. Warnings
-                                           are printed, but do not fail. Needs no
-                                           project.
+                                           are printed, but do not fail.
         states <file> <type>               Evaluate a type: the states it has in each
                                            profile, or without profiles under each
                                            combination of the dimensions it needs,
@@ -82,18 +77,13 @@ describe("dxn cli", () => {
                                            stored record, once both check; with --dry-run,
                                            say what it would write
 
-        prototype <command>                The JSON prototype's commands, kept until it
-                                           is retired
-
         help [<command>]                   Show this overview, or a command's usage
 
       Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
-      and options, and "dxn prototype" for the prototype's commands. The
-      docs/language/guide.md file of the dxn package explains the language.
+      and options. The docs/language/guide.md file of the dxn package explains the
+      language.
 
       Options:
-        --dir <directory>                  Use this project directory instead of the
-                                           nearest .dxn
         --dry-run                          Print the files a command would write,
                                            without writing them
         -h, --help                         Show this help
@@ -117,8 +107,7 @@ describe("dxn cli", () => {
       Commands:
         check <file>                       Parse and check a file; say what it declares,
                                            or report every problem it has. Warnings
-                                           are printed, but do not fail. Needs no
-                                           project.
+                                           are printed, but do not fail.
         states <file> <type>               Evaluate a type: the states it has in each
                                            profile, or without profiles under each
                                            combination of the dimensions it needs,
@@ -153,18 +142,13 @@ describe("dxn cli", () => {
                                            stored record, once both check; with --dry-run,
                                            say what it would write
 
-        prototype <command>                The JSON prototype's commands, kept until it
-                                           is retired
-
         help [<command>]                   Show this overview, or a command's usage
 
       Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
-      and options, and "dxn prototype" for the prototype's commands. The
-      docs/language/guide.md file of the dxn package explains the language.
+      and options. The docs/language/guide.md file of the dxn package explains the
+      language.
 
       Options:
-        --dir <directory>                  Use this project directory instead of the
-                                           nearest .dxn
         --dry-run                          Print the files a command would write,
                                            without writing them
         -h, --help                         Show this help
@@ -191,8 +175,7 @@ describe("dxn cli", () => {
       Commands:
         check <file>                       Parse and check a file; say what it declares,
                                            or report every problem it has. Warnings
-                                           are printed, but do not fail. Needs no
-                                           project.
+                                           are printed, but do not fail.
         states <file> <type>               Evaluate a type: the states it has in each
                                            profile, or without profiles under each
                                            combination of the dimensions it needs,
@@ -227,18 +210,13 @@ describe("dxn cli", () => {
                                            stored record, once both check; with --dry-run,
                                            say what it would write
 
-        prototype <command>                The JSON prototype's commands, kept until it
-                                           is retired
-
         help [<command>]                   Show this overview, or a command's usage
 
       Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
-      and options, and "dxn prototype" for the prototype's commands. The
-      docs/language/guide.md file of the dxn package explains the language.
+      and options. The docs/language/guide.md file of the dxn package explains the
+      language.
 
       Options:
-        --dir <directory>                  Use this project directory instead of the
-                                           nearest .dxn
         --dry-run                          Print the files a command would write,
                                            without writing them
         -h, --help                         Show this help
@@ -251,7 +229,7 @@ describe("dxn cli", () => {
 });
 
 describe("the command surface", () => {
-  it("lists the language's commands at the top, and the prototype under one command", () => {
+  it("lists the language's commands at the top", () => {
     const overview = capture([]).stdout;
     const commands = [...overview.matchAll(/^ {2}([a-z][a-z-]*)/gm)].map((match) => match[1]);
     expect(commands).toEqual([
@@ -262,19 +240,8 @@ describe("the command surface", () => {
       "attach",
       "status",
       "rename",
-      "prototype",
       "help",
     ]);
-  });
-
-  it("prints the prototype's overview for prototype alone, --help or help prototype", () => {
-    const result = capture(["prototype"]);
-    expect([result.code, result.stderr]).toEqual([0, ""]);
-    expect(result.stdout.split("\n")[0]).toBe("Usage: dxn prototype <command> [options]");
-    expect(result.stdout).toContain("  workflow ");
-    expect(result.stdout).toContain('"dxn prototype workflow"');
-    expect(capture(["prototype", "--help"]).stdout).toBe(result.stdout);
-    expect(capture(["help", "prototype"]).stdout).toBe(result.stdout);
   });
 
   it("knows no lang command any more", () => {
@@ -282,19 +249,12 @@ describe("the command surface", () => {
     expect([result.code, result.stderr.split("\n")[0]]).toEqual([2, "dxn: unknown command: lang"]);
   });
 
-  it("runs the prototype's status under prototype, as it ran at the top before", () => {
-    let stdout = "";
-    let stderr = "";
-    const io = {
-      stdout: (text: string) => {
-        stdout += text;
-      },
-      stderr: (text: string) => {
-        stderr += text;
-      },
-    };
-    const code = status([], { io, cwd: website, dir: website, dryRun: false });
-    expect(capture(["--dir", website, "prototype", "status"])).toEqual({ code, stdout, stderr });
+  it("knows no prototype command any more", () => {
+    const result = capture(["prototype"]);
+    expect([result.code, result.stderr.split("\n")[0]]).toEqual([
+      2,
+      "dxn: unknown command: prototype",
+    ]);
   });
 
   it("runs the language's status for a .dxn file at the top", () => {

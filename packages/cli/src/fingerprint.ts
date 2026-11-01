@@ -8,15 +8,6 @@ import { readFileSync } from "node:fs";
 // while a change to a component or variable the frame shows does. For any
 // other file, the file as a whole, by its git blob hash. Undefined when a
 // pen.dev file has no such frame.
-// The sources an actor's evidence can come from: frames in pen.dev files,
-// fingerprinted by structure, or any file, fingerprinted as a whole.
-export const sources = ["pen.dev", "file"];
-
-// The key under which a frame's fingerprint is kept: a whole-file fingerprint
-// differs from a frame's, so the source is part of the key.
-export const fingerprintKey = (file: string, frame: string, source: string | undefined) =>
-  source === "file" ? `${file}#${frame}|file` : `${file}#${frame}`;
-
 export class Fingerprints {
   private readonly documents = new Map<string, PenDocument | undefined>();
 
@@ -63,13 +54,6 @@ export class Fingerprints {
     return createHash("sha1")
       .update(JSON.stringify(canonical(payload)))
       .digest("hex");
-  }
-
-  // The frame's name in a pen.dev file; undefined for other files.
-  name(path: string, frame: string): string | undefined {
-    if (!path.endsWith(".pen")) return undefined;
-    const name = this.document(path)?.nodes.get(frame)?.name;
-    return typeof name === "string" ? name : undefined;
   }
 
   private document(path: string): PenDocument | undefined {
@@ -122,7 +106,7 @@ function canonical(value: unknown): unknown {
 }
 
 // The git blob hash of a file, as "git hash-object" prints it.
-export function blobHash(path: string): string {
+function blobHash(path: string): string {
   const content = readFileSync(path);
   return createHash("sha1").update(`blob ${content.length}\0`).update(content).digest("hex");
 }

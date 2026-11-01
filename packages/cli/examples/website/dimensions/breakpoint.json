@@ -1,6 +1,0 @@
-{
-  "$schema": "../../../schema/dimension.schema.json",
-  "version": 1,
-  "values": ["sm", "md", "lg"],
-  "appliesTo": ["article-page"]
-}

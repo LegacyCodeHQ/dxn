@@ -4,27 +4,17 @@ import type { Io } from "../io.js";
 export interface Context {
   io: Io;
   cwd: string;
-  // From --dir, resolved against cwd.
-  dir: string | undefined;
+  // From --dry-run: print what would be written instead of writing it.
   dryRun: boolean;
 }
 
-// A command, with the usage text --help and "help <command>" print. A command
-// that is a set of commands of its own, such as prototype, also has them.
+// A command, with the usage text --help and "help <command>" print.
 export type Command = ((args: string[], context: Context) => number) & {
   usage: string;
-  commands?: Record<string, Command>;
 };
 
 export function command(usage: string, run: (args: string[], context: Context) => number): Command {
   return Object.assign(run, { usage });
-}
-
-// A set of commands, run as "<name> <command> ...", with usage as its
-// overview.
-export function commandSet(usage: string, commands: Record<string, Command>): Command {
-  const run = (args: string[], context: Context) => dispatch(args, context, usage, commands);
-  return Object.assign(run, { usage, commands });
 }
 
 // Runs the command args name, from commands, with the rest of args. With no
@@ -43,8 +33,7 @@ export function dispatch(
     return 0;
   }
   if (first === "help") {
-    // help <command> [<subcommand>]: the command's usage; help alone: the
-    // overview.
+    // help <command>: the command's usage; help alone: the overview.
     const [name] = rest.filter((arg) => arg !== "--help" && arg !== "-h");
     if (name === undefined) {
       io.stdout(usage);
@@ -63,11 +52,7 @@ export function dispatch(
     io.stderr(`dxn: unknown command: ${first}\n\n${usage}`);
     return 2;
   }
-  // A set of commands reads its own help, one level down.
-  if (command.commands !== undefined) {
-    return command(rest, context);
-  }
-  // --help anywhere after a command prints its usage; no project needed.
+  // --help anywhere after a command prints its usage.
   if (rest.includes("--help") || rest.includes("-h")) {
     io.stdout(command.usage);
     return 0;
