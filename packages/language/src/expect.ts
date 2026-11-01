@@ -2,7 +2,7 @@ import type { Child, Expectation, ParseResult, Trigger, Type } from "./ast.js";
 import { eventText } from "./check.js";
 import { holds } from "./condition.js";
 import { placement } from "./evaluate.js";
-import { profilesOf } from "./profiles.js";
+import { environmentOf, profilesOf } from "./profiles.js";
 import { type Combination, expand, treePaths } from "./status.js";
 
 // Checks each expectation against the tree in place: its element, or it and
@@ -11,9 +11,7 @@ import { type Combination, expand, treePaths } from "./status.js";
 // always pass, so it is reported too. The file must have no other problems.
 export function expectations(file: ParseResult): void {
   const profiles = profilesOf(file);
-  const environment = file.environments.find(
-    ({ name }) => name === file.profiles[0]?.environment.name,
-  );
+  const environment = environmentOf(file);
   const given = environment?.dimensions.map(({ name }) => name) ?? [];
   // All are evaluated before any failure is recorded: a recorded one is a
   // problem, and a file with problems cannot be evaluated.

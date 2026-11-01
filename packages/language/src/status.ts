@@ -1,6 +1,7 @@
 import type { ParseResult, Type } from "./ast.js";
 import { fieldValue } from "./derive.js";
 import { inPlace } from "./evaluate.js";
+import { environmentOf } from "./profiles.js";
 
 // One combination of an element in place: the profiles that share it, the
 // dimensions no profile gives, the parents' states that place it, and one
@@ -115,9 +116,7 @@ export function coverage(
   sources: string[],
   check?: Check,
 ): Coverage {
-  const environment = file.environments.find(
-    ({ name }) => name === file.profiles[0]?.environment.name,
-  );
+  const environment = environmentOf(file);
   const given = environment?.dimensions.map(({ name }) => name) ?? [];
   const declared = file.records.find(({ name }) => name === record);
   const contexts = sources.flatMap((source) =>

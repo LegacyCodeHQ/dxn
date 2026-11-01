@@ -7,6 +7,7 @@ import {
   cases,
   coverage,
   Diagnostics,
+  environmentOf,
   states as evaluateStates,
   fieldValue,
   folderOf,
@@ -1000,9 +1001,7 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   // The context's keys, and the values each can take.
   const names = new Names(parsed);
   const profiled = parsed.profiles.length > 0;
-  const environment = parsed.environments.find(
-    ({ name }) => name === parsed.profiles[0]?.environment.name,
-  );
+  const environment = environmentOf(parsed);
   const given = profiled ? (environment?.dimensions.map(({ name }) => name) ?? []) : [];
   const keys: [string, string, string[]][] = [
     ...(profiled

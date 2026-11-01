@@ -128,6 +128,16 @@ describe("modifier", () => {
     ]);
   });
 
+  it("is checked against the environment, even when the first profile's is misspelled", () => {
+    const source = magic
+      .replace("profile phone: Device", "profile phone: Devise")
+      .replace("  Pointer = mouse, Keyboard = keyboard\n}", "  Pointer = mouse, Colour = red\n}");
+    expect(problems(source).map((problem) => problem.split(": ").slice(1).join(": "))).toEqual([
+      "unknown-environment: Devise is not an environment (Device)",
+      "unknown-dimension: Colour is not a dimension of Device (Breakpoint, Pointer, Keyboard)",
+    ]);
+  });
+
   it("warns when it changes nothing on a profile it is on: that profile already exists", () => {
     expect(
       problems(`${device}modifier magic on laptop, phone {\n  Keyboard = keyboard\n}\n`),

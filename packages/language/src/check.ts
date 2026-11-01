@@ -15,6 +15,7 @@ import type {
 } from "./ast.js";
 import { comparisons, conditionText, coverage, subjects } from "./condition.js";
 import { among, article, Names } from "./names.js";
+import { environmentOf } from "./profiles.js";
 import { scalar } from "./scalars.js";
 import { around } from "./scope.js";
 
@@ -1217,9 +1218,7 @@ function checkDerivedField(
 // profiles' environment, each once, with one of their values; and changing
 // something on each profile, or the profile it makes already exists.
 function checkModifiers(file: ParseResult, names: Names, report: Report): void {
-  const environment = file.environments.find(
-    ({ name }) => name === file.profiles[0]?.environment.name,
-  );
+  const environment = environmentOf(file);
   for (const modifier of file.modifiers) {
     const listed = new Set<string>();
     for (const profile of modifier.on) {

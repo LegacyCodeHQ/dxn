@@ -1,4 +1,4 @@
-import type { ParseResult } from "./ast.js";
+import type { Environment, ParseResult } from "./ast.js";
 
 // A profile with its values: one the file declares, or one a modifier makes,
 // named "<profile>+<modifier>".
@@ -33,4 +33,14 @@ export function profilesOf(file: ParseResult): Resolved[] {
     }),
   );
   return [...declared, ...made];
+}
+
+// The environment the profiles are instances of: that of the first profile
+// whose environment is one, as profiles are checked against.
+export function environmentOf(file: ParseResult): Environment | undefined {
+  for (const { environment } of file.profiles) {
+    const found = file.environments.find(({ name }) => name === environment.name);
+    if (found !== undefined) return found;
+  }
+  return undefined;
 }
