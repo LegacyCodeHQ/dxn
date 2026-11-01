@@ -52,6 +52,24 @@ describe("diagnostics", () => {
     ]);
   });
 
+  it("report nothing more about a when on, or giving, an enum that does not parse", () => {
+    expect([
+      problems(
+        "enum On = yes | no |\nenum Lit = a | b\ntype Lamp {\n  state lit: Lit\n}\ntype Room {\n  state on: On\n  has lamp: Lamp { lit = when on { yes -> a, no -> b } }\n}\n",
+      ),
+      problems(
+        "enum On = yes | no\nenum Lit = a | b |\ntype Lamp {\n  state lit: Lit\n}\ntype Room {\n  state on: On\n  has lamp: Lamp { lit = when on { yes -> a, no -> b } }\n}\n",
+      ),
+      problems(
+        "enum Actor = agent | person |\nenum Tool = pen | file\nrecord Note {\n  actor: Actor\n  tool: Tool = when actor {\n    agent -> pen\n    person -> file\n  }\n}\n",
+      ),
+    ]).toEqual([
+      ['1:21: syntax-error: expected a value after "|", found the end of the line'],
+      ['2:19: syntax-error: expected a value after "|", found the end of the line'],
+      ['1:30: syntax-error: expected a value after "|", found the end of the line'],
+    ]);
+  });
+
   it("skip to the next declaration after a mistake, wherever it is", () => {
     expect([
       problems("type {\n  state hover: Hover\n}\nenum Hover = rest\n"),
