@@ -85,3 +85,14 @@ type SourceRow {
     }
   }
 }
+
+type FeedScreen {
+  enum Content = articles | empty
+
+  state content: Content
+
+  has navigation: NavigationBar { kind = root }
+  has tabs: TabBar { section = feed }
+  has article: ArticleRow only when content = articles
+  has follow: Button only when content = empty
+}

@@ -3260,6 +3260,481 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "s0h2D",
+      "x": 0,
+      "y": 3284,
+      "name": "Feed screen states",
+      "fill": "#FFFFFF",
+      "gap": 48,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "cMqrt",
+          "name": "Articles",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "D6gPL",
+              "name": "Articles label",
+              "fill": "$text-secondary",
+              "content": "Articles",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "k6kZKF",
+              "name": "content / articles",
+              "clip": true,
+              "width": 390,
+              "height": 844,
+              "fill": "$surface",
+              "cornerRadius": 24,
+              "layout": "vertical",
+              "children": [
+                {
+                  "id": "e45um",
+                  "type": "ref",
+                  "ref": "BEcY6",
+                  "name": "Navigation",
+                  "width": "fill_container",
+                  "descendants": {
+                    "plIUL": {
+                      "enabled": false
+                    },
+                    "ZVwzI": {
+                      "content": "Feed"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "yCvMV",
+                  "name": "List",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "id": "nlw8M",
+                      "type": "ref",
+                      "ref": "u3j6f8",
+                      "name": "Article",
+                      "width": "fill_container",
+                      "descendants": {
+                        "JGIOg": {
+                          "enabled": true
+                        },
+                        "QhRAl": {
+                          "type": "frame",
+                          "id": "Splel",
+                          "name": "Content",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "UwnjI",
+                              "name": "Text",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n5XqhM",
+                                  "name": "Meta",
+                                  "fill": "$text-secondary",
+                                  "content": "The Verge · 2h",
+                                  "fontFamily": "$font-ui",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "TNuio",
+                                  "name": "Headline",
+                                  "fill": "$text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "Apple unveils a quieter iPhone, built to…",
+                                  "lineHeight": 1.25,
+                                  "fontFamily": "$font-ui",
+                                  "fontSize": 17,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "uz6dz",
+                              "name": "Thumbnail",
+                              "width": 60,
+                              "height": 60,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "cover"
+                              },
+                              "cornerRadius": 8
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "id": "F0U5MG",
+                      "type": "ref",
+                      "ref": "u3j6f8",
+                      "name": "Article",
+                      "width": "fill_container",
+                      "descendants": {
+                        "JGIOg": {
+                          "enabled": true
+                        },
+                        "QhRAl": {
+                          "type": "frame",
+                          "id": "O40up",
+                          "name": "Content",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "wAkct",
+                              "name": "Text",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "vFHv2",
+                                  "name": "Meta",
+                                  "gap": 6,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "JKut1",
+                                      "name": "Meta text",
+                                      "fill": "$text-secondary",
+                                      "content": "BBC News · 3h",
+                                      "fontFamily": "$font-ui",
+                                      "fontSize": 13,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "D7Jlx",
+                                      "name": "Bookmark",
+                                      "width": 13,
+                                      "height": 13,
+                                      "icon": "bookmark-check",
+                                      "library": "lucide",
+                                      "fill": "$accent"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Bz0Bg",
+                                  "name": "Headline",
+                                  "fill": "$text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "City councils agree on a shared plan for cleaner rivers",
+                                  "lineHeight": 1.25,
+                                  "fontFamily": "$font-ui",
+                                  "fontSize": 17,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "id": "YchUg",
+                      "type": "ref",
+                      "ref": "u3j6f8",
+                      "name": "Article",
+                      "width": "fill_container",
+                      "descendants": {
+                        "JGIOg": {
+                          "enabled": false
+                        },
+                        "QhRAl": {
+                          "type": "frame",
+                          "id": "Q6T3fh",
+                          "name": "Content",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "N1jLR0",
+                              "name": "Text",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "zpWHj",
+                                  "name": "Meta",
+                                  "fill": "$text-secondary",
+                                  "content": "Ars Technica · 5h",
+                                  "fontFamily": "$font-ui",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "y5lD9s",
+                                  "name": "Headline",
+                                  "fill": "$text-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "Why the newest chips spend most of…",
+                                  "lineHeight": 1.25,
+                                  "fontFamily": "$font-ui",
+                                  "fontSize": 17
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Uxj57",
+                              "name": "Thumbnail",
+                              "width": 60,
+                              "height": 60,
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                                "mode": "cover"
+                              },
+                              "cornerRadius": 8
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "id": "U6bg8E",
+                      "type": "ref",
+                      "ref": "u3j6f8",
+                      "name": "Article",
+                      "width": "fill_container",
+                      "descendants": {
+                        "JGIOg": {
+                          "enabled": false
+                        },
+                        "QhRAl": {
+                          "type": "frame",
+                          "id": "NG0ER",
+                          "name": "Content",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "jnq42",
+                              "name": "Text",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "KjzDI",
+                                  "name": "Meta",
+                                  "fill": "$text-secondary",
+                                  "content": "The Guardian · Yesterday",
+                                  "fontFamily": "$font-ui",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "EN1av",
+                                  "name": "Headline",
+                                  "fill": "$text-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "The quiet return of the neighbourhood bookshop",
+                                  "lineHeight": 1.25,
+                                  "fontFamily": "$font-ui",
+                                  "fontSize": 17
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "id": "F4hY6",
+                      "type": "ref",
+                      "ref": "u3j6f8",
+                      "name": "Article",
+                      "width": "fill_container",
+                      "descendants": {
+                        "JGIOg": {
+                          "enabled": false
+                        },
+                        "QhRAl": {
+                          "type": "frame",
+                          "id": "J2V5uI",
+                          "name": "Content",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "gUjqD",
+                              "name": "Text",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "PnY4T",
+                                  "name": "Meta",
+                                  "fill": "$text-secondary",
+                                  "content": "Wired · Yesterday",
+                                  "fontFamily": "$font-ui",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "WA5N0",
+                                  "name": "Headline",
+                                  "fill": "$text-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "A field guide to reading the news without the noise",
+                                  "lineHeight": 1.25,
+                                  "fontFamily": "$font-ui",
+                                  "fontSize": 17
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "d0gmak",
+                  "type": "ref",
+                  "ref": "yUiuK",
+                  "name": "Tabs",
+                  "width": "fill_container",
+                  "descendants": {
+                    "Qx460/w12fbN": {
+                      "fill": "$accent"
+                    },
+                    "Qx460/N6rOHN": {
+                      "fill": "$accent"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "C2frE",
+          "name": "Empty",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "Q7tHdx",
+              "name": "Empty label",
+              "fill": "$text-secondary",
+              "content": "Empty",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "tISdx",
+              "name": "content / empty",
+              "clip": true,
+              "width": 390,
+              "height": 844,
+              "fill": "$surface",
+              "cornerRadius": 24,
+              "layout": "vertical",
+              "children": [
+                {
+                  "id": "Ea7t9",
+                  "type": "ref",
+                  "ref": "BEcY6",
+                  "name": "Navigation",
+                  "width": "fill_container",
+                  "descendants": {
+                    "plIUL": {
+                      "enabled": false
+                    },
+                    "ZVwzI": {
+                      "content": "Feed"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "mHQJt",
+                  "name": "Space",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [
+                    0,
+                    40
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center"
+                },
+                {
+                  "id": "lLhIQ",
+                  "type": "ref",
+                  "ref": "yUiuK",
+                  "name": "Tabs",
+                  "width": "fill_container",
+                  "descendants": {
+                    "Qx460/w12fbN": {
+                      "fill": "$accent"
+                    },
+                    "Qx460/N6rOHN": {
+                      "fill": "$accent"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
