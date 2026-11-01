@@ -153,6 +153,21 @@ function checkValues(file: ParseResult, report: Report): void {
 // needed dimension and its values, and one rule for each state value. A need
 // no rule uses is a warning.
 function checkTypes(file: ParseResult, names: Names, report: Report): void {
+  // One of a type's states, by name; undefined, reported, when it has none
+  // of that name. A broken type's states may not all have been read, so a
+  // name it lacks is not reported.
+  const stateOf = (type: Type, named: Located): State | undefined => {
+    const state = type.states.find(({ name }) => name === named.name);
+    if (state === undefined && !type.broken) {
+      const all = type.states.map(({ name }) => name);
+      report(
+        "unknown-state",
+        `${named.name} is not a state of ${type.name}${among(all, "it has none")}`,
+        named,
+      );
+    }
+    return state;
+  };
   // What a state or a dimension is that a type compares, with what to declare
   // when it does not need it: the declaration its values come from, an enum
   // for one of the type's states, or a dimension, needed or not; undefined,
@@ -165,18 +180,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     declare: string,
     states = true,
   ): string | undefined => {
-    if (states && /^[a-z]/.test(subject.name)) {
-      const state = type.states.find(({ name }) => name === subject.name);
-      if (state === undefined) {
-        const all = type.states.map(({ name }) => name);
-        report(
-          "unknown-state",
-          `${subject.name} is not a state of ${type.name}${among(all, "it has none")}`,
-          subject,
-        );
-      }
-      return state?.enum.name;
-    }
+    if (states && /^[a-z]/.test(subject.name)) return stateOf(type, subject)?.enum.name;
     if (!names.is(subject.name, "dimension")) {
       report("unknown-dimension", names.not(subject.name, "dimension"), subject);
       return undefined;
@@ -270,16 +274,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       };
     }
     const { state: named, to } = effect;
-    const state = type.states.find(({ name }) => name === named.name);
-    if (state === undefined) {
-      const states = type.states.map(({ name }) => name);
-      report(
-        "unknown-state",
-        `${named.name} is not a state of ${type.name}${among(states, "it has none")}`,
-        named,
-      );
-      return undefined;
-    }
+    const state = stateOf(type, named);
+    if (state === undefined) return undefined;
     if (state.derived !== undefined || state.fixed !== undefined || state.received) {
       const why = state.received
         ? "is received"
@@ -340,16 +336,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         );
       }
       named.add(action.name.name);
-      const state = type.states.find(({ name }) => name === action.state.name);
-      if (state === undefined) {
-        const states = type.states.map(({ name }) => name);
-        report(
-          "unknown-state",
-          `${action.state.name} is not a state of ${type.name}${among(states, "it has none")}`,
-          action.state,
-        );
-        continue;
-      }
+      const state = stateOf(type, action.state);
+      if (state === undefined) continue;
       if (state.derived !== undefined || state.fixed !== undefined || state.received) {
         const why = state.received
           ? "is received"
@@ -529,25 +517,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         continue;
       }
       bound.add(state.name);
-      const target = inner?.states.find(({ name }) => name === state.name);
-      // A broken type's states may not all have been read.
-      if (inner !== undefined && target === undefined && !inner.broken) {
-        const states = inner.states.map(({ name }) => name);
-        report(
-          "unknown-state",
-          `${state.name} is not a state of ${inner.name}${among(states, "it has none")}`,
-          state,
-        );
-      }
-      const source = type.states.find(({ name }) => name === from.name);
-      if (source === undefined) {
-        const states = type.states.map(({ name }) => name);
-        report(
-          "unknown-state",
-          `${from.name} is not a state of ${type.name}${among(states, "it has none")}`,
-          from,
-        );
-      }
+      const target = inner === undefined ? undefined : stateOf(inner, state);
+      const source = stateOf(type, from);
       if (target === undefined || source === undefined) continue;
       // Mapped or not, a binding cannot set a state the child decides.
       if (target.derived !== undefined || target.fixed !== undefined || target.received) {
@@ -788,24 +759,15 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         }
       }
     }
-    const stateNames = type.states.map(({ name }) => name);
     const conditioned = new Map<string, Rule>();
     for (const rule of type.rules) {
       const start = file.diagnostics.length;
-      const state = type.states.find(({ name }) => name === rule.state.name);
+      const state = stateOf(type, rule.state);
       if (state?.derived !== undefined || state?.fixed !== undefined || state?.received) {
         const why = state.received
           ? "is received"
           : `is decided by ${state.fixed === undefined ? "its when" : "its value"}`;
         report("rule-on-derived", `${state.name} ${why}; it cannot also have a rule`, rule.state);
-      }
-      // A broken type's states may not all have been read.
-      if (state === undefined && !type.broken) {
-        report(
-          "unknown-state",
-          `${rule.state.name} is not a state of ${type.name}${among(stateNames, "it has none")}`,
-          rule.state,
-        );
       }
       const values = state === undefined ? undefined : names.values(state.enum.name);
       if (values !== undefined && !values.includes(rule.value.name)) {
