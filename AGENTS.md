@@ -1,8 +1,9 @@
 # Agent Instructions
 
-`dxn` is a Node.js command-line tool written in TypeScript. It records a tree
-of nodes, the dimensions each node varies over, and what has been specified,
-built and verified for every applicable combination. Data is stored as JSON.
+`dxn` is a Node.js command-line tool written in TypeScript. It checks `.dxn`
+files, written in a language for the states a thing has and the dimensions it
+varies over, and evaluates every combination they give. Evidence for those
+combinations is stored as JSON files beside each `.dxn` file.
 
 ## Workflow
 
@@ -29,7 +30,7 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
 - ES modules only; relative imports use the `.js` extension (NodeNext).
 - Keep the CLI testable: `run(argv, io)` takes its output streams as arguments
   and returns the exit code. Do not call `process.exit` inside commands.
-- Machine-readable output is JSON on stdout; diagnostics go to stderr.
+- Machine-readable output (`--json`) is JSON on stdout; diagnostics go to stderr.
 - Exit codes: `0` success, `1` a check failed, `2` usage error.
 - No source-file dependency cycles (`make cycles`).
 
