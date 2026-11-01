@@ -17,3 +17,11 @@ type Toggle {
 
   state setting: Setting, interaction: Interaction
 }
+
+enum TabInteraction = idle | hovered | pressed
+
+type Tab {
+  enum Selection = unselected | selected
+
+  state selection: Selection, interaction: TabInteraction
+}

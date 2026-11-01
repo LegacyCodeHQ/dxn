@@ -43,6 +43,74 @@
       "children": [
         {
           "type": "frame",
+          "id": "HD62m",
+          "name": "columns",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "yoLSP",
+              "name": "Corner",
+              "width": 88,
+              "height": 16
+            },
+            {
+              "type": "text",
+              "id": "gIYP0",
+              "name": "Idle column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 172,
+              "content": "Idle",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "EYCcJ",
+              "name": "Hovered column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 172,
+              "content": "Hovered",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "iNVdF",
+              "name": "Pressed column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 172,
+              "content": "Pressed",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "Z7OzsB",
+              "name": "Disabled column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 172,
+              "content": "Disabled",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
           "id": "J7CDR7",
           "name": "filled",
           "gap": 32,
@@ -313,7 +381,7 @@
       "type": "frame",
       "id": "YhUCf",
       "x": 0,
-      "y": 464,
+      "y": 493,
       "name": "Toggle states",
       "clip": true,
       "fill": "#FFFFFF",
@@ -321,6 +389,73 @@
       "gap": 24,
       "padding": 40,
       "children": [
+        {
+          "type": "frame",
+          "id": "zHIKh",
+          "name": "columns",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Vp8zL",
+              "name": "Corner",
+              "width": 104,
+              "height": 16
+            },
+            {
+              "type": "text",
+              "id": "FKFR6",
+              "name": "Idle column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 83,
+              "content": "Idle",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "CRMIK",
+              "name": "Hovered column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 83,
+              "content": "Hovered",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "HJJ7W",
+              "name": "Pressed column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 83,
+              "content": "Pressed",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "c7Asuv",
+              "name": "Disabled column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 83,
+              "content": "Disabled",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            }
+          ]
+        },
         {
           "type": "frame",
           "id": "P7at2",
@@ -450,6 +585,245 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "KWmW2",
+      "x": 383,
+      "y": 0,
+      "name": "Tab",
+      "reusable": true,
+      "cornerRadius": 10,
+      "layout": "vertical",
+      "gap": 2,
+      "padding": [
+        6,
+        16
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "icon",
+          "id": "w12fbN",
+          "name": "Icon",
+          "width": 24,
+          "height": 24,
+          "icon": "newspaper",
+          "library": "lucide",
+          "fill": "$text-secondary"
+        },
+        {
+          "type": "text",
+          "id": "N6rOHN",
+          "name": "Label",
+          "fill": "$text-secondary",
+          "content": "Feed",
+          "fontFamily": "$font-ui",
+          "fontSize": 11,
+          "fontWeight": "500"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "WbKuu",
+      "x": 0,
+      "y": 749,
+      "name": "Tab states",
+      "clip": true,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "ZIH43",
+          "name": "columns",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Dj13W",
+              "name": "Corner",
+              "width": 88,
+              "height": 16
+            },
+            {
+              "type": "text",
+              "id": "pGSrg",
+              "name": "Idle column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 58,
+              "content": "Idle",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "uRt3X",
+              "name": "Hovered column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 58,
+              "content": "Hovered",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "LSTPo",
+              "name": "Pressed column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 58,
+              "content": "Pressed",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "jPNaN",
+          "name": "unselected",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "LzqMK",
+              "name": "unselected label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Unselected",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "j4B4y",
+              "type": "ref",
+              "ref": "KWmW2",
+              "name": "unselected / idle",
+              "fill": "#00000000",
+              "descendants": {
+                "w12fbN": {
+                  "fill": "$text-secondary"
+                },
+                "N6rOHN": {
+                  "fill": "$text-secondary"
+                }
+              }
+            },
+            {
+              "id": "WhsUo",
+              "type": "ref",
+              "ref": "KWmW2",
+              "name": "unselected / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "w12fbN": {
+                  "fill": "$text-secondary"
+                },
+                "N6rOHN": {
+                  "fill": "$text-secondary"
+                }
+              }
+            },
+            {
+              "id": "os77b",
+              "type": "ref",
+              "ref": "KWmW2",
+              "name": "unselected / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "w12fbN": {
+                  "fill": "$text-secondary"
+                },
+                "N6rOHN": {
+                  "fill": "$text-secondary"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "OMBb8",
+          "name": "selected",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "E9LEXw",
+              "name": "selected label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Selected",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "CUCuw",
+              "type": "ref",
+              "ref": "KWmW2",
+              "name": "selected / idle",
+              "fill": "#00000000",
+              "descendants": {
+                "w12fbN": {
+                  "fill": "$accent"
+                },
+                "N6rOHN": {
+                  "fill": "$accent"
+                }
+              }
+            },
+            {
+              "id": "HdDH9",
+              "type": "ref",
+              "ref": "KWmW2",
+              "name": "selected / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "w12fbN": {
+                  "fill": "$accent"
+                },
+                "N6rOHN": {
+                  "fill": "$accent"
+                }
+              }
+            },
+            {
+              "id": "aKkIj",
+              "type": "ref",
+              "ref": "KWmW2",
+              "name": "selected / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "w12fbN": {
+                  "fill": "$accent"
+                },
+                "N6rOHN": {
+                  "fill": "$accent"
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
@@ -516,6 +890,14 @@
     "toggle-off-hover": {
       "type": "color",
       "value": "#D9D3CC"
+    },
+    "hover-tint": {
+      "type": "color",
+      "value": "#1C1B1A0D"
+    },
+    "press-tint": {
+      "type": "color",
+      "value": "#1C1B1A1A"
     }
   },
   "fileToken": "77ae2f9f-61ba-4878-9b55-acc6c60ad0dd"

@@ -54,8 +54,8 @@ In the order to build them: each from the ones before it, where it uses any.
 
 1. **Button:** primary, secondary or tertiary; idle, hovered, pressed or disabled.
 2. **Toggle:** off or on; idle, hovered, pressed or disabled.
-3. **Tab:** one tab of the tab bar, with its icon and label; selected or not;
-   pressed or not.
+3. **Tab:** one tab of the tab bar, with its icon and label; unselected or
+   selected; idle, hovered or pressed.
 4. **Tab bar:** the three tabs, Feed, Saved and Sources, one of them selected.
 5. **Navigation bar:** a screen's title, with a back button on the article.
 6. **Article row:** source, headline, time; read or unread; saved or not; with
@@ -68,7 +68,7 @@ Then the screens, from the components.
 
 - [x] Button
 - [x] Toggle
-- [ ] Tab
+- [x] Tab
 - [ ] Tab bar
 - [ ] Navigation bar
 - [ ] Article row

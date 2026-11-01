@@ -1,0 +1,110 @@
+[
+  {
+    "context": {
+      "path": "Tab",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "selection": "unselected",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "WbKuu",
+      "node": "j4B4y",
+      "fingerprint": "d1b26d3b248776d6673434a175637d9e761c55ac"
+    }
+  },
+  {
+    "context": {
+      "path": "Tab",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "selection": "unselected",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "WbKuu",
+      "node": "WhsUo",
+      "fingerprint": "c3d655a91a3faf6f70485d53b961a35a0a3c85e2"
+    }
+  },
+  {
+    "context": {
+      "path": "Tab",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "selection": "unselected",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "WbKuu",
+      "node": "os77b",
+      "fingerprint": "9aed22edc5aa6482eaaebf31b108010d0d3626a8"
+    }
+  },
+  {
+    "context": {
+      "path": "Tab",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "selection": "selected",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "WbKuu",
+      "node": "CUCuw",
+      "fingerprint": "0714a247d14d5cf7b3c985f824bed95c17410f78"
+    }
+  },
+  {
+    "context": {
+      "path": "Tab",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "selection": "selected",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "WbKuu",
+      "node": "HdDH9",
+      "fingerprint": "732b857b65db0679bec97023228905a7c5733be7"
+    }
+  },
+  {
+    "context": {
+      "path": "Tab",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "selection": "selected",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "WbKuu",
+      "node": "aKkIj",
+      "fingerprint": "7fdae9a9195efaef7d91136aff50d974337f2dfa"
+    }
+  }
+]
