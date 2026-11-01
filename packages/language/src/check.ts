@@ -493,51 +493,6 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       }
     });
   };
-  // A when's branches: each value of its subject's enum covered once, each
-  // giving a value of the result's enum.
-  const checkBranches = (
-    branches: { values: Located[]; result: Located }[],
-    on: Located,
-    subject: string,
-    subjectEnum: string,
-    result: string,
-    resultEnum: string,
-  ) => {
-    // A broken enum's values may not all have been read: its side is not
-    // checked against them.
-    const allowed = names.values(subjectEnum);
-    const covered = new Set<string>();
-    for (const value of allowed === undefined ? [] : branches.flatMap(({ values }) => values)) {
-      if (!allowed?.includes(value.name)) {
-        report(
-          "unknown-value",
-          `${JSON.stringify(value.name)} is not a value of ${subject} (${allowed?.join(", ")})`,
-          value,
-        );
-      } else if (covered.has(value.name)) {
-        report(
-          "duplicate-value",
-          `${JSON.stringify(value.name)} is already covered by the when`,
-          value,
-        );
-      }
-      covered.add(value.name);
-    }
-    const missing = (allowed ?? []).filter((value) => !covered.has(value));
-    if (missing.length > 0) {
-      report("incomplete-when", `when ${subject} does not cover ${missing.join(", ")}`, on);
-    }
-    const results = names.values(resultEnum);
-    for (const branch of results === undefined ? [] : branches) {
-      if (!results?.includes(branch.result.name)) {
-        report(
-          "unknown-value",
-          `${JSON.stringify(branch.result.name)} is not a value of ${result} (${results?.join(", ")})`,
-          branch.result,
-        );
-      }
-    }
-  };
   // A child's bindings: each a state of the child, set once, from a state of
   // the type, both with their values from one enum, or mapped by a when.
   const checkBindings = (type: Type, child: Child) => {
@@ -600,7 +555,13 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       }
       const map = child.bindings?.find((binding) => binding.state === state)?.map;
       if (map !== undefined) {
-        checkBranches(map, from, source.name, source.enum.name, target.name, target.enum.name);
+        checkWhen(
+          map,
+          from,
+          { name: source.name, values: names.values(source.enum.name) },
+          { name: target.name, values: names.values(target.enum.name) },
+          report,
+        );
       } else if (target.enum.name !== source.enum.name) {
         report(
           "binding-mismatch",
@@ -724,55 +685,24 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
   // values once, each branch giving a value of the state's enum.
   const checkDerived = (state: State, type: string, needed: Set<string>, declare: string) => {
     const { dimension, branches } = state.derived as Derived;
-    if (!names.is(dimension.name, "dimension")) {
+    const known = names.is(dimension.name, "dimension");
+    if (!known) {
       report("unknown-dimension", names.not(dimension.name, "dimension"), dimension);
-    } else {
-      if (!needed.has(dimension.name)) {
-        report(
-          "unneeded-dimension",
-          `${type} does not need ${dimension.name}; declare ${declare}`,
-          dimension,
-        );
-      }
-      const allowed = names.values(dimension.name);
-      if (allowed !== undefined) {
-        const covered = new Set<string>();
-        for (const value of branches.flatMap(({ values }) => values)) {
-          if (!allowed.includes(value.name)) {
-            report(
-              "unknown-value",
-              `${JSON.stringify(value.name)} is not a value of ${dimension.name} (${allowed.join(", ")})`,
-              value,
-            );
-          } else if (covered.has(value.name)) {
-            report(
-              "duplicate-value",
-              `${JSON.stringify(value.name)} is already covered by the when`,
-              value,
-            );
-          }
-          covered.add(value.name);
-        }
-        const missing = allowed.filter((value) => !covered.has(value));
-        if (missing.length > 0) {
-          report(
-            "incomplete-when",
-            `when ${dimension.name} does not cover ${missing.join(", ")}`,
-            dimension,
-          );
-        }
-      }
+    } else if (!needed.has(dimension.name)) {
+      report(
+        "unneeded-dimension",
+        `${type} does not need ${dimension.name}; declare ${declare}`,
+        dimension,
+      );
     }
-    const results = names.values(state.enum.name);
-    for (const { result } of branches) {
-      if (results !== undefined && !results.includes(result.name)) {
-        report(
-          "unknown-value",
-          `${JSON.stringify(result.name)} is not a value of ${state.name} (${results.join(", ")})`,
-          result,
-        );
-      }
-    }
+    // A dimension that is not one has no values to check the branches against.
+    checkWhen(
+      branches,
+      dimension,
+      { name: dimension.name, values: known ? names.values(dimension.name) : undefined },
+      { name: state.name, values: names.values(state.enum.name) },
+      report,
+    );
   };
   for (const type of file.types) {
     const needed = new Set<string>();
@@ -1178,37 +1108,57 @@ function checkDerivedField(
     );
     return;
   }
-  // A broken enum's values may not all have been read: its side is not
-  // checked against them.
-  const allowed = names.values(subject.type.name);
-  const covered = new Set<string>();
-  for (const value of allowed === undefined ? [] : branches.flatMap(({ values }) => values)) {
-    if (!allowed?.includes(value.name)) {
-      report(
-        "unknown-value",
-        `${JSON.stringify(value.name)} is not a value of ${on.name} (${allowed?.join(", ")})`,
-        value,
-      );
-    } else if (covered.has(value.name)) {
-      report(
-        "duplicate-value",
-        `${JSON.stringify(value.name)} is already covered by the when`,
-        value,
-      );
+  checkWhen(
+    branches,
+    on,
+    { name: on.name, values: names.values(subject.type.name) },
+    { name: field.name, values: names.values(field.type.name) },
+    report,
+  );
+}
+
+// A when's branches: each value of its subject covered once, each giving a
+// value of its result. A side whose values are not known, such as a broken
+// enum's, which may not all have been read, is not checked against them.
+function checkWhen(
+  branches: { values: Located[]; result: Located }[],
+  on: Located,
+  subject: { name: string; values: string[] | undefined },
+  result: { name: string; values: string[] | undefined },
+  report: Report,
+): void {
+  const allowed = subject.values;
+  if (allowed !== undefined) {
+    const covered = new Set<string>();
+    for (const value of branches.flatMap(({ values }) => values)) {
+      if (!allowed.includes(value.name)) {
+        report(
+          "unknown-value",
+          `${JSON.stringify(value.name)} is not a value of ${subject.name} (${allowed.join(", ")})`,
+          value,
+        );
+      } else if (covered.has(value.name)) {
+        report(
+          "duplicate-value",
+          `${JSON.stringify(value.name)} is already covered by the when`,
+          value,
+        );
+      }
+      covered.add(value.name);
     }
-    covered.add(value.name);
+    const missing = allowed.filter((value) => !covered.has(value));
+    if (missing.length > 0) {
+      report("incomplete-when", `when ${subject.name} does not cover ${missing.join(", ")}`, on);
+    }
   }
-  const missing = (allowed ?? []).filter((value) => !covered.has(value));
-  if (missing.length > 0) {
-    report("incomplete-when", `when ${on.name} does not cover ${missing.join(", ")}`, on);
-  }
-  const results = names.values(field.type.name);
-  for (const { result } of results === undefined ? [] : branches) {
-    if (!results?.includes(result.name)) {
+  const results = result.values;
+  if (results === undefined) return;
+  for (const branch of branches) {
+    if (!results.includes(branch.result.name)) {
       report(
         "unknown-value",
-        `${JSON.stringify(result.name)} is not a value of ${field.name} (${results?.join(", ")})`,
-        result,
+        `${JSON.stringify(branch.result.name)} is not a value of ${result.name} (${results.join(", ")})`,
+        branch.result,
       );
     }
   }
