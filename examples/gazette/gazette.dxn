@@ -4,15 +4,16 @@ record PenEvidence {
   source: PenNode
 }
 
-enum Style = primary | secondary | tertiary
 enum Interaction = idle | hovered | pressed | disabled
 
 type Button {
+  enum Style = primary | secondary | tertiary
+
   state style: Style, interaction: Interaction
 }
 
-enum Setting = off | on
-
 type Toggle {
+  enum Setting = off | on
+
   state setting: Setting, interaction: Interaction
 }
