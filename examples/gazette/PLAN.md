@@ -72,7 +72,7 @@ Then the screens, from the components.
 - [x] Tab
 - [x] Tab bar
 - [x] Back button
-- [ ] Navigation bar
+- [x] Navigation bar
 - [ ] Article row
 - [ ] Source row
 - [ ] Feed

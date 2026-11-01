@@ -1182,6 +1182,148 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "BEcY6",
+      "x": 1151,
+      "y": 0,
+      "name": "NavigationBar",
+      "reusable": true,
+      "width": 390,
+      "height": 44,
+      "fill": "$surface",
+      "stroke": "#1C1B1A1F",
+      "strokeWidth": {
+        "bottom": 1
+      },
+      "padding": [
+        0,
+        8
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "erJpk",
+          "name": "Leading",
+          "width": 100,
+          "height": 44,
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "plIUL",
+              "type": "ref",
+              "ref": "rmtXt",
+              "name": "Back"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "ZVwzI",
+          "name": "Title",
+          "fill": "$text-primary",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "Feed",
+          "textAlign": "center",
+          "fontFamily": "$font-ui",
+          "fontSize": 17,
+          "fontWeight": "600"
+        },
+        {
+          "type": "frame",
+          "id": "t0KHw",
+          "name": "Trailing",
+          "width": 100,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "gpy9W",
+      "x": 0,
+      "y": 1702,
+      "name": "Navigation bar states",
+      "clip": true,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "tafLp",
+          "name": "root",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "GtW77",
+              "name": "Root label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Root",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "Wmk0S",
+              "type": "ref",
+              "ref": "BEcY6",
+              "name": "kind / root",
+              "descendants": {
+                "plIUL": {
+                  "enabled": false
+                },
+                "ZVwzI": {
+                  "content": "Feed"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "STGon",
+          "name": "pushed",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "tZT5b",
+              "name": "Pushed label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Pushed",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "V6o3x",
+              "type": "ref",
+              "ref": "BEcY6",
+              "name": "kind / pushed",
+              "descendants": {
+                "plIUL": {
+                  "enabled": true
+                },
+                "ZVwzI": {
+                  "content": "Article"
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
