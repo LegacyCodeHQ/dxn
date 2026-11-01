@@ -1,5 +1,7 @@
 import type { Child, Condition, Declaration, Enum, Located, ParseResult, Type } from "./ast.js";
+import { type Placement, placement } from "./evaluate.js";
 import { parse } from "./parse.js";
+import { treePaths } from "./status.js";
 
 // A name as it is written in a file, and what it means: a declaration's own
 // name, one of the type a path into its children leads to, or a value of an
@@ -108,6 +110,7 @@ export function links(source: string, file: ParseResult = parse(source)): Link[]
       }
     }
   }
+  result.push(...expectationLinks(file, lines, declared));
   return result.sort((a, b) => a.from.line - b.from.line || a.from.column - b.from.column);
 }
 
@@ -276,4 +279,132 @@ function references(file: ParseResult): Reference[] {
     }
   }
   return result;
+}
+
+// The links in expectations: the element's path, part by part; each key, to
+// the state it names in each element it applies to, or a dimension; each
+// value, to its key's enum's or dimension's, or a profile's and its
+// modifiers'; and the event.
+function expectationLinks(
+  file: ParseResult,
+  lines: string[],
+  declared: Map<string, Declaration>,
+): Link[] {
+  const result: Link[] = [];
+  // A span for each part of a name, split at a separator, from where it is.
+  const parts = (at: Located, separator: string) => {
+    const spans: { part: string; from: Span }[] = [];
+    let column = at.column;
+    for (const part of wordAt(lines, at.line, at.column).split(separator)) {
+      spans.push({ part, from: { line: at.line, column, length: part.length } });
+      column += part.length + separator.length;
+    }
+    return spans;
+  };
+  const add = (from: Span, to: Located | undefined) => {
+    if (to === undefined) return;
+    const same = result.some(
+      (link) => link.to === to && link.from.line === from.line && link.from.column === from.column,
+    );
+    if (!same) result.push({ from, to });
+  };
+  const valueIn = (of: string | undefined, name: string) =>
+    (declared.get(of ?? "") as Enum | undefined)?.values?.find((value) => value.name === name);
+  for (const expectation of file.expectations) {
+    const path = expectation.path.name;
+    // The path: its type, written with its own dots, then a child for each
+    // part after it.
+    const spans = parts(expectation.path, ".");
+    const first = spans.findIndex(({ part }) => /^[a-z]/.test(part));
+    const rootParts = first === -1 ? spans : spans.slice(0, first);
+    for (const [index, { from }] of rootParts.entries()) {
+      const name = rootParts
+        .slice(0, index + 1)
+        .map(({ part }) => part)
+        .join(".");
+      add(from, declared.get(name));
+    }
+    const root = file.types.find(
+      ({ name }) => name === rootParts.map(({ part }) => part).join("."),
+    );
+    if (root === undefined) continue;
+    const children = spans.slice(rootParts.length);
+    for (const [index, { from }] of children.entries()) {
+      add(
+        from,
+        along(
+          file,
+          root,
+          children.map(({ part }) => part),
+          index,
+          "child",
+        ),
+      );
+    }
+    // The elements its keys are about: the one it names, and with "and
+    // below", every element under it.
+    const named = treePaths(file).filter(
+      (element) => element === path || (expectation.below && element.startsWith(`${path}.`)),
+    );
+    const places: Placement[] = [];
+    for (const element of named.length > 0 ? named : [path]) {
+      try {
+        places.push(placement(file, element));
+      } catch {
+        // A path that is not one is checked, and reported, elsewhere.
+      }
+    }
+    for (const { key, value } of [...expectation.when, ...expectation.values]) {
+      if (key.name === "profile") {
+        const [profile, ...modifiers] = parts(value, "+");
+        if (profile !== undefined) add(profile.from, declared.get(profile.part));
+        for (const modifier of modifiers) add(modifier.from, declared.get(modifier.part));
+        continue;
+      }
+      const keyParts = parts(key, ".");
+      if (/^[A-Z]/.test(key.name)) {
+        for (const { from } of keyParts) add(from, declared.get(key.name));
+        add(span(lines, value), valueIn(key.name, value.name));
+        continue;
+      }
+      const names = keyParts.map(({ part }) => part);
+      for (const place of places) {
+        const steps = place.steps;
+        const rootType = steps[0]?.type as Type;
+        // A parent's state, by its path from the type; or the element's own,
+        // or, after an event, a child's by its path from the element.
+        const parent = place.parents.find((candidate) => candidate.key === key.name);
+        const from = parent !== undefined ? rootType : place.target;
+        let state: Located | undefined;
+        for (const [index, { from: at }] of keyParts.entries()) {
+          const last = index === keyParts.length - 1;
+          const to = along(file, from, names, index, last ? "state" : "child");
+          add(at, to);
+          if (last) state = to;
+        }
+        const enumName = (state as { enum?: Located } | undefined)?.enum?.name;
+        add(span(lines, value), valueIn(enumName, value.name));
+      }
+    }
+    const on = expectation.on;
+    if (on?.kind === "dimension") {
+      add(span(lines, on.dimension), declared.get(on.dimension.name));
+      for (const to of on.values) add(span(lines, to), valueIn(on.dimension.name, to.name));
+    } else if (on !== undefined) {
+      const eventParts = parts(on.name, ".");
+      const names = eventParts.map(({ part }) => part);
+      for (const place of places) {
+        for (const [index, { from }] of eventParts.entries()) {
+          const last = index === eventParts.length - 1;
+          add(from, along(file, place.target, names, index, last ? "event" : "child"));
+        }
+      }
+    }
+  }
+  return result;
+}
+
+// The span of a name, as it is written.
+function span(lines: string[], at: Located): Span {
+  return { line: at.line, column: at.column, length: wordAt(lines, at.line, at.column).length };
 }
