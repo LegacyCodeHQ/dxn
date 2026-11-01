@@ -37,5 +37,7 @@ describe("a file being typed", () => {
       }
     }
     expect(failures).toEqual([]);
-  });
+    // Every feature at every character is thousands of answers: well under a
+    // second alone, but longer under coverage on a shared CI machine.
+  }, 30_000);
 });
