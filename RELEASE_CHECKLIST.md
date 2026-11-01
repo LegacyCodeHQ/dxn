@@ -107,6 +107,56 @@ installs the server from npm, as the Svelte, Astro and Vue extensions do.
   version. Its README says how; a release after this one bumps the version
   in both places.
 
+## VS Code extension
+
+The extension in `packages/vscode` bundles everything it runs: the language
+server and the `dxn` command, built by `make build` into `dist/` and run with
+VS Code's own Node. A user installs it and needs nothing else, so its release
+is packaging and publishing, not installing a server.
+
+### The package
+
+- [ ] **Only what it runs is packaged:** a `.vscodeignore` that leaves out
+  `src/`, `test/`, `build.mjs` and the TypeScript, so the `.vsix` holds
+  `dist/`, `syntaxes/`, `language-configuration.json`, `package.json`, the
+  README, the changelog and the license. `npx @vscode/vsce ls` lists it.
+- [ ] **Packaged without its dependencies,** which `dist/` already bundles:
+  `vsce package --no-dependencies`. Check the `.vsix`'s size stays near
+  `dist/`'s, about 2 MB.
+- [ ] **`package.json` is the Marketplace page's:** `displayName`,
+  `description`, `version`, `publisher` (`legacycodehq`), `repository`,
+  `categories`, `keywords`, a 128×128 PNG `icon`, and `license`; check
+  whether `"private": true` must go for `vsce`.
+- [ ] **The README is for users first,** as the Marketplace shows it: what
+  the extension does, with a screenshot or two, before the development
+  sections, which can move to a CONTRIBUTING note.
+- [ ] **A CHANGELOG.md** in `packages/vscode`, which the Marketplace shows.
+- [ ] **The minimatch override is still needed:** the root `package.json`
+  overrides `vscode-languageclient`'s `minimatch` to 11.0.1, for a moderate
+  advisory in 10. Remove it once the client depends on a fixed release.
+
+### Tried as users get it
+
+- [ ] **Installed from the `.vsix`,** not loaded for development:
+  `code --install-extension dxn-<version>.vsix` in a fresh profile
+  (`code --profile dxn-release`), with nothing linked on the `PATH`
+  (`npm unlink -g @legacycodehq/dxn @legacycodehq/dxn-language-server`).
+- [ ] **Every item in `playground/README.md`,** with the playground opened as
+  a folder, the code lenses too.
+- [ ] **In Cursor too,** which installs from Open VSX rather than the
+  Marketplace.
+
+### Published
+
+- [ ] **A publisher on the VS Code Marketplace:** `legacycodehq`, created
+  from an Azure DevOps organization, with a personal access token that may
+  publish.
+- [ ] **A namespace on Open VSX** (`legacycodehq`), for Cursor, VSCodium and
+  other editors that do not use the Marketplace, with its own token.
+- [ ] **Published from CI,** by the release workflow, with both tokens as
+  secrets: `vsce publish --no-dependencies` and `ovsx publish`. The version
+  is the same release's as the npm packages' and the Zed extension's.
+
 ## Loose ends
 
 - [ ] **neo-website's `.dxn/` folder** (14 files) is no longer read by any
