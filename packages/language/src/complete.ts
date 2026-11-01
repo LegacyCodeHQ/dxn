@@ -447,9 +447,13 @@ function inExpectation(
   // Every key an element has: its states, its parents' by their keys, and,
   // after an event, its children's by their paths; each with its state.
   const keys = new Map<string, Type["states"][number]>();
+  const ofParents = new Set<string>();
   for (const place of places) {
     for (const state of place.target.states) keys.set(state.name, state);
-    for (const parent of place.parents) keys.set(parent.key, parent.state);
+    for (const parent of place.parents) {
+      keys.set(parent.key, parent.state);
+      ofParents.add(parent.key);
+    }
     if (!event) continue;
     const walk = (type: Type, prefix: string, depth: number) => {
       if (depth > 4) return;
@@ -494,15 +498,19 @@ function inExpectation(
   const keyed = statement.match(/^(when|then|some)\s+(?:.*,\s*)?([a-z][A-Za-z0-9.-]*\.)?$/);
   if (keyed === null) return [];
   const prefix = keyed[2] ?? "";
+  // A condition is on anything the element has; what happens, on its own
+  // states, or a child's: a parent's states, and the dimensions, are where it
+  // is, which its event does not change.
+  const condition = keyed[1] === "when";
   const result: Completion[] = [];
   for (const [key] of keys) {
-    if (!key.startsWith(prefix)) continue;
+    if (!key.startsWith(prefix) || (!condition && ofParents.has(key))) continue;
     const rest = key.slice(prefix.length).split(".");
     result.push({ label: rest[0] as string, kind: rest.length > 1 ? "child" : "state" });
   }
-  if (prefix === "") {
+  if (prefix === "" && condition) {
     result.push(...names(dimensions, "dimension"));
-    if (keyed[1] === "when") result.push({ label: "profile", kind: "keyword" });
+    result.push({ label: "profile", kind: "keyword" });
   }
   const written = new Set(statement.split(/[^A-Za-z0-9.+-]+/));
   return result.filter(

@@ -288,6 +288,12 @@ profile phone: Device { Pointer = touch }
     snapshot.push(
       at(`${model}expect "x" {\n  in Page.menu\n  on escape\n  then menu = closed, ‸\n}\n`),
     );
+    // What happens is to the element's own states, or a child's: not a
+    // parent's, or a dimension.
+    snapshot.push(
+      at(`${model}expect "x" {\n  in Page.menu.link\n  when menu.menu = open\n  then ‸\n}\n`),
+    );
+    snapshot.push(at(`${model}expect "x" {\n  in Page.menu\n  on escape\n  then ‸\n}\n`));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
@@ -335,6 +341,14 @@ profile phone: Device { Pointer = touch }
           "press event",
         ],
         [
+          "link child",
+        ],
+        [
+          "hover state",
+          "focus state",
+        ],
+        [
+          "menu state",
           "link child",
         ],
       ]
