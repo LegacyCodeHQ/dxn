@@ -163,10 +163,18 @@ function checkOne(
       ) {
         return false;
       }
-      const action = type.actions.find(({ name }) => name.name === candidate.action.name);
+      // A change in place applies wherever its state is not yet its value.
+      if (candidate.change !== undefined) {
+        return combination.states[candidate.change.state.name] !== candidate.change.to.name;
+      }
+      const action = type.actions.find(({ name }) => name.name === candidate.action?.name);
       return action !== undefined && combination.states[action.state.name] === action.from.name;
     });
-    const action = type.actions.find(({ name }) => name.name === trigger?.action.name);
+    const named = type.actions.find(({ name }) => name.name === trigger?.action?.name);
+    const action =
+      trigger?.change !== undefined
+        ? { state: trigger.change.state, to: trigger.change.to }
+        : named;
     // Where nothing fires, the element stays as it was: what the rule says
     // must hold of it unchanged, with nowhere for focus to have gone.
     const unchanged =

@@ -104,7 +104,10 @@ export type Event =
 // child's by its path; focus says where keyboard focus goes after.
 export interface Trigger extends Located {
   event: Event;
-  action: Located;
+  // What it does: a named action, its own or a child's by its path; or a
+  // change written in place, of one of the type's own states to a value.
+  action?: Located;
+  change?: { state: Located; to: Located };
   focus?: Located;
   // Where it fires: everywhere, or only where this holds.
   when?: Condition;

@@ -1367,6 +1367,26 @@ are two values. It applies only in its `from` value: `close` does nothing
 while the menu is closed. That is how one event can mean two things: a click
 on the toggle opens a closed menu and closes an open one.
 
+A trigger can also write its change in place, with no action to name: one
+of the type's own states, and the value it changes to.
+
+```
+type Button {
+  state press: Press
+  on key Space: press -> pressed
+  on key Escape: press -> released
+}
+```
+
+`press -> pressed` applies wherever `press` is not yet `pressed`, as an
+action applies only in its `from` value, and it is checked as an action is:
+a state the type owns, a value of it. Name a change as an action when it is
+part of the type's interface: when a parent calls it, as the toolbar calls
+`menu.close`, or when several triggers make it, as the menu's `close` is made
+by Escape, a link and a click outside. Write it in place when it belongs to
+one trigger, where a name would only repeat the value. A change in place is
+always on the type's own states; a child's are changed through its actions.
+
 An event is one of:
 
 - **click** a child, by its path: `click toggle`, `click panel.blog`;
@@ -1392,7 +1412,7 @@ A trigger can fire only where a condition holds, written at its end with
 while it is focused:
 
 ```
-on key Space: push only when focus = focused
+on key Space: press -> pressed only when focus = focused
 ```
 
 The condition is checked as any other: on the type's states and the
@@ -1620,7 +1640,7 @@ type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" f
               "{" { blank-line | state | rule | enum | type | has | provides | action | on | alike } "}"
 alike       = "alike" name [ "in" "(" value { "," value } ")" ] [ "when" condition ] newline
 action      = "action" action-name ":" state-name value "->" value newline
-on          = "on" event ":" path [ "," "focus" path ] [ "only" "when" condition ] newline   # path: an action, or a child's
+on          = "on" event ":" ( path | state-name "->" value ) [ "," "focus" path ] [ "only" "when" condition ] newline   # path: an action, or a child's
 event       = "click" path | "key" word | "pointer" "outside" | condition
 provides    = "provides" state-name newline
 has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline

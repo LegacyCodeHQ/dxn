@@ -60,7 +60,12 @@ export function renameInSource(
         }
       }
     }
-    // A trigger's condition: the values it compares of a state of that enum.
+    // A trigger's change in place, and its condition: the values of a state
+    // of that enum.
+    for (const { change } of type.triggers) {
+      const on = type.states.find(({ name }) => name === change?.state.name);
+      if (on?.enum.name === enumName && change?.to.name === from) named.push(change.to);
+    }
     for (const { when } of type.triggers) {
       for (const { subject, values } of when === undefined ? [] : comparisons(when)) {
         const on = type.states.find(({ name }) => name === subject.name);

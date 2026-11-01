@@ -17,6 +17,10 @@ import { among, article, Names } from "./names.js";
 import { scalar } from "./scalars.js";
 import { around } from "./scope.js";
 
+// What a trigger changes, named or written in place: its state, from which
+// values, to which, and how it reads in messages.
+type Change = { label: string; state: string; from: string[]; to: string; named: boolean };
+
 type Report = (
   code: string,
   message: string,
@@ -247,22 +251,69 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           checkChosen(event.values, event.dimension.name, names, report, "the event");
         }
       }
-      // The action: the type's own, or a child's by its path.
-      const parts = trigger.action.name.split(".");
-      const actionName = parts.at(-1) as string;
-      const owner =
-        parts.length === 1
-          ? type
-          : childType(type, { ...trigger.action, name: parts.slice(0, -1).join(".") });
-      const action = owner?.actions.find(({ name }) => name.name === actionName);
-      // A broken type's actions may not all have been read.
-      if (owner !== undefined && action === undefined && !owner.broken) {
-        const actions = owner.actions.map(({ name }) => name.name);
-        report(
-          "unknown-action",
-          `${actionName} is not an action of ${owner.name}${among(actions, "it has none")}`,
-          trigger.action,
-        );
+      // What it changes: a named action, the type's own or a child's by its
+      // path; or one of the type's own states, to one of its values.
+      let change: Change | undefined;
+      let path = "";
+      if (trigger.action !== undefined) {
+        const parts = trigger.action.name.split(".");
+        const actionName = parts.at(-1) as string;
+        path = parts.slice(0, -1).join(".");
+        const owner =
+          parts.length === 1 ? type : childType(type, { ...trigger.action, name: path });
+        const action = owner?.actions.find(({ name }) => name.name === actionName);
+        // A broken type's actions may not all have been read.
+        if (owner !== undefined && action === undefined && !owner.broken) {
+          const actions = owner.actions.map(({ name }) => name.name);
+          report(
+            "unknown-action",
+            `${actionName} is not an action of ${owner.name}${among(actions, "it has none")}`,
+            trigger.action,
+          );
+        }
+        if (action !== undefined) {
+          change = {
+            label: path === "" ? action.name.name : `${path}.${action.name.name}`,
+            state: action.state.name,
+            from: [action.from.name],
+            to: action.to.name,
+            named: true,
+          };
+        }
+      } else if (trigger.change !== undefined) {
+        const { state: named, to } = trigger.change;
+        const state = type.states.find(({ name }) => name === named.name);
+        if (state === undefined) {
+          const states = type.states.map(({ name }) => name);
+          report(
+            "unknown-state",
+            `${named.name} is not a state of ${type.name}${among(states, "it has none")}`,
+            named,
+          );
+        } else if (state.derived !== undefined || state.fixed !== undefined || state.received) {
+          const why = state.received
+            ? "is received"
+            : `is decided by ${state.fixed === undefined ? "its when" : "its value"}`;
+          report("action-on-derived", `${state.name} ${why}; no change can change it`, named);
+        } else {
+          const values = names.values(state.enum.name) ?? [];
+          if (!values.includes(to.name)) {
+            report(
+              "unknown-value",
+              `${JSON.stringify(to.name)} is not a value of ${state.name} (${values.join(", ")})`,
+              to,
+            );
+          } else {
+            // It applies wherever the state is not yet its value.
+            change = {
+              label: `${state.name} -> ${to.name}`,
+              state: state.name,
+              from: values.filter((value) => value !== to.name),
+              to: to.name,
+              named: false,
+            };
+          }
+        }
       }
       if (trigger.focus !== undefined) {
         const target = childType(type, trigger.focus);
@@ -274,14 +325,13 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           );
         }
       }
-      const path = parts.slice(0, -1).join(".");
       if (trigger.when !== undefined) {
         checkCondition(type, trigger.when, needed, declare, true, trigger, {
           never: "the trigger never fires",
           always: "the trigger always fires",
         });
       }
-      return { trigger, action, path };
+      return { trigger, change, path };
     });
     // One event, one change: no two actions that events which overlap
     // trigger can both apply to one state, from one value.
@@ -309,31 +359,38 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       };
       return coverage(both, valuesOf) !== "never";
     };
-    resolved.forEach(({ trigger, action, path }, index) => {
-      if (action === undefined) return;
+    resolved.forEach(({ trigger, change, path }, index) => {
+      if (change === undefined) return;
       const of = (name: string) => (path === "" ? name : `${path}.${name}`);
       for (const earlier of resolved.slice(0, index)) {
-        const other = earlier.action;
+        const other = earlier.change;
+        const common = other?.from.filter((value) => change.from.includes(value)) ?? [];
         if (
           other === undefined ||
           earlier.path !== path ||
           !overlap(earlier.trigger.event, trigger.event) ||
-          other.state.name !== action.state.name ||
-          other.from.name !== action.from.name ||
+          other.state !== change.state ||
+          common.length === 0 ||
           !together(earlier.trigger, trigger)
         ) {
           continue;
         }
-        if (other === action) {
+        // Two named actions are the same only by name; a change in place is
+        // the same as any that changes the same values to the same value.
+        const same =
+          other.named && change.named
+            ? other.label === change.label
+            : other.to === change.to && common.length === change.from.length;
+        if (same) {
           report(
             "duplicate-trigger",
-            `${eventText(trigger.event)} already triggers ${of(action.name.name)}`,
+            `${eventText(trigger.event)} already triggers ${change.label}`,
             trigger,
           );
         } else {
           report(
             "ambiguous-event",
-            `${eventText(trigger.event)} triggers both ${of(other.name.name)} and ${of(action.name.name)} when ${of(action.state.name)} = ${action.from.name}`,
+            `${eventText(trigger.event)} triggers both ${other.label} and ${change.label} when ${of(change.state)} = ${common[0]}`,
             trigger,
           );
         }
@@ -423,12 +480,22 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         report("bound-derived", `${target.name} ${why}; it cannot also be bound`, state);
         continue;
       }
-      // Bound, its value is the parent's: no action of the child can change it.
+      // Bound, its value is the parent's: no action or change of the child
+      // can change it.
       const action = inner?.actions.find((candidate) => candidate.state.name === target.name);
+      const changing = inner?.triggers.find(
+        (candidate) => candidate.change?.state.name === target.name,
+      );
       if (action !== undefined) {
         report(
           "bound-action",
           `${target.name} is bound here, so ${inner?.name}'s action ${action.name.name} can never change it`,
+          state,
+        );
+      } else if (changing !== undefined) {
+        report(
+          "bound-action",
+          `${target.name} is bound here, so ${inner?.name}'s change on ${eventText(changing.event)} can never change it`,
           state,
         );
       }

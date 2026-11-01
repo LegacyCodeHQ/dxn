@@ -480,11 +480,26 @@ export function parse(source: string): ParseResult {
         next();
         const event = eventOf();
         expect(":", '":" after the event');
-        const trigger: Trigger = {
-          ...located(token),
-          event,
-          action: qualified('an action after ":"'),
-        };
+        // A change in place, "<state> -> <value>", or an action by its name.
+        const named = qualified('an action or a change after ":"');
+        const trigger: Trigger = { ...located(token), event };
+        if (peek().kind !== "->") trigger.action = named;
+        else {
+          // A change is on one of the type's own states; a child's are
+          // changed through its actions.
+          if (named.name.includes(".")) {
+            result.diagnostics.push({
+              severity: "error",
+              code: "syntax-error",
+              message: `a change is on one of the type's own states, not ${JSON.stringify(named.name)}; change a child through one of its actions`,
+              line: named.line,
+              column: named.column,
+            });
+            throw new ParseFailure();
+          }
+          next();
+          trigger.change = { state: named, to: word('a value after "->"') };
+        }
         if (peek().kind === ",") {
           next();
           keyword("focus", '"focus" after ","');

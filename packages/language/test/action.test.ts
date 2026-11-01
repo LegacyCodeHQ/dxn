@@ -1,5 +1,6 @@
 import { expect as assert, describe, it } from "vitest";
 import { parse } from "../src/parse.js";
+import { renameInSource } from "../src/rename.js";
 import { errors, problems } from "./support/language.js";
 
 const model = `dimension Breakpoint = base | lg
@@ -60,12 +61,12 @@ describe("actions and on", () => {
       menu?.actions.map(({ name, state, from, to }) => [name.name, state.name, from.name, to.name]),
       menu?.triggers.map(({ event, action, focus }) => [
         event.kind,
-        action.name,
+        action?.name,
         focus?.name ?? null,
       ]),
       toolbar?.triggers.map(({ event, action, focus }) => [
         event.kind,
-        action.name,
+        action?.name,
         focus?.name ?? null,
       ]),
     ]).toEqual([
@@ -302,7 +303,7 @@ describe("a trigger only when", () => {
   it("fires only where its condition holds", () => {
     const source = button("on key Space: push only when focus = focused");
     const trigger = parse(source).types[0]?.triggers[0];
-    assert([problems(source), trigger?.when?.kind, trigger?.action.name]).toEqual([
+    assert([problems(source), trigger?.when?.kind, trigger?.action?.name]).toEqual([
       [],
       "compare",
       "push",
@@ -361,6 +362,109 @@ expect "Space presses the button only while it is focused" {
       [
         "17:8: expectation-failed: Space presses the button only while it is focused: nothing happens on key Space to Page.button when focus = blurred, press = released",
       ],
+    ]);
+  });
+});
+
+const pressing = (...lines: string[]) => `dimension Keyboard = keyboard | no-keyboard
+enum Press = released | pressed
+enum Focus = blurred | focused
+enum Layout = compact | inline
+
+type Button needs Keyboard {
+  state press: Press
+  state focus: Focus
+  state layout: Layout = when Keyboard { keyboard -> inline, no-keyboard -> compact }
+  focus = focused only when Keyboard = keyboard
+${lines.map((line) => `  ${line}\n`).join("")}}
+
+type Page {
+  has button: Button
+}
+`;
+
+describe("a change written in a trigger", () => {
+  it("changes one of the type's own states to a value, with no action to name", () => {
+    const source = pressing(
+      "on key Space: press -> pressed only when focus = focused",
+      "on key Escape: press -> released",
+    );
+    const [first] = parse(source).types[0]?.triggers ?? [];
+    assert([problems(source), first?.change?.state.name, first?.change?.to.name]).toEqual([
+      [],
+      "press",
+      "pressed",
+    ]);
+  });
+
+  it("is on a state of the type that a change can change, to one of its values", () => {
+    assert([
+      errors(pressing("on key Space: pres -> pressed")),
+      errors(pressing("on key Space: press -> presed")),
+      errors(pressing("on key Space: layout -> compact")),
+      errors(pressing("on key Space: page.press -> pressed")),
+    ]).toEqual([
+      ["11:17: unknown-state: pres is not a state of Button (press, focus, layout)"],
+      ['11:26: unknown-value: "presed" is not a value of press (released, pressed)'],
+      ["11:17: action-on-derived: layout is decided by its when; no change can change it"],
+      [
+        '11:17: syntax-error: a change is on one of the type\'s own states, not "page.press"; change a child through one of its actions',
+      ],
+    ]);
+  });
+
+  it("is one change of an event, like a named action's", () => {
+    assert([
+      errors(
+        pressing(
+          "action push: press released -> pressed",
+          "on key Space: push",
+          "on key Space: press -> pressed",
+        ),
+      ),
+      errors(pressing("on key Space: press -> pressed", "on key Space: press -> pressed")),
+    ]).toEqual([
+      ["13:3: duplicate-trigger: key Space already triggers press -> pressed"],
+      ["12:3: duplicate-trigger: key Space already triggers press -> pressed"],
+    ]);
+  });
+
+  it("is applied by an expectation, wherever the state is not yet its value", () => {
+    const rule = (then: string) =>
+      `${pressing("on key Space: press -> pressed only when focus = focused")}
+expect "Space presses the focused button" {
+  in Page.button
+  when focus = focused
+  on key Space
+  then ${then}
+}
+`;
+    assert([problems(rule("press = pressed")), problems(rule("press = released")).length]).toEqual([
+      [],
+      1,
+    ]);
+  });
+
+  it("cannot change a state its parent binds, and is renamed with its value", () => {
+    const bound = `enum State = closed | open
+type Toggle {
+  state expanded: State
+  on key Space: expanded -> open
+}
+type Menu {
+  state menu: State
+  has toggle: Toggle { expanded = menu }
+}
+`;
+    const source = pressing("on key Space: press -> pressed");
+    assert([
+      errors(bound),
+      renameInSource(parse(source), source, "Press", "pressed", "down"),
+    ]).toEqual([
+      [
+        "8:24: bound-action: expanded is bound here, so Toggle's change on key Space can never change it",
+      ],
+      source.replace("released | pressed", "released | down").replace("-> pressed", "-> down"),
     ]);
   });
 });
