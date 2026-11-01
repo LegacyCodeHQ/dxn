@@ -377,3 +377,35 @@ export function renameTypeInData(
   }
   return { source: replace(source, edits), changed: edits.length };
 }
+
+// Renames a profile, or a modifier, in stored records' contexts: a profile is
+// written first in a context's profile, and its modifiers after it, each
+// after a "+". Data without problems.
+export function renameProfileInData(
+  source: string,
+  kind: "profile" | "modifier",
+  from: string,
+  to: string,
+): { source: string; changed: number } {
+  const edits: { start: number; end: number; text: string }[] = [];
+  const { root } = parseJson(source);
+  if (root?.kind !== "array") return { source, changed: 0 };
+  for (const element of root.elements) {
+    if (element.kind !== "object") continue;
+    const context = element.members.find(({ key }) => key.value === "context")?.value;
+    if (context?.kind !== "object") continue;
+    const profile = context.members.find(({ key }) => key.value === "profile")?.value;
+    if (profile?.kind !== "string") continue;
+    const parts = profile.value.split("+");
+    const renamed = parts.map((part, index) =>
+      part === from && (index === 0) === (kind === "profile") ? to : part,
+    );
+    if (renamed.every((part, index) => part === parts[index])) continue;
+    edits.push({
+      start: profile.span.start,
+      end: profile.span.end,
+      text: JSON.stringify(renamed.join("+")),
+    });
+  }
+  return { source: replace(source, edits), changed: edits.length };
+}

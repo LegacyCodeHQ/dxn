@@ -290,6 +290,66 @@ describe("renaming in the editor", () => {
     `);
   });
 
+  it("renames a profile and a modifier where they are used, and in stored records' profiles", () => {
+    const record = (profile: string) => `  {
+    "context": {
+      "path": "Page.menu.link",
+      "profile": "${profile}",
+      "dimensions": {},
+      "parents": { "menu.menu": "open" },
+      "states": { "hover": "rest", "focus": "blurred" }
+    },
+    "actor": "designer"
+  }`;
+    const both = [
+      {
+        record: "Evidence",
+        path: "evidence/evidence.json",
+        source: `[\n${record("phone")},\n${record("phone+trackpad")}\n]\n`,
+      },
+    ];
+    const snapshot: unknown[] = [];
+    for (const [before, word, to] of [
+      ["profile ", "phone", "handset"],
+      ["modifier ", "trackpad", "mouse-pad"],
+    ] as const) {
+      const result = renameAt(source, ...at(before, word), to, both);
+      if ("refusal" in result) throw new Error(result.refusal);
+      const after = edited(result.edits);
+      const lines = source.split("\n");
+      snapshot.push(
+        after
+          .split("\n")
+          .filter((line, index) => line !== lines[index])
+          .map((line) => line.trim()),
+      );
+      const records = result.data[0]?.source ?? "";
+      snapshot.push(records.match(/"profile": "[^"]*"/g));
+      expect(validate(parse(after), "Evidence", records)).toEqual([]);
+    }
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "profile handset: Device { Pointer = touch }",
+          "modifier trackpad on handset { Pointer = mouse }",
+          "when hover = hovered, profile = handset+trackpad",
+        ],
+        [
+          ""profile": "handset"",
+          ""profile": "handset+trackpad"",
+        ],
+        [
+          "modifier mouse-pad on phone { Pointer = mouse }",
+          "when hover = hovered, profile = phone+mouse-pad",
+        ],
+        [
+          ""profile": "phone"",
+          ""profile": "phone+mouse-pad"",
+        ],
+      ]
+    `);
+  });
+
   it("refuses, for now, a state that is provided or received, which is matched by its name", () => {
     const shared = `enum Section = home | blog
 type Link receives current: Section {
@@ -325,7 +385,6 @@ type Page {
     snapshot.push(renamed("enum Hover = rest | ", "hovered", "a b"));
     snapshot.push(renamed("enum Hover = ", "rest", "hovered"));
     snapshot.push(renamed("enum ", "Focus", "Hover"));
-    snapshot.push(renamed("profile ", "phone", "handset"));
     snapshot.push(renamed("dimension ", "Pointer", "Input"));
     snapshot.push(renamed("dimension Pointer = ", "mouse", "cursor"));
     snapshot.push(renamed("record ", "Evidence", "Proof"));
@@ -337,7 +396,6 @@ type Page {
         ""a b" is not a value name: a letter or digit, then letters, digits and hyphens",
         "the rename would leave a problem: "hovered" appears twice in Hover",
         "the rename would leave a problem: Hover is already declared at line 2",
-        "phone is a profile, and stored records name it; renaming it here is not supported yet",
         "Pointer is a dimension, and stored records name it; renaming it here is not supported yet",
         "mouse is a value of the dimension Pointer, and stored records name it; renaming it here is not supported yet",
         "Evidence is a record, and its stored records are in a folder named after it; renaming it here is not supported yet",

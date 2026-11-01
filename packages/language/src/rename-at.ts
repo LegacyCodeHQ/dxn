@@ -6,6 +6,7 @@ import {
   isValue,
   renameChildInData,
   renameInData,
+  renameProfileInData,
   renameStateInData,
   renameTypeInData,
 } from "./rename.js";
@@ -56,8 +57,8 @@ export function renameable(
 // both from one, wherever it is used: the edits to the source, and the stored
 // data files that change, with their new content. Refused for a name that is
 // not one of its kind's, a rename that would leave problems, and, for now, the
-// names stored records hold other than an enum's values, states, children
-// and types.
+// names stored records hold other than an enum's values, states, children,
+// types, profiles and modifiers.
 export function renameAt(
   source: string,
   line: number,
@@ -93,7 +94,9 @@ export function renameAt(
             ? renameChildInData(file, item.source, found.declared as Child, to)
             : kind.kind === "type"
               ? renameTypeInData(item.source, found.declared as Type, to)
-              : undefined;
+              : kind.kind === "profile" || kind.kind === "modifier"
+                ? renameProfileInData(item.source, kind.kind, name, to)
+                : undefined;
     if (renamed !== undefined && renamed.changed > 0) {
       data.push({ path: item.path, source: renamed.source });
     }
@@ -103,6 +106,10 @@ export function renameAt(
 
 // How each kind that can be renamed is named.
 const rules: Record<string, { pattern: RegExp; text: string }> = {
+  profile: {
+    pattern: /^[a-z][A-Za-z0-9-]*$/,
+    text: "a lowercase letter, then letters, digits and hyphens",
+  },
   type: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   child: {
     pattern: /^[a-z][A-Za-z0-9-]*$/,
