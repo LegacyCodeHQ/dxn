@@ -276,10 +276,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     const { state: named, to } = effect;
     const state = stateOf(type, named);
     if (state === undefined) return undefined;
-    if (state.derived !== undefined || state.fixed !== undefined || state.received) {
-      const why = state.received
-        ? "is received"
-        : `is decided by ${state.fixed === undefined ? "its when" : "its value"}`;
+    const why = decidedBy(state);
+    if (why !== undefined) {
       report("action-on-derived", `${state.name} ${why}; no change can change it`, named);
       return undefined;
     }
@@ -338,10 +336,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       named.add(action.name.name);
       const state = stateOf(type, action.state);
       if (state === undefined) continue;
-      if (state.derived !== undefined || state.fixed !== undefined || state.received) {
-        const why = state.received
-          ? "is received"
-          : `is decided by ${state.fixed === undefined ? "its when" : "its value"}`;
+      const why = decidedBy(state);
+      if (why !== undefined) {
         report("action-on-derived", `${state.name} ${why}; no action can change it`, action.state);
         continue;
       }
@@ -521,10 +517,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       const source = stateOf(type, from);
       if (target === undefined || source === undefined) continue;
       // Mapped or not, a binding cannot set a state the child decides.
-      if (target.derived !== undefined || target.fixed !== undefined || target.received) {
-        const why = target.received
-          ? "is received"
-          : `is decided by ${target.fixed === undefined ? "its when" : "its value"}`;
+      const why = decidedBy(target);
+      if (why !== undefined) {
         report("bound-derived", `${target.name} ${why}; it cannot also be bound`, state);
         continue;
       }
@@ -763,10 +757,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     for (const rule of type.rules) {
       const start = file.diagnostics.length;
       const state = stateOf(type, rule.state);
-      if (state?.derived !== undefined || state?.fixed !== undefined || state?.received) {
-        const why = state.received
-          ? "is received"
-          : `is decided by ${state.fixed === undefined ? "its when" : "its value"}`;
+      const why = state === undefined ? undefined : decidedBy(state);
+      if (state !== undefined && why !== undefined) {
         report("rule-on-derived", `${state.name} ${why}; it cannot also have a rule`, rule.state);
       }
       const values = state === undefined ? undefined : names.values(state.enum.name);
@@ -1229,4 +1221,14 @@ export function eventText(event: Event): string {
   if (event.kind === "named") return event.name.name;
   const values = event.values.map(({ name }) => name);
   return `${event.dimension.name} ${values.length === 1 ? `= ${values[0]}` : `in (${values.join(", ")})`}`;
+}
+
+// Why a state is not the type's to set, by a rule, an action or a binding:
+// it is received, or its when or its value decides it; undefined when it is
+// free.
+function decidedBy(state: State): string | undefined {
+  if (state.received) return "is received";
+  if (state.derived !== undefined) return "is decided by its when";
+  if (state.fixed !== undefined) return "is decided by its value";
+  return undefined;
 }
