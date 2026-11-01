@@ -79,7 +79,7 @@ describe("coverage", () => {
     ]).toEqual([2, 2, []]);
   });
 
-  it("lists each combination without evidence, as the context that would cover it", () => {
+  it("lists each look without evidence, by its own states, whatever placed it", () => {
     const report = coverage(file, "Evidence", [
       JSON.stringify([toggle("Phone", "closed", "rest"), toggle("Studio", "open", "hovered")]),
     ]);
@@ -87,25 +87,25 @@ describe("coverage", () => {
       {
         profiles: ["Phone"],
         dimensions: {},
-        parents: { "menu.menu": "open" },
+        parents: {},
         states: { hover: "rest", expanded: "open" },
       },
       {
         profiles: ["Laptop", "Studio"],
         dimensions: {},
-        parents: { "menu.menu": "closed" },
+        parents: {},
         states: { hover: "rest", expanded: "closed" },
       },
       {
         profiles: ["Laptop", "Studio"],
         dimensions: {},
-        parents: { "menu.menu": "closed" },
+        parents: {},
         states: { hover: "hovered", expanded: "closed" },
       },
       {
         profiles: ["Laptop", "Studio"],
         dimensions: {},
-        parents: { "menu.menu": "open" },
+        parents: {},
         states: { hover: "rest", expanded: "open" },
       },
     ]);

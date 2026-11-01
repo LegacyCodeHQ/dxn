@@ -232,15 +232,17 @@ export function expand(file: ParseResult, path: string, given: string[]): Combin
   return combinations;
 }
 
-// An element's combinations as contexts give them, those that differ only in
-// their profiles as one, with all their profiles: the profiles differ in
-// dimensions the element does not have. Two that differ in a dimension it
-// has, even one a profile gives, stay apart.
+// An element's looks in place: its combinations as contexts give them, by
+// its own states and dimensions, those that differ only in their profiles, or
+// in the states of the parents that place it, as one. A place can only allow
+// fewer of an element's looks, never more: the profiles differ in dimensions
+// the element does not have, and the parents' states only decide its own.
+// Two that differ in a dimension it has, even one a profile gives, stay apart.
 function merged(file: ParseResult, path: string, given: string[]): Combination[] {
   const result: Combination[] = [];
   const byKey = new Map<string, Combination>();
   for (const full of expand(file, path, [])) {
-    const { profiles, ...rest } = full;
+    const { profiles, parents: _parents, ...rest } = full;
     const key = JSON.stringify(rest);
     const same = byKey.get(key);
     if (same === undefined) {
@@ -248,7 +250,7 @@ function merged(file: ParseResult, path: string, given: string[]): Combination[]
       const dimensions = Object.fromEntries(
         Object.entries(full.dimensions).filter(([name]) => !given.includes(name)),
       );
-      const combination = { ...full, dimensions };
+      const combination = { ...full, dimensions, parents: {} };
       result.push(combination);
       byKey.set(key, combination);
     } else if (profiles !== undefined) {
@@ -335,13 +337,12 @@ export function judge(
         combination.profiles.includes(context.profile ?? "")) &&
       same(context.dimensions, combination.dimensions) &&
       same(context.states, combination.states);
-    // A combination is as its best entry is: one about it in this place, or
-    // else one about its component elsewhere in the same look.
+    // A look is as its best entry is: one about it in this place, whatever
+    // the parents' states that placed it, or else one about it elsewhere, its
+    // component's or another place's, in the same look.
     const judged = (combination: Combination): Judged => {
       for (const found of [
-        about.filter(
-          (context) => looks(context, combination) && same(context.parents, combination.parents),
-        ),
+        about.filter((context) => looks(context, combination)),
         alike.filter((context) => looks(context, combination)),
       ]) {
         for (const best of ["present", "stale", "gone"] as const) {

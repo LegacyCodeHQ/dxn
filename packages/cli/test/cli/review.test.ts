@@ -141,7 +141,7 @@ describe("dxn review", () => {
     expect(page()).toContain("| filled |  | no picture |");
   });
 
-  it("gives an element in place its own section, with the states of the parents that place it", () => {
+  it("gives an element in place its own section, by its own states", () => {
     const { run, page } = project(
       `enum Openness = closed | open
 enum Style = filled | plain
@@ -178,10 +178,10 @@ actor Designer records Evidence
 
       ## Card.button
 
-      | open | style | status | as recorded |
-      | --- | --- | --- | --- |
-      | open | filled |  | ![Card.button with open = open: style = filled](pictures/filled.png) |
-      | open | plain | **missing** | — |
+      | style | status | as recorded |
+      | --- | --- | --- |
+      | filled |  | ![Card.button: style = filled](pictures/filled.png) |
+      | plain | **missing** | — |
       "
     `);
   });

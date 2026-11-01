@@ -84,18 +84,18 @@ describe("progress", () => {
       {
         "gone": [],
         "missing": [
-          "Menu.toggle on Phone with menu = open: hover = rest, expanded = open",
-          "Menu.toggle on Laptop with menu = closed: hover = rest, expanded = closed",
-          "Menu.toggle on Laptop with menu = closed: hover = hovered, expanded = closed",
-          "Menu.toggle on Laptop with menu = open: hover = rest, expanded = open",
-          "Toolbar.menu.toggle on Phone with menu.menu = open: hover = rest, expanded = open",
-          "Toolbar.menu.toggle on Laptop with menu.menu = closed: hover = rest, expanded = closed",
-          "Toolbar.menu.toggle on Laptop with menu.menu = closed: hover = hovered, expanded = closed",
-          "Toolbar.menu.toggle on Laptop with menu.menu = open: hover = rest, expanded = open",
+          "Menu.toggle on Phone: hover = rest, expanded = open",
+          "Menu.toggle on Laptop: hover = rest, expanded = closed",
+          "Menu.toggle on Laptop: hover = hovered, expanded = closed",
+          "Menu.toggle on Laptop: hover = rest, expanded = open",
+          "Toolbar.menu.toggle on Phone: hover = rest, expanded = open",
+          "Toolbar.menu.toggle on Laptop: hover = rest, expanded = closed",
+          "Toolbar.menu.toggle on Laptop: hover = hovered, expanded = closed",
+          "Toolbar.menu.toggle on Laptop: hover = rest, expanded = open",
         ],
         "stale": [
-          "Menu.toggle on Laptop with menu = open: hover = hovered, expanded = open",
-          "Toolbar.menu.toggle on Laptop with menu.menu = open: hover = hovered, expanded = open",
+          "Menu.toggle on Laptop: hover = hovered, expanded = open",
+          "Toolbar.menu.toggle on Laptop: hover = hovered, expanded = open",
         ],
       }
     `);
@@ -177,6 +177,45 @@ actor DesignAgent records Evidence
 
   it("is valid evidence of the type on its own, though another type contains it", () => {
     expect(validate(bar, "Evidence", stored)).toEqual([]);
+  });
+
+  it("has no more looks where it is placed than on its own, only those its place allows", () => {
+    // A tab the bar always selects, and one it selects in one section.
+    const always = parse(`enum Selection = unselected | selected
+type Tab {
+  state selection: Selection
+}
+type Bar {
+  enum Section = first | second
+  state section: Section
+  has first: Tab {
+    selection = when section {
+      first -> selected
+      second -> unselected
+    }
+  }
+  has pinned: Tab {
+    selection = when section {
+      first, second -> selected
+    }
+  }
+}
+record Evidence {
+  source: PenNode
+}
+actor DesignAgent records Evidence
+`);
+    expect(
+      coverage(always, "Evidence", ["[]"]).paths.map(({ path, combinations }) => [
+        path,
+        combinations,
+      ]),
+    ).toEqual([
+      ["Tab", 2],
+      ["Bar", 2],
+      ["Bar.first", 2],
+      ["Bar.pinned", 1],
+    ]);
   });
 
   it("counts on its own, and covers itself where it is placed, in the same look", () => {

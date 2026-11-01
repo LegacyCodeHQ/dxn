@@ -1262,8 +1262,11 @@ the record's folder, in a file named after the type the path starts at.
 ### Status: what has evidence, and what is missing
 
 With evidence recorded for children, `dxn status` says how much of the
-model it covers: every combination of every element in the file's trees, in
-place, and which of them a stored record is about.
+model it covers: every look of every element in the file's trees, in place,
+and which of them a stored record is about. An element's looks in place are
+its own: its states and the dimensions it needs. Its parents decide which of
+them occur, but never add any, so two places that differ only in a parent's
+state, and give the element the same states, are one look of it.
 
 A type declared at the top of the file is also a **component**: it is counted
 on its own, as a tree of its own, though another type contains it, so a design

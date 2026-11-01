@@ -431,8 +431,8 @@ describe("dxn status, with fingerprints", () => {
       "| Toolbar.menu.toggle | 6            | 0       | 2     | 0    | 4       |",
       [
         "Stale:",
-        "  Toolbar.menu.toggle on Phone with menu.menu = closed: hover = rest, expanded = closed",
-        "  Toolbar.menu.toggle on Phone with menu.menu = open: hover = rest, expanded = open",
+        "  Toolbar.menu.toggle on Phone: hover = rest, expanded = closed",
+        "  Toolbar.menu.toggle on Phone: hover = rest, expanded = open",
       ],
     ]);
   });
