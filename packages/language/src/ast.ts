@@ -198,6 +198,12 @@ export interface Diagnostic {
   column: number;
 }
 
+// An actor: who records a record, with context, and is responsible for each
+// one it stores. One record each, for now.
+export interface Actor extends Declaration {
+  records: Located;
+}
+
 export interface ParseResult {
   enums: Enum[];
   dimensions: Dimension[];
@@ -206,6 +212,7 @@ export interface ParseResult {
   profiles: Profile[];
   modifiers: Modifier[];
   records: RecordDeclaration[];
+  actors: Actor[];
   expectations: Expectation[];
   diagnostics: Diagnostic[];
 }

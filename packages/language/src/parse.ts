@@ -46,6 +46,7 @@ export function parse(source: string): ParseResult {
     profiles: [],
     modifiers: [],
     records: [],
+    actors: [],
     expectations: [],
     diagnostics: [],
   };
@@ -99,6 +100,7 @@ export function parse(source: string): ParseResult {
         "profile",
         "modifier",
         "record",
+        "actor",
         "expect",
       ].includes(after.text);
     if (peek().kind === "newline" && !declaration) next();
@@ -481,7 +483,7 @@ export function parse(source: string): ParseResult {
       // A declaration of the file, not of a type; a rule on a state of that
       // name has "=" next.
       if (
-        ["dimension", "environment", "profile", "modifier", "record", "expect"].includes(
+        ["dimension", "environment", "profile", "modifier", "record", "actor", "expect"].includes(
           token.text,
         ) &&
         tokens[position + 1]?.kind !== "="
@@ -696,6 +698,22 @@ export function parse(source: string): ParseResult {
     assignments(modifier.name, modifier.values);
   };
 
+  // An actor: "actor <name> records <Record>", the one record it records.
+  const actorDeclaration = () => {
+    next();
+    const named = name("actor", 'an actor name after "actor"', lowercase);
+    keyword("records", `"records" after ${JSON.stringify(named.name)}`);
+    const records = word('a record after "records"');
+    keep(result.actors, { ...named, records });
+    if (peek().kind === ",") {
+      failWith(
+        peek(),
+        `an actor records one record, for now: ${named.name} records ${records.name}`,
+      );
+    }
+    end(["newline", "end"], "the end of the line");
+  };
+
   // A record: "record <Name> [with context] { <field>: <Type> ... }", a field
   // a line.
   const recordDeclaration = () => {
@@ -807,6 +825,7 @@ export function parse(source: string): ParseResult {
     profile: profileDeclaration,
     modifier: modifierDeclaration,
     record: recordDeclaration,
+    actor: actorDeclaration,
     expect: expectDeclaration,
   };
   // A line that starts a declaration, at the start of the line: one inside a
@@ -829,7 +848,7 @@ export function parse(source: string): ParseResult {
       if (declaration === undefined) {
         fail(
           token,
-          '"enum", "dimension", "type", "environment", "profile", "modifier", "record" or "expect"',
+          '"enum", "dimension", "type", "environment", "profile", "modifier", "record", "actor" or "expect"',
         );
       }
       declaration?.();

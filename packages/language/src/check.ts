@@ -21,8 +21,28 @@ export function check(file: ParseResult): void {
   checkProfiles(file, names, report);
   checkModifiers(file, names, report);
   checkRecords(file, names, report);
+  checkActors(file, names, report);
   checkContainment(file, names, report);
   checkExpectations(file, report);
+}
+
+// Actors: each records a record with context, which is what can be stored.
+function checkActors(file: ParseResult, names: Names, report: Report): void {
+  for (const actor of file.actors) {
+    const recorded = actor.records;
+    if (names.kindOf(recorded.name) !== "record") {
+      report("unknown-record", names.not(recorded.name, "record"), recorded);
+      continue;
+    }
+    const record = file.records.find(({ name }) => name === recorded.name);
+    if (record !== undefined && !record.context) {
+      report(
+        "record-without-context",
+        `${recorded.name} has no context, so nothing stores it; declare "record ${recorded.name} with context"`,
+        recorded,
+      );
+    }
+  }
 }
 
 // Expectations: each title once.
@@ -100,6 +120,7 @@ function checkDeclared(file: ParseResult, report: Report): void {
     ...file.profiles,
     ...file.modifiers,
     ...file.records,
+    ...file.actors,
   ].sort((a, b) => a.line - b.line || a.column - b.column);
   const declared = new Map<string, Located>();
   for (const declaration of declarations) {

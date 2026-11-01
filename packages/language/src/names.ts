@@ -9,6 +9,7 @@ export type Kind =
   | "profile"
   | "modifier"
   | "record"
+  | "actor"
   | "scalar";
 
 export const article = (word: string) => (/^[AEIOUaeiou]/.test(word) ? "an" : "a");
@@ -27,7 +28,8 @@ export class Names {
   }
 
   private lists(): [Kind, Declaration[]][] {
-    const { enums, dimensions, types, environments, profiles, modifiers, records } = this.file;
+    const { enums, dimensions, types, environments, profiles, modifiers, records, actors } =
+      this.file;
     return [
       ["enum", enums],
       ["dimension", dimensions],
@@ -36,6 +38,7 @@ export class Names {
       ["profile", profiles],
       ["modifier", modifiers],
       ["record", records],
+      ["actor", actors],
     ];
   }
 

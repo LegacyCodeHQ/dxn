@@ -69,7 +69,7 @@ describe("enum", () => {
       ['1:12: syntax-error: expected a value after "=", found the end of the line'],
       ['2:3: syntax-error: expected a value after "|", found "|"'],
       [
-        '3:3: syntax-error: expected "enum", "dimension", "type", "environment", "profile", "modifier", "record" or "expect", found "md"',
+        '3:3: syntax-error: expected "enum", "dimension", "type", "environment", "profile", "modifier", "record", "actor" or "expect", found "md"',
       ],
     ]);
   });
@@ -111,7 +111,7 @@ describe("enum", () => {
       ['1:13: syntax-error: expected a value after "=", found the end of the line'],
       ['2:1: syntax-error: expected a value after "|", found the end of the file'],
       [
-        '1:1: syntax-error: expected "enum", "dimension", "type", "environment", "profile", "modifier", "record" or "expect", found "enumm"',
+        '1:1: syntax-error: expected "enum", "dimension", "type", "environment", "profile", "modifier", "record", "actor" or "expect", found "enumm"',
       ],
     ]);
   });
