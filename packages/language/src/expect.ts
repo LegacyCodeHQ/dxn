@@ -1,5 +1,5 @@
 import type { Child, Expectation, ParseResult, Trigger, Type } from "./ast.js";
-import { eventText } from "./check.js";
+import { eventText } from "./check-types.js";
 import { holds } from "./condition.js";
 import { placement } from "./evaluate.js";
 import { valuesOf as declaredValues } from "./names.js";
