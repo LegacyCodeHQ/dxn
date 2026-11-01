@@ -30,6 +30,13 @@ with. It colours what Zed's queries in
 colour, as near as the words on a line say: a TextMate grammar reads a line at
 a time, without the tree Zed's grammar has.
 
+## Formatting
+
+A `.dxn` file is formatted when it is saved, the one way `dxn fmt` writes it:
+the extension makes itself the formatter for `.dxn` files and turns on
+format-on-save for them, settings a user can still change. **Format
+Document** formats one at any time.
+
 ## Running a type or an expectation
 
 "Run states" above a type runs `dxn states` for it, by its full name; "Run"

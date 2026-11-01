@@ -74,7 +74,13 @@
           }
         }
       }
-    ]
+    ],
+    "configurationDefaults": {
+      "[dxn]": {
+        "editor.defaultFormatter": "legacycodehq.dxn",
+        "editor.formatOnSave": true
+      }
+    }
   },
   "devDependencies": {
     "@types/vscode": "1.100.0",

@@ -54,6 +54,12 @@ server names its tokens with the protocol's standard types, which Zed's
 themes already colour, so the extension needs no rules of its own. After
 changing the setting, run `editor: restart language server`.
 
+## Formatting
+
+A `.dxn` file is formatted when it is saved, the one way `dxn fmt` writes it,
+by the language server: Zed formats on save, with the language server, unless
+its settings say otherwise.
+
 ## Running a type or an expectation
 
 Each type has a run button beside its name, which runs `dxn states` for it in
