@@ -37,9 +37,9 @@ combinations have evidence, a record at a time, as `dxn status` counts them:
 `PenEvidence 4 of 6, 1 stale` after `type Button {`. Hovering over the
 element's name lists the combinations still missing, stale or gone. A record
 whose stored records have problems, such as a value renamed by hand, is not
-counted: its hint says how many of its records have problems, and what most
-of them have, such as `PenEvidence: 3 records still say style = plain, which
-Style no longer has (primary, secondary)`, and the hover lists each problem,
+counted: its hint says how many of its records have problems, of how many,
+and what most of them have, such as `PenEvidence: 3 of 6 records still say
+style = plain, which Style no longer has (primary, secondary)`, and the hover lists each problem,
 as `dxn validate` prints it. The count
 follows the stored records and the designs they point at as they change on
 disk.

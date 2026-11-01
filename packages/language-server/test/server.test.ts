@@ -926,7 +926,7 @@ describe("the language server", () => {
         `  {\n    "context": { "type": "Button", "dimensions": {}, "states": { "style": "${style}" } },\n    "actor": "DesignAgent",\n    "source": { "file": "design.txt", "frame": "f", "fingerprint": "a1" }\n  }`;
       writeFileSync(
         join(folder, "pen-evidence", "button.json"),
-        `[\n${entry("filled")},\n${entry("plain")},\n${entry("filled")}\n]\n`,
+        `[\n${entry("filled")},\n${entry("plain")},\n${entry("filled")},\n${entry("primary")}\n]\n`,
       );
       const uri = pathToFileURL(join(folder, "spec.dxn")).href;
       const editor = connect();
@@ -956,7 +956,7 @@ describe("the language server", () => {
         [
           [
             { line: 1, character: 13 },
-            "PenEvidence: 3 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
+            "PenEvidence: 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
           ],
         ],
         [
@@ -969,7 +969,10 @@ describe("the language server", () => {
       ]);
 
       // All of them alike: the hint says so of all of them.
-      writeFileSync(join(folder, "pen-evidence", "button.json"), `[\n${entry("plain")}\n]\n`);
+      writeFileSync(
+        join(folder, "pen-evidence", "button.json"),
+        `[\n${entry("plain")},\n${entry("primary")}\n]\n`,
+      );
       await editor.sendNotification(DidChangeWatchedFilesNotification.type, {
         changes: [
           {
@@ -984,7 +987,7 @@ describe("the language server", () => {
         range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
       });
       expect(again?.map(({ label }) => label)).toEqual([
-        "PenEvidence: 1 record still says style = plain, which Style no longer has (primary, secondary)",
+        "PenEvidence: 1 of 2 records still says style = plain, which Style no longer has (primary, secondary)",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });

@@ -149,7 +149,13 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
   return counted.flatMap((place) => {
     const parts = place.records.map((each) => {
       const problems = stopped.get(each.record);
-      return problems === undefined ? countOf(each) : stoppedBy(file, each.record, problems);
+      if (problems === undefined) return countOf(each);
+      return stoppedBy(
+        file,
+        each.record,
+        problems,
+        found.read.filter(({ record }) => record === each.record),
+      );
     });
     if (parts.length === 0) return [];
     return [
@@ -185,12 +191,13 @@ function countOf(each: Progress["records"][number]): { label: string; details: s
 }
 
 // A record that cannot be counted: how many of its stored records have
-// problems, and what most of them have; then each problem, as dxn validate
-// prints it.
+// problems, of how many, and what most of them have; then each problem, as
+// dxn validate prints it.
 function stoppedBy(
   file: ParseResult,
   record: string,
   problems: Problem[],
+  read: Read[],
 ): { label: string; details: string } {
   // Each stored record by its file and its place in it, with why it is wrong:
   // what most of its kind say, for those that name what the file no longer
@@ -208,7 +215,22 @@ function stoppedBy(
     reason.startsWith("say ")
       ? `${count === 1 ? "still says" : "still say"} ${reason.slice("say ".length)}`
       : `with ${reason}`;
-  const records = entries.size === 1 ? "1 record" : `${entries.size} records`;
+  // Of how many stored records, when every file of them is a list.
+  const lengths = read.map(({ source }) => {
+    try {
+      const list: unknown = JSON.parse(source);
+      return Array.isArray(list) ? list.length : undefined;
+    } catch {
+      return undefined;
+    }
+  });
+  const total = lengths.every((length) => length !== undefined)
+    ? lengths.reduce((sum: number, length) => sum + (length ?? 0), 0)
+    : undefined;
+  const records =
+    total === undefined
+      ? `${entries.size} ${entries.size === 1 ? "record" : "records"}`
+      : `${entries.size} of ${total} ${total === 1 ? "record" : "records"}`;
   const label =
     those.size === entries.size
       ? `${record}: ${records} ${what(entries.size)}`
