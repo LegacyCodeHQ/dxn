@@ -5,11 +5,8 @@ record PenEvidence {
 }
 
 enum Style = primary | secondary | tertiary
-enum Press = released | pressed
-enum Enabled = enabled | disabled
+enum Interaction = idle | hovered | pressed | disabled
 
 type Button {
-  state style: Style, press: Press, enabled: Enabled
-
-  press = pressed only when enabled = enabled
+  state style: Style, interaction: Interaction
 }

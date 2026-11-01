@@ -73,6 +73,18 @@
               }
             },
             {
+              "id": "J27fW",
+              "type": "ref",
+              "ref": "FBIeO",
+              "name": "primary / hovered",
+              "fill": "$accent-hover",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$on-accent"
+                }
+              }
+            },
+            {
               "id": "uqEAm",
               "type": "ref",
               "ref": "FBIeO",
@@ -123,6 +135,21 @@
               "ref": "FBIeO",
               "name": "plain / released / enabled",
               "fill": "#00000000",
+              "stroke": "$accent",
+              "strokeWidth": 1.5,
+              "strokeAlignment": "inner",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$accent"
+                }
+              }
+            },
+            {
+              "id": "zHoy6",
+              "type": "ref",
+              "ref": "FBIeO",
+              "name": "secondary / hovered",
+              "fill": "$accent-hover-tint",
               "stroke": "$accent",
               "strokeWidth": 1.5,
               "strokeAlignment": "inner",
@@ -191,6 +218,21 @@
               "strokeAlignment": "inner",
               "name": "tertiary / released / enabled",
               "fill": "#00000000",
+              "stroke": "#00000000",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$accent"
+                }
+              }
+            },
+            {
+              "id": "cVPwz",
+              "type": "ref",
+              "ref": "FBIeO",
+              "name": "tertiary / hovered",
+              "fill": "$accent-hover-tint",
+              "strokeWidth": 0,
+              "strokeAlignment": "inner",
               "stroke": "#00000000",
               "descendants": {
                 "Lesdz": {
@@ -281,6 +323,14 @@
     "radius-button": {
       "type": "number",
       "value": 12
+    },
+    "accent-hover": {
+      "type": "color",
+      "value": "#A0221B"
+    },
+    "accent-hover-tint": {
+      "type": "color",
+      "value": "#B3261E12"
     }
   },
   "fileToken": "77ae2f9f-61ba-4878-9b55-acc6c60ad0dd"

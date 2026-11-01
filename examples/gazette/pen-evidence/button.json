@@ -6,8 +6,7 @@
       "parents": {},
       "states": {
         "style": "primary",
-        "press": "released",
-        "enabled": "enabled"
+        "interaction": "idle"
       }
     },
     "actor": "DesignAgent",
@@ -25,8 +24,7 @@
       "parents": {},
       "states": {
         "style": "primary",
-        "press": "pressed",
-        "enabled": "enabled"
+        "interaction": "pressed"
       }
     },
     "actor": "DesignAgent",
@@ -44,8 +42,7 @@
       "parents": {},
       "states": {
         "style": "primary",
-        "press": "released",
-        "enabled": "disabled"
+        "interaction": "disabled"
       }
     },
     "actor": "DesignAgent",
@@ -63,8 +60,7 @@
       "parents": {},
       "states": {
         "style": "secondary",
-        "press": "released",
-        "enabled": "enabled"
+        "interaction": "idle"
       }
     },
     "actor": "DesignAgent",
@@ -82,8 +78,7 @@
       "parents": {},
       "states": {
         "style": "secondary",
-        "press": "pressed",
-        "enabled": "enabled"
+        "interaction": "pressed"
       }
     },
     "actor": "DesignAgent",
@@ -101,8 +96,7 @@
       "parents": {},
       "states": {
         "style": "secondary",
-        "press": "released",
-        "enabled": "disabled"
+        "interaction": "disabled"
       }
     },
     "actor": "DesignAgent",
@@ -120,8 +114,7 @@
       "parents": {},
       "states": {
         "style": "tertiary",
-        "press": "released",
-        "enabled": "enabled"
+        "interaction": "idle"
       }
     },
     "actor": "DesignAgent",
@@ -139,8 +132,7 @@
       "parents": {},
       "states": {
         "style": "tertiary",
-        "press": "pressed",
-        "enabled": "enabled"
+        "interaction": "pressed"
       }
     },
     "actor": "DesignAgent",
@@ -158,8 +150,7 @@
       "parents": {},
       "states": {
         "style": "tertiary",
-        "press": "released",
-        "enabled": "disabled"
+        "interaction": "disabled"
       }
     },
     "actor": "DesignAgent",
@@ -168,6 +159,60 @@
       "frame": "IeCCz",
       "node": "o0rI0f",
       "fingerprint": "e5fb14161fc243c18b1b5fc15568dd7c57271c97"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "primary",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "J27fW",
+      "fingerprint": "f5616e9aa6a3a3b30b74c9caa24e52de7114e9a9"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "secondary",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "zHoy6",
+      "fingerprint": "ecbac924552ad5e979640bb5257e3f6cfe4d7a36"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "tertiary",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "cVPwz",
+      "fingerprint": "9798cff799c698c87d52a711c14802b964ed4563"
     }
   }
 ]
