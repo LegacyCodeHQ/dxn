@@ -824,6 +824,190 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "yUiuK",
+      "x": 521,
+      "y": 0,
+      "name": "TabBar",
+      "reusable": true,
+      "width": 390,
+      "fill": "$surface",
+      "stroke": "#1C1B1A1F",
+      "strokeWidth": {
+        "top": 1
+      },
+      "padding": [
+        6,
+        0,
+        24,
+        0
+      ],
+      "justifyContent": "space_around",
+      "children": [
+        {
+          "id": "Qx460",
+          "type": "ref",
+          "ref": "KWmW2",
+          "name": "Feed tab",
+          "descendants": {
+            "w12fbN": {
+              "icon": "newspaper"
+            },
+            "N6rOHN": {
+              "content": "Feed"
+            }
+          }
+        },
+        {
+          "id": "ve7GX",
+          "type": "ref",
+          "ref": "KWmW2",
+          "name": "Saved tab",
+          "descendants": {
+            "w12fbN": {
+              "icon": "bookmark"
+            },
+            "N6rOHN": {
+              "content": "Saved"
+            }
+          }
+        },
+        {
+          "id": "uF63t",
+          "type": "ref",
+          "ref": "KWmW2",
+          "name": "Sources tab",
+          "descendants": {
+            "w12fbN": {
+              "icon": "rss"
+            },
+            "N6rOHN": {
+              "content": "Sources"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "zapWc",
+      "x": 0,
+      "y": 1055,
+      "name": "Tab bar states",
+      "clip": true,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "hpFSS",
+          "name": "feed",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "wVrcx",
+              "name": "Feed label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Feed",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "AyOE0",
+              "type": "ref",
+              "ref": "yUiuK",
+              "name": "section / feed",
+              "descendants": {
+                "Qx460/w12fbN": {
+                  "fill": "$accent"
+                },
+                "Qx460/N6rOHN": {
+                  "fill": "$accent"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "FeS3H",
+          "name": "saved",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "wOFmw",
+              "name": "Saved label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Saved",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "cCdc9",
+              "type": "ref",
+              "ref": "yUiuK",
+              "name": "section / saved",
+              "descendants": {
+                "ve7GX/w12fbN": {
+                  "fill": "$accent"
+                },
+                "ve7GX/N6rOHN": {
+                  "fill": "$accent"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "KDRlT",
+          "name": "sources",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "YQBiD",
+              "name": "Sources label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Sources",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "gUXxI",
+              "type": "ref",
+              "ref": "yUiuK",
+              "name": "section / sources",
+              "descendants": {
+                "uF63t/w12fbN": {
+                  "fill": "$accent"
+                },
+                "uF63t/N6rOHN": {
+                  "fill": "$accent"
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {

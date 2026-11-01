@@ -69,7 +69,7 @@ Then the screens, from the components.
 - [x] Button
 - [x] Toggle
 - [x] Tab
-- [ ] Tab bar
+- [x] Tab bar
 - [ ] Navigation bar
 - [ ] Article row
 - [ ] Source row

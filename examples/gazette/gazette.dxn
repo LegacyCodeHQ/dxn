@@ -18,10 +18,36 @@ type Toggle {
   state setting: Setting, interaction: Interaction
 }
 
-enum TabInteraction = idle | hovered | pressed
-
 type Tab {
+  enum TabInteraction = idle | hovered | pressed
   enum Selection = unselected | selected
 
   state selection: Selection, interaction: TabInteraction
+}
+
+type TabBar {
+  enum Section = feed | saved | sources
+
+  state section: Section
+
+  has feed: Tab {
+    selection = when section {
+      feed -> selected
+      saved, sources -> unselected
+    }
+  }
+
+  has saved: Tab {
+    selection = when section {
+      saved -> selected
+      feed, sources -> unselected
+    }
+  }
+
+  has sources: Tab {
+    selection = when section {
+      sources -> selected
+      feed, saved -> unselected
+    }
+  }
 }

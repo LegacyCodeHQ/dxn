@@ -1,0 +1,53 @@
+[
+  {
+    "context": {
+      "path": "TabBar",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "section": "feed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "zapWc",
+      "node": "AyOE0",
+      "fingerprint": "34fe43749570269650a7dcde5d43391525c0b5dd"
+    }
+  },
+  {
+    "context": {
+      "path": "TabBar",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "section": "saved"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "zapWc",
+      "node": "cCdc9",
+      "fingerprint": "8eca7da33da443e9df76bfec465281e0ff8a5742"
+    }
+  },
+  {
+    "context": {
+      "path": "TabBar",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "section": "sources"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "zapWc",
+      "node": "gUXxI",
+      "fingerprint": "cbf34edaaacb76a167ecf246abc21a61bbd79deb"
+    }
+  }
+]
