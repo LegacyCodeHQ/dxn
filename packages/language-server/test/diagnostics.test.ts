@@ -43,4 +43,9 @@ describe("diagnose", () => {
       diagnose("enum Hover =\n").map(({ code, range }) => [code, range.start, range.end]),
     ).toEqual([["syntax-error", { line: 0, character: 12 }, { line: 0, character: 12 }]]);
   });
+
+  it("marks a problem at the same place with Windows line endings, the ends of lines too", () => {
+    const text = "enum Hover =\ntype A {\n  state hover: Hovr\n}\n";
+    expect(diagnose(text.replaceAll("\n", "\r\n"))).toEqual(diagnose(text));
+  });
 });

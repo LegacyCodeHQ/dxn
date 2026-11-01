@@ -47,7 +47,13 @@ export function scan(source: string): Token[] {
       column = 1;
       continue;
     }
-    if (char === " " || char === "\t" || char === "\r") {
+    // A \r before a \n is the end of a Windows line, as the \n is: it takes
+    // no column, so a problem at the end of a line is where it is with \n.
+    if (char === "\r") {
+      index += 1;
+      continue;
+    }
+    if (char === " " || char === "\t") {
       index += 1;
       column += 1;
       continue;
