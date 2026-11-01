@@ -151,6 +151,19 @@ function checkOne(
       .join(", ");
     return `${element}${world === "" ? "" : ` on ${world}`}${parents === "" ? "" : ` with ${parents}`}`;
   };
+  // An element's combinations, worked out once, and each as a key, to find a
+  // combination among them: alike in everything, profiles, dimensions,
+  // parents and states.
+  const evaluated = new Map<string, { all: Combination[]; keys: Set<string> }>();
+  const combinationsOf = (element: string) => {
+    let found = evaluated.get(element);
+    if (found === undefined) {
+      const all = expand(file, element, given);
+      found = { all, keys: new Set(all.map((combination) => JSON.stringify(combination))) };
+      evaluated.set(element, found);
+    }
+    return found;
+  };
   // After the event: the element's own changes its trigger makes in the
   // combination applied, and what it changes in its children.
   const after = (element: string, combination: Combination) => {
@@ -208,7 +221,7 @@ function checkOne(
     }
     const changed = { ...combination, states };
     // The change must lead to a combination the element can have there.
-    if (!expand(file, element, given).some((candidate) => same(candidate, changed))) {
+    if (!combinationsOf(element).keys.has(JSON.stringify(changed))) {
       return failed(
         `on ${event}, ${where(element, combination)} would have ${action.state.name} = ${action.to.name}, which it cannot have there`,
       );
@@ -225,12 +238,9 @@ function checkOne(
     }
     return { combination: changed, children };
   };
-  // Two combinations alike in everything: profiles, dimensions, parents and
-  // states.
-  const same = (a: Combination, b: Combination) => JSON.stringify(a) === JSON.stringify(b);
   let picked = 0;
   for (const element of applicable) {
-    const before = expand(file, element, given).filter((combination) =>
+    const before = combinationsOf(element).all.filter((combination) =>
       matches(combination, expectation.when),
     );
     picked += before.length;
