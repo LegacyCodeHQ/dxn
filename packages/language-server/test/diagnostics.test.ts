@@ -38,6 +38,14 @@ describe("diagnose", () => {
     ]);
   });
 
+  it("marks a problem at an expectation over its whole title, quotes and all", () => {
+    expect(
+      diagnose(
+        'enum State = closed | open\ntype Menu {\n  state menu: State\n}\nexpect "Always closed" {\n  in Menu\n  then menu = closed\n}\n',
+      ).map(({ code, range }) => [code, range.start, range.end]),
+    ).toEqual([["expectation-failed", { line: 4, character: 7 }, { line: 4, character: 22 }]]);
+  });
+
   it("marks a problem at the end of a line or of the file, where no word is", () => {
     expect(
       diagnose("enum Hover =\n").map(({ code, range }) => [code, range.start, range.end]),
