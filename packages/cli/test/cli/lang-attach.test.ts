@@ -273,6 +273,30 @@ describe("dxn attach", () => {
     ]);
   });
 
+  it("reads its options strictly, and names a field the record lacks before anything else", () => {
+    const { run } = project();
+    const context = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
+    const swap = (from: string, to: string[]) =>
+      attach(...context).flatMap((arg, index, all) =>
+        all[index - 1] === from ? [] : arg === from ? to : [arg],
+      );
+    const misuse = (result: { code: number; stderr: string }) => [
+      result.code,
+      result.stderr.split("\n")[0],
+    ];
+    expect([
+      run(...swap("--field", ["--field", "actr=design-agent"])).stderr,
+      misuse(run(...swap("--field", ["--field", "actor"]))),
+      misuse(run(...attach(...context), "--file", "design/other.png")),
+      misuse(run(...swap("--file", ["--file=design/toolbar.png"]))),
+    ]).toEqual([
+      'dxn: Evidence has no field "actr" (actor, at, source, fingerprint)\n',
+      [2, 'dxn: --field takes <name>=<value>, found "actor"'],
+      [2, "dxn: give --file once"],
+      [2, 'dxn: write "--file design/toolbar.png", with a space, not "--file=design/toolbar.png"'],
+    ]);
+  });
+
   it("shows what it would write with --dry-run, and writes nothing", () => {
     const { root } = project();
     const result = capture(

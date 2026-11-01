@@ -934,13 +934,33 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   const flags = new Map<string, string[]>();
   const pairs: string[] = [];
   const positional: string[] = [];
+  const valued = ["--file", "--frame", "--field", "--at", "--record"];
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index] as string;
-    if (["--file", "--frame", "--field", "--at", "--record"].includes(arg)) {
+    // An option's value comes after a space; "--file=x" is not a context pair.
+    const joined = valued.find((option) => arg.startsWith(`${option}=`));
+    if (joined !== undefined) {
+      return misused(
+        io,
+        json,
+        `write "${joined} ${arg.slice(joined.length + 1)}", with a space, not "${arg}"`,
+      );
+    }
+    if (valued.includes(arg)) {
       flags.set(arg, [...(flags.get(arg) ?? []), rest[index + 1] ?? ""]);
       index++;
     } else if (arg.includes("=")) pairs.push(arg);
     else positional.push(arg);
+  }
+  // Each option once, but --field once for each field, as <name>=<value>.
+  for (const [option, values] of flags) {
+    if (option !== "--field" && values.length > 1) {
+      return misused(io, json, `give ${option} once`);
+    }
+  }
+  const unpaired = flags.get("--field")?.find((pair) => !pair.includes("="));
+  if (unpaired !== undefined) {
+    return misused(io, json, `--field takes <name>=<value>, found ${JSON.stringify(unpaired)}`);
   }
   const [file, path, ...extra] = positional;
   const source = flags.get("--file")?.[0];
@@ -1083,6 +1103,14 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   const fields = new Map(
     (flags.get("--field") ?? []).map((pair) => pair.split(/=(.*)/s) as [string, string]),
   );
+  // A field the record does not have is named before what is missing.
+  for (const name of fields.keys()) {
+    if (!record.fields.some((field) => field.name === name)) {
+      return report.refuse(
+        `${record.name} has no field ${JSON.stringify(name)} (${record.fields.map((field) => field.name).join(", ")})`,
+      );
+    }
+  }
   if (
     !record.fields.some(({ name }) => name === "fingerprint") ||
     !record.fields.some(({ name }) => name === "source")
@@ -1122,13 +1150,6 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   if (fingerprint === undefined)
     return report.refuse(`frame ${JSON.stringify(frame)} is not in ${source}`);
   values.fingerprint = fingerprint;
-  for (const name of fields.keys()) {
-    if (!record.fields.some((field) => field.name === name)) {
-      return report.refuse(
-        `${record.name} has no field ${JSON.stringify(name)} (${record.fields.map((field) => field.name).join(", ")})`,
-      );
-    }
-  }
   // An entry for the same combination, frame and given fields is replaced
   // where it is stored, in whichever of the record's files; a new one goes
   // into the record's folder, in a file named after the path's type.
