@@ -34,6 +34,17 @@ it with `make build`, then point Zed's settings at it:
 
 Zed shows each problem `dxn check` finds under the word it is at, as you type.
 
+## Running a type
+
+Each type has a run button beside its name, which runs `dxn states` for it in
+Zed's terminal: the table of the states it has in each combination. A type
+inside another runs by its full name, `<Type>.<Name>`. The button runs the
+`dxn` on the project's `PATH`; to use the one in this repository, build it with
+`make build` and link it with `npm link --workspace packages/cli`.
+
+`runnables.scm` puts the buttons on the types' names, and `tasks.json` holds
+the tasks they run. `task: rerun` runs the last one again after an edit.
+
 ## Checking it
 
 ```bash

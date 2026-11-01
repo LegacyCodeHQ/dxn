@@ -1,0 +1,16 @@
+[
+  {
+    "label": "dxn states $ZED_CUSTOM_type",
+    "command": "dxn",
+    "args": ["states", "$ZED_RELATIVE_FILE", "$ZED_CUSTOM_type"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["dxn-type"]
+  },
+  {
+    "label": "dxn states $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
+    "command": "dxn",
+    "args": ["states", "$ZED_RELATIVE_FILE", "$ZED_CUSTOM_parent.$ZED_CUSTOM_type"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["dxn-nested-type"]
+  }
+]
