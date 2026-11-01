@@ -82,9 +82,15 @@ Commands:
                                      combinations of every element in the file's
                                      trees, in place, and those a stored record is
                                      about; with --missing, list the others
-  rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
-                                     stored record, once both check; with --dry-run,
-                                     say what it would write
+  rename <file> <name> <new>         Rename a declaration where the file uses it
+                                     and where stored records name it, once both
+                                     check: <name> as dxn writes it (Hover,
+                                     Hover.rest, Toolbar.layout, phone, ...;
+                                     <kind>:<name> where one name names two), or
+                                     <file>:<line>:<column> <new> by its place; a
+                                     record's stored records move to the folder of
+                                     its new name; with --dry-run, say what it
+                                     would write
 
 Options:
   --json                             Print one JSON document, for tools: the result
@@ -149,8 +155,26 @@ dxn status toolbar.dxn
 
 ### rename
 
-Renames an enum's value in the file and in every stored record.
+Renames a declaration everywhere the file uses it, and everywhere stored
+records name it: in their contexts' paths, profiles, dimensions, parents and
+states, and in their fields. Renaming a record moves its stored records to the
+folder named after its new name.
+
+A declaration is named as dxn writes it: an enum, a type, a dimension, a
+record, an environment, a profile or a modifier by its name, one declared
+inside a type by its full name (`Menu.State`), a value with its enum or
+dimension (`Hover.rest`, `Breakpoint.sm`), and a state, an action, an event or
+a child with its type (`Toolbar.layout`). Where one name names two, such as an
+event and an action, a kind before it says which (`event:Menu.close`). A name
+can also be given by its place in the file, as an editor does.
 
 ```bash
 dxn rename evidence.dxn Actor.design-agent designer
+dxn rename toolbar.dxn Toolbar.layout arrangement
+dxn rename toolbar.dxn:96:9 arrangement
+dxn rename toolbar.dxn Evidence Proof
 ```
+
+A state that is provided is renamed with every state that receives it. The
+rename is refused, and nothing is written, when the file or the stored
+records would not check afterwards.

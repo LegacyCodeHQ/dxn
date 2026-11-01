@@ -143,6 +143,7 @@ describe("renaming in the editor", () => {
       {
         path: "evidence/evidence.json",
         source: renameInData(file, "Evidence", data, "Focus", "blurred", "unfocused").source,
+        changed: 1,
       },
     ]);
     expect(result.data[0]?.source).toContain('"focus": "unfocused"');

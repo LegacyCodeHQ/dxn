@@ -35,7 +35,14 @@ export { givenDimensions, profilesOf } from "./profiles.js";
 // Renaming an enum's value in a .dxn file and in its stored records.
 export { isValue, renameInData, renameInSource } from "./rename.js";
 // Renaming a declaration where it is used, and in stored records, for editors.
-export { type Edit, type Renamed, renameAt, renameable, type StoredFile } from "./rename-at.js";
+export {
+  declarationNamed,
+  type Edit,
+  type Renamed,
+  renameAt,
+  renameable,
+  type StoredFile,
+} from "./rename-at.js";
 // How many combinations of each element stored records are about.
 export { type Check, type Combination, coverage, treePaths } from "./status.js";
 // Records stored as JSON beside a .dxn file.

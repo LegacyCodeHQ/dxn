@@ -1,7 +1,7 @@
-import type { Child, Enum, Located, ParseResult, State, Type } from "./ast.js";
+import type { Child, Diagnostic, Enum, Located, ParseResult, State, Type } from "./ast.js";
 import { covers, links, type Span, wordAt } from "./definition.js";
 import { placement } from "./evaluate.js";
-import { article } from "./names.js";
+import { among, article } from "./names.js";
 import { parse } from "./parse.js";
 import {
   isValue,
@@ -32,10 +32,17 @@ export interface Edit {
 }
 
 export type Renamed =
-  | { refusal: string }
+  // With the problems the rename would leave, when that is why.
+  | { refusal: string; problems?: Diagnostic[] }
   | {
+      // What is renamed: its kind, and its name as dxn writes it.
+      kind: string;
+      name: string;
       edits: Edit[];
-      data: { path: string; source: string }[];
+      // The source, renamed.
+      source: string;
+      // The stored data files that change, and how many changes each has.
+      data: { path: string; source: string; changed: number }[];
       // For a record, the folder its stored records are in, by its old name
       // and its new, next to the file.
       folder?: { from: string; to: string };
@@ -47,7 +54,7 @@ interface Kind {
   kind: string;
   of?: Enum;
   dimension?: boolean;
-  // For a state, the type it is of.
+  // For a state, an action, an event or a child, the type it is of.
   type?: Type;
 }
 
@@ -88,11 +95,14 @@ export function renameAt(
   if (to === name) return { refusal: `${name} is already its name` };
   const edits = spans.map((span) => ({ ...span, text: to }));
   // The rename must leave the file as sound as it was.
-  const after = parse(apply(source, edits));
-  const before = new Set(problems(file));
-  const left = problems(after).filter((problem) => !before.has(problem));
-  if (left.length > 0) return { refusal: `the rename would leave a problem: ${left[0]}` };
-  const data: { path: string; source: string }[] = [];
+  const renamedSource = apply(source, edits);
+  const after = parse(renamedSource);
+  const before = new Set(problems(file).map(({ message }) => message));
+  const left = problems(after).filter(({ message }) => !before.has(message));
+  if (left.length > 0) {
+    return { refusal: `the rename would leave a problem: ${left[0]?.message}`, problems: left };
+  }
+  const data: { path: string; source: string; changed: number }[] = [];
   for (const item of stored) {
     // A state is renamed with the states it is provided to, or received from.
     if (kind.kind === "state") {
@@ -103,7 +113,7 @@ export function renameAt(
         source = renamed.source;
         changed += renamed.changed;
       }
-      if (changed > 0) data.push({ path: item.path, source });
+      if (changed > 0) data.push({ path: item.path, source, changed });
       continue;
     }
     const renamed =
@@ -121,13 +131,20 @@ export function renameAt(
                   ? renameProfileInData(item.source, kind.kind, name, to)
                   : undefined;
     if (renamed !== undefined && renamed.changed > 0) {
-      data.push({ path: item.path, source: renamed.source });
+      data.push({ path: item.path, source: renamed.source, changed: renamed.changed });
     }
   }
+  const done = {
+    kind: kind.kind,
+    name: qualified(found.declared, kind),
+    edits,
+    source: renamedSource,
+    data,
+  };
   if (kind.kind === "record") {
-    return { edits, data, folder: { from: folderOf(name), to: folderOf(to) } };
+    return { ...done, folder: { from: folderOf(name), to: folderOf(to) } };
   }
-  return { edits, data };
+  return done;
 }
 
 // How each kind that can be renamed is named.
@@ -172,7 +189,15 @@ const rules: Record<string, { pattern: RegExp; text: string }> = {
 
 // The errors in a file, each as it is reported.
 const problems = (file: ParseResult) =>
-  file.diagnostics.filter(({ severity }) => severity === "error").map(({ message }) => message);
+  file.diagnostics.filter(({ severity }) => severity === "error");
+
+// A declaration's name as dxn writes it from outside: a value with its enum's
+// or dimension's, and a state, an action, an event or a child with its type's.
+function qualified(at: Located, { kind, of, type }: Kind): string {
+  if (kind === "value") return `${of?.name}.${at.name}`;
+  if (["state", "action", "event", "child"].includes(kind)) return `${type?.name}.${at.name}`;
+  return at.name;
+}
 
 // The declaration whose name is at a line and a column, from where it is
 // declared or used: its kind, its name, and every span to rename; or why it
@@ -239,9 +264,9 @@ function kindsOf(file: ParseResult): Map<Located, Kind> {
   for (const type of file.types) {
     result.set(type, { kind: "type" });
     for (const state of type.states) result.set(state, { kind: "state", type });
-    for (const action of type.actions) result.set(action.name, { kind: "action" });
-    for (const event of type.events) result.set(event, { kind: "event" });
-    for (const child of type.children) result.set(child, { kind: "child" });
+    for (const action of type.actions) result.set(action.name, { kind: "action", type });
+    for (const event of type.events) result.set(event, { kind: "event", type });
+    for (const child of type.children) result.set(child, { kind: "child", type });
   }
   for (const declaration of file.environments) result.set(declaration, { kind: "environment" });
   for (const declaration of file.profiles) result.set(declaration, { kind: "profile" });
@@ -295,4 +320,54 @@ function connected(file: ParseResult, state: State): State[] {
     }
   }
   return group;
+}
+
+// Where the declaration a name names is: a line and a column, both from one.
+// A name is written as dxn writes it: a declaration of the file by its name,
+// a type's or an enum's inside it by its full name, a value of an enum or a
+// dimension as "<Enum>.<value>", and a type's state, action, event or child
+// as "<Type>.<name>"; "<kind>:" before it picks one kind where a name names
+// several. Refused for a name nothing is declared by, or that is ambiguous.
+export function declarationNamed(
+  source: string,
+  target: string,
+): { line: number; column: number } | { refusal: string } {
+  const file = parse(source);
+  const colon = target.indexOf(":");
+  const kind = colon === -1 ? undefined : target.slice(0, colon);
+  const name = colon === -1 ? target : target.slice(colon + 1);
+  const named: { name: string; kind: string; at: Located }[] = [];
+  for (const [at, kinded] of kindsOf(file)) {
+    named.push({ name: qualified(at, kinded), kind: kinded.kind, at });
+  }
+  const found = named.filter(
+    (each) => each.name === name && (kind === undefined || each.kind === kind),
+  );
+  const [only] = found;
+  if (found.length === 1 && only !== undefined) {
+    return { line: only.at.line, column: only.at.column };
+  }
+  if (found.length > 1) {
+    const kinds = found.map((each) => `${each.kind}:${name}`);
+    return {
+      refusal: `${name} names ${found.map((each) => `${article(each.kind)} ${each.kind}`).join(" and ")}; say which: ${kinds.join(" or ")}`,
+    };
+  }
+  const names = named
+    .filter((each) => kind === undefined || each.kind === kind)
+    .map((each) => each.name);
+  const nothing = kind === undefined ? "nothing" : `no ${kind}`;
+  // A name with a part before its last is compared with the others that
+  // share that part, by its last.
+  const dot = name.lastIndexOf(".");
+  const last = name.slice(dot + 1);
+  const siblings = [...new Set(names)].filter(
+    (each) =>
+      dot !== -1 && each.startsWith(name.slice(0, dot + 1)) && !each.slice(dot + 1).includes("."),
+  );
+  const suggested =
+    siblings.length > 0
+      ? among(name, siblings, "", last.length)
+      : among(name, [...new Set(names)], "the file declares none");
+  return { refusal: `${nothing} is declared as ${name}${suggested}` };
 }

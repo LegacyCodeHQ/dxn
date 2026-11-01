@@ -705,7 +705,7 @@ record Evidence with context {
     const result = run("evidence.dxn", "Actor.design-agent", "designer");
     expect([result.code, result.stdout, read("evidence.dxn"), read("evidence/page.json")]).toEqual([
       0,
-      "Renamed Actor.design-agent to designer in evidence.dxn, evidence/page.json (2 values)\n",
+      "Renamed value Actor.design-agent to designer in evidence.dxn, evidence/page.json (2 changes in stored records)\n",
       schema.replace("design-agent", "designer"),
       renamed,
     ]);
@@ -716,7 +716,7 @@ record Evidence with context {
     const result = dryRun("evidence.dxn", "Actor.design-agent", "designer");
     expect([result.code, result.stdout, read("evidence.dxn")]).toEqual([
       0,
-      "Would rename Actor.design-agent to designer in evidence.dxn, evidence/page.json (2 values)\n",
+      "Would rename value Actor.design-agent to designer in evidence.dxn, evidence/page.json (2 changes in stored records)\n",
       schema,
     ]);
   });
@@ -731,11 +731,11 @@ record Evidence with context {
       run("evidence.dxn", "Actor.design-agent", "design agent").stderr,
       read("evidence.dxn"),
     ]).toEqual([
-      "dxn: Actr is not an enum; did you mean Actor?\n",
-      "dxn: Evidence is a record, not an enum\n",
-      'dxn: "designer" is not a value of Actor (design-agent, reviewer)\n',
-      'dxn: "reviewer" is already a value of Actor\n',
-      'dxn: "design agent" is not a value: a letter or digit, then letters, digits and hyphens\n',
+      "dxn: nothing is declared as Actr.design-agent; did you mean Actor.design-agent?\n",
+      "dxn: nothing is declared as Evidence.design-agent (Actor, Actor.design-agent, Actor.reviewer, Card, Card.owner, Evidence)\n",
+      "dxn: nothing is declared as Actor.designer (Actor.design-agent, Actor.reviewer)\n",
+      'evidence.dxn:1:25: duplicate-value: "reviewer" appears twice in Actor\ndxn: the rename would leave problems; nothing was written\n',
+      'dxn: "design agent" is not a value name: a letter or digit, then letters, digits and hyphens\n',
       schema,
     ]);
   });
@@ -810,12 +810,73 @@ expect "Each m can be open" {
     ]);
   });
 
-  it("needs a file, an enum's value and its new name", () => {
+  it("needs a file, a name and its new name, or a file's line and column and the new name", () => {
     const { run } = project(stored);
     expect([
       run("evidence.dxn", "Actor.design-agent").code,
-      run("evidence.dxn", "Actor", "x").code,
-    ]).toEqual([2, 2]);
+      run("evidence.dxn").code,
+      run("evidence.dxn:1", "x").code,
+    ]).toEqual([2, 2, 2]);
+  });
+
+  it("renames any declaration by its name, and the stored records that name it", () => {
+    const { run, read } = project(stored);
+    const result = run("evidence.dxn", "Card.owner", "maker");
+    expect([result.code, result.stdout, read("evidence.dxn"), read("evidence/page.json")]).toEqual([
+      0,
+      "Renamed state Card.owner to maker in evidence.dxn, evidence/page.json (2 changes in stored records)\n",
+      schema.replace("state owner", "state maker"),
+      stored.replaceAll('"owner"', '"maker"'),
+    ]);
+  });
+
+  it("renames the declaration at a line and a column, as an editor does", () => {
+    const { run, read } = project(stored);
+    const result = run("evidence.dxn:3:10", "maker");
+    expect([result.code, result.stdout, read("evidence.dxn")]).toEqual([
+      0,
+      "Renamed state Card.owner to maker in evidence.dxn, evidence/page.json (2 changes in stored records)\n",
+      schema.replace("state owner", "state maker"),
+    ]);
+  });
+
+  it("moves a record's stored records to the folder named after its new name", () => {
+    const { run, dryRun, read } = project(stored);
+    const planned = dryRun("evidence.dxn", "Evidence", "Proof", "--json");
+    const result = run("evidence.dxn", "Evidence", "Proof");
+    expect([
+      JSON.parse(planned.stdout).moved,
+      result.code,
+      result.stdout,
+      read("evidence.dxn"),
+      read("proof/page.json"),
+    ]).toEqual([
+      { from: "evidence", to: "proof" },
+      0,
+      "Renamed record Evidence to Proof in evidence.dxn, and moved evidence/ to proof/\n",
+      schema.replace("record Evidence", "record Proof"),
+      stored,
+    ]);
+  });
+
+  it("refuses a name that names two declarations, until it says which", () => {
+    const root = writeProject({});
+    const source =
+      "enum State = closed | open\ntype Menu {\n  state menu: State\n  event close\n  action close: menu open -> closed\n}\n";
+    writeFileSync(join(root, "menu.dxn"), source);
+    const ambiguous = capture(["rename", "menu.dxn", "Menu.close", "shut"], root);
+    const chosen = capture(["rename", "menu.dxn", "event:Menu.close", "shut"], root);
+    expect([
+      ambiguous.code,
+      ambiguous.stderr,
+      chosen.code,
+      readFileSync(join(root, "menu.dxn"), "utf8"),
+    ]).toEqual([
+      1,
+      "dxn: Menu.close names an action and an event; say which: action:Menu.close or event:Menu.close\n",
+      0,
+      source.replace("event close", "event shut"),
+    ]);
   });
 
   describe("with --json", () => {
@@ -827,8 +888,8 @@ expect "Each m can be open" {
         "",
         {
           file: "evidence.dxn",
-          enum: "Actor",
-          from: "design-agent",
+          kind: "value",
+          name: "Actor.design-agent",
           to: "designer",
           written: ["evidence.dxn", "evidence/page.json"],
           records: 2,
@@ -877,7 +938,7 @@ expect "Each m can be open" {
         ),
       ]).toEqual([
         1,
-        { error: "Actr is not an enum; did you mean Actor?" },
+        { error: "nothing is declared as Actr.design-agent; did you mean Actor.design-agent?" },
         1,
         "",
         [["evidence/page.json", "unknown-value", "$[0].actor"]],

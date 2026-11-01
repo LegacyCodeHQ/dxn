@@ -1,83 +1,117 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { isValue, Names, parse, renameInData, renameInSource } from "@legacycodehq/dxn-language";
+import { readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
+import { declarationNamed, parse, renameAt } from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
 import { checkStored, loadStored } from "./stored.js";
 import { usage } from "./usage.js";
 
+// Renames a declaration, by its name as dxn writes it or by its place in the
+// file, where the file uses it and where stored records name it: refused
+// unless the file and the stored records still check afterwards.
 export const renameCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
-  const {
-    json,
-    rest: [file, target, to, ...rest],
-  } = options(args);
-  const dot = target?.lastIndexOf(".") ?? -1;
-  if (
-    file === undefined ||
-    target === undefined ||
-    to === undefined ||
-    rest.length > 0 ||
-    dot < 1
-  ) {
-    return misused(io, json, "give a file, <Enum>.<value> and the value's new name");
+  const { json, rest } = options(args);
+  // "<file>:<line>:<column> <new>", or "<file> <name> <new>".
+  const place = rest.length === 2 ? rest[0]?.match(/^(.+):(\d+):(\d+)$/) : undefined;
+  const [file, target, to] =
+    place !== undefined && place !== null
+      ? [place[1], undefined, rest[1]]
+      : rest.length === 3
+        ? [rest[0], rest[1], rest[2]]
+        : [];
+  if (file === undefined || to === undefined) {
+    return misused(
+      io,
+      json,
+      "give a file, a name and its new name, or a file's line and column and the new name",
+    );
   }
-  const enumName = target.slice(0, dot);
-  const from = target.slice(dot + 1);
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
   if (typeof parsed === "number") return parsed;
-  const names = new Names(parsed);
-  const values = names.values(enumName) ?? [];
-  const refusal =
-    names.kindOf(enumName) !== "enum"
-      ? names.not(enumName, "enum")
-      : !values.includes(from)
-        ? `${JSON.stringify(from)} is not a value of ${enumName} (${values.join(", ")})`
-        : values.includes(to)
-          ? `${JSON.stringify(to)} is already a value of ${enumName}`
-          : !isValue(to)
-            ? `${JSON.stringify(to)} is not a value: a letter or digit, then letters, digits and hyphens`
-            : undefined;
-  if (refusal !== undefined) return report.refuse(refusal);
+  const path = resolve(cwd, file);
+  const source = readFileSync(path, "utf8");
+  const at =
+    target === undefined
+      ? { line: Number(place?.[2]), column: Number(place?.[3]) }
+      : declarationNamed(source, target);
+  if ("refusal" in at) return report.refuse(at.refusal);
   const stored = loadStored(parsed, file, cwd, report);
   if (typeof stored === "number") return stored;
-  const path = resolve(cwd, file);
-  const source = renameInSource(parsed, readFileSync(path, "utf8"), enumName, from, to);
-  const written = [{ shown: file, path, source }];
-  let records = 0;
-  for (const data of stored) {
-    const renamed = renameInData(parsed, data.record, data.source, enumName, from, to);
-    if (renamed.changed === 0) continue;
-    records += renamed.changed;
-    written.push({ shown: data.shown, path: data.path, source: renamed.source });
-  }
-  // The renamed file and data must check, before anything is written.
-  const after = parse(source);
-  const writtenData = new Map(written.map((item) => [item.path, item.source]));
-  const afterStored = stored.map((data) => ({
-    ...data,
-    source: writtenData.get(data.path) ?? data.source,
-  }));
-  const left = after.diagnostics.filter(({ severity }) => severity === "error");
-  for (const { line, column, severity, code, message } of left) {
-    report.problem({ file, line, column, severity, code, message });
-  }
-  if (left.length > 0 || !checkStored(after, afterStored, report)) {
+  const renamed = renameAt(source, at.line, at.column, to, stored);
+  if ("refusal" in renamed) {
+    if (renamed.problems === undefined) return report.refuse(renamed.refusal);
+    for (const { line, column, severity, code, message } of renamed.problems) {
+      report.problem({ file, line, column, severity, code, message });
+    }
     return report.refuse("the rename would leave problems; nothing was written");
   }
-  const what = `${target} to ${to} in ${written.map(({ shown }) => shown).join(", ")} (${count(records, "value")})`;
+  const shown = (data: string) => relative(cwd, data);
+  const written = [
+    { shown: file, path, source: renamed.source },
+    ...renamed.data.map((data) => ({
+      shown: shown(data.path),
+      path: data.path,
+      source: data.source,
+    })),
+  ];
+  // A record's stored records move to the folder named after its new name.
+  const directory = dirname(path);
+  const move =
+    renamed.folder !== undefined &&
+    renamed.folder.from !== renamed.folder.to &&
+    statSync(join(directory, renamed.folder.from), { throwIfNoEntry: false })?.isDirectory() ===
+      true
+      ? renamed.folder
+      : undefined;
+  if (move !== undefined && statSync(join(directory, move.to), { throwIfNoEntry: false })) {
+    return report.refuse(
+      `${move.to}/ is already next to ${file}; ${renamed.name}'s stored records cannot move there`,
+    );
+  }
+  // The renamed file and stored records must check, before anything is
+  // written.
+  const after = parse(renamed.source);
+  const now = new Map(renamed.data.map((data) => [data.path, data.source]));
+  const afterStored = stored.map((data) => ({
+    ...data,
+    record: data.record === renamed.name && renamed.kind === "record" ? to : data.record,
+    source: now.get(data.path) ?? data.source,
+  }));
+  if (!checkStored(after, afterStored, report)) {
+    return report.refuse("the rename would leave problems; nothing was written");
+  }
+  const records = renamed.data.reduce((sum, data) => sum + data.changed, 0);
+  const files = written.map((item) => item.shown).join(", ");
+  const what = `${renamed.kind} ${renamed.name} to ${to} in ${files}${
+    move !== undefined
+      ? `, and moved ${move.from}/ to ${move.to}/`
+      : records > 0
+        ? ` (${count(records, "change")} in stored records)`
+        : ""
+  }`;
   if (dryRun) {
     return report.succeed(
       {
         dryRun: true,
-        written: Object.fromEntries(written.map(({ shown, source }) => [shown, source])),
+        written: Object.fromEntries(written.map((item) => [item.shown, item.source])),
+        ...(move === undefined ? {} : { moved: move }),
       },
       `Would rename ${what}\n`,
     );
   }
   for (const item of written) writeFileSync(item.path, item.source);
+  if (move !== undefined) renameSync(join(directory, move.from), join(directory, move.to));
   return report.succeed(
-    { file, enum: enumName, from, to, written: written.map(({ shown }) => shown), records },
+    {
+      file,
+      kind: renamed.kind,
+      name: renamed.name,
+      to,
+      written: written.map((item) => item.shown),
+      records,
+      ...(move === undefined ? {} : { moved: move }),
+    },
     `Renamed ${what}\n`,
   );
 });

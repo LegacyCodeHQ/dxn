@@ -97,11 +97,19 @@ export function enumOf(type: Type, subject: string): string | undefined {
 
 // What to say after a name that is not one of these: the ones close to it, as
 // a suggestion, closest first; or, when none is close, all of them.
-export function among(written: string, names: string[], none = "the file declares none"): string {
+// How close is close is measured on so many of the written name's characters:
+// all of them, or only those of its last part, when the names to choose from
+// share the rest.
+export function among(
+  written: string,
+  names: string[],
+  none = "the file declares none",
+  measured = written.length,
+): string {
   if (names.length === 0) return `; ${none}`;
   const close = names
     .map((name) => ({ name, distance: distance(written, name) }))
-    .filter(({ distance: apart }) => apart <= Math.max(1, Math.floor(written.length / 3)))
+    .filter(({ distance: apart }) => apart <= Math.max(1, Math.floor(measured / 3)))
     .sort((a, b) => a.distance - b.distance);
   if (close.length === 0) return ` (${names.join(", ")})`;
   const each = close.map(({ name }) => name);

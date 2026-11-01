@@ -76,9 +76,15 @@ describe("dxn cli", () => {
                                            combinations of every element in the file's
                                            trees, in place, and those a stored record is
                                            about; with --missing, list the others
-        rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
-                                           stored record, once both check; with --dry-run,
-                                           say what it would write
+        rename <file> <name> <new>         Rename a declaration where the file uses it
+                                           and where stored records name it, once both
+                                           check: <name> as dxn writes it (Hover,
+                                           Hover.rest, Toolbar.layout, phone, ...;
+                                           <kind>:<name> where one name names two), or
+                                           <file>:<line>:<column> <new> by its place; a
+                                           record's stored records move to the folder of
+                                           its new name; with --dry-run, say what it
+                                           would write
 
         help [<command>]                   Show this overview, or a command's usage
 
