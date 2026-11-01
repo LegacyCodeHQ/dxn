@@ -409,3 +409,33 @@ export function renameProfileInData(
   }
   return { source: replace(source, edits), changed: edits.length };
 }
+
+// Renames a dimension, or one of its values, in stored records' contexts:
+// the dimension's key among a context's dimensions, or its value there. Data
+// without problems.
+export function renameDimensionInData(
+  source: string,
+  dimension: string,
+  to: string,
+  value?: string,
+): { source: string; changed: number } {
+  const edits: { start: number; end: number; text: string }[] = [];
+  const { root } = parseJson(source);
+  if (root?.kind !== "array") return { source, changed: 0 };
+  for (const element of root.elements) {
+    if (element.kind !== "object") continue;
+    const context = element.members.find(({ key }) => key.value === "context")?.value;
+    if (context?.kind !== "object") continue;
+    const dimensions = context.members.find(({ key }) => key.value === "dimensions")?.value;
+    if (dimensions?.kind !== "object") continue;
+    for (const { key, value: given } of dimensions.members) {
+      if (key.value !== dimension) continue;
+      if (value === undefined) {
+        edits.push({ start: key.span.start, end: key.span.end, text: JSON.stringify(to) });
+      } else if (given.kind === "string" && given.value === value) {
+        edits.push({ start: given.span.start, end: given.span.end, text: JSON.stringify(to) });
+      }
+    }
+  }
+  return { source: replace(source, edits), changed: edits.length };
+}

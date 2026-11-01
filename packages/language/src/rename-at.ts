@@ -5,6 +5,7 @@ import { parse } from "./parse.js";
 import {
   isValue,
   renameChildInData,
+  renameDimensionInData,
   renameInData,
   renameProfileInData,
   renameStateInData,
@@ -58,7 +59,7 @@ export function renameable(
 // data files that change, with their new content. Refused for a name that is
 // not one of its kind's, a rename that would leave problems, and, for now, the
 // names stored records hold other than an enum's values, states, children,
-// types, profiles and modifiers.
+// types, profiles, modifiers and dimensions.
 export function renameAt(
   source: string,
   line: number,
@@ -86,17 +87,21 @@ export function renameAt(
   const data: { path: string; source: string }[] = [];
   for (const item of stored) {
     const renamed =
-      kind.kind === "value" && kind.of !== undefined
-        ? renameInData(file, item.record, item.source, kind.of.name, name, to)
-        : kind.kind === "state"
-          ? renameStateInData(file, item.source, found.declared as State, to)
-          : kind.kind === "child"
-            ? renameChildInData(file, item.source, found.declared as Child, to)
-            : kind.kind === "type"
-              ? renameTypeInData(item.source, found.declared as Type, to)
-              : kind.kind === "profile" || kind.kind === "modifier"
-                ? renameProfileInData(item.source, kind.kind, name, to)
-                : undefined;
+      kind.kind === "value" && kind.dimension && kind.of !== undefined
+        ? renameDimensionInData(item.source, kind.of.name, to, name)
+        : kind.kind === "dimension"
+          ? renameDimensionInData(item.source, name, to)
+          : kind.kind === "value" && kind.of !== undefined
+            ? renameInData(file, item.record, item.source, kind.of.name, name, to)
+            : kind.kind === "state"
+              ? renameStateInData(file, item.source, found.declared as State, to)
+              : kind.kind === "child"
+                ? renameChildInData(file, item.source, found.declared as Child, to)
+                : kind.kind === "type"
+                  ? renameTypeInData(item.source, found.declared as Type, to)
+                  : kind.kind === "profile" || kind.kind === "modifier"
+                    ? renameProfileInData(item.source, kind.kind, name, to)
+                    : undefined;
     if (renamed !== undefined && renamed.changed > 0) {
       data.push({ path: item.path, source: renamed.source });
     }
@@ -106,6 +111,7 @@ export function renameAt(
 
 // How each kind that can be renamed is named.
 const rules: Record<string, { pattern: RegExp; text: string }> = {
+  dimension: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   profile: {
     pattern: /^[a-z][A-Za-z0-9-]*$/,
     text: "a lowercase letter, then letters, digits and hyphens",
@@ -185,7 +191,7 @@ function target(
   ].map(last);
   const name = (declared as { short?: string }).short ?? declared.name;
   const from = last(link?.from ?? span(declared));
-  if (rules[kind.kind] === undefined || (kind.kind === "value" && kind.dimension)) {
+  if (rules[kind.kind] === undefined) {
     const what =
       kind.kind === "value"
         ? `a value of the dimension ${kind.of?.name}`

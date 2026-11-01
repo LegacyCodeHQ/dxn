@@ -350,6 +350,115 @@ describe("renaming in the editor", () => {
     `);
   });
 
+  it("renames a dimension and its values where they are used, and in stored records' dimensions", () => {
+    const themed = `dimension Pointer = mouse | touch
+dimension Theme = light | dark
+enum Actor = designer
+type Card needs Pointer, Theme {
+  enum Shade = pale | deep
+  enum Glow = off | on
+  state shade: Shade = when Theme { light -> pale, dark -> deep }
+  state glow: Glow
+  on Theme in (dark): glow -> on
+}
+environment Device = Pointer
+profile phone: Device { Pointer = touch }
+record Evidence with context {
+  actor: Actor
+}
+expect "A dark card is deep" {
+  in Card
+  when Theme = dark
+  then shade = deep
+}
+`;
+    const records = `[
+  {
+    "context": {
+      "path": "Card",
+      "profile": "phone",
+      "dimensions": { "Theme": "dark" },
+      "parents": {},
+      "states": { "shade": "deep", "glow": "off" }
+    },
+    "actor": "designer"
+  }
+]
+`;
+    const where = (before: string, word: string): [number, number] => {
+      const offset = themed.indexOf(`${before}${word}`) + before.length;
+      const above = themed.slice(0, offset).split("\n");
+      return [above.length, (above.at(-1) ?? "").length + 1 + Math.floor(word.length / 2)];
+    };
+    expect(validate(parse(themed), "Evidence", records)).toEqual([]);
+    const snapshot: unknown[] = [];
+    for (const [before, word, to] of [
+      ["dimension ", "Theme", "Mode"],
+      ["dimension Theme = light | ", "dark", "night"],
+      ["dimension ", "Pointer", "Input"],
+      ["dimension Pointer = mouse | ", "touch", "finger"],
+    ] as const) {
+      const result = renameAt(themed, ...where(before, word), to, [
+        { record: "Evidence", path: "evidence/card.json", source: records },
+      ]);
+      if ("refusal" in result) throw new Error(result.refusal);
+      const lines = themed.split("\n");
+      const sorted = [...result.edits].sort((a, b) => b.line - a.line || b.column - a.column);
+      for (const { line, column, length, text } of sorted) {
+        const content = lines[line - 1] ?? "";
+        lines[line - 1] =
+          `${content.slice(0, column - 1)}${text}${content.slice(column - 1 + length)}`;
+      }
+      const after = lines.join("\n");
+      const before_ = themed.split("\n");
+      snapshot.push(
+        lines.filter((line, index) => line !== before_[index]).map((line) => line.trim()),
+      );
+      const data = result.data[0]?.source ?? records;
+      snapshot.push(data.match(/"dimensions": \{[^}]*\}/g));
+      expect(validate(parse(after), "Evidence", data)).toEqual([]);
+    }
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "dimension Mode = light | dark",
+          "type Card needs Pointer, Mode {",
+          "state shade: Shade = when Mode { light -> pale, dark -> deep }",
+          "on Mode in (dark): glow -> on",
+          "when Mode = dark",
+        ],
+        [
+          ""dimensions": { "Mode": "dark" }",
+        ],
+        [
+          "dimension Theme = light | night",
+          "state shade: Shade = when Theme { light -> pale, night -> deep }",
+          "on Theme in (night): glow -> on",
+          "when Theme = night",
+        ],
+        [
+          ""dimensions": { "Theme": "night" }",
+        ],
+        [
+          "dimension Input = mouse | touch",
+          "type Card needs Input, Theme {",
+          "environment Device = Input",
+          "profile phone: Device { Input = touch }",
+        ],
+        [
+          ""dimensions": { "Theme": "dark" }",
+        ],
+        [
+          "dimension Pointer = mouse | finger",
+          "profile phone: Device { Pointer = finger }",
+        ],
+        [
+          ""dimensions": { "Theme": "dark" }",
+        ],
+      ]
+    `);
+  });
+
   it("refuses, for now, a state that is provided or received, which is matched by its name", () => {
     const shared = `enum Section = home | blog
 type Link receives current: Section {
@@ -385,8 +494,6 @@ type Page {
     snapshot.push(renamed("enum Hover = rest | ", "hovered", "a b"));
     snapshot.push(renamed("enum Hover = ", "rest", "hovered"));
     snapshot.push(renamed("enum ", "Focus", "Hover"));
-    snapshot.push(renamed("dimension ", "Pointer", "Input"));
-    snapshot.push(renamed("dimension Pointer = ", "mouse", "cursor"));
     snapshot.push(renamed("record ", "Evidence", "Proof"));
     snapshot.push(renamed("", "type", "kind"));
     expect(snapshot).toMatchInlineSnapshot(`
@@ -396,8 +503,6 @@ type Page {
         ""a b" is not a value name: a letter or digit, then letters, digits and hyphens",
         "the rename would leave a problem: "hovered" appears twice in Hover",
         "the rename would leave a problem: Hover is already declared at line 2",
-        "Pointer is a dimension, and stored records name it; renaming it here is not supported yet",
-        "mouse is a value of the dimension Pointer, and stored records name it; renaming it here is not supported yet",
         "Evidence is a record, and its stored records are in a folder named after it; renaming it here is not supported yet",
         "there is no name here to rename",
       ]
