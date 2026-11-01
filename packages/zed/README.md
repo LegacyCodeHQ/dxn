@@ -2,7 +2,7 @@
 
 Language support for [dxn](../../docs/language/guide.md) in Zed, powered by the
 grammar in [`packages/tree-sitter-dxn`](../tree-sitter-dxn). It recognizes
-`.dxn` files and gives them syntax highlighting, bracket matching, `#` line
+`.dxn` files and gives them syntax highlighting, bracket matching, an outline, `#` line
 comments, and inline errors from the language server in
 [`packages/language-server`](../language-server).
 
