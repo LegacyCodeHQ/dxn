@@ -58,13 +58,16 @@ export function parse(source: string): ParseResult {
     return token;
   };
   const previous = () => tokens[position - 1] as Token;
-  const fail = (token: Token, expected: string): never => {
+  const fail = (token: Token, expected: string): never =>
+    failWith(token, `expected ${expected}, found ${describe(token)}`);
+  // A syntax error that says more than what was expected.
+  const failWith = (at: { line: number; column: number }, message: string): never => {
     result.diagnostics.push({
       severity: "error",
       code: "syntax-error",
-      message: `expected ${expected}, found ${describe(token)}`,
-      line: token.line,
-      column: token.column,
+      message,
+      line: at.line,
+      column: at.column,
     });
     throw new ParseFailure();
   };
@@ -281,14 +284,10 @@ export function parse(source: string): ParseResult {
           .join(" ");
       const other = operators[mixed] as Token;
       const last = terms.length - 1;
-      result.diagnostics.push({
-        severity: "error",
-        code: "syntax-error",
-        message: `"and" and "or" need brackets to mix: write "(${written(0, mixed)}) ${other.text} ${written(mixed + 1, last)}" or "${written(0, mixed - 1)} ${first.text} (${written(mixed, last)})"`,
-        line: other.line,
-        column: other.column,
-      });
-      throw new ParseFailure();
+      failWith(
+        other,
+        `"and" and "or" need brackets to mix: write "(${written(0, mixed)}) ${other.text} ${written(mixed + 1, last)}" or "${written(0, mixed - 1)} ${first.text} (${written(mixed, last)})"`,
+      );
     }
     return { kind: first.text as "and" | "or", terms };
   };
@@ -306,26 +305,25 @@ export function parse(source: string): ParseResult {
   };
   const comparison = (subject: string, after: string): Condition => {
     const on = word(`${subject} after ${after}`);
-    const values: Located[] = [];
+    return { kind: "compare", subject: on, values: compared(on) };
+  };
+  // What is compared: "= <value>", or "in (<value>, ...)" for several.
+  const compared = (subject: Located): Located[] => {
     const operator = next();
-    const conditionValue = (after: string) => word(`a value after ${after}`);
-    if (operator.kind === "=") {
-      values.push(conditionValue('"="'));
-    } else if (operator.kind === "word" && operator.text === "in") {
-      expect("(", '"(" after "in"');
-      values.push(conditionValue('"("'));
-      for (;;) {
-        const token = next();
-        if (token.kind === ")") break;
-        if (token.kind !== ",") {
-          fail(token, `"," or ")" after ${JSON.stringify(values.at(-1)?.name)}`);
-        }
-        values.push(conditionValue('","'));
-      }
-    } else {
-      fail(operator, `"=" or "in" after ${JSON.stringify(on.name)}`);
+    if (operator.kind === "=") return [word('a value after "="')];
+    if (operator.kind === "word" && operator.text === "in") return valueList();
+    return fail(operator, `"=" or "in" after ${JSON.stringify(subject.name)}`);
+  };
+  // "(<value>, ...)", after "in".
+  const valueList = (): Located[] => {
+    expect("(", '"(" after "in"');
+    const values = [word('a value after "("')];
+    while (peek().kind === ",") {
+      next();
+      values.push(word('a value after ","'));
     }
-    return { kind: "compare", subject: on, values };
+    expect(")", `"," or ")" after ${JSON.stringify(values.at(-1)?.name)}`);
+    return values;
   };
 
   // "when <subject> { <value>, ... -> <value> ... }", after the "=" of a
@@ -369,14 +367,7 @@ export function parse(source: string): ParseResult {
     const token = peek();
     // The built-in words of before: what to declare and write instead.
     const old = (said: string, instead: string) => {
-      result.diagnostics.push({
-        severity: "error",
-        code: "syntax-error",
-        message: `${JSON.stringify(said)} is not an event: ${instead}`,
-        line: token.line,
-        column: token.column,
-      });
-      throw new ParseFailure();
+      failWith(token, `${JSON.stringify(said)} is not an event: ${instead}`);
     };
     const after = tokens[position + 1];
     if (token.text === "key" && after?.kind === "word") {
@@ -402,19 +393,7 @@ export function parse(source: string): ParseResult {
     }
     if (token.kind === "word" && /^[A-Z]/.test(token.text)) {
       const dimension = word("a dimension");
-      const values: Located[] = [];
-      const operator = next();
-      if (operator.kind === "=") values.push(word('a value after "="'));
-      else if (operator.kind === "word" && operator.text === "in") {
-        expect("(", '"(" after "in"');
-        values.push(word('a value after "("'));
-        while (peek().kind === ",") {
-          next();
-          values.push(word('a value after ","'));
-        }
-        expect(")", '"," or ")"');
-      } else fail(operator, `"=" or "in" after ${JSON.stringify(dimension.name)}`);
-      return { kind: "dimension", dimension, values };
+      return { kind: "dimension", dimension, values: compared(dimension) };
     }
     if (token.kind === "word") return { kind: "named", name: qualified("an event") };
     return fail(token, 'an event or a dimension after "on"');
@@ -551,27 +530,19 @@ export function parse(source: string): ParseResult {
             ) {
               target += `.${tokens[at + 1]?.text}`;
             }
-            result.diagnostics.push({
-              severity: "error",
-              code: "syntax-error",
-              message: `"focus ${target}" is not a change: move focus with an action of the child, such as ${target}.take-focus`,
-              line: named.line,
-              column: named.column,
-            });
-            throw new ParseFailure();
+            failWith(
+              named,
+              `"focus ${target}" is not a change: move focus with an action of the child, such as ${target}.take-focus`,
+            );
           }
           if (peek().kind !== "->") return { kind: "action", name: named };
           // A change is on one of the type's own states; a child's are
           // changed through its actions.
           if (named.name.includes(".")) {
-            result.diagnostics.push({
-              severity: "error",
-              code: "syntax-error",
-              message: `a change is on one of the type's own states, not ${JSON.stringify(named.name)}; change a child through one of its actions`,
-              line: named.line,
-              column: named.column,
-            });
-            throw new ParseFailure();
+            failWith(
+              named,
+              `a change is on one of the type's own states, not ${JSON.stringify(named.name)}; change a child through one of its actions`,
+            );
           }
           next();
           return { kind: "change", state: named, to: word('a value after "->"') };
@@ -598,14 +569,7 @@ export function parse(source: string): ParseResult {
         const alike: Alike = { subject: word('a state or a dimension after "alike"') };
         if (peek().kind === "word" && peek().text === "in") {
           next();
-          expect("(", '"(" after "in"');
-          const values = [word('a value after "("')];
-          while (peek().kind === ",") {
-            next();
-            values.push(word('a value after ","'));
-          }
-          expect(")", `"," or ")" after ${JSON.stringify(values.at(-1)?.name)}`);
-          alike.values = values;
+          alike.values = valueList();
         }
         if (peek().kind === "word" && peek().text === "when") {
           next();
