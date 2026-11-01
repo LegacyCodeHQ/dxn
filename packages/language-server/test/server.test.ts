@@ -20,6 +20,7 @@ import {
   type PublishDiagnosticsParams,
   ReferencesRequest,
   RenameRequest,
+  ShowMessageNotification,
   StreamMessageReader,
   StreamMessageWriter,
 } from "vscode-languageserver/node";
@@ -326,15 +327,29 @@ describe("the language server", () => {
         },
       ]);
 
-      // A record, whose stored records are in a folder named after it, is
-      // refused with the reason.
-      await expect(
-        editor.sendRequest(PrepareRenameRequest.type, {
+      // A refusal is shown as a message, which editors show, where a failed
+      // request may only be logged; the request returns nothing to do.
+      const shown = (editor: MessageConnection) =>
+        new Promise<string>((resolve) => {
+          const listening = editor.onNotification(ShowMessageNotification.type, ({ message }) => {
+            listening.dispose();
+            resolve(message);
+          });
+        });
+      const record = shown(editor);
+      expect(
+        await editor.sendRequest(PrepareRenameRequest.type, {
           textDocument: { uri },
           position: { line: 5, character: 9 },
         }),
-      ).rejects.toThrow(
-        "Evidence is a record, and its stored records are in a folder named after it",
+      ).toBeNull();
+      expect(await record).toBe(
+        "Evidence is a record, and its stored records are in a folder named after it; renaming it here is not supported yet",
+      );
+      const name = shown(editor);
+      expect(await editor.sendRequest(RenameRequest.type, { ...at, newName: "a b" })).toBeNull();
+      expect(await name).toBe(
+        '"a b" is not a value name: a letter or digit, then letters, digits and hyphens',
       );
     } finally {
       rmSync(folder, { recursive: true, force: true });

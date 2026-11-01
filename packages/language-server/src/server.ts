@@ -17,9 +17,9 @@ import {
 import {
   CompletionItemKind,
   type Connection,
-  ErrorCodes,
+  MessageType,
   type Range,
-  ResponseError,
+  ShowMessageNotification,
   TextDocumentSyncKind,
   TextDocuments,
 } from "vscode-languageserver/node";
@@ -107,11 +107,20 @@ export function serve(connection: Connection): void {
       },
     };
   });
+  // Why a rename cannot be done, as a message: an editor shows a message,
+  // where it may only log a request that failed. Nothing is renamed.
+  const refuse = (reason: string) => {
+    connection.sendNotification(ShowMessageNotification.type, {
+      type: MessageType.Error,
+      message: reason,
+    });
+    return null;
+  };
   connection.onPrepareRename(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
     const found = renameable(document.getText(), position.line + 1, position.character + 1);
-    if ("refusal" in found) throw new ResponseError(ErrorCodes.InvalidRequest, found.refusal);
+    if ("refusal" in found) return refuse(found.refusal);
     return { range: rangeOf(found.from), placeholder: found.name };
   });
   connection.onRenameRequest(({ textDocument, position, newName }) => {
@@ -125,7 +134,7 @@ export function serve(connection: Connection): void {
       newName,
       storedBeside(textDocument.uri, text),
     );
-    if ("refusal" in renamed) throw new ResponseError(ErrorCodes.InvalidRequest, renamed.refusal);
+    if ("refusal" in renamed) return refuse(renamed.refusal);
     const changes: Record<string, { range: Range; newText: string }[]> = {
       [textDocument.uri]: renamed.edits.map(({ line, column, length, text: newText }) => ({
         range: rangeOf({ line, column, length }),
