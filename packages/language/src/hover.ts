@@ -11,9 +11,11 @@ export interface Hover {
   comment?: string;
 }
 
-// What the name at a line and a column of a source, both from one, is: where
-// it is used, or where it is declared. Nothing over a keyword, or a name the
-// file does not declare.
+// What the name at a line and a column of a source, both from one, is, where
+// it is used: its declaration, from elsewhere in the file. Where it is
+// declared, only what that line does not say: a state's enum, with its
+// values; nothing for any other declaration. Nothing over a keyword, or a name
+// the file does not declare.
 export function hover(source: string, line: number, column: number): Hover | undefined {
   const file = parse(source);
   const lines = source.split("\n");
@@ -24,11 +26,17 @@ export function hover(source: string, line: number, column: number): Hover | und
     length: wordAt(lines, at.line, at.column).length,
   });
   const link = links(source, file).find(({ from }) => covers(from, line, column));
-  const target =
-    link?.to ?? [...described.keys()].find((declared) => covers(span(declared), line, column));
-  const found = target === undefined ? undefined : described.get(target);
-  if (target === undefined || found === undefined) return undefined;
-  return { from: link?.from ?? span(target), ...found };
+  if (link !== undefined) {
+    const found = described.get(link.to);
+    return found === undefined ? undefined : { from: link.from, ...found };
+  }
+  const declared = [...described.keys()].find((at) => covers(span(at), line, column));
+  const state = file.types
+    .flatMap(({ states }) => states)
+    .find((candidate) => candidate === declared);
+  const of = file.enums.find(({ name }) => name === state?.enum.name);
+  const found = of === undefined ? undefined : described.get(of);
+  return state === undefined || found === undefined ? undefined : { from: span(state), ...found };
 }
 
 // The comment on the lines right above a line, without its "#"; none above

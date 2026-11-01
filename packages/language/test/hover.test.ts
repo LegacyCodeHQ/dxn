@@ -59,23 +59,17 @@ function over(before: string, word: string): string | undefined {
 }
 
 describe("hover", () => {
-  it("shows a declaration as it is written, with its comment, from where it is used or itself", () => {
+  it("shows a declaration as it is written, with its comment, where its name is used", () => {
     const snapshot: unknown[] = [];
     snapshot.push(over("state hover: ", "Hover"));
-    snapshot.push(over("enum ", "Hover"));
     snapshot.push(over("needs ", "Pointer"));
     snapshot.push(over("has link: ", "Link"));
     snapshot.push(over("state menu: ", "Openness"));
     snapshot.push(over("section: ", "Section"));
-    snapshot.push(over("record ", "Source"));
     snapshot.push(over("profile laptop: ", "Device"));
     snapshot.push(over("modifier tablet on ", "laptop"));
-    snapshot.push(over("modifier ", "tablet"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "[Hover]
-      enum Hover = rest | hovered
-      -- Whether the pointer is over it.",
         "[Hover]
       enum Hover = rest | hovered
       -- Whether the pointer is over it.",
@@ -91,18 +85,10 @@ describe("hover", () => {
       enum Menu.Openness = closed | open",
         "[Section]
       enum Section = home | blog",
-        "[Source]
-      record Source {
-        file: RelativePath
-        section: Section
-      }
-      -- Where a drawing is.",
         "[Device]
       environment Device = Pointer",
         "[laptop]
       profile laptop: Device { Pointer = mouse }",
-        "[tablet]
-      modifier tablet on laptop { Pointer = touch }",
       ]
     `);
   });
@@ -117,7 +103,7 @@ describe("hover", () => {
     snapshot.push(over("on link.press: ", "link"));
     snapshot.push(over("on link.press: link.", "take-focus"));
     snapshot.push(over("hover = ", "hovered"));
-    snapshot.push(over("Pointer = ", "mouse"));
+    snapshot.push(over("when Pointer = ", "mouse"));
     snapshot.push(over("only when menu = ", "open"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -126,10 +112,8 @@ describe("hover", () => {
       enum Hover = rest | hovered
       -- Over it, with a mouse only.",
         "[shown]
-      state Menu.shown: Section = blog
       enum Section = home | blog",
         "[current]
-      receives Link.current: Section
       enum Section = home | blog",
         "[take-focus]
       action Link.take-focus: focus blurred -> focused
@@ -150,6 +134,26 @@ describe("hover", () => {
       enum Menu.Openness = closed | open",
       ]
     `);
+  });
+
+  it("shows, over a declaration, only what its line does not: a state's enum, or nothing", () => {
+    expect(over("state focus: ", "Focus")).toBe("[Focus]\nenum Focus = blurred | focused");
+    expect(over("  state ", "focus")).toBe("[focus]\nenum Focus = blurred | focused");
+    for (const [before, word] of [
+      ["enum ", "Hover"],
+      ["enum Hover = ", "rest"],
+      ["dimension ", "Pointer"],
+      ["type ", "Link"],
+      ["record ", "Source"],
+      ["environment ", "Device"],
+      ["profile ", "laptop"],
+      ["modifier ", "tablet"],
+      ["  event ", "press"],
+      ["action ", "take-focus"],
+      ["has ", "link"],
+    ] as const) {
+      expect([word, over(before, word)]).toEqual([word, undefined]);
+    }
   });
 
   it("shows nothing over a keyword or a name the file does not declare", () => {
