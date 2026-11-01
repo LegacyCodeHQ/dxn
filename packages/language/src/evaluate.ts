@@ -432,10 +432,17 @@ export function placement(file: ParseResult, path: string): Placement {
   });
   // A root's states are keyed by their own names, as the element's own are:
   // one of each with one name could not be told apart. A received state is
-  // the provider's, so it may share it.
-  const target = (steps.at(-1) as Placement["steps"][number]).type;
+  // the provider's, so it may share it, and so may one bound straight from
+  // the root's state of its name, since the two always agree.
+  const last = steps.at(-1) as Placement["steps"][number];
+  const target = last.type;
+  const agrees = (name: string) =>
+    steps.length === 2 &&
+    (last.child?.bindings ?? []).some(
+      ({ state, from, map }) => state.name === name && from.name === name && map === undefined,
+    );
   const shadowed = target.states.find(
-    ({ name, received: own }) => !own && parents.some(({ key }) => key === name),
+    ({ name, received: own }) => !own && !agrees(name) && parents.some(({ key }) => key === name),
   );
   if (shadowed !== undefined && target !== root) {
     throw new Error(

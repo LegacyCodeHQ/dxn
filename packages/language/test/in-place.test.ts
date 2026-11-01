@@ -139,6 +139,31 @@ type Root {
     ]);
   });
 
+  it("places a child bound to a root state of its own name: the two always agree", () => {
+    const bound = parse(`enum Focus = blurred | focused
+type Item {
+  state focus: Focus
+}
+type Button {
+  state focus: Focus
+  has item: Item { focus = focus }
+}
+`);
+    expect([
+      bound.diagnostics,
+      inPlace(bound, "Button.item").rows.map(({ parents, states: own }) => [
+        parents.focus,
+        own.focus,
+      ]),
+    ]).toEqual([
+      [],
+      [
+        ["blurred", ["blurred"]],
+        ["focused", ["focused"]],
+      ],
+    ]);
+  });
+
   it("refuses a child whose own state has the name of a parent's state it is under", () => {
     const shadowed = parse(`enum Mode = a | b
 type Inner {
