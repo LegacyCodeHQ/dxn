@@ -1,7 +1,9 @@
 // The commands, as the overview and each command's usage list them.
-export const commandList = `  check <file>                       Parse and check a file; say what it declares,
+export const commandList = `  check <file> [--expect <title>]    Parse and check a file; say what it declares,
                                      or report every problem it has. Warnings
-                                     are printed, but do not fail.
+                                     are printed, but do not fail. With
+                                     --expect, run only the expectation with
+                                     that title, and say whether it holds
   states <file> <type>               Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,

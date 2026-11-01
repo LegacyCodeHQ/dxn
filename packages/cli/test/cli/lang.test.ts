@@ -51,6 +51,104 @@ describe("dxn check", () => {
     ]);
   });
 
+  describe("with --expect", () => {
+    const expectations = `enum State = closed | open
+type Menu {
+  state menu: State
+}
+expect "The menu can be open" {
+  in Menu
+  some menu = open
+}
+expect "The menu is always closed" {
+  in Menu
+  then menu = closed
+}
+`;
+
+    it("runs one expectation by its title, and says it holds", () => {
+      const result = file(expectations)(
+        "check",
+        "wordmark.dxn",
+        "--expect",
+        "The menu can be open",
+      );
+      expect([result.code, result.stdout, result.stderr]).toEqual([
+        0,
+        "wordmark.dxn: The menu can be open holds\n",
+        "",
+      ]);
+    });
+
+    it("takes a title as it is written in the file, quotes and all", () => {
+      const result = file(expectations)(
+        "check",
+        "wordmark.dxn",
+        "--expect",
+        '"The menu can be open"',
+      );
+      expect([result.code, result.stdout]).toEqual([
+        0,
+        "wordmark.dxn: The menu can be open holds\n",
+      ]);
+    });
+
+    it("reports only that expectation when it fails, and fails", () => {
+      const result = file(expectations)(
+        "check",
+        "wordmark.dxn",
+        "--expect",
+        "The menu is always closed",
+      );
+      expect([result.code, result.stdout, result.stderr.split("\n")[0]]).toEqual([
+        1,
+        "",
+        "wordmark.dxn:9:8: expectation-failed: The menu is always closed: Menu has menu = open",
+      ]);
+    });
+
+    it("still fails a file with other problems, which no expectation can hold in", () => {
+      const result = file(`${expectations}enum Broken = a | a\n`)(
+        "check",
+        "wordmark.dxn",
+        "--expect",
+        "The menu can be open",
+      );
+      expect([result.code, result.stderr]).toEqual([
+        1,
+        'wordmark.dxn:13:19: duplicate-value: "a" appears twice in Broken\n',
+      ]);
+    });
+
+    it("refuses a title no expectation has, with the titles close to it", () => {
+      const result = file(expectations)("check", "wordmark.dxn", "--expect", "The menu can be opn");
+      expect([result.code, result.stderr]).toEqual([
+        1,
+        'dxn: no expectation is titled "The menu can be opn"; did you mean "The menu can be open"?\n',
+      ]);
+    });
+
+    it("prints whether it holds with --json", () => {
+      const result = file(expectations)(
+        "check",
+        "wordmark.dxn",
+        "--expect",
+        "The menu can be open",
+        "--json",
+      );
+      expect(JSON.parse(result.stdout)).toEqual({
+        file: "wordmark.dxn",
+        expectation: "The menu can be open",
+        holds: true,
+        problems: [],
+      });
+    });
+
+    it("needs a title", () => {
+      expect(file(expectations)("check", "wordmark.dxn", "--expect").code).toBe(2);
+    });
+  });
+
   it("needs a file that exists, and no project", () => {
     const run = file("");
     expect([run("check", "nope.dxn").stderr, run("check").code]).toEqual([

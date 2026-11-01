@@ -46,9 +46,11 @@ comment, to the end of the line:
   profile laptop: Device { Pointer = mouse }
 
 Commands:
-  check <file>                       Parse and check a file; say what it declares,
+  check <file> [--expect <title>]    Parse and check a file; say what it declares,
                                      or report every problem it has. Warnings
-                                     are printed, but do not fail.
+                                     are printed, but do not fail. With
+                                     --expect, run only the expectation with
+                                     that title, and say whether it holds
   states <file> <type>               Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
@@ -111,6 +113,14 @@ Says what a file declares, in one line, or prints each problem as `<file>:<line>
 ```bash
 dxn check wordmark.dxn
 dxn check wordmark.dxn --json
+```
+
+With `--expect`, it runs only the expectation with that title, written with or
+without its quotes, and says it holds, or reports why it fails. The rest of the
+file is still checked: an expectation cannot hold in a file with problems.
+
+```bash
+dxn check toolbar.dxn --expect "Escape closes the menu and returns focus to its button"
 ```
 
 ### states

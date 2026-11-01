@@ -1,4 +1,4 @@
-import type { Type } from "@legacycodehq/dxn-language";
+import { among, type Type } from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
 import { usage } from "./usage.js";
@@ -32,16 +32,33 @@ function nestedOnly(type: Type): unknown {
 }
 
 export const checkCommand: Command = command(usage, (args, { io, cwd }) => {
-  const {
-    json,
-    rest: [file, ...rest],
-  } = options(args);
-  if (file === undefined || rest.length > 0) {
-    return misused(io, json, "give one file to check");
+  const { json, rest: given } = options(args);
+  // --expect <title> runs only the expectation with that title.
+  // A title is taken as the file writes it, too: in its quotes.
+  const flag = given.indexOf("--expect");
+  const title = flag === -1 ? undefined : given[flag + 1]?.replace(/^"(.*)"$/, "$1");
+  const [file, ...rest] =
+    flag === -1 ? given : given.filter((_, at) => at !== flag && at !== flag + 1);
+  if (file === undefined || rest.length > 0 || (flag !== -1 && title === undefined)) {
+    return misused(io, json, "give one file to check, and with --expect, an expectation's title");
   }
   const report = new Reporter(io, json, file);
-  const parsed = read(file, cwd, report);
+  // With --expect, the other expectations' failures are not reported.
+  const parsed = read(file, cwd, report, (diagnostic, { expectations }) => {
+    if (title === undefined || !diagnostic.code.startsWith("expectation-")) return true;
+    const chosen = expectations.find((expectation) => expectation.title === title);
+    return chosen !== undefined && chosen.line === diagnostic.line;
+  });
   if (typeof parsed === "number") return parsed;
+  if (title !== undefined) {
+    const titles = parsed.expectations.map((expectation) => JSON.stringify(expectation.title));
+    if (!titles.includes(JSON.stringify(title))) {
+      return report.refuse(
+        `no expectation is titled ${JSON.stringify(title)}${among(JSON.stringify(title), titles, "the file has none")}`,
+      );
+    }
+    return report.succeed({ file, expectation: title, holds: true }, `${file}: ${title} holds\n`);
+  }
   const { enums, dimensions, types, environments, profiles, modifiers, records, expectations } =
     parsed;
   const output = {

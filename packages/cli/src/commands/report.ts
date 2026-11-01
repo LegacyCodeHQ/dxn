@@ -1,6 +1,6 @@
 import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { type ParseResult, parse } from "@legacycodehq/dxn-language";
+import { type Diagnostic, type ParseResult, parse } from "@legacycodehq/dxn-language";
 import type { Context } from "./context.js";
 import { usage } from "./usage.js";
 
@@ -91,15 +91,21 @@ export const count = (n: number, thing: string) => `${n} ${thing}${n === 1 ? "" 
 export const assignments = (pairs: [string, string][]) =>
   pairs.map(([name, value]) => `${name} = ${value}`).join(", ");
 
-// Reads and parses a file, reporting its problems; the exit code when it
-// cannot be used.
-export function read(file: string, cwd: string, report: Reporter): ParseResult | number {
+// Reads and parses a file, reporting its problems, or those it keeps; the
+// exit code when it cannot be used.
+export function read(
+  file: string,
+  cwd: string,
+  report: Reporter,
+  keep: (diagnostic: Diagnostic, parsed: ParseResult) => boolean = () => true,
+): ParseResult | number {
   const path = resolve(cwd, file);
   if (statSync(path, { throwIfNoEntry: false })?.isFile() !== true) {
     return report.refuse(`file not found: ${JSON.stringify(file)}`);
   }
   const parsed = parse(readFileSync(path, "utf8"));
-  for (const { line, column, severity, code, message } of parsed.diagnostics) {
+  for (const diagnostic of parsed.diagnostics.filter((each) => keep(each, parsed))) {
+    const { line, column, severity, code, message } = diagnostic;
     report.problem({ file, line, column, severity, code, message });
   }
   return report.failed ? report.fail() : parsed;

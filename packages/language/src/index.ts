@@ -2,7 +2,7 @@
 // read a .dxn file, check it, evaluate it and check stored data against it.
 
 // Reading a .dxn file into declarations.
-export type { ParseResult, RecordDeclaration, Type } from "./ast.js";
+export type { Diagnostic, ParseResult, RecordDeclaration, Type } from "./ast.js";
 // What a type, or a child in place, has that can be told apart.
 export { type Cases, cases } from "./cases.js";
 // What fits where a cursor is, for editors.
@@ -29,7 +29,7 @@ export {
 export { type Hover, hover } from "./hover.js";
 // The JSON reader stored data is read with.
 export { parseJson } from "./json.js";
-export { Names } from "./names.js";
+export { among, Names } from "./names.js";
 export { parse } from "./parse.js";
 export { givenDimensions, profilesOf } from "./profiles.js";
 // Renaming an enum's value in a .dxn file and in its stored records.
