@@ -56,9 +56,18 @@ changing the setting, run `editor: restart language server`.
 
 ## Formatting
 
-A `.dxn` file is formatted when it is saved, the one way `dxn fmt` writes it,
-by the language server: Zed formats on save, with the language server, unless
-its settings say otherwise.
+A `.dxn` file is formatted the one way `dxn fmt` writes it, by the language
+server: **editor: format** formats it at any time. To format it when it is
+saved too, turn on Zed's format-on-save for `.dxn` files in Zed's settings;
+Zed 1.26 does not, by default:
+
+```json
+{
+  "languages": {
+    "dxn": { "format_on_save": "on" }
+  }
+}
+```
 
 ## Running a type or an expectation
 

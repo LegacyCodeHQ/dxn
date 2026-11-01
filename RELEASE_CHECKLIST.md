@@ -95,6 +95,10 @@ installs the server from npm, as the Svelte, Astro and Vue extensions do.
   highlighting, errors, navigation, completion, rename and running types and
   expectations; `version` is the release's; `authors` and `repository` are
   right.
+- [ ] **Formatting on save:** Zed 1.26 does not format `.dxn` files on save
+  until a user's settings turn on `format_on_save` for them, as the README
+  says. Check whether an extension can turn it on itself, as the VS Code one
+  does; if not, keep the README's setting where users will see it.
 - [ ] **The README is for users first:** installing from Zed's extensions
   view, what it gives, and what to install (if the run buttons need `dxn`),
   before the development sections.
