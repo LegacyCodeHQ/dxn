@@ -8,6 +8,9 @@ import { type Combination, expand } from "./status.js";
 // covers.
 export interface Distinct {
   name: string;
+  // What can tell its combinations apart: the dimensions its type needs and
+  // its states, in order.
+  subjects: string[];
   combinations: number;
   distinct: { values: Record<string, string>; combinations: Combination[] }[];
 }
@@ -79,5 +82,10 @@ export function distinct(file: ParseResult, target: string): Distinct {
     if (same !== undefined) same.combinations.push(combination);
     else found.push({ values, combinations: [combination] });
   }
-  return { name: target, combinations: combinations.length, distinct: found };
+  return {
+    name: target,
+    subjects: [...type.needs, ...type.states].map(({ name }) => name),
+    combinations: combinations.length,
+    distinct: found,
+  };
 }

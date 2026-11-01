@@ -928,7 +928,8 @@ type Button needs Pointer {
 
 `alike Pointer` reads: combinations that differ only in the pointer cannot
 be told apart. `lang states --distinct` lists the cases that can, each with
-how many combinations it covers, or which profiles, when there are profiles:
+what it covers: its profiles, when the file has profiles, or otherwise each
+combination, by the values the case does not show:
 
 ```bash
 dxn lang states button.dxn Button --distinct
@@ -937,11 +938,11 @@ dxn lang states button.dxn Button --distinct
 ```
 Button: 3 distinct of 5 combinations
 
-| enabled  | hover   | combinations |
-| -------- | ------- | ------------ |
-| enabled  | rest    | 2            |
-| enabled  | hovered | 1            |
-| disabled | rest    | 2            |
+| enabled  | hover   | combinations                     |
+| -------- | ------- | -------------------------------- |
+| enabled  | rest    | Pointer = mouse; Pointer = touch |
+| enabled  | hovered | Pointer = mouse                  |
+| disabled | rest    | Pointer = mouse; Pointer = touch |
 ```
 
 Without `alike`, every combination is its own case. Only what a type

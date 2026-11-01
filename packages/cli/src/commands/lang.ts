@@ -419,8 +419,8 @@ function compactTable(
 }
 
 // What can be told apart, as a table: each distinct case by the values that
-// tell it apart, and the combinations it covers, by their profiles, or how
-// many there are without profiles.
+// tell it apart, and what it covers: its profiles, or, without profiles, each
+// combination, by the values the case does not show.
 function distinctCases(parsed: ParseResult, target: string, report: Reporter): number {
   let found: Distinct;
   try {
@@ -429,12 +429,28 @@ function distinctCases(parsed: ParseResult, target: string, report: Reporter): n
     return report.refuse((error as Error).message);
   }
   const columns = [...new Set(found.distinct.flatMap(({ values }) => Object.keys(values)))];
-  const covered = ({ combinations }: Distinct["distinct"][number]) => {
-    const profiles = [...new Set(combinations.flatMap(({ profiles }) => profiles ?? []))];
-    return profiles.length > 0 ? profiles.join(", ") : String(combinations.length);
+  const profiled = found.distinct.some(({ combinations }) =>
+    combinations.some(({ profiles }) => profiles !== undefined),
+  );
+  const covered = ({ values, combinations }: Distinct["distinct"][number]) => {
+    if (profiled) {
+      return [...new Set(combinations.flatMap(({ profiles }) => profiles ?? []))].join(", ");
+    }
+    return (
+      combinations
+        .map((combination) =>
+          found.subjects
+            .map((name) => [name, combination.dimensions[name] ?? combination.states[name]])
+            .filter(([name, value]) => value !== undefined && values[name as string] !== value)
+            .map(([name, value]) => `${name} = ${value}`)
+            .join(", "),
+        )
+        .filter((shown) => shown !== "")
+        .join("; ") || NONE
+    );
   };
   const table = drawTable(
-    [...columns, "combinations"],
+    [...columns, profiled ? "profiles" : "combinations"],
     found.distinct.map((each) => [
       ...columns.map((column) => each.values[column] ?? NONE),
       covered(each),

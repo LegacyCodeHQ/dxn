@@ -574,7 +574,24 @@ record Part {
 });
 
 describe("lang states --distinct", () => {
-  it("groups the combinations that are alike, each distinct case with the combinations it covers", () => {
+  it("lists, without profiles, each combination a case covers, by the values it does not show", () => {
+    const run = file(
+      "dimension Pointer = mouse | touch\nenum Hover = rest | hovered\ntype Link needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n  alike Pointer\n}\n",
+    );
+    expect(run("states", "wordmark.dxn", "Link", "--distinct").stdout).toBe(
+      [
+        "Link: 2 distinct of 3 combinations",
+        "",
+        "| hover   | combinations                     |",
+        "| ------- | -------------------------------- |",
+        "| rest    | Pointer = mouse; Pointer = touch |",
+        "| hovered | Pointer = mouse                  |",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("groups the combinations that are alike, each distinct case with the profiles it covers", () => {
     const run = file(`dimension Pointer = mouse | touch
 enum Enabled = enabled | disabled
 enum Hover = rest | hovered
@@ -600,7 +617,7 @@ type Page {
       [
         "Button: 3 distinct of 5 combinations",
         "",
-        "| enabled  | hover   | combinations  |",
+        "| enabled  | hover   | profiles      |",
         "| -------- | ------- | ------------- |",
         "| enabled  | rest    | phone, laptop |",
         "| disabled | rest    | phone, laptop |",
