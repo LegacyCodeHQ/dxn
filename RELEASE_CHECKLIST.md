@@ -159,9 +159,9 @@ is packaging and publishing, not installing a server.
 
 ## Loose ends
 
-- [ ] **neo-website's `.dxn/` folder** (14 files) is no longer read by any
-  dxn command now that the prototype is gone. Confirm that `spec/` holds
-  all of it, then remove it; git keeps the history.
+- [x] **neo-website's `.dxn/` folder** (14 files) is removed: `spec/` holds
+  all of it, the same evidence, dimensions, profiles, modifier and
+  expectations; git keeps the history.
 - [ ] **design.md refers to neo-website's toolbar,** which readers cannot
   follow while neo-website is private: link it, or describe it in place.
 
