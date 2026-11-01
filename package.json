@@ -9,6 +9,7 @@
     "packages/language",
     "packages/cli",
     "packages/language-server",
+    "packages/vscode",
     "packages/tree-sitter-dxn"
   ],
   "engines": {

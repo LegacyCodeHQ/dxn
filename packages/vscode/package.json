@@ -1,0 +1,44 @@
+{
+  "name": "dxn",
+  "displayName": "dxn",
+  "description": "Language support for dxn: highlighting, inline errors, navigation, completion, rename, and running types and expectations.",
+  "version": "0.0.1",
+  "publisher": "legacycodehq",
+  "license": "Apache-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LegacyCodeHQ/dxn"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "dxn",
+        "aliases": [
+          "dxn"
+        ],
+        "extensions": [
+          ".dxn"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "dxn",
+        "scopeName": "source.dxn",
+        "path": "./syntaxes/dxn.tmLanguage.json"
+      }
+    ]
+  },
+  "devDependencies": {
+    "vscode-oniguruma": "2.0.1",
+    "vscode-textmate": "9.3.2"
+  }
+}
