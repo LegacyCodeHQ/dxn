@@ -1,0 +1,12 @@
+# The secret scan, as gitleaks runs it before a commit and in CI: its default
+# rules, but for pen.dev's identifier for a design file, the fileToken line
+# every .pen file has, which is not a credential. Only that line is allowed:
+# anything else on any other line of a .pen file is still found.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "pen.dev's identifier for a design file, in a .pen file"
+regexTarget = "line"
+regexes = ['''^\s*"fileToken":\s*"[A-Za-z0-9+/=_-]*",?\s*$''']
