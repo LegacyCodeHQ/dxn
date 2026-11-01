@@ -34,6 +34,26 @@ it with `make build`, then point Zed's settings at it:
 
 Zed shows each problem `dxn check` finds under the word it is at, as you type.
 
+## Colouring by what each name is
+
+The grammar colours a name by how it is written, so a few are coloured by
+guesswork: in `{ expanded = menu }`, `menu` is a state, not a value. The
+language server knows what each name is, and says so with semantic tokens,
+but Zed only uses them when its settings turn them on, for dxn alone:
+
+```json
+{
+  "languages": {
+    "dxn": { "semantic_tokens": "combined" }
+  }
+}
+```
+
+`combined` keeps the grammar's colours and lays the server's over them. The
+server names its tokens with the protocol's standard types, which Zed's
+themes already colour, so the extension needs no rules of its own. After
+changing the setting, run `editor: restart language server`.
+
 ## Running a type or an expectation
 
 Each type has a run button beside its name, which runs `dxn states` for it in
