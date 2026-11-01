@@ -243,7 +243,7 @@ function checkDerivedField(
       .map(({ name }) => name);
     report(
       "unknown-field",
-      `${on.name} is not a field of ${record.name}${among(fields, "it has none")}`,
+      `${on.name} is not a field of ${record.name}${among(on.name, fields, "it has none")}`,
       on,
     );
     return;

@@ -123,7 +123,7 @@ type Toolbar needs Breakpoint {
       footer("layout in (inline, inline)"),
       footer("Breakpoint = lg"),
     ]).toEqual([
-      ["27:30: unknown-state: layot is not a state of Footer (layout)"],
+      ["27:30: unknown-state: layot is not a state of Footer; did you mean layout?"],
       ['27:39: unknown-value: "wide" is not a value of layout (compact, inline)'],
       ['27:49: duplicate-value: "inline" appears twice in the condition'],
       [

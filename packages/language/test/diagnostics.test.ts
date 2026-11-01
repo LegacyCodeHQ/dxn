@@ -23,6 +23,50 @@ describe("diagnostics", () => {
     ]);
   });
 
+  it("suggest only the names close to one that is not declared, and list them all when none is", () => {
+    const enums =
+      "enum Hover = rest | hovered\nenum Focus = blurred | focused\nenum Selection = unselected | selected\n";
+    const snapshot: string[][] = [];
+    // A typo, a swap of two letters, and a difference only of case.
+    snapshot.push(problems(`${enums}type Link {\n  state hover: Hovr\n}\n`));
+    snapshot.push(problems(`${enums}type Link {\n  state focus: Fcous\n}\n`));
+    snapshot.push(problems(`${enums}type Link {\n  state hover: hover\n}\n`));
+    // Two close names, and none.
+    snapshot.push(problems(`${enums}enum Hovers = a | b\ntype Link {\n  state hover: Hovere\n}\n`));
+    snapshot.push(problems(`${enums}type Link {\n  state hover: Pointer\n}\n`));
+    // A state, an event, an action and a child, by the same rule.
+    snapshot.push(
+      problems(
+        `${enums}type Link {\n  state hover: Hover, focus: Focus\n  event press\n  action blur: focus focused -> blurred\n  on pres: blurr\n  hovr = hovered only when focus = blurred\n}\ntype Menu {\n  has link: Link\n  event escape\n  on escape: lnk.blur\n}\n`,
+      ),
+    );
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "5:16: unknown-enum: Hovr is not an enum; did you mean Hover?",
+        ],
+        [
+          "5:16: unknown-enum: Fcous is not an enum; did you mean Focus?",
+        ],
+        [
+          "5:16: unknown-enum: hover is not an enum; did you mean Hover?",
+        ],
+        [
+          "6:16: unknown-enum: Hovere is not an enum; did you mean Hover or Hovers?",
+        ],
+        [
+          "5:16: unknown-enum: Pointer is not an enum (Hover, Focus, Selection)",
+        ],
+        [
+          "8:6: unknown-event: pres is not an event of Link; did you mean press?",
+          "8:12: unknown-action: blurr is not an action of Link; did you mean blur?",
+          "9:3: unknown-state: hovr is not a state of Link; did you mean hover?",
+          "14:14: unknown-child: lnk is not a child of Menu; did you mean link?",
+        ],
+      ]
+    `);
+  });
+
   it("report a declaration that does not parse once, not again where it is used", () => {
     expect([
       problems(

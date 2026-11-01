@@ -1,6 +1,6 @@
 import type { Child, ParseResult, State, Type } from "./ast.js";
 import { conditionText, holds, subjects } from "./condition.js";
-import { valuesOf as declaredValues } from "./names.js";
+import { among, valuesOf as declaredValues } from "./names.js";
 import { profilesOf } from "./profiles.js";
 
 // What a type's states are under each combination of the dimensions its
@@ -365,8 +365,10 @@ export function placement(file: ParseResult, path: string): Placement {
     const { type: parent, prefix: previous } = steps.at(-1) as Placement["steps"][number];
     const child = parent.children.find((candidate) => candidate.name === name);
     if (child === undefined) {
-      const children = parent.children.map((candidate) => candidate.name).join(", ");
-      throw new Error(`${name} is not a child of ${parent.name} (${children})`);
+      const children = parent.children.map((candidate) => candidate.name);
+      throw new Error(
+        `${name} is not a child of ${parent.name}${among(name, children, "it has none")}`,
+      );
     }
     const type = file.types.find(({ name }) => name === child.type.name) as Type;
     steps.push({ type, child, prefix: previous === "" ? name : `${previous}.${name}` });

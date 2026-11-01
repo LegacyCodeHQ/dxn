@@ -264,7 +264,7 @@ describe("dxn attach", () => {
       ).stderr,
     ]).toEqual([
       'dxn: Evidence has no field "colour" (actor, at, source, fingerprint)\n',
-      "dxn: togle is not a child of Menu (toggle)\n",
+      "dxn: togle is not a child of Menu; did you mean toggle?\n",
       'dxn: frame "phone-toggle" is not in design/toolbar.pen\n',
     ]);
   });

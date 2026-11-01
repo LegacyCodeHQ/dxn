@@ -46,9 +46,9 @@ describe("an event", () => {
       errors(site("on toggle.activat: open")),
       errors(site("on togle.activate: open")),
     ]).toEqual([
-      ["14:6: unknown-event: escpe is not an event of Menu (escape, outside)"],
-      ["14:6: unknown-event: activat is not an event of Toggle (activate)"],
-      ["14:6: unknown-child: togle is not a child of Menu (toggle)"],
+      ["14:6: unknown-event: escpe is not an event of Menu; did you mean escape?"],
+      ["14:6: unknown-event: activat is not an event of Toggle; did you mean activate?"],
+      ["14:6: unknown-child: togle is not a child of Menu; did you mean toggle?"],
     ]);
   });
 

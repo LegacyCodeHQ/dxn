@@ -99,7 +99,7 @@ describe("actions and on", () => {
     ]).toEqual([
       ['24:30: unknown-value: "shut" is not a value of menu (closed, open)'],
       ["25:10: duplicate-action: close is already an action of Menu"],
-      ["24:17: unknown-state: menus is not a state of Menu (menu)"],
+      ["24:17: unknown-state: menus is not a state of Menu; did you mean menu?"],
       ["24:30: unchanged-action: close changes nothing: menu is open before and after"],
     ]);
     assert(
@@ -119,7 +119,7 @@ describe("actions and on", () => {
       on("on Breakpoint = xl: menu.close"),
       on("on wordmark.activate: menu.close, layout.take-focus"),
     ]).toEqual([
-      ["41:6: unknown-child: wordmrk is not a child of Toolbar (wordmark, link, menu)"],
+      ["41:6: unknown-child: wordmrk is not a child of Toolbar; did you mean wordmark?"],
       ["41:25: unknown-action: shut is not an action of Menu (open, close)"],
       ["41:25: unknown-action: shut is not an action of Toolbar; it has none"],
       ['41:19: unknown-value: "xl" is not a value of Breakpoint (base, lg)'],
@@ -340,7 +340,7 @@ describe("a trigger only when", () => {
       errors(button("on space: push only when focus = blurd")),
       problems(button("on space: push only when focus in (blurred, focused)")),
     ]).toEqual([
-      ["11:28: unknown-state: fokus is not a state of Button (press, focus)"],
+      ["11:28: unknown-state: fokus is not a state of Button; did you mean focus?"],
       ['11:36: unknown-value: "blurd" is not a value of focus (blurred, focused)'],
       [
         "11:3: warning: vacuous-condition: focus in (blurred, focused) is always true, so the trigger always fires",
@@ -478,7 +478,7 @@ describe("a change written in a trigger", () => {
       errors(pressing("on space: layout -> compact")),
       errors(pressing("on space: page.press -> pressed")),
     ]).toEqual([
-      ["12:13: unknown-state: pres is not a state of Button (press, focus, layout)"],
+      ["12:13: unknown-state: pres is not a state of Button; did you mean press?"],
       ['12:22: unknown-value: "presed" is not a value of press (released, pressed)'],
       ["12:13: action-on-derived: layout is decided by its when; no change can change it"],
       [
@@ -595,7 +595,7 @@ describe("a trigger with several changes", () => {
       errors(several("on escape: close, toggle.take-focs")),
       errors(several("on space: lamp -> on, lamp -> off")),
     ]).toEqual([
-      ["17:21: unknown-action: take-focs is not an action of Button (take-focus)"],
+      ["17:21: unknown-action: take-focs is not an action of Button; did you mean take-focus?"],
       ["17:25: conflicting-change: space changes lamp twice"],
     ]);
   });

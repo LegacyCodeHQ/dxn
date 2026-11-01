@@ -131,7 +131,7 @@ describe("expect", () => {
         "34:8: expectation-empty: Nothing tests nothing: no element in Page.toolbar.link has colour",
       ],
       [
-        "34:8: expectation-empty: Nothing tests nothing: lnk is not a child of Toolbar (link, menu)",
+        "34:8: expectation-empty: Nothing tests nothing: lnk is not a child of Toolbar; did you mean link?",
       ],
     ]);
   });

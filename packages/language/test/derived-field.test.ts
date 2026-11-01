@@ -56,7 +56,7 @@ describe("a field with when", () => {
         "enum Actor = design-agent\nrecord Review {\n  actor: Actor\n  note: NonEmptyString = when actor {\n    design-agent -> x\n  }\n}\n",
       ),
     ]).toEqual([
-      ["5:21: unknown-field: actr is not a field of Review (actor)"],
+      ["5:21: unknown-field: actr is not a field of Review; did you mean actor?"],
       ["4:21: derived-field: tool is derived from note, whose values are not an enum's"],
       ["4:9: derived-field: note is derived, so its values must be an enum's, not NonEmptyString"],
     ]);
@@ -68,9 +68,7 @@ describe("a field with when", () => {
       problems(both.replace("tool: Tool = when", "tool: Tol = when")),
     ]).toEqual([
       ["5:21: derived-field: tool cannot be derived from itself"],
-      [
-        "5:9: unknown-type: Tol is not an enum, a record or a scalar (Actor, Tool, Review, Timestamp, NonEmptyString, RelativePath)",
-      ],
+      ["5:9: unknown-type: Tol is not an enum, a record or a scalar; did you mean Tool?"],
     ]);
   });
 

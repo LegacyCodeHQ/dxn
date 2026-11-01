@@ -71,7 +71,7 @@ describe("a context for a child", () => {
 
   it("names a child that is one, on the way from a type", () => {
     expect(check(toggle({ path: "Toolbar.menu.togle" }))).toEqual([
-      'unknown-value: $[0].context.path: "Toolbar.menu.togle" is not a path: togle is not a child of Menu (toggle, panel)',
+      'unknown-value: $[0].context.path: "Toolbar.menu.togle" is not a path: togle is not a child of Menu; did you mean toggle?',
     ]);
   });
 

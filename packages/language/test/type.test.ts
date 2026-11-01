@@ -62,7 +62,7 @@ type wordmark {
     ).toEqual([
       "3:6: duplicate-name: Hover is already declared at line 1",
       '4:6: type-name: type names start with a capital letter: "wordmark"',
-      "5:16: unknown-enum: Hovr is not an enum (Hover, Focus)",
+      "5:16: unknown-enum: Hovr is not an enum; did you mean Hover?",
       '5:22: state-name: state names start with a lowercase letter: "Focus"',
       "5:36: duplicate-state: hover is already a state of wordmark",
     ]);

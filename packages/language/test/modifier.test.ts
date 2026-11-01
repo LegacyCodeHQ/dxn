@@ -133,7 +133,7 @@ describe("modifier", () => {
       .replace("profile phone: Device", "profile phone: Devise")
       .replace("  Pointer = mouse, Keyboard = keyboard\n}", "  Pointer = mouse, Colour = red\n}");
     expect(problems(source).map((problem) => problem.split(": ").slice(1).join(": "))).toEqual([
-      "unknown-environment: Devise is not an environment (Device)",
+      "unknown-environment: Devise is not an environment; did you mean Device?",
       "unknown-dimension: Colour is not a dimension of Device (Breakpoint, Pointer, Keyboard)",
     ]);
   });

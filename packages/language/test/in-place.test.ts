@@ -104,7 +104,7 @@ describe("evaluating a child in place", () => {
       "Keyboard",
     ]);
     expect(() => inPlace(toolbar, "Toolbar.menu.togle")).toThrow(
-      "togle is not a child of Menu (toggle, panel)",
+      "togle is not a child of Menu; did you mean toggle?",
     );
     expect(() => inPlace(toolbar, "Toolbr.menu")).toThrow("no type Toolbr");
   });

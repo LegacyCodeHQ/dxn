@@ -62,7 +62,10 @@ export class Names {
       each.length > 1 ? `${each.slice(0, -1).join(", ")} or ${each.at(-1)}` : (each[0] ?? "");
     const actual = this.kinds.get(name);
     if (actual !== undefined) return `${name} is ${article(actual)} ${actual}, not ${wanted}`;
-    return `${name} is not ${wanted}${among(kinds.flatMap((kind) => this.of(kind)))}`;
+    return `${name} is not ${wanted}${among(
+      name,
+      kinds.flatMap((kind) => this.of(kind)),
+    )}`;
   }
 
   // The values of an enum or a dimension, unless it is broken.
@@ -92,7 +95,40 @@ export function enumOf(type: Type, subject: string): string | undefined {
     : subject;
 }
 
-// The names to choose from, after a name that is not one of them.
-export function among(names: string[], none = "the file declares none"): string {
-  return names.length > 0 ? ` (${names.join(", ")})` : `; ${none}`;
+// What to say after a name that is not one of these: the ones close to it, as
+// a suggestion, closest first; or, when none is close, all of them.
+export function among(written: string, names: string[], none = "the file declares none"): string {
+  if (names.length === 0) return `; ${none}`;
+  const close = names
+    .map((name) => ({ name, distance: distance(written, name) }))
+    .filter(({ distance: apart }) => apart <= Math.max(1, Math.floor(written.length / 3)))
+    .sort((a, b) => a.distance - b.distance);
+  if (close.length === 0) return ` (${names.join(", ")})`;
+  const each = close.map(({ name }) => name);
+  const said = each.length > 1 ? `${each.slice(0, -1).join(", ")} or ${each.at(-1)}` : each[0];
+  return `; did you mean ${said}?`;
+}
+
+// How many edits apart two names are: a character added, removed, changed, or
+// swapped with the next, ignoring case, which counts as no edit only when it
+// is the whole difference.
+function distance(a: string, b: string): number {
+  const x = a.toLowerCase();
+  const y = b.toLowerCase();
+  if (x === y) return a === b ? 0 : 0.5;
+  const rows = Array.from({ length: x.length + 1 }, (_, i) =>
+    Array.from({ length: y.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
+  );
+  const at = (i: number, j: number) => rows[i]?.[j] ?? 0;
+  for (let i = 1; i <= x.length; i++) {
+    for (let j = 1; j <= y.length; j++) {
+      const cost = x[i - 1] === y[j - 1] ? 0 : 1;
+      let best = Math.min(at(i - 1, j) + 1, at(i, j - 1) + 1, at(i - 1, j - 1) + cost);
+      if (i > 1 && j > 1 && x[i - 1] === y[j - 2] && x[i - 2] === y[j - 1]) {
+        best = Math.min(best, at(i - 2, j - 2) + 1);
+      }
+      (rows[i] as number[])[j] = best;
+    }
+  }
+  return at(x.length, y.length);
 }

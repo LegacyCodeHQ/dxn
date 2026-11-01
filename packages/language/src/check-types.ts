@@ -469,7 +469,7 @@ function checkTrigger(checking: TypeContext, trigger: Trigger): Triggered[] {
       const events = owner.events.map(({ name }) => name);
       report(
         "unknown-event",
-        `${named} is not an event of ${owner.name}${among(events, "it declares none")}`,
+        `${named} is not an event of ${owner.name}${among(named, events, "it declares none")}`,
         event.name,
       );
     }
@@ -682,7 +682,7 @@ function checkProvides({ report, type }: TypeContext): void {
       const states = own.map((state) => state.name);
       report(
         "unknown-state",
-        `${name.name} is not a state of ${type.name}${among(states, "it has none")}`,
+        `${name.name} is not a state of ${type.name}${among(name.name, states, "it has none")}`,
         name,
       );
     } else if (provided.has(name.name)) {
@@ -701,7 +701,7 @@ function stateOf({ report }: Context, type: Type, named: Located): State | undef
     const all = type.states.map(({ name }) => name);
     report(
       "unknown-state",
-      `${named.name} is not a state of ${type.name}${among(all, "it has none")}`,
+      `${named.name} is not a state of ${type.name}${among(named.name, all, "it has none")}`,
       named,
     );
   }
@@ -743,7 +743,7 @@ function childType({ file, report }: Context, type: Type, path: Located): Type |
       const children = at.children.map(({ name }) => name);
       report(
         "unknown-child",
-        `${part} is not a child of ${at.name}${among(children, "it has none")}`,
+        `${part} is not a child of ${at.name}${among(part, children, "it has none")}`,
         path,
       );
       return undefined;
@@ -793,7 +793,7 @@ function changeOf(checking: TypeContext, effect: Effect): Found | undefined {
       const actions = owner.actions.map(({ name }) => name.name);
       report(
         "unknown-action",
-        `${actionName} is not an action of ${owner.name}${among(actions, "it has none")}`,
+        `${actionName} is not an action of ${owner.name}${among(actionName, actions, "it has none")}`,
         effect.name,
       );
     }

@@ -284,7 +284,7 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse }
         "| open      | rest  | open     |",
         "",
       ].join("\n"),
-      "dxn: togle is not a child of Menu (toggle)\n",
+      "dxn: togle is not a child of Menu; did you mean toggle?\n",
     ]);
   });
 
@@ -731,7 +731,7 @@ record Evidence with context {
       run("evidence.dxn", "Actor.design-agent", "design agent").stderr,
       read("evidence.dxn"),
     ]).toEqual([
-      "dxn: Actr is not an enum (Actor)\n",
+      "dxn: Actr is not an enum; did you mean Actor?\n",
       "dxn: Evidence is a record, not an enum\n",
       'dxn: "designer" is not a value of Actor (design-agent, reviewer)\n',
       'dxn: "reviewer" is already a value of Actor\n',
@@ -877,7 +877,7 @@ expect "Each m can be open" {
         ),
       ]).toEqual([
         1,
-        { error: "Actr is not an enum (Actor)" },
+        { error: "Actr is not an enum; did you mean Actor?" },
         1,
         "",
         [["evidence/page.json", "unknown-value", "$[0].actor"]],

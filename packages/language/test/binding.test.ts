@@ -39,8 +39,8 @@ describe("a binding", () => {
       problems(menu("{ expanded = men }")),
       problems(menu("{ expanded = layout }")),
     ]).toEqual([
-      ["14:24: unknown-state: expnded is not a state of Menu.Toggle (hover, expanded)"],
-      ["14:35: unknown-state: men is not a state of Menu (menu, layout)"],
+      ["14:24: unknown-state: expnded is not a state of Menu.Toggle; did you mean expanded?"],
+      ["14:35: unknown-state: men is not a state of Menu; did you mean menu?"],
       [
         "14:24: binding-mismatch: expanded's values come from Menu.State, but layout's from Layout; a binding needs one enum",
       ],

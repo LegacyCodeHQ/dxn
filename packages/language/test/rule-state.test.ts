@@ -76,7 +76,7 @@ describe("a rule on another state of its type", () => {
         "10:29: rule-cycle: focus depends on hover, which depends on focus; no state can depend on itself",
       ],
       ["9:29: rule-cycle: hover depends on hover; no state can depend on itself"],
-      ["9:29: unknown-state: enabld is not a state of Button (enabled, hover, focus)"],
+      ["9:29: unknown-state: enabld is not a state of Button; did you mean enabled?"],
     ]);
   });
 

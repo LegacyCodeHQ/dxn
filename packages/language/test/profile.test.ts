@@ -36,7 +36,7 @@ describe("environment", () => {
       problems(`${dimensions}environment Device = Pointer x Pointer\n`),
     ]).toEqual([
       ['4:13: environment-name: environment names start with a capital letter: "device"'],
-      ["4:22: unknown-dimension: Pointr is not a dimension (Breakpoint, Pointer, Keyboard)"],
+      ["4:22: unknown-dimension: Pointr is not a dimension; did you mean Pointer?"],
       ["5:22: unknown-dimension: Hover is an enum, not a dimension"],
       ["4:32: duplicate-dimension: Pointer is already part of Device"],
     ]);
@@ -138,7 +138,7 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
       problems(`${pointing}profile phone: Pointer { Pointer = touch }\n`),
       problems(`${pointing}type Wordmark {}\nprofile phone: Wordmark { Pointer = touch }\n`),
     ]).toEqual([
-      ["5:16: unknown-environment: Devce is not an environment (Device)"],
+      ["5:16: unknown-environment: Devce is not an environment; did you mean Device?"],
       ["5:16: unknown-environment: Pointer is a dimension, not an environment"],
       ["6:16: unknown-environment: Wordmark is a type, not an environment"],
     ]);

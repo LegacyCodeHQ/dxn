@@ -68,7 +68,7 @@ type BlogLink needs Breakpoint {
       errors(wordmark("hovr = hovered only when Pointer = mouse")),
       errors(wordmark("hover = hovred only when Pointer = mouse")),
     ]).toEqual([
-      ["7:3: unknown-state: hovr is not a state of Wordmark (hover, focus)"],
+      ["7:3: unknown-state: hovr is not a state of Wordmark; did you mean hover?"],
       ['7:11: unknown-value: "hovred" is not a value of hover (rest, hovered)'],
     ]);
   });
@@ -80,7 +80,7 @@ type BlogLink needs Breakpoint {
       errors(wordmark("hover = hovered only when Pointer = mous")),
       errors(wordmark("hover = hovered only when Pointer in (mouse, mouse)")),
     ]).toEqual([
-      ["7:29: unknown-dimension: Pointr is not a dimension (Pointer, Keyboard)"],
+      ["7:29: unknown-dimension: Pointr is not a dimension; did you mean Pointer?"],
       ["7:29: unknown-dimension: Hover is an enum, not a dimension"],
       ['7:39: unknown-value: "mous" is not a value of Pointer (mouse, touch)'],
       ['7:48: duplicate-value: "mouse" appears twice in the condition'],
