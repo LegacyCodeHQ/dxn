@@ -1,0 +1,113 @@
+# A settings window, in dxn: the playground for trying the editor extensions.
+# It uses every construct of the language at least once; see README.md.
+
+# What varies around the window: its width and the pointer, which the devices
+# give, and the theme, which no device gives, so stored records name it.
+dimension Width = narrow | wide
+dimension Pointer = mouse | touch
+dimension Theme = light | dark
+
+# Hover needs a mouse.
+enum Hover = rest | hovered
+enum Focus = blurred | focused
+enum Selection = unselected | selected
+
+# The section of the settings on show.
+enum Section = general | privacy
+
+# A tab in the window's tab bar, selected when its section is on show.
+type Tab needs Pointer receives current: Section {
+  event activate
+  state hover: Hover, focus: Focus
+  state selection: Selection
+  hover = hovered only when Pointer = mouse
+  alike hover when selection = selected
+  action take-focus: focus blurred -> focused
+  on activate: take-focus
+}
+
+# The tab bar: tabs side by side when the window is wide, stacked when narrow.
+type TabBar needs Width receives current: Section {
+  enum Layout = stacked | side-by-side
+  state layout: Layout = when Width {
+    narrow -> stacked
+    wide -> side-by-side
+  }
+  has general: Tab {
+    selection = when current { general -> selected, privacy -> unselected }
+  }
+  has privacy: Tab {
+    selection = when current { privacy -> selected, general -> unselected }
+  }
+}
+
+# The help panel: a toggle that opens it, and the panel's text while open.
+# Its event and its action share the name close.
+type Help needs Theme {
+  event close
+  enum Openness = closed | open
+  state openness: Openness
+
+  type Toggle needs Pointer {
+    event activate
+    state hover: Hover
+    state expanded: Openness
+    hover = hovered only when Pointer = mouse
+  }
+
+  type Text needs Theme {
+    enum Shade = pale | deep
+    state shade: Shade = when Theme { light -> pale, dark -> deep }
+  }
+
+  has toggle: Toggle { expanded = openness }
+  has text: Text only when openness = open
+
+  action open: openness closed -> open
+  action close: openness open -> closed
+  on toggle.activate: open
+  on close: close
+}
+
+# The window: the section on show, which its tabs receive.
+type Window needs Width {
+  state current: Section = general
+  provides current
+  has tabs: TabBar
+  has help: Help
+  on Width in (narrow): help.close
+}
+
+environment Device = Width x Pointer
+profile phone: Device { Width = narrow, Pointer = touch }
+profile laptop: Device { Width = wide, Pointer = mouse }
+
+# A trackpad, for a phone in a case that has one.
+modifier trackpad on phone { Pointer = mouse }
+
+# Evidence: who looked at one element in one combination, stored in
+# evidence/, next to this file.
+enum Actor = designer | reviewer
+
+record Evidence with context {
+  actor: Actor
+  note: NonEmptyString
+}
+
+expect "Touch never shows hover" {
+  in Window and below
+  when Pointer = touch
+  then hover = rest
+}
+
+expect "The general tab is selected at first" {
+  in Window.tabs.general
+  then selection = selected
+}
+
+expect "Closing the help closes it" {
+  in Window.help
+  when openness = open
+  on close
+  then openness = closed
+}

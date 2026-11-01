@@ -1,0 +1,78 @@
+[
+  {
+    "context": {
+      "path": "Window",
+      "profile": "laptop",
+      "dimensions": {},
+      "parents": {},
+      "states": { "current": "general" }
+    },
+    "actor": "designer",
+    "note": "The window opens on the general section."
+  },
+  {
+    "context": {
+      "path": "Window.tabs.general",
+      "profile": "laptop",
+      "dimensions": {},
+      "parents": { "current": "general" },
+      "states": {
+        "current": "general",
+        "hover": "hovered",
+        "focus": "blurred",
+        "selection": "selected"
+      }
+    },
+    "actor": "designer",
+    "note": "The selected tab, under the mouse."
+  },
+  {
+    "context": {
+      "path": "Window.tabs.general",
+      "profile": "phone+trackpad",
+      "dimensions": {},
+      "parents": { "current": "general" },
+      "states": {
+        "current": "general",
+        "hover": "rest",
+        "focus": "focused",
+        "selection": "selected"
+      }
+    },
+    "actor": "reviewer",
+    "note": "The selected tab, focused, on a phone with a trackpad."
+  },
+  {
+    "context": {
+      "path": "Window.help",
+      "profile": "laptop",
+      "dimensions": { "Theme": "dark" },
+      "parents": {},
+      "states": { "openness": "open" }
+    },
+    "actor": "designer",
+    "note": "The help, open, in the dark theme."
+  },
+  {
+    "context": {
+      "path": "Window.help.text",
+      "profile": "laptop",
+      "dimensions": { "Theme": "dark" },
+      "parents": { "help.openness": "open" },
+      "states": { "shade": "deep" }
+    },
+    "actor": "designer",
+    "note": "The help's text, deep in the dark theme."
+  },
+  {
+    "context": {
+      "path": "Window.help.toggle",
+      "profile": "phone",
+      "dimensions": { "Theme": "light" },
+      "parents": { "help.openness": "closed" },
+      "states": { "hover": "rest", "expanded": "closed" }
+    },
+    "actor": "reviewer",
+    "note": "The help's toggle, closed, on a phone."
+  }
+]
