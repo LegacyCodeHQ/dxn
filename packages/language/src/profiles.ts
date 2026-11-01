@@ -44,3 +44,9 @@ export function environmentOf(file: ParseResult): Environment | undefined {
   }
   return undefined;
 }
+
+// The dimensions the profiles give a value: their environment's, or none
+// without profiles.
+export function givenDimensions(file: ParseResult): string[] {
+  return environmentOf(file)?.dimensions.map(({ name }) => name) ?? [];
+}

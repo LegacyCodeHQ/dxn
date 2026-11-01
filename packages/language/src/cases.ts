@@ -1,6 +1,7 @@
 import type { ParseResult } from "./ast.js";
 import { holds } from "./condition.js";
 import { placement } from "./evaluate.js";
+import { enumOf, valuesOf } from "./names.js";
 import { alone, type Combination, expand } from "./status.js";
 
 // What a type, or a child in place, has that can be told apart: each case,
@@ -43,10 +44,6 @@ export function cases(
       same.profiles = [...(same.profiles ?? []), ...profiles];
     }
   }
-  const valuesOf = (name: string) =>
-    [...file.enums, ...file.dimensions]
-      .find((declaration) => declaration.name === name)
-      ?.values.map(({ name: value }) => value) ?? [];
   // A value as it tells combinations apart: alone, as one of values alike,
   // or not at all, when all its values are alike.
   const told = (subject: string, value: string, combination: Combination) => {
@@ -57,10 +54,7 @@ export function cases(
       if (values === undefined) return undefined;
       const alike = values.map(({ name }) => name);
       if (!alike.includes(value)) continue;
-      const of = /^[a-z]/.test(subject)
-        ? type.states.find(({ name }) => name === subject)?.enum.name
-        : subject;
-      return valuesOf(of ?? "")
+      return valuesOf(file, enumOf(type, subject) ?? "")
         .filter((each) => alike.includes(each))
         .join(", ");
     }

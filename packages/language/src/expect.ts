@@ -2,7 +2,8 @@ import type { Child, Expectation, ParseResult, Trigger, Type } from "./ast.js";
 import { eventText } from "./check.js";
 import { holds } from "./condition.js";
 import { placement } from "./evaluate.js";
-import { environmentOf, profilesOf } from "./profiles.js";
+import { valuesOf as declaredValues } from "./names.js";
+import { givenDimensions, profilesOf } from "./profiles.js";
 import { type Combination, expand, treePaths } from "./status.js";
 
 // Checks each expectation against the tree in place: its element, or it and
@@ -11,8 +12,7 @@ import { type Combination, expand, treePaths } from "./status.js";
 // always pass, so it is reported too. The file must have no other problems.
 export function expectations(file: ParseResult): void {
   const profiles = profilesOf(file);
-  const environment = environmentOf(file);
-  const given = environment?.dimensions.map(({ name }) => name) ?? [];
+  const given = givenDimensions(file);
   // All are evaluated before any failure is recorded: a recorded one is a
   // problem, and a file with problems cannot be evaluated.
   const failures = file.expectations.map((expectation) => ({
@@ -109,17 +109,13 @@ function checkOne(
   // Each value must be one its key can have: a mistyped one would pick or
   // assert nothing.
   const valuesOf = (element: string, key: string): string[] => {
-    if (/^[A-Z]/.test(key)) {
-      return file.dimensions.find(({ name }) => name === key)?.values.map(({ name }) => name) ?? [];
-    }
+    if (/^[A-Z]/.test(key)) return declaredValues(file, key);
     const place = placement(file, element);
     const state =
       place.parents.find((parent) => parent.key === key)?.state ??
       place.target.states.find(({ name }) => name === key) ??
       childState(element, key);
-    return (
-      file.enums.find(({ name }) => name === state?.enum.name)?.values.map(({ name }) => name) ?? []
-    );
+    return declaredValues(file, state?.enum.name ?? "");
   };
   for (const { key, value } of keys) {
     if (key.name === "profile") continue;

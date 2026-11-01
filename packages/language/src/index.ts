@@ -23,7 +23,7 @@ export {
 export { parseJson } from "./json.js";
 export { Names } from "./names.js";
 export { parse } from "./parse.js";
-export { environmentOf, profilesOf } from "./profiles.js";
+export { givenDimensions, profilesOf } from "./profiles.js";
 // Records stored as JSON beside a .dxn file.
 export { isValue, renameInData, renameInSource } from "./rename.js";
 export { type Check, type Combination, coverage, treePaths } from "./status.js";

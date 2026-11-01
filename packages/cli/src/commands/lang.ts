@@ -7,10 +7,10 @@ import {
   cases,
   coverage,
   Diagnostics,
-  environmentOf,
   states as evaluateStates,
   fieldValue,
   folderOf,
+  givenDimensions,
   type InPlace,
   inPlace,
   isValue,
@@ -1001,8 +1001,7 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   // The context's keys, and the values each can take.
   const names = new Names(parsed);
   const profiled = parsed.profiles.length > 0;
-  const environment = environmentOf(parsed);
-  const given = profiled ? (environment?.dimensions.map(({ name }) => name) ?? []) : [];
+  const given = givenDimensions(parsed);
   const keys: [string, string, string[]][] = [
     ...(profiled
       ? ([["profile", "profile", profilesOf(parsed).map(({ name }) => name)]] as [

@@ -1,5 +1,6 @@
 import type { Condition, Located, ParseResult, Type } from "./ast.js";
 import { conditionText, coverage, holds } from "./condition.js";
+import { enumOf, valuesOf } from "./names.js";
 import { alone } from "./status.js";
 
 // Checks each condition of a type against the combinations it really has:
@@ -8,16 +9,7 @@ import { alone } from "./status.js";
 // that is always true there a warning, where judging by values alone said
 // neither. The file must have no other problems.
 export function conditionsInMatrix(file: ParseResult): void {
-  const valuesOf = (type: Type) => (subject: string) => {
-    const name = /^[a-z]/.test(subject)
-      ? type.states.find((state) => state.name === subject)?.enum.name
-      : subject;
-    return (
-      [...file.enums, ...file.dimensions]
-        .find((declaration) => declaration.name === name)
-        ?.values.map(({ name: value }) => value) ?? []
-    );
-  };
+  const valuesIn = (type: Type) => (subject: string) => valuesOf(file, enumOf(type, subject) ?? "");
   for (const type of file.types) {
     // Every combination of the type: a value for each of its states, and for
     // each dimension it needs, with every rule applied.
@@ -31,7 +23,7 @@ export function conditionsInMatrix(file: ParseResult): void {
       ).length;
       const real = holding === 0 ? "never" : holding === combinations.length ? "always" : undefined;
       // What judging by values alone said is reported already.
-      if (real === undefined || coverage(condition, valuesOf(type)) === real) return;
+      if (real === undefined || coverage(condition, valuesIn(type)) === real) return;
       file.diagnostics.push({
         severity: real === "never" ? "error" : "warning",
         code: real === "never" ? "impossible-condition" : "vacuous-condition",

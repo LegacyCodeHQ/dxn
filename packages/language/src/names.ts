@@ -1,4 +1,4 @@
-import type { Declaration, ParseResult } from "./ast.js";
+import type { Declaration, ParseResult, Type } from "./ast.js";
 import { scalars } from "./scalars.js";
 
 export type Kind =
@@ -72,6 +72,24 @@ export class Names {
     );
     return declaration?.broken ? undefined : declaration?.values.map((item) => item.name);
   }
+}
+
+// The values an enum or a dimension declares, by its name, whether it is
+// broken or not; none, for a name that is neither.
+export function valuesOf(file: ParseResult, name: string): string[] {
+  return (
+    [...file.enums, ...file.dimensions]
+      .find((declaration) => declaration.name === name)
+      ?.values.map((value) => value.name) ?? []
+  );
+}
+
+// What a type compares takes its values from: a state's enum, by the state's
+// lowercase name, or a dimension, by its own; undefined for a state it lacks.
+export function enumOf(type: Type, subject: string): string | undefined {
+  return /^[a-z]/.test(subject)
+    ? type.states.find((state) => state.name === subject)?.enum.name
+    : subject;
 }
 
 // The names to choose from, after a name that is not one of them.

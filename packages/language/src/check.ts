@@ -14,7 +14,7 @@ import type {
   Type,
 } from "./ast.js";
 import { comparisons, conditionText, coverage, subjects } from "./condition.js";
-import { among, article, Names } from "./names.js";
+import { among, article, enumOf, Names } from "./names.js";
 import { environmentOf } from "./profiles.js";
 import { scalar } from "./scalars.js";
 import { around } from "./scope.js";
@@ -232,12 +232,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
   ];
   // The values a subject of a type's condition can have: a state's enum's,
   // or a dimension's.
-  const valuesIn = (type: Type) => (subject: string) => {
-    const name = /^[a-z]/.test(subject)
-      ? type.states.find((state) => state.name === subject)?.enum.name
-      : subject;
-    return names.values(name ?? "") ?? [];
-  };
+  const valuesIn = (type: Type) => (subject: string) =>
+    names.values(enumOf(type, subject) ?? "") ?? [];
   // One change a trigger makes, checked: a named action, the type's own or a
   // child's by its path, or one of the type's own states changed in place to
   // one of its values. Where it is, and what it changes from and to.
@@ -623,9 +619,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     // The values each subject can have; a broken declaration's may not all
     // have been read.
     const declarationOf = (subject: string) => {
-      const name = /^[a-z]/.test(subject)
-        ? type.states.find((state) => state.name === subject)?.enum.name
-        : subject;
+      const name = enumOf(type, subject);
       return [...file.enums, ...file.dimensions].find((declaration) => declaration.name === name);
     };
     if (subjects(condition).some(({ name }) => declarationOf(name)?.broken)) return;

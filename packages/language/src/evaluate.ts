@@ -1,5 +1,6 @@
 import type { Child, ParseResult, State, Type } from "./ast.js";
 import { conditionText, holds, subjects } from "./condition.js";
+import { valuesOf as declaredValues } from "./names.js";
 import { profilesOf } from "./profiles.js";
 
 // What a type's states are under each combination of the dimensions its
@@ -83,10 +84,7 @@ export function states(file: ParseResult, typeName: string): TypeStates {
       children: Object.fromEntries(type.children.map((child) => [child.name, presence(child)])),
     };
   };
-  const valuesOf = (name: string) =>
-    [...file.enums, ...file.dimensions]
-      .find((declaration) => declaration.name === name)
-      ?.values.map(({ name }) => name) ?? [];
+  const valuesOf = (name: string) => declaredValues(file, name);
   const dimensions = type.needs.map(({ name }) => name);
   // With profiles, a row per profile, with the values it gives; the
   // dimensions it does not give still go through every value.
@@ -213,10 +211,7 @@ export function inPlace(file: ParseResult, path: string): InPlace {
   const place = placement(file, path);
   const { steps: chain, dimensions } = place;
   type Step = Placement["steps"][number];
-  const valuesOf = (name: string) =>
-    file.dimensions
-      .find((declaration) => declaration.name === name)
-      ?.values.map(({ name }) => name) ?? [];
+  const valuesOf = (name: string) => declaredValues(file, name);
   // The worlds: each group of profiles with the same values, or one with no
   // profile; then every value of each dimension no profile gives.
   const groups = profileGroups(file);

@@ -3,7 +3,7 @@ import { childPath, type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { states as evaluate, inPlace, type Placement, placement } from "./evaluate.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { article, Names } from "./names.js";
-import { environmentOf, profilesOf } from "./profiles.js";
+import { givenDimensions, profilesOf } from "./profiles.js";
 import { scalar } from "./scalars.js";
 
 // How a JSON value reads in a message.
@@ -161,8 +161,7 @@ export function validate(file: ParseResult, recordName: string, source: string):
         )
       : undefined;
     // The dimensions the profiles give, and so the ones to give here.
-    const environment = environmentOf(file);
-    const given = profiled ? (environment?.dimensions.map(({ name }) => name) ?? []) : [];
+    const given = givenDimensions(file);
     const expected = needs.filter((name) => !given.includes(name));
     const chosen: Record<string, string> = {};
     const parents: Record<string, string> = {};
