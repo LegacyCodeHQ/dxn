@@ -1,0 +1,83 @@
+================================================================================
+Enums on one line
+================================================================================
+
+enum Hover = rest | hovered
+enum Focus = blurred | focused
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (enum_declaration
+    name: (identifier)
+    (value)
+    (value))
+  (enum_declaration
+    name: (identifier)
+    (value)
+    (value)))
+
+================================================================================
+An enum carried on after a pipe, and one with a pipe before each value
+================================================================================
+
+enum Size = xs | sm | md |
+  lg | xl
+
+enum Size =
+  | xs
+  | sm
+  | md
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (enum_declaration
+    name: (identifier)
+    (value)
+    (value)
+    (value)
+    (value)
+    (value))
+  (enum_declaration
+    name: (identifier)
+    (value)
+    (value)
+    (value)))
+
+================================================================================
+An enum with a single value
+================================================================================
+
+enum Actor = design-agent
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (enum_declaration
+    name: (identifier)
+    (value)))
+
+================================================================================
+Dimensions, with values that have hyphens and digits
+================================================================================
+
+dimension Pointer = mouse | touch
+dimension Keyboard = keyboard | no-keyboard
+dimension Gap = 19px | 2xl
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (dimension_declaration
+    name: (identifier)
+    (value)
+    (value))
+  (dimension_declaration
+    name: (identifier)
+    (value)
+    (value))
+  (dimension_declaration
+    name: (identifier)
+    (value)
+    (value)))

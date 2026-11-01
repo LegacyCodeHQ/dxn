@@ -52,6 +52,7 @@ command line is wrong.
   at a time, and every diagnostic code
 - [commands.md](docs/commands.md): every command, with its usage
   and examples
+- [tree-sitter-dxn](packages/tree-sitter-dxn/README.md): a tree-sitter grammar for dxn, for highlighting
 
 ## Development
 

@@ -1,0 +1,60 @@
+================================================================================
+A record, and one on a single line
+================================================================================
+
+record Source {
+  file: RelativePath
+  frame: NonEmptyString
+}
+
+record Note { text: NonEmptyString }
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (record_declaration
+    name: (identifier)
+    (record_field
+      name: (identifier)
+      type: (identifier))
+    (record_field
+      name: (identifier)
+      type: (identifier)))
+  (record_declaration
+    name: (identifier)
+    (record_field
+      name: (identifier)
+      type: (identifier))))
+
+================================================================================
+A record with context, and a derived field
+================================================================================
+
+record Evidence with context {
+  actor: Actor
+  tool: Tool = when actor {
+    design-agent -> pen-dev
+    reviewer -> file
+  }
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (record_declaration
+    name: (identifier)
+    (with_context)
+    (record_field
+      name: (identifier)
+      type: (identifier))
+    (record_field
+      name: (identifier)
+      type: (identifier)
+      value: (when_expression
+        subject: (identifier)
+        (when_branch
+          (value)
+          result: (value))
+        (when_branch
+          (value)
+          result: (value))))))

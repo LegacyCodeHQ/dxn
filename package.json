@@ -7,7 +7,8 @@
   "type": "module",
   "workspaces": [
     "packages/language",
-    "packages/cli"
+    "packages/cli",
+    "packages/tree-sitter-dxn"
   ],
   "engines": {
     "node": ">=22"
@@ -28,5 +29,8 @@
     "@vitest/coverage-v8": "5.0.5",
     "typescript": "7.0.2",
     "vitest": "5.0.5"
+  },
+  "allowScripts": {
+    "tree-sitter-cli@0.27.1": true
   }
 }

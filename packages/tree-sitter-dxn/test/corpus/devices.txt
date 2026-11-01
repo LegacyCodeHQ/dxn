@@ -1,0 +1,72 @@
+================================================================================
+An environment
+================================================================================
+
+environment Device = Breakpoint x Pointer x
+  Keyboard
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (environment_declaration
+    name: (identifier)
+    (identifier)
+    (identifier)
+    (identifier)))
+
+================================================================================
+Profiles, with values split by commas or lines
+================================================================================
+
+profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile laptop: Device {
+  Breakpoint = lg
+  Pointer = mouse
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (profile_declaration
+    name: (identifier)
+    environment: (identifier)
+    (assignment
+      dimension: (identifier)
+      value: (value))
+    (assignment
+      dimension: (identifier)
+      value: (value))
+    (assignment
+      dimension: (identifier)
+      value: (value)))
+  (profile_declaration
+    name: (identifier)
+    environment: (identifier)
+    (assignment
+      dimension: (identifier)
+      value: (value))
+    (assignment
+      dimension: (identifier)
+      value: (value))))
+
+================================================================================
+A modifier on several profiles
+================================================================================
+
+modifier magic-keyboard on tablet, phone {
+  Pointer = mouse, Keyboard = keyboard
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (modifier_declaration
+    name: (identifier)
+    profile: (identifier)
+    profile: (identifier)
+    (assignment
+      dimension: (identifier)
+      value: (value))
+    (assignment
+      dimension: (identifier)
+      value: (value))))

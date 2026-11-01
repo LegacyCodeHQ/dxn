@@ -1,0 +1,53 @@
+================================================================================
+A file of comments
+================================================================================
+
+# The wordmark in the toolbar: the site's name, linking home.
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (comment))
+
+================================================================================
+Comments between declarations and at the end of lines
+================================================================================
+
+# What the reader can point with.
+dimension Pointer = mouse | touch # no pen yet
+
+type Toggle {
+  state expanded: State             # closed: ☰ Menu; open: ✕ Close
+  # a comment of its own
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (comment)
+  (dimension_declaration
+    name: (identifier)
+    (value)
+    (value))
+  (comment)
+  (type_declaration
+    name: (identifier)
+    body: (type_body
+      (state_declaration
+        (state_field
+          name: (identifier)
+          type: (identifier)))
+      (comment)
+      (comment))))
+
+================================================================================
+A missing pipe is an error
+:error
+================================================================================
+
+enum Hover = rest hovered
+type Wordmark {
+  state hover: Hover
+}
+
+--------------------------------------------------------------------------------

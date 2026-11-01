@@ -1,0 +1,30 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "dxn",
+      "camelcase": "Dxn",
+      "title": "dxn",
+      "scope": "source.dxn",
+      "file-types": ["dxn"],
+      "injection-regex": "^dxn$",
+      "highlights": "queries/highlights.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.0.0",
+    "license": "Apache-2.0",
+    "description": "Tree-sitter grammar for the dxn language",
+    "authors": [{ "name": "Ragunath Jawahar", "email": "ragunath@legacycode.com" }],
+    "links": { "repository": "https://github.com/LegacyCodeHQ/dxn" }
+  },
+  "bindings": {
+    "c": false,
+    "go": false,
+    "node": false,
+    "python": false,
+    "rust": false,
+    "swift": false,
+    "zig": false
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@legacycodehq/tree-sitter-dxn",
+  "version": "0.0.0",
+  "description": "Tree-sitter grammar for the dxn language, for syntax highlighting.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "test": "tree-sitter test"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "0.27.1"
+  }
+}

@@ -1,0 +1,167 @@
+================================================================================
+A toolbar with its menu, in place on devices
+================================================================================
+
+dimension Breakpoint = base | sm | lg | xl
+dimension Pointer = mouse | touch
+dimension Keyboard = keyboard | no-keyboard
+enum Hover = rest | hovered
+enum Focus = blurred | focused
+enum Layout = compact | inline
+
+type Menu {
+  enum State = closed | open
+  state menu: State
+
+  type Toggle needs Pointer, Keyboard {
+    state hover: Hover, focus: Focus
+    state expanded: State
+    hover = hovered only when Pointer = mouse
+    focus = focused only when Keyboard = keyboard
+  }
+
+  has toggle: Toggle { expanded = menu }
+}
+
+type Toolbar needs Breakpoint {
+  state layout: Layout = when Breakpoint {
+    base, sm -> compact
+    lg, xl -> inline
+  }
+  has menu: Menu only when layout = compact
+}
+
+environment Device = Breakpoint x Pointer x Keyboard
+profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
+profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (dimension_declaration
+    name: (identifier)
+    (value)
+    (value)
+    (value)
+    (value))
+  (dimension_declaration
+    name: (identifier)
+    (value)
+    (value))
+  (dimension_declaration
+    name: (identifier)
+    (value)
+    (value))
+  (enum_declaration
+    name: (identifier)
+    (value)
+    (value))
+  (enum_declaration
+    name: (identifier)
+    (value)
+    (value))
+  (enum_declaration
+    name: (identifier)
+    (value)
+    (value))
+  (type_declaration
+    name: (identifier)
+    body: (type_body
+      (enum_declaration
+        name: (identifier)
+        (value)
+        (value))
+      (state_declaration
+        (state_field
+          name: (identifier)
+          type: (identifier)))
+      (type_declaration
+        name: (identifier)
+        (needs
+          (identifier)
+          (identifier))
+        body: (type_body
+          (state_declaration
+            (state_field
+              name: (identifier)
+              type: (identifier))
+            (state_field
+              name: (identifier)
+              type: (identifier)))
+          (state_declaration
+            (state_field
+              name: (identifier)
+              type: (identifier)))
+          (rule
+            state: (identifier)
+            value: (value)
+            condition: (comparison
+              subject: (identifier)
+              (value)))
+          (rule
+            state: (identifier)
+            value: (value)
+            condition: (comparison
+              subject: (identifier)
+              (value)))))
+      (child_declaration
+        name: (identifier)
+        type: (identifier)
+        bindings: (bindings
+          (binding
+            state: (identifier)
+            from: (identifier))))))
+  (type_declaration
+    name: (identifier)
+    (needs
+      (identifier))
+    body: (type_body
+      (state_declaration
+        (state_field
+          name: (identifier)
+          type: (identifier))
+        value: (when_expression
+          subject: (identifier)
+          (when_branch
+            (value)
+            (value)
+            result: (value))
+          (when_branch
+            (value)
+            (value)
+            result: (value))))
+      (child_declaration
+        name: (identifier)
+        type: (identifier)
+        condition: (comparison
+          subject: (identifier)
+          (value)))))
+  (environment_declaration
+    name: (identifier)
+    (identifier)
+    (identifier)
+    (identifier))
+  (profile_declaration
+    name: (identifier)
+    environment: (identifier)
+    (assignment
+      dimension: (identifier)
+      value: (value))
+    (assignment
+      dimension: (identifier)
+      value: (value))
+    (assignment
+      dimension: (identifier)
+      value: (value)))
+  (profile_declaration
+    name: (identifier)
+    environment: (identifier)
+    (assignment
+      dimension: (identifier)
+      value: (value))
+    (assignment
+      dimension: (identifier)
+      value: (value))
+    (assignment
+      dimension: (identifier)
+      value: (value))))
