@@ -5,7 +5,7 @@
       "dimensions": {},
       "parents": {},
       "states": {
-        "style": "filled",
+        "style": "primary",
         "press": "released",
         "enabled": "enabled"
       }
@@ -24,7 +24,7 @@
       "dimensions": {},
       "parents": {},
       "states": {
-        "style": "filled",
+        "style": "primary",
         "press": "pressed",
         "enabled": "enabled"
       }
@@ -43,7 +43,7 @@
       "dimensions": {},
       "parents": {},
       "states": {
-        "style": "filled",
+        "style": "primary",
         "press": "released",
         "enabled": "disabled"
       }
@@ -62,7 +62,7 @@
       "dimensions": {},
       "parents": {},
       "states": {
-        "style": "plain",
+        "style": "secondary",
         "press": "released",
         "enabled": "enabled"
       }
@@ -72,7 +72,7 @@
       "file": "examples/gazette/gazette.pen",
       "frame": "IeCCz",
       "node": "Aii8A",
-      "fingerprint": "4cbc71d56eb85941df3c5c1803479b6a4e95a35f"
+      "fingerprint": "bcdac7e1c5cf7281cd93ce21862c192546a0b656"
     }
   },
   {
@@ -81,7 +81,7 @@
       "dimensions": {},
       "parents": {},
       "states": {
-        "style": "plain",
+        "style": "secondary",
         "press": "pressed",
         "enabled": "enabled"
       }
@@ -91,7 +91,7 @@
       "file": "examples/gazette/gazette.pen",
       "frame": "IeCCz",
       "node": "Rmfi0",
-      "fingerprint": "f153312ba728a67b2f5b3d17bf53db6bfbfb0389"
+      "fingerprint": "347fc852efd237993eac7e3cc8e78b5e428c53f0"
     }
   },
   {
@@ -100,7 +100,7 @@
       "dimensions": {},
       "parents": {},
       "states": {
-        "style": "plain",
+        "style": "secondary",
         "press": "released",
         "enabled": "disabled"
       }
@@ -110,7 +110,64 @@
       "file": "examples/gazette/gazette.pen",
       "frame": "IeCCz",
       "node": "gKYmP",
-      "fingerprint": "7501f2af9f544ec57fc85d0cd88455780709f989"
+      "fingerprint": "d3a0fee9861786b4730e825e6d63c72b62b38f84"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "tertiary",
+        "press": "released",
+        "enabled": "enabled"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "rosKx",
+      "fingerprint": "039ed537309d917d31caf73104c7186d3faecc10"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "tertiary",
+        "press": "pressed",
+        "enabled": "enabled"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "ieTid",
+      "fingerprint": "b7f2d3302c378d706b748141a18d98c9781e533c"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "tertiary",
+        "press": "released",
+        "enabled": "disabled"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "o0rI0f",
+      "fingerprint": "e5fb14161fc243c18b1b5fc15568dd7c57271c97"
     }
   }
 ]

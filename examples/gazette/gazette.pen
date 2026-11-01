@@ -49,6 +49,18 @@
           "alignItems": "center",
           "children": [
             {
+              "type": "text",
+              "id": "ZGFYi",
+              "name": "Primary label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Primary",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
               "id": "OcEJ9",
               "type": "ref",
               "ref": "FBIeO",
@@ -94,11 +106,26 @@
           "alignItems": "center",
           "children": [
             {
+              "type": "text",
+              "id": "u2YJ2",
+              "name": "Secondary label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Secondary",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
               "id": "Aii8A",
               "type": "ref",
               "ref": "FBIeO",
               "name": "plain / released / enabled",
               "fill": "#00000000",
+              "stroke": "$accent",
+              "strokeWidth": 1.5,
+              "strokeAlignment": "inner",
               "descendants": {
                 "Lesdz": {
                   "fill": "$accent"
@@ -111,6 +138,9 @@
               "ref": "FBIeO",
               "name": "plain / pressed / enabled",
               "fill": "$accent-tint",
+              "stroke": "$accent-pressed",
+              "strokeWidth": 1.5,
+              "strokeAlignment": "inner",
               "descendants": {
                 "Lesdz": {
                   "fill": "$accent-pressed"
@@ -123,6 +153,75 @@
               "ref": "FBIeO",
               "name": "plain / released / disabled",
               "fill": "#00000000",
+              "stroke": "$disabled-text",
+              "strokeWidth": 1.5,
+              "strokeAlignment": "inner",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$disabled-text"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Eu5Ki",
+          "name": "tertiary",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "FFbQ9",
+              "name": "Tertiary label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Tertiary",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "rosKx",
+              "type": "ref",
+              "ref": "FBIeO",
+              "strokeWidth": 0,
+              "strokeAlignment": "inner",
+              "name": "tertiary / released / enabled",
+              "fill": "#00000000",
+              "stroke": "#00000000",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$accent"
+                }
+              }
+            },
+            {
+              "id": "ieTid",
+              "type": "ref",
+              "ref": "FBIeO",
+              "strokeWidth": 0,
+              "strokeAlignment": "inner",
+              "name": "tertiary / pressed / enabled",
+              "fill": "$accent-tint",
+              "stroke": "#00000000",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$accent-pressed"
+                }
+              }
+            },
+            {
+              "id": "o0rI0f",
+              "type": "ref",
+              "ref": "FBIeO",
+              "strokeWidth": 0,
+              "strokeAlignment": "inner",
+              "name": "tertiary / released / disabled",
+              "fill": "#00000000",
+              "stroke": "#00000000",
               "descendants": {
                 "Lesdz": {
                   "fill": "$disabled-text"

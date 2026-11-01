@@ -4,7 +4,7 @@ record PenEvidence {
   source: PenNode
 }
 
-enum Style = filled | plain
+enum Style = primary | secondary | tertiary
 enum Press = released | pressed
 enum Enabled = enabled | disabled
 
