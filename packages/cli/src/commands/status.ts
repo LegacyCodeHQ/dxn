@@ -1,16 +1,15 @@
 import { resolve } from "node:path";
 import {
-  type Combination,
   coverage,
+  describe,
   freshness,
   placement,
-  profilesOf,
   repositoryOf,
   treePaths,
 } from "@legacycodehq/dxn-language";
 import { drawTable } from "../tables.js";
 import { type Command, command } from "./context.js";
-import { assignments, count, misused, options, Reporter, read } from "./report.js";
+import { count, misused, options, Reporter, read } from "./report.js";
 import { loadStored } from "./stored.js";
 import { usage } from "./usage.js";
 
@@ -54,20 +53,6 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       ),
       fingerprinted: fingerprinted(name),
     }));
-  // A combination, as its path and where it is: "<path> on <profiles>,
-  // <Dimension> <value> with <parent> = <value>: <state> = <value>".
-  // A combination that covers every profile is the same on all of them.
-  const everyProfile = profilesOf(parsed).map(({ name }) => name);
-  const describe = (path: string, combination: Combination) => {
-    const covered = combination.profiles ?? [];
-    const world = [
-      ...(everyProfile.every((name) => covered.includes(name)) ? [] : covered),
-      ...Object.entries(combination.dimensions).map(([name, value]) => `${name} ${value}`),
-    ].join(", ");
-    const parents = assignments(Object.entries(combination.parents));
-    const states = assignments(Object.entries(combination.states));
-    return `${path}${world === "" ? "" : ` on ${world}`}${parents === "" ? "" : ` with ${parents}`}${states === "" ? "" : `: ${states}`}`;
-  };
   const blocks = records.map((coverage) => {
     const { record, combinations, present, stale, gone, paths } = coverage;
     const table = drawTable(
@@ -84,7 +69,7 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     // Each combination that is not present, under what it is.
     const listed = (heading: string, of: "missing" | "stale" | "gone") => {
       const lines = paths.flatMap((path) =>
-        path[of].map((combination) => `  ${describe(path.path, combination)}\n`),
+        path[of].map((combination) => `  ${describe(parsed, path.path, combination)}\n`),
       );
       return lines.length === 0 ? "" : `\n${heading}:\n${lines.join("")}`;
     };

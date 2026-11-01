@@ -1,6 +1,6 @@
-import type { ParseResult, Type } from "./ast.js";
+import type { Located, ParseResult, Type } from "./ast.js";
 import { inPlace, states } from "./evaluate.js";
-import { givenDimensions } from "./profiles.js";
+import { givenDimensions, profilesOf } from "./profiles.js";
 import { penNode } from "./scalars.js";
 
 // One combination of an element in place: the profiles that share it, the
@@ -45,20 +45,117 @@ export type Check = (node: {
 // Every element of the file's trees, by its path: each type that no type
 // contains, then each of its children, theirs, and so on.
 export function treePaths(file: ParseResult): string[] {
+  return treePlaces(file).map(({ path }) => path);
+}
+
+// Every element of the file's trees, by its path, with where its name is
+// written: a type that no type contains, by its own name; a child, by the
+// name its parent gives it.
+export function treePlaces(file: ParseResult): { path: string; at: Located }[] {
   const contained = new Set(
     file.types.flatMap(({ children }) => children.map(({ type }) => type.name)),
   );
   const byName = new Map(file.types.map((type) => [type.name, type]));
-  const paths: string[] = [];
-  const walk = (type: Type, path: string) => {
-    paths.push(path);
+  const places: { path: string; at: Located }[] = [];
+  const walk = (type: Type, path: string, at: Located) => {
+    places.push({ path, at });
     for (const child of type.children) {
       const inner = byName.get(child.type.name);
-      if (inner !== undefined) walk(inner, `${path}.${child.name}`);
+      if (inner !== undefined) walk(inner, `${path}.${child.name}`, child);
     }
   };
-  for (const type of file.types) if (!contained.has(type.name)) walk(type, type.name);
-  return paths;
+  for (const type of file.types) if (!contained.has(type.name)) walk(type, type.name, type);
+  return places;
+}
+
+// A combination, as its path and where it is: "<path> on <profiles>,
+// <Dimension> <value> with <parent> = <value>: <state> = <value>". A
+// combination on every profile is the same on all of them.
+export function describe(file: ParseResult, path: string, combination: Combination): string {
+  const every = profilesOf(file).map(({ name }) => name);
+  const covered = combination.profiles ?? [];
+  const assignments = (pairs: Record<string, string>) =>
+    Object.entries(pairs)
+      .map(([name, value]) => `${name} = ${value}`)
+      .join(", ");
+  const world = [
+    ...(every.every((name) => covered.includes(name)) ? [] : covered),
+    ...Object.entries(combination.dimensions).map(([name, value]) => `${name} ${value}`),
+  ].join(", ");
+  const parents = assignments(combination.parents);
+  const states = assignments(combination.states);
+  return `${path}${world === "" ? "" : ` on ${world}`}${parents === "" ? "" : ` with ${parents}`}${states === "" ? "" : `: ${states}`}`;
+}
+
+// Where each element of the trees is written, how much of it each record an
+// actor records covers: its combinations, how many are present, stale and
+// gone, and those not present, described. An element written in one place
+// and placed in several, as a child of a type that is, counts all of them
+// there. The file and the data must have no problems.
+export interface Progress {
+  line: number;
+  column: number;
+  records: {
+    record: string;
+    combinations: number;
+    present: number;
+    stale: number;
+    gone: number;
+    listed: { missing: string[]; stale: string[]; gone: string[] };
+  }[];
+}
+
+export function progress(
+  file: ParseResult,
+  stored: { record: string; source: string }[],
+  check?: Check,
+): Progress[] {
+  const recorded = file.records.filter(({ context }) => context);
+  const covered = recorded.map(({ name }) =>
+    coverage(
+      file,
+      name,
+      stored.filter(({ record }) => record === name).map(({ source }) => source),
+      // A record without a PenNode has nothing to check.
+      recorded
+        .find((each) => each.name === name)
+        ?.fields.some(({ type }) => type.name === penNode.name)
+        ? check
+        : undefined,
+    ),
+  );
+  const byPlace = new Map<string, Progress>();
+  for (const { path, at } of treePlaces(file)) {
+    const key = `${at.line}:${at.column}`;
+    const place = byPlace.get(key) ?? { line: at.line, column: at.column, records: [] };
+    byPlace.set(key, place);
+    for (const report of covered) {
+      const found = report.paths.find((each) => each.path === path);
+      if (found === undefined) continue;
+      let counted = place.records.find(({ record }) => record === report.record);
+      if (counted === undefined) {
+        counted = {
+          record: report.record,
+          combinations: 0,
+          present: 0,
+          stale: 0,
+          gone: 0,
+          listed: { missing: [], stale: [], gone: [] },
+        };
+        place.records.push(counted);
+      }
+      counted.combinations += found.combinations;
+      counted.present += found.present;
+      counted.stale += found.stale.length;
+      counted.gone += found.gone.length;
+      for (const of of ["missing", "stale", "gone"] as const) {
+        counted.listed[of].push(
+          ...found[of].map((combination) => describe(file, path, combination)),
+        );
+      }
+    }
+  }
+  return [...byPlace.values()].sort((a, b) => a.line - b.line || a.column - b.column);
 }
 
 // A row's states, split: one value for each state, in every combination of

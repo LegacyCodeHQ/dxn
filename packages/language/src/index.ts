@@ -53,7 +53,15 @@ export {
 // What each name in a file is, for editors to colour it by.
 export { type Token, tokens } from "./semantic.js";
 // How many combinations of each element stored records are about.
-export { type Check, type Combination, coverage, treePaths } from "./status.js";
+export {
+  type Check,
+  type Combination,
+  coverage,
+  describe,
+  type Progress,
+  progress,
+  treePaths,
+} from "./status.js";
 // Records stored as JSON beside a .dxn file.
 export { folderOf, storedFiles } from "./store.js";
 // The outline of a file, for editors.
