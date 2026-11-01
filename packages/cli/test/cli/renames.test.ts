@@ -123,7 +123,7 @@ interface Expectation {
 function renamed(...argv: string[]) {
   const project = cliProject(files);
   const result = project.run(...argv);
-  const validate = project.run("validate");
+  const validate = project.run("prototype", "validate");
   const read = project.read as (name: string) => unknown;
   return {
     result,
@@ -143,7 +143,7 @@ function renamed(...argv: string[]) {
 
 describe("renames update every reference", () => {
   it("node rename: a transition's target and focus", () => {
-    const { result, validate, menu } = renamed("node", "rename", "button", "trigger");
+    const { result, validate, menu } = renamed("prototype", "node", "rename", "button", "trigger");
     expect([result.code, validate.code]).toEqual([0, 0]);
     expect(menu().transitions.map((t: Transition) => [t.target ?? null, t.focus ?? null])).toEqual([
       ["trigger", null],
@@ -154,6 +154,7 @@ describe("renames update every reference", () => {
 
   it("node rename: a shared node in onlyWhen, records and expectations", () => {
     const { result, validate, menu, records, expectation } = renamed(
+      "prototype",
       "node",
       "rename",
       "menu",
@@ -171,6 +172,7 @@ describe("renames update every reference", () => {
 
   it("node rename: include states and an expectation's node", () => {
     const { result, validate, expectation, includeStates } = renamed(
+      "prototype",
       "node",
       "rename",
       "item",
@@ -184,7 +186,13 @@ describe("renames update every reference", () => {
   });
 
   it("node rename: a root in expectations", () => {
-    const { result, validate, expectation, exists } = renamed("node", "rename", "page", "home");
+    const { result, validate, expectation, exists } = renamed(
+      "prototype",
+      "node",
+      "rename",
+      "page",
+      "home",
+    );
     expect([result.code, validate.code]).toEqual([0, 0]);
     expect(expectation().root).toBe("home");
     expect([exists("roots/home.json"), exists("verification/home.json")]).toEqual([true, true]);
@@ -192,6 +200,7 @@ describe("renames update every reference", () => {
 
   it("state-group rename-value: a shared node's transitions, onlyWhen, records and expectations", () => {
     const { result, validate, menu, records, expectation } = renamed(
+      "prototype",
       "state-group",
       "rename-value",
       "openness",
@@ -211,6 +220,7 @@ describe("renames update every reference", () => {
 
   it("state-group rename-value: include states, records and expectations", () => {
     const { result, validate, records, expectation, includeStates } = renamed(
+      "prototype",
       "state-group",
       "rename-value",
       "hover",
@@ -225,6 +235,7 @@ describe("renames update every reference", () => {
 
   it("dimension rename-value: a transition's when and expectations", () => {
     const { result, validate, menu, expectation } = renamed(
+      "prototype",
       "dimension",
       "rename-value",
       "breakpoint",
@@ -246,7 +257,9 @@ describe("renames of a shared node's states", () => {
         overrides: { open: { nodes: { button: { states: { remove: ["hovered"] } } } } },
       },
     });
-    expect(run("state-group", "rename-value", "openness", "open", "expanded").code).toBe(0);
+    expect(
+      run("prototype", "state-group", "rename-value", "openness", "open", "expanded").code,
+    ).toBe(0);
     expect(Object.keys(read("overrides/menu.json").overrides as object)).toEqual(["expanded"]);
   });
 });

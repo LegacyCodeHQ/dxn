@@ -38,6 +38,7 @@ const files = {
 
 const at = "2026-10-30T19:20:00Z";
 const verify = (...extra: string[]) => [
+  "prototype",
   "verify",
   "blog-link",
   "--check",
@@ -93,6 +94,7 @@ describe("verify", () => {
     const { run, read } = cliProject(files);
     run(...verify("state=normal", "pointer=mouse"));
     run(
+      "prototype",
       "verify",
       "blog-link",
       "--check",
@@ -123,6 +125,7 @@ describe("verify", () => {
     const { run, read } = cliProject(files);
     const before = Date.now();
     run(
+      "prototype",
       "verify",
       "blog-link",
       "--check",
@@ -198,7 +201,9 @@ describe("verify", () => {
       "roots/page.json": rootFile({ id: "page", title: "Page" }),
     });
     snapshot.push(run(...verify("state=normal")));
-    snapshot.push(run("verify", "blog-link", "--check", "visual", "--actor", "agent").code);
+    snapshot.push(
+      run("prototype", "verify", "blog-link", "--check", "visual", "--actor", "agent").code,
+    );
     snapshot.push(run(...verify("pointer")).code);
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -224,6 +229,7 @@ describe("unverify", () => {
     run(...verify("state=hovered", "pointer=mouse"));
     snapshot.push(
       run(
+        "prototype",
         "unverify",
         "blog-link",
         "--check",
@@ -258,7 +264,15 @@ describe("unverify", () => {
   it("refuses when there is no such record", () => {
     const { run } = cliProject(files);
     expect(
-      run("unverify", "blog-link", "--check", "visual", "state=normal", "pointer=mouse"),
+      run(
+        "prototype",
+        "unverify",
+        "blog-link",
+        "--check",
+        "visual",
+        "state=normal",
+        "pointer=mouse",
+      ),
     ).toMatchObject({
       code: 1,
       stderr: 'dxn: no visual record for blog-link in {"state":"normal","pointer":"mouse"}\n',
@@ -275,6 +289,7 @@ describe("unverify", () => {
       undeclared.stderr.replace(/^.*?:\d+:\d+: /, ""),
       run(...verify("state=normal", "pointer=mouse", "--evidence", "shots/a.png")).code,
       run(
+        "prototype",
         "verify",
         "blog-link",
         "--check",

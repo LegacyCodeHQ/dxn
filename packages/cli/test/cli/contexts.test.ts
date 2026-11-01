@@ -81,10 +81,18 @@ describe("contexts --subtree", () => {
     });
     const snapshot: unknown[] = [];
     for (const root of [[], ["--root", "article-page"]]) {
-      const result = json(run("contexts", "toolbar", "--subtree", "--count", ...root));
+      const result = json(run("prototype", "contexts", "toolbar", "--subtree", "--count", ...root));
       snapshot.push(result.counts["blog-link"]);
       const selected = json(
-        run("contexts", "toolbar", "--subtree", "selection=unselected", "--count", ...root),
+        run(
+          "prototype",
+          "contexts",
+          "toolbar",
+          "--subtree",
+          "selection=unselected",
+          "--count",
+          ...root,
+        ),
       );
       snapshot.push(selected.counts["blog-link"]);
     }
@@ -100,7 +108,7 @@ describe("contexts --subtree", () => {
 
   it("lists every part's combinations, the fragment on its own by default", () => {
     const { run } = cliProject(files);
-    const result = json(run("contexts", "toolbar", "--subtree"));
+    const result = json(run("prototype", "contexts", "toolbar", "--subtree"));
     expect(
       result.nodes.map(({ id, contexts }: { id: string; contexts: unknown[] }) => [
         id,
@@ -146,7 +154,7 @@ describe("contexts --subtree", () => {
 
   it("lists every combination of a small subtree", () => {
     const { run } = cliProject(files);
-    expect(json(run("contexts", "menu-panel", "--subtree"))).toMatchInlineSnapshot(`
+    expect(json(run("prototype", "contexts", "menu-panel", "--subtree"))).toMatchInlineSnapshot(`
       {
         "node": "menu-panel",
         "nodes": [
@@ -288,7 +296,9 @@ describe("contexts --subtree", () => {
   it("shows the fragment as included in a root with --root", () => {
     const { run } = cliProject(files);
     expect(
-      json(run("contexts", "toolbar", "--subtree", "--root", "article-page", "--count")),
+      json(
+        run("prototype", "contexts", "toolbar", "--subtree", "--root", "article-page", "--count"),
+      ),
     ).toMatchInlineSnapshot(`
       {
         "counts": {
@@ -313,12 +323,28 @@ describe("contexts filters", () => {
   it("keep only the combinations with every given value", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("contexts", "toolbar", "--subtree", "breakpoint=sm", "--count")));
     snapshot.push(
-      json(run("contexts", "toolbar", "--subtree", "hover=hovered", "focus=focused", "--count")),
+      json(run("prototype", "contexts", "toolbar", "--subtree", "breakpoint=sm", "--count")),
     );
-    snapshot.push(json(run("contexts", "toolbar", "--subtree", "menu=open", "selection=selected")));
-    snapshot.push(json(run("contexts", "blog-link", "selection=selected", "hover=hovered")));
+    snapshot.push(
+      json(
+        run(
+          "prototype",
+          "contexts",
+          "toolbar",
+          "--subtree",
+          "hover=hovered",
+          "focus=focused",
+          "--count",
+        ),
+      ),
+    );
+    snapshot.push(
+      json(run("prototype", "contexts", "toolbar", "--subtree", "menu=open", "selection=selected")),
+    );
+    snapshot.push(
+      json(run("prototype", "contexts", "blog-link", "selection=selected", "hover=hovered")),
+    );
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {
@@ -463,7 +489,17 @@ describe("contexts filters", () => {
   it("keep parts a shared state does not apply to, where that shared node exists", () => {
     const { run } = cliProject(files);
     expect(
-      json(run("contexts", "toolbar", "--subtree", "breakpoint=sm", "menu=open", "--count")),
+      json(
+        run(
+          "prototype",
+          "contexts",
+          "toolbar",
+          "--subtree",
+          "breakpoint=sm",
+          "menu=open",
+          "--count",
+        ),
+      ),
     ).toMatchInlineSnapshot(`
       {
         "counts": {
@@ -485,12 +521,12 @@ describe("contexts filters", () => {
   it("reject unknown names and values, listing the valid ones", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("contexts", "toolbar", "--subtree", "theme=dark"));
-    snapshot.push(run("contexts", "toolbar", "--subtree", "breakpoint=md").stderr);
-    snapshot.push(run("contexts", "toolbar", "--subtree", "hover=yes").stderr);
-    snapshot.push(run("contexts", "toolbar", "--subtree", "menu=ajar").stderr);
-    snapshot.push(run("contexts", "toolbar", "--subtree", "hover").code);
-    snapshot.push(run("contexts", "toolbar", "--subtree", "--root", "nope").stderr);
+    snapshot.push(run("prototype", "contexts", "toolbar", "--subtree", "theme=dark"));
+    snapshot.push(run("prototype", "contexts", "toolbar", "--subtree", "breakpoint=md").stderr);
+    snapshot.push(run("prototype", "contexts", "toolbar", "--subtree", "hover=yes").stderr);
+    snapshot.push(run("prototype", "contexts", "toolbar", "--subtree", "menu=ajar").stderr);
+    snapshot.push(run("prototype", "contexts", "toolbar", "--subtree", "hover").code);
+    snapshot.push(run("prototype", "contexts", "toolbar", "--subtree", "--root", "nope").stderr);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {
@@ -516,7 +552,7 @@ describe("contexts filters", () => {
 describe("contexts --count", () => {
   it("counts a single node's combinations", () => {
     const { run } = cliProject(files);
-    expect(json(run("contexts", "wordmark", "--count"))).toMatchInlineSnapshot(`
+    expect(json(run("prototype", "contexts", "wordmark", "--count"))).toMatchInlineSnapshot(`
       {
         "count": 16,
         "node": "wordmark",
@@ -528,7 +564,7 @@ describe("contexts --count", () => {
 describe("contexts --tree", () => {
   it("prints one node's contexts as a tree, merging identical branches", () => {
     const { run } = cliProject(files);
-    expect(run("contexts", "wordmark", "--tree").stdout).toMatchInlineSnapshot(`
+    expect(run("prototype", "contexts", "wordmark", "--tree").stdout).toMatchInlineSnapshot(`
       "wordmark (16 combinations)
       └── hover=unhovered, hovered
           └── focus=unfocused, focused
@@ -538,7 +574,9 @@ describe("contexts --tree", () => {
 
   it("prints every part of a subtree, splitting only where they differ", () => {
     const { run } = cliProject(files);
-    expect(run("contexts", "menu", "--subtree", "--tree").stdout).toMatchInlineSnapshot(`
+    expect(
+      run("prototype", "contexts", "menu", "--subtree", "--tree").stdout,
+    ).toMatchInlineSnapshot(`
       "menu (4 combinations)
       └── breakpoint=base, sm
           └── menu=closed, open
@@ -563,7 +601,15 @@ describe("contexts --tree", () => {
   it("applies filters first", () => {
     const { run } = cliProject(files);
     expect(
-      run("contexts", "toolbar", "--subtree", "--tree", "breakpoint=lg", "focus=focused").stdout,
+      run(
+        "prototype",
+        "contexts",
+        "toolbar",
+        "--subtree",
+        "--tree",
+        "breakpoint=lg",
+        "focus=focused",
+      ).stdout,
     ).toMatchInlineSnapshot(`
       "wordmark (2 combinations)
       └── breakpoint=lg
@@ -580,6 +626,6 @@ describe("contexts --tree", () => {
 
   it("cannot be combined with --count", () => {
     const { run } = cliProject(files);
-    expect(run("contexts", "wordmark", "--tree", "--count").code).toBe(2);
+    expect(run("prototype", "contexts", "wordmark", "--tree", "--count").code).toBe(2);
   });
 });

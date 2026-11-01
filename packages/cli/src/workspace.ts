@@ -149,6 +149,6 @@ export class Workspace {
 
 export class UnreadableFile extends Error {
   constructor(readonly path: string) {
-    super(`${path} is not a JSON object; run dxn validate`);
+    super(`${path} is not a JSON object; run dxn prototype validate`);
   }
 }

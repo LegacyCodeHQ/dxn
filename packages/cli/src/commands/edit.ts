@@ -304,7 +304,7 @@ export function overrideTargets(
 export function typesFile(workspace: Workspace): Json {
   const types = workspace.read("types.json");
   if (types === undefined) {
-    throw new Refusal("types.json not found; run dxn validate");
+    throw new Refusal("types.json not found; run dxn prototype validate");
   }
   return types;
 }

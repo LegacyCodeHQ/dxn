@@ -10,7 +10,7 @@ const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 describe("expectation commands", () => {
   it("add rules of every kind, written as expectations.json", () => {
     const { run, read } = cliProject(toolbarFiles);
-    const add = (...args: string[]) => run("expectation", "add", ...args).code;
+    const add = (...args: string[]) => run("prototype", "expectation", "add", ...args).code;
     expect([
       add(
         "Touch never hovers",
@@ -87,6 +87,7 @@ describe("expectation commands", () => {
     });
     expect(
       run(
+        "prototype",
         "expectation",
         "add",
         "Escape closes the menu",
@@ -116,6 +117,7 @@ describe("expectation commands", () => {
   it("refuse a rule that fails or tests nothing, and write nothing", () => {
     const { run, exists } = cliProject(toolbarFiles);
     const failing = run(
+      "prototype",
       "expectation",
       "add",
       "Touch hovers",
@@ -135,13 +137,20 @@ describe("expectation commands", () => {
 
   it("need one assertion and a unique title", () => {
     const { run } = cliProject(toolbarFiles);
-    run("expectation", "add", "Once", "--node", "wordmark", "--exists");
+    run("prototype", "expectation", "add", "Once", "--node", "wordmark", "--exists");
     expect([
-      run("expectation", "add", "None", "--node", "wordmark").stderr,
-      run("expectation", "add", "Two", "--node", "wordmark", "--exists", "--absent").stderr.split(
-        "\n",
-      )[0],
-      run("expectation", "add", "Once", "--node", "wordmark", "--exists").stderr,
+      run("prototype", "expectation", "add", "None", "--node", "wordmark").stderr,
+      run(
+        "prototype",
+        "expectation",
+        "add",
+        "Two",
+        "--node",
+        "wordmark",
+        "--exists",
+        "--absent",
+      ).stderr.split("\n")[0],
+      run("prototype", "expectation", "add", "Once", "--node", "wordmark", "--exists").stderr,
     ]).toEqual([
       expect.stringContaining("give one of --then, --some, --exists and --absent"),
       "dxn: give one of --then, --some, --exists and --absent",
@@ -151,16 +160,30 @@ describe("expectation commands", () => {
 
   it("list and remove rules by title", () => {
     const { run } = cliProject(toolbarFiles);
-    run("expectation", "add", "Once", "--node", "wordmark", "--exists");
-    run("expectation", "add", "Twice", "--node", "wordmark", "--when", "profile=phone", "--exists");
+    run("prototype", "expectation", "add", "Once", "--node", "wordmark", "--exists");
+    run(
+      "prototype",
+      "expectation",
+      "add",
+      "Twice",
+      "--node",
+      "wordmark",
+      "--when",
+      "profile=phone",
+      "--exists",
+    );
     expect(
-      json(run("expectation", "list")).expectations.map(({ title }: { title: string }) => title),
+      json(run("prototype", "expectation", "list")).expectations.map(
+        ({ title }: { title: string }) => title,
+      ),
     ).toEqual(["Once", "Twice"]);
-    expect(run("expectation", "remove", "Once").code).toBe(0);
+    expect(run("prototype", "expectation", "remove", "Once").code).toBe(0);
     expect(
-      json(run("expectation", "list")).expectations.map(({ title }: { title: string }) => title),
+      json(run("prototype", "expectation", "list")).expectations.map(
+        ({ title }: { title: string }) => title,
+      ),
     ).toEqual(["Twice"]);
-    expect(run("expectation", "remove", "Nope").stderr).toBe(
+    expect(run("prototype", "expectation", "remove", "Nope").stderr).toBe(
       'dxn: expectation not found: "Nope"\n',
     );
   });

@@ -18,7 +18,7 @@ import {
 } from "./edit.js";
 import { dimensions } from "./reading.js";
 
-const usage = `Usage: dxn dimension <subcommand>
+const usage = `Usage: dxn prototype dimension <subcommand>
 
 Subcommands:
   list                               List every dimension, its values, default and scope

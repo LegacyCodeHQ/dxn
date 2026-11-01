@@ -31,10 +31,12 @@ describe("per-include states in reading commands", () => {
   it("limit contexts, views and status on the including page only", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("contexts", "blog-link", "--tree").stdout);
-    snapshot.push(JSON.parse(run("view", "toolbar", "--root", "article-page").stdout).tree);
-    snapshot.push(JSON.parse(run("view", "toolbar", "--root", "home").stdout).tree);
-    snapshot.push(JSON.parse(run("status", "blog-link").stdout).summary);
+    snapshot.push(run("prototype", "contexts", "blog-link", "--tree").stdout);
+    snapshot.push(
+      JSON.parse(run("prototype", "view", "toolbar", "--root", "article-page").stdout).tree,
+    );
+    snapshot.push(JSON.parse(run("prototype", "view", "toolbar", "--root", "home").stdout).tree);
+    snapshot.push(JSON.parse(run("prototype", "status", "blog-link").stdout).summary);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "blog-link (6 combinations)
@@ -108,13 +110,29 @@ describe("node include-states", () => {
       }),
     });
     snapshot.push(
-      run("node", "include-states", "article-page", "toolbar", "blog-link", "selection", "selected")
-        .code,
+      run(
+        "prototype",
+        "node",
+        "include-states",
+        "article-page",
+        "toolbar",
+        "blog-link",
+        "selection",
+        "selected",
+      ).code,
     );
     snapshot.push(read("roots/article-page.json"));
     snapshot.push(
-      run("node", "include-states", "article-page", "toolbar", "blog-link", "selection", "--any")
-        .code,
+      run(
+        "prototype",
+        "node",
+        "include-states",
+        "article-page",
+        "toolbar",
+        "blog-link",
+        "selection",
+        "--any",
+      ).code,
     );
     snapshot.push(read("roots/article-page.json"));
     expect(snapshot).toMatchInlineSnapshot(`
@@ -160,13 +178,32 @@ describe("node include-states", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(
-      run("node", "include-states", "article-page", "toolbar", "blog-link", "selection", "current")
-        .stderr,
+      run(
+        "prototype",
+        "node",
+        "include-states",
+        "article-page",
+        "toolbar",
+        "blog-link",
+        "selection",
+        "current",
+      ).stderr,
     );
     snapshot.push(
-      run("node", "include-states", "home", "footer", "blog-link", "selection", "selected"),
+      run(
+        "prototype",
+        "node",
+        "include-states",
+        "home",
+        "footer",
+        "blog-link",
+        "selection",
+        "selected",
+      ),
     );
-    snapshot.push(run("node", "include-states", "home", "toolbar", "blog-link", "selection").code);
+    snapshot.push(
+      run("prototype", "node", "include-states", "home", "toolbar", "blog-link", "selection").code,
+    );
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "<tmp>/.dxn/roots/article-page.json:11:27: unknown-state: "current" is not in node "blog-link"'s "selection" group

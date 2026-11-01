@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { projectFolder } from "../project.js";
 import { type Context, command } from "./context.js";
 
-export const initUsage = "Usage: dxn init [--dir <directory>]\n";
+export const initUsage = "Usage: dxn prototype init [--dir <directory>]\n";
 
 // Creates the project: .dxn/ in the working directory, or --dir.
 export const init = command(initUsage, (args: string[], { io, cwd, dir }: Context): number => {

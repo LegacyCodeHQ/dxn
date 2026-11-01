@@ -7,7 +7,7 @@ afterAll(cleanup);
 
 const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 const table = (...args: string[]) =>
-  json(cliProject(toolbarFiles).run("contexts", ...args, "--table", "--json"));
+  json(cliProject(toolbarFiles).run("prototype", "contexts", ...args, "--table", "--json"));
 
 describe("contexts --table for one node", () => {
   it("prints one table per state group, a row per profile", () => {
@@ -98,7 +98,7 @@ describe("contexts --subtree --table", () => {
 describe("tables as Markdown", () => {
   it("print each state group under a heading, padded for reading", () => {
     const { run } = cliProject(toolbarFiles);
-    expect(run("contexts", "blog-link", "--table").stdout).toBe(
+    expect(run("prototype", "contexts", "blog-link", "--table").stdout).toBe(
       [
         "### blog-link · hover",
         "",
@@ -125,6 +125,7 @@ describe("tables as Markdown", () => {
   it("print the presence matrix with shared states and profile names in cells", () => {
     const { run } = cliProject(toolbarFiles);
     const lines = run(
+      "prototype",
       "contexts",
       "toolbar",
       "--subtree",
@@ -143,7 +144,7 @@ describe("tables as Markdown", () => {
 
   it("refuse a --by that is neither profile nor a dimension", () => {
     const { run } = cliProject(toolbarFiles);
-    expect(run("contexts", "blog-link", "--table", "--by", "colour").stderr).toBe(
+    expect(run("prototype", "contexts", "blog-link", "--table", "--by", "colour").stderr).toBe(
       'dxn: "colour" is not profile, a dimension or a shared node of blog-link (breakpoint, keyboard, pointer)\n',
     );
   });

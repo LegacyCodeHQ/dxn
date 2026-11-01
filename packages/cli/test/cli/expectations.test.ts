@@ -53,7 +53,7 @@ const noHoverOnTouch = {
 // Each problem validate reports, without its file position.
 function problems(extra: Record<string, unknown>, list: unknown[]): string[] {
   const { run } = cliProject({ ...files, ...extra, "expectations.json": expectations(list) });
-  return run("validate")
+  return run("prototype", "validate")
     .stderr.split("\n")
     .filter((line) => line !== "")
     .map((line) => line.replace(/^.*?:\d+:\d+: /, ""));
@@ -223,7 +223,7 @@ describe("expectations in the compiler", () => {
 
   it("refuse an edit that would make one fail, and write nothing", () => {
     const { run, read } = cliProject({ ...files, "expectations.json": passing });
-    const result = run("override", "unset", "pointer=touch", "--type", "link");
+    const result = run("prototype", "override", "unset", "pointer=touch", "--type", "link");
     expect([result.code, result.stdout, result.stderr.includes("expectation-failed")]).toEqual([
       1,
       "",
@@ -238,7 +238,7 @@ describe("expectations in the compiler", () => {
       "overrides/pointer.json": { version: 1, overrides: {} },
       "expectations.json": passing,
     });
-    const result = run("show", "home-link");
+    const result = run("prototype", "show", "home-link");
     expect([result.code, result.stderr.includes("expectation-failed")]).toEqual([1, true]);
   });
 

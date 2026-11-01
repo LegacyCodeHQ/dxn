@@ -11,10 +11,10 @@ describe("fragment add and remove", () => {
   it("add a fragment file and remove an unused one", () => {
     const snapshot: unknown[] = [];
     const { run, read, exists } = cliProject({ "types.json": types });
-    snapshot.push(run("fragment", "add", "toolbar", "--title", "Toolbar").code);
+    snapshot.push(run("prototype", "fragment", "add", "toolbar", "--title", "Toolbar").code);
     snapshot.push(read("fragments/toolbar.json"));
-    snapshot.push(run("fragment", "add", "toolbar", "--title", "Again"));
-    snapshot.push(run("fragment", "remove", "toolbar").code);
+    snapshot.push(run("prototype", "fragment", "add", "toolbar", "--title", "Again"));
+    snapshot.push(run("prototype", "fragment", "remove", "toolbar").code);
     snapshot.push(exists("fragments/toolbar.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -46,10 +46,10 @@ describe("fragment add and remove", () => {
       "fragments/toolbar.json": { version: 1, fragment: { id: "toolbar", title: "Toolbar" } },
       "roots/page.json": page([{ include: "toolbar" }]),
     });
-    snapshot.push(run("fragment", "remove", "toolbar").stderr);
-    snapshot.push(run("fragment", "remove", "nope"));
-    snapshot.push(run("fragment", "add", "x").code);
-    snapshot.push(run("fragment").code);
+    snapshot.push(run("prototype", "fragment", "remove", "toolbar").stderr);
+    snapshot.push(run("prototype", "fragment", "remove", "nope"));
+    snapshot.push(run("prototype", "fragment", "add", "x").code);
+    snapshot.push(run("prototype", "fragment").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -78,7 +78,7 @@ describe("fragment extract", () => {
         { id: "body", title: "Body" },
       ]),
     });
-    const result = run("fragment", "extract", "toolbar");
+    const result = run("prototype", "fragment", "extract", "toolbar");
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
     snapshot.push(read("fragments/toolbar.json"));
@@ -129,7 +129,7 @@ describe("fragment extract", () => {
 
   it("refuses a file's root", () => {
     const { run } = cliProject({ "types.json": types, "roots/page.json": page() });
-    expect(run("fragment", "extract", "page")).toMatchObject({
+    expect(run("prototype", "fragment", "extract", "page")).toMatchObject({
       code: 1,
       stderr: 'dxn: "page" is the top node of its file; only a node inside one can be extracted\n',
     });
@@ -144,12 +144,12 @@ describe("node include and uninclude", () => {
       "fragments/toolbar.json": { version: 1, fragment: { id: "toolbar", title: "Toolbar" } },
       "roots/page.json": page(),
     });
-    snapshot.push(run("node", "include", "page", "toolbar").code);
+    snapshot.push(run("prototype", "node", "include", "page", "toolbar").code);
     snapshot.push(read("roots/page.json"));
-    snapshot.push(run("node", "include", "page", "toolbar").stderr);
-    snapshot.push(run("node", "uninclude", "page", "toolbar").code);
+    snapshot.push(run("prototype", "node", "include", "page", "toolbar").stderr);
+    snapshot.push(run("prototype", "node", "uninclude", "page", "toolbar").code);
     snapshot.push(read("roots/page.json"));
-    snapshot.push(run("node", "uninclude", "page", "toolbar"));
+    snapshot.push(run("prototype", "node", "uninclude", "page", "toolbar"));
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -189,6 +189,8 @@ describe("node include and uninclude", () => {
 
   it("refuse unknown fragments", () => {
     const { run } = cliProject({ "types.json": types, "roots/page.json": page() });
-    expect(run("node", "include", "page", "nope").stderr).toContain("unknown-fragment");
+    expect(run("prototype", "node", "include", "page", "nope").stderr).toContain(
+      "unknown-fragment",
+    );
   });
 });

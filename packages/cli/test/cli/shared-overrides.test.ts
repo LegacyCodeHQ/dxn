@@ -40,7 +40,7 @@ const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 
 function problems(extra: Record<string, unknown>): string[] {
   return cliProject({ ...files, ...extra })
-    .run("validate")
+    .run("prototype", "validate")
     .stderr.split("\n")
     .filter((line) => line !== "")
     .map((line) => line.replace(/^.*?:\d+:\d+: /, ""));
@@ -50,9 +50,11 @@ describe("overrides by a shared node's state", () => {
   it("change the states of nodes below it", () => {
     const { run } = cliProject(files);
     expect([
-      json(run("show", "submit", "form=incomplete")).stateGroups,
-      json(run("show", "submit", "form=complete")).stateGroups,
-      json(run("contexts", "submit")).contexts.map(({ context }: { context: object }) => context),
+      json(run("prototype", "show", "submit", "form=incomplete")).stateGroups,
+      json(run("prototype", "show", "submit", "form=complete")).stateGroups,
+      json(run("prototype", "contexts", "submit")).contexts.map(
+        ({ context }: { context: object }) => context,
+      ),
     ]).toEqual([
       { availability: ["disabled"] },
       { availability: ["enabled"] },
@@ -67,7 +69,16 @@ describe("overrides by a shared node's state", () => {
     const { "overrides/form.json": _, ...without } = files;
     const { run, read } = cliProject(without);
     expect(
-      run("override", "states", "form=incomplete", "--node", "submit", "--remove", "enabled").code,
+      run(
+        "prototype",
+        "override",
+        "states",
+        "form=incomplete",
+        "--node",
+        "submit",
+        "--remove",
+        "enabled",
+      ).code,
     ).toBe(0);
     expect(read("overrides/form.json")).toEqual({
       version: 1,
@@ -136,12 +147,12 @@ describe("overrides by a shared node's state", () => {
 
   it("follow a renamed shared node", () => {
     const { run, exists, read } = cliProject(files);
-    expect(run("node", "rename", "form", "sign-in-form").code).toBe(0);
+    expect(run("prototype", "node", "rename", "form", "sign-in-form").code).toBe(0);
     expect([exists("overrides/form.json"), exists("overrides/sign-in-form.json")]).toEqual([
       false,
       true,
     ]);
-    expect(run("show", "submit", "sign-in-form=incomplete").code).toBe(0);
+    expect(run("prototype", "show", "submit", "sign-in-form=incomplete").code).toBe(0);
     expect(Object.keys((read("overrides/sign-in-form.json").overrides as object) ?? {})).toEqual([
       "incomplete",
       "complete",
@@ -177,6 +188,7 @@ describe("lists of values", () => {
     const { run, read } = cliProject(without);
     expect(
       run(
+        "prototype",
         "override",
         "states",
         "form=incomplete|complete",
@@ -195,7 +207,8 @@ describe("tables by a shared node's state", () => {
   it("put its states on the rows", () => {
     const { run } = cliProject(files);
     expect(
-      JSON.parse(run("contexts", "submit", "--table", "--by", "form", "--json").stdout).tables,
+      JSON.parse(run("prototype", "contexts", "submit", "--table", "--by", "form", "--json").stdout)
+        .tables,
     ).toEqual([
       {
         group: "availability",

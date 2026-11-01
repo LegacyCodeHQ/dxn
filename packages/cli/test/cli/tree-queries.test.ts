@@ -98,7 +98,7 @@ const files = {
   },
 };
 
-const tree = (...args: string[]) => cliProject(files).run("contexts", ...args).stdout;
+const tree = (...args: string[]) => cliProject(files).run("prototype", "contexts", ...args).stdout;
 
 describe("collapsing dimensions that change nothing", () => {
   it("drops a dimension level when every value leads to the same subtree", () => {
@@ -365,10 +365,14 @@ describe("tree query errors", () => {
   it("reject unknown levels and options without --tree", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("contexts", "toolbar", "--subtree", "--tree", "--by", "theme").stderr);
-    snapshot.push(run("contexts", "toolbar", "--subtree", "--tree", "--only", "theme").stderr);
-    snapshot.push(run("contexts", "toolbar", "--by", "breakpoint").code);
-    snapshot.push(run("contexts", "toolbar", "--json").code);
+    snapshot.push(
+      run("prototype", "contexts", "toolbar", "--subtree", "--tree", "--by", "theme").stderr,
+    );
+    snapshot.push(
+      run("prototype", "contexts", "toolbar", "--subtree", "--tree", "--only", "theme").stderr,
+    );
+    snapshot.push(run("prototype", "contexts", "toolbar", "--by", "breakpoint").code);
+    snapshot.push(run("prototype", "contexts", "toolbar", "--json").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "dxn: "theme" is not a level here (breakpoint, focus, hover, keyboard, menu, pointer)

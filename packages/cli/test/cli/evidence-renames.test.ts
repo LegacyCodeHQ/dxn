@@ -47,19 +47,19 @@ const first = (read: (name: string) => Record<string, unknown>, file = "evidence
 describe("renames update evidence", () => {
   it("node rename: the node an entry is for", () => {
     const { run, read } = project();
-    expect(run("node", "rename", "menu-button", "toggle").code).toBe(0);
+    expect(run("prototype", "node", "rename", "menu-button", "toggle").code).toBe(0);
     expect(first(read)?.node).toBe("toggle");
   });
 
   it("node rename: a shared node's state in an entry's context", () => {
     const { run, read } = project();
-    expect(run("node", "rename", "menu", "nav-menu").code).toBe(0);
+    expect(run("prototype", "node", "rename", "menu", "nav-menu").code).toBe(0);
     expect(first(read)?.context).toMatchObject({ "nav-menu": "closed" });
   });
 
   it("node rename: a root, whose evidence file moves with it", () => {
     const { run, read, exists } = project();
-    expect(run("node", "rename", "page", "site").code).toBe(0);
+    expect(run("prototype", "node", "rename", "page", "site").code).toBe(0);
     expect([exists("evidence/page.json"), first(read, "evidence/site.json")?.node]).toEqual([
       false,
       "menu-button",
@@ -68,13 +68,13 @@ describe("renames update evidence", () => {
 
   it("dimension rename-value: a dimension's value in an entry's context", () => {
     const { run, read } = project();
-    expect(run("dimension", "rename-value", "breakpoint", "base", "xs").code).toBe(0);
+    expect(run("prototype", "dimension", "rename-value", "breakpoint", "base", "xs").code).toBe(0);
     expect(first(read)?.context).toMatchObject({ breakpoint: "xs" });
   });
 
   it("state-group rename-value: a state in an entry's context", () => {
     const { run, read } = project();
-    expect(run("state-group", "rename-value", "hover", "rest", "idle").code).toBe(0);
+    expect(run("prototype", "state-group", "rename-value", "hover", "rest", "idle").code).toBe(0);
     expect(first(read)?.context).toMatchObject({ hover: "idle" });
   });
 });

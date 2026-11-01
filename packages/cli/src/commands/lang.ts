@@ -33,9 +33,8 @@ import {
 import { Fingerprints } from "../compiler/fingerprint.js";
 import { drawTable, NONE } from "../tables.js";
 import { type Command, type Context, command } from "./context.js";
-import { group } from "./edit.js";
 
-const usage = `Usage: dxn lang <subcommand>
+const usage = `Usage: dxn <command> <file> [options]
 
 dxn, the language of design and dimensions, which grows one concept at a
 time: see docs/language/guide.md. A .dxn file declares enums, each a named
@@ -58,7 +57,7 @@ comment, to the end of the line:
   environment Device = Pointer
   profile laptop: Device { Pointer = mouse }
 
-Subcommands:
+Commands:
   check <file>                       Parse and check a file; say what it declares,
                                      or report every problem it has. Warnings
                                      are printed, but do not fail. Needs no
@@ -464,8 +463,8 @@ const casesCommand: Command = command(usage, (args, { io, cwd }) => {
         .join("; ") || NONE
     );
   };
-  // Every combination its own case: its profiles first, as lang states
-  // shows them. Otherwise, what a case covers only where it covers more than
+  // Every combination its own case: its profiles first, as states shows
+  // them. Otherwise, what a case covers only where it covers more than
   // one.
   const single = found.cases.every(({ combinations }) => combinations.length === 1);
   const table = all
@@ -1072,7 +1071,7 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
     );
   if (contexts.length === 0) {
     return report.refuse(
-      `no combination given exists for ${path}; dxn lang states ${file} ${path} lists them`,
+      `no combination given exists for ${path}; dxn states ${file} ${path} lists them`,
     );
   }
   // The frame, and its fingerprint now.
@@ -1199,7 +1198,8 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   );
 });
 
-export const lang: Command = group(usage, {
+// The language's commands, each at the top of dxn.
+export const language: Record<string, Command> = {
   check,
   states: statesCommand,
   cases: casesCommand,
@@ -1207,4 +1207,4 @@ export const lang: Command = group(usage, {
   rename: renameCommand,
   status: statusCommand,
   attach: attachCommand,
-});
+};

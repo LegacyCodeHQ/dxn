@@ -14,7 +14,7 @@ import {
 } from "./edit.js";
 import { attributeList } from "./reading.js";
 
-const usage = `Usage: dxn attribute <subcommand>
+const usage = `Usage: dxn prototype attribute <subcommand>
 
 Subcommands:
   list                               List every attribute and its values

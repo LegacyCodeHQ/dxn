@@ -1,7 +1,7 @@
 import { workflow as guide } from "../generated/workflow.js";
 import { type Command, command } from "./context.js";
 
-const usage = `Usage: dxn workflow
+const usage = `Usage: dxn prototype workflow
 
 Prints the step-by-step guide to building a model, from an empty folder to
 verified checks, as Markdown. Needs no project.

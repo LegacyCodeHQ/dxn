@@ -3,7 +3,7 @@ import type { Command } from "./context.js";
 import { editCommand, group, isObject, list, parse, Refusal, reorder } from "./edit.js";
 import { actorList } from "./reading.js";
 
-const usage = `Usage: dxn actor <subcommand>
+const usage = `Usage: dxn prototype actor <subcommand>
 
 An actor is a role that does work against the model, declared in actors.json
 with what it records: evidence of one kind, such as a design agent's designs,

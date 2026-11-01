@@ -26,6 +26,7 @@ function project() {
 
 const at = "2026-10-31T12:00:00Z";
 const attach = (...context: string[]) => [
+  "prototype",
   "attach",
   "menu",
   "--actor",
@@ -78,6 +79,7 @@ describe("attach", () => {
     expect([
       run(...attach("profile=phone")).stderr.replace(/^.*?:\d+:\d+: /, ""),
       run(
+        "prototype",
         "attach",
         "menu",
         "--actor",
@@ -89,9 +91,11 @@ describe("attach", () => {
         "profile=phone",
         "menu=closed",
       ).stderr,
-      run("attach", "menu", "--actor", "design-agent", "profile=phone").stderr.split("\n")[0],
+      run("prototype", "attach", "menu", "--actor", "design-agent", "profile=phone").stderr.split(
+        "\n",
+      )[0],
     ]).toEqual([
-      'unknown-context: menu has no such context in root "page"; "dxn evidence menu --actor <name>" lists them\n',
+      'unknown-context: menu has no such context in root "page"; "dxn prototype evidence menu --actor <name>" lists them\n',
       'dxn: "design/missing.pen" does not exist in the repository\n',
       "dxn: --file and --frame are required",
     ]);
@@ -103,6 +107,7 @@ describe("detach", () => {
     const { run, read } = project();
     run(...attach("profile=phone", "menu=closed"));
     const detach = [
+      "prototype",
       "detach",
       "menu",
       "--actor",
@@ -124,6 +129,7 @@ describe("attach with lists", () => {
   const listed = (...context: string[]) => {
     const result = project();
     const run = result.run(
+      "prototype",
       "attach",
       "wordmark",
       "--actor",
@@ -170,7 +176,7 @@ describe("attach with lists", () => {
   it("refuses lists where no combination is a context", () => {
     const { run } = listed("profile=phone|tablet-portrait", "hover=hovered", "focus=blurred");
     expect(run.stderr).toBe(
-      'dxn: no context of wordmark matches; "dxn evidence wordmark --actor design-agent" lists them\n',
+      'dxn: no context of wordmark matches; "dxn prototype evidence wordmark --actor design-agent" lists them\n',
     );
   });
 });

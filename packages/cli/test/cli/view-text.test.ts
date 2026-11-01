@@ -8,7 +8,7 @@ afterAll(cleanup);
 describe("view --tree", () => {
   it("prints the tree present in one view as text", () => {
     const { run } = cliProject(toolbarFiles);
-    expect(run("view", "toolbar", "profile=phone", "menu=open", "--tree").stdout).toBe(
+    expect(run("prototype", "view", "toolbar", "profile=phone", "menu=open", "--tree").stdout).toBe(
       [
         "toolbar",
         "├── wordmark  hover: rest · focus: blurred",
@@ -25,7 +25,7 @@ describe("view --tree", () => {
 describe("views --table", () => {
   it("prints every view as a Markdown row", () => {
     const { run } = cliProject(toolbarFiles);
-    expect(run("views", "toolbar", "--table").stdout).toBe(
+    expect(run("prototype", "views", "toolbar", "--table").stdout).toBe(
       [
         "| profile          | breakpoint | keyboard    | pointer | menu   |",
         "| ---------------- | ---------- | ----------- | ------- | ------ |",
@@ -44,7 +44,7 @@ describe("views --table", () => {
   it("leaves out the profile column when there are no profiles", () => {
     const { "profiles.json": _, ...withoutProfiles } = toolbarFiles;
     const lines = cliProject(withoutProfiles)
-      .run("views", "toolbar", "breakpoint=xl", "--table")
+      .run("prototype", "views", "toolbar", "breakpoint=xl", "--table")
       .stdout.split("\n");
     expect(lines.slice(0, 3)).toEqual([
       "| breakpoint | keyboard    | pointer |",

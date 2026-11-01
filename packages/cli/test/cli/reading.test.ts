@@ -98,7 +98,7 @@ const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 describe("show", () => {
   it("resolves states and values in a context, applying precedence", () => {
     const { run } = cliProject(files);
-    expect(json(run("show", "blog-link", "breakpoint=lg", "pointer=touch"))).toEqual({
+    expect(json(run("prototype", "show", "blog-link", "breakpoint=lg", "pointer=touch"))).toEqual({
       id: "blog-link",
       title: "Blog link",
       type: "link",
@@ -112,8 +112,8 @@ describe("show", () => {
   it("fills in defaults and leaves dimensions without one unapplied", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("show", "blog-link", "pointer=mouse")));
-    snapshot.push(json(run("show", "blog-link")));
+    snapshot.push(json(run("prototype", "show", "blog-link", "pointer=mouse")));
+    snapshot.push(json(run("prototype", "show", "blog-link")));
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -162,15 +162,17 @@ describe("show", () => {
 
   it("says when a node does not exist in the context", () => {
     const { run } = cliProject(files);
-    expect(json(run("show", "menu-link", "breakpoint=lg"))).toMatchObject({ present: false });
+    expect(json(run("prototype", "show", "menu-link", "breakpoint=lg"))).toMatchObject({
+      present: false,
+    });
   });
 
   it("rejects dimensions the node does not have and unknown values", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("show", "blog-link", "theme=dark"));
-    snapshot.push(run("show", "blog-link", "pointer=pen"));
-    snapshot.push(run("show", "blog-link", "pointer").code);
+    snapshot.push(run("prototype", "show", "blog-link", "theme=dark"));
+    snapshot.push(run("prototype", "show", "blog-link", "pointer=pen"));
+    snapshot.push(run("prototype", "show", "blog-link", "pointer").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -196,9 +198,9 @@ describe("contexts", () => {
   it("lists every context a node exists in, per root", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("contexts", "blog-link")));
-    snapshot.push(json(run("contexts", "menu-link")).contexts);
-    snapshot.push(json(run("contexts", "links")).contexts);
+    snapshot.push(json(run("prototype", "contexts", "blog-link")));
+    snapshot.push(json(run("prototype", "contexts", "menu-link")).contexts);
+    snapshot.push(json(run("prototype", "contexts", "links")).contexts);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -279,7 +281,7 @@ describe("contexts", () => {
 
   it("reports unknown nodes", () => {
     const { run } = cliProject(files);
-    expect(run("contexts", "nope")).toMatchObject({
+    expect(run("prototype", "contexts", "nope")).toMatchObject({
       code: 1,
       stderr: "dxn: node not found: nope\n",
     });
@@ -289,7 +291,7 @@ describe("contexts", () => {
 describe("status", () => {
   it("reports each required check in each context as passed, failed or missing", () => {
     const { run } = cliProject(files);
-    const result = json(run("status", "blog-link"));
+    const result = json(run("prototype", "status", "blog-link"));
     expect(result).toEqual({
       summary: { passed: 1, failed: 1, missing: 1 },
       items: [
@@ -320,7 +322,7 @@ describe("status", () => {
 
   it("covers every typed node with checks when no node is given", () => {
     const { run } = cliProject(files);
-    expect(json(run("status")).summary).toEqual({ passed: 1, failed: 1, missing: 4 });
+    expect(json(run("prototype", "status")).summary).toEqual({ passed: 1, failed: 1, missing: 4 });
   });
 });
 
@@ -338,8 +340,8 @@ describe("nodes no root includes", () => {
         },
       },
     });
-    snapshot.push(json(run("show", "footer-link")));
-    snapshot.push(json(run("contexts", "footer-link")).contexts);
+    snapshot.push(json(run("prototype", "show", "footer-link")));
+    snapshot.push(json(run("prototype", "contexts", "footer-link")).contexts);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -372,7 +374,7 @@ describe("tree", () => {
       ...files,
       "fragments/footer.json": { version: 1, fragment: { id: "footer", title: "Footer" } },
     });
-    const result = json(run("tree"));
+    const result = json(run("prototype", "tree"));
     snapshot.push(result.roots.map((root: { id: string }) => root.id));
     snapshot.push(result.fragments);
 
@@ -394,9 +396,9 @@ describe("tree", () => {
   it("reports an invalid project", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({ "types.json": { version: 2 } });
-    snapshot.push(run("tree").stderr);
-    snapshot.push(run("status").code);
-    snapshot.push(run("contexts", "x").code);
+    snapshot.push(run("prototype", "tree").stderr);
+    snapshot.push(run("prototype", "status").code);
+    snapshot.push(run("prototype", "contexts", "x").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [

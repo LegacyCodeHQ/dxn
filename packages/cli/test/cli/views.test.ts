@@ -67,7 +67,7 @@ const json = (result: { stdout: string }) => JSON.parse(result.stdout);
 describe("views", () => {
   it("lists every distinct view of a fragment, with shared states only where they exist", () => {
     const { run } = cliProject(files);
-    expect(json(run("views", "toolbar"))).toEqual({
+    expect(json(run("prototype", "views", "toolbar"))).toEqual({
       node: "toolbar",
       views: [
         { breakpoint: "base", menu: "closed" },
@@ -83,9 +83,9 @@ describe("views", () => {
   it("works for a root, a node inside a fragment, and a node that does not vary", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("views", "article-page")).views);
-    snapshot.push(json(run("views", "menu")).views);
-    snapshot.push(json(run("views", "menu-panel")).views);
+    snapshot.push(json(run("prototype", "views", "article-page")).views);
+    snapshot.push(json(run("prototype", "views", "menu")).views);
+    snapshot.push(json(run("prototype", "views", "menu-panel")).views);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -147,7 +147,7 @@ describe("views", () => {
 
   it("reports unknown nodes", () => {
     const { run } = cliProject(files);
-    expect(run("views", "nope")).toMatchObject({
+    expect(run("prototype", "views", "nope")).toMatchObject({
       code: 1,
       stderr: "dxn: node not found: nope\n",
     });
@@ -157,7 +157,7 @@ describe("views", () => {
 describe("view", () => {
   it("prints the tree present in one view, with states and shared states", () => {
     const { run } = cliProject(files);
-    expect(json(run("view", "toolbar", "breakpoint=sm", "menu=open"))).toEqual({
+    expect(json(run("prototype", "view", "toolbar", "breakpoint=sm", "menu=open"))).toEqual({
       node: "toolbar",
       context: { breakpoint: "sm", menu: "open" },
       tree: {
@@ -194,9 +194,9 @@ describe("view", () => {
   it("leaves out what the view does not have, and uses defaults", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    const closed = json(run("view", "toolbar", "breakpoint=sm", "menu=closed")).tree;
+    const closed = json(run("prototype", "view", "toolbar", "breakpoint=sm", "menu=closed")).tree;
     snapshot.push(closed.children[1].children.map((child: { id: string }) => child.id));
-    const desktop = json(run("view", "toolbar"));
+    const desktop = json(run("prototype", "view", "toolbar"));
     snapshot.push(desktop.context);
     snapshot.push(desktop.tree.children.map((child: { id: string }) => child.id));
 
@@ -218,16 +218,16 @@ describe("view", () => {
 
   it("expands included fragments in a root", () => {
     const { run } = cliProject(files);
-    expect(json(run("view", "article-page")).tree.children[0].id).toBe("toolbar");
+    expect(json(run("prototype", "view", "article-page")).tree.children[0].id).toBe("toolbar");
   });
 
   it("needs the state of each shared node in the view, and known values", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("view", "toolbar", "breakpoint=sm"));
-    snapshot.push(run("view", "toolbar", "breakpoint=md"));
-    snapshot.push(run("view", "toolbar", "menu=ajar", "breakpoint=sm"));
-    snapshot.push(run("view", "toolbar", "theme=dark"));
+    snapshot.push(run("prototype", "view", "toolbar", "breakpoint=sm"));
+    snapshot.push(run("prototype", "view", "toolbar", "breakpoint=md"));
+    snapshot.push(run("prototype", "view", "toolbar", "menu=ajar", "breakpoint=sm"));
+    snapshot.push(run("prototype", "view", "toolbar", "theme=dark"));
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -264,8 +264,8 @@ describe("view configurations that cannot exist", () => {
   it("reject a shared node's state where that node does not exist", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("view", "toolbar", "breakpoint=lg", "menu=open"));
-    snapshot.push(run("view", "toolbar", "breakpoint=xl", "menu=closed").code);
+    snapshot.push(run("prototype", "view", "toolbar", "breakpoint=lg", "menu=open"));
+    snapshot.push(run("prototype", "view", "toolbar", "breakpoint=xl", "menu=closed").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {
@@ -282,9 +282,9 @@ describe("view configurations that cannot exist", () => {
   it("reject viewing a node where it does not exist", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("view", "menu", "breakpoint=lg"));
-    snapshot.push(run("view", "menu-panel", "breakpoint=sm", "menu=closed"));
-    snapshot.push(run("view", "menu-panel", "breakpoint=sm", "menu=open").code);
+    snapshot.push(run("prototype", "view", "menu", "breakpoint=lg"));
+    snapshot.push(run("prototype", "view", "menu-panel", "breakpoint=sm", "menu=closed"));
+    snapshot.push(run("prototype", "view", "menu-panel", "breakpoint=sm", "menu=open").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {
@@ -309,8 +309,8 @@ describe("shared states in the other reading commands", () => {
   it("are part of a node's contexts", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("contexts", "menu-button")).contexts);
-    snapshot.push(json(run("contexts", "menu-link")).contexts);
+    snapshot.push(json(run("prototype", "contexts", "menu-button")).contexts);
+    snapshot.push(json(run("prototype", "contexts", "menu-link")).contexts);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -385,8 +385,10 @@ describe("shared states in the other reading commands", () => {
   it("decide presence in query", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("show", "menu-link", "breakpoint=sm", "menu=closed")));
-    snapshot.push(json(run("show", "menu-link", "breakpoint=sm", "menu=open")).present);
+    snapshot.push(json(run("prototype", "show", "menu-link", "breakpoint=sm", "menu=closed")));
+    snapshot.push(
+      json(run("prototype", "show", "menu-link", "breakpoint=sm", "menu=open")).present,
+    );
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -427,7 +429,11 @@ describe("shared states in the other reading commands", () => {
         ],
       },
     });
-    expect(json(run("status", "menu-link")).summary).toEqual({ passed: 1, failed: 0, missing: 3 });
+    expect(json(run("prototype", "status", "menu-link")).summary).toEqual({
+      passed: 1,
+      failed: 0,
+      missing: 3,
+    });
   });
 });
 
@@ -435,10 +441,12 @@ describe("show, like view", () => {
   it("needs the state of each shared node above the node, where it exists", () => {
     const { run } = cliProject(files);
     const snapshot: unknown[] = [];
-    snapshot.push(run("show", "menu-link", "breakpoint=sm"));
-    snapshot.push(run("show", "menu-link", "breakpoint=lg", "menu=open"));
-    snapshot.push(json(run("show", "menu-link", "breakpoint=lg")).present);
-    snapshot.push(json(run("show", "menu-link", "breakpoint=sm", "menu=open")).present);
+    snapshot.push(run("prototype", "show", "menu-link", "breakpoint=sm"));
+    snapshot.push(run("prototype", "show", "menu-link", "breakpoint=lg", "menu=open"));
+    snapshot.push(json(run("prototype", "show", "menu-link", "breakpoint=lg")).present);
+    snapshot.push(
+      json(run("prototype", "show", "menu-link", "breakpoint=sm", "menu=open")).present,
+    );
     expect(snapshot).toEqual([
       {
         code: 1,
@@ -473,9 +481,9 @@ describe("show, like view", () => {
       }),
     });
     expect([
-      json(run("show", "blog-link")).stateGroups,
-      json(run("show", "blog-link", "--root", "article-page")).stateGroups,
-      run("show", "blog-link", "--root", "nope").stderr,
+      json(run("prototype", "show", "blog-link")).stateGroups,
+      json(run("prototype", "show", "blog-link", "--root", "article-page")).stateGroups,
+      run("prototype", "show", "blog-link", "--root", "nope").stderr,
     ]).toEqual([
       { selection: ["unselected", "selected"] },
       { selection: ["selected"] },
@@ -500,6 +508,7 @@ describe("records for a shared node", () => {
     });
     const verify = (...context: string[]) =>
       run(
+        "prototype",
         "verify",
         "menu",
         "--check",
@@ -513,7 +522,7 @@ describe("records for a shared node", () => {
     const snapshot: unknown[] = [];
     snapshot.push(verify("breakpoint=base", "state=closed").code);
     snapshot.push(verify("breakpoint=base", "menu=closed").code);
-    snapshot.push(json(run("status", "menu")).summary);
+    snapshot.push(json(run("prototype", "status", "menu")).summary);
     expect(snapshot).toEqual([1, 0, { passed: 1, failed: 0, missing: 3 }]);
   });
 });
@@ -532,10 +541,10 @@ describe("a shared type that uses a state group", () => {
       },
     });
     expect([
-      json(run("axes", "toolbar")).shared,
-      json(run("contexts", "menu-link", "menu=open", "--count")).count,
-      run("view", "toolbar", "breakpoint=sm").stderr,
-      json(run("view", "toolbar", "breakpoint=sm", "menu=open")).context,
+      json(run("prototype", "axes", "toolbar")).shared,
+      json(run("prototype", "contexts", "menu-link", "menu=open", "--count")).count,
+      run("prototype", "view", "toolbar", "breakpoint=sm").stderr,
+      json(run("prototype", "view", "toolbar", "breakpoint=sm", "menu=open")).context,
     ]).toEqual([
       [{ node: "menu", states: ["closed", "open"], existsWhen: { breakpoint: ["base", "sm"] } }],
       4,

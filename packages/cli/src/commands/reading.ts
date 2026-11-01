@@ -111,7 +111,7 @@ function contextValues(
   return context;
 }
 
-const dimensionsUsage = `Usage: dxn dimension list
+const dimensionsUsage = `Usage: dxn prototype dimension list
 
 Lists every dimension: its values, default, and the nodes it applies to.
 `;
@@ -119,7 +119,7 @@ Lists every dimension: its values, default, and the nodes it applies to.
 const byName = <T>(entries: [string, T][]): [string, T][] =>
   entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 
-export const typeList = readCommand("Usage: dxn type list\n", (resolver, args, io) => {
+export const typeList = readCommand("Usage: dxn prototype type list\n", (resolver, args, io) => {
   parse(args, [], {});
   const declared = resolver.project.types.types ?? {};
   print(io, {
@@ -144,23 +144,26 @@ function typesWhere(resolver: Resolver, uses: (type: string) => boolean): string
     .sort();
 }
 
-export const stateGroupList = readCommand("Usage: dxn state-group list\n", (resolver, args, io) => {
-  parse(args, [], {});
-  print(io, {
-    stateGroups: byName(Object.entries(resolver.project.types.stateGroups ?? {})).map(
-      ([name, values]) => ({
-        name,
-        values,
-        usedBy: typesWhere(resolver, (type) => {
-          const used = resolver.project.types.types?.[type]?.stateGroups;
-          return Array.isArray(used) ? used.includes(name) : used?.[name] !== undefined;
+export const stateGroupList = readCommand(
+  "Usage: dxn prototype state-group list\n",
+  (resolver, args, io) => {
+    parse(args, [], {});
+    print(io, {
+      stateGroups: byName(Object.entries(resolver.project.types.stateGroups ?? {})).map(
+        ([name, values]) => ({
+          name,
+          values,
+          usedBy: typesWhere(resolver, (type) => {
+            const used = resolver.project.types.types?.[type]?.stateGroups;
+            return Array.isArray(used) ? used.includes(name) : used?.[name] !== undefined;
+          }),
         }),
-      }),
-    ),
-  });
-});
+      ),
+    });
+  },
+);
 
-export const checkList = readCommand("Usage: dxn check list\n", (resolver, args, io) => {
+export const checkList = readCommand("Usage: dxn prototype check list\n", (resolver, args, io) => {
   parse(args, [], {});
   print(io, {
     checks: Object.keys(resolver.project.types.checks ?? {})
@@ -175,7 +178,7 @@ export const checkList = readCommand("Usage: dxn check list\n", (resolver, args,
   });
 });
 
-export const actorList = readCommand("Usage: dxn actor list\n", (resolver, args, io) => {
+export const actorList = readCommand("Usage: dxn prototype actor list\n", (resolver, args, io) => {
   parse(args, [], {});
   print(io, {
     actors: Object.entries(resolver.project.actors?.actors ?? {})
@@ -184,14 +187,17 @@ export const actorList = readCommand("Usage: dxn actor list\n", (resolver, args,
   });
 });
 
-export const attributeList = readCommand("Usage: dxn attribute list\n", (resolver, args, io) => {
-  parse(args, [], {});
-  print(io, {
-    attributes: byName(Object.entries(resolver.project.types.attributes ?? {})).map(
-      ([name, { values }]) => ({ name, values }),
-    ),
-  });
-});
+export const attributeList = readCommand(
+  "Usage: dxn prototype attribute list\n",
+  (resolver, args, io) => {
+    parse(args, [], {});
+    print(io, {
+      attributes: byName(Object.entries(resolver.project.types.attributes ?? {})).map(
+        ([name, { values }]) => ({ name, values }),
+      ),
+    });
+  },
+);
 
 export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
   parse(args, [], {});
@@ -214,7 +220,7 @@ export const dimensions = readCommand(dimensionsUsage, (resolver, args, io) => {
   });
 });
 
-const axesUsage = `Usage: dxn axes <node-id> [<name>=<value>...] [--root <root-id>]
+const axesUsage = `Usage: dxn prototype axes <node-id> [<name>=<value>...] [--root <root-id>]
 
 Lists what view and show accept for the node: the dimensions that apply in
 its subtree, with their values and defaults, and the shared nodes above or in
@@ -346,24 +352,27 @@ export function fillProfile(
 }
 
 export const expectationList = readCommand(
-  "Usage: dxn expectation list\n",
+  "Usage: dxn prototype expectation list\n",
   (resolver, args, io) => {
     parse(args, [], {});
     print(io, { expectations: resolver.project.expectations?.expectations ?? [] });
   },
 );
 
-export const modifierList = readCommand("Usage: dxn modifier list\n", (resolver, args, io) => {
-  parse(args, [], {});
-  print(io, {
-    modifiers: Object.entries(resolver.project.profiles?.modifiers ?? {}).map(
-      ([name, { on, sets }]) => ({ name, on, sets }),
-    ),
-  });
-});
+export const modifierList = readCommand(
+  "Usage: dxn prototype modifier list\n",
+  (resolver, args, io) => {
+    parse(args, [], {});
+    print(io, {
+      modifiers: Object.entries(resolver.project.profiles?.modifiers ?? {}).map(
+        ([name, { on, sets }]) => ({ name, on, sets }),
+      ),
+    });
+  },
+);
 
 export const profileListCommand = readCommand(
-  `Usage: dxn profile list [--table]
+  `Usage: dxn prototype profile list [--table]
 
 Lists every profile in profiles.json order, each modifier's profiles after the
 profile they are on, with its values, the modifier that made it, and the other
@@ -418,8 +427,8 @@ function existsWhenFor(
   return existsWhen;
 }
 
-const showUsage = `Usage: dxn show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
-                       [--root <root-id>]
+const showUsage = `Usage: dxn prototype show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+                                 [--root <root-id>]
 
 Shows the node's states and attribute values in a context. Dimensions
 left out take their default; those without one are not applied. Each shared
@@ -485,9 +494,9 @@ export const show = readCommand(showUsage, (resolver, args, io) => {
   });
 });
 
-const contextsUsage = `Usage: dxn contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]
-                          [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]
-                          | --table [--by profile|a,b] [--json]]
+const contextsUsage = `Usage: dxn prototype contexts <node-id> [<name>=<value>...] [--subtree] [--root <root-id>]
+                                    [--count | --tree [--by a,b] [--only a,b] [--json] [--transitions]
+                                    | --table [--by profile|a,b] [--json]]
 
 Lists every context the node exists in, in each root that contains it.
 --subtree lists every part of the node's subtree instead, with the fragment
@@ -680,7 +689,7 @@ function filter(
   }
 }
 
-const viewsUsage = `Usage: dxn views <node-id> [<name>=<value>...] [--root <root-id>] [--table]
+const viewsUsage = `Usage: dxn prototype views <node-id> [<name>=<value>...] [--root <root-id>] [--table]
 
 Lists every distinct view of the node's subtree: each combination of the
 dimensions that apply in it, and the states of shared nodes wherever those
@@ -708,8 +717,8 @@ export const views = readCommand(viewsUsage, (resolver, args, io) => {
   print(io, { node: id, views: kept });
 });
 
-const evidenceUsage = `Usage: dxn evidence <node-id> [--actor <name>] [<name>=<value>...] [--root <root-id>]
-                          [--subtree] [--missing] [--table] [--by profile|frame|look]
+const evidenceUsage = `Usage: dxn prototype evidence <node-id> [--actor <name>] [<name>=<value>...] [--root <root-id>]
+                                    [--subtree] [--missing] [--table] [--by profile|frame|look]
 
 Lists every context the node exists in, with the profile it matches and the
 evidence the actor has recorded for it (--actor may be left out when only one
@@ -772,7 +781,7 @@ export function chooseEvidenceActor(resolver: Resolver, given: string | undefine
   }
   const actors = Object.entries(resolver.project.actors?.actors ?? {});
   if (actors.length === 0) {
-    throw new Refusal('no actors; add one with "dxn actor add <name>"');
+    throw new Refusal('no actors; add one with "dxn prototype actor add <name>"');
   }
   const recording = actors
     .filter(([, actor]) => actor.evidence !== undefined)
@@ -780,7 +789,7 @@ export function chooseEvidenceActor(resolver: Resolver, given: string | undefine
   if (recording.length === 1) return recording[0] as string;
   if (recording.length === 0) {
     throw new Refusal(
-      'no actor records evidence; give one with "dxn actor set <name> --evidence <kind>"',
+      'no actor records evidence; give one with "dxn prototype actor set <name> --evidence <kind>"',
     );
   }
   throw new Refusal(`give --actor <${recording.sort().join("|")}>`);
@@ -800,7 +809,7 @@ function requireEvidenceActor(resolver: Resolver, actor: string): string {
 function requireActor(resolver: Resolver, actor: string): void {
   const actors = Object.keys(resolver.project.actors?.actors ?? {});
   if (actors.length === 0) {
-    throw new Refusal('no actors; add one with "dxn actor add <name>"');
+    throw new Refusal('no actors; add one with "dxn prototype actor add <name>"');
   }
   if (!actors.includes(actor)) {
     throw new Refusal(`actor not found: ${JSON.stringify(actor)} (${choices(actors)})`);
@@ -1305,8 +1314,8 @@ export const evidence = readCommand(evidenceUsage, (resolver, args, io) => {
   print(io, { node: id, actor, kind, contexts: rows });
 });
 
-const viewUsage = `Usage: dxn view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
-                      [--root <root-id>] [--tree]
+const viewUsage = `Usage: dxn prototype view <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+                                [--root <root-id>] [--tree]
 
 Prints the tree present in one view, with each node's states and values.
 Dimensions left out take their default; each shared node in the view needs
@@ -1373,7 +1382,7 @@ function describe(context: NodeContext): string {
     .join(" and ");
 }
 
-const transitionsUsage = `Usage: dxn transitions <node-id>
+const transitionsUsage = `Usage: dxn prototype transitions <node-id>
 
 Lists how a shared node's state changes: each transition's states, DOM event,
 target and where focus ends up.
@@ -1385,7 +1394,7 @@ export const transitions = readCommand(transitionsUsage, (resolver, args, io) =>
   print(io, { node: id, transitions: resolver.node(id)?.transitions ?? [] });
 });
 
-const statusUsage = `Usage: dxn status [<node-id>] [--actor <name>]
+const statusUsage = `Usage: dxn prototype status [<node-id>] [--actor <name>]
 
 Reports every check each typed node requires, in every context it exists in,
 as passed, failed or missing. With --actor, reports instead every context of
@@ -1498,7 +1507,7 @@ function nodesIn(resolver: Resolver, root: string): string[] {
   return ids;
 }
 
-const treeUsage = "Usage: dxn tree\n";
+const treeUsage = "Usage: dxn prototype tree\n";
 
 export const tree = readCommand(treeUsage, (resolver, args, io) => {
   parse(args, [], {});

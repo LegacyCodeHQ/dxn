@@ -57,7 +57,7 @@ function project() {
   const result = cliProject(files);
   writeFileSync(join(result.root, design), JSON.stringify(pen));
   const attach = (frame: string, ...context: string[]) =>
-    result.run("attach", "wordmark", "--file", design, "--frame", frame, ...context);
+    result.run("prototype", "attach", "wordmark", "--file", design, "--frame", frame, ...context);
   return { ...result, attach };
 }
 
@@ -67,7 +67,7 @@ describe("a frame", () => {
     expect(attach("laptopRest", "profile=laptop", "hover=rest|hovered", "focus=blurred").code).toBe(
       0,
     );
-    expect(run("validate").code).toBe(0);
+    expect(run("prototype", "validate").code).toBe(0);
   });
 
   it("covering contexts that look different is a conflict on its entries, not an error", () => {
@@ -75,8 +75,8 @@ describe("a frame", () => {
     expect(attach("laptopRest", "profile=laptop|desktop", "hover=rest", "focus=blurred").code).toBe(
       0,
     );
-    expect(run("validate").code).toBe(0);
-    const entries = json(run("evidence", "wordmark")).contexts.flatMap(
+    expect(run("prototype", "validate").code).toBe(0);
+    const entries = json(run("prototype", "evidence", "wordmark")).contexts.flatMap(
       ({ evidence }: { evidence: { conflicting?: boolean }[] }) => evidence,
     );
     expect(entries.map(({ conflicting }: { conflicting?: boolean }) => conflicting)).toEqual([
@@ -84,8 +84,15 @@ describe("a frame", () => {
       true,
     ]);
     expect(
-      run("evidence", "wordmark", "profile=desktop", "hover=rest", "focus=blurred", "--table")
-        .stdout,
+      run(
+        "prototype",
+        "evidence",
+        "wordmark",
+        "profile=desktop",
+        "hover=rest",
+        "focus=blurred",
+        "--table",
+      ).stdout,
     ).toContain("design.pen#laptopRest (conflicting)");
   });
 });
@@ -94,16 +101,21 @@ describe("a model change that makes a frame's contexts look different", () => {
   it("is not refused; the frame's entries become conflicting and count as missing", () => {
     const { attach, run } = project();
     attach("laptopRest", "profile=laptop", "hover=rest|hovered", "focus=blurred");
-    expect(run("attribute", "add", "color", "--values", "primary,accent").code).toBe(0);
-    expect(run("type", "set", "link", "color", "rest=primary", "hovered=accent").code).toBe(0);
-    expect(json(run("status", "--actor", "design-agent")).summary).toMatchObject({
+    expect(run("prototype", "attribute", "add", "color", "--values", "primary,accent").code).toBe(
+      0,
+    );
+    expect(
+      run("prototype", "type", "set", "link", "color", "rest=primary", "hovered=accent").code,
+    ).toBe(0);
+    expect(json(run("prototype", "status", "--actor", "design-agent")).summary).toMatchObject({
       present: 0,
       conflicting: 2,
     });
     expect(
-      json(run("evidence", "wordmark", "profile=laptop", "focus=blurred", "--missing")).contexts,
+      json(run("prototype", "evidence", "wordmark", "profile=laptop", "focus=blurred", "--missing"))
+        .contexts,
     ).toHaveLength(2);
-    expect(run("evidence", "wordmark", "--by", "look", "--table").stdout).toContain(
+    expect(run("prototype", "evidence", "wordmark", "--by", "look", "--table").stdout).toContain(
       "design.pen#laptopRest (conflicting)",
     );
   });
@@ -113,7 +125,7 @@ describe("evidence --by look", () => {
   it("groups the contexts by what they look like, with the frames that cover each look", () => {
     const { attach, run } = project();
     attach("laptopRest", "profile=laptop", "hover=rest|hovered", "focus=blurred");
-    expect(run("evidence", "wordmark", "--by", "look", "--table").stdout).toBe(
+    expect(run("prototype", "evidence", "wordmark", "--by", "look", "--table").stdout).toBe(
       [
         "| size  | ring  | profiles                                         | contexts | frames                | missing |",
         "| ----- | ----- | ------------------------------------------------ | -------- | --------------------- | ------- |",
@@ -124,7 +136,7 @@ describe("evidence --by look", () => {
         "",
       ].join("\n"),
     );
-    expect(json(run("evidence", "wordmark", "--by", "look")).looks[0]).toEqual({
+    expect(json(run("prototype", "evidence", "wordmark", "--by", "look")).looks[0]).toEqual({
       attributes: { size: "small", ring: "none" },
       profiles: [["phone"], ["tablet-portrait"], ["tablet-landscape"], ["laptop"]],
       contexts: 5,
@@ -141,7 +153,7 @@ describe("evidence --by look", () => {
       ...toolbarFiles,
       "actors.json": { version: 1, actors: { "design-agent": { evidence: "design" } } },
     });
-    expect(run("evidence", "wordmark", "--by", "look").stderr).toBe(
+    expect(run("prototype", "evidence", "wordmark", "--by", "look").stderr).toBe(
       "dxn: wordmark has no attributes, so every context looks alike; give its type attributes to tell its looks apart\n",
     );
   });

@@ -12,7 +12,7 @@ import {
 } from "./edit.js";
 import { checkList } from "./reading.js";
 
-const usage = `Usage: dxn check <subcommand>
+const usage = `Usage: dxn prototype check <subcommand>
 
 Subcommands:
   list                               List every check and the types that require it

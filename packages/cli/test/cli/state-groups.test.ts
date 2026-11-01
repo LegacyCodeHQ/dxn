@@ -39,11 +39,11 @@ describe("state groups in reading commands", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(
-      json(run("contexts", "blog-link")).contexts.map(
+      json(run("prototype", "contexts", "blog-link")).contexts.map(
         ({ context }: { context: unknown }) => context,
       ),
     );
-    snapshot.push(json(run("contexts", "wordmark")).contexts.length);
+    snapshot.push(json(run("prototype", "contexts", "wordmark")).contexts.length);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
@@ -106,8 +106,8 @@ describe("state groups in reading commands", () => {
   it("show each group's values in query and view", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(json(run("show", "blog-link", "pointer=touch")));
-    snapshot.push(json(run("view", "page", "pointer=mouse")).tree);
+    snapshot.push(json(run("prototype", "show", "blog-link", "pointer=touch")));
+    snapshot.push(json(run("prototype", "view", "page", "pointer=mouse")).tree);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {
@@ -180,6 +180,7 @@ describe("state groups in reading commands", () => {
     });
     snapshot.push(
       run(
+        "prototype",
         "verify",
         "blog-link",
         "--check",
@@ -196,9 +197,10 @@ describe("state groups in reading commands", () => {
       ).code,
     );
     snapshot.push(read("verification/page.json"));
-    snapshot.push(json(run("status", "blog-link")).summary);
+    snapshot.push(json(run("prototype", "status", "blog-link")).summary);
     snapshot.push(
       run(
+        "prototype",
         "verify",
         "blog-link",
         "--check",
@@ -248,18 +250,25 @@ describe("state group commands", () => {
   it("declare groups and have types use them", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({ "types.json": { version: 1 } });
-    snapshot.push(run("state-group", "add", "interaction", "--values", "normal,hovered").code);
-    snapshot.push(run("state-group", "add-value", "interaction", "focused").code);
-    snapshot.push(run("state-group", "add", "selection", "--values", "unselected,selected").code);
-    snapshot.push(run("type", "add", "link", "--groups", "interaction,selection").code);
-    snapshot.push(run("type", "add", "wordmark").code);
     snapshot.push(
-      run("type", "use-group", "wordmark", "interaction", "--values", "normal,focused").code,
+      run("prototype", "state-group", "add", "interaction", "--values", "normal,hovered").code,
+    );
+    snapshot.push(run("prototype", "state-group", "add-value", "interaction", "focused").code);
+    snapshot.push(
+      run("prototype", "state-group", "add", "selection", "--values", "unselected,selected").code,
+    );
+    snapshot.push(
+      run("prototype", "type", "add", "link", "--groups", "interaction,selection").code,
+    );
+    snapshot.push(run("prototype", "type", "add", "wordmark").code);
+    snapshot.push(
+      run("prototype", "type", "use-group", "wordmark", "interaction", "--values", "normal,focused")
+        .code,
     );
     snapshot.push(read("types.json"));
-    snapshot.push(run("type", "drop-group", "link", "selection").code);
-    snapshot.push(run("state-group", "remove", "selection").code);
-    snapshot.push(run("state-group", "remove-value", "interaction", "hovered").code);
+    snapshot.push(run("prototype", "type", "drop-group", "link", "selection").code);
+    snapshot.push(run("prototype", "state-group", "remove", "selection").code);
+    snapshot.push(run("prototype", "state-group", "remove-value", "interaction", "hovered").code);
     snapshot.push(read("types.json"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -339,9 +348,9 @@ describe("state group commands", () => {
         types: { wordmark: { states: ["normal", "focused"] } },
       },
     });
-    snapshot.push(run("type", "remove-state", "wordmark", "normal").code);
-    snapshot.push(run("type", "remove-state", "wordmark", "focused").code);
-    snapshot.push(run("type", "use-group", "wordmark", "interaction").code);
+    snapshot.push(run("prototype", "type", "remove-state", "wordmark", "normal").code);
+    snapshot.push(run("prototype", "type", "remove-state", "wordmark", "focused").code);
+    snapshot.push(run("prototype", "type", "use-group", "wordmark", "interaction").code);
     snapshot.push(read("types.json").types);
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -413,12 +422,14 @@ describe("state group commands", () => {
       "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
       "verification/page.json": { version: 1, records: [record] },
     });
-    snapshot.push(run("state-group", "rename-value", "hover", "unhovered", "rest").code);
+    snapshot.push(
+      run("prototype", "state-group", "rename-value", "hover", "unhovered", "rest").code,
+    );
     snapshot.push(read("types.json"));
     snapshot.push(read("roots/page.json"));
     snapshot.push(read("overrides/pointer.json"));
     snapshot.push(read("verification/page.json").records);
-    snapshot.push(run("state-group", "rename-value", "hover", "pressed", "x").stderr);
+    snapshot.push(run("prototype", "state-group", "rename-value", "hover", "pressed", "x").stderr);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         0,
@@ -551,13 +562,13 @@ describe("state group commands", () => {
   it("refuse what the compiler rejects and unknown names", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({ "types.json": { version: 1 } });
-    run("state-group", "add", "interaction", "--values", "normal,focused");
-    run("type", "add", "wordmark", "--groups", "interaction");
-    snapshot.push(run("state-group", "add", "interaction", "--values", "x"));
-    snapshot.push(run("state-group", "remove", "interaction").stderr);
-    snapshot.push(run("type", "use-group", "wordmark", "size").stderr);
-    snapshot.push(run("type", "drop-group", "wordmark", "size"));
-    snapshot.push(run("state-group", "add", "x").code);
+    run("prototype", "state-group", "add", "interaction", "--values", "normal,focused");
+    run("prototype", "type", "add", "wordmark", "--groups", "interaction");
+    snapshot.push(run("prototype", "state-group", "add", "interaction", "--values", "x"));
+    snapshot.push(run("prototype", "state-group", "remove", "interaction").stderr);
+    snapshot.push(run("prototype", "type", "use-group", "wordmark", "size").stderr);
+    snapshot.push(run("prototype", "type", "drop-group", "wordmark", "size"));
+    snapshot.push(run("prototype", "state-group", "add", "x").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {

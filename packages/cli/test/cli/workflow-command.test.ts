@@ -10,7 +10,7 @@ const guide = readFileSync(new URL("../../docs/workflow.md", import.meta.url), "
 
 describe("dxn workflow", () => {
   it("prints the step-by-step guide as Markdown, with no project needed", () => {
-    const result = capture(["workflow"], writeProject({}));
+    const result = capture(["prototype", "workflow"], writeProject({}));
     expect([result.code, result.stderr, result.stdout === guide]).toEqual([0, "", true]);
   });
 
@@ -20,7 +20,7 @@ describe("dxn workflow", () => {
   });
 
   it("is where the overview tells an agent to start", () => {
-    expect(capture(["--help"]).stdout).toContain("dxn workflow");
+    expect(capture(["prototype", "--help"]).stdout).toContain("dxn prototype workflow");
   });
 });
 

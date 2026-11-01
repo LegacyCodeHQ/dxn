@@ -60,7 +60,7 @@ export function treePaths(file: ParseResult): string[] {
 }
 
 // An element's combinations in place, each with one value for each state:
-// its rows of lang states, split.
+// its rows of dxn states, split.
 export function expand(file: ParseResult, path: string, given: string[]): Combination[] {
   const combinations: Combination[] = [];
   for (const row of inPlace(file, path).rows) {

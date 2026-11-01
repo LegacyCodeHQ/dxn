@@ -54,7 +54,7 @@ function project() {
 }
 
 const evidence = (...args: string[]) =>
-  project().run("evidence", "menu-button", "--actor", "design-agent", ...args);
+  project().run("prototype", "evidence", "menu-button", "--actor", "design-agent", ...args);
 
 describe("evidence --by profile", () => {
   it("prints a row per profile: its states, and how many contexts have evidence", () => {
@@ -131,7 +131,8 @@ describe("evidence --missing", () => {
     const { run, root } = project();
     writeFileSync(join(root, design), "redrawn");
     expect(
-      json(run("evidence", "menu-button", "--actor", "design-agent", "--missing")).contexts,
+      json(run("prototype", "evidence", "menu-button", "--actor", "design-agent", "--missing"))
+        .contexts,
     ).toHaveLength(12);
   });
 

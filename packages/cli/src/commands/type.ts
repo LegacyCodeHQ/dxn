@@ -21,7 +21,7 @@ import {
 } from "./edit.js";
 import { typeList } from "./reading.js";
 
-const usage = `Usage: dxn type <subcommand>
+const usage = `Usage: dxn prototype type <subcommand>
 
 Subcommands:
   list                               List every type, its states, checks and values

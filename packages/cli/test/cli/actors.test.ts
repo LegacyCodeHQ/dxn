@@ -14,7 +14,7 @@ const withActor = {
 
 function problems(actors: unknown): string[] {
   return cliProject({ ...toolbarFiles, "actors.json": actors })
-    .run("validate")
+    .run("prototype", "validate")
     .stderr.split("\n")
     .filter((line) => line !== "")
     .map((line) => line.replace(/^.*?:\d+:\d+: /, ""));
@@ -23,28 +23,30 @@ function problems(actors: unknown): string[] {
 describe("actors", () => {
   it("are added as roles in actors.json and listed", () => {
     const { run, read } = cliProject(toolbarFiles);
-    expect(run("actor", "add", "design-agent").code).toBe(0);
-    expect(run("actor", "add", "visual-reviewer").code).toBe(0);
+    expect(run("prototype", "actor", "add", "design-agent").code).toBe(0);
+    expect(run("prototype", "actor", "add", "visual-reviewer").code).toBe(0);
     expect(read("actors.json")).toEqual({
       version: 1,
       actors: { "design-agent": {}, "visual-reviewer": {} },
     });
-    expect(json(run("actor", "list"))).toEqual({
+    expect(json(run("prototype", "actor", "list"))).toEqual({
       actors: [{ name: "design-agent" }, { name: "visual-reviewer" }],
     });
   });
 
   it("are removed by name", () => {
     const { run, read } = cliProject(withActor);
-    run("actor", "add", "visual-reviewer");
-    expect(run("actor", "remove", "visual-reviewer").code).toBe(0);
+    run("prototype", "actor", "add", "visual-reviewer");
+    expect(run("prototype", "actor", "remove", "visual-reviewer").code).toBe(0);
     expect(read("actors.json").actors).toEqual({ "design-agent": { evidence: "design" } });
-    expect(run("actor", "remove", "nobody").stderr).toBe("dxn: actor not found: nobody\n");
+    expect(run("prototype", "actor", "remove", "nobody").stderr).toBe(
+      "dxn: actor not found: nobody\n",
+    );
   });
 
   it("are added once", () => {
     const { run } = cliProject(withActor);
-    expect(run("actor", "add", "design-agent").stderr).toBe(
+    expect(run("prototype", "actor", "add", "design-agent").stderr).toBe(
       'dxn: actor "design-agent" already exists\n',
     );
   });
@@ -67,7 +69,7 @@ describe("actors", () => {
 describe("evidence", () => {
   it("has a row for every context of the node, empty before anything is recorded", () => {
     const { run } = cliProject(withActor);
-    const result = run("evidence", "toolbar", "--actor", "design-agent", "--table");
+    const result = run("prototype", "evidence", "toolbar", "--actor", "design-agent", "--table");
     expect(result.stdout).toBe(
       [
         "| profile          | breakpoint | keyboard    | pointer | design-agent |",
@@ -84,7 +86,7 @@ describe("evidence", () => {
 
   it("prints JSON for tools: each context, its profile and the evidence for it", () => {
     const { run } = cliProject(withActor);
-    const result = json(run("evidence", "menu-button", "--actor", "design-agent"));
+    const result = json(run("prototype", "evidence", "menu-button", "--actor", "design-agent"));
     expect(result.node).toBe("menu-button");
     expect(result.actor).toBe("design-agent");
     expect(result.contexts).toHaveLength(4);
@@ -105,12 +107,13 @@ describe("evidence", () => {
 
   it("refuses an actor that is not declared, or a project without actors", () => {
     expect([
-      cliProject(withActor).run("evidence", "toolbar", "--actor", "designer").stderr,
-      cliProject(toolbarFiles).run("evidence", "toolbar", "--actor", "design-agent").stderr,
-      cliProject(withActor).run("evidence", "toolbar").code,
+      cliProject(withActor).run("prototype", "evidence", "toolbar", "--actor", "designer").stderr,
+      cliProject(toolbarFiles).run("prototype", "evidence", "toolbar", "--actor", "design-agent")
+        .stderr,
+      cliProject(withActor).run("prototype", "evidence", "toolbar").code,
     ]).toEqual([
       'dxn: actor not found: "designer" (design-agent)\n',
-      'dxn: no actors; add one with "dxn actor add <name>"\n',
+      'dxn: no actors; add one with "dxn prototype actor add <name>"\n',
       0,
     ]);
   });

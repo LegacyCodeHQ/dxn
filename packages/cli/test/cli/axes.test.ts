@@ -65,7 +65,7 @@ const files = {
 describe("dimensions", () => {
   it("lists every dimension with its values, default and scope", () => {
     const { run } = cliProject(files);
-    expect(run("dimension", "list")).toMatchInlineSnapshot(`
+    expect(run("prototype", "dimension", "list")).toMatchInlineSnapshot(`
       {
         "code": 0,
         "stderr": "",
@@ -106,10 +106,10 @@ describe("axes", () => {
   it("lists what view and show accept for a node", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(JSON.parse(run("axes", "toolbar").stdout));
-    snapshot.push(JSON.parse(run("axes", "article-page").stdout));
-    snapshot.push(JSON.parse(run("axes", "menu-link").stdout));
-    snapshot.push(JSON.parse(run("axes", "wordmark").stdout));
+    snapshot.push(JSON.parse(run("prototype", "axes", "toolbar").stdout));
+    snapshot.push(JSON.parse(run("prototype", "axes", "article-page").stdout));
+    snapshot.push(JSON.parse(run("prototype", "axes", "menu-link").stdout));
+    snapshot.push(JSON.parse(run("prototype", "axes", "wordmark").stdout));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {
@@ -232,8 +232,8 @@ describe("axes", () => {
   it("reports unknown nodes and usage errors", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("axes", "nope"));
-    snapshot.push(run("axes").code);
+    snapshot.push(run("prototype", "axes", "nope"));
+    snapshot.push(run("prototype", "axes").code);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         {
@@ -252,10 +252,10 @@ describe("errors for wrong names and values", () => {
   it("list the valid choices", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("view", "toolbar", "breakpoint=md").stderr);
-    snapshot.push(run("view", "toolbar", "breakpoint=sm", "menu=ajar").stderr);
-    snapshot.push(run("view", "toolbar", "theme=dark").stderr);
-    snapshot.push(run("show", "blog-link", "theme=dark").stderr);
+    snapshot.push(run("prototype", "view", "toolbar", "breakpoint=md").stderr);
+    snapshot.push(run("prototype", "view", "toolbar", "breakpoint=sm", "menu=ajar").stderr);
+    snapshot.push(run("prototype", "view", "toolbar", "theme=dark").stderr);
+    snapshot.push(run("prototype", "show", "blog-link", "theme=dark").stderr);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "dxn: "md" is not a value of breakpoint (base, sm, lg, xl)

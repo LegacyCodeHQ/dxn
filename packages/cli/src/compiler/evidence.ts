@@ -214,7 +214,7 @@ function checkEntry(
       report(
         diagnostics,
         "unknown-context",
-        `${id} has no such context in root ${JSON.stringify(root)}; "dxn evidence ${id} --actor <name>" lists them`,
+        `${id} has no such context in root ${JSON.stringify(root)}; "dxn prototype evidence ${id} --actor <name>" lists them`,
         `${path}.context`,
         contextObject,
       );

@@ -34,11 +34,11 @@ describe("node only", () => {
   it("says where a node exists, creating the override file", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    snapshot.push(run("node", "only", "links", "breakpoint", "lg", "xl").code);
-    snapshot.push(run("node", "only", "menu", "breakpoint", "base", "sm").code);
+    snapshot.push(run("prototype", "node", "only", "links", "breakpoint", "lg", "xl").code);
+    snapshot.push(run("prototype", "node", "only", "menu", "breakpoint", "base", "sm").code);
     snapshot.push(read("overrides/breakpoint.json"));
-    snapshot.push(run("node", "only", "links", "breakpoint", "--everywhere").code);
-    snapshot.push(run("node", "only", "menu", "breakpoint", "--everywhere").code);
+    snapshot.push(run("prototype", "node", "only", "links", "breakpoint", "--everywhere").code);
+    snapshot.push(run("prototype", "node", "only", "menu", "breakpoint", "--everywhere").code);
     snapshot.push(read("overrides/breakpoint.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -72,10 +72,12 @@ describe("node only", () => {
   it("refuses invalid values and usage errors", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    snapshot.push(run("node", "only", "links", "breakpoint", "md").stderr);
-    snapshot.push(run("node", "only", "links", "theme", "dark").stderr);
-    snapshot.push(run("node", "only", "links", "breakpoint").code);
-    snapshot.push(run("node", "only", "links", "breakpoint", "lg", "--everywhere").code);
+    snapshot.push(run("prototype", "node", "only", "links", "breakpoint", "md").stderr);
+    snapshot.push(run("prototype", "node", "only", "links", "theme", "dark").stderr);
+    snapshot.push(run("prototype", "node", "only", "links", "breakpoint").code);
+    snapshot.push(
+      run("prototype", "node", "only", "links", "breakpoint", "lg", "--everywhere").code,
+    );
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -95,11 +97,29 @@ describe("override states", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
     snapshot.push(
-      run("override", "states", "pointer=touch", "--type", "link", "--remove", "hovered").code,
+      run(
+        "prototype",
+        "override",
+        "states",
+        "pointer=touch",
+        "--type",
+        "link",
+        "--remove",
+        "hovered",
+      ).code,
     );
     snapshot.push(read("overrides/pointer.json"));
     snapshot.push(
-      run("override", "states", "pointer=touch", "--node", "blog-link", "--add", "hovered").code,
+      run(
+        "prototype",
+        "override",
+        "states",
+        "pointer=touch",
+        "--node",
+        "blog-link",
+        "--add",
+        "hovered",
+      ).code,
     );
     snapshot.push(read("overrides/pointer.json"));
 
@@ -157,6 +177,7 @@ describe("override states", () => {
     const { run, read } = cliProject(files);
     snapshot.push(
       run(
+        "prototype",
         "override",
         "states",
         "pointer=touch,breakpoint=sm",
@@ -197,11 +218,23 @@ describe("override states", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(
-      run("override", "states", "pointer=touch", "--type", "link", "--remove", "pressed").stderr,
+      run(
+        "prototype",
+        "override",
+        "states",
+        "pointer=touch",
+        "--type",
+        "link",
+        "--remove",
+        "pressed",
+      ).stderr,
     );
-    snapshot.push(run("override", "states", "pointer=touch", "--remove", "hovered").code);
+    snapshot.push(
+      run("prototype", "override", "states", "pointer=touch", "--remove", "hovered").code,
+    );
     snapshot.push(
       run(
+        "prototype",
         "override",
         "states",
         "pointer=touch",
@@ -213,12 +246,23 @@ describe("override states", () => {
         "x",
       ).code,
     );
-    snapshot.push(run("override", "states", "pointer", "--type", "link", "--add", "x").code);
     snapshot.push(
-      run("override", "states", "pointer=touch,pointer=mouse", "--type", "link", "--add", "x").code,
+      run("prototype", "override", "states", "pointer", "--type", "link", "--add", "x").code,
     );
-    snapshot.push(run("override", "states", "pointer=touch", "--type", "link").code);
-    snapshot.push(run("override").code);
+    snapshot.push(
+      run(
+        "prototype",
+        "override",
+        "states",
+        "pointer=touch,pointer=mouse",
+        "--type",
+        "link",
+        "--add",
+        "x",
+      ).code,
+    );
+    snapshot.push(run("prototype", "override", "states", "pointer=touch", "--type", "link").code);
+    snapshot.push(run("prototype", "override").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -240,12 +284,29 @@ describe("override set and unset", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
     snapshot.push(
-      run("override", "set", "breakpoint=sm", "--node", "blog-link", "design", "normal=missing")
-        .code,
+      run(
+        "prototype",
+        "override",
+        "set",
+        "breakpoint=sm",
+        "--node",
+        "blog-link",
+        "design",
+        "normal=missing",
+      ).code,
     );
     snapshot.push(read("overrides/breakpoint.json"));
     snapshot.push(
-      run("override", "unset", "breakpoint=sm", "--node", "blog-link", "design", "normal").code,
+      run(
+        "prototype",
+        "override",
+        "unset",
+        "breakpoint=sm",
+        "--node",
+        "blog-link",
+        "design",
+        "normal",
+      ).code,
     );
     snapshot.push(read("overrides/breakpoint.json"));
 
@@ -280,9 +341,27 @@ describe("override set and unset", () => {
   it("unset a whole override", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    run("override", "states", "pointer=touch", "--type", "link", "--remove", "hovered");
-    run("override", "set", "pointer=touch", "--type", "link", "design", "normal=missing");
-    snapshot.push(run("override", "unset", "pointer=touch", "--type", "link").code);
+    run(
+      "prototype",
+      "override",
+      "states",
+      "pointer=touch",
+      "--type",
+      "link",
+      "--remove",
+      "hovered",
+    );
+    run(
+      "prototype",
+      "override",
+      "set",
+      "pointer=touch",
+      "--type",
+      "link",
+      "design",
+      "normal=missing",
+    );
+    snapshot.push(run("prototype", "override", "unset", "pointer=touch", "--type", "link").code);
     snapshot.push(read("overrides/pointer.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -300,9 +379,18 @@ describe("override set and unset", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
     snapshot.push(
-      run("override", "set", "pointer=touch", "--type", "link", "design", "normal=maybe").stderr,
+      run(
+        "prototype",
+        "override",
+        "set",
+        "pointer=touch",
+        "--type",
+        "link",
+        "design",
+        "normal=maybe",
+      ).stderr,
     );
-    snapshot.push(run("override", "unset", "pointer=touch", "--type", "link"));
+    snapshot.push(run("prototype", "override", "unset", "pointer=touch", "--type", "link"));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [

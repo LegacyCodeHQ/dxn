@@ -25,7 +25,7 @@ function problems(modifier: unknown, extra: Record<string, unknown> = {}): strin
     "profiles.json": { version: 1, profiles, modifiers: { "magic-keyboard": modifier } },
     ...extra,
   })
-    .run("validate")
+    .run("prototype", "validate")
     .stderr.split("\n")
     .filter((line) => line !== "")
     .map((line) => line.replace(/^.*?:\d+:\d+: /, ""));
@@ -66,13 +66,22 @@ describe("a modifier", () => {
   it("adds a profile for each one it is on, named after both", () => {
     const { run } = cliProject(files);
     expect(
-      json(run("contexts", "menu-button", "profile=tablet-portrait+magic-keyboard", "--count"))
-        .count,
+      json(
+        run(
+          "prototype",
+          "contexts",
+          "menu-button",
+          "profile=tablet-portrait+magic-keyboard",
+          "--count",
+        ),
+      ).count,
     ).toBe(8);
-    expect(json(run("contexts", "menu-button", "profile=tablet-portrait", "--count")).count).toBe(
-      2,
-    );
-    expect(json(run("contexts", "menu-button", "--table", "--json")).tables[0]).toEqual({
+    expect(
+      json(run("prototype", "contexts", "menu-button", "profile=tablet-portrait", "--count")).count,
+    ).toBe(2);
+    expect(
+      json(run("prototype", "contexts", "menu-button", "--table", "--json")).tables[0],
+    ).toEqual({
       group: "hover",
       rows: [
         { row: "phone", values: { rest: true, hovered: false } },
@@ -86,19 +95,22 @@ describe("a modifier", () => {
     const { run } = cliProject(files);
     const shared = "laptop / tablet-landscape+magic-keyboard";
     expect(
-      json(run("contexts", "blog-link", "--table", "--json")).tables[0].rows.map(
+      json(run("prototype", "contexts", "blog-link", "--table", "--json")).tables[0].rows.map(
         ({ row }: { row: string }) => row,
       ),
     ).toEqual(["tablet-landscape", shared, "desktop"]);
-    expect(run("views", "toolbar", "breakpoint=lg", "--table").stdout).toContain(`| ${shared} |`);
+    expect(run("prototype", "views", "toolbar", "breakpoint=lg", "--table").stdout).toContain(
+      `| ${shared} |`,
+    );
     expect(
-      json(run("evidence", "blog-link", "--actor", "design-agent")).contexts.find(
+      json(run("prototype", "evidence", "blog-link", "--actor", "design-agent")).contexts.find(
         ({ context }: { context: { breakpoint: string; pointer: string } }) =>
           context.breakpoint === "lg" && context.pointer === "mouse",
       )?.profiles,
     ).toEqual(["laptop", "tablet-landscape+magic-keyboard"]);
     expect(
-      json(run("show", "blog-link", "profile=tablet-landscape+magic-keyboard")).context,
+      json(run("prototype", "show", "blog-link", "profile=tablet-landscape+magic-keyboard"))
+        .context,
     ).toEqual({ breakpoint: "lg", keyboard: "keyboard", pointer: "mouse" });
   });
 
@@ -116,7 +128,7 @@ describe("a modifier", () => {
           },
         ],
       },
-    }).run("validate");
+    }).run("prototype", "validate");
     expect(result.stderr).toContain("blog-link at laptop / tablet-landscape+magic-keyboard");
   });
 });
@@ -126,6 +138,7 @@ describe("modifier commands", () => {
     const { run, read } = cliProject(toolbarFiles);
     expect(
       run(
+        "prototype",
         "modifier",
         "add",
         "magic-keyboard",
@@ -141,7 +154,7 @@ describe("modifier commands", () => {
         sets: { keyboard: "keyboard", pointer: "mouse" },
       },
     });
-    expect(json(run("modifier", "list"))).toEqual({
+    expect(json(run("prototype", "modifier", "list"))).toEqual({
       modifiers: [
         {
           name: "magic-keyboard",
@@ -150,10 +163,11 @@ describe("modifier commands", () => {
         },
       ],
     });
-    expect(run("modifier", "add", "magic-keyboard", "--on", "phone", "pointer=mouse").stderr).toBe(
-      'dxn: modifier "magic-keyboard" already exists\n',
-    );
-    expect(run("modifier", "remove", "magic-keyboard").code).toBe(0);
+    expect(
+      run("prototype", "modifier", "add", "magic-keyboard", "--on", "phone", "pointer=mouse")
+        .stderr,
+    ).toBe('dxn: modifier "magic-keyboard" already exists\n');
+    expect(run("prototype", "modifier", "remove", "magic-keyboard").code).toBe(0);
     expect(read("profiles.json").modifiers).toBeUndefined();
   });
 });
@@ -171,7 +185,7 @@ describe("profile remove", () => {
         },
       },
     });
-    expect(run("profile", "remove", "tablet-portrait").code).toBe(0);
+    expect(run("prototype", "profile", "remove", "tablet-portrait").code).toBe(0);
     expect(read("profiles.json").modifiers).toEqual({
       "magic-keyboard": { on: ["tablet-landscape"], sets: magicKeyboard.sets },
     });
@@ -181,7 +195,7 @@ describe("profile remove", () => {
 describe("profile list", () => {
   it("lists profiles in file order, each modifier's after the profile it is on", () => {
     const { run } = cliProject(files);
-    const listed = json(run("profile", "list")).profiles;
+    const listed = json(run("prototype", "profile", "list")).profiles;
     expect(listed.map(({ name }: { name: string }) => name)).toEqual([
       "phone",
       "tablet-portrait",
@@ -202,7 +216,7 @@ describe("profile list", () => {
 
   it("prints them as a Markdown table", () => {
     const { run } = cliProject(files);
-    expect(run("profile", "list", "--table").stdout).toBe(
+    expect(run("prototype", "profile", "list", "--table").stdout).toBe(
       [
         "| profile                         | breakpoint | keyboard    | pointer | modifier       | same combination as             |",
         "| ------------------------------- | ---------- | ----------- | ------- | -------------- | ------------------------------- |",

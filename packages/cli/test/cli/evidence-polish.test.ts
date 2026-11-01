@@ -24,6 +24,7 @@ function project(actors: Record<string, unknown> = { "design-agent": { evidence:
 }
 
 const attach = (...args: string[]) => [
+  "prototype",
   "attach",
   "wordmark",
   "--file",
@@ -40,7 +41,7 @@ describe("--actor", () => {
       "visual-reviewer": { checks: ["visual"] },
     });
     expect(run(...attach("--frame", "restCell", "hover=rest")).code).toBe(0);
-    expect(json(run("evidence", "wordmark")).actor).toBe("design-agent");
+    expect(json(run("prototype", "evidence", "wordmark")).actor).toBe("design-agent");
   });
 
   it("is asked for when several actors record evidence", () => {
@@ -48,7 +49,7 @@ describe("--actor", () => {
       "design-agent": { evidence: "design" },
       "screenshot-agent": { evidence: "screenshot" },
     });
-    expect(run("evidence", "wordmark").stderr).toBe(
+    expect(run("prototype", "evidence", "wordmark").stderr).toBe(
       "dxn: give --actor <design-agent|screenshot-agent>\n",
     );
   });
@@ -59,6 +60,7 @@ describe("detach with lists", () => {
     const { run, read } = project();
     run(...attach("--frame", "restCell", "hover=rest|hovered"));
     const detach = [
+      "prototype",
       "detach",
       "wordmark",
       "--frame",
@@ -80,7 +82,15 @@ describe("evidence tables", () => {
     const { run } = project();
     run(...attach("--frame", "restCell", "hover=rest|hovered"));
     expect(
-      run("evidence", "wordmark", "profile=laptop", "focus=blurred", "--missing", "--table").stdout,
+      run(
+        "prototype",
+        "evidence",
+        "wordmark",
+        "profile=laptop",
+        "focus=blurred",
+        "--missing",
+        "--table",
+      ).stdout,
     ).toBe("Nothing missing: every context has current evidence.\n");
   });
 
@@ -89,13 +99,17 @@ describe("evidence tables", () => {
     run(...attach("--frame", "restCell", "hover=rest"));
     run(...attach("--frame", "hoverCell", "hover=hovered"));
     expect(
-      run("evidence", "wordmark", "--by", "frame", "--table").stdout.split("\n").slice(0, 4),
+      run("prototype", "evidence", "wordmark", "--by", "frame", "--table")
+        .stdout.split("\n")
+        .slice(0, 4),
     ).toEqual([
       "| frame                | name           | profiles        | hover   | focus   | contexts | stale |",
       "| -------------------- | -------------- | --------------- | ------- | ------- | -------- | ----- |",
       "| design.pen#restCell  | Cell · rest    | laptop, desktop | rest    | blurred | 2        | 0     |",
       "| design.pen#hoverCell | Cell · hovered | laptop, desktop | hovered | blurred | 2        | 0     |",
     ]);
-    expect(json(run("evidence", "wordmark", "--by", "frame")).frames[0].name).toBe("Cell · rest");
+    expect(json(run("prototype", "evidence", "wordmark", "--by", "frame")).frames[0].name).toBe(
+      "Cell · rest",
+    );
   });
 });

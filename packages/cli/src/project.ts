@@ -58,7 +58,9 @@ export function findProject(cwd: string, dir: string | undefined): string | unde
 export function requireProject(io: Io, cwd: string, dir: string | undefined): string | undefined {
   const project = findProject(cwd, dir);
   if (project === undefined) {
-    io.stderr(`dxn: no ${projectFolder} directory in ${resolve(cwd)} or above; run dxn init\n`);
+    io.stderr(
+      `dxn: no ${projectFolder} directory in ${resolve(cwd)} or above; run dxn prototype init\n`,
+    );
   }
   return project;
 }

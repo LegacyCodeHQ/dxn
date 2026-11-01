@@ -9,10 +9,10 @@ afterAll(cleanup);
 function file(source: string) {
   const root = writeProject({});
   writeFileSync(join(root, "wordmark.dxn"), source);
-  return (...args: string[]) => capture(["lang", ...args], root);
+  return (...args: string[]) => capture(args, root);
 }
 
-describe("lang check", () => {
+describe("dxn check", () => {
   it("says what a file declares, in one line, counting each kind it has", () => {
     const run = file(
       "enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile tablet: Device { Pointer = touch }\nmodifier trackpad on tablet { Pointer = mouse }\nrecord Note {\n  hover: Hover\n}\n",
@@ -170,7 +170,7 @@ describe("lang check", () => {
   });
 });
 
-describe("lang states", () => {
+describe("dxn states", () => {
   const wordmark = `dimension Pointer = mouse | touch
 dimension Keyboard = keyboard | no-keyboard
 enum Hover = rest | hovered
@@ -420,7 +420,7 @@ type Button needs Pointer {
   });
 });
 
-describe("lang validate", () => {
+describe("dxn validate", () => {
   const schema = `enum Tool = pen-dev | code
 type Card {}
 record Source with context {
@@ -444,7 +444,7 @@ record Part {
       mkdirSync(join(root, dirname(path)), { recursive: true });
       writeFileSync(join(root, path), content);
     }
-    return (...args: string[]) => capture(["lang", "validate", ...args], root);
+    return (...args: string[]) => capture(["validate", ...args], root);
   };
   const valid = {
     "source/designs.json": `[{ ${card}, "tool": "pen-dev" }]`,
@@ -573,7 +573,7 @@ record Part {
   });
 });
 
-describe("lang cases", () => {
+describe("dxn cases", () => {
   const button = `dimension Pointer = mouse | touch
 enum Enabled = enabled | disabled
 enum Hover = rest | hovered
@@ -675,14 +675,14 @@ type Page {
   });
 });
 
-describe("lang states, with a child on several states", () => {
+describe("dxn states, with a child on several states", () => {
   it("shows where the child is by its condition", () => {
     const root = writeProject({});
     writeFileSync(
       join(root, "menu.dxn"),
       "dimension Breakpoint = base | lg\nenum State = closed | open\nenum Size = small | big\ntype Panel {}\ntype Menu needs Breakpoint {\n  state menu: State, size: Size\n  has panel: Panel only when menu = open and (size = big or Breakpoint = lg)\n}\n",
     );
-    const lines = capture(["lang", "states", "menu.dxn", "Menu"], root).stdout.split("\n");
+    const lines = capture(["states", "menu.dxn", "Menu"], root).stdout.split("\n");
     expect(lines.slice(2, 4).map((line) => line.split("|").at(-2)?.trim())).toEqual([
       "menu = open and (size = big or Breakpoint = lg)",
       "menu = open",
@@ -690,7 +690,7 @@ describe("lang states, with a child on several states", () => {
   });
 });
 
-describe("lang rename", () => {
+describe("dxn rename", () => {
   const schema = `enum Actor = design-agent | reviewer
 type Card {
   state owner: Actor
@@ -708,8 +708,8 @@ record Evidence with context {
     writeFileSync(join(root, "evidence.dxn"), schema);
     mkdirSync(join(root, "evidence"));
     writeFileSync(join(root, "evidence", "page.json"), data);
-    const run = (...args: string[]) => capture(["lang", "rename", ...args], root);
-    const dryRun = (...args: string[]) => capture(["--dry-run", "lang", "rename", ...args], root);
+    const run = (...args: string[]) => capture(["rename", ...args], root);
+    const dryRun = (...args: string[]) => capture(["--dry-run", "rename", ...args], root);
     const read = (path: string) => readFileSync(join(root, path), "utf8");
     return { run, dryRun, read };
   };
@@ -784,7 +784,7 @@ expect "Each m can be open" {
 }
 `;
     writeFileSync(join(root, "page.dxn"), source);
-    const result = capture(["lang", "rename", "page.dxn", "State.open", "shown"], root);
+    const result = capture(["rename", "page.dxn", "State.open", "shown"], root);
     expect([
       result.code,
       result.stdout,
@@ -802,7 +802,7 @@ expect "Each m can be open" {
     const root = writeProject({});
     const source = "type Menu {\n  enum State = closed | open\n  state menu: State\n}\n";
     writeFileSync(join(root, "menu.dxn"), source);
-    const result = capture(["lang", "rename", "menu.dxn", "Menu.State.open", "shown"], root);
+    const result = capture(["rename", "menu.dxn", "Menu.State.open", "shown"], root);
     expect([result.code, readFileSync(join(root, "menu.dxn"), "utf8")]).toEqual([
       0,
       source.replace("closed | open", "closed | shown"),
@@ -885,7 +885,7 @@ expect "Each m can be open" {
   });
 });
 
-describe("lang status", () => {
+describe("dxn status", () => {
   const schema = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered
 type Toolbar {
@@ -905,7 +905,7 @@ record Evidence with context {}
     writeFileSync(join(root, "toolbar.dxn"), schema);
     mkdirSync(join(root, "evidence"));
     writeFileSync(join(root, "evidence", "toolbar.json"), data);
-    return (...args: string[]) => capture(["lang", "status", ...args], root);
+    return (...args: string[]) => capture(["status", ...args], root);
   };
   const link = (profile: string, hover: string) =>
     `{ "context": { "path": "Toolbar.link", "profile": "${profile}", "dimensions": {}, "parents": {}, "states": { "hover": "${hover}" } } }`;
@@ -950,14 +950,14 @@ record Evidence with context {}
   });
 });
 
-describe("lang status, with a received state", () => {
+describe("dxn status, with a received state", () => {
   it("refuses a tree where a received state has no provider above it", () => {
     const root = writeProject({});
     writeFileSync(
       join(root, "site.dxn"),
       "enum Section = home | blog\ntype Links receives current: Section {}\ntype Toolbar {\n  has links: Links\n}\nrecord Evidence with context {}\n",
     );
-    expect(capture(["lang", "status", "site.dxn"], root).stderr).toBe(
+    expect(capture(["status", "site.dxn"], root).stderr).toBe(
       "dxn: Toolbar.links: current is received by Links, but nothing above it provides it\n",
     );
   });

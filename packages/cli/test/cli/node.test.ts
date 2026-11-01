@@ -34,7 +34,7 @@ describe("node add", () => {
   it("creates a page when there is no parent", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project();
-    const result = run("node", "add", "home", "--title", "Home page");
+    const result = run("prototype", "node", "add", "home", "--title", "Home page");
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
     snapshot.push(read("roots/home.json"));
@@ -66,6 +66,7 @@ describe("node add", () => {
     });
     snapshot.push(
       run(
+        "prototype",
         "node",
         "add",
         "blog-link",
@@ -112,7 +113,8 @@ describe("node add", () => {
       "fragments/toolbar.json": { version: 1, fragment: { id: "toolbar", title: "Toolbar" } },
     });
     snapshot.push(
-      run("node", "add", "wordmark", "--title", "Wordmark", "--parent", "toolbar").code,
+      run("prototype", "node", "add", "wordmark", "--title", "Wordmark", "--parent", "toolbar")
+        .code,
     );
     snapshot.push(read("fragments/toolbar.json"));
 
@@ -139,10 +141,19 @@ describe("node add", () => {
   it("refuses changes the compiler rejects, and writes nothing", () => {
     const snapshot: unknown[] = [];
     const { run, exists } = project({ "roots/page.json": page() });
-    const duplicate = run("node", "add", "page", "--title", "Again", "--parent", "page");
+    const duplicate = run(
+      "prototype",
+      "node",
+      "add",
+      "page",
+      "--title",
+      "Again",
+      "--parent",
+      "page",
+    );
     snapshot.push(duplicate.code);
     snapshot.push(duplicate.stderr);
-    snapshot.push(run("node", "add", "x", "--title", "X", "--type", "button").stderr);
+    snapshot.push(run("prototype", "node", "add", "x", "--title", "X", "--type", "button").stderr);
     snapshot.push(exists("roots/x.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -160,10 +171,10 @@ describe("node add", () => {
   it("reports an unknown parent and usage errors", () => {
     const snapshot: unknown[] = [];
     const { run } = project();
-    snapshot.push(run("node", "add", "x", "--title", "X", "--parent", "nope"));
-    snapshot.push(run("node", "add", "x").code);
-    snapshot.push(run("node", "add", "--title", "X").code);
-    snapshot.push(run("node", "frobnicate").code);
+    snapshot.push(run("prototype", "node", "add", "x", "--title", "X", "--parent", "nope"));
+    snapshot.push(run("prototype", "node", "add", "x").code);
+    snapshot.push(run("prototype", "node", "add", "--title", "X").code);
+    snapshot.push(run("prototype", "node", "frobnicate").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -183,7 +194,7 @@ describe("node add", () => {
   it("prints the files with --dry-run and writes nothing", () => {
     const snapshot: unknown[] = [];
     const { run, exists } = project();
-    const result = run("node", "add", "home", "--title", "Home", "--dry-run");
+    const result = run("prototype", "node", "add", "home", "--title", "Home", "--dry-run");
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
     snapshot.push(exists("roots/home.json"));
@@ -215,10 +226,10 @@ describe("node set-title and set-type", () => {
   it("change the title and type", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project({ "roots/page.json": page([{ id: "a", title: "A" }]) });
-    snapshot.push(run("node", "set-title", "a", "Renamed").code);
-    snapshot.push(run("node", "set-type", "a", "link").code);
+    snapshot.push(run("prototype", "node", "set-title", "a", "Renamed").code);
+    snapshot.push(run("prototype", "node", "set-type", "a", "link").code);
     snapshot.push(read("roots/page.json"));
-    snapshot.push(run("node", "set-type", "a", "--none").code);
+    snapshot.push(run("prototype", "node", "set-type", "a", "--none").code);
     snapshot.push(read("roots/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -264,7 +275,7 @@ describe("node set-title and set-type", () => {
         { id: "a", title: "A", type: "link", attributes: { design: { normal: "missing" } } },
       ]),
     });
-    const result = run("node", "set-type", "a", "--none");
+    const result = run("prototype", "node", "set-type", "a", "--none");
     snapshot.push(result.code);
     snapshot.push(result.stderr);
 
@@ -285,7 +296,7 @@ describe("node move", () => {
       "roots/page.json": page([{ id: "a", title: "A", children: [{ id: "b", title: "B" }] }]),
       "roots/other.json": rootFile({ id: "other", title: "Other" }),
     });
-    snapshot.push(run("node", "move", "a", "--parent", "other").code);
+    snapshot.push(run("prototype", "node", "move", "a", "--parent", "other").code);
     snapshot.push(read("roots/page.json"));
     snapshot.push(read("roots/other.json"));
 
@@ -327,7 +338,7 @@ describe("node move", () => {
     const { run } = project({
       "roots/page.json": page([{ id: "a", title: "A", children: [{ id: "b", title: "B" }] }]),
     });
-    expect(run("node", "move", "a", "--parent", "b")).toMatchObject({
+    expect(run("prototype", "node", "move", "a", "--parent", "b")).toMatchObject({
       code: 1,
       stderr: 'dxn: cannot move "a" into its own subtree\n',
     });
@@ -339,7 +350,7 @@ describe("node move", () => {
       "roots/page.json": page(),
       "roots/other.json": rootFile({ id: "other", title: "Other" }),
     });
-    const result = run("node", "move", "other", "--parent", "page");
+    const result = run("prototype", "node", "move", "other", "--parent", "page");
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
     snapshot.push(exists("roots/other.json"));
@@ -375,7 +386,7 @@ describe("node rename", () => {
       "actors.json": { version: 1, actors: { agent: { checks: [] } } },
       "verification/page.json": { version: 1, records: [] },
     });
-    snapshot.push(run("node", "rename", "a", "b").code);
+    snapshot.push(run("prototype", "node", "rename", "a", "b").code);
     snapshot.push(read("roots/page.json"));
     snapshot.push(read("dimensions/pointer.json"));
     snapshot.push(read("overrides/pointer.json"));
@@ -439,7 +450,7 @@ describe("node rename", () => {
       "actors.json": { version: 1, actors: { agent: { checks: [] } } },
       "verification/page.json": { version: 1, records: [] },
     });
-    snapshot.push(run("node", "rename", "page", "home").code);
+    snapshot.push(run("prototype", "node", "rename", "page", "home").code);
     snapshot.push(exists("roots/home.json"));
     snapshot.push(exists("verification/home.json"));
     snapshot.push(exists("roots/page.json"));
@@ -460,7 +471,7 @@ describe("node rename", () => {
       "fragments/toolbar.json": { version: 1, fragment: { id: "toolbar", title: "Toolbar" } },
       "roots/page.json": page([{ include: "toolbar" }]),
     });
-    snapshot.push(run("node", "rename", "toolbar", "header").code);
+    snapshot.push(run("prototype", "node", "rename", "toolbar", "header").code);
     snapshot.push(exists("fragments/toolbar.json"));
     snapshot.push(read("fragments/header.json"));
     snapshot.push(read("roots/page.json"));
@@ -512,7 +523,7 @@ describe("node rename", () => {
       "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
       "verification/page.json": { version: 1, records: [record] },
     });
-    snapshot.push(run("node", "rename", "a", "b").code);
+    snapshot.push(run("prototype", "node", "rename", "a", "b").code);
     snapshot.push(read("verification/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -544,7 +555,7 @@ describe("node remove", () => {
     const { run, read } = project({
       "roots/page.json": page([{ id: "a", title: "A", children: [{ id: "b", title: "B" }] }]),
     });
-    snapshot.push(run("node", "remove", "a").code);
+    snapshot.push(run("prototype", "node", "remove", "a").code);
     snapshot.push(read("roots/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -565,7 +576,7 @@ describe("node remove", () => {
   it("removes a page's file", () => {
     const snapshot: unknown[] = [];
     const { run, exists } = project({ "roots/page.json": page() });
-    snapshot.push(run("node", "remove", "page").code);
+    snapshot.push(run("prototype", "node", "remove", "page").code);
     snapshot.push(exists("roots/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -582,7 +593,7 @@ describe("node remove", () => {
       "roots/page.json": page([{ id: "a", title: "A" }]),
       "dimensions/pointer.json": { version: 1, values: ["mouse"], appliesTo: ["a"] },
     });
-    const result = run("node", "remove", "a");
+    const result = run("prototype", "node", "remove", "a");
     snapshot.push(result.code);
     snapshot.push(result.stderr);
     snapshot.push(exists("roots/page.json"));
@@ -604,11 +615,13 @@ describe("node set and unset", () => {
     const { run, read } = project({
       "roots/page.json": page([{ id: "a", title: "A", type: "link" }]),
     });
-    snapshot.push(run("node", "set", "a", "design", "normal=missing", "hovered=available").code);
+    snapshot.push(
+      run("prototype", "node", "set", "a", "design", "normal=missing", "hovered=available").code,
+    );
     snapshot.push(read("roots/page.json"));
-    snapshot.push(run("node", "unset", "a", "design", "hovered").code);
+    snapshot.push(run("prototype", "node", "unset", "a", "design", "hovered").code);
     snapshot.push(read("roots/page.json"));
-    snapshot.push(run("node", "unset", "a", "design").code);
+    snapshot.push(run("prototype", "node", "unset", "a", "design").code);
     snapshot.push(read("roots/page.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -676,9 +689,9 @@ describe("node set and unset", () => {
   it("refuse values the compiler rejects and malformed pairs", () => {
     const snapshot: unknown[] = [];
     const { run } = project({ "roots/page.json": page([{ id: "a", title: "A", type: "link" }]) });
-    snapshot.push(run("node", "set", "a", "design", "normal=maybe").stderr);
-    snapshot.push(run("node", "set", "a", "design", "normal").code);
-    snapshot.push(run("node", "set", "a", "design").code);
+    snapshot.push(run("prototype", "node", "set", "a", "design", "normal=maybe").stderr);
+    snapshot.push(run("prototype", "node", "set", "a", "design", "normal").code);
+    snapshot.push(run("prototype", "node", "set", "a", "design").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -695,29 +708,40 @@ describe("projects with unreadable files", () => {
   it("are refused before any change", () => {
     const snapshot: unknown[] = [];
     const { run } = project({ "roots/page.json": "{" });
-    snapshot.push(run("node", "add", "x", "--title", "X", "--parent", "page"));
+    snapshot.push(run("prototype", "node", "add", "x", "--title", "X", "--parent", "page"));
     snapshot.push(
-      run("node", "add", "x", "--title", "X", "--parent", "page", "--dir", "/nonexistent").code,
+      run(
+        "prototype",
+        "node",
+        "add",
+        "x",
+        "--title",
+        "X",
+        "--parent",
+        "page",
+        "--dir",
+        "/nonexistent",
+      ).code,
     );
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    {
-      "code": 1,
-      "stderr": "dxn: roots/page.json is not a JSON object; run dxn validate
-  ",
-      "stdout": "",
-    },
-    1,
-  ]
-`);
+      [
+        {
+          "code": 1,
+          "stderr": "dxn: roots/page.json is not a JSON object; run dxn prototype validate
+      ",
+          "stdout": "",
+        },
+        1,
+      ]
+    `);
   });
 });
 
 describe("files the CLI writes", () => {
   it("are formatted as Prettier formats them", () => {
     const { root, run } = project();
-    run("node", "add", "home", "--title", "Home");
+    run("prototype", "node", "add", "home", "--title", "Home");
     expect(readFileSync(join(root, ".dxn", "roots", "home.json"), "utf8")).toBe(
       [
         "{",
@@ -735,8 +759,8 @@ describe("files the CLI writes", () => {
   it("start from types.json written by init", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({});
-    capture(["init"], root);
-    snapshot.push(capture(["node", "add", "home", "--title", "Home"], root).code);
+    capture(["prototype", "init"], root);
+    snapshot.push(capture(["prototype", "node", "add", "home", "--title", "Home"], root).code);
     snapshot.push(types);
 
     expect(snapshot).toMatchInlineSnapshot(`

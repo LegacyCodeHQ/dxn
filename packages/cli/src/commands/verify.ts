@@ -5,9 +5,9 @@ import type { Command } from "./context.js";
 import { editCommand, isObject, parse, Refusal, UsageError } from "./edit.js";
 import { fillProfile } from "./reading.js";
 
-const verifyUsage = `Usage: dxn verify <node-id> --check <name> --result passed|failed --actor <role>
-                        [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
-                        [--transition <id>] [--at <time>] [--root <root-id>]
+const verifyUsage = `Usage: dxn prototype verify <node-id> --check <name> --result passed|failed --actor <role>
+                                  [<group>=<value>...] [<dimension>=<value>...] [<shared-node>=<state>...]
+                                  [--transition <id>] [--at <time>] [--root <root-id>]
 
 Records a check's result for a node in one context, replacing any earlier
 record for the same node, context and check. --actor is the role that checked,
@@ -19,8 +19,8 @@ shared nodes above it; dimensions left out take their default.
 --at defaults to now; --root is needed when several roots include the node.
 `;
 
-const unverifyUsage = `Usage: dxn unverify <node-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
-                          [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]
+const unverifyUsage = `Usage: dxn prototype unverify <node-id> --check <name> [<group>=<value>...] [<dimension>=<value>...]
+                                    [<shared-node>=<state>...] [--transition <id>] [--root <root-id>]
 
 Removes the record for that node and check, in that context or for that
 transition.
@@ -30,7 +30,7 @@ transition.
 export function resolver(workspace: Workspace): Resolver {
   const { project } = compileDirectory(workspace.project);
   if (project === undefined) {
-    throw new Refusal("the project has errors; run dxn validate");
+    throw new Refusal("the project has errors; run dxn prototype validate");
   }
   return new Resolver(project);
 }

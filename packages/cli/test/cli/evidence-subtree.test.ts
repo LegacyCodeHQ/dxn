@@ -47,7 +47,15 @@ function project() {
 }
 
 const subtree = (...args: string[]) =>
-  project().run("evidence", "toolbar", "--subtree", "--actor", "design-agent", ...args);
+  project().run(
+    "prototype",
+    "evidence",
+    "toolbar",
+    "--subtree",
+    "--actor",
+    "design-agent",
+    ...args,
+  );
 
 describe("evidence --subtree", () => {
   it("prints a row per node and a column per profile: contexts with evidence out of all", () => {
@@ -80,9 +88,9 @@ describe("evidence --subtree", () => {
   it("marks stale contexts in a cell", () => {
     const { run, root } = project();
     writeFileSync(join(root, design), "redrawn");
-    const row = json(run("evidence", "toolbar", "--subtree", "--actor", "design-agent")).rows.find(
-      ({ node }: { node: string }) => node === "menu-panel",
-    );
+    const row = json(
+      run("prototype", "evidence", "toolbar", "--subtree", "--actor", "design-agent"),
+    ).rows.find(({ node }: { node: string }) => node === "menu-panel");
     expect(row).toEqual({
       node: "menu-panel",
       type: null,
@@ -95,13 +103,15 @@ describe("evidence --subtree", () => {
       ],
     });
     expect(
-      run("evidence", "toolbar", "--subtree", "--actor", "design-agent", "--table").stdout,
+      run("prototype", "evidence", "toolbar", "--subtree", "--actor", "design-agent", "--table")
+        .stdout,
     ).toContain("| menu-panel    | —    | 0/1 · 1 stale |");
   });
 
   it("counts a node that no dimension applies to on every profile", () => {
     const { run } = project();
     const lines = run(
+      "prototype",
       "evidence",
       "page",
       "--subtree",

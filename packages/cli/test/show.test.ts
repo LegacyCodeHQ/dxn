@@ -10,7 +10,7 @@ const website = fileURLToPath(new URL("../examples/website", import.meta.url));
 describe("dxn show", () => {
   it("reports the states blog-link gets from its type", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["show", "--dir", website, "blog-link"]);
+    const result = capture(["prototype", "show", "--dir", website, "blog-link"]);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
     snapshot.push(result.stderr);
@@ -43,7 +43,7 @@ describe("dxn show", () => {
 
   it("reports no states for a node without a type", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["show", "--dir", website, "logo-mark"]);
+    const result = capture(["prototype", "show", "--dir", website, "logo-mark"]);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
 
@@ -62,7 +62,7 @@ describe("dxn show", () => {
 
   it("fails with exit code 1 when the node does not exist", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["show", "--dir", website, "missing-link"]);
+    const result = capture(["prototype", "show", "--dir", website, "missing-link"]);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
     snapshot.push(result.stdout);
@@ -79,7 +79,7 @@ describe("dxn show", () => {
 
   it("fails with exit code 2 when arguments are missing", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["show", "--dir", website]);
+    const result = capture(["prototype", "show", "--dir", website]);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
 
@@ -88,8 +88,8 @@ describe("dxn show", () => {
         2,
         "dxn: missing node-id
 
-      Usage: dxn show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
-                             [--root <root-id>]
+      Usage: dxn prototype show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+                                       [--root <root-id>]
 
       Shows the node's states and attribute values in a context. Dimensions
       left out take their default; those without one are not applied. Each shared
@@ -106,7 +106,7 @@ describe("dxn show", () => {
       ".dxn/types.json": types,
       ".dxn/roots/a.json": rootFile({ id: "a", title: "A" }),
     });
-    const result = capture(["show", "a"], root);
+    const result = capture(["prototype", "show", "a"], root);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
 
@@ -125,23 +125,23 @@ describe("dxn show", () => {
 
   it("reports when there is no project", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["show", "a"], writeProject({}));
+    const result = capture(["prototype", "show", "a"], writeProject({}));
     snapshot.push(result.code);
     snapshot.push(result.stderr);
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    1,
-    "dxn: no .dxn directory in <tmp> or above; run dxn init
-  ",
-  ]
-`);
+      [
+        1,
+        "dxn: no .dxn directory in <tmp> or above; run dxn prototype init
+      ",
+      ]
+    `);
   });
 
   it("reports a directory without types.json", () => {
     const snapshot: unknown[] = [];
     const directory = writeProject({});
-    const result = capture(["show", "--dir", directory, "x"]);
+    const result = capture(["prototype", "show", "--dir", directory, "x"]);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
 
@@ -160,7 +160,7 @@ describe("dxn show", () => {
       "types.json": types,
       "roots/x.json": '{"version":1,"root":{"id":"x","title":"X","type":"nope"}}',
     });
-    const result = capture(["show", "--dir", directory, "x"]);
+    const result = capture(["prototype", "show", "--dir", directory, "x"]);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
     snapshot.push(result.stdout);
@@ -185,7 +185,7 @@ describe("dxn show", () => {
       },
       "roots/a.json": rootFile({ id: "a", title: "A", children: [{ include: "toolbar" }] }),
     });
-    const result = capture(["show", "--dir", directory, "c"]);
+    const result = capture(["prototype", "show", "--dir", directory, "c"]);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
 
@@ -209,7 +209,7 @@ describe("dxn show", () => {
       "roots/a.json": rootFile({ id: "a", title: "A" }),
       "roots/b.json": rootFile({ id: "b", title: "B", children: [{ id: "c", title: "C" }] }),
     });
-    const result = capture(["show", "--dir", directory, "c"]);
+    const result = capture(["prototype", "show", "--dir", directory, "c"]);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
 

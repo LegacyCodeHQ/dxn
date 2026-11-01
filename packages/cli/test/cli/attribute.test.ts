@@ -23,8 +23,10 @@ describe("attribute commands", () => {
   it("add an attribute and its values", () => {
     const snapshot: unknown[] = [];
     const { run, attributes } = project();
-    snapshot.push(run("attribute", "add", "design", "--values", "available,missing").code);
-    snapshot.push(run("attribute", "add-value", "design", "draft").code);
+    snapshot.push(
+      run("prototype", "attribute", "add", "design", "--values", "available,missing").code,
+    );
+    snapshot.push(run("prototype", "attribute", "add-value", "design", "draft").code);
     snapshot.push(attributes());
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -47,10 +49,10 @@ describe("attribute commands", () => {
   it("remove values and attributes nothing uses", () => {
     const snapshot: unknown[] = [];
     const { run, attributes } = project();
-    run("attribute", "add", "design", "--values", "available,missing");
-    run("attribute", "add", "size", "--values", "s");
-    snapshot.push(run("attribute", "remove-value", "design", "missing").code);
-    snapshot.push(run("attribute", "remove", "size").code);
+    run("prototype", "attribute", "add", "design", "--values", "available,missing");
+    run("prototype", "attribute", "add", "size", "--values", "s");
+    snapshot.push(run("prototype", "attribute", "remove-value", "design", "missing").code);
+    snapshot.push(run("prototype", "attribute", "remove", "size").code);
     snapshot.push(attributes());
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -71,11 +73,11 @@ describe("attribute commands", () => {
   it("refuse to remove what is in use", () => {
     const snapshot: unknown[] = [];
     const { run } = project();
-    run("attribute", "add", "design", "--values", "available,missing");
-    run("type", "add", "link", "--states", "normal");
-    run("type", "set", "link", "design", "normal=missing");
-    snapshot.push(run("attribute", "remove-value", "design", "missing").stderr);
-    snapshot.push(run("attribute", "remove", "design").stderr);
+    run("prototype", "attribute", "add", "design", "--values", "available,missing");
+    run("prototype", "type", "add", "link", "--states", "normal");
+    run("prototype", "type", "set", "link", "design", "normal=missing");
+    snapshot.push(run("prototype", "attribute", "remove-value", "design", "missing").stderr);
+    snapshot.push(run("prototype", "attribute", "remove", "design").stderr);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -90,11 +92,11 @@ describe("attribute commands", () => {
   it("report existing attributes, unknown ones and usage errors", () => {
     const snapshot: unknown[] = [];
     const { run } = project();
-    run("attribute", "add", "design", "--values", "a");
-    snapshot.push(run("attribute", "add", "design", "--values", "b"));
-    snapshot.push(run("attribute", "add-value", "size", "x"));
-    snapshot.push(run("attribute", "add", "size").code);
-    snapshot.push(run("attribute").code);
+    run("prototype", "attribute", "add", "design", "--values", "a");
+    snapshot.push(run("prototype", "attribute", "add", "design", "--values", "b"));
+    snapshot.push(run("prototype", "attribute", "add-value", "size", "x"));
+    snapshot.push(run("prototype", "attribute", "add", "size").code);
+    snapshot.push(run("prototype", "attribute").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [

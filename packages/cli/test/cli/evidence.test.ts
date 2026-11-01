@@ -54,7 +54,7 @@ function project(entries: unknown[], extra: Record<string, unknown> = {}) {
 
 const problems = (entries: unknown[], extra: Record<string, unknown> = {}) =>
   project(entries, extra)
-    .run("validate")
+    .run("prototype", "validate")
     .stderr.split("\n")
     .filter((line) => line !== "")
     .map((line) => line.replace(/^.*?:\d+:\d+: /, ""));
@@ -62,7 +62,9 @@ const problems = (entries: unknown[], extra: Record<string, unknown> = {}) =>
 describe("evidence entries", () => {
   it("fill the row of the context they name, with where they point", () => {
     const { run } = project([entry()]);
-    const rows = json(run("evidence", "menu-button", "--actor", "design-agent")).contexts;
+    const rows = json(
+      run("prototype", "evidence", "menu-button", "--actor", "design-agent"),
+    ).contexts;
     expect(rows[0].evidence).toEqual([
       {
         at: "2026-10-31T12:00:00Z",
@@ -72,27 +74,30 @@ describe("evidence entries", () => {
       },
     ]);
     expect(rows.slice(1).map((row: { evidence: unknown[] }) => row.evidence)).toEqual([[], [], []]);
-    expect(run("evidence", "menu-button", "--actor", "design-agent", "--table").stdout).toContain(
-      "| touch   | closed | website.png#vbGba |",
-    );
+    expect(
+      run("prototype", "evidence", "menu-button", "--actor", "design-agent", "--table").stdout,
+    ).toContain("| touch   | closed | website.png#vbGba |");
   });
 
   it("are stale once the file they point to changes", () => {
     const { run, root } = project([entry()]);
     writeFileSync(join(root, design), "the toolbar, redrawn");
-    expect(run("validate").code).toBe(0);
+    expect(run("prototype", "validate").code).toBe(0);
     expect(
-      json(run("evidence", "menu-button", "--actor", "design-agent")).contexts[0].evidence[0],
+      json(run("prototype", "evidence", "menu-button", "--actor", "design-agent")).contexts[0]
+        .evidence[0],
     ).toMatchObject({ stale: true });
-    expect(run("evidence", "menu-button", "--actor", "design-agent", "--table").stdout).toContain(
-      "| website.png#vbGba (stale) |",
-    );
+    expect(
+      run("prototype", "evidence", "menu-button", "--actor", "design-agent", "--table").stdout,
+    ).toContain("| website.png#vbGba (stale) |");
   });
 
   it("print as a table with a row per context and the actor's frames", () => {
     const { run, root } = project([entry()]);
     writeFileSync(join(root, design), "the toolbar, redrawn");
-    expect(run("evidence", "menu-button", "--actor", "design-agent", "--table").stdout).toBe(
+    expect(
+      run("prototype", "evidence", "menu-button", "--actor", "design-agent", "--table").stdout,
+    ).toBe(
       [
         "| profile         | hover | focus   | breakpoint | keyboard    | pointer | menu   | design-agent              |",
         "| --------------- | ----- | ------- | ---------- | ----------- | ------- | ------ | ------------------------- |",
@@ -128,10 +133,10 @@ describe("evidence entries", () => {
       [],
       ['undeclared-actor: actor "designer" is not declared in actors.json'],
       [
-        'unknown-context: menu-button has no such context in root "page"; "dxn evidence menu-button --actor <name>" lists them',
+        'unknown-context: menu-button has no such context in root "page"; "dxn prototype evidence menu-button --actor <name>" lists them',
       ],
       [
-        'unknown-context: menu-button has no such context in root "page"; "dxn evidence menu-button --actor <name>" lists them',
+        'unknown-context: menu-button has no such context in root "page"; "dxn prototype evidence menu-button --actor <name>" lists them',
       ],
       ['unknown-node: node "nope" does not exist'],
       ['missing-source: "design/missing.pen" does not exist in the repository'],
@@ -143,7 +148,7 @@ describe("evidence entries", () => {
 
   it("let editing commands compile, though they check a copy of the project", () => {
     const { run } = project([entry()]);
-    const result = run("actor", "add", "visual-reviewer");
+    const result = run("prototype", "actor", "add", "visual-reviewer");
     expect([result.code, result.stderr]).toEqual([0, ""]);
   });
 

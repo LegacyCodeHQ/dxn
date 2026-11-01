@@ -25,7 +25,7 @@ import {
 } from "./edit.js";
 import { only } from "./override.js";
 
-const usage = `Usage: dxn node <subcommand>
+const usage = `Usage: dxn prototype node <subcommand>
 
 Subcommands:
   add <id> --title <title> [--parent <id>] [--type <type>]

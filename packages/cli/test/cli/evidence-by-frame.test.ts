@@ -49,7 +49,16 @@ function project() {
 }
 
 const evidence = (...args: string[]) =>
-  project().run("evidence", "menu-button", "--actor", "design-agent", "--by", "frame", ...args);
+  project().run(
+    "prototype",
+    "evidence",
+    "menu-button",
+    "--actor",
+    "design-agent",
+    "--by",
+    "frame",
+    ...args,
+  );
 
 describe("evidence --by frame", () => {
   it("groups the contexts that point to one frame: what the design draws as one look", () => {
@@ -86,7 +95,7 @@ describe("evidence --by frame", () => {
     const { run, root } = project();
     writeFileSync(join(root, design), "redrawn");
     const frames = json(
-      run("evidence", "menu-button", "--actor", "design-agent", "--by", "frame"),
+      run("prototype", "evidence", "menu-button", "--actor", "design-agent", "--by", "frame"),
     ).frames;
     expect(frames.map(({ stale }: { stale: number }) => stale)).toEqual([2, 1]);
   });

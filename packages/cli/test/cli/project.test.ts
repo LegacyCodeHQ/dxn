@@ -12,7 +12,7 @@ describe("finding the project", () => {
     const root = writeProject({ ".dxn/types.json": types });
     const deep = join(root, "src", "fragments");
     mkdirSync(deep, { recursive: true });
-    const result = capture(["validate"], deep);
+    const result = capture(["prototype", "validate"], deep);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
 
@@ -31,8 +31,8 @@ describe("finding the project", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({ "elsewhere/types.json": types });
     for (const argv of [
-      ["--dir", join(root, "elsewhere"), "validate"],
-      ["validate", "--dir", join(root, "elsewhere")],
+      ["--dir", join(root, "elsewhere"), "prototype", "validate"],
+      ["prototype", "validate", "--dir", join(root, "elsewhere")],
     ]) {
       const result = capture(argv, root);
       snapshot.push(result.code, JSON.parse(result.stdout).project);
@@ -50,24 +50,24 @@ describe("finding the project", () => {
   it("reports when there is no project", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({});
-    const result = capture(["validate"], root);
+    const result = capture(["prototype", "validate"], root);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
     snapshot.push(result.stdout);
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    1,
-    "dxn: no .dxn directory in <tmp> or above; run dxn init
-  ",
-    "",
-  ]
-`);
+      [
+        1,
+        "dxn: no .dxn directory in <tmp> or above; run dxn prototype init
+      ",
+        "",
+      ]
+    `);
   });
 
   it("rejects --dir without a value", () => {
     const snapshot: unknown[] = [];
-    const result = capture(["validate", "--dir"]);
+    const result = capture(["prototype", "validate", "--dir"]);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
 
@@ -78,75 +78,61 @@ describe("finding the project", () => {
 
       Usage: dxn <command> [options]
 
-      Project
-        workflow            Print the step-by-step guide to building a model; start here
-        init                Create a .dxn project in the working directory
-        validate            Compile the project and report every error
-        status [<node-id>]  Report each required check as passed, failed or missing
+      Commands:
+        check <file>                       Parse and check a file; say what it declares,
+                                           or report every problem it has. Warnings
+                                           are printed, but do not fail. Needs no
+                                           project.
+        states <file> <type>               Evaluate a type: the states it has in each
+                                           profile, or without profiles under each
+                                           combination of the dimensions it needs,
+                                           as a Markdown table; or a child in place,
+                                           given its path from a type, such as
+                                           Toolbar.menu.toggle: where it is inside its
+                                           parents, with the states they give it
+        cases <file> <type>                List the cases a type, or a child in place,
+              [--combinations]             has: those that can be told apart, each
+                                           with what it covers where it covers more
+                                           than one combination; with --combinations,
+                                           every combination, as if nothing were
+                                           alike
+        validate <file>                    Check the stored records: each record's data is
+                                           every JSON file in a folder named after it in
+                                           kebab-case, next to the file, each a list of
+                                           records with every field given, each of its
+                                           type, and no others. Print what it checked, or
+                                           every problem with its line, column and path
+        attach <file> <path> --file <f> --frame <id> [--field <name>=<value>]... <key>=<value>...
+                                           Record a frame for each combination the
+                                           context's keys give (a|b lists several) that
+                                           exists in place, with its fingerprint; an
+                                           entry for the same combination, frame and
+                                           fields is replaced; with --dry-run, say what
+                                           it would write
+        status <file> [--missing]          Count, for each record with context, the
+                                           combinations of every element in the file's
+                                           trees, in place, and those a stored record is
+                                           about; with --missing, list the others
+        rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
+                                           stored record, once both check; with --dry-run,
+                                           say what it would write
 
-      Explore
-        tree                Print the roots and fragments
-        show <node-id> [<context>...]
-                            Show a node's states and values in one context
-        contexts <node-id> [<filter>...]
-                            List every context a node exists in
-        views <node-id>     List every distinct view of a node's subtree: one diagram each
-        view <node-id> [<context>...]
-                            Print the tree present in one view
-        axes <node-id>      List what a view or show of a node accepts
-        transitions <node-id>
-                            List how a shared node's state changes
-        evidence <node-id> --actor <name>
-                            List every context of a node and the actor's evidence for it
+        prototype <command>                The JSON prototype's commands, kept until it
+                                           is retired
 
-      Record
-        verify <node-id> --check <c> --result passed|failed --by <who> [<context>...]
-                            Record a check's result for a node in one context
-        unverify <node-id> --check <c> [<context>...]
-                            Remove that record
-        attach <node-id> --actor <a> --file <path> --frame <id> [<context>...]
-                            Record an actor's evidence for a node in one context
-        detach <node-id> --actor <a> --frame <id> [<context>...]
-                            Remove that evidence
+        help [<command>]                   Show this overview, or a command's usage
 
-      Model
-        node <subcommand>   Add, move, rename and remove nodes; say where they exist
-        fragment <subcommand>
-                            Add, extract and remove reusable fragments
-        type <subcommand>   List and add types and states, and set their values
-        state-group <subcommand>
-                            List and declare groups of states that exclude each other
-        attribute <subcommand>
-                            List and declare attributes and their values
-        check <subcommand>  List and declare checks that types can require
-        dimension <subcommand>
-                            List and add dimensions, their values, default and scope
-        profile <subcommand>
-                            List, add and remove the combinations of values that exist
-        modifier <subcommand>
-                            List, add and remove accessories that change some profiles' values
-        override <subcommand>
-                            Change states and values for a dimension value or combination
-        expectation <subcommand>
-                            List, add and remove the rules the model must follow
-        actor <subcommand>  List and declare the roles that do work against the model
-
-      Language
-        lang <subcommand>   Check a file in the dxn language, being designed
-
-        help [<command>]    Show this overview, or a command's usage
-
-      To build a model, start with "dxn workflow": it prints the step-by-step
-      guide as Markdown. Run "dxn help <command>" (or "dxn <command>
-      --help") for a command's options. The docs/ folder of the dxn package
-      also explains the concepts, every command, every diagnostic code and the JSON
-      output.
+      Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
+      and options, and "dxn prototype" for the prototype's commands. The
+      docs/language/guide.md file of the dxn package explains the language.
 
       Options:
-        --dir <directory>   Use this project directory instead of the nearest .dxn
-        --dry-run           Print the files a command would write, without writing them
-        -h, --help          Show this help
-        -V, --version       Print version information as JSON
+        --dir <directory>                  Use this project directory instead of the
+                                           nearest .dxn
+        --dry-run                          Print the files a command would write,
+                                           without writing them
+        -h, --help                         Show this help
+        -V, --version                      Print version information as JSON
       ",
       ]
     `);
@@ -157,11 +143,11 @@ describe("dxn init", () => {
   it("creates .dxn with types.json in the working directory", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({});
-    const result = capture(["init"], root);
+    const result = capture(["prototype", "init"], root);
     snapshot.push(result.code);
     snapshot.push(JSON.parse(result.stdout));
     snapshot.push(JSON.parse(readFileSync(join(root, ".dxn", "types.json"), "utf8")));
-    snapshot.push(capture(["validate"], root).code);
+    snapshot.push(capture(["prototype", "validate"], root).code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -180,7 +166,7 @@ describe("dxn init", () => {
   it("creates the project at --dir", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({});
-    const result = capture(["init", "--dir", join(root, "plans")], root);
+    const result = capture(["prototype", "init", "--dir", join(root, "plans")], root);
     snapshot.push(result.code);
     snapshot.push(existsSync(join(root, "plans", "types.json")));
 
@@ -195,7 +181,7 @@ describe("dxn init", () => {
   it("refuses to overwrite an existing project", () => {
     const snapshot: unknown[] = [];
     const root = writeProject({ ".dxn/types.json": "keep" });
-    const result = capture(["init"], root);
+    const result = capture(["prototype", "init"], root);
     snapshot.push(result.code);
     snapshot.push(result.stderr);
     snapshot.push(readFileSync(join(root, ".dxn", "types.json"), "utf8"));
@@ -211,7 +197,7 @@ describe("dxn init", () => {
   });
 
   it("takes no arguments", () => {
-    expect(capture(["init", "extra"], writeProject({})).code).toBe(2);
+    expect(capture(["prototype", "init", "extra"], writeProject({})).code).toBe(2);
   });
 });
 
@@ -223,7 +209,7 @@ describe("dxn validate", () => {
       ".dxn/roots/a.json": '{"version":1,"root":{"id":"a","title":"A","type":"nope"}}',
       ".dxn/roots/b.json": rootFile({ id: "b", title: "B", extra: 1 }),
     });
-    const result = capture(["validate"], root);
+    const result = capture(["prototype", "validate"], root);
     const _roots = join(root, ".dxn", "roots");
     snapshot.push(result.code);
     snapshot.push(result.stderr);
@@ -244,6 +230,6 @@ describe("dxn validate", () => {
   });
 
   it("takes no arguments", () => {
-    expect(capture(["validate", "extra"], writeProject({})).code).toBe(2);
+    expect(capture(["prototype", "validate", "extra"], writeProject({})).code).toBe(2);
   });
 });

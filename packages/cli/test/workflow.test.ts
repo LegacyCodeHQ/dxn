@@ -48,7 +48,7 @@ describe("docs/workflow.md", () => {
       if (result.code !== 0) failed.push(`${step.command.join(" ")}\n${result.stderr}`);
     }
     expect(failed).toEqual([]);
-    expect(capture(["validate"], root).stdout).toContain('"errors":0');
+    expect(capture(["prototype", "validate"], root).stdout).toContain('"errors":0');
     expect(steps().filter((step) => "command" in step).length).toBeGreaterThan(40);
   });
 });

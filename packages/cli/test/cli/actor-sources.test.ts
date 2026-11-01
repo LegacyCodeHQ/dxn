@@ -25,6 +25,7 @@ function project(actor: Record<string, unknown>) {
   writeFileSync(join(result.root, "shot.png"), "pixels");
   const attach = (file: string, frame: string) =>
     result.run(
+      "prototype",
       "attach",
       "wordmark",
       "--file",
@@ -40,7 +41,7 @@ function project(actor: Record<string, unknown>) {
 
 const problems = (actor: unknown) =>
   cliProject({ ...toolbarFiles, "actors.json": { version: 1, actors: { agent: actor } } })
-    .run("validate")
+    .run("prototype", "validate")
     .stderr.split("\n")
     .filter((line) => line !== "")
     .map((line) => line.replace(/^.*?:\d+:\d+: /, ""));
@@ -74,7 +75,7 @@ describe("an actor's source", () => {
       actors,
       JSON.stringify({ version: 1, actors: { agent: { evidence: "design", source: "pen.dev" } } }),
     );
-    expect(run("validate").stderr.replace(/^.*?:\d+:\d+: /, "")).toBe(
+    expect(run("prototype", "validate").stderr.replace(/^.*?:\d+:\d+: /, "")).toBe(
       'wrong-source: actor "agent" records pen.dev frames; "shot.png" is not a pen.dev file\n',
     );
   });
@@ -85,7 +86,7 @@ describe("an actor's source", () => {
     const document = JSON.parse(readFileSync(join(root, "design.pen"), "utf8"));
     document.children[1].name = "Renamed";
     writeFileSync(join(root, "design.pen"), JSON.stringify(document));
-    expect(json(run("status", "--actor", "agent")).summary.stale).toBe(1);
+    expect(json(run("prototype", "status", "--actor", "agent")).summary.stale).toBe(1);
   });
 
   it("pen.dev: an edit to another frame leaves the entry present", () => {
@@ -94,18 +95,18 @@ describe("an actor's source", () => {
     const document = JSON.parse(readFileSync(join(root, "design.pen"), "utf8"));
     document.children[1].name = "Renamed";
     writeFileSync(join(root, "design.pen"), JSON.stringify(document));
-    expect(json(run("status", "--actor", "agent")).summary.present).toBe(1);
+    expect(json(run("prototype", "status", "--actor", "agent")).summary.present).toBe(1);
   });
 });
 
 describe("actor commands", () => {
   it("declare and list an actor's source", () => {
     const { run, read } = project({ evidence: "design" });
-    expect(run("actor", "set", "agent", "--source", "pen.dev").code).toBe(0);
+    expect(run("prototype", "actor", "set", "agent", "--source", "pen.dev").code).toBe(0);
     expect(read("actors.json").actors).toEqual({
       agent: { evidence: "design", source: "pen.dev" },
     });
-    expect(json(run("actor", "list")).actors).toEqual([
+    expect(json(run("prototype", "actor", "list")).actors).toEqual([
       { name: "agent", evidence: "design", source: "pen.dev" },
     ]);
   });

@@ -13,7 +13,7 @@ const names = "desktop|laptop|phone|tablet-landscape|tablet-portrait";
 describe("profiles limit the combinations", () => {
   it("to the ones a profile names", () => {
     const { run } = cliProject(files);
-    expect(json(run("contexts", "toolbar", "--subtree", "--count")).counts).toEqual({
+    expect(json(run("prototype", "contexts", "toolbar", "--subtree", "--count")).counts).toEqual({
       toolbar: 5,
       wordmark: 11,
       "toolbar-links": 3,
@@ -23,7 +23,7 @@ describe("profiles limit the combinations", () => {
       "menu-panel": 2,
       "menu-link": 2,
     });
-    expect(json(run("views", "toolbar")).views).toEqual([
+    expect(json(run("prototype", "views", "toolbar")).views).toEqual([
       { breakpoint: "base", keyboard: "no-keyboard", pointer: "touch", menu: "closed" },
       { breakpoint: "base", keyboard: "no-keyboard", pointer: "touch", menu: "open" },
       { breakpoint: "sm", keyboard: "no-keyboard", pointer: "touch", menu: "closed" },
@@ -36,7 +36,7 @@ describe("profiles limit the combinations", () => {
 
   it("and are listed by axes", () => {
     const { run } = cliProject(files);
-    expect(json(run("axes", "toolbar")).profiles).toEqual([
+    expect(json(run("prototype", "axes", "toolbar")).profiles).toEqual([
       { name: "phone", values: profiles.phone },
       { name: "tablet-portrait", values: profiles["tablet-portrait"] },
       { name: "tablet-landscape", values: profiles["tablet-landscape"] },
@@ -50,7 +50,7 @@ describe("views and axes filter", () => {
   it("to one breakpoint, profile or shared state", () => {
     const { run } = cliProject(files);
     const views = (...args: string[]) => {
-      const result = run("views", "toolbar", ...args);
+      const result = run("prototype", "views", "toolbar", ...args);
       return result.code === 0 ? json(result).views : result.stderr;
     };
     expect([
@@ -75,7 +75,7 @@ describe("views and axes filter", () => {
   it("so axes says what a view accepts there", () => {
     const { run } = cliProject(files);
     const axes = (...args: string[]) => {
-      const { node: _, ...rest } = json(run("axes", "toolbar", ...args));
+      const { node: _, ...rest } = json(run("prototype", "axes", "toolbar", ...args));
       return rest;
     };
     expect([axes("breakpoint=lg"), axes("profile=phone")]).toEqual([
@@ -108,7 +108,7 @@ describe("show and view fill in from a profile", () => {
   it("when exactly one profile fits, and ask otherwise", () => {
     const { run } = cliProject(files);
     const context = (...args: string[]) => {
-      const result = run("show", "blog-link", ...args);
+      const result = run("prototype", "show", "blog-link", ...args);
       return result.code === 0 ? json(result).context : result.stderr;
     };
     expect([
@@ -133,9 +133,9 @@ describe("show and view fill in from a profile", () => {
   it("in view, before asking for shared states", () => {
     const { run } = cliProject(files);
     expect([
-      run("view", "toolbar").stderr,
-      run("view", "toolbar", "profile=phone").stderr,
-      json(run("view", "toolbar", "profile=phone", "menu=open")).context,
+      run("prototype", "view", "toolbar").stderr,
+      run("prototype", "view", "toolbar", "profile=phone").stderr,
+      json(run("prototype", "view", "toolbar", "profile=phone", "menu=open")).context,
     ]).toEqual([
       `dxn: give profile=<${names}> for this view\n`,
       "dxn: give menu=<closed|open> for this view\n",
@@ -148,9 +148,9 @@ describe("filters by profile", () => {
   it("keep the contexts of that profile", () => {
     const { run } = cliProject(files);
     expect([
-      json(run("contexts", "blog-link", "profile=laptop", "--count")).count,
-      json(run("contexts", "wordmark", "profile=phone", "--count")).count,
-      run("contexts", "wordmark", "profile=watch").stderr,
+      json(run("prototype", "contexts", "blog-link", "profile=laptop", "--count")).count,
+      json(run("prototype", "contexts", "wordmark", "profile=phone", "--count")).count,
+      run("prototype", "contexts", "wordmark", "profile=watch").stderr,
     ]).toEqual([4, 1, `dxn: "watch" is not a value of profile (${names.replaceAll("|", ", ")})\n`]);
   });
 
@@ -169,7 +169,7 @@ describe("filters by profile", () => {
         ],
       },
     });
-    expect(run("validate").stderr.replace(/^.*?:\d+:\d+: /, "")).toBe(
+    expect(run("prototype", "validate").stderr.replace(/^.*?:\d+:\d+: /, "")).toBe(
       "expectation-failed: The panel never exists: menu-panel exists at phone (menu=open)\n",
     );
   });
@@ -189,7 +189,7 @@ describe("filters by profile", () => {
         ],
       },
     });
-    expect(run("validate")).toMatchObject({ code: 0, stderr: "" });
+    expect(run("prototype", "validate")).toMatchObject({ code: 0, stderr: "" });
   });
 });
 
@@ -200,6 +200,7 @@ describe("verify", () => {
       "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
     });
     const result = run(
+      "prototype",
       "verify",
       "blog-link",
       "--check",
@@ -229,7 +230,11 @@ describe("verify", () => {
       actor: "agent",
       at: "2026-10-31T10:00:00Z",
     });
-    expect(json(run("status", "blog-link")).summary).toEqual({ passed: 1, failed: 0, missing: 8 });
+    expect(json(run("prototype", "status", "blog-link")).summary).toEqual({
+      passed: 1,
+      failed: 0,
+      missing: 8,
+    });
   });
 });
 
@@ -239,6 +244,7 @@ describe("profile commands", () => {
     const snapshot: unknown[] = [];
     snapshot.push(
       run(
+        "prototype",
         "profile",
         "add",
         "tablet-keyboard",
@@ -248,10 +254,12 @@ describe("profile commands", () => {
       ).code,
     );
     snapshot.push((read("profiles.json").profiles as Record<string, unknown>)["tablet-keyboard"]);
-    snapshot.push(run("profile", "remove", "tablet-landscape").code);
+    snapshot.push(run("prototype", "profile", "remove", "tablet-landscape").code);
     // phone is the only profile with breakpoint=base, which is then simply unused.
-    snapshot.push(run("profile", "remove", "phone").code === 0);
-    snapshot.push(json(run("profile", "list")).profiles.map(({ name }: { name: string }) => name));
+    snapshot.push(run("prototype", "profile", "remove", "phone").code === 0);
+    snapshot.push(
+      json(run("prototype", "profile", "list")).profiles.map(({ name }: { name: string }) => name),
+    );
     expect(snapshot).toEqual([
       0,
       { breakpoint: "lg", keyboard: "keyboard", pointer: "touch" },
@@ -292,9 +300,9 @@ describe("profile commands", () => {
       ...["tablet", "breakpoint=sm", "pointer=touch", "keyboard=no-keyboard"],
       ...["laptop", "breakpoint=lg", "pointer=mouse", "keyboard=keyboard"],
     ];
-    const alone = run("profile", "add", ...phone);
+    const alone = run("prototype", "profile", "add", ...phone);
     expect([alone.code, alone.stderr.includes("empty-expectation")]).toEqual([1, true]);
-    expect(run("profile", "add", ...phone, ...together).code).toBe(0);
+    expect(run("prototype", "profile", "add", ...phone, ...together).code).toBe(0);
     expect(Object.keys(read("profiles.json").profiles as Record<string, unknown>)).toEqual([
       "phone",
       "desktop",
@@ -305,7 +313,7 @@ describe("profile commands", () => {
 
   it("need values for each profile they add", () => {
     const { run } = cliProject(files);
-    expect(run("profile", "add", "watch", "tv", "breakpoint=xl").stderr).toContain(
+    expect(run("prototype", "profile", "add", "watch", "tv", "breakpoint=xl").stderr).toContain(
       'give at least one <dimension>=<value> for profile "watch"',
     );
   });
@@ -313,14 +321,21 @@ describe("profile commands", () => {
   it("accept a combination that another profile already has", () => {
     const { run } = cliProject(files);
     expect(
-      run("profile", "add", "ipad-keyboard", "breakpoint=lg", "pointer=mouse", "keyboard=keyboard")
-        .code,
+      run(
+        "prototype",
+        "profile",
+        "add",
+        "ipad-keyboard",
+        "breakpoint=lg",
+        "pointer=mouse",
+        "keyboard=keyboard",
+      ).code,
     ).toBe(0);
   });
 
   it("follow a renamed dimension value", () => {
     const { run, read } = cliProject(files);
-    expect(run("dimension", "rename-value", "breakpoint", "xl", "wide").code).toBe(0);
+    expect(run("prototype", "dimension", "rename-value", "breakpoint", "xl", "wide").code).toBe(0);
     expect(
       (read("profiles.json").profiles as Record<string, Record<string, string>>).desktop
         ?.breakpoint,
@@ -338,7 +353,7 @@ describe("dimension list", () => {
       },
     });
     expect(
-      json(run("dimension", "list")).dimensions.map(
+      json(run("prototype", "dimension", "list")).dimensions.map(
         ({ name, inNoProfile }: { name: string; inNoProfile?: string[] }) => [name, inNoProfile],
       ),
     ).toEqual([

@@ -3,14 +3,14 @@ import type { Command } from "./context.js";
 import { editCommand, group, isObject, parse, Refusal, UsageError } from "./edit.js";
 import { profileListCommand } from "./reading.js";
 
-const usage = `Usage: dxn profile <subcommand>
+const usage = `Usage: dxn prototype profile <subcommand>
 
 A profile is a combination of dimension values that exists, such as phone
 (breakpoint=base, pointer=touch, keyboard=no-keyboard). Profiles may share a
 combination. Once profiles exist, only their combinations do, and commands fill
 those dimensions in from the one combination that fits what you give.
 Accessories that change some profiles' values are modifiers; see
-"dxn modifier".
+"dxn prototype modifier".
 
 Subcommands:
   list [--table]                     List every profile and its values

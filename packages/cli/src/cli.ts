@@ -1,33 +1,6 @@
-import { actor } from "./commands/actor.js";
-import { attach, detach } from "./commands/attach.js";
-import { attribute } from "./commands/attribute.js";
-import { check } from "./commands/checks.js";
-import type { Command } from "./commands/context.js";
-import { dimension } from "./commands/dimension.js";
-import { expectation } from "./commands/expectation.js";
-import { fragment } from "./commands/fragment.js";
-import { init } from "./commands/init.js";
-import { lang } from "./commands/lang.js";
-import { modifier } from "./commands/modifier.js";
-import { node } from "./commands/node.js";
-import { override } from "./commands/override.js";
-import { profile } from "./commands/profile.js";
-import {
-  axes,
-  contexts,
-  evidence,
-  show,
-  status,
-  transitions,
-  tree,
-  view,
-  views,
-} from "./commands/reading.js";
-import { stateGroup } from "./commands/state-group.js";
-import { type } from "./commands/type.js";
-import { validate } from "./commands/validate.js";
-import { unverify, verify } from "./commands/verify.js";
-import { workflow } from "./commands/workflow.js";
+import { type Command, dispatch } from "./commands/context.js";
+import { language } from "./commands/lang.js";
+import { prototype } from "./commands/prototype.js";
 import type { Io } from "./io.js";
 import { parseGlobal } from "./project.js";
 import { version } from "./version.js";
@@ -36,108 +9,66 @@ export type { Io } from "./io.js";
 
 const usage = `Usage: dxn <command> [options]
 
-Project
-  workflow            Print the step-by-step guide to building a model; start here
-  init                Create a .dxn project in the working directory
-  validate            Compile the project and report every error
-  status [<node-id>]  Report each required check as passed, failed or missing
+Commands:
+  check <file>                       Parse and check a file; say what it declares,
+                                     or report every problem it has. Warnings
+                                     are printed, but do not fail. Needs no
+                                     project.
+  states <file> <type>               Evaluate a type: the states it has in each
+                                     profile, or without profiles under each
+                                     combination of the dimensions it needs,
+                                     as a Markdown table; or a child in place,
+                                     given its path from a type, such as
+                                     Toolbar.menu.toggle: where it is inside its
+                                     parents, with the states they give it
+  cases <file> <type>                List the cases a type, or a child in place,
+        [--combinations]             has: those that can be told apart, each
+                                     with what it covers where it covers more
+                                     than one combination; with --combinations,
+                                     every combination, as if nothing were
+                                     alike
+  validate <file>                    Check the stored records: each record's data is
+                                     every JSON file in a folder named after it in
+                                     kebab-case, next to the file, each a list of
+                                     records with every field given, each of its
+                                     type, and no others. Print what it checked, or
+                                     every problem with its line, column and path
+  attach <file> <path> --file <f> --frame <id> [--field <name>=<value>]... <key>=<value>...
+                                     Record a frame for each combination the
+                                     context's keys give (a|b lists several) that
+                                     exists in place, with its fingerprint; an
+                                     entry for the same combination, frame and
+                                     fields is replaced; with --dry-run, say what
+                                     it would write
+  status <file> [--missing]          Count, for each record with context, the
+                                     combinations of every element in the file's
+                                     trees, in place, and those a stored record is
+                                     about; with --missing, list the others
+  rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
+                                     stored record, once both check; with --dry-run,
+                                     say what it would write
 
-Explore
-  tree                Print the roots and fragments
-  show <node-id> [<context>...]
-                      Show a node's states and values in one context
-  contexts <node-id> [<filter>...]
-                      List every context a node exists in
-  views <node-id>     List every distinct view of a node's subtree: one diagram each
-  view <node-id> [<context>...]
-                      Print the tree present in one view
-  axes <node-id>      List what a view or show of a node accepts
-  transitions <node-id>
-                      List how a shared node's state changes
-  evidence <node-id> --actor <name>
-                      List every context of a node and the actor's evidence for it
+  prototype <command>                The JSON prototype's commands, kept until it
+                                     is retired
 
-Record
-  verify <node-id> --check <c> --result passed|failed --by <who> [<context>...]
-                      Record a check's result for a node in one context
-  unverify <node-id> --check <c> [<context>...]
-                      Remove that record
-  attach <node-id> --actor <a> --file <path> --frame <id> [<context>...]
-                      Record an actor's evidence for a node in one context
-  detach <node-id> --actor <a> --frame <id> [<context>...]
-                      Remove that evidence
+  help [<command>]                   Show this overview, or a command's usage
 
-Model
-  node <subcommand>   Add, move, rename and remove nodes; say where they exist
-  fragment <subcommand>
-                      Add, extract and remove reusable fragments
-  type <subcommand>   List and add types and states, and set their values
-  state-group <subcommand>
-                      List and declare groups of states that exclude each other
-  attribute <subcommand>
-                      List and declare attributes and their values
-  check <subcommand>  List and declare checks that types can require
-  dimension <subcommand>
-                      List and add dimensions, their values, default and scope
-  profile <subcommand>
-                      List, add and remove the combinations of values that exist
-  modifier <subcommand>
-                      List, add and remove accessories that change some profiles' values
-  override <subcommand>
-                      Change states and values for a dimension value or combination
-  expectation <subcommand>
-                      List, add and remove the rules the model must follow
-  actor <subcommand>  List and declare the roles that do work against the model
-
-Language
-  lang <subcommand>   Check a file in the dxn language, being designed
-
-  help [<command>]    Show this overview, or a command's usage
-
-To build a model, start with "dxn workflow": it prints the step-by-step
-guide as Markdown. Run "dxn help <command>" (or "dxn <command>
---help") for a command's options. The docs/ folder of the dxn package
-also explains the concepts, every command, every diagnostic code and the JSON
-output.
+Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
+and options, and "dxn prototype" for the prototype's commands. The
+docs/language/guide.md file of the dxn package explains the language.
 
 Options:
-  --dir <directory>   Use this project directory instead of the nearest .dxn
-  --dry-run           Print the files a command would write, without writing them
-  -h, --help          Show this help
-  -V, --version       Print version information as JSON
+  --dir <directory>                  Use this project directory instead of the
+                                     nearest .dxn
+  --dry-run                          Print the files a command would write,
+                                     without writing them
+  -h, --help                         Show this help
+  -V, --version                      Print version information as JSON
 `;
 
-const commands: Record<string, Command> = {
-  workflow,
-  init,
-  validate,
-  show,
-  contexts,
-  status,
-  transitions,
-  evidence,
-  tree,
-  views,
-  view,
-  axes,
-  node,
-  type,
-  attribute,
-  "state-group": stateGroup,
-  check,
-  fragment,
-  dimension,
-  profile,
-  modifier,
-  override,
-  expectation,
-  actor,
-  verify,
-  unverify,
-  attach,
-  detach,
-  lang,
-};
+// The language's commands at the top, and the JSON prototype's under one
+// command of its own.
+const commands: Record<string, Command> = { ...language, prototype };
 
 export function run(argv: string[], io: Io): number {
   const cwd = io.cwd ?? process.cwd();
@@ -146,39 +77,15 @@ export function run(argv: string[], io: Io): number {
     io.stderr(`dxn: ${global.error}\n\n${usage}`);
     return 2;
   }
-  const [first, ...rest] = global.args;
-  if (first === undefined || first === "-h" || first === "--help") {
-    io.stdout(usage);
-    return 0;
-  }
+  const [first] = global.args;
   if (first === "-V" || first === "--version") {
     io.stdout(`${JSON.stringify({ version })}\n`);
     return 0;
   }
-  if (first === "help") {
-    // help <command> [<subcommand>]: the command's usage; help alone: this.
-    const [name] = rest.filter((arg) => arg !== "--help" && arg !== "-h");
-    if (name === undefined) {
-      io.stdout(usage);
-      return 0;
-    }
-    const target = commands[name];
-    if (target === undefined) {
-      io.stderr(`dxn: unknown command: ${name}\n\n${usage}`);
-      return 2;
-    }
-    io.stdout(target.usage);
-    return 0;
-  }
-  const command = commands[first];
-  if (command === undefined) {
-    io.stderr(`dxn: unknown command: ${first}\n\n${usage}`);
-    return 2;
-  }
-  // --help anywhere after a command prints its usage; no project needed.
-  if (rest.includes("--help") || rest.includes("-h")) {
-    io.stdout(command.usage);
-    return 0;
-  }
-  return command(rest, { io, cwd, dir: global.dir, dryRun: global.dryRun });
+  return dispatch(
+    global.args,
+    { io, cwd, dir: global.dir, dryRun: global.dryRun },
+    usage,
+    commands,
+  );
 }

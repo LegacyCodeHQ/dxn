@@ -56,7 +56,7 @@ function project() {
   mkdirSync(join(root, "design"));
   writeFileSync(join(root, "spec", "toolbar.dxn"), schema);
   writeFileSync(join(root, "design", "toolbar.png"), "drawn");
-  const run = (...args: string[]) => capture(["lang", "attach", ...args], root);
+  const run = (...args: string[]) => capture(["attach", ...args], root);
   const stored = () =>
     JSON.parse(readFileSync(join(root, "spec", "evidence", "toolbar.json"), "utf8")) as {
       context: { states: Record<string, string>; parents: Record<string, string> };
@@ -79,7 +79,7 @@ const attach = (...context: string[]) => [
   ...context,
 ];
 
-describe("lang attach", () => {
+describe("dxn attach", () => {
   it("records an entry for each listed combination that exists in place, with its fingerprint", () => {
     const { run, stored } = project();
     const result = run(
@@ -203,7 +203,7 @@ describe("lang attach", () => {
       "dxn: give expanded, as expanded=<value>, or several as expanded=<a>|<b>\n",
       'dxn: "colour" is not part of a context of Toolbar.menu.toggle (profile, menu.menu, hover, expanded)\n',
       'dxn: "shut" is not a value of menu.menu (closed, open)\n',
-      "dxn: no combination given exists for Toolbar.menu.toggle; dxn lang states spec/toolbar.dxn Toolbar.menu.toggle lists them\n",
+      "dxn: no combination given exists for Toolbar.menu.toggle; dxn states spec/toolbar.dxn Toolbar.menu.toggle lists them\n",
       'dxn: "design/missing.png" does not exist in the repository\n',
       "dxn: give actor, as --field actor=<value>\n",
       false,
@@ -241,7 +241,6 @@ describe("lang attach", () => {
     const result = capture(
       [
         "--dry-run",
-        "lang",
         "attach",
         ...attach("profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"),
       ],
@@ -272,12 +271,11 @@ describe("lang attach", () => {
   });
 });
 
-describe("lang status, with fingerprints", () => {
+describe("dxn status, with fingerprints", () => {
   const recorded = () => {
     const { root, run } = project();
     run(...attach("profile=phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"));
-    const status = (...args: string[]) =>
-      capture(["lang", "status", "spec/toolbar.dxn", ...args], root);
+    const status = (...args: string[]) => capture(["status", "spec/toolbar.dxn", ...args], root);
     return { root, status };
   };
 
@@ -341,7 +339,7 @@ describe("lang status, with fingerprints", () => {
       join(root, "note", "a.json"),
       '[{ "context": { "type": "Card", "dimensions": {}, "states": {} } }]',
     );
-    expect(capture(["lang", "status", "plain.dxn"], root).stdout.split("\n")[0]).toBe(
+    expect(capture(["status", "plain.dxn"], root).stdout.split("\n")[0]).toBe(
       "plain.dxn: Note for 1 of 1 combination; Note has no fingerprint field next to a source { file, frame }, so staleness is not checked",
     );
   });
@@ -406,7 +404,7 @@ describe("the tool convention", () => {
     const { root, run } = tooled();
     run(...record("design-agent", "design/toolbar.pen", "toggle"));
     rmSync(join(root, "design", "toolbar.pen"));
-    const result = capture(["lang", "status", "spec/toolbar.dxn"], root);
+    const result = capture(["status", "spec/toolbar.dxn"], root);
     expect([result.code, result.stderr, result.stdout.split("\n")[0]]).toEqual([
       0,
       "",
@@ -414,12 +412,12 @@ describe("the tool convention", () => {
     ]);
   });
 
-  it("reports, in lang status, a stored entry whose file is not its tool's", () => {
+  it("reports, in dxn status, a stored entry whose file is not its tool's", () => {
     const { root, run } = tooled();
     run(...record("reviewer", "design/toolbar.png", "toggle"));
     const path = join(root, "spec", "evidence", "toolbar.json");
     writeFileSync(path, readFileSync(path, "utf8").replace('"reviewer"', '"design-agent"'));
-    const result = capture(["lang", "status", "spec/toolbar.dxn"], root);
+    const result = capture(["status", "spec/toolbar.dxn"], root);
     expect([result.code, result.stderr.replace(/:\d+:\d+:/, ":L:C:")]).toEqual([
       1,
       'spec/evidence/toolbar.json:L:C: wrong-tool: $[0].source.file: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file\n',
@@ -434,7 +432,7 @@ describe("duplicate records", () => {
     run(...attach("profile=phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"));
     const path = join(root, "spec", "evidence", "toolbar.json");
     const entries = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>[];
-    const validate = () => capture(["lang", "validate", "spec/toolbar.dxn"], root);
+    const validate = () => capture(["validate", "spec/toolbar.dxn"], root);
     return { root, path, entries, validate };
   };
 

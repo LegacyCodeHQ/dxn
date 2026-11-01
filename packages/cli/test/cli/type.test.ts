@@ -31,8 +31,10 @@ describe("type add", () => {
   it("adds a type, with or without states", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project();
-    snapshot.push(run("type", "add", "link", "--states", "normal,hovered,selected").code);
-    snapshot.push(run("type", "add", "button").code);
+    snapshot.push(
+      run("prototype", "type", "add", "link", "--states", "normal,hovered,selected").code,
+    );
+    snapshot.push(run("prototype", "type", "add", "button").code);
     snapshot.push(types(read));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -56,10 +58,10 @@ describe("type add", () => {
   it("refuses an existing type and usage errors", () => {
     const snapshot: unknown[] = [];
     const { run } = project();
-    run("type", "add", "link");
-    snapshot.push(run("type", "add", "link"));
-    snapshot.push(run("type", "add").code);
-    snapshot.push(run("type", "frobnicate").code);
+    run("prototype", "type", "add", "link");
+    snapshot.push(run("prototype", "type", "add", "link"));
+    snapshot.push(run("prototype", "type", "add").code);
+    snapshot.push(run("prototype", "type", "frobnicate").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -77,7 +79,9 @@ describe("type add", () => {
 
   it("refuses names the compiler rejects", () => {
     const { run } = project();
-    expect(run("type", "add", "link", "--states", "a,a").stderr).toContain("duplicate-state");
+    expect(run("prototype", "type", "add", "link", "--states", "a,a").stderr).toContain(
+      "duplicate-state",
+    );
   });
 });
 
@@ -85,9 +89,9 @@ describe("type add-state and remove-state", () => {
   it("add and remove states", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project();
-    run("type", "add", "link", "--states", "normal");
-    snapshot.push(run("type", "add-state", "link", "hovered").code);
-    snapshot.push(run("type", "remove-state", "link", "normal").code);
+    run("prototype", "type", "add", "link", "--states", "normal");
+    snapshot.push(run("prototype", "type", "add-state", "link", "hovered").code);
+    snapshot.push(run("prototype", "type", "remove-state", "link", "normal").code);
     snapshot.push(types(read));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -108,10 +112,10 @@ describe("type add-state and remove-state", () => {
   it("refuse to remove a state that has values, and unknown types", () => {
     const snapshot: unknown[] = [];
     const { run } = project();
-    run("type", "add", "link", "--states", "normal");
-    run("type", "set", "link", "design", "normal=missing");
-    snapshot.push(run("type", "remove-state", "link", "normal").stderr);
-    snapshot.push(run("type", "add-state", "button", "x"));
+    run("prototype", "type", "add", "link", "--states", "normal");
+    run("prototype", "type", "set", "link", "design", "normal=missing");
+    snapshot.push(run("prototype", "type", "remove-state", "link", "normal").stderr);
+    snapshot.push(run("prototype", "type", "add-state", "button", "x"));
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -132,10 +136,12 @@ describe("type set and unset", () => {
   it("set and clear a type's attribute values", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project();
-    run("type", "add", "link", "--states", "normal,hovered");
-    snapshot.push(run("type", "set", "link", "design", "normal=available", "hovered=missing").code);
+    run("prototype", "type", "add", "link", "--states", "normal,hovered");
+    snapshot.push(
+      run("prototype", "type", "set", "link", "design", "normal=available", "hovered=missing").code,
+    );
     snapshot.push(types(read));
-    snapshot.push(run("type", "unset", "link", "design").code);
+    snapshot.push(run("prototype", "type", "unset", "link", "design").code);
     snapshot.push(types(read));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -184,8 +190,8 @@ describe("type rename", () => {
         overrides: { touch: { types: { link: { states: { remove: ["hovered"] } } } } },
       },
     });
-    run("type", "add", "link", "--states", "normal,hovered");
-    snapshot.push(run("type", "rename", "link", "toolbar-link").code);
+    run("prototype", "type", "add", "link", "--states", "normal,hovered");
+    snapshot.push(run("prototype", "type", "rename", "link", "toolbar-link").code);
     snapshot.push(types(read));
     snapshot.push(read("roots/page.json"));
     snapshot.push(read("overrides/pointer.json"));
@@ -246,10 +252,10 @@ describe("type remove", () => {
         children: [{ id: "a", title: "A", type: "link" }],
       }),
     });
-    run("type", "add", "link");
-    run("type", "add", "button");
-    snapshot.push(run("type", "remove", "button").code);
-    snapshot.push(run("type", "remove", "link").stderr);
+    run("prototype", "type", "add", "link");
+    run("prototype", "type", "add", "button");
+    snapshot.push(run("prototype", "type", "remove", "button").code);
+    snapshot.push(run("prototype", "type", "remove", "link").stderr);
     snapshot.push(types(read));
 
     expect(snapshot).toMatchInlineSnapshot(`

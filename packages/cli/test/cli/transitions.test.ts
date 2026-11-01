@@ -44,7 +44,8 @@ describe("node transition add and remove", () => {
   it("add transitions to a shared node and remove them", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject(files);
-    const add = (...args: string[]) => run("node", "transition", "add", "menu", ...args).code;
+    const add = (...args: string[]) =>
+      run("prototype", "node", "transition", "add", "menu", ...args).code;
     snapshot.push(
       add("open", "--from", "closed", "--to", "open", "--on", "click", "--target", "menu-button"),
     );
@@ -77,8 +78,8 @@ describe("node transition add and remove", () => {
       ),
     );
     snapshot.push(read("fragments/toolbar.json"));
-    snapshot.push(run("node", "transition", "remove", "menu", "outside").code);
-    snapshot.push(run("transitions", "menu").stdout);
+    snapshot.push(run("prototype", "node", "transition", "remove", "menu", "outside").code);
+    snapshot.push(run("prototype", "transitions", "menu").stdout);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         0,
@@ -172,7 +173,8 @@ describe("node transition add and remove", () => {
   it("refuse what the compiler rejects, duplicates and unknown ones", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject(files);
-    const add = (...args: string[]) => run("node", "transition", "add", "menu", ...args);
+    const add = (...args: string[]) =>
+      run("prototype", "node", "transition", "add", "menu", ...args);
     snapshot.push(
       add("open", "--from", "closed", "--to", "open", "--on", "click", "--target", "menu-link")
         .stderr,
@@ -181,7 +183,7 @@ describe("node transition add and remove", () => {
     snapshot.push(
       add("open", "--from", "open", "--to", "closed", "--on", "click", "--target", "menu-button"),
     );
-    snapshot.push(run("node", "transition", "remove", "menu", "nope"));
+    snapshot.push(run("prototype", "node", "transition", "remove", "menu", "nope"));
     snapshot.push(add("x", "--to", "open", "--on", "click").code);
     snapshot.push(
       add("x", "--from", "closed", "--to", "open", "--on", "resize", "--when", "breakpoint").code,
@@ -217,6 +219,7 @@ describe("transitions in status and verify", () => {
       "actors.json": { version: 1, actors: { agent: { checks: ["behavior"] } } },
     });
     run(
+      "prototype",
       "node",
       "transition",
       "add",
@@ -232,6 +235,7 @@ describe("transitions in status and verify", () => {
       "menu-button",
     );
     run(
+      "prototype",
       "node",
       "transition",
       "add",
@@ -248,6 +252,7 @@ describe("transitions in status and verify", () => {
     );
     const verify = (...args: string[]) =>
       run(
+        "prototype",
         "verify",
         "menu",
         "--check",
@@ -262,11 +267,13 @@ describe("transitions in status and verify", () => {
       );
     snapshot.push(verify("--transition", "open").code);
     snapshot.push(read("verification/article-page.json"));
-    snapshot.push(JSON.parse(run("status", "menu").stdout));
+    snapshot.push(JSON.parse(run("prototype", "status", "menu").stdout));
     snapshot.push(verify("--transition", "nope").stderr);
     snapshot.push(verify("--transition", "open", "menu=open").code);
-    snapshot.push(run("unverify", "menu", "--check", "behavior", "--transition", "open").code);
-    snapshot.push(JSON.parse(run("status", "menu").stdout).summary);
+    snapshot.push(
+      run("prototype", "unverify", "menu", "--check", "behavior", "--transition", "open").code,
+    );
+    snapshot.push(JSON.parse(run("prototype", "status", "menu").stdout).summary);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         0,
@@ -341,7 +348,8 @@ describe("transitions in status and verify", () => {
 describe("contexts --tree --transitions", () => {
   const withTransitions = () => {
     const project = cliProject(files);
-    const add = (...args: string[]) => project.run("node", "transition", "add", "menu", ...args);
+    const add = (...args: string[]) =>
+      project.run("prototype", "node", "transition", "add", "menu", ...args);
     add("open", "--from", "closed", "--to", "open", "--on", "click", "--target", "menu-button");
     add(
       "escape",
@@ -373,7 +381,7 @@ describe("contexts --tree --transitions", () => {
   it("lists each part's transitions under it", () => {
     const { run } = withTransitions();
     expect(
-      run("contexts", "toolbar", "--subtree", "--tree", "--transitions").stdout,
+      run("prototype", "contexts", "toolbar", "--subtree", "--tree", "--transitions").stdout,
     ).toMatchInlineSnapshot(`
       "toolbar (1 combination)
       menu (2 combinations)
@@ -395,7 +403,7 @@ describe("contexts --tree --transitions", () => {
   it("adds them to the JSON tree", () => {
     const { run } = withTransitions();
     expect(
-      JSON.parse(run("contexts", "menu", "--tree", "--json", "--transitions").stdout),
+      JSON.parse(run("prototype", "contexts", "menu", "--tree", "--json", "--transitions").stdout),
     ).toMatchInlineSnapshot(`
       {
         "node": "menu",
@@ -445,6 +453,6 @@ describe("contexts --tree --transitions", () => {
 
   it("needs --tree", () => {
     const { run } = withTransitions();
-    expect(run("contexts", "menu", "--transitions").code).toBe(2);
+    expect(run("prototype", "contexts", "menu", "--transitions").code).toBe(2);
   });
 });

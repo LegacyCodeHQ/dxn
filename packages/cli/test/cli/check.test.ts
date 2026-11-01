@@ -8,12 +8,12 @@ describe("check commands", () => {
   it("declare checks and make types require them", () => {
     const snapshot: unknown[] = [];
     const { run, read } = cliProject({ "types.json": { version: 1, types: { link: {} } } });
-    snapshot.push(run("check", "add", "visual").code);
-    snapshot.push(run("check", "add", "behavior").code);
-    snapshot.push(run("type", "require", "link", "visual").code);
+    snapshot.push(run("prototype", "check", "add", "visual").code);
+    snapshot.push(run("prototype", "check", "add", "behavior").code);
+    snapshot.push(run("prototype", "type", "require", "link", "visual").code);
     snapshot.push(read("types.json"));
-    snapshot.push(run("type", "unrequire", "link", "visual").code);
-    snapshot.push(run("check", "remove", "behavior").code);
+    snapshot.push(run("prototype", "type", "unrequire", "link", "visual").code);
+    snapshot.push(run("prototype", "check", "remove", "behavior").code);
     snapshot.push(read("types.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -55,14 +55,14 @@ describe("check commands", () => {
   it("refuse existing, unknown and required checks", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({ "types.json": { version: 1, types: { link: {} } } });
-    run("check", "add", "visual");
-    snapshot.push(run("check", "add", "visual"));
-    snapshot.push(run("check", "remove", "speed"));
-    snapshot.push(run("type", "require", "link", "speed").stderr);
-    run("type", "require", "link", "visual");
-    snapshot.push(run("check", "remove", "visual").stderr);
-    snapshot.push(run("type", "unrequire", "link", "speed"));
-    snapshot.push(run("check").code);
+    run("prototype", "check", "add", "visual");
+    snapshot.push(run("prototype", "check", "add", "visual"));
+    snapshot.push(run("prototype", "check", "remove", "speed"));
+    snapshot.push(run("prototype", "type", "require", "link", "speed").stderr);
+    run("prototype", "type", "require", "link", "visual");
+    snapshot.push(run("prototype", "check", "remove", "visual").stderr);
+    snapshot.push(run("prototype", "type", "unrequire", "link", "speed"));
+    snapshot.push(run("prototype", "check").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [

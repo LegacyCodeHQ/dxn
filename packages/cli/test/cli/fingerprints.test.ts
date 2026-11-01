@@ -58,6 +58,7 @@ function project() {
   write(pen);
   const attach = (node: string, frame: string, ...context: string[]) =>
     result.run(
+      "prototype",
       "attach",
       node,
       "--actor",
@@ -81,7 +82,7 @@ function project() {
     write(document);
   };
   const states = () => {
-    const status = json(result.run("status", "--actor", "design-agent"));
+    const status = json(result.run("prototype", "status", "--actor", "design-agent"));
     const of = (node: string) =>
       status.items.find(
         (item: { node: string; evidence: string }) =>
@@ -137,19 +138,21 @@ describe("evidence in a pen.dev file", () => {
     edit((document) => {
       document.children.splice(2, 1);
     });
-    expect(run("validate").code).toBe(0);
+    expect(run("prototype", "validate").code).toBe(0);
     expect(
-      json(run("evidence", "wordmark", "--actor", "design-agent")).contexts[0].evidence[0],
+      json(run("prototype", "evidence", "wordmark", "--actor", "design-agent")).contexts[0]
+        .evidence[0],
     ).toMatchObject({ stale: true, gone: true });
-    expect(run("evidence", "wordmark", "--actor", "design-agent", "--table").stdout).toContain(
-      "design.pen#textCell (gone)",
-    );
+    expect(
+      run("prototype", "evidence", "wordmark", "--actor", "design-agent", "--table").stdout,
+    ).toContain("design.pen#textCell (gone)");
   });
 
   it("refuses a frame the file does not have", () => {
     const { run } = project();
     expect(
       run(
+        "prototype",
         "attach",
         "wordmark",
         "--actor",

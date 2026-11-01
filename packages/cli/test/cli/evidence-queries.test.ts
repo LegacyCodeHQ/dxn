@@ -46,7 +46,9 @@ describe("evidence filters", () => {
   it("keep the contexts with those values, states or profiles", () => {
     const { run } = project();
     const rows = (...filters: string[]) =>
-      json(run("evidence", "menu-button", "--actor", "design-agent", ...filters)).contexts.map(
+      json(
+        run("prototype", "evidence", "menu-button", "--actor", "design-agent", ...filters),
+      ).contexts.map(
         ({ context }: { context: { breakpoint: string; menu: string } }) =>
           `${context.breakpoint}/${context.menu}`,
       );
@@ -55,14 +57,16 @@ describe("evidence filters", () => {
       ["base/open", "sm/open"],
       ["base/open"],
     ]);
-    expect(run("evidence", "menu-button", "--actor", "design-agent", "theme=dark").code).toBe(1);
+    expect(
+      run("prototype", "evidence", "menu-button", "--actor", "design-agent", "theme=dark").code,
+    ).toBe(1);
   });
 });
 
 describe("status --actor", () => {
   it("reports each context of each node as present, stale or missing for the actor", () => {
     const { run, root } = project();
-    const result = json(run("status", "menu-button", "--actor", "design-agent"));
+    const result = json(run("prototype", "status", "menu-button", "--actor", "design-agent"));
     expect(result.summary).toEqual({ present: 1, stale: 0, conflicting: 0, missing: 3 });
     expect(result.items[0]).toEqual({
       root: "page",
@@ -78,7 +82,9 @@ describe("status --actor", () => {
       evidence: "present",
     });
     writeFileSync(join(root, design), "redrawn");
-    expect(json(run("status", "menu-button", "--actor", "design-agent")).summary).toEqual({
+    expect(
+      json(run("prototype", "status", "menu-button", "--actor", "design-agent")).summary,
+    ).toEqual({
       present: 0,
       stale: 1,
       conflicting: 0,
@@ -88,9 +94,9 @@ describe("status --actor", () => {
 
   it("covers every node without a node id, and refuses an undeclared actor", () => {
     const { run } = project();
-    const all = json(run("status", "--actor", "design-agent"));
+    const all = json(run("prototype", "status", "--actor", "design-agent"));
     expect(new Set(all.items.map(({ node }: { node: string }) => node)).has("wordmark")).toBe(true);
-    expect(run("status", "--actor", "designer").stderr).toBe(
+    expect(run("prototype", "status", "--actor", "designer").stderr).toBe(
       'dxn: actor not found: "designer" (design-agent)\n',
     );
   });

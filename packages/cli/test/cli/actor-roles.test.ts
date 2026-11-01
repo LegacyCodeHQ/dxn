@@ -65,7 +65,7 @@ function project(files: Record<string, unknown>) {
 
 const problems = (files: Record<string, unknown>) =>
   project(files)
-    .run("validate")
+    .run("prototype", "validate")
     .stderr.split("\n")
     .filter((line) => line !== "")
     .map((line) => line.replace(/^.*?:\d+:\d+: /, ""));
@@ -105,19 +105,19 @@ describe("actor commands", () => {
   it("add and set what an actor records, and list it", () => {
     const { run, read } = project({});
     expect([
-      run("actor", "add", "design-agent", "--evidence", "design").code,
-      run("actor", "add", "visual-reviewer", "--checks", "visual").code,
-      run("actor", "set", "design-agent", "--checks", "visual").code,
+      run("prototype", "actor", "add", "design-agent", "--evidence", "design").code,
+      run("prototype", "actor", "add", "visual-reviewer", "--checks", "visual").code,
+      run("prototype", "actor", "set", "design-agent", "--checks", "visual").code,
     ]).toEqual([0, 0, 0]);
     expect(read("actors.json").actors).toEqual({
       "design-agent": { evidence: "design", checks: ["visual"] },
       "visual-reviewer": { checks: ["visual"] },
     });
-    expect(json(run("actor", "list")).actors).toEqual([
+    expect(json(run("prototype", "actor", "list")).actors).toEqual([
       { name: "design-agent", evidence: "design", checks: ["visual"] },
       { name: "visual-reviewer", checks: ["visual"] },
     ]);
-    expect(run("actor", "set", "nobody", "--evidence", "design").stderr).toBe(
+    expect(run("prototype", "actor", "set", "nobody", "--evidence", "design").stderr).toBe(
       "dxn: actor not found: nobody\n",
     );
   });
@@ -129,9 +129,11 @@ describe("evidence queries", () => {
       "actors.json": { version: 1, actors },
       "evidence/page.json": evidenceBy("design-agent"),
     });
-    expect(json(run("evidence", "wordmark", "--actor", "design-agent")).kind).toBe("design");
-    expect(json(run("status", "--actor", "design-agent")).kind).toBe("design");
-    expect(run("evidence", "wordmark", "--actor", "visual-reviewer").stderr).toBe(
+    expect(json(run("prototype", "evidence", "wordmark", "--actor", "design-agent")).kind).toBe(
+      "design",
+    );
+    expect(json(run("prototype", "status", "--actor", "design-agent")).kind).toBe("design");
+    expect(run("prototype", "evidence", "wordmark", "--actor", "visual-reviewer").stderr).toBe(
       'dxn: actor "visual-reviewer" records no evidence\n',
     );
   });

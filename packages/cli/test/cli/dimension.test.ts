@@ -24,6 +24,7 @@ describe("dimension add and remove", () => {
     const { run, read } = cliProject({ "types.json": types, "roots/page.json": page });
     snapshot.push(
       run(
+        "prototype",
         "dimension",
         "add",
         "breakpoint",
@@ -37,7 +38,16 @@ describe("dimension add and remove", () => {
     );
     snapshot.push(read("dimensions/breakpoint.json"));
     snapshot.push(
-      run("dimension", "add", "pointer", "--values", "mouse,touch", "--applies-to", "a,b").code,
+      run(
+        "prototype",
+        "dimension",
+        "add",
+        "pointer",
+        "--values",
+        "mouse,touch",
+        "--applies-to",
+        "a,b",
+      ).code,
     );
     snapshot.push(read("dimensions/pointer.json"));
 
@@ -75,14 +85,17 @@ describe("dimension add and remove", () => {
   it("refuse existing dimensions, invalid ones and usage errors", () => {
     const snapshot: unknown[] = [];
     const { run } = cliProject({ "types.json": types, "roots/page.json": page });
-    run("dimension", "add", "pointer", "--values", "mouse", "--applies-to", "page");
-    snapshot.push(run("dimension", "add", "pointer", "--values", "x", "--applies-to", "page"));
+    run("prototype", "dimension", "add", "pointer", "--values", "mouse", "--applies-to", "page");
     snapshot.push(
-      run("dimension", "add", "theme", "--values", "dark", "--applies-to", "nope").stderr,
+      run("prototype", "dimension", "add", "pointer", "--values", "x", "--applies-to", "page"),
     );
-    snapshot.push(run("dimension", "add", "theme", "--applies-to", "page").code);
-    snapshot.push(run("dimension", "add", "theme", "--values", "dark").code);
-    snapshot.push(run("dimension").code);
+    snapshot.push(
+      run("prototype", "dimension", "add", "theme", "--values", "dark", "--applies-to", "nope")
+        .stderr,
+    );
+    snapshot.push(run("prototype", "dimension", "add", "theme", "--applies-to", "page").code);
+    snapshot.push(run("prototype", "dimension", "add", "theme", "--values", "dark").code);
+    snapshot.push(run("prototype", "dimension").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -110,10 +123,10 @@ describe("dimension add and remove", () => {
       "dimensions/theme.json": { version: 1, values: ["dark"], appliesTo: ["page"] },
       "overrides/theme.json": { version: 1, overrides: {} },
     });
-    snapshot.push(run("dimension", "remove", "pointer").code);
+    snapshot.push(run("prototype", "dimension", "remove", "pointer").code);
     snapshot.push(exists("dimensions/pointer.json"));
-    snapshot.push(run("dimension", "remove", "theme").stderr);
-    snapshot.push(run("dimension", "remove", "size"));
+    snapshot.push(run("prototype", "dimension", "remove", "theme").stderr);
+    snapshot.push(run("prototype", "dimension", "remove", "size"));
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -143,14 +156,14 @@ describe("dimension values, default and scope", () => {
   it("add and remove values, set and clear the default", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project();
-    snapshot.push(run("dimension", "add-value", "pointer", "pen").code);
-    snapshot.push(run("dimension", "remove-value", "pointer", "touch").code);
-    snapshot.push(run("dimension", "set-default", "pointer", "mouse").code);
+    snapshot.push(run("prototype", "dimension", "add-value", "pointer", "pen").code);
+    snapshot.push(run("prototype", "dimension", "remove-value", "pointer", "touch").code);
+    snapshot.push(run("prototype", "dimension", "set-default", "pointer", "mouse").code);
     snapshot.push(read("dimensions/pointer.json"));
-    snapshot.push(run("dimension", "set-default", "pointer", "--none").code);
+    snapshot.push(run("prototype", "dimension", "set-default", "pointer", "--none").code);
     snapshot.push(read("dimensions/pointer.json"));
-    snapshot.push(run("dimension", "set-default", "pointer", "nope").stderr);
-    snapshot.push(run("dimension", "set-default", "pointer").code);
+    snapshot.push(run("prototype", "dimension", "set-default", "pointer", "nope").stderr);
+    snapshot.push(run("prototype", "dimension", "set-default", "pointer").code);
 
     expect(snapshot).toMatchInlineSnapshot(`
   [
@@ -189,11 +202,11 @@ describe("dimension values, default and scope", () => {
   it("apply to and unapply from nodes", () => {
     const snapshot: unknown[] = [];
     const { run, read } = project();
-    snapshot.push(run("dimension", "apply", "pointer", "b").code);
-    snapshot.push(run("dimension", "unapply", "pointer", "a").code);
+    snapshot.push(run("prototype", "dimension", "apply", "pointer", "b").code);
+    snapshot.push(run("prototype", "dimension", "unapply", "pointer", "a").code);
     snapshot.push(read("dimensions/pointer.json"));
-    snapshot.push(run("dimension", "unapply", "pointer", "a"));
-    snapshot.push(run("dimension", "unapply", "pointer", "b").stderr);
+    snapshot.push(run("prototype", "dimension", "unapply", "pointer", "a"));
+    snapshot.push(run("prototype", "dimension", "unapply", "pointer", "b").stderr);
 
     expect(snapshot).toMatchInlineSnapshot(`
       [
@@ -227,7 +240,7 @@ describe("dimension values, default and scope", () => {
       "dimensions/pointer.json": { version: 1, values: ["mouse", "touch"], appliesTo: ["a"] },
       "overrides/pointer.json": { version: 1, overrides: { touch: {} } },
     });
-    expect(run("dimension", "remove-value", "pointer", "touch").stderr).toContain(
+    expect(run("prototype", "dimension", "remove-value", "pointer", "touch").stderr).toContain(
       "unknown-dimension-value",
     );
   });
@@ -268,7 +281,7 @@ describe("dimension rename-value", () => {
       "actors.json": { version: 1, actors: { agent: { checks: ["visual"] } } },
       "verification/page.json": { version: 1, records: [record] },
     });
-    snapshot.push(run("dimension", "rename-value", "breakpoint", "0", "base").code);
+    snapshot.push(run("prototype", "dimension", "rename-value", "breakpoint", "0", "base").code);
     snapshot.push(read("dimensions/breakpoint.json"));
     snapshot.push(read("overrides/breakpoint.json"));
     snapshot.push(read("overrides/breakpoint+pointer.json"));
@@ -360,7 +373,7 @@ describe("dimension rename-value", () => {
         overrides: { sm: { touch: { types: { link: { states: { remove: ["hovered"] } } } } } },
       },
     });
-    snapshot.push(run("dimension", "rename-value", "pointer", "touch", "finger").code);
+    snapshot.push(run("prototype", "dimension", "rename-value", "pointer", "touch", "finger").code);
     snapshot.push(read("overrides/breakpoint+pointer.json"));
 
     expect(snapshot).toMatchInlineSnapshot(`
@@ -394,10 +407,12 @@ describe("dimension rename-value", () => {
       "roots/page.json": page,
       "dimensions/pointer.json": { version: 1, values: ["mouse"], appliesTo: ["page"] },
     });
-    expect(run("dimension", "rename-value", "pointer", "pen", "stylus")).toMatchObject({
-      code: 1,
-      stderr: 'dxn: dimension "pointer" has no value "pen"\n',
-    });
+    expect(run("prototype", "dimension", "rename-value", "pointer", "pen", "stylus")).toMatchObject(
+      {
+        code: 1,
+        stderr: 'dxn: dimension "pointer" has no value "pen"\n',
+      },
+    );
   });
 });
 
@@ -405,18 +420,19 @@ describe("a dimension before any node", () => {
   it("can be added, used by profiles, and applied once nodes exist", () => {
     const { run, read, exists } = cliProject({ "types.json": { version: 1 } });
     const snapshot: unknown[] = [];
-    snapshot.push(run("dimension", "add", "breakpoint", "--values", "base,lg").code);
+    snapshot.push(run("prototype", "dimension", "add", "breakpoint", "--values", "base,lg").code);
     snapshot.push(read("dimensions/breakpoint.json"));
     snapshot.push(
-      run("profile", "add", "phone", "breakpoint=base", "desktop", "breakpoint=lg").code,
+      run("prototype", "profile", "add", "phone", "breakpoint=base", "desktop", "breakpoint=lg")
+        .code,
     );
-    snapshot.push(run("node", "add", "page", "--title", "Page").code);
-    snapshot.push(run("dimension", "apply", "breakpoint", "page").code);
+    snapshot.push(run("prototype", "node", "add", "page", "--title", "Page").code);
+    snapshot.push(run("prototype", "dimension", "apply", "breakpoint", "page").code);
     snapshot.push(read("dimensions/breakpoint.json").appliesTo);
-    snapshot.push(JSON.parse(run("contexts", "page", "--count").stdout).count);
-    snapshot.push(run("dimension", "unapply", "breakpoint", "page").code);
+    snapshot.push(JSON.parse(run("prototype", "contexts", "page", "--count").stdout).count);
+    snapshot.push(run("prototype", "dimension", "unapply", "breakpoint", "page").code);
     snapshot.push("appliesTo" in read("dimensions/breakpoint.json"));
-    snapshot.push(JSON.parse(run("dimension", "list").stdout).dimensions[0].appliesTo);
+    snapshot.push(JSON.parse(run("prototype", "dimension", "list").stdout).dimensions[0].appliesTo);
     snapshot.push(exists("profiles.json"));
     expect(snapshot).toEqual([
       0,

@@ -82,7 +82,7 @@ function problems(list: unknown[], extra: Record<string, unknown> = {}): string[
     ...extra,
     "expectations.json": { version: 1, expectations: list },
   });
-  return run("validate")
+  return run("prototype", "validate")
     .stderr.split("\n")
     .filter((line) => line !== "")
     .map((line) => line.replace(/^.*?:\d+:\d+: /, ""));
