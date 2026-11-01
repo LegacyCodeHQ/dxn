@@ -1,5 +1,6 @@
 import type { Expectation, ParseResult, Trigger } from "./ast.js";
 import { eventText } from "./check.js";
+import { holds } from "./condition.js";
 import { placement } from "./evaluate.js";
 import { profilesOf } from "./profiles.js";
 import { type Combination, expand, treePaths } from "./status.js";
@@ -155,10 +156,25 @@ function checkOne(
     const type = placement(file, element).target;
     const trigger: Trigger | undefined = type.triggers.find((candidate) => {
       if (eventText(candidate.event) !== event) return false;
+      // A trigger with a condition fires only where it holds.
+      if (
+        candidate.when !== undefined &&
+        !holds(candidate.when, (name) => valueAt(combination, name))
+      ) {
+        return false;
+      }
       const action = type.actions.find(({ name }) => name.name === candidate.action.name);
       return action !== undefined && combination.states[action.state.name] === action.from.name;
     });
     const action = type.actions.find(({ name }) => name.name === trigger?.action.name);
+    // Where nothing fires, the element stays as it was: what the rule says
+    // must hold of it unchanged, with nowhere for focus to have gone.
+    const unchanged =
+      values.every(({ key, value }) => valueAt(combination, key.name) === value.name) &&
+      !expectation.values.some(({ key }) => key.name === "focus");
+    if ((trigger === undefined || action === undefined) && unchanged) {
+      return { combination, focus: undefined };
+    }
     if (trigger === undefined || action === undefined) {
       const condition = expectation.when
         .map(({ key, value }) => `${key.name} = ${value.name}`)

@@ -261,3 +261,86 @@ expect "Escape closes the menu and returns focus to its button" {
     ]);
   });
 });
+
+const button = (...lines: string[]) => `dimension Keyboard = keyboard | no-keyboard
+enum Press = released | pressed
+enum Focus = blurred | focused
+
+type Button needs Keyboard {
+  state press: Press
+  state focus: Focus
+  focus = focused only when Keyboard = keyboard
+  action press: press released -> pressed
+${lines.map((line) => `  ${line}\n`).join("")}}
+
+type Page {
+  has button: Button
+}
+`;
+
+describe("a trigger only when", () => {
+  it("fires only where its condition holds", () => {
+    const source = button("on key Space: press only when focus = focused");
+    const trigger = parse(source).types[0]?.triggers[0];
+    assert([problems(source), trigger?.when?.kind, trigger?.action.name]).toEqual([
+      [],
+      "compare",
+      "press",
+    ]);
+  });
+
+  it("is checked as any condition is", () => {
+    assert([
+      errors(button("on key Space: press only when fokus = focused")),
+      errors(button("on key Space: press only when focus = blurd")),
+      problems(button("on key Space: press only when focus in (blurred, focused)")),
+    ]).toEqual([
+      ["10:33: unknown-state: fokus is not a state of Button (press, focus)"],
+      ['10:41: unknown-value: "blurd" is not a value of focus (blurred, focused)'],
+      [
+        "10:3: warning: vacuous-condition: focus in (blurred, focused) is always true, so the trigger always fires",
+      ],
+    ]);
+  });
+
+  it("does not make an event ambiguous where the conditions can never both hold", () => {
+    const twice = (first: string, second: string) =>
+      errors(
+        button(
+          "action hold: press released -> pressed",
+          `on key Space: press only when ${first}`,
+          `on key Space: hold only when ${second}`,
+        ),
+      );
+    assert([
+      twice("focus = focused", "focus = blurred"),
+      twice("focus = focused", "Keyboard = keyboard"),
+    ]).toEqual([
+      [],
+      ["12:3: ambiguous-event: key Space triggers both press and hold when press = released"],
+    ]);
+  });
+
+  it("is applied by an expectation only where it holds, and nothing happens elsewhere", () => {
+    const rule = (when: string, then: string) =>
+      `${button("on key Space: press only when focus = focused")}
+expect "Space presses the button only while it is focused" {
+  in Page.button
+  when ${when}
+  on key Space
+  then ${then}
+}
+`;
+    assert([
+      problems(rule("focus = focused", "press = pressed")),
+      problems(rule("focus = blurred, press = released", "press = released")),
+      problems(rule("focus = blurred, press = released", "press = pressed")),
+    ]).toEqual([
+      [],
+      [],
+      [
+        "17:8: expectation-failed: Space presses the button only while it is focused: nothing happens on key Space to Page.button when focus = blurred, press = released",
+      ],
+    ]);
+  });
+});

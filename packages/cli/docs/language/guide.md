@@ -1385,6 +1385,19 @@ type Toolbar needs Breakpoint {
 }
 ```
 
+A trigger can fire only where a condition holds, written at its end with
+`only when`, as a rule's and a child's are. A key presses a button only
+while it is focused:
+
+```
+on key Space: press only when focus = focused
+```
+
+The condition is checked as any other: on the type's states and the
+dimensions it needs, never true an error and always true a warning. Two
+triggers for one event are not ambiguous when their conditions can never
+both hold.
+
 `focus` says where focus goes after the change: a child, by its path, that
 has a state named `focus`. Focus is an effect, not a state of the matrix, so
 it is checked, and an expectation can assert it.
@@ -1451,7 +1464,10 @@ expect "Escape closes the menu and returns focus to its button" {
 }
 ```
 
-If the event changes nothing in a combination picked, the rule fails.
+Where the event fires nothing in a combination picked, the element stays as
+it was, and the rule is checked on it unchanged: `when focus = blurred`, `on
+key Space`, `then press = released` holds for the button above. Where that
+does not hold, the rule fails, saying nothing happens.
 
 A change that breaks a rule is an error, with one combination that breaks
 it:
@@ -1602,7 +1618,7 @@ type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" f
               "{" { blank-line | state | rule | enum | type | has | provides | action | on | alike } "}"
 alike       = "alike" name [ "in" "(" value { "," value } ")" ] [ "when" condition ] newline
 action      = "action" action-name ":" state-name value "->" value newline
-on          = "on" event ":" path [ "," "focus" path ] newline     # path: an action, or a child's
+on          = "on" event ":" path [ "," "focus" path ] [ "only" "when" condition ] newline   # path: an action, or a child's
 event       = "click" path | "key" word | "pointer" "outside" | condition
 provides    = "provides" state-name newline
 has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline

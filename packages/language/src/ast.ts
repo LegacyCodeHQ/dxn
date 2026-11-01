@@ -106,6 +106,8 @@ export interface Trigger extends Located {
   event: Event;
   action: Located;
   focus?: Located;
+  // Where it fires: everywhere, or only where this holds.
+  when?: Condition;
 }
 
 // A child of a type: its name, its type, and, when it is not always there,

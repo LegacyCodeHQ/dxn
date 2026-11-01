@@ -491,7 +491,13 @@ export function parse(source: string): ParseResult {
           trigger.focus = qualified('a path after "focus"');
         }
         type.triggers.push(trigger);
-        end(["newline", "}"], "the end of the line");
+        if (peek().kind === "word" && peek().text === "only") {
+          next();
+          keyword("when", '"when" after "only"');
+          trigger.when = condition("a state or a dimension");
+          return;
+        }
+        end(["newline", "}"], '"only when" or the end of the line');
         return;
       }
       // "alike <subject> [in (...)] [when ...]"; a rule on a state named

@@ -9,6 +9,7 @@ import type {
   RecordDeclaration,
   Rule,
   State,
+  Trigger,
   Type,
 } from "./ast.js";
 import { comparisons, conditionText, coverage, subjects } from "./condition.js";
@@ -266,6 +267,12 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
         }
       }
       const path = parts.slice(0, -1).join(".");
+      if (trigger.when !== undefined) {
+        checkCondition(type, trigger.when, needed, declare, true, trigger, {
+          never: "the trigger never fires",
+          always: "the trigger always fires",
+        });
+      }
       return { trigger, action, path };
     });
     // One event, one change: no two actions that events which overlap
@@ -281,6 +288,19 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       }
       return a.kind === b.kind;
     };
+    // Two triggers' conditions can both hold where they have values in
+    // common; one without a condition holds everywhere.
+    const together = (a: Trigger, b: Trigger) => {
+      if (a.when === undefined || b.when === undefined) return true;
+      const both: Condition = { kind: "and", terms: [a.when, b.when] };
+      const valuesOf = (subject: string) => {
+        const name = /^[a-z]/.test(subject)
+          ? type.states.find((state) => state.name === subject)?.enum.name
+          : subject;
+        return names.values(name ?? "") ?? [];
+      };
+      return coverage(both, valuesOf) !== "never";
+    };
     resolved.forEach(({ trigger, action, path }, index) => {
       if (action === undefined) return;
       const of = (name: string) => (path === "" ? name : `${path}.${name}`);
@@ -291,7 +311,8 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           earlier.path !== path ||
           !overlap(earlier.trigger.event, trigger.event) ||
           other.state.name !== action.state.name ||
-          other.from.name !== action.from.name
+          other.from.name !== action.from.name ||
+          !together(earlier.trigger, trigger)
         ) {
           continue;
         }
@@ -602,6 +623,9 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           ...type.triggers.flatMap(({ event }) =>
             event.kind === "dimension" ? [event.dimension.name] : [],
           ),
+          ...type.triggers.flatMap(({ when }) =>
+            when === undefined ? [] : subjects(when).map(({ name }) => name),
+          ),
           ...type.alikes.flatMap(({ subject, when }) => [
             subject.name,
             ...(when === undefined ? [] : subjects(when).map(({ name }) => name)),
@@ -626,6 +650,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           ...type.rules.map(({ when }) => when),
           ...type.children.flatMap(({ when }) => (when === undefined ? [] : [when])),
           ...type.alikes.flatMap(({ when }) => (when === undefined ? [] : [when])),
+          ...type.triggers.flatMap(({ when }) => (when === undefined ? [] : [when])),
         ].some((when) => subjects(when).some((subject) => subject.name === name)) ||
         type.states.some(({ derived }) => derived?.dimension.name === name) ||
         type.triggers.some(
