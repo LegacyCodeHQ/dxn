@@ -126,6 +126,11 @@
 
 (value) @constant
 
+; The else of a when, a branch for every value the others do not list,
+; which comes after values, so that it is a keyword and not a value.
+
+(when_branch . (value) @keyword (#eq? @keyword "else"))
+
 ; A profile an expectation names, on its own or with its modifiers, which
 ; comes after values, so that each is a profile's or a modifier's, not a
 ; value's.

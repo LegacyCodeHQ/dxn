@@ -226,6 +226,12 @@ describe("the TextMate grammar", () => {
     `);
   });
 
+  it("colours the else of a when as a keyword", async () => {
+    expect(await tokens("    else -> redraw")).toEqual([
+      ["else keyword.control.dxn", "-> keyword.operator.dxn", "redraw constant.other.dxn"],
+    ]);
+  });
+
   it("colours an expectation", async () => {
     expect(
       await tokens(

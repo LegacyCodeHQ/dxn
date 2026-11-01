@@ -7,6 +7,7 @@
 import type {
   Alike,
   Assignment,
+  Branch,
   Child,
   Condition,
   Declaration,
@@ -353,9 +354,10 @@ export function parse(source: string): ParseResult {
   };
 
   // A when's branches, after its "{", to its "}": "<value>, ... -> <value>",
-  // split by commas or lines.
+  // split by commas or lines; the last may be "else -> <value>", for the
+  // values the others do not list.
   const branchList = (owner: string, subject = "state") => {
-    const branches: { values: Located[]; result: Located }[] = [];
+    const branches: Branch[] = [];
     for (;;) {
       while (peek().kind === "newline") next();
       if (peek().kind === "}") {
@@ -363,6 +365,18 @@ export function parse(source: string): ParseResult {
         return branches;
       }
       if (peek().kind === "end") fail(peek(), `"}" to close the when of ${owner}`);
+      if (branches.at(-1)?.otherwise !== undefined) {
+        fail(peek(), '"}" after the else, which is the last branch of a when');
+      }
+      if (peek().kind === "word" && peek().text === "else") {
+        const otherwise = located(next());
+        end(["->"], '"->" after "else"');
+        next();
+        branches.push({ values: [], result: word('a value after "->"'), otherwise });
+        if (peek().kind === ",") next();
+        else end(["newline", "}"], '",", the end of the line or "}"');
+        continue;
+      }
       const values = [word(`a value of the ${subject}`)];
       while (peek().kind === ",") {
         next();

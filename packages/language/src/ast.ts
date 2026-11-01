@@ -36,10 +36,19 @@ export interface State extends Located {
   received?: true;
 }
 
+// A branch of a when: "<value>, ... -> <value>", or "else -> <value>", the
+// last, for every value the others do not list, with no values of its own and
+// where its "else" is written.
+export interface Branch {
+  values: Located[];
+  result: Located;
+  otherwise?: Located;
+}
+
 // "when <Dimension> { <value>, ... -> <value> ... }".
 export interface Derived {
   dimension: Located;
-  branches: { values: Located[]; result: Located }[];
+  branches: Branch[];
 }
 
 // A condition: a state or a dimension has one of these values, or several
@@ -127,7 +136,7 @@ export interface Child extends Located {
   // The child's states the type sets, each from one of its own states:
   // without a map, both with their values from the same enum; with a map,
   // the child's state takes the value its branch gives for the type's state.
-  bindings?: { state: Located; from: Located; map?: { values: Located[]; result: Located }[] }[];
+  bindings?: { state: Located; from: Located; map?: Branch[] }[];
 }
 
 // An environment: a product of dimensions, whose instances are profiles.
@@ -164,7 +173,7 @@ export interface Field extends Located {
   type: Located;
   // A derived field: its value decided by another field's, which is not
   // stored, one branch for each group of that field's values.
-  derived?: { on: Located; branches: { values: Located[]; result: Located }[] };
+  derived?: { on: Located; branches: Branch[] };
 }
 
 // A record: plain data, a named group of typed fields, every one of which is

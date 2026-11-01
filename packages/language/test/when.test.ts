@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { states } from "../src/evaluate.js";
+import { inPlace, states } from "../src/evaluate.js";
 import { parse } from "../src/parse.js";
 import { renameInSource } from "../src/rename.js";
 import { validate } from "../src/validate.js";
@@ -142,5 +142,69 @@ actor EvidenceRecorder records Evidence`);
         .replace("enum Layout = compact | inline", "enum Layout = compact | wide")
         .replace("lg, xl -> inline", "lg, xl -> wide"),
     );
+  });
+});
+
+describe("else in a when", () => {
+  it("gives its value to every value the other branches do not list", () => {
+    const withElse = toolbar("base, sm -> compact", "else -> inline");
+    expect([
+      problems(withElse),
+      states(parse(withElse), "Toolbar").rows.map(({ when, states: own }) => [
+        when.Breakpoint,
+        own.layout,
+      ]),
+    ]).toEqual([
+      [],
+      [
+        ["base", ["compact"]],
+        ["sm", ["compact"]],
+        ["lg", ["inline"]],
+        ["xl", ["inline"]],
+      ],
+    ]);
+  });
+
+  it("gives a child's state its value from the type's, in a binding", () => {
+    const bar = `enum Selection = unselected | selected
+type Tab {
+  state selection: Selection
+}
+type Bar {
+  enum Section = feed | saved | sources
+  state section: Section
+  has feed: Tab { selection = when section { feed -> selected, else -> unselected } }
+}
+`;
+    expect([
+      problems(bar),
+      inPlace(parse(bar), "Bar.feed").rows.map(({ parents, states: own }) => [
+        parents.section,
+        own.selection,
+      ]),
+    ]).toEqual([
+      [],
+      [
+        ["feed", ["selected"]],
+        ["saved", ["unselected"]],
+        ["sources", ["unselected"]],
+      ],
+    ]);
+  });
+
+  it("comes last, gives a value of the result, and covers something", () => {
+    expect([
+      problems(toolbar("else -> inline", "base, sm -> compact")),
+      problems(toolbar("base, sm -> compact", "else -> wide")),
+      problems(toolbar("base, sm -> compact", "lg, xl -> inline", "else -> compact")),
+    ]).toEqual([
+      [
+        '6:5: syntax-error: expected "}" after the else, which is the last branch of a when, found "base"',
+      ],
+      ['6:13: unknown-value: "wide" is not a value of layout (compact, inline)'],
+      [
+        "7:5: warning: unused-else: else covers nothing: the other branches cover every value of Breakpoint",
+      ],
+    ]);
   });
 });

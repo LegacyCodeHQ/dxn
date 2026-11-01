@@ -1,4 +1,4 @@
-import type { Child, ParseResult, State, Type } from "./ast.js";
+import type { Branch, Child, ParseResult, State, Type } from "./ast.js";
 import { conditionText, holds, subjects } from "./condition.js";
 import { among, valuesOf as declaredValues } from "./names.js";
 import { profilesOf } from "./profiles.js";
@@ -152,11 +152,9 @@ export function states(file: ParseResult, typeName: string): TypeStates {
               .every((rule) => holds(rule.when, (name) => chosen[name] ?? settled[name]?.[0])),
           )
         : // A derived state has the one value its when gives here.
-          state.derived.branches
-            .filter(({ values }) =>
-              values.some(({ name }) => name === chosen[state.derived?.dimension.name ?? ""]),
-            )
-            .map(({ result }) => result.name);
+          [resultFor(state.derived.branches, chosen[state.derived.dimension.name] ?? "")].flatMap(
+            (result) => (result === undefined ? [] : [result]),
+          );
   return {
     type: type.name,
     dimensions,
@@ -324,8 +322,8 @@ export function inPlace(file: ParseResult, path: string): InPlace {
       const given = Object.fromEntries(
         (next.bindings ?? []).map(({ state, from, map }) => {
           const value = combination[from.name] as string;
-          const mapped = map?.find(({ values }) => values.some(({ name }) => name === value));
-          return [state.name, mapped === undefined ? value : mapped.result.name];
+          const mapped = map === undefined ? undefined : resultFor(map, value);
+          return [state.name, mapped ?? value];
         }),
       );
       // A received state is named by its provider's key, already given.
@@ -476,4 +474,13 @@ function profileGroups(
     else groups.set(key, { profiles: [profile.name], values: { ...profile.values } });
   }
   return [...groups.values()];
+}
+
+// The value a when gives for one of its subject's values: its branch's, or
+// else its else's; none for a value it does not cover.
+export function resultFor(branches: Branch[], value: string): string | undefined {
+  const branch =
+    branches.find(({ values }) => values.some(({ name }) => name === value)) ??
+    branches.find(({ otherwise }) => otherwise !== undefined);
+  return branch?.result.name;
 }

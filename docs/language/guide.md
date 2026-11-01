@@ -476,12 +476,26 @@ exactly once, so the state has exactly one value in each row:
 | touch   | disabled | rest          |
 ```
 
-There is no `else`: a value left out is reported, not quietly given a
-default.
+A value left out is reported, not quietly given a default:
 
 ```
 toolbar.dxn:7:31: incomplete-when: when Breakpoint does not cover xl
 ```
+
+Unless the `when` says so with `else`, its last branch, which gives one value
+to every value the others do not list:
+
+```
+state layout: Layout = when Breakpoint {
+  base, sm -> compact
+  else -> inline
+}
+```
+
+An `else` also covers a value added to the dimension later, without a
+report, so it is for a value that stands for "anything else", not for
+saving a line. An `else` with nothing left to cover is a warning,
+`unused-else`.
 
 The dimension must be one the type needs, as for a rule. A derived state is
 declared on a `state` line of its own, and has no `only when` rules: its
@@ -1732,6 +1746,7 @@ state       = "state" field { "," [newline] field } newline
             | "state" field "=" "when" Name "{" { branch ( "," | newline ) } "}" newline
             | "state" field "=" value newline
 branch      = value { "," value } "->" value       # a when's branches are split by commas or lines
+            | "else" "->" value                   # the last, for every value the others do not list
 field       = state-name ":" Name { "." Name }
 rule        = state-name "=" value "only" "when" condition newline
 condition   = term { [newline] "and" [newline] term } | term { [newline] "or" [newline] term }   # mixed only in brackets
@@ -1770,6 +1785,7 @@ comment     = "#" to the end of the line
 | `unknown-value`                                                                                                              | error    | a value is not one of its enum's or dimension's                                                  |
 | `unneeded-dimension`                                                                                                         | error    | a rule, a `when`, a child condition or an event uses a dimension its type does not need          |
 | `incomplete-when`                                                                                                            | error    | a `when` leaves out a value of its dimension                                                     |
+| `unused-else`                                                                                                                | warning  | a `when`'s `else` covers nothing: its other branches cover every value                           |
 | `repeated-comparison`                                                                                                        | error    | a dimension or state is compared twice in one `and`                                              |
 | `impossible-condition`                                                                                                       | error    | a rule's or a child's condition is never true                                                    |
 | `vacuous-condition`                                                                                                          | warning  | a rule's or a child's condition is always true                                                   |

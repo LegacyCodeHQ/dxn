@@ -1,4 +1,4 @@
-import type { Located } from "./ast.js";
+import type { Branch, Located } from "./ast.js";
 import type { Names } from "./names.js";
 
 // Where a check reports a problem: its code, its message, where it is, and
@@ -41,7 +41,7 @@ export function checkChosen(
 // value of its result. A side whose values are not known, such as a broken
 // enum's, which may not all have been read, is not checked against them.
 export function checkWhen(
-  branches: { values: Located[]; result: Located }[],
+  branches: Branch[],
   on: Located,
   subject: { name: string; values: string[] | undefined },
   result: { name: string; values: string[] | undefined },
@@ -67,7 +67,15 @@ export function checkWhen(
       covered.add(value.name);
     }
     const missing = allowed.filter((value) => !covered.has(value));
-    if (missing.length > 0) {
+    const otherwise = branches.find((branch) => branch.otherwise !== undefined)?.otherwise;
+    if (otherwise !== undefined && missing.length === 0) {
+      report(
+        "unused-else",
+        `else covers nothing: the other branches cover every value of ${subject.name}`,
+        otherwise,
+        "warning",
+      );
+    } else if (otherwise === undefined && missing.length > 0) {
       report("incomplete-when", `when ${subject.name} does not cover ${missing.join(", ")}`, on);
     }
   }

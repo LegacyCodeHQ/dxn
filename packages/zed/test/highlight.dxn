@@ -63,7 +63,7 @@ record Review {
   verdict: Verdict
   next: Next = when verdict {
     approved -> ship
-    changes -> redraw
+    else -> redraw
   }
 }
 

@@ -317,7 +317,7 @@
       ]
     },
     "keyword": {
-      "match": "\\b(enum|dimension|type|needs|receives|state|has|provides|event|action|on|alike|environment|profile|modifier|record|actor|records|expect|and|or|below|then|some|absent|only|when|in)\\b",
+      "match": "\\b(enum|dimension|type|needs|receives|state|has|provides|event|action|on|alike|environment|profile|modifier|record|actor|records|expect|and|or|below|then|some|absent|only|when|else|in)\\b",
       "name": "keyword.control.dxn"
     },
     "name": {
