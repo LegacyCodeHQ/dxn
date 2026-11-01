@@ -1344,6 +1344,13 @@ type's own state, from one of its values to another; an **on** says which
 event triggers it:
 
 ```
+type Toggle {
+  event activate
+  state expanded: Menu.State
+  state focus: Focus
+  action take-focus: focus blurred -> focused
+}
+
 type Menu {
   enum State = closed | open
   event escape
@@ -1620,11 +1627,15 @@ or under discussion but not part of it yet:
   nothing above provides its state is found today when the path is
   evaluated: by `dxn states`, `dxn status` or an expectation. `dxn check`
   could find it as soon as the `has` is written.
-- **Events and where things are.** An `on` that acts on a child, or moves
-  focus to one, does not yet say whether that child must be there before the
-  event or after it.
+- **Events and where things are.** An `on` that calls a child's action, such
+  as `toggle.take-focus`, does not yet say whether that child must be there
+  before the event or after it.
 - **Expectations on a parent's triggers,** and on a dimension event, which
-  would also move the dimension to its new value.
+  would also move the dimension to its new value. A child's state can be
+  checked after an event, but not yet without one.
+- **Counting the same way everywhere.** `dxn cases` counts as one combination
+  what differs only in profiles; `dxn status` still counts each group of
+  profiles apart, so the two can give different totals for one element.
 - **Dimension keys below a path.** `when Pointer = touch` with `and below`
   applies only to the elements whose types need `Pointer`, even where every
   profile gives it.
@@ -1635,6 +1646,8 @@ or under discussion but not part of it yet:
 - **A runtime.** Evidence today is recorded by the actors that draw and
   build. A runtime would check the real system itself, driving a browser or a
   device into each combination and recording what it shows.
+- **Evidence against `alike`.** Two combinations of one case recorded with
+  different frames, or two cases with one frame, are not reported yet.
 - **Kits.** Domain words that alias the core, such as a UI kit, so the same
   language can describe other domains. `Actor` in the records above is already
   the pattern: the core knows nothing about any actor or tool; a file or a kit
@@ -1645,10 +1658,9 @@ or under discussion but not part of it yet:
 
 The language says what exists: the states, what they depend on, and which
 combinations happen. It does not say what anything looks like: no colors,
-sizes or icons. Whether two combinations look the same is something you
-observe, not something you declare. Evidence answers it: two combinations
-whose evidence points to the same design frame, or later to the same
-rendering in the code, look the same.
+sizes or icons. It can say which combinations cannot be told apart, with
+`alike`, but not how they look; evidence shows that: the design frame each
+case was drawn in, and later the rendering in the code.
 
 ## Reference
 
@@ -1711,7 +1723,8 @@ assignment  = Name "=" value
 record      = "record" Name [ "with" "context" ] "{" { blank-line | record-field } "}"
 record-field = field-name ":" Name { "." Name } [ "=" "when" field-name "{" { blank-line | branch } "}" ] newline
 expect      = "expect" string "{" "in" path [ "and" "below" ] [ "when" pairs ] [ "on" event ] ( ( "then" | "some" ) pairs | "absent" ) "}"
-pairs       = key "=" value { "," key "=" value }       # key: profile, a dimension, a state, or a parent's state
+pairs       = key "=" value { "," key "=" value }       # key: profile, a dimension, a state, or a parent's state;
+                                                        # after an event, a child's state by its path
                                                         # a profile's value may be <profile> "+" <modifier>
 comment     = "#" to the end of the line
 ```
