@@ -1,0 +1,9 @@
+enum Style = filled | plain
+enum Press = released | pressed
+enum Enabled = enabled | disabled
+
+type Button {
+  state style: Style, press: Press, enabled: Enabled
+
+  press = pressed only when enabled = enabled
+}
