@@ -87,7 +87,8 @@ Options:
   --json                             Print one JSON document, for tools: the result
                                      and any warnings as "problems"; on a failure,
                                      the file and its problems; on a refusal or
-                                     a usage error, {"error": "<message>"}
+                                     a usage error, {"error": "<message>"}, with
+                                     any problems found before a refusal
 ```
 
 Each command prints a readable answer by default, and one JSON document with `--json`. Every command prints the usage above with `--help`.

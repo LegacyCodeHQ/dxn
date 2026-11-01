@@ -798,6 +798,21 @@ expect "Each m can be open" {
     ]);
   });
 
+  it("keeps, with --json, the problems a refusal found beside its error", () => {
+    const root = writeProject({});
+    writeFileSync(
+      join(root, "page.dxn"),
+      'enum State = closed | open\nenum Other = open | shut\ntype A {\n  state m: State\n}\ntype B {\n  state m: Other\n}\ntype Page {\n  has a: A\n  has b: B\n}\nexpect "Each m can be open" {\n  in Page and below\n  some m = open\n}\n',
+    );
+    const result = capture(["rename", "page.dxn", "State.open", "shown", "--json"], root);
+    const output = JSON.parse(result.stdout);
+    expect([
+      result.code,
+      output.error,
+      output.problems.map(({ code }: { code: string }) => code),
+    ]).toEqual([1, "the rename would leave problems; nothing was written", ["expectation-failed"]]);
+  });
+
   it("renames a value of an enum inside a type, by its full name", () => {
     const root = writeProject({});
     const source = "type Menu {\n  enum State = closed | open\n  state menu: State\n}\n";

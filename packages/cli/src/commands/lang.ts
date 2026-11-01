@@ -99,7 +99,8 @@ Options:
   --json                             Print one JSON document, for tools: the result
                                      and any warnings as "problems"; on a failure,
                                      the file and its problems; on a refusal or
-                                     a usage error, {"error": "<message>"}
+                                     a usage error, {"error": "<message>"}, with
+                                     any problems found before a refusal
 `;
 
 // What a file declares, without positions, which are for diagnostics: each
@@ -167,8 +168,11 @@ class Reporter {
 
   // The command cannot do what was asked.
   refuse(...messages: string[]): number {
-    if (this.json) this.io.stdout(`${JSON.stringify({ error: messages.join("; ") }, null, 2)}\n`);
-    else for (const message of messages) this.io.stderr(`dxn: ${message}\n`);
+    // With --json, the problems found before the refusal stay with its error.
+    const found = this.problems.length > 0 ? { problems: this.problems } : {};
+    if (this.json) {
+      this.io.stdout(`${JSON.stringify({ error: messages.join("; "), ...found }, null, 2)}\n`);
+    } else for (const message of messages) this.io.stderr(`dxn: ${message}\n`);
     return 1;
   }
 
