@@ -25,7 +25,8 @@ profile phone: Device { Pointer = touch }
 profile laptop: Device { Pointer = mouse }
 profile studio: Device { Pointer = mouse }
 
-record Evidence with context {}
+record Evidence {}
+actor evidence-recorder records Evidence
 `);
 const toggle = (profile: string, menu: string, hover: string) => ({
   context: {

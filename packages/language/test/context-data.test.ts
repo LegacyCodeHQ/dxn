@@ -10,9 +10,10 @@ type Wordmark needs Pointer, Theme {
   state hover: Hover
   hover = hovered only when Pointer = mouse
 }
-record Evidence with context {
+record Evidence {
   actor: Actor
 }
+actor evidence-recorder records Evidence
 `;
 const profiles = `environment Device = Pointer
 profile laptop: Device { Pointer = mouse }
@@ -138,7 +139,8 @@ describe("a stored record's context", () => {
   });
 
   it("is only on stored records: a nested record has none", () => {
-    const source = `${model}${profiles}record Source {\n  actor: Actor\n}\nrecord Review with context {\n  source: Source\n}\n`;
+    const source = `${model}${profiles}record Source {\n  actor: Actor\n}\nrecord Review {\n  source: Source\n}\n
+actor review-recorder records Review`;
     expect(
       validate(
         parse(source),

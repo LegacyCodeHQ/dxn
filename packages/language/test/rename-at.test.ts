@@ -33,7 +33,7 @@ profile phone: Device { Pointer = touch }
 modifier trackpad on phone { Pointer = mouse }
 
 enum Actor = designer | agent
-record Evidence with context {
+record Evidence {
   actor: Actor
 }
 
@@ -43,6 +43,7 @@ expect "A press takes the focus" {
   on press
   then focus = focused
 }
+actor evidence-recorder records Evidence
 `;
 
 const data = `[
@@ -364,7 +365,7 @@ type Card needs Pointer, Theme {
 }
 environment Device = Pointer
 profile phone: Device { Pointer = touch }
-record Evidence with context {
+record Evidence {
   actor: Actor
 }
 expect "A dark card is deep" {
@@ -372,6 +373,7 @@ expect "A dark card is deep" {
   when Theme = dark
   then shade = deep
 }
+actor evidence-recorder records Evidence
 `;
     const records = `[
   {
@@ -475,7 +477,7 @@ type Page {
   provides current
   has panel: Panel
 }
-record Evidence with context {
+record Evidence {
   actor: Actor
 }
 expect "The link is selected on the blog" {
@@ -483,6 +485,7 @@ expect "The link is selected on the blog" {
   when current = blog
   then selection = selected
 }
+actor evidence-recorder records Evidence
 `;
     const records = `[
   {
@@ -570,10 +573,11 @@ expect "The link is selected on the blog" {
 record Source {
   file: RelativePath
 }
-record DesignReview with context {
+record DesignReview {
   actor: Actor
   source: Source
 }
+actor design-review-recorder records DesignReview
 `;
     const lines = records.split("\n");
     const where = (text: string, word: string): [number, number] => {
@@ -612,7 +616,8 @@ record DesignReview with context {
           "to": "origin",
         },
         [
-          "record DesignReview with context {",
+          "record DesignReview {",
+          "actor design-review-recorder records DesignReview",
         ],
         {
           "from": "design-review",

@@ -55,7 +55,8 @@ describe("the TextMate grammar", () => {
         "environment Device = Breakpoint x Pointer",
         "profile phone: Device",
         "modifier trackpad on phone",
-        "record Evidence with context {",
+        "actor designer records Evidence",
+        "record Evidence {",
       ),
     ).toMatchInlineSnapshot(`
       [
@@ -116,10 +117,14 @@ describe("the TextMate grammar", () => {
           "} punctuation.bracket.dxn",
         ],
         [
+          "actor keyword.control.dxn",
+          "designer variable.other.dxn",
+          "records keyword.control.dxn",
+          "Evidence entity.name.type.dxn",
+        ],
+        [
           "record keyword.control.dxn",
           "Evidence entity.name.type.dxn",
-          "with keyword.control.dxn",
-          "context keyword.control.dxn",
           "{ punctuation.bracket.dxn",
         ],
       ]

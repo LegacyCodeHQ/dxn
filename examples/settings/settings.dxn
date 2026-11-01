@@ -88,8 +88,8 @@ modifier trackpad on phone { Pointer = mouse }
 # Evidence: who looked at one element in one combination, stored in
 # evidence/, next to this file.
 enum Actor = designer | reviewer
-
-record Evidence with context {
+actor designer records Evidence
+record Evidence {
   actor: Actor
   note: NonEmptyString
 }

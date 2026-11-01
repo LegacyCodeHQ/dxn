@@ -26,7 +26,7 @@ modifier trackpad on phone {
   Pointer = mouse
 }
 
-record Evidence with context {
+record Evidence {
   hover: Hover
 }
 
@@ -35,6 +35,7 @@ expect "Escape closes the menu" {
   on escape
   then menu = closed
 }
+actor evidence-recorder records Evidence
 `;
 
 // Each symbol as its kind, its name, the lines it spans and where its name

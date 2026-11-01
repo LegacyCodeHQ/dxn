@@ -38,7 +38,8 @@ environment Device = Breakpoint x Pointer x Keyboard
 profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
 profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 
-record Evidence with context {}
+record Evidence {}
+actor evidence-recorder records Evidence
 `;
 const schema = parse(source);
 const toggle = (overrides: Record<string, unknown> = {}) => ({

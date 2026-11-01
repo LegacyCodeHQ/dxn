@@ -714,7 +714,7 @@ export function parse(source: string): ParseResult {
     end(["newline", "end"], "the end of the line");
   };
 
-  // A record: "record <Name> [with context] { <field>: <Type> ... }", a field
+  // A record: "record <Name> { <field>: <Type> ... }", a field
   // a line.
   const recordDeclaration = () => {
     next();
@@ -722,9 +722,10 @@ export function parse(source: string): ParseResult {
     const record = keep(result.records, { ...named, context: false, fields: [] });
     const after = peek();
     if (after.kind === "word" && after.text === "with") {
-      next();
-      keyword("context", '"context" after "with"');
-      record.context = true;
+      failWith(
+        after,
+        `a record has context when an actor records it, not with context: "actor <name> records ${named.name}"`,
+      );
     }
     expect("{", '"{" after the record name');
     braces(record.name, () => {
@@ -861,6 +862,12 @@ export function parse(source: string): ParseResult {
       // mistake does not hide others, nor cause more.
       while (peek().kind !== "end" && !starts(peek())) next();
     }
+  }
+  // A record an actor records is stored, each one about a combination: it
+  // has context.
+  for (const actor of result.actors) {
+    const record = result.records.find(({ name }) => name === actor.records.name);
+    if (record !== undefined) record.context = true;
   }
   scope(result);
   check(result);

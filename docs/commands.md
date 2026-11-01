@@ -84,7 +84,7 @@ Commands:
                                      when several have context, and --at the time
                                      recorded, instead of now; with --dry-run, say
                                      what it would write
-  status <file> [--missing]          Count, for each record with context, the
+  status <file> [--missing]          Count, for each record an actor records, the
                                      combinations of every element in the file's
                                      trees, in place, and those a stored record is
                                      about; with --missing, list the others
@@ -187,7 +187,7 @@ dxn attach toolbar.dxn Toolbar.menu.toggle --file design/website.pen --frame l5Z
 
 ### status
 
-Counts, for each record with context, the combinations of every element in the file's trees and those a stored record is about; `--missing` lists the others.
+Counts, for each record an actor records, the combinations of every element in the file's trees and those a stored record is about; `--missing` lists the others.
 
 ```bash
 dxn status toolbar.dxn

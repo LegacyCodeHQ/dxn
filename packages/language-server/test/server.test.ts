@@ -295,7 +295,7 @@ describe("the language server", () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-rename-"));
     try {
       const text =
-        "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\nenum Actor = designer\nrecord Evidence with context {\n  actor: Actor\n}\n";
+        "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\nenum Actor = designer\nrecord Evidence {\n  actor: Actor\n}\nactor evidence-recorder records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       const stored = `[\n  {\n    "context": { "type": "Link", "profile": null, "dimensions": {}, "states": { "hover": "hovered" } },\n    "actor": "designer"\n  }\n]\n`;
@@ -366,7 +366,8 @@ describe("the language server", () => {
   it("renames a record and moves its stored records' folder, where the editor can", async () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-rename-"));
     try {
-      const text = "enum Actor = designer\nrecord Evidence with context {\n  actor: Actor\n}\n";
+      const text =
+        "enum Actor = designer\nrecord Evidence {\n  actor: Actor\n}\nactor evidence-recorder records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       const uri = pathToFileURL(join(folder, "spec.dxn")).href;
@@ -402,6 +403,10 @@ describe("the language server", () => {
             edits: [
               {
                 range: { start: { line: 1, character: 7 }, end: { line: 1, character: 15 } },
+                newText: "Proof",
+              },
+              {
+                range: { start: { line: 4, character: 32 }, end: { line: 4, character: 40 } },
                 newText: "Proof",
               },
             ],
@@ -544,7 +549,7 @@ describe("the language server", () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-evidence-"));
     try {
       const text =
-        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence with context {\n  actor: Actor\n}\n";
+        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n  actor: Actor\n}\nactor evidence-recorder records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       const record = (actor: string) =>
@@ -719,7 +724,7 @@ describe("the language server", () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-duplicates-"));
     try {
       const text =
-        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence with context {\n  actor: Actor\n  at: Timestamp\n}\n";
+        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n  actor: Actor\n  at: Timestamp\n}\nactor evidence-recorder records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       const entry = (at: string) =>

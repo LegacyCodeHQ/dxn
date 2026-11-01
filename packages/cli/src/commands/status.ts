@@ -168,7 +168,7 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
         : ""
     }`;
   });
-  const text = blocks.length === 0 ? `${file}: no records with context\n` : blocks.join("\n");
+  const text = blocks.length === 0 ? `${file}: no records an actor records\n` : blocks.join("\n");
   // In JSON, each count a number, and each combination not present listed.
   const counted = records.map(({ paths, stale, gone, ...rest }) => ({
     ...rest,

@@ -9,6 +9,7 @@
 (profile_declaration "profile" @context name: (identifier) @name) @item
 (modifier_declaration "modifier" @context name: (identifier) @name) @item
 (record_declaration "record" @context name: (identifier) @name) @item
+(actor_declaration "actor" @context name: (identifier) @name) @item
 (expect_declaration "expect" @context title: (string) @name) @item
 
 (receives "receives" @context (state_field name: (identifier) @name) @item)

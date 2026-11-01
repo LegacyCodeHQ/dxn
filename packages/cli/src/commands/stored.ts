@@ -46,7 +46,7 @@ function storedWithoutContext(parsed: ParseResult, file: string, cwd: string): s
     .filter(({ name, context }) => !context && storedFiles(directory, name) !== undefined)
     .map(
       ({ name }) =>
-        `${name} is stored in ${folderOf(name)}/, but has no context; declare "record ${name} with context"`,
+        `${name} is stored in ${folderOf(name)}/, but no actor records it; declare "actor <name> records ${name}"`,
     );
 }
 

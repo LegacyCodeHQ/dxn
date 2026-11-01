@@ -1035,7 +1035,7 @@ record Source {
   frame: NonEmptyString
 }
 
-record Evidence with context {
+record Evidence {
   actor: Actor
   at: Timestamp
   source: Source
@@ -1043,7 +1043,7 @@ record Evidence with context {
 }
 ```
 
-(`with context` is the next section.) Scalars only type a record's fields. A
+(Who records it is the next section but one.) Scalars only type a record's fields. A
 state or a dimension cannot have one: their values must be listed, so a
 type's combinations can always be counted. A scalar's name is built in, so a
 file cannot declare it.
@@ -1058,7 +1058,7 @@ a state can:
 enum Actor = design-agent | reviewer
 enum Tool = pen-dev | file
 
-record Evidence with context {
+record Evidence {
   actor: Actor
   tool: Tool = when actor {
     design-agent -> pen-dev
@@ -1072,24 +1072,21 @@ that is an enum's and is not derived itself, and its `when` covers every
 value of that field once. It is not stored: its value always follows, so a stored record
 that gives it is reported.
 
-### With context: a fact about one combination
+### Actors: who records a fact about one combination
 
 Evidence is always about one case of the matrix: _this_ drawing shows the
-wordmark on a laptop, in the dark theme, hovered. A record that is a fact about
-one combination says so on its first line:
+wordmark on a laptop, in the dark theme, hovered. Someone records it, and is
+responsible for it: an actor. An actor is declared with the record it
+records, one record each:
 
 ```
-record Evidence with context {
-  actor: Actor
-  at: Timestamp
-  source: Source
-  fingerprint: NonEmptyString
-}
+actor design-agent records Evidence
 ```
 
-Every stored `Evidence` then has a `context`: the one row of `dxn states` it
-is about. The field is not listed among the record's fields, because every
-record with context has it, in the same shape:
+A record an actor records is stored, each one a fact about one combination:
+it has a context. Every stored `Evidence` then has a `context`: the one row of
+`dxn states` it is about. The field is not listed among the record's fields,
+because every record an actor records has it, in the same shape:
 
 | Part         | What it holds                                                                                             |
 | ------------ | --------------------------------------------------------------------------------------------------------- |
@@ -1139,11 +1136,11 @@ those parents, and its bound states must be the ones its parents give it.
 evidence/toolbar.json:14:21: unknown-value: $[0].context.states.expanded: "open" is not a value of expanded on phone with layout = compact, menu.menu = closed (closed)
 ```
 
-Only a record with context can be stored, since stored data is a fact about
-the matrix. A record with context cannot be a field of another record, which
+Only a record an actor records can be stored, since stored data is a fact
+about the matrix. Such a record cannot be a field of another record, which
 would give it a second context, and it cannot declare a field named
-`context`. A record without it, like `Source`, is a part of the facts that
-contain it.
+`context`. A record no actor records, like `Source`, is a part of the facts
+that contain it.
 
 ### Where records are stored, and checking them
 
@@ -1155,18 +1152,18 @@ plural: `Evidence` is stored in `evidence/`, `DesignReview` in
 so the data can be split across as many files as you like:
 
 ```
-evidence.dxn                # declares record Evidence with context
+evidence.dxn                # declares Evidence, and the actor who records it
 evidence/
   wordmark.json             # [ {…}, {…} ]
   menu-button.json
 ```
 
 A record with no folder is not stored: `Source` above only ever appears
-inside `Evidence`, so it needs none. Only a record with context can have a
-folder; for any other, `dxn validate` stops before checking anything:
+inside `Evidence`, so it needs none. Only a record an actor records can have
+a folder; for any other, `dxn validate` stops before checking anything:
 
 ```
-dxn: Source is stored in source/, but has no context; declare "record Source with context"
+dxn: Source is stored in source/, but no actor records it; declare "actor <name> records Source"
 ```
 
 Each stored record is an object with its `context`, and a key for every
@@ -1787,8 +1784,8 @@ comment     = "#" to the end of the line
 | `expectation-failed`                                                          | error    | the model breaks an expectation; the message gives a combination that breaks it                  |
 | `expectation-empty`                                                           | error    | an expectation picks nothing, so it would always pass                                            |
 | `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
-| `nested-context`                                                              | error    | a record's field is a record with context, which would be a second context                       |
-| `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |
+| `nested-context`                                                              | error    | a record's field is a record an actor records, which would be a second context                   |
+| `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a recorded record has a field named `context`     |
 | `unused-need`                                                                 | warning  | a type needs a dimension that is alike throughout and that nothing in it uses                    |
 
 Checking stored records with `dxn validate` reports these, after any problem with the

@@ -198,7 +198,7 @@ export interface Diagnostic {
   column: number;
 }
 
-// An actor: who records a record, with context, and is responsible for each
+// An actor: who records a record, which it gives a context, and is responsible for each
 // one it stores. One record each, for now.
 export interface Actor extends Declaration {
   records: Located;

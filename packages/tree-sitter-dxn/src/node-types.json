@@ -65,6 +65,32 @@
     }
   },
   {
+    "type": "actor_declaration",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "record": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "alike_declaration",
     "named": true,
     "fields": {
@@ -732,10 +758,6 @@
         {
           "type": "record_field",
           "named": true
-        },
-        {
-          "type": "with_context",
-          "named": true
         }
       ]
     }
@@ -856,6 +878,10 @@
       "multiple": true,
       "required": false,
       "types": [
+        {
+          "type": "actor_declaration",
+          "named": true
+        },
         {
           "type": "dimension_declaration",
           "named": true
@@ -1215,11 +1241,6 @@
     }
   },
   {
-    "type": "with_context",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "(",
     "named": false
   },
@@ -1260,6 +1281,10 @@
     "named": false
   },
   {
+    "type": "actor",
+    "named": false
+  },
+  {
     "type": "alike",
     "named": false
   },
@@ -1275,10 +1300,6 @@
     "type": "comment",
     "named": true,
     "extra": true
-  },
-  {
-    "type": "context",
-    "named": false
   },
   {
     "type": "dimension",
@@ -1349,6 +1370,10 @@
     "named": false
   },
   {
+    "type": "records",
+    "named": false
+  },
+  {
     "type": "some",
     "named": false
   },
@@ -1374,10 +1399,6 @@
   },
   {
     "type": "when",
-    "named": false
-  },
-  {
-    "type": "with",
     "named": false
   },
   {

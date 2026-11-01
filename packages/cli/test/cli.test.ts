@@ -78,7 +78,7 @@ describe("dxn cli", () => {
                                            when several have context, and --at the time
                                            recorded, instead of now; with --dry-run, say
                                            what it would write
-        status <file> [--missing]          Count, for each record with context, the
+        status <file> [--missing]          Count, for each record an actor records, the
                                            combinations of every element in the file's
                                            trees, in place, and those a stored record is
                                            about; with --missing, list the others
@@ -143,7 +143,10 @@ describe("the command surface", () => {
 
   it("runs the language's status for a .dxn file at the top", () => {
     const root = writeProject({});
-    writeFileSync(join(root, "toolbar.dxn"), "type Toolbar {}\nrecord Evidence with context {}\n");
+    writeFileSync(
+      join(root, "toolbar.dxn"),
+      "type Toolbar {}\nrecord Evidence {}\nactor evidence-recorder records Evidence\n",
+    );
     mkdirSync(join(root, "evidence"));
     writeFileSync(join(root, "evidence", "toolbar.json"), "[]");
     const result = capture(["status", "toolbar.dxn"], root);

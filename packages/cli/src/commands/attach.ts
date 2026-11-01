@@ -62,7 +62,7 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
   if (typeof parsed === "number") return parsed;
   const data = loadStored(parsed, file, cwd, report);
   if (typeof data === "number") return data;
-  // The record: the one given, or the only one with context.
+  // The record: the one given, or the only one an actor records.
   const named = flags.get("--record")?.[0];
   const candidates = parsed.records.filter(
     ({ context, name }) => context && (named === undefined || name === named),
@@ -75,7 +75,7 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
             .filter(({ context }) => context)
             .map(({ name }) => name)
             .join(", ")})`
-        : `${named} is not a record with context`,
+        : `${named} is not a record an actor records`,
     );
   }
   let place: Placement;

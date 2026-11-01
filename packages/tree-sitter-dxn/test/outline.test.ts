@@ -107,6 +107,7 @@ describe("the outline", () => {
         "record Source",
         "  file",
         "  frame",
+        "actor designer",
         "record Evidence",
         "  actor",
         "  tool",

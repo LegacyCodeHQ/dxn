@@ -27,10 +27,12 @@ record Note { text: NonEmptyString }
       type: (identifier))))
 
 ================================================================================
-A record with context, and a derived field
+A record an actor records, and a derived field
 ================================================================================
 
-record Evidence with context {
+actor designer records Evidence
+
+record Evidence {
   actor: Actor
   tool: Tool = when actor {
     design-agent -> pen-dev
@@ -41,9 +43,11 @@ record Evidence with context {
 --------------------------------------------------------------------------------
 
 (source_file
+  (actor_declaration
+    name: (identifier)
+    record: (identifier))
   (record_declaration
     name: (identifier)
-    (with_context)
     (record_field
       name: (identifier)
       type: (identifier))

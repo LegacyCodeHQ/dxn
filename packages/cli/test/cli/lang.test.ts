@@ -518,15 +518,17 @@ type Button needs Pointer {
 describe("dxn validate", () => {
   const schema = `enum Tool = pen-dev | code
 type Card {}
-record Source with context {
+record Source {
   tool: Tool
 }
-record Evidence with context {
+record Evidence {
   at: Timestamp
 }
 record Part {
   tool: Tool
 }
+actor source-recorder records Source
+actor evidence-recorder records Evidence
 `;
   // A stored record of Card, which has one combination.
   const card = '"context": { "type": "Card", "dimensions": {}, "states": {} }';
@@ -563,7 +565,7 @@ record Part {
     const result = project({ "part/a.json": '[{ "tool": "code" }]' })("evidence.dxn");
     expect([result.code, result.stderr, result.stdout]).toEqual([
       1,
-      'dxn: Part is stored in part/, but has no context; declare "record Part with context"\n',
+      'dxn: Part is stored in part/, but no actor records it; declare "actor <name> records Part"\n',
       "",
     ]);
   });
@@ -653,7 +655,8 @@ record Part {
         1,
         "",
         {
-          error: 'Part is stored in part/, but has no context; declare "record Part with context"',
+          error:
+            'Part is stored in part/, but no actor records it; declare "actor <name> records Part"',
         },
       ]);
     });
@@ -782,9 +785,10 @@ describe("dxn rename", () => {
 type Card {
   state owner: Actor
 }
-record Evidence with context {
+record Evidence {
   actor: Actor
 }
+actor evidence-recorder records Evidence
 `;
   const card = (owner: string) =>
     `"context": { "type": "Card", "dimensions": {}, "states": { "owner": "${owner}" } }`;
@@ -952,7 +956,9 @@ expect "Each m can be open" {
       { from: "evidence", to: "proof" },
       0,
       "Renamed record Evidence to Proof in evidence.dxn, and moved evidence/ to proof/\n",
-      schema.replace("record Evidence", "record Proof"),
+      schema
+        .replace("record Evidence", "record Proof")
+        .replace("records Evidence", "records Proof"),
       stored,
     ]);
   });
@@ -1125,7 +1131,8 @@ type Link needs Pointer {
 environment Device = Pointer
 profile phone: Device { Pointer = touch }
 profile laptop: Device { Pointer = mouse }
-record Evidence with context {}
+record Evidence {}
+actor evidence-recorder records Evidence
 `;
   const project = (data: string) =>
     inProject({ "toolbar.dxn": schema, "evidence/toolbar.json": data }, "status");
@@ -1176,7 +1183,7 @@ describe("dxn status, with a received state", () => {
     const root = writeProject({});
     writeFileSync(
       join(root, "site.dxn"),
-      "enum Section = home | blog\ntype Links receives current: Section {}\ntype Toolbar {\n  has links: Links\n}\nrecord Evidence with context {}\n",
+      "enum Section = home | blog\ntype Links receives current: Section {}\ntype Toolbar {\n  has links: Links\n}\nrecord Evidence {}\nactor evidence-recorder records Evidence\n",
     );
     expect(capture(["status", "site.dxn"], root).stderr).toBe(
       "dxn: Toolbar.links: current is received by Links, but nothing above it provides it\n",

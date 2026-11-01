@@ -6,10 +6,10 @@ const records = `enum Verdict = approved | changes
 record Source {
   file: RelativePath
 }
-record PenEvidence with context {
+record PenEvidence {
   source: Source
 }
-record DesignReview with context {
+record DesignReview {
   verdict: Verdict
 }
 `;
@@ -32,7 +32,26 @@ describe("actor", () => {
     ]);
   });
 
-  it("refuses an actor that records what is not a record with context, or no record", () => {
+  it("gives the record it records a context: what it stores is about one combination", () => {
+    const { records: declared } = parse(
+      `${records}actor design-agent records PenEvidence\nactor designer records DesignReview\n`,
+    );
+    expect(declared.map(({ name, context }) => [name, context])).toEqual([
+      ["Source", false],
+      ["PenEvidence", true],
+      ["DesignReview", true],
+    ]);
+  });
+
+  it("is what gives a record its context, which with context no longer does", () => {
+    expect(problems("record Note with context {\n}\n")).toMatchInlineSnapshot(`
+      [
+        "1:13: syntax-error: a record has context when an actor records it, not with context: "actor <name> records Note"",
+      ]
+    `);
+  });
+
+  it("refuses an actor that records what is not a record, or no record", () => {
     expect([
       problems(`${records}actor design-agent records PenEvidance\n`),
       problems(`${records}actor design-agent records Verdict\n`),
@@ -47,7 +66,7 @@ describe("actor", () => {
           "11:28: unknown-record: Verdict is an enum, not a record",
         ],
         [
-          "11:28: record-without-context: Source has no context, so nothing stores it; declare "record Source with context"",
+          "6:3: nested-context: PenEvidence.source is a Source, which has its own context",
         ],
         [
           "11:19: syntax-error: expected "records" after "design-agent", found the end of the line",

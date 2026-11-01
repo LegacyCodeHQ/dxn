@@ -66,7 +66,8 @@ describe("modifier", () => {
   });
 
   it("can be named in a context, as the profile it makes", () => {
-    const schema = parse(`${wordmark}${magic}record Evidence with context {}\n`);
+    const schema = parse(`${wordmark}${magic}record Evidence {}\n
+actor evidence-recorder records Evidence`);
     const context = (profile: string, hover: string) =>
       JSON.stringify([
         { context: { type: "Wordmark", profile, dimensions: {}, states: { hover } } },
@@ -85,7 +86,8 @@ describe("modifier", () => {
   });
 
   it("lets a context name either of two profiles with the same values", () => {
-    const schema = parse(`${wordmark}${magic}record Evidence with context {}\n`);
+    const schema = parse(`${wordmark}${magic}record Evidence {}\n
+actor evidence-recorder records Evidence`);
     const context = (profile: string) =>
       JSON.stringify([
         { context: { type: "Wordmark", profile, dimensions: {}, states: { hover: "hovered" } } },

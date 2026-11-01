@@ -22,7 +22,7 @@ environment Device = Pointer
 profile phone: Device { Pointer = touch }
 modifier trackpad on phone { Pointer = mouse }
 enum Actor = designer
-record Evidence with context {
+record Evidence {
   actor: Actor
 }
 
@@ -32,6 +32,7 @@ expect "A pressed link is at rest" {
   on press
   then hover = rest
 }
+actor evidence-recorder records Evidence
 `;
 
 const lines = source.split("\n");

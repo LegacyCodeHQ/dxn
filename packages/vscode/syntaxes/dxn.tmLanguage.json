@@ -117,6 +117,24 @@
           }
         },
         {
+          "comment": "An actor, and the record it records.",
+          "match": "\\b(actor)\\s+([a-z][A-Za-z0-9-]*)\\s+(records)\\s+([A-Z][A-Za-z0-9]*)",
+          "captures": {
+            "1": {
+              "name": "keyword.control.dxn"
+            },
+            "2": {
+              "name": "variable.other.dxn"
+            },
+            "3": {
+              "name": "keyword.control.dxn"
+            },
+            "4": {
+              "name": "entity.name.type.dxn"
+            }
+          }
+        },
+        {
           "match": "\\b(on)\\s+((?:[a-z][A-Za-z0-9-]*\\s*,\\s*)*[a-z][A-Za-z0-9-]*)\\s*(?=\\{)",
           "captures": {
             "1": {
@@ -299,7 +317,7 @@
       ]
     },
     "keyword": {
-      "match": "\\b(enum|dimension|type|needs|receives|state|has|provides|event|action|on|alike|environment|profile|modifier|record|with|context|expect|and|or|below|then|some|absent|only|when|in)\\b",
+      "match": "\\b(enum|dimension|type|needs|receives|state|has|provides|event|action|on|alike|environment|profile|modifier|record|actor|records|expect|and|or|below|then|some|absent|only|when|in)\\b",
       "name": "keyword.control.dxn"
     },
     "name": {

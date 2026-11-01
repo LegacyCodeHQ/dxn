@@ -37,7 +37,7 @@ export const commandList = `  check <file> [--expect <title>]    Parse and check
                                      when several have context, and --at the time
                                      recorded, instead of now; with --dry-run, say
                                      what it would write
-  status <file> [--missing]          Count, for each record with context, the
+  status <file> [--missing]          Count, for each record an actor records, the
                                      combinations of every element in the file's
                                      trees, in place, and those a stored record is
                                      about; with --missing, list the others

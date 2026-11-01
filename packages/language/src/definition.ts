@@ -281,6 +281,7 @@ function references(file: ParseResult): Reference[] {
       value(assignment.value, assignment.dimension.name);
     }
   }
+  for (const actor of file.actors) declared(actor.records);
   for (const record of file.records) {
     for (const field of record.fields) {
       declared(field.type);

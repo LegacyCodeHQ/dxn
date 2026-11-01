@@ -129,7 +129,7 @@ function merged(file: ParseResult, path: string, given: string[]): Combination[]
   return result;
 }
 
-// How much of the trees a record with context covers: every combination of
+// How much of the trees a record an actor records covers: every combination of
 // every element, in place, and which a stored record is about. Profiles that
 // share a row count as one. With a check, each entry is present, stale or
 // gone by its frame, and a combination is as its best entry is. The file and

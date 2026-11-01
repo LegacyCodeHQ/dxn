@@ -100,8 +100,11 @@ function describe(file: ParseResult, lines: string[]): Map<Located, Omit<Hover, 
   }
   for (const record of file.records) {
     const fields = record.fields.map(({ name, type }) => `  ${name}: ${type.name}`);
-    const context = record.context ? " with context" : "";
-    add(record, [`record ${record.name}${context} {`, ...fields, "}"].join("\n"));
+    // Who records it, which is what gives it a context.
+    const by = file.actors
+      .filter((actor) => actor.records.name === record.name)
+      .map((actor) => `actor ${actor.name} records ${record.name}`);
+    add(record, [...by, `record ${record.name} {`, ...fields, "}"].join("\n"));
   }
   return result;
 }

@@ -43,6 +43,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "actor_declaration"
+        },
+        {
+          "type": "SYMBOL",
           "name": "expect_declaration"
         }
       ]
@@ -1413,18 +1417,6 @@
           }
         },
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "with_context"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
           "type": "STRING",
           "value": "{"
         },
@@ -1441,16 +1433,32 @@
         }
       ]
     },
-    "with_context": {
+    "actor_declaration": {
       "type": "SEQ",
       "members": [
         {
           "type": "STRING",
-          "value": "with"
+          "value": "actor"
+        },
+        {
+          "type": "FIELD",
+          "name": "name",
+          "content": {
+            "type": "SYMBOL",
+            "name": "identifier"
+          }
         },
         {
           "type": "STRING",
-          "value": "context"
+          "value": "records"
+        },
+        {
+          "type": "FIELD",
+          "name": "record",
+          "content": {
+            "type": "SYMBOL",
+            "name": "identifier"
+          }
         }
       ]
     },

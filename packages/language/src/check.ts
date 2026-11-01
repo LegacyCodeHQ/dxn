@@ -26,21 +26,12 @@ export function check(file: ParseResult): void {
   checkExpectations(file, report);
 }
 
-// Actors: each records a record with context, which is what can be stored.
+// Actors: each records a record, which recording it gives a context.
 function checkActors(file: ParseResult, names: Names, report: Report): void {
   for (const actor of file.actors) {
     const recorded = actor.records;
     if (names.kindOf(recorded.name) !== "record") {
       report("unknown-record", names.not(recorded.name, "record"), recorded);
-      continue;
-    }
-    const record = file.records.find(({ name }) => name === recorded.name);
-    if (record !== undefined && !record.context) {
-      report(
-        "record-without-context",
-        `${recorded.name} has no context, so nothing stores it; declare "record ${recorded.name} with context"`,
-        recorded,
-      );
     }
   }
 }

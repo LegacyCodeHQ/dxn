@@ -35,12 +35,13 @@ record Source {
   file: RelativePath
   frame: NonEmptyString
 }
-record Evidence with context {
+record Evidence {
   actor: Actor
   at: Timestamp
   source: Source
   fingerprint: NonEmptyString
 }
+actor evidence-recorder records Evidence
 `;
 const at = "2026-10-31T12:00:00Z";
 const hash = (content: string) =>
@@ -390,7 +391,10 @@ describe("dxn status, with fingerprints", () => {
 
   it("says when a record has no fingerprint to check", () => {
     const root = writeProject({});
-    writeFileSync(join(root, "plain.dxn"), "type Card {}\nrecord Note with context {}\n");
+    writeFileSync(
+      join(root, "plain.dxn"),
+      "type Card {}\nrecord Note {}\nactor note-recorder records Note\n",
+    );
     mkdirSync(join(root, "note"));
     writeFileSync(
       join(root, "note", "a.json"),

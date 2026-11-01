@@ -24,9 +24,10 @@ environment Device = Pointer
 profile phone: Device { Pointer = touch }
 modifier trackpad on phone { Pointer = mouse }
 enum Actor = designer
-record Evidence with context {
+record Evidence {
   actor: Actor
 }
+actor evidence-recorder records Evidence
 `;
 
 const lines = source.split("\n");
@@ -79,7 +80,7 @@ describe("a declaration by its name", () => {
         "20:13 environment Device = Pointer [Device]",
         "21:9 profile phone: Device { Pointer = touch } [phone]",
         "22:10 modifier trackpad on phone { Pointer = mouse } [trackpad]",
-        "24:8 record Evidence with context { [Evidence]",
+        "24:8 record Evidence { [Evidence]",
       ]
     `);
   });

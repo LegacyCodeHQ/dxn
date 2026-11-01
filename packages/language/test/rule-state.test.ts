@@ -112,7 +112,8 @@ type Page {
   });
 
   it("checks a stored context against the row its states are in", () => {
-    const stored = `${disabled}record Evidence with context {}\n`;
+    const stored = `${disabled}record Evidence {}\n
+actor evidence-recorder records Evidence`;
     const context = (enabled: string, hover: string) =>
       JSON.stringify([
         {

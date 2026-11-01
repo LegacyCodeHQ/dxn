@@ -41,6 +41,7 @@ module.exports = grammar({
         $.profile_declaration,
         $.modifier_declaration,
         $.record_declaration,
+        $.actor_declaration,
         $.expect_declaration,
       ),
 
@@ -201,17 +202,14 @@ module.exports = grammar({
     _assignments: ($) => seq("{", repeat(seq($.assignment, optional(","))), "}"),
     assignment: ($) => seq(field("dimension", $.identifier), "=", field("value", $._value)),
 
-    // "record <Name> [with context] { <field>: <Type> [= when ...] ... }"
+    // "record <Name> { <field>: <Type> [= when ...] ... }"
     record_declaration: ($) =>
-      seq(
-        "record",
-        field("name", $.identifier),
-        optional($.with_context),
-        "{",
-        repeat($.record_field),
-        "}",
-      ),
-    with_context: (_) => seq("with", "context"),
+      seq("record", field("name", $.identifier), "{", repeat($.record_field), "}"),
+
+    // "actor <name> records <Record>": who records a record, which gives it a
+    // context.
+    actor_declaration: ($) =>
+      seq("actor", field("name", $.identifier), "records", field("record", $.identifier)),
     record_field: ($) =>
       seq(
         field("name", $.identifier),

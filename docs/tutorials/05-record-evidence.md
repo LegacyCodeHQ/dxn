@@ -16,7 +16,8 @@ record Source {
 }
 
 # A case, drawn: who drew it, when, where, and the file as it was.
-record Evidence with context {
+actor designer records Evidence
+record Evidence {
   actor: Actor
   tool: Tool = when actor {
     designer -> file
@@ -27,8 +28,8 @@ record Evidence with context {
 }
 ```
 
-- `with context` makes each piece of evidence a fact about one combination of
-  the model.
+- `actor designer records Evidence` says who records it, and makes each piece
+  of evidence a fact about one combination of the model.
 - `tool` follows from the actor: a designer's evidence is a whole file. A
   pen.dev file's evidence can be one frame in it, with `pen-dev` as the tool.
 - `at`, `source` and `fingerprint` are filled in by `dxn attach`: the time,

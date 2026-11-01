@@ -56,7 +56,8 @@ record Source {
   file: RelativePath
   frame: NonEmptyString
 }
-record Evidence with context {
+actor designer records Evidence
+record Evidence {
   actor: Actor
   tool: Tool = when actor {
     designer -> file

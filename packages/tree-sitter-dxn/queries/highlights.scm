@@ -17,8 +17,8 @@
   "profile"
   "modifier"
   "record"
-  "with"
-  "context"
+  "actor"
+  "records"
   "expect"
   "below"
   "then"
@@ -121,6 +121,11 @@
 (profile_declaration name: (identifier) @variable)
 (modifier_declaration name: (identifier) @variable)
 (modifier_declaration profile: (identifier) @variable)
+
+; Actors, and the record each records
+
+(actor_declaration name: (identifier) @variable)
+(actor_declaration record: (identifier) @type)
 
 ; Values
 
