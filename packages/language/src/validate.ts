@@ -28,6 +28,19 @@ export function validate(file: ParseResult, recordName: string, source: string):
   const parsed = parseJson(source);
   if (parsed.root === undefined || parsed.diagnostics.length > 0) return parsed.diagnostics;
   const diagnostics = new Diagnostics(source);
+  // What the file says about a path or a type does not change from one
+  // stored record to the next: each is worked out once.
+  const once = <Value>(work: (key: string) => Value) => {
+    const known = new Map<string, Value>();
+    return (key: string): Value => {
+      if (!known.has(key)) known.set(key, work(key));
+      return known.get(key) as Value;
+    };
+  };
+  const placedAt = once((path) => placement(file, path));
+  const inPlaceOf = once((path) => inPlace(file, path));
+  const statesOf = once((type) => evaluate(file, type));
+  const profileNames = profilesOf(file).map(({ name }) => name);
   const records = new Map<string, RecordDeclaration>();
   for (const record of file.records)
     if (!records.has(record.name)) records.set(record.name, record);
@@ -116,7 +129,7 @@ export function validate(file: ParseResult, recordName: string, source: string):
         return;
       }
       try {
-        place = placement(file, placed.value.value);
+        place = placedAt(placed.value.value);
         // Only a path from a type nothing contains is an element of a tree.
         const root = place.steps[0]?.type;
         const container = file.types.find(({ children }) =>
@@ -155,7 +168,7 @@ export function validate(file: ParseResult, recordName: string, source: string):
       ? choose(
           "a profile",
           "profile",
-          profilesOf(file).map(({ name }) => name),
+          profileNames,
           childPath(path, "profile"),
           member("profile")?.value,
         )
@@ -272,7 +285,7 @@ export function validate(file: ParseResult, recordName: string, source: string):
         .map(([name, value]) => `${name} = ${value}`)
         .join(", ");
       where = `${world} with ${settled}`;
-      const there = inPlace(file, label).rows.filter(
+      const there = inPlaceOf(label).rows.filter(
         (candidate) =>
           inWorld(candidate) &&
           Object.entries(parents).every(([name, value]) => candidate.parents[name] === value),
@@ -289,7 +302,7 @@ export function validate(file: ParseResult, recordName: string, source: string):
       }
       rows = there.map(({ states }) => states);
     } else {
-      rows = evaluate(file, owner.name)
+      rows = statesOf(owner.name)
         .rows.filter(inWorld)
         .map(({ states }) => states);
     }
