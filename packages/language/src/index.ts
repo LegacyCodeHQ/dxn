@@ -27,6 +27,8 @@ export {
   placement,
   states,
 } from "./evaluate.js";
+// The one way a file is written, for dxn fmt and editors.
+export { format } from "./format.js";
 // What a name is, as its declaration is written, for editors.
 export { type Hover, hover } from "./hover.js";
 // The JSON reader stored data is read with.
