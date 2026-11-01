@@ -251,7 +251,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
   };
   // Its actions, each a change of its own state between two of its values,
   // once by name; and its triggers, each an event on the type, an action of
-  // it or of a child, and where focus goes, to a child that can take it. One
+  // it or of a child. One
   // event triggers one action in any state.
   const checkActions = (type: Type, needed: Set<string>, declare: string) => {
     const named = new Set<string>();
@@ -348,16 +348,6 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           );
         }
       });
-      if (trigger.focus !== undefined) {
-        const target = childType(type, trigger.focus);
-        if (target !== undefined && !target.states.some(({ name }) => name === "focus")) {
-          report(
-            "focus-target",
-            `${trigger.focus.name} cannot take focus: ${target.name} has no focus state`,
-            trigger.focus,
-          );
-        }
-      }
       if (trigger.when !== undefined) {
         checkCondition(type, trigger.when, needed, declare, true, trigger, {
           never: "the trigger never fires",

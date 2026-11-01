@@ -100,8 +100,8 @@ export type Event =
   | { kind: "pointer-outside"; at: Located }
   | { kind: "dimension"; dimension: Located; values: Located[] };
 
-// "on <event>: <action>[, focus <path>]": the action is the type's own, or a
-// child's by its path; focus says where keyboard focus goes after.
+// "on <event>: <change>, <change> … [only when <condition>]": what an event
+// changes, each change a named action or a change in place.
 // One change a trigger makes.
 export type Effect =
   | { kind: "action"; name: Located }
@@ -112,7 +112,6 @@ export interface Trigger extends Located {
   // What it does, in order: each a named action, its own or a child's by its
   // path, or a change written in place, of one of the type's own states.
   does: Effect[];
-  focus?: Located;
   // Where it fires: everywhere, or only where this holds.
   when?: Condition;
 }

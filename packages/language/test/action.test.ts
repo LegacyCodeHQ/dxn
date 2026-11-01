@@ -7,14 +7,14 @@ import { errors, problems } from "./support/language.js";
 const model = `dimension Breakpoint = base | lg
 enum Focus = blurred | focused
 enum Layout = compact | inline
-
 type Button {
   state focus: Focus
+  action take-focus: focus blurred -> focused
 }
 type Link {
   state focus: Focus
+  action take-focus: focus blurred -> focused
 }
-
 type Menu {
   enum State = closed | open
   state menu: State
@@ -29,8 +29,8 @@ type Menu {
 
   on click toggle: open
   on click toggle: close
-  on key Escape: close, focus toggle
-  on click panel.blog: close, focus toggle
+  on key Escape: close, toggle.take-focus
+  on click panel.blog: close, toggle.take-focus
 }
 
 type Toolbar needs Breakpoint {
@@ -44,7 +44,7 @@ type Toolbar needs Breakpoint {
 
   on click wordmark: menu.close
   on pointer outside: menu.close
-  on Breakpoint = lg: menu.close, focus link
+  on Breakpoint = lg: menu.close, link.take-focus
 }
 
 type Page {
@@ -64,16 +64,8 @@ describe("actions and on", () => {
     assert([
       problems(model),
       menu?.actions.map(({ name, state, from, to }) => [name.name, state.name, from.name, to.name]),
-      menu?.triggers.map(({ event, does, focus }) => [
-        event.kind,
-        named(does),
-        focus?.name ?? null,
-      ]),
-      toolbar?.triggers.map(({ event, does, focus }) => [
-        event.kind,
-        named(does),
-        focus?.name ?? null,
-      ]),
+      menu?.triggers.map(({ event, does }) => [event.kind, named(does)]),
+      toolbar?.triggers.map(({ event, does }) => [event.kind, named(does)]),
     ]).toEqual([
       [],
       [
@@ -81,15 +73,15 @@ describe("actions and on", () => {
         ["close", "menu", "open", "closed"],
       ],
       [
-        ["click", "open", null],
-        ["click", "close", null],
-        ["key", "close", "toggle"],
-        ["click", "close", "toggle"],
+        ["click", "open"],
+        ["click", "close"],
+        ["key", "close, toggle.take-focus"],
+        ["click", "close, toggle.take-focus"],
       ],
       [
-        ["click", "menu.close", null],
-        ["pointer-outside", "menu.close", null],
-        ["dimension", "menu.close", "link"],
+        ["click", "menu.close"],
+        ["pointer-outside", "menu.close"],
+        ["dimension", "menu.close, link.take-focus"],
       ],
     ]);
   });
@@ -123,22 +115,24 @@ describe("actions and on", () => {
       on("on click wordmark: menu.shut"),
       on("on click wordmark: shut"),
       on("on Breakpoint = xl: menu.close"),
-      on("on click wordmark: menu.close, focus layout"),
+      on("on click wordmark: menu.close, layout.take-focus"),
     ]).toEqual([
       ["39:12: unknown-child: wordmrk is not a child of Toolbar (wordmark, link, menu)"],
       ["39:22: unknown-action: shut is not an action of Menu (open, close)"],
       ["39:22: unknown-action: shut is not an action of Toolbar; it has none"],
       ['39:19: unknown-value: "xl" is not a value of Breakpoint (base, lg)'],
-      ["39:40: unknown-child: layout is not a child of Toolbar (wordmark, link, menu)"],
+      ["39:34: unknown-child: layout is not a child of Toolbar (wordmark, link, menu)"],
     ]);
     assert(
-      errors(
+      problems(
         model.replace(
+          "  on key Escape: close, toggle.take-focus",
           "  on key Escape: close, focus toggle",
-          "  on key Escape: close, focus panel",
         ),
       ),
-    ).toEqual(["26:31: focus-target: panel cannot take focus: Menu.Panel has no focus state"]);
+    ).toEqual([
+      '26:25: syntax-error: "focus toggle" is not a change: move focus with an action of the child, such as toggle.take-focus',
+    ]);
   });
 
   it("reports nothing more about a path through a child whose type is not one", () => {
@@ -149,7 +143,7 @@ type Menu {
   has toggle: Nope
   action close: menu open -> closed
   on click toggle.x: close
-  on key Escape: toggle.y.close, focus toggle.z
+  on key Escape: toggle.y.close, toggle.z.take-focus
 }
 `),
     ).toEqual(["4:15: unknown-type: Nope is not a type (Menu)"]);
@@ -230,7 +224,7 @@ type Menu {
             "  action close: menu open -> closed\n",
             "  action close: menu open -> closed\n  action shut: menu open -> closed\n",
           )
-          .replace("  on Breakpoint = lg: menu.close, focus link\n", `  ${lines}\n`),
+          .replace("  on Breakpoint = lg: menu.close, link.take-focus\n", `  ${lines}\n`),
       );
     assert([
       shut("on Breakpoint in (base, lg): menu.close\n  on Breakpoint = lg: menu.shut"),
@@ -249,7 +243,7 @@ type Menu {
     ]);
   });
 
-  it("can be the subject of an expectation: its state, and where focus goes, after the event", () => {
+  it("can be the subject of an expectation: its state, and its children's, after the event", () => {
     const rule = (then: string) => `${model}
 expect "Escape closes the menu and returns focus to its button" {
   in Page.toolbar.menu
@@ -259,15 +253,18 @@ expect "Escape closes the menu and returns focus to its button" {
 }
 `;
     assert([
-      problems(rule("menu = closed, focus = toggle")),
-      problems(rule("menu = closed, focus = panel.blog")),
+      problems(rule("menu = closed, toggle.focus = focused")),
+      problems(rule("menu = closed, toggle.focus = blurred")),
       problems(
-        rule("menu = closed, focus = toggle").replace("  on key Escape: close, focus toggle\n", ""),
+        rule("menu = closed, toggle.focus = focused").replace(
+          "  on key Escape: close, toggle.take-focus\n",
+          "",
+        ),
       ),
     ]).toEqual([
       [],
       [
-        "48:8: expectation-failed: Escape closes the menu and returns focus to its button: on key Escape, focus goes to toggle, not panel.blog",
+        "48:8: expectation-failed: Escape closes the menu and returns focus to its button: on key Escape, toggle.focus becomes focused, not blurred",
       ],
       [
         "47:8: expectation-failed: Escape closes the menu and returns focus to its button: nothing happens on key Escape to Page.toolbar.menu when menu = open",

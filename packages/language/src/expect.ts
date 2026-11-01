@@ -49,9 +49,8 @@ function checkOne(
   } catch (error) {
     return empty((error as Error).message);
   }
-  // After an event, focus is where it went, not a state of the element.
   const on = expectation.on;
-  const values = expectation.values.filter(({ key }) => on === undefined || key.name !== "focus");
+  const values = expectation.values;
   const keys = [...expectation.when, ...values];
   for (const { key, value } of keys) {
     if (key.name === "profile" && !profiles.some(({ name }) => name === value.name)) {
@@ -158,10 +157,10 @@ function checkOne(
       .join(", ");
     return `${element}${world === "" ? "" : ` on ${world}`}${parents === "" ? "" : ` with ${parents}`}`;
   };
-  // After the event: the element's own action it triggers in the
-  // combination applied, and where focus went.
+  // After the event: the element's own changes its trigger makes in the
+  // combination applied, and what it changes in its children.
   const after = (element: string, combination: Combination) => {
-    if (on === undefined) return { combination, focus: undefined, children: {} };
+    if (on === undefined) return { combination, children: {} };
     const event = eventText(on);
     const type = placement(file, element).target;
     // The changes of the element's own a trigger makes here: a named action
@@ -193,14 +192,12 @@ function checkOne(
     const action = trigger === undefined ? undefined : applied(trigger)[0];
     // Where nothing fires, the element stays as it was. A rule that some
     // combination matches looks for it among the others; one that every
-    // combination does must hold of it unchanged, with nowhere for focus to
-    // have gone.
+    // combination does must hold of it unchanged.
     const unchanged =
       expectation.assertion !== "then" ||
-      (values.every(({ key, value }) => valueAt(combination, key.name) === value.name) &&
-        !expectation.values.some(({ key }) => key.name === "focus"));
+      values.every(({ key, value }) => valueAt(combination, key.name) === value.name);
     if ((trigger === undefined || action === undefined) && unchanged) {
-      return { combination, focus: undefined, children: {} };
+      return { combination, children: {} };
     }
     if (trigger === undefined || action === undefined) {
       const condition = expectation.when
@@ -232,7 +229,7 @@ function checkOne(
       const done = at?.actions.find(({ name }) => name.name === parts.at(-1));
       if (done !== undefined) children[`${owner}.${done.state.name}`] = done.to.name;
     }
-    return { combination: changed, focus: trigger.focus?.name, children };
+    return { combination: changed, children };
   };
   // Two combinations alike in everything: profiles, dimensions, parents and
   // states.
@@ -244,24 +241,12 @@ function checkOne(
     );
     picked += before.length;
     const chosen: Combination[] = [];
-    const focused: (string | undefined)[] = [];
     const inChildren: Record<string, string>[] = [];
     for (const combination of before) {
       const changed = after(element, combination);
       if ("code" in changed) return changed;
       chosen.push(changed.combination);
-      focused.push(changed.focus);
       inChildren.push(changed.children);
-    }
-    if (on !== undefined) {
-      const focus = expectation.values.find(({ key }) => key.name === "focus");
-      const wrong = focused.findIndex((went) => focus !== undefined && went !== focus.value.name);
-      if (focus !== undefined && wrong !== -1) {
-        const went = focused[wrong];
-        return failed(
-          `on ${eventText(on)}, focus ${went === undefined ? "stays where it was" : `goes to ${went}`}, not ${focus.value.name}`,
-        );
-      }
     }
     // A child's state after the event is what the event changed it to.
     const ofChild = (key: string) =>

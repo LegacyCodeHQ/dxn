@@ -505,6 +505,18 @@ export function parse(source: string): ParseResult {
         // change in place, "<state> -> <value>".
         const effect = (after: string): Effect => {
           const named = qualified(`an action or a change after ${after}`);
+          // Focus moves by an action of the child that takes it, not by a
+          // word of the language's own.
+          if (named.name === "focus" && peek().kind === "word") {
+            result.diagnostics.push({
+              severity: "error",
+              code: "syntax-error",
+              message: `"focus ${peek().text}" is not a change: move focus with an action of the child, such as ${peek().text}.take-focus`,
+              line: named.line,
+              column: named.column,
+            });
+            throw new ParseFailure();
+          }
           if (peek().kind !== "->") return { kind: "action", name: named };
           // A change is on one of the type's own states; a child's are
           // changed through its actions.
@@ -522,18 +534,9 @@ export function parse(source: string): ParseResult {
           return { kind: "change", state: named, to: word('a value after "->"') };
         };
         const trigger: Trigger = { ...located(token), event, does: [effect('":"')] };
-        // "focus <path>" after a comma moves focus; any other word is a change.
-        while (
-          peek().kind === "," &&
-          !(tokens[position + 1]?.text === "focus" && tokens[position + 2]?.kind === "word")
-        ) {
+        while (peek().kind === ",") {
           next();
           trigger.does.push(effect('","'));
-        }
-        if (peek().kind === ",") {
-          next();
-          keyword("focus", '"focus" after ","');
-          trigger.focus = qualified('a path after "focus"');
         }
         type.triggers.push(trigger);
         if (peek().kind === "word" && peek().text === "only") {
@@ -734,7 +737,7 @@ export function parse(source: string): ParseResult {
       for (;;) {
         const key = qualified("a state, a dimension or profile");
         expect("=", `"=" after ${JSON.stringify(key.name)}`);
-        // A path, for where focus goes; a profile a modifier makes, as
+        // A path, for a child's state; a profile a modifier makes, as
         // "<profile>+<modifier>".
         const value = qualified('a value after "="');
         while (key.name === "profile" && peek().text === "+") {

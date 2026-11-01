@@ -1352,8 +1352,8 @@ type Menu {
 
   on click toggle: open
   on click toggle: close
-  on key Escape: close, focus toggle
-  on click panel.blog: close, focus toggle
+  on key Escape: close, toggle.take-focus
+  on click panel.blog: close, toggle.take-focus
 }
 ```
 
@@ -1403,7 +1403,7 @@ type Toolbar needs Breakpoint {
   ...
   on click wordmark: menu.close
   on pointer outside: menu.close
-  on Breakpoint in (lg, xl): menu.close, focus links.blog
+  on Breakpoint in (lg, xl): menu.close, links.blog.take-focus
 }
 ```
 
@@ -1429,9 +1429,16 @@ dimensions it needs, never true an error and always true a warning. Two
 triggers for one event are not ambiguous when their conditions can never
 both hold.
 
-`focus` says where focus goes after the change: a child, by its path, that
-has a state named `focus`. Focus is an effect, not a state of the matrix, so
-it is checked, and an expectation can assert it.
+Moving focus is no word of the language's own: the child that takes it
+declares an action for it, and a trigger calls that action as it calls any
+child's, as in `close, toggle.take-focus`:
+
+```
+type Toggle {
+  state focus: Focus
+  action take-focus: focus blurred -> focused
+}
+```
 
 One event makes one change: two actions that one event triggers, its own or
 a child's, cannot both apply to the same value, and one event does not
@@ -1482,16 +1489,16 @@ assertion:
 
 With `on`, the assertion is about what happens after the event: the action
 the element's own type triggers on it is applied to every combination `when`
-picks, and `focus` in `then` is where focus went. A trigger a parent has on
+picks. A trigger a parent has on
 the element's action, like the toolbar's `on click wordmark: menu.close`, is
 not applied yet.
 
 ```
-expect "Escape closes the menu and returns focus to its button" {
+expect "Escape closes the menu" {
   in ArticlePage.toolbar.menu
   when menu = open
   on key Escape
-  then menu = closed, focus = toggle
+  then menu = closed
 }
 ```
 
@@ -1669,7 +1676,7 @@ type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" f
               "{" { blank-line | state | rule | enum | type | has | provides | action | on | alike } "}"
 alike       = "alike" name [ "in" "(" value { "," value } ")" ] [ "when" condition ] newline
 action      = "action" action-name ":" state-name value "->" value newline
-on          = "on" event ":" change { "," change } [ "," "focus" path ] [ "only" "when" condition ] newline
+on          = "on" event ":" change { "," change } [ "only" "when" condition ] newline
 change      = path | state-name "->" value                      # path: an action, or a child's
 event       = "click" path | "key" word | "pointer" "outside" | condition
 provides    = "provides" state-name newline
@@ -1746,7 +1753,6 @@ comment     = "#" to the end of the line
 | `unchanged-action`                                                            | error    | an action's from and to are one value, so it changes nothing                                     |
 | `unknown-child`                                                               | error    | an event, an action's path or a focus names a child that is not one                              |
 | `unknown-action`                                                              | error    | an `on` triggers an action its type does not have                                                |
-| `focus-target`                                                                | error    | focus goes to a child that has no `focus` state                                                  |
 | `ambiguous-event`                                                             | error    | events that overlap trigger two actions that apply to one state's same value                     |
 | `duplicate-trigger`                                                           | error    | an event triggers the same action twice                                                          |
 | `conflicting-change`                                                          | error    | a trigger changes one of its type's states twice                                                 |
