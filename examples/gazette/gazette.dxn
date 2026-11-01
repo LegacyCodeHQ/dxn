@@ -33,21 +33,21 @@ type TabBar {
   has feed: Tab {
     selection = when section {
       feed -> selected
-      saved, sources -> unselected
+      else -> unselected
     }
   }
 
   has saved: Tab {
     selection = when section {
       saved -> selected
-      feed, sources -> unselected
+      else -> unselected
     }
   }
 
   has sources: Tab {
     selection = when section {
       sources -> selected
-      feed, saved -> unselected
+      else -> unselected
     }
   }
 }
