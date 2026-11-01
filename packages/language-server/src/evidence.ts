@@ -199,22 +199,19 @@ function stoppedBy(
   problems: Problem[],
   read: Read[],
 ): { label: string; details: string } {
-  // Each stored record by its file and its place in it, with why it is wrong:
-  // what most of its kind say, for those that name what the file no longer
-  // has, or else the problem itself.
-  const why = new Map<string, Set<string>>();
+  // Each stored record by its file and its place in it, grouped by why it is
+  // wrong, in the words of the reason most of its kind share.
+  const why = new Map<string, { reason: Reason; entries: Set<string> }>();
   for (const problem of problems) {
-    const entry = `${problem.at.shown}#${problem.path.match(/^\$\[(\d+)\]/)?.[1] ?? ""}`;
-    const reason = reasonOf(file, problem);
-    why.set(reason, new Set([...(why.get(reason) ?? []), entry]));
+    const index = problem.path.match(/^\$\[(\d+)\]/)?.[1];
+    const reason = reasonOf(file, problem, index === undefined ? undefined : Number(index));
+    const group = why.get(reason.many) ?? { reason, entries: new Set<string>() };
+    group.entries.add(`${problem.at.shown}#${index ?? ""}`);
+    why.set(reason.many, group);
   }
-  const entries = new Set([...why.values()].flatMap((each) => [...each]));
-  const [reason, those] = [...why].sort((a, b) => b[1].size - a[1].size)[0] ?? ["", new Set()];
-  // What those records have: "still say style = plain, …", or the problem.
-  const what = (count: number) =>
-    reason.startsWith("say ")
-      ? `${count === 1 ? "still says" : "still say"} ${reason.slice("say ".length)}`
-      : `with ${reason}`;
+  const entries = new Set([...why.values()].flatMap(({ entries: each }) => [...each]));
+  const [top] = [...why.values()].sort((a, b) => b.entries.size - a.entries.size);
+  const what = (count: number) => (count === 1 ? top?.reason.one : top?.reason.many) ?? "";
   // Of how many stored records, when every file of them is a list.
   const lengths = read.map(({ source }) => {
     try {
@@ -231,10 +228,11 @@ function stoppedBy(
     total === undefined
       ? `${entries.size} ${entries.size === 1 ? "record" : "records"}`
       : `${entries.size} of ${total} ${total === 1 ? "record" : "records"}`;
+  const those = top?.entries.size ?? 0;
   const label =
-    those.size === entries.size
+    those === entries.size
       ? `${record}: ${records} ${what(entries.size)}`
-      : `${record}: ${records} have problems, ${those.size} ${what(those.size)}`;
+      : `${record}: ${records} have problems, ${those} ${what(those)}`;
   return {
     label,
     details: [
@@ -248,25 +246,75 @@ function stoppedBy(
   };
 }
 
-// Why a stored record is wrong, in the words a hint uses. A context that names
-// a value its state no longer has, "say style = plain, which Style no longer
-// has (primary, secondary)", or one it cannot have there, "say hover =
-// hovered, which hover cannot be on Phone (rest)"; any other problem, as it
-// is.
-function reasonOf(file: ParseResult, { code, path, message }: Problem): string {
-  const state = path.match(/\.context\.(?:states|dimensions)\.([A-Za-z0-9-]+)$/)?.[1];
+// Why stored records are wrong, as a hint says it of one and of several.
+interface Reason {
+  one: string;
+  many: string;
+}
+
+// Why a stored record is wrong, in the words of what changed in the model
+// since it was recorded, where that is what happened:
+// - a value its state no longer has: "still say style = plain, which Style no
+//   longer has (primary, secondary)", or one it cannot have there: "… which
+//   hover cannot be on Phone (rest)";
+// - a state or a dimension added since: "say nothing of hover, a state Button
+//   now has", "… Pointer, which Button now needs";
+// - one taken away since: "still say press, a state Button no longer has".
+// Any other problem, as it is.
+function reasonOf(file: ParseResult, { at, code, path, message }: Problem, index?: number): Reason {
+  const as = (many: string, one = many) => ({ one, many });
+  const group = path.match(/\.context\.(states|dimensions)(?:\.([A-Za-z0-9-]+))?$/);
+  const element = index === undefined ? undefined : elementOf(at.source, index);
+  if (code === "missing-field" && group !== null && element !== undefined) {
+    const name = message.match(/ is missing (\S+)$/)?.[1];
+    if (name !== undefined) {
+      const has =
+        group[1] === "states" ? `a state ${element} now has` : `which ${element} now needs`;
+      return as(`say nothing of ${name}, ${has}`, `says nothing of ${name}, ${has}`);
+    }
+  }
+  if (code === "unknown-field" && group?.[2] !== undefined && element !== undefined) {
+    const name = group[2];
+    const had =
+      group[1] === "states"
+        ? `a state ${element} no longer has`
+        : `which ${element} no longer needs`;
+    return as(`still say ${name}, ${had}`, `still says ${name}, ${had}`);
+  }
+  const state = group?.[2];
   const said = message.match(/^"([^"]*)" is not a value of \S+( on .*)? (\([^)]*\))$/);
-  if (code !== "unknown-value" || state === undefined || said === null) return message;
+  if (code !== "unknown-value" || state === undefined || said === null) {
+    return as(`with ${message}`);
+  }
   const [, value, where, values] = said;
-  if (where !== undefined)
-    return `say ${state} = ${value}, which ${state} cannot be${where} ${values}`;
-  // The enum the state takes its values from, when every state of that name
-  // takes them from one; a dimension is its own.
+  const which =
+    where !== undefined
+      ? `which ${state} cannot be${where} ${values}`
+      : `which ${ownerOf(file, state)} no longer has ${values}`;
+  return as(`still say ${state} = ${value}, ${which}`, `still says ${state} = ${value}, ${which}`);
+}
+
+// The enum a state takes its values from, when every state of that name
+// takes them from one; a dimension is its own.
+function ownerOf(file: ParseResult, state: string): string {
+  if (/^[A-Z]/.test(state)) return state;
   const enums = new Set(
     file.types.flatMap(({ states }) =>
       states.filter(({ name }) => name === state).map(({ enum: of }) => of.name),
     ),
   );
-  const owner = /^[A-Z]/.test(state) ? state : enums.size === 1 ? [...enums][0] : state;
-  return `say ${state} = ${value}, which ${owner} no longer has ${values}`;
+  return enums.size === 1 ? ([...enums][0] as string) : state;
+}
+
+// The element a stored record is about, by its place in its file: its
+// context's path, or type.
+function elementOf(source: string, index: number): string | undefined {
+  try {
+    const list = JSON.parse(source) as { context?: { path?: unknown; type?: unknown } }[];
+    const { path, type } = list[index]?.context ?? {};
+    const element = path ?? type;
+    return typeof element === "string" ? element : undefined;
+  } catch {
+    return undefined;
+  }
 }

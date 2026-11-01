@@ -993,4 +993,56 @@ describe("the language server", () => {
       rmSync(folder, { recursive: true, force: true });
     }
   });
+  it("says of stored records made before a state was added, or after one was taken away, what they leave out or still say", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-reworded-"));
+    try {
+      const text =
+        "enum Style = primary | secondary\nenum Hover = rest | hovered\ntype Button {\n  state style: Style, hover: Hover\n}\nrecord PenEvidence {\n  source: PenNode\n}\nactor DesignAgent records PenEvidence\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      mkdirSync(join(folder, "pen-evidence"));
+      const stored = join(folder, "pen-evidence", "button.json");
+      const entry = (states: string) =>
+        `{ "context": { "type": "Button", "dimensions": {}, "states": ${states} }, "actor": "DesignAgent", "source": { "file": "design.txt", "frame": "f", "fingerprint": "a1" } }`;
+      writeFileSync(
+        stored,
+        `[${entry('{ "style": "primary" }')}, ${entry('{ "style": "secondary" }')}]`,
+      );
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const editor = connect();
+      editors.push(editor);
+      await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+      });
+      const opened = published(editor);
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await opened;
+      const label = async () =>
+        (
+          await editor.sendRequest(InlayHintRequest.type, {
+            textDocument: { uri },
+            range: { start: { line: 0, character: 0 }, end: { line: 9, character: 0 } },
+          })
+        )?.map(({ label }) => label);
+      const before = await label();
+      // A state the model no longer has, on one record.
+      writeFileSync(
+        stored,
+        `[${entry('{ "style": "primary", "hover": "rest", "press": "released" }')}, ${entry('{ "style": "secondary", "hover": "rest" }')}]`,
+      );
+      await editor.sendNotification(DidChangeWatchedFilesNotification.type, {
+        changes: [{ uri: pathToFileURL(stored).href, type: FileChangeType.Changed }],
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect([before, await label()]).toEqual([
+        ["PenEvidence: 2 of 2 records say nothing of hover, a state Button now has"],
+        ["PenEvidence: 1 of 2 records still says press, a state Button no longer has"],
+      ]);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
 });
