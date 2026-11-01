@@ -1,6 +1,8 @@
 import type { Declaration, ParseResult, Type } from "./ast.js";
+import { type Placement, placement } from "./evaluate.js";
 import { parse } from "./parse.js";
 import { scalars } from "./scalars.js";
+import { treePaths } from "./status.js";
 
 export type CompletionKind =
   | "keyword"
@@ -31,6 +33,7 @@ type Open =
   | { kind: "record"; name: string }
   | { kind: "assignments"; environment?: string }
   | { kind: "bindings"; type: string }
+  | { kind: "expect"; line: number }
   | { kind: "other" };
 
 const topKeywords = [
@@ -73,6 +76,8 @@ export function completions(source: string, line: number, column: number): Compl
     return completions.filter(({ label }) => !written.has(label));
   };
   const values = (subject: string) => names(valuesOf(file, typed, subject, inside), "value");
+
+  if (inside?.kind === "expect") return inExpectation(file, lines, inside.line, statement);
 
   // Along a path into children: what the child at its end has.
   const path = statement.match(/([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*)\.$/);
@@ -335,6 +340,7 @@ function opened(file: ParseResult, lines: string[], line: number, column: number
       const childHead = head.match(/^has\s+[A-Za-z0-9-]+\s*:\s*([A-Za-z0-9.-]+)/);
       const profileHead = head.match(/^profile\s+[A-Za-z0-9-]+\s*:\s*([A-Za-z0-9-]+)/);
       if (/\bwhen\s+[A-Za-z0-9-]+\s*$/.test(head)) stack.push({ kind: "other" });
+      else if (/^expect\b/.test(head)) stack.push({ kind: "expect", line: row + 1 });
       else if (typeHead !== null) {
         const name = typeHead[1] as string;
         stack.push({ kind: "type", name: parent === undefined ? name : `${parent}.${name}` });
@@ -352,4 +358,165 @@ function opened(file: ParseResult, lines: string[], line: number, column: number
     }
   }
   return stack;
+}
+
+const expectKeywords = ["in", "when", "on", "then", "some", "absent"];
+
+// What fits in an expectation, which starts on a line: the element's path,
+// the keys of the elements it is about and their values, and their events.
+function inExpectation(
+  file: ParseResult,
+  lines: string[],
+  line: number,
+  statement: string,
+): Completion[] {
+  const names = (labels: string[], kind: CompletionKind) =>
+    [...new Set(labels)].map((label) => ({ label, kind }));
+  if (statement === "") return names(expectKeywords, "keyword");
+  if (/^in\s+$/.test(statement))
+    return names(
+      file.types.map(({ name }) => name),
+      "type",
+    );
+  const pathSoFar = statement.match(/^in\s+([A-Za-z0-9.-]+)\.$/);
+  if (pathSoFar !== null) {
+    const children = elementAt(file, pathSoFar[1] as string)?.target.children ?? [];
+    return names(
+      children.map(({ name }) => name),
+      "child",
+    );
+  }
+
+  // The block's own lines: the element it names, and whether it has an event.
+  const block: string[] = [];
+  for (let at = line - 1; at < lines.length; at++) {
+    const text = lines[at] ?? "";
+    if (at > line - 1 && /^\s*}/.test(text)) break;
+    block.push(text);
+  }
+  const named = block
+    .map((text) => text.match(/^\s*in\s+([A-Za-z0-9.-]+)(\s+and\s+below)?/))
+    .find(Boolean);
+  if (named === undefined || named === null) return [];
+  const path = named[1] as string;
+  const below = named[2] !== undefined;
+  const event = block.some((text) => /^\s*on\s/.test(text));
+  const elements = treePaths(file).filter(
+    (element) => element === path || (below && element.startsWith(`${path}.`)),
+  );
+  const places = (elements.length > 0 ? elements : [path]).flatMap((element) => {
+    const place = elementAt(file, element);
+    return place === undefined ? [] : [place];
+  });
+
+  // An event: the element's own, a child's by its path, or a dimension's.
+  if (/^on\s+$/.test(statement)) {
+    return [
+      ...names(
+        places.flatMap(({ target }) => target.events.map(({ name }) => name)),
+        "event",
+      ),
+      ...names(
+        places.flatMap(({ target }) => target.children.map(({ name }) => name)),
+        "child",
+      ),
+      ...names(
+        places.flatMap(({ dimensions }) => dimensions),
+        "dimension",
+      ),
+    ];
+  }
+  const eventPath = statement.match(/^on\s+([A-Za-z0-9.-]+)\.$/);
+  if (eventPath !== null) {
+    const ends = places.flatMap(({ target }) => {
+      const end = along(file, target, (eventPath[1] as string).split("."));
+      return end === undefined ? [] : [end];
+    });
+    return [
+      ...names(
+        ends.flatMap(({ events }) => events.map(({ name }) => name)),
+        "event",
+      ),
+      ...names(
+        ends.flatMap(({ children }) => children.map(({ name }) => name)),
+        "child",
+      ),
+    ];
+  }
+
+  // Every key an element has: its states, its parents' by their keys, and,
+  // after an event, its children's by their paths; each with its state.
+  const keys = new Map<string, Type["states"][number]>();
+  for (const place of places) {
+    for (const state of place.target.states) keys.set(state.name, state);
+    for (const parent of place.parents) keys.set(parent.key, parent.state);
+    if (!event) continue;
+    const walk = (type: Type, prefix: string, depth: number) => {
+      if (depth > 4) return;
+      for (const child of type.children) {
+        const inner = file.types.find(({ name }) => name === child.type.name);
+        if (inner === undefined) continue;
+        for (const state of inner.states) keys.set(`${prefix}${child.name}.${state.name}`, state);
+        walk(inner, `${prefix}${child.name}.`, depth + 1);
+      }
+    };
+    walk(place.target, "", 0);
+  }
+  const dimensions = places.flatMap((place) => place.dimensions);
+
+  // A value: of the profile, a dimension, or the state a key names.
+  const valued = statement.match(/([A-Za-z0-9.+-]+)\s*=\s*$/);
+  if (valued !== null) {
+    const key = valued[1] as string;
+    if (key === "profile")
+      return names(
+        file.profiles.map(({ name }) => name),
+        "profile",
+      );
+    if (/^[A-Z]/.test(key)) {
+      const dimension = file.dimensions.find(({ name }) => name === key);
+      return names(dimension?.values.map(({ name }) => name) ?? [], "value");
+    }
+    const of = file.enums.find(({ name }) => name === keys.get(key)?.enum.name);
+    return names(of?.values.map(({ name }) => name) ?? [], "value");
+  }
+  const withModifier = statement.match(/\bprofile\s*=\s*([A-Za-z0-9-]+)\+$/);
+  if (withModifier !== null) {
+    const fits = file.modifiers.filter(({ on }) => on.some(({ name }) => name === withModifier[1]));
+    return names(
+      fits.map(({ name }) => name),
+      "profile",
+    );
+  }
+
+  // A key, or the next part of one: after "when", "then" or "some", or a
+  // comma between pairs.
+  const keyed = statement.match(/^(when|then|some)\s+(?:.*,\s*)?([a-z][A-Za-z0-9.-]*\.)?$/);
+  if (keyed === null) return [];
+  const prefix = keyed[2] ?? "";
+  const result: Completion[] = [];
+  for (const [key] of keys) {
+    if (!key.startsWith(prefix)) continue;
+    const rest = key.slice(prefix.length).split(".");
+    result.push({ label: rest[0] as string, kind: rest.length > 1 ? "child" : "state" });
+  }
+  if (prefix === "") {
+    result.push(...names(dimensions, "dimension"));
+    if (keyed[1] === "when") result.push({ label: "profile", kind: "keyword" });
+  }
+  const written = new Set(statement.split(/[^A-Za-z0-9.+-]+/));
+  return result.filter(
+    ({ label, kind }, index) =>
+      !written.has(`${prefix}${label}`) &&
+      result.findIndex((other) => other.label === label && other.kind === kind) === index,
+  );
+}
+
+// The element at a path, or nothing for a path that is not one.
+function elementAt(file: ParseResult, path: string): Placement | undefined {
+  try {
+    return placement(file, path);
+  } catch {
+    return undefined;
+  }
 }

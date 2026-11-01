@@ -253,4 +253,91 @@ describe("completions", () => {
       ]
     `);
   });
+
+  it("suggest, in an expectation, the element's path, its keys and their values, and its events", () => {
+    const model = `${link}  on press: blur
+}
+type Menu {
+  enum Openness = closed | open
+  state menu: Openness
+  event escape
+  has link: Link only when menu = open
+  on escape: link.blur
+}
+type Page {
+  has menu: Menu
+}
+environment Device = Pointer
+profile phone: Device { Pointer = touch }
+`;
+    const snapshot: unknown[] = [];
+    snapshot.push(at(`${model}expect "x" {\n  ‸\n}\n`));
+    snapshot.push(at(`${model}expect "x" {\n  in ‸\n}\n`));
+    snapshot.push(at(`${model}expect "x" {\n  in Page.‸\n}\n`));
+    snapshot.push(at(`${model}expect "x" {\n  in Page.menu.‸\n}\n`));
+    snapshot.push(at(`${model}expect "x" {\n  in Page.menu.link\n  when ‸\n}\n`));
+    snapshot.push(at(`${model}expect "x" {\n  in Page.menu.link\n  when menu.menu = ‸\n}\n`));
+    snapshot.push(at(`${model}expect "x" {\n  in Page.menu.link\n  when profile = ‸\n}\n`));
+    snapshot.push(
+      at(
+        `${model}expect "x" {\n  in Page.menu.link\n  when Pointer = mouse\n  then focus = ‸\n}\n`,
+      ),
+    );
+    snapshot.push(at(`${model}expect "x" {\n  in Page.menu\n  on ‸\n}\n`));
+    snapshot.push(at(`${model}expect "x" {\n  in Page.menu\n  on link.‸\n}\n`));
+    snapshot.push(
+      at(`${model}expect "x" {\n  in Page.menu\n  on escape\n  then menu = closed, ‸\n}\n`),
+    );
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "in keyword",
+          "when keyword",
+          "on keyword",
+          "then keyword",
+          "some keyword",
+          "absent keyword",
+        ],
+        [
+          "Link type",
+          "Menu type",
+          "Page type",
+        ],
+        [
+          "menu child",
+        ],
+        [
+          "link child",
+        ],
+        [
+          "hover state",
+          "focus state",
+          "menu child",
+          "Pointer dimension",
+          "profile keyword",
+        ],
+        [
+          "closed value",
+          "open value",
+        ],
+        [
+          "phone profile",
+        ],
+        [
+          "blurred value",
+          "focused value",
+        ],
+        [
+          "escape event",
+          "link child",
+        ],
+        [
+          "press event",
+        ],
+        [
+          "link child",
+        ],
+      ]
+    `);
+  });
 });
