@@ -93,7 +93,7 @@ type Wordmark {
 ## Grammar
 
 Built one concept at a time; each section here is implemented by the parser
-in `src/language/parse.ts` and checked by `dxn lang check <file>`.
+in `src/language/parse.ts` and checked by `dxn check <file>`.
 
 ### enum
 
@@ -295,7 +295,7 @@ inheritance; it comes later, with modifiers.
 
 **Decided and implemented.** The language is evaluated directly, without
 compiling it to today's JSON model first: a type can be evaluated on its own,
-with no tree or page around it. `dxn lang states <file> <type>` lists
+with no tree or page around it. `dxn states <file> <type>` lists
 the states a type has under each combination of the dimensions its rules use,
 as JSON or, with `--table`, as a table:
 

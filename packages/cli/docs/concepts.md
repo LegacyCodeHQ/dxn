@@ -42,11 +42,11 @@ opens a panel with the same link on narrow screens.
   evidence/<root-id>.json     what actors recorded for nodes in that root
 ```
 
-`dxn init` creates the folder. Commands find the nearest `.dxn`
+`dxn prototype init` creates the folder. Commands find the nearest `.dxn`
 in the working directory or above, or the one `--dir` names. Every file has
 `"version": 1`, and every file has a JSON schema in `schema/`.
 
-`dxn validate` compiles the whole folder and reports every error with
+`dxn prototype validate` compiles the whole folder and reports every error with
 its file, line and column. There are no warnings: a project either compiles
 or it doesn't. Every editing command compiles the result before it writes
 anything, so a command can't leave the project broken. See
@@ -91,7 +91,7 @@ contexts are counted from and where verification records are filed. A
 }
 ```
 
-`dxn tree` prints the roots and the fragments.
+`dxn prototype tree` prints the roots and the fragments.
 
 ## Types and states
 
@@ -105,7 +105,7 @@ either a plain list:
 
 or a set of state groups (next section). A node without a type has no states.
 
-`dxn show blog-link` shows a node's states in one context.
+`dxn prototype show blog-link` shows a node's states in one context.
 
 ## State groups
 
@@ -155,9 +155,9 @@ The toolbar has three dimensions: `breakpoint` (base, sm, lg, xl), `pointer`
 
 A **context** is one value for every dimension that applies to a node, one
 value for each of its state groups (or its one plain state), and the state of
-every shared node above it. `dxn contexts blog-link` lists all of
+every shared node above it. `dxn prototype contexts blog-link` lists all of
 them, `--count` counts them, and `--tree` draws them as a merged tree.
-`dxn dimension list` lists every dimension.
+`dxn prototype dimension list` lists every dimension.
 
 ## Profiles
 
@@ -215,11 +215,11 @@ does exist. Profiles live in `profiles.json`, for the whole project:
   and `breakpoint=xl pointer=touch` is refused because no profile has it.
 
 Filters take `profile=<name>` too, in `contexts` and in expectations. Manage
-profiles with `dxn profile list`, `profile add` and `profile remove`.
+profiles with `dxn prototype profile list`, `profile add` and `profile remove`.
 `profile add` takes several profiles at once (`profile add phone breakpoint=base
 … desktop breakpoint=xl …`): add profiles that belong together in one step,
 because the first profile alone leaves out every other combination. Manage
-modifiers with `dxn modifier list`, `modifier add magic-keyboard --on
+modifiers with `dxn prototype modifier list`, `modifier add magic-keyboard --on
 tablet-portrait,tablet-landscape pointer=mouse keyboard=keyboard` and
 `modifier remove`.
 
@@ -238,7 +238,7 @@ wide screens, and the menu only on narrow ones. `only` in
 
 A node left out of `only` exists at every value. `show` reports
 `"present": false` where a node doesn't exist, and `contexts` skips those
-contexts. Set it with `dxn node only menu breakpoint base sm`.
+contexts. Set it with `dxn prototype node only menu breakpoint base sm`.
 
 ## Overrides
 
@@ -280,7 +280,7 @@ Two overrides at the same level that disagree in a context they share are a
 `conflicting-override` error. To settle it, add a combination override for
 those values, which outranks both.
 
-Set overrides with `dxn override states pointer=touch --type
+Set overrides with `dxn prototype override states pointer=touch --type
 toolbar-link --remove hovered`. For a combination, write
 `breakpoint=sm,pointer=touch`.
 
@@ -297,7 +297,7 @@ complete:
 
 The file is named after the shared node, its keys are that node's states, and
 it changes only the nodes below it. It has no `only`: use `onlyWhen` for what
-exists. Write it with `dxn override states form=incomplete --node
+exists. Write it with `dxn prototype override states form=incomplete --node
 submit --remove enabled`.
 
 ## Shared states and onlyWhen
@@ -357,7 +357,7 @@ A shared node can list how its state changes, as DOM events:
 Each event takes only its own field, and `focus` (optional) is where keyboard
 focus ends up. The compiler checks that
 `target` exists in the `from` state, and that `focus` exists after the
-transition. `dxn transitions menu` lists them, and
+transition. `dxn prototype transitions menu` lists them, and
 `contexts menu --tree --transitions` draws them under the states. A
 transition can be verified like a context (`verify --transition`).
 
@@ -378,7 +378,7 @@ link is the current page's link, so it is always `selected`:
 ```
 
 This narrows the root's contexts without changing the fragment. Set it with
-`dxn node include-states article-page toolbar blog-link selection
+`dxn prototype node include-states article-page toolbar blog-link selection
 selected`.
 
 ## Attributes
@@ -406,8 +406,8 @@ The neo-website project declares no checks yet. The examples below assume
 these two commands have run:
 
 ```bash
-dxn check add visual
-dxn type require toolbar-link visual
+dxn prototype check add visual
+dxn prototype type require toolbar-link visual
 ```
 
 `check list` shows which checks a project declares and which types require
@@ -434,8 +434,8 @@ out means that dimension's default, so the record above is for a mouse and a
 keyboard. The context must exist. A record can also name a `transition`
 instead of a context. `actor` is the role that checked, declared in
 `actors.json` (see [Actors and evidence](#actors-and-evidence)).
-`dxn verify` writes records and `unverify` removes them.
-`dxn status` reports every required check as passed, failed or
+`dxn prototype verify` writes records and `unverify` removes them.
+`dxn prototype status` reports every required check as passed, failed or
 missing.
 
 ## Expectations
@@ -508,9 +508,9 @@ because it would test nothing.
 
 A **view** is one picture of a node's subtree: one value for each dimension
 that applies in it, plus a state for each shared node present. Inside a view,
-leaf nodes still list their states. `dxn views toolbar` lists every
-distinct view (one diagram each), and `dxn view toolbar breakpoint=base
-menu=open` prints the tree in one of them. `dxn axes toolbar` lists
+leaf nodes still list their states. `dxn prototype views toolbar` lists every
+distinct view (one diagram each), and `dxn prototype view toolbar breakpoint=base
+menu=open` prints the tree in one of them. `dxn prototype axes toolbar` lists
 what a view accepts: the dimensions with values and defaults, and the shared
 nodes with their states and where they exist.
 
@@ -574,7 +574,7 @@ and a frame in it. `fingerprint` records what the frame showed then. The context
 node's contexts, so an entry claims one row and no more; a frame that shows
 several gets an entry for each.
 
-`dxn attach menu-button --actor design-agent --file design/website.pen
+`dxn prototype attach menu-button --actor design-agent --file design/website.pen
 --frame vbGba profile=phone menu=closed hover=rest focus=blurred` records an
 entry, filling in the context from the profile and the fingerprint from the frame;
 `detach` removes one. A frame that shows several contexts alike is recorded in one
@@ -582,7 +582,7 @@ step with lists: `attach wordmark … --frame h7eW6z
 "profile=tablet-landscape|laptop|desktop" "hover=rest|hovered" focus=blurred`
 records an entry for each combination that is a context of the wordmark.
 
-`dxn evidence menu-button --actor design-agent --table` lists every
+`dxn prototype evidence menu-button --actor design-agent --table` lists every
 context of the node with the profile it matches and the actor's evidence for
 it, where `—` is the list of what is missing.
 
@@ -601,7 +601,7 @@ records its new fingerprint.
 
 Several entries can point to the same frame. That says the design draws those
 contexts as one look: the closed menu button on a phone and on a tablet, say.
-`dxn evidence menu-button --actor design-agent --by frame` lists each
+`dxn prototype evidence menu-button --actor design-agent --by frame` lists each
 frame with the contexts it covers. It is the actor's claim, recorded with its
 provenance, and the model checks it: a node's **look** in a context is the
 value each of its attributes has for the states the context names. Two
@@ -613,7 +613,7 @@ counts it, and `--missing` lists it, until the frame is split into one per
 look. A wordmark
 that is small on laptops and large on desktops cannot share a frame across
 them without conflicting, while its rest and hovered states can, if hover changes no attribute.
-`dxn evidence wordmark --by look --table` lists the looks the model
+`dxn prototype evidence wordmark --by look --table` lists the looks the model
 defines, the contexts of each, the frames that cover them and how many still
 miss evidence: what to draw, one frame per look. A node whose type declares no
 attributes has one look everywhere, so nothing is checked until it has some.

@@ -48,7 +48,7 @@ values. Each part of it comes from a family of languages you may know:
 | dimensions, environments, profiles and `only when` | variability modeling, as in the feature models of software product lines: profiles are the configurations that exist         |
 | every combination listed and checked               | finite-state specification, as in Alloy or TLA+: because every set is finite, the whole space is checked, not sampled        |
 | records, scalars and stored data                   | schema languages such as Protobuf, JSON Schema or CUE: types that data is stored as and checked against                      |
-| `lang rename`, which rewrites the stored data      | schema evolution: every stored value is typed, so a rename knows exactly which values to change                              |
+| `dxn rename`, which rewrites the stored data       | schema evolution: every stored value is typed, so a rename knows exactly which values to change                              |
 | evidence that actors record as they draw and build | model-based testing: the model says which cases must exist, and the evidence records which ones the design and the code show |
 
 Put together, dxn is a typed specification of what varies: every case can be
@@ -56,12 +56,12 @@ counted, and recorded evidence says which cases the real system shows.
 
 ## Your first file
 
-A dxn file is plain text, and its name ends in `.dxn`. The `lang check`
+A dxn file is plain text, and its name ends in `.dxn`. The `dxn check`
 command reads one, reports any problems, and otherwise says in one line what
 it declares:
 
 ```bash
-dxn lang check wordmark.dxn
+dxn check wordmark.dxn
 ```
 
 ```
@@ -71,15 +71,15 @@ wordmark.dxn: 2 enums, 1 type
 It needs no project, so you can try everything in this guide in an empty
 folder. Seven commands work on a file, each introduced where it is needed:
 
-| Command                                      | What it does                                                         |
-| -------------------------------------------- | -------------------------------------------------------------------- |
-| `lang check <file>`                          | reports every problem, or says what the file declares                |
-| `lang states <file> <Type or path>`          | evaluates a type, or a child in place: its states in each profile    |
-| `lang cases <file> <Type or path>`           | lists the cases that can be told apart, and what each covers         |
-| `lang validate <file>`                       | checks every stored record against its declaration                   |
-| `lang attach <file> <path> --file --frame …` | records evidence for an element in the combinations given            |
-| `lang status <file>`                         | counts which combinations have evidence, and which are stale or gone |
-| `lang rename <file> <Enum>.<value> <new>`    | renames an enum's value in the file and its stored records           |
+| Command                                     | What it does                                                         |
+| ------------------------------------------- | -------------------------------------------------------------------- |
+| `dxn check <file>`                          | reports every problem, or says what the file declares                |
+| `dxn states <file> <Type or path>`          | evaluates a type, or a child in place: its states in each profile    |
+| `dxn cases <file> <Type or path>`           | lists the cases that can be told apart, and what each covers         |
+| `dxn validate <file>`                       | checks every stored record against its declaration                   |
+| `dxn attach <file> <path> --file --frame …` | records evidence for an element in the combinations given            |
+| `dxn status <file>`                         | counts which combinations have evidence, and which are stale or gone |
+| `dxn rename <file> <Enum>.<value> <new>`    | renames an enum's value in the file and its stored records           |
 
 Each prints a readable answer for you. A tool or an agent adds `--json` to any
 of them, and gets one JSON document instead: the answer with its `problems`,
@@ -165,7 +165,7 @@ in any of the four combinations of hover and focus. You can ask the tool for
 them:
 
 ```bash
-dxn lang states wordmark.dxn Wordmark
+dxn states wordmark.dxn Wordmark
 ```
 
 ```
@@ -216,7 +216,7 @@ it is in: `Menu.State`, `Menu.Toggle`. `Hover` stays at the top, because
 several types use it.
 
 ```bash
-dxn lang states menu.dxn Menu.Toggle
+dxn states menu.dxn Menu.Toggle
 ```
 
 ```
@@ -543,7 +543,7 @@ its type, so the tree nests as deep as the types do.
 The matrix shows where each child is:
 
 ```bash
-dxn lang states toolbar.dxn Toolbar
+dxn states toolbar.dxn Toolbar
 ```
 
 ```
@@ -652,7 +652,7 @@ on the path that provides it, with the same enum. In place, it is one of
 the parents' states, by its provider's name:
 
 ```bash
-dxn lang states site.dxn ArticlePage.toolbar.links.blog
+dxn states site.dxn ArticlePage.toolbar.links.blog
 ```
 
 ```
@@ -662,8 +662,8 @@ dxn lang states site.dxn ArticlePage.toolbar.links.blog
 ```
 
 On its own, a receiving type has the state free, with every value; and a
-path where nothing above provides it is refused, by `lang states`, by
-`lang status`, and by an expectation that reaches it:
+path where nothing above provides it is refused, by `dxn states`, by
+`dxn status`, and by an expectation that reaches it:
 
 ```
 dxn: current is received by Links, but nothing above it provides it
@@ -671,9 +671,9 @@ dxn: current is received by Links, but nothing above it provides it
 
 ### In place: a child inside its parents
 
-`lang states` on a type gives what that type can be on its own. A child
+`dxn states` on a type gives what that type can be on its own. A child
 inside a page is narrower: it is only where its parents put it, and some of
-its states are set by them. Give `lang states` a path from a type, and it
+its states are set by them. Give `dxn states` a path from a type, and it
 evaluates the child in place:
 
 ```
@@ -712,7 +712,7 @@ profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 ```
 
 ```bash
-dxn lang states toolbar.dxn Toolbar.menu.toggle
+dxn states toolbar.dxn Toolbar.menu.toggle
 ```
 
 ```
@@ -738,7 +738,7 @@ where the toolbar is `compact`; the rest varies, row by row.
 This is where the language pays off. Ask for the wordmark's state again:
 
 ```bash
-dxn lang states wordmark.dxn Wordmark
+dxn states wordmark.dxn Wordmark
 ```
 
 ```
@@ -896,7 +896,7 @@ either is lost: both stay declared, and a context still names the one profile
 its evidence was recorded on, `"profile": "laptop"` or
 `"profile": "tablet+magic-keyboard"`, which then counts for the whole row. If
 the two ever differ, the row splits, and each piece of evidence stays with the
-profile it named. In JSON, each row of `lang states` lists its `profiles`.
+profile it named. In JSON, each row of `dxn states` lists its `profiles`.
 
 A modifier sets dimensions of the profiles' environment, each once, with one
 of their values, and is on profiles that exist. One that changes nothing on a
@@ -928,13 +928,13 @@ type Button needs Pointer {
 ```
 
 `alike Pointer` reads: combinations that differ only in the pointer cannot
-be told apart. `lang cases` lists the cases that can. Where a case covers
+be told apart. `dxn cases` lists the cases that can. Where a case covers
 more than one combination, it says what it covers: its profiles, when the
 file has profiles, or otherwise each combination, by the values the case
 does not show:
 
 ```bash
-dxn lang cases button.dxn Button
+dxn cases button.dxn Button
 ```
 
 ```
@@ -947,7 +947,7 @@ Button: 3 cases of 5 combinations
 | disabled | rest    | Pointer = mouse; Pointer = touch |
 ```
 
-Without `alike`, every combination is its own case, and `lang cases` lists
+Without `alike`, every combination is its own case, and `dxn cases` lists
 them one by one: `Button: 5 cases`. With `--combinations`, it lists every
 combination even where some are alike, to see what `alike` merged. Only what a type
 declares can tell its combinations apart: its own states and the dimensions
@@ -1083,7 +1083,7 @@ record Evidence with context {
 }
 ```
 
-Every stored `Evidence` then has a `context`: the one row of `lang states` it
+Every stored `Evidence` then has a `context`: the one row of `dxn states` it
 is about. The field is not listed among the record's fields, because every
 record with context has it, in the same shape:
 
@@ -1111,7 +1111,7 @@ hovered wordmark on a phone, so a context that says so is reported.
 
 Evidence is usually about one element on a page, not about any element of a
 type: _this_ toggle, inside _this_ toolbar's menu. Such a context names the
-child by its path instead of a type, and is one row of `lang states` for that
+child by its path instead of a type, and is one row of `dxn states` for that
 path, with the parents' states that place it:
 
 ```json
@@ -1159,7 +1159,7 @@ evidence/
 
 A record with no folder is not stored: `Source` above only ever appears
 inside `Evidence`, so it needs none. Only a record with context can have a
-folder; for any other, `lang validate` stops before checking anything:
+folder; for any other, `dxn validate` stops before checking anything:
 
 ```
 dxn: Source is stored in source/, but has no context; declare "record Source with context"
@@ -1186,10 +1186,10 @@ as a string, and a scalar field a string that is a valid value of the scalar.
 ]
 ```
 
-`lang validate` checks every stored record against its declaration:
+`dxn validate` checks every stored record against its declaration:
 
 ```bash
-dxn lang validate evidence.dxn
+dxn validate evidence.dxn
 ```
 
 ```
@@ -1200,7 +1200,7 @@ evidence/wordmark.json:21:14: unknown-value: $[1].actor: "designer" is not a val
 Every field must be given, each of its type, and no others. Two stored
 records that are the same in everything but `at` and `fingerprint`, which
 only say when one was recorded, are duplicates, in one file or across the
-record's files; `lang attach` replaces an entry rather than making one. Each
+record's files; `dxn attach` replaces an entry rather than making one. Each
 problem has its file, line and column, and its JSON path, so a person or an
 agent can go straight to it. When everything is valid, the command says what
 it checked, a line for each stored record:
@@ -1211,13 +1211,13 @@ evidence.dxn: Evidence, 2 records in 1 file in evidence/
 
 ### Attaching: recording evidence
 
-An actor records evidence with `lang attach`: the element by its path, the
+An actor records evidence with `dxn attach`: the element by its path, the
 frame, the record's other fields, and the context as `key=value` pairs, the
 same keys a context has. Every key is given, and `a|b` lists several values:
 it records one entry for each combination listed that exists in place.
 
 ```bash
-dxn lang attach toolbar.dxn Toolbar.menu.toggle \
+dxn attach toolbar.dxn Toolbar.menu.toggle \
   --file design/website.pen --frame l5Z3Z --field actor=design-agent \
   profile=phone layout=compact "menu.menu=closed|open" \
   hover=rest focus=blurred "expanded=closed|open"
@@ -1237,8 +1237,8 @@ other file, the whole file. The other fields, here `actor`, are given with
 By convention, a record's `tool` says how its frames are fingerprinted:
 `pen-dev`, a frame in a pen.dev file; `file`, the whole file, even a pen.dev
 one. A tool derived from the actor is how an actor's rules are written: a
-design agent records with pen-dev, so `lang attach` refuses its frame in any
-other file, and `lang status` reports a stored one.
+design agent records with pen-dev, so `dxn attach` refuses its frame in any
+other file, and `dxn status` reports a stored one.
 
 ```
 dxn: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file
@@ -1251,12 +1251,12 @@ the record's folder, in a file named after the type the path starts at.
 
 ### Status: what has evidence, and what is missing
 
-With evidence recorded for children, `lang status` says how much of the
+With evidence recorded for children, `dxn status` says how much of the
 model it covers: every combination of every element in the file's trees, in
 place, and which of them a stored record is about.
 
 ```bash
-dxn lang status toolbar.dxn
+dxn status toolbar.dxn
 ```
 
 ```
@@ -1304,14 +1304,14 @@ that are not present under `listed`, as `stale`, `gone` and `missing`.
 ### Renaming a value
 
 An enum's values are stored as text, so renaming one by hand leaves every
-stored record that used it invalid. `lang rename` renames it everywhere at
+stored record that used it invalid. `dxn rename` renames it everywhere at
 once: in the enum; wherever the file writes a value of it, in rules,
 children's conditions, bindings, fixed and derived states, actions,
 expectations and derived fields; and in every stored record's fields of that
 enum, nested ones included, and in the states of every context.
 
 ```bash
-dxn lang rename evidence.dxn Actor.design-agent designer
+dxn rename evidence.dxn Actor.design-agent designer
 ```
 
 ```
@@ -1401,7 +1401,7 @@ into the language for now; they belong to a UI kit, once there are kits.
 
 Some things must stay true however the model changes: touch screens never
 show hover; the menu's panel only exists while the menu is open. An
-**expectation** writes such a rule down, and `lang check` checks it against
+**expectation** writes such a rule down, and `dxn check` checks it against
 the tree in place, every time:
 
 ```
@@ -1428,7 +1428,7 @@ The title is the rule in words, in quotes, once in the file. `in` names the
 element by its path; with `and below`, every element under it too, each that
 has every key the rule names. `when` picks its combinations by the keys a
 context has: `profile`, a dimension, one of its states, or a parent's state
-by its key in place. A profile a modifier makes is named as `lang states`
+by its key in place. A profile a modifier makes is named as `dxn states`
 names it: `when profile = tablet-portrait+magic-keyboard`. Then one
 assertion:
 
@@ -1532,9 +1532,9 @@ declaration starts, at the start of a line, which then reads as its own.
 The language grows one concept at a time, and the concepts below are designed
 or under discussion but not part of it yet:
 
-- **Provided state, checked by `lang check`.** A receiving type placed where
+- **Provided state, checked by `dxn check`.** A receiving type placed where
   nothing above provides its state is found today when the path is
-  evaluated: by `lang states`, `lang status` or an expectation. `lang check`
+  evaluated: by `dxn states`, `dxn status` or an expectation. `dxn check`
   could find it as soon as the `has` is written.
 - **Events and where things are.** An `on` that acts on a child, or moves
   focus to one, does not yet say whether that child must be there before the
@@ -1545,8 +1545,8 @@ or under discussion but not part of it yet:
   applies only to the elements whose types need `Pointer`, even where every
   profile gives it.
 - **Evidence for a type across pages.** A context can name a type, but
-  `lang status` counts only the elements of trees.
-- **More renames.** `lang rename` renames an enum's value. Renaming a field,
+  `dxn status` counts only the elements of trees.
+- **More renames.** `dxn rename` renames an enum's value. Renaming a field,
   a record (and its folder), or an enum, dimension or type is still to come.
 - **A runtime.** Evidence today is recorded by the actors that draw and
   build. A runtime would check the real system itself, driving a browser or a
@@ -1688,7 +1688,7 @@ comment     = "#" to the end of the line
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |
 | `unused-need`                                                                 | warning  | a type needs a dimension that is alike throughout and that nothing in it uses                    |
 
-Checking stored records with `lang validate` reports these, after any problem with the
+Checking stored records with `dxn validate` reports these, after any problem with the
 JSON itself:
 
 | Code               | When                                                                                                                                                                   |
@@ -1699,5 +1699,5 @@ JSON itself:
 | `unknown-value`    | an enum field's value is not one of the enum's; or a context's type, profile, dimension or state value is not one of the file's, or does not exist in that combination |
 | `invalid-value`    | a scalar field's value is not a valid value of the scalar                                                                                                              |
 | `derived-field`    | a stored record gives a derived field, whose value follows from another's                                                                                              |
-| `wrong-tool`       | (in `lang status`) a pen-dev entry's file is not a pen.dev file                                                                                                        |
+| `wrong-tool`       | (in `dxn status`) a pen-dev entry's file is not a pen.dev file                                                                                                         |
 | `duplicate-record` | two stored records are the same in everything but `at` and `fingerprint`                                                                                               |

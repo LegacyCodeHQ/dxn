@@ -27,7 +27,7 @@ A refusal (exit 1) is one line.
 ```text
 dxn: missing node-id
 
-Usage: dxn show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
+Usage: dxn prototype show <node-id> [<dimension>=<value>...] [<shared-node>=<state>...]
 ...
 ```
 

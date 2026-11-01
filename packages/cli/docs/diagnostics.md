@@ -1,6 +1,6 @@
 # Diagnostics
 
-`dxn validate`, and every command that compiles the project, reports
+`dxn prototype validate`, and every command that compiles the project, reports
 problems one per line on stderr:
 
 ```text
@@ -38,7 +38,7 @@ contents follow the order of the sections.
 ### `missing-file`
 
 A required file doesn't exist. The usual case is `types.json`. Run
-`dxn init`, or create it with `{ "version": 1 }`.
+`dxn prototype init`, or create it with `{ "version": 1 }`.
 
 ### `not-a-file`
 
@@ -526,25 +526,25 @@ node's contexts. Entries also report `unknown-node`, `node-outside-file` and
 
 An entry's context is not one of the node's contexts in that root. A context
 must be complete: every dimension, state and shared node's state the node has,
-exactly as `dxn evidence <node-id> --actor <name>` lists them.
+exactly as `dxn prototype evidence <node-id> --actor <name>` lists them.
 
 ### `undeclared-actor`
 
 An evidence entry or a verification record names an actor that `actors.json`
-does not declare. Add it with `dxn actor add <name>`.
+does not declare. Add it with `dxn prototype actor add <name>`.
 
 ### `actor-without-evidence`
 
 An evidence entry names an actor that records no evidence. An actor declares
 the kind of evidence it records in `actors.json`, such as `"evidence": "design"`
-for a design agent; give it one with `dxn actor set <name> --evidence
+for a design agent; give it one with `dxn prototype actor set <name> --evidence
 <kind>`, or record the entry as the actor that made it.
 
 ### `actor-cannot-check`
 
 A verification record names an actor whose `checks` in `actors.json` leave out
 that check: a design agent passing a visual review, say. Record it as an actor
-that may check it, or add the check with `dxn actor set <name> --checks
+that may check it, or add the check with `dxn prototype actor set <name> --checks
 <check>,...`.
 
 ### `unknown-source`
@@ -560,7 +560,7 @@ evidence must be, so it only makes sense for an actor that records evidence.
 
 An evidence entry does not fit its actor's source: an actor with
 `"source": "pen.dev"` records frames in pen.dev files, and the entry points to a
-file that is not one. `dxn attach` refuses such an entry too.
+file that is not one. `dxn prototype attach` refuses such an entry too.
 
 ### `missing-source`
 
@@ -569,10 +569,10 @@ that holds `.dxn`, normally the repository's root.
 
 ### `invalid-fingerprint`
 
-An entry's fingerprint is not 40 hexadecimal characters. `dxn attach`
+An entry's fingerprint is not 40 hexadecimal characters. `dxn prototype attach`
 records it: for a pen.dev frame, a hash of the frame and the components and
 variables it uses; for any other file, the file's git blob hash. When what the
-frame shows changes, the entry is not an error: `dxn evidence` shows it
+frame shows changes, the entry is not an error: `dxn prototype evidence` shows it
 as stale, or as gone when the frame is no longer in the file.
 
 ### `duplicate-evidence`
@@ -613,4 +613,4 @@ The model breaks the rule. The message names one context that breaks it, by
 profile where it matches one, for example "home-link at tablet-landscape
 (hover=hovered, focus=blurred) breaks hover=rest". Either the model is wrong
 (fix the types, dimensions, overrides or profiles) or the expectation is.
-`dxn show` or `contexts` with the same values shows that context.
+`dxn prototype show` or `contexts` with the same values shows that context.
