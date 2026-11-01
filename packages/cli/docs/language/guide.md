@@ -1407,6 +1407,15 @@ type Toolbar needs Breakpoint {
 }
 ```
 
+A trigger can make several changes, split by commas, in the order written:
+its own actions, a child's, and changes in place. It changes each of its
+type's own states at most once:
+
+```
+on key Escape: close, toggle.take-focus
+on key Space: lamp -> on, bell -> on
+```
+
 A trigger can fire only where a condition holds, written at its end with
 `only when`, as a rule's and a child's are. A key presses a button only
 while it is focused:
@@ -1640,7 +1649,8 @@ type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" f
               "{" { blank-line | state | rule | enum | type | has | provides | action | on | alike } "}"
 alike       = "alike" name [ "in" "(" value { "," value } ")" ] [ "when" condition ] newline
 action      = "action" action-name ":" state-name value "->" value newline
-on          = "on" event ":" ( path | state-name "->" value ) [ "," "focus" path ] [ "only" "when" condition ] newline   # path: an action, or a child's
+on          = "on" event ":" change { "," change } [ "," "focus" path ] [ "only" "when" condition ] newline
+change      = path | state-name "->" value                      # path: an action, or a child's
 event       = "click" path | "key" word | "pointer" "outside" | condition
 provides    = "provides" state-name newline
 has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline
@@ -1719,6 +1729,7 @@ comment     = "#" to the end of the line
 | `focus-target`                                                                | error    | focus goes to a child that has no `focus` state                                                  |
 | `ambiguous-event`                                                             | error    | events that overlap trigger two actions that apply to one state's same value                     |
 | `duplicate-trigger`                                                           | error    | an event triggers the same action twice                                                          |
+| `conflicting-change`                                                          | error    | a trigger changes one of its type's states twice                                                 |
 | `expectation-failed`                                                          | error    | the model breaks an expectation; the message gives a combination that breaks it                  |
 | `expectation-empty`                                                           | error    | an expectation picks nothing, so it would always pass                                            |
 | `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |

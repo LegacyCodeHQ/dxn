@@ -154,6 +154,21 @@ function checkOne(
     if (on === undefined) return { combination, focus: undefined };
     const event = eventText(on);
     const type = placement(file, element).target;
+    // The changes of the element's own a trigger makes here: a named action
+    // in its from value, a change in place where its state is not yet its
+    // value.
+    const applied = (candidate: Trigger) =>
+      candidate.does.flatMap((effect) => {
+        if (effect.kind === "change") {
+          return combination.states[effect.state.name] === effect.to.name
+            ? []
+            : [{ state: effect.state, to: effect.to }];
+        }
+        const action = type.actions.find(({ name }) => name.name === effect.name.name);
+        return action !== undefined && combination.states[action.state.name] === action.from.name
+          ? [{ state: action.state, to: action.to }]
+          : [];
+      });
     const trigger: Trigger | undefined = type.triggers.find((candidate) => {
       if (eventText(candidate.event) !== event) return false;
       // A trigger with a condition fires only where it holds.
@@ -163,18 +178,9 @@ function checkOne(
       ) {
         return false;
       }
-      // A change in place applies wherever its state is not yet its value.
-      if (candidate.change !== undefined) {
-        return combination.states[candidate.change.state.name] !== candidate.change.to.name;
-      }
-      const action = type.actions.find(({ name }) => name.name === candidate.action?.name);
-      return action !== undefined && combination.states[action.state.name] === action.from.name;
+      return applied(candidate).length > 0;
     });
-    const named = type.actions.find(({ name }) => name.name === trigger?.action?.name);
-    const action =
-      trigger?.change !== undefined
-        ? { state: trigger.change.state, to: trigger.change.to }
-        : named;
+    const action = trigger === undefined ? undefined : applied(trigger)[0];
     // Where nothing fires, the element stays as it was. A rule that some
     // combination matches looks for it among the others; one that every
     // combination does must hold of it unchanged, with nowhere for focus to
@@ -194,10 +200,12 @@ function checkOne(
         `nothing happens on ${event} to ${element}${condition === "" ? "" : ` when ${condition}`}`,
       );
     }
-    const changed = {
-      ...combination,
-      states: { ...combination.states, [action.state.name]: action.to.name },
-    };
+    // Every change of the element's own that applies here.
+    const states = { ...combination.states };
+    for (const { state, to } of trigger === undefined ? [] : applied(trigger)) {
+      states[state.name] = to.name;
+    }
+    const changed = { ...combination, states };
     // The change must lead to a combination the element can have there.
     if (!expand(file, element, given).some((candidate) => same(candidate, changed))) {
       return failed(

@@ -10,6 +10,7 @@ import type {
   Child,
   Condition,
   Declaration,
+  Effect,
   Enum,
   Event,
   Expectation,
@@ -500,11 +501,11 @@ export function parse(source: string): ParseResult {
         next();
         const event = eventOf();
         expect(":", '":" after the event');
-        // A change in place, "<state> -> <value>", or an action by its name.
-        const named = qualified('an action or a change after ":"');
-        const trigger: Trigger = { ...located(token), event };
-        if (peek().kind !== "->") trigger.action = named;
-        else {
+        // Its changes, split by commas: each an action by its name, or a
+        // change in place, "<state> -> <value>".
+        const effect = (after: string): Effect => {
+          const named = qualified(`an action or a change after ${after}`);
+          if (peek().kind !== "->") return { kind: "action", name: named };
           // A change is on one of the type's own states; a child's are
           // changed through its actions.
           if (named.name.includes(".")) {
@@ -518,7 +519,16 @@ export function parse(source: string): ParseResult {
             throw new ParseFailure();
           }
           next();
-          trigger.change = { state: named, to: word('a value after "->"') };
+          return { kind: "change", state: named, to: word('a value after "->"') };
+        };
+        const trigger: Trigger = { ...located(token), event, does: [effect('":"')] };
+        // "focus <path>" after a comma moves focus; any other word is a change.
+        while (
+          peek().kind === "," &&
+          !(tokens[position + 1]?.text === "focus" && tokens[position + 2]?.kind === "word")
+        ) {
+          next();
+          trigger.does.push(effect('","'));
         }
         if (peek().kind === ",") {
           next();

@@ -1,4 +1,5 @@
 import { expect as assert, describe, it } from "vitest";
+import type { Effect } from "../src/ast.js";
 import { parse } from "../src/parse.js";
 import { renameInSource } from "../src/rename.js";
 import { errors, problems } from "./support/language.js";
@@ -51,6 +52,10 @@ type Page {
 }
 `;
 
+// A trigger's only change, as written: an action's name.
+const named = (does: Effect[]) =>
+  does.map((effect) => (effect.kind === "action" ? effect.name.name : "")).join(", ");
+
 describe("actions and on", () => {
   it("name how a type's own state changes, and what triggers each change", () => {
     const file = parse(model);
@@ -59,14 +64,14 @@ describe("actions and on", () => {
     assert([
       problems(model),
       menu?.actions.map(({ name, state, from, to }) => [name.name, state.name, from.name, to.name]),
-      menu?.triggers.map(({ event, action, focus }) => [
+      menu?.triggers.map(({ event, does, focus }) => [
         event.kind,
-        action?.name,
+        named(does),
         focus?.name ?? null,
       ]),
-      toolbar?.triggers.map(({ event, action, focus }) => [
+      toolbar?.triggers.map(({ event, does, focus }) => [
         event.kind,
-        action?.name,
+        named(does),
         focus?.name ?? null,
       ]),
     ]).toEqual([
@@ -303,7 +308,7 @@ describe("a trigger only when", () => {
   it("fires only where its condition holds", () => {
     const source = button("on key Space: push only when focus = focused");
     const trigger = parse(source).types[0]?.triggers[0];
-    assert([problems(source), trigger?.when?.kind, trigger?.action?.name]).toEqual([
+    assert([problems(source), trigger?.when?.kind, named(trigger?.does ?? [])]).toEqual([
       [],
       "compare",
       "push",
@@ -437,12 +442,12 @@ describe("a change written in a trigger", () => {
       "on key Space: press -> pressed only when focus = focused",
       "on key Escape: press -> released",
     );
-    const [first] = parse(source).types[0]?.triggers ?? [];
-    assert([problems(source), first?.change?.state.name, first?.change?.to.name]).toEqual([
-      [],
-      "press",
-      "pressed",
-    ]);
+    const [first] = parse(source).types[0]?.triggers[0]?.does ?? [];
+    assert([
+      problems(source),
+      first?.kind === "change" && first.state.name,
+      first?.kind === "change" && first.to.name,
+    ]).toEqual([[], "press", "pressed"]);
   });
 
   it("is on a state of the type that a change can change, to one of its values", () => {
@@ -514,5 +519,73 @@ type Menu {
       ],
       source.replace("released | pressed", "released | down").replace("-> pressed", "-> down"),
     ]);
+  });
+});
+
+const several = (...lines: string[]) => `enum Openness = closed | open
+enum Ring = hidden | visible
+enum Lit = off | on
+
+type Button {
+  state ring: Ring
+  action take-focus: ring hidden -> visible
+}
+
+type Menu {
+  state menu: Openness
+  state lamp: Lit
+  state bell: Lit
+  has toggle: Button
+  action close: menu open -> closed
+${lines.map((line) => `  ${line}\n`).join("")}}
+
+type Page {
+  has menu: Menu
+}
+`;
+
+describe("a trigger with several changes", () => {
+  it("makes each, its own actions, a child's, and changes in place", () => {
+    const source = several(
+      "on key Escape: close, toggle.take-focus",
+      "on key Space: lamp -> on, bell -> on, toggle.take-focus",
+    );
+    const triggers = parse(source).types.find(({ name }) => name === "Menu")?.triggers ?? [];
+    assert([
+      problems(source),
+      triggers.map(({ does }) =>
+        does.map((effect) =>
+          effect.kind === "action" ? effect.name.name : `${effect.state.name} -> ${effect.to.name}`,
+        ),
+      ),
+    ]).toEqual([
+      [],
+      [
+        ["close", "toggle.take-focus"],
+        ["lamp -> on", "bell -> on", "toggle.take-focus"],
+      ],
+    ]);
+  });
+
+  it("checks each change, and changes one state once", () => {
+    assert([
+      errors(several("on key Escape: close, toggle.take-focs")),
+      errors(several("on key Space: lamp -> on, lamp -> off")),
+    ]).toEqual([
+      ["16:25: unknown-action: take-focs is not an action of Button (take-focus)"],
+      ["16:29: conflicting-change: key Space changes lamp twice"],
+    ]);
+  });
+
+  it("is applied by an expectation, every change of the element's own", () => {
+    const rule = `${several("on key Space: lamp -> on, bell -> on")}
+expect "Space lights both" {
+  in Page.menu
+  when lamp = off, bell = off
+  on key Space
+  then lamp = on, bell = on
+}
+`;
+    assert(problems(rule)).toEqual([]);
   });
 });

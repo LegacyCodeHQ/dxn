@@ -62,9 +62,10 @@ export function renameInSource(
     }
     // A trigger's change in place, and its condition: the values of a state
     // of that enum.
-    for (const { change } of type.triggers) {
-      const on = type.states.find(({ name }) => name === change?.state.name);
-      if (on?.enum.name === enumName && change?.to.name === from) named.push(change.to);
+    for (const effect of type.triggers.flatMap(({ does }) => does)) {
+      if (effect.kind !== "change") continue;
+      const on = type.states.find(({ name }) => name === effect.state.name);
+      if (on?.enum.name === enumName && effect.to.name === from) named.push(effect.to);
     }
     for (const { when } of type.triggers) {
       for (const { subject, values } of when === undefined ? [] : comparisons(when)) {

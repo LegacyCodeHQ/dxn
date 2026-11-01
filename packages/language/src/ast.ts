@@ -102,12 +102,16 @@ export type Event =
 
 // "on <event>: <action>[, focus <path>]": the action is the type's own, or a
 // child's by its path; focus says where keyboard focus goes after.
+// One change a trigger makes.
+export type Effect =
+  | { kind: "action"; name: Located }
+  | { kind: "change"; state: Located; to: Located };
+
 export interface Trigger extends Located {
   event: Event;
-  // What it does: a named action, its own or a child's by its path; or a
-  // change written in place, of one of the type's own states to a value.
-  action?: Located;
-  change?: { state: Located; to: Located };
+  // What it does, in order: each a named action, its own or a child's by its
+  // path, or a change written in place, of one of the type's own states.
+  does: Effect[];
   focus?: Located;
   // Where it fires: everywhere, or only where this holds.
   when?: Condition;

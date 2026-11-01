@@ -2,6 +2,7 @@ import type {
   Child,
   Condition,
   Derived,
+  Effect,
   Event,
   Field,
   Located,
@@ -173,6 +174,81 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     }
     return at;
   };
+  // One change a trigger makes, checked: a named action, the type's own or a
+  // child's by its path, or one of the type's own states changed in place to
+  // one of its values. Where it is, and what it changes from and to.
+  const changeOf = (
+    type: Type,
+    effect: Effect,
+  ): { change: Change; path: string; at: Located } | undefined => {
+    if (effect.kind === "action") {
+      const parts = effect.name.name.split(".");
+      const actionName = parts.at(-1) as string;
+      const path = parts.slice(0, -1).join(".");
+      const owner = parts.length === 1 ? type : childType(type, { ...effect.name, name: path });
+      const action = owner?.actions.find(({ name }) => name.name === actionName);
+      // A broken type's actions may not all have been read.
+      if (owner !== undefined && action === undefined && !owner.broken) {
+        const actions = owner.actions.map(({ name }) => name.name);
+        report(
+          "unknown-action",
+          `${actionName} is not an action of ${owner.name}${among(actions, "it has none")}`,
+          effect.name,
+        );
+      }
+      if (action === undefined) return undefined;
+      return {
+        change: {
+          label: path === "" ? action.name.name : `${path}.${action.name.name}`,
+          state: action.state.name,
+          from: [action.from.name],
+          to: action.to.name,
+          named: true,
+        },
+        path,
+        at: effect.name,
+      };
+    }
+    const { state: named, to } = effect;
+    const state = type.states.find(({ name }) => name === named.name);
+    if (state === undefined) {
+      const states = type.states.map(({ name }) => name);
+      report(
+        "unknown-state",
+        `${named.name} is not a state of ${type.name}${among(states, "it has none")}`,
+        named,
+      );
+      return undefined;
+    }
+    if (state.derived !== undefined || state.fixed !== undefined || state.received) {
+      const why = state.received
+        ? "is received"
+        : `is decided by ${state.fixed === undefined ? "its when" : "its value"}`;
+      report("action-on-derived", `${state.name} ${why}; no change can change it`, named);
+      return undefined;
+    }
+    const values = names.values(state.enum.name) ?? [];
+    if (!values.includes(to.name)) {
+      report(
+        "unknown-value",
+        `${JSON.stringify(to.name)} is not a value of ${state.name} (${values.join(", ")})`,
+        to,
+      );
+      return undefined;
+    }
+    // It applies wherever the state is not yet its value.
+    return {
+      change: {
+        label: `${state.name} -> ${to.name}`,
+        state: state.name,
+        from: values.filter((value) => value !== to.name),
+        to: to.name,
+        named: false,
+      },
+      path: "",
+      at: named,
+    };
+  };
   // Its actions, each a change of its own state between two of its values,
   // once by name; and its triggers, each an event on the type, an action of
   // it or of a child, and where focus goes, to a child that can take it. One
@@ -251,70 +327,27 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           checkChosen(event.values, event.dimension.name, names, report, "the event");
         }
       }
-      // What it changes: a named action, the type's own or a child's by its
-      // path; or one of the type's own states, to one of its values.
-      let change: Change | undefined;
-      let path = "";
-      if (trigger.action !== undefined) {
-        const parts = trigger.action.name.split(".");
-        const actionName = parts.at(-1) as string;
-        path = parts.slice(0, -1).join(".");
-        const owner =
-          parts.length === 1 ? type : childType(type, { ...trigger.action, name: path });
-        const action = owner?.actions.find(({ name }) => name.name === actionName);
-        // A broken type's actions may not all have been read.
-        if (owner !== undefined && action === undefined && !owner.broken) {
-          const actions = owner.actions.map(({ name }) => name.name);
-          report(
-            "unknown-action",
-            `${actionName} is not an action of ${owner.name}${among(actions, "it has none")}`,
-            trigger.action,
-          );
-        }
-        if (action !== undefined) {
-          change = {
-            label: path === "" ? action.name.name : `${path}.${action.name.name}`,
-            state: action.state.name,
-            from: [action.from.name],
-            to: action.to.name,
-            named: true,
-          };
-        }
-      } else if (trigger.change !== undefined) {
-        const { state: named, to } = trigger.change;
-        const state = type.states.find(({ name }) => name === named.name);
-        if (state === undefined) {
-          const states = type.states.map(({ name }) => name);
-          report(
-            "unknown-state",
-            `${named.name} is not a state of ${type.name}${among(states, "it has none")}`,
-            named,
-          );
-        } else if (state.derived !== undefined || state.fixed !== undefined || state.received) {
-          const why = state.received
-            ? "is received"
-            : `is decided by ${state.fixed === undefined ? "its when" : "its value"}`;
-          report("action-on-derived", `${state.name} ${why}; no change can change it`, named);
-        } else {
-          const values = names.values(state.enum.name) ?? [];
-          if (!values.includes(to.name)) {
-            report(
-              "unknown-value",
-              `${JSON.stringify(to.name)} is not a value of ${state.name} (${values.join(", ")})`,
-              to,
-            );
-          } else {
-            // It applies wherever the state is not yet its value.
-            change = {
-              label: `${state.name} -> ${to.name}`,
-              state: state.name,
-              from: values.filter((value) => value !== to.name),
-              to: to.name,
-              named: false,
-            };
-          }
-        }
+      // What it changes: each a named action, the type's own or a child's by
+      // its path; or one of the type's own states, to one of its values.
+      const changes: { change: Change; path: string; at: Located }[] = [];
+      for (const effect of trigger.does) {
+        const found = changeOf(type, effect);
+        if (found !== undefined) changes.push(found);
       }
+      // One trigger changes each of its type's own states once.
+      changes.forEach(({ change, path, at }, index) => {
+        if (
+          changes
+            .slice(0, index)
+            .some((earlier) => earlier.path === path && earlier.change.state === change.state)
+        ) {
+          report(
+            "conflicting-change",
+            `${eventText(trigger.event)} changes ${path === "" ? change.state : `${path}.${change.state}`} twice`,
+            at,
+          );
+        }
+      });
       if (trigger.focus !== undefined) {
         const target = childType(type, trigger.focus);
         if (target !== undefined && !target.states.some(({ name }) => name === "focus")) {
@@ -331,7 +364,7 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           always: "the trigger always fires",
         });
       }
-      return { trigger, change, path };
+      return changes.map(({ change, path }) => ({ trigger, change, path }));
     });
     // One event, one change: no two actions that events which overlap
     // trigger can both apply to one state, from one value.
@@ -359,10 +392,11 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       };
       return coverage(both, valuesOf) !== "never";
     };
-    resolved.forEach(({ trigger, change, path }, index) => {
-      if (change === undefined) return;
+    const flat = resolved.flat();
+    flat.forEach(({ trigger, change, path }, index) => {
       const of = (name: string) => (path === "" ? name : `${path}.${name}`);
-      for (const earlier of resolved.slice(0, index)) {
+      for (const earlier of flat.slice(0, index)) {
+        if (earlier.trigger === trigger) continue;
         const other = earlier.change;
         const common = other?.from.filter((value) => change.from.includes(value)) ?? [];
         if (
@@ -483,8 +517,10 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
       // Bound, its value is the parent's: no action or change of the child
       // can change it.
       const action = inner?.actions.find((candidate) => candidate.state.name === target.name);
-      const changing = inner?.triggers.find(
-        (candidate) => candidate.change?.state.name === target.name,
+      const changing = inner?.triggers.find((candidate) =>
+        candidate.does.some(
+          (effect) => effect.kind === "change" && effect.state.name === target.name,
+        ),
       );
       if (action !== undefined) {
         report(
