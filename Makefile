@@ -1,4 +1,4 @@
-.PHONY: help install fmt fmt-check lint lint-check typecheck cycles security test coverage build smoke check check-fast qa setup-hooks clean
+.PHONY: help install fmt fmt-check lint lint-check typecheck cycles security test coverage grammar build smoke check check-fast qa setup-hooks clean
 
 help:
 	@echo "Targets:"
@@ -12,6 +12,7 @@ help:
 	@echo "  security    - Audit production dependencies for known vulnerabilities"
 	@echo "  test        - Run both packages' test suites"
 	@echo "  coverage    - Run the test suite with coverage thresholds"
+	@echo "  grammar     - Check the tree-sitter grammar's generated parser and run its corpus tests"
 	@echo "  build       - Compile packages/*/src/ to packages/*/dist/, and add dist/main.js"
 	@echo "  smoke       - Run the built CLI once"
 	@echo "  check       - Run the full quality gate (the pre-push hook)"
@@ -51,6 +52,16 @@ test:
 coverage:
 	npx vitest run --coverage
 
+# The tree-sitter grammar: the committed parser in src/ is the one grammar.js
+# generates, and the corpus tests in test/corpus pass.
+grammar:
+	cd packages/tree-sitter-dxn && \
+	  generated="$$(mktemp -d)" && \
+	  trap 'rm -rf "$$generated"' EXIT && \
+	  npx tree-sitter generate --output "$$generated" && \
+	  { diff -r "$$generated" src || { echo "grammar: src/ is stale; run 'npx tree-sitter generate' in packages/tree-sitter-dxn" >&2; exit 1; }; } && \
+	  npx tree-sitter test
+
 # The language, then the dxn command. dist/main.js at the root runs the built
 # command, for tooling that runs the CLI from the repository root.
 build:
@@ -62,9 +73,9 @@ smoke: build
 	node packages/cli/dist/main.js --version
 	node dist/main.js --version
 
-check: lint-check cycles security coverage smoke
+check: lint-check cycles security coverage grammar smoke
 
-check-fast: lint-check cycles test smoke
+check-fast: lint-check cycles test grammar smoke
 
 qa: check
 

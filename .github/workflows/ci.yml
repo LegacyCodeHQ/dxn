@@ -49,5 +49,8 @@ jobs:
       - name: Check coverage
         run: make coverage
 
+      - name: Check the tree-sitter grammar
+        run: make grammar
+
       - name: Smoke-test the CLI
         run: make smoke
