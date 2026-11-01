@@ -186,7 +186,7 @@ actor Designer records Evidence
     `);
   });
 
-  it("writes, for a type, only the page of the tree it is in, by its own name or inside one", () => {
+  it("writes, for a type, only its own page, a component's, or else those of the trees it is in", () => {
     const { run } = project(
       `enum Openness = closed | open
 enum Style = filled | plain
@@ -214,13 +214,16 @@ actor Designer records Evidence
           written: string[];
         }
       ).written;
+    // Button, declared at the top, is a component, with a page of its own
+    // though Card places it.
     expect([written(), written("Banner"), written("Button"), written("Card")]).toEqual([
       [
+        "<cache>/review/<repository>/spec/evidence/button.md",
         "<cache>/review/<repository>/spec/evidence/card.md",
         "<cache>/review/<repository>/spec/evidence/banner.md",
       ],
       ["<cache>/review/<repository>/spec/evidence/banner.md"],
-      ["<cache>/review/<repository>/spec/evidence/card.md"],
+      ["<cache>/review/<repository>/spec/evidence/button.md"],
       ["<cache>/review/<repository>/spec/evidence/card.md"],
     ]);
   });

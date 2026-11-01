@@ -1265,6 +1265,15 @@ With evidence recorded for children, `dxn status` says how much of the
 model it covers: every combination of every element in the file's trees, in
 place, and which of them a stored record is about.
 
+A type declared at the top of the file is also a **component**: it is counted
+on its own, as a tree of its own, though another type contains it, so a design
+system can draw each of its components once, in all its looks. A record about
+an element, on its own or in any of its places, also covers it everywhere
+else it is, in the same look: the same states, dimensions and profile. A
+type declared inside another is a part of it, counted only in place; and a
+type that receives a state from its parent cannot be on its own, so it is
+counted only in place too.
+
 ```bash
 dxn status toolbar.dxn
 ```
@@ -1649,8 +1658,6 @@ or under discussion but not part of it yet:
 - **Dimension keys below a path.** `when Pointer = touch` with `and below`
   applies only to the elements whose types need `Pointer`, even where every
   profile gives it.
-- **Evidence for a type across pages.** A context can name a type, but
-  `dxn status` counts only the elements of trees.
 - **More renames.** `dxn rename` renames an enum's value. Renaming a field,
   a record (and its folder), or an enum, dimension or type is still to come.
 - **A runtime.** Evidence today is recorded by the actors that draw and

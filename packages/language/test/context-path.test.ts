@@ -76,17 +76,20 @@ describe("a context for a child", () => {
     ]);
   });
 
-  it("starts at a type nothing contains, so it names an element of a tree", () => {
-    expect(
-      check(
-        toggle({
-          path: "Menu.toggle",
-          dimensions: { Breakpoint: "base" },
-          parents: { menu: "closed" },
-        }),
-      ),
-    ).toEqual([
-      'unknown-value: $[0].context.path: "Menu.toggle" is not a path: Menu is inside Toolbar; a path starts at a type nothing contains',
+  it("starts at a type nothing contains, or at a component, a type declared at the top, on its own", () => {
+    expect([
+      check(toggle()),
+      // Menu, inside Toolbar, is a component: its toggle on its own.
+      check(toggle({ path: "Menu.toggle", parents: { menu: "closed" } })),
+      check(toggle({ path: "Menu.toggle", parents: { layout: "compact", "menu.menu": "closed" } })),
+    ]).toEqual([
+      [],
+      [],
+      [
+        "missing-field: $[0].context.parents: context.parents is missing menu",
+        "unknown-field: $[0].context.parents.layout: layout does not decide where Menu.toggle is (menu)",
+        'unknown-field: $[0].context.parents["menu.menu"]: menu.menu does not decide where Menu.toggle is (menu)',
+      ],
     ]);
   });
 

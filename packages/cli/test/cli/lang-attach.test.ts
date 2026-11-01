@@ -11,18 +11,18 @@ afterAll(cleanup);
 const schema = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered
 
-type Menu {
-  enum State = closed | open
-  state menu: State
-  type Toggle needs Pointer {
-    state hover: Hover
-    state expanded: State
-    hover = hovered only when Pointer = mouse
-  }
-  has toggle: Toggle { expanded = menu }
-}
-
 type Toolbar {
+  type Menu {
+    enum State = closed | open
+    state menu: State
+    type Toggle needs Pointer {
+      state hover: Hover
+      state expanded: State
+      hover = hovered only when Pointer = mouse
+    }
+    has toggle: Toggle { expanded = menu }
+  }
+
   has menu: Menu
 }
 
@@ -268,7 +268,7 @@ describe("dxn attach", () => {
       'dxn: "design/missing.png" does not exist in the repository\n',
       'dxn: frame "gone" is not in design/toolbar.pen\n',
       'dxn: node "closed" is not in frame other of design/toolbar.pen\n',
-      "dxn: togle is not a child of Menu; did you mean toggle?\n",
+      "dxn: togle is not a child of Toolbar.Menu; did you mean toggle?\n",
       false,
     ]);
   });

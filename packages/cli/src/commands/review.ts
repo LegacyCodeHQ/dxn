@@ -50,13 +50,15 @@ export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dr
       return report.refuse(`${path}: ${(error as Error).message}`);
     }
   }
-  // With a type, only the trees it is in: the one it is the root of, or
-  // those it is placed in.
+  // With a type, only its own tree, where it has one, a component's or a
+  // type's nothing contains; or else those it is placed in.
   let roots: string[] | undefined;
   if (type !== undefined) {
     const places = treePlaces(parsed).filter((place) => place.type === type);
     if (places.length === 0) return report.refuse(new Names(parsed).not(type, "type"));
-    roots = [...new Set(places.map(({ path }) => path.split(".")[0] as string))];
+    roots = places.some(({ path }) => path === type)
+      ? [type]
+      : [...new Set(places.map(({ path }) => path.split(".")[0] as string))];
   }
   const full = resolve(cwd, file);
   const check = freshness(repositoryOf(full, cwd));

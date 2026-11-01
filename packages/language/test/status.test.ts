@@ -48,11 +48,14 @@ describe("coverage", () => {
     expect(
       report.paths.map(({ path, combinations, present }) => [path, combinations, present]),
     ).toEqual([
+      // Menu, a component on its own, its toggle covered by the same entries.
+      ["Menu", 2, 0],
+      ["Menu.toggle", 6, 2],
       ["Toolbar", 1, 0],
       ["Toolbar.menu", 2, 0],
       ["Toolbar.menu.toggle", 6, 2],
     ]);
-    expect([report.combinations, report.present]).toEqual([9, 2]);
+    expect([report.combinations, report.present]).toEqual([17, 4]);
   });
 
   it("counts as one what differs only in profiles, with evidence on any of them", () => {
@@ -80,7 +83,7 @@ describe("coverage", () => {
     const report = coverage(file, "Evidence", [
       JSON.stringify([toggle("Phone", "closed", "rest"), toggle("Studio", "open", "hovered")]),
     ]);
-    expect(report.paths[2]?.missing).toEqual([
+    expect(report.paths.find(({ path }) => path === "Toolbar.menu.toggle")?.missing).toEqual([
       {
         profiles: ["Phone"],
         dimensions: {},
@@ -126,13 +129,14 @@ describe("coverage", () => {
       ],
       ({ frame }) => (frame === "fresh" ? "present" : frame === "changed" ? "stale" : "gone"),
     );
-    const toggles = report.paths[2];
+    const toggles = report.paths.find(({ path }) => path === "Toolbar.menu.toggle");
     expect([
       toggles?.present,
       toggles?.stale.length,
       toggles?.gone.length,
       toggles?.missing.length,
     ]).toEqual([1, 2, 0, 3]);
-    expect([report.present, report.stale, report.gone]).toEqual([1, 2, 0]);
+    // There, and in Menu on its own.
+    expect([report.present, report.stale, report.gone]).toEqual([2, 4, 0]);
   });
 });

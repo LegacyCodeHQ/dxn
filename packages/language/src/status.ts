@@ -1,5 +1,5 @@
 import type { Located, ParseResult, Type } from "./ast.js";
-import { inPlace, states } from "./evaluate.js";
+import { inPlace, placement, states } from "./evaluate.js";
 import { givenDimensions, profilesOf } from "./profiles.js";
 import { penNode } from "./scalars.js";
 
@@ -60,7 +60,10 @@ export function treePaths(file: ParseResult): string[] {
 
 // Every element of the file's trees, by its path, with its type and where its
 // name is written: a type that no type contains, by its own name; a child, by
-// the name its parent gives it.
+// the name its parent gives it. A type declared at the top of the file is a
+// component, a tree of its own though another type contains it: what it is
+// wherever it is placed, unless it needs what its parent provides. A type
+// declared inside another is only in place.
 export function treePlaces(file: ParseResult): { path: string; type: string; at: Located }[] {
   const contained = new Set(
     file.types.flatMap(({ children }) => children.map(({ type }) => type.name)),
@@ -74,7 +77,20 @@ export function treePlaces(file: ParseResult): { path: string; type: string; at:
       if (inner !== undefined) walk(inner, `${path}.${child.name}`, child);
     }
   };
-  for (const type of file.types) if (!contained.has(type.name)) walk(type, type.name, type);
+  // A component stands on its own when nothing in it needs a state from
+  // above it.
+  const alone = (type: Type) => {
+    try {
+      placement(file, type.name);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  for (const type of file.types) {
+    if (!contained.has(type.name)) walk(type, type.name, type);
+    else if (type.scope === undefined && alone(type)) walk(type, type.name, type);
+  }
   return places;
 }
 
@@ -296,25 +312,42 @@ export function judge(
   const same = (a: Record<string, string>, b: Record<string, string>) =>
     Object.keys(a).length === Object.keys(b).length &&
     Object.entries(a).every(([name, value]) => b[name] === value);
-  // The stored contexts by the path they are about.
+  // The stored contexts by the path they are about, and by the type of the
+  // element they are about.
   const byPath = new Map<string, typeof contexts>();
   for (const context of contexts) {
     byPath.set(context.path, [...(byPath.get(context.path) ?? []), context]);
   }
-  return treePaths(file).map((path) => {
+  const places = treePlaces(file);
+  const typeOf = new Map(places.map(({ path, type }) => [path, type]));
+  const byType = new Map<string, typeof contexts>();
+  for (const context of contexts) {
+    const type = typeOf.get(context.path);
+    if (type !== undefined) byType.set(type, [...(byType.get(type) ?? []), context]);
+  }
+  return places.map(({ path, type }) => {
     const about = byPath.get(path) ?? [];
+    // An element's entries elsewhere, its component's or its other places',
+    // stand for it here in the same look.
+    const alike = (byType.get(type) ?? []).filter((context) => context.path !== path);
+    const looks = (context: (typeof contexts)[number], combination: Combination) =>
+      (combination.profiles === undefined ||
+        combination.profiles.includes(context.profile ?? "")) &&
+      same(context.dimensions, combination.dimensions) &&
+      same(context.states, combination.states);
+    // A combination is as its best entry is: one about it in this place, or
+    // else one about its component elsewhere in the same look.
     const judged = (combination: Combination): Judged => {
-      const found = about.filter(
-        (context) =>
-          (combination.profiles === undefined ||
-            combination.profiles.includes(context.profile ?? "")) &&
-          same(context.dimensions, combination.dimensions) &&
-          same(context.parents, combination.parents) &&
-          same(context.states, combination.states),
-      );
-      for (const best of ["present", "stale", "gone"] as const) {
-        const entry = found.find(({ freshness: each }) => each === best);
-        if (entry !== undefined) return { combination, state: best, entry: entry.entry };
+      for (const found of [
+        about.filter(
+          (context) => looks(context, combination) && same(context.parents, combination.parents),
+        ),
+        alike.filter((context) => looks(context, combination)),
+      ]) {
+        for (const best of ["present", "stale", "gone"] as const) {
+          const entry = found.find(({ freshness: each }) => each === best);
+          if (entry !== undefined) return { combination, state: best, entry: entry.entry };
+        }
       }
       return { combination, state: "missing" };
     };

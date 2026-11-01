@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
 import { coverage, progress } from "../src/status.js";
+import { validate } from "../src/validate.js";
 
 const file = parse(`dimension Pointer = mouse | touch
 enum Hover = rest | hovered
@@ -66,7 +67,10 @@ describe("progress", () => {
         ),
       ]),
     ).toEqual([
-      [12, 7, ["Evidence 1 of 6, 1 stale, 0 gone"]],
+      // Menu, a component on its own, and its toggle, there and in Toolbar's
+      // menu, which its records cover in both.
+      [4, 6, ["Evidence 0 of 2, 0 stale, 0 gone"]],
+      [12, 7, ["Evidence 2 of 12, 2 stale, 0 gone"]],
       [15, 6, ["Evidence 0 of 1, 0 stale, 0 gone"]],
       [16, 7, ["Evidence 0 of 2, 0 stale, 0 gone"]],
     ]);
@@ -75,17 +79,22 @@ describe("progress", () => {
   it("lists, for each, the combinations not present, as dxn status --missing words them", () => {
     const toggles = progress(file, stored, ({ node }) =>
       node === "changed" ? "stale" : "present",
-    )[0];
+    ).find(({ line }) => line === 12);
     expect(toggles?.records[0]?.listed).toMatchInlineSnapshot(`
       {
         "gone": [],
         "missing": [
+          "Menu.toggle on Phone with menu = open: hover = rest, expanded = open",
+          "Menu.toggle on Laptop with menu = closed: hover = rest, expanded = closed",
+          "Menu.toggle on Laptop with menu = closed: hover = hovered, expanded = closed",
+          "Menu.toggle on Laptop with menu = open: hover = rest, expanded = open",
           "Toolbar.menu.toggle on Phone with menu.menu = open: hover = rest, expanded = open",
           "Toolbar.menu.toggle on Laptop with menu.menu = closed: hover = rest, expanded = closed",
           "Toolbar.menu.toggle on Laptop with menu.menu = closed: hover = hovered, expanded = closed",
           "Toolbar.menu.toggle on Laptop with menu.menu = open: hover = rest, expanded = open",
         ],
         "stale": [
+          "Menu.toggle on Laptop with menu = open: hover = hovered, expanded = open",
           "Toolbar.menu.toggle on Laptop with menu.menu = open: hover = hovered, expanded = open",
         ],
       }
@@ -93,7 +102,8 @@ describe("progress", () => {
   });
 
   it("counts every entry as present without a check", () => {
-    expect(progress(file, stored)[0]?.records[0]?.present).toBe(2);
+    // Each, in Menu on its own and in Toolbar's menu.
+    expect(progress(file, stored).find(({ line }) => line === 12)?.records[0]?.present).toBe(4);
   });
 });
 
@@ -133,6 +143,50 @@ actor DesignAgent records Evidence
       [1, 4, 1],
       [[["style = filled", ["hover"]]]],
       [[1, [["style = filled", ["hover"]]]]],
+    ]);
+  });
+});
+
+describe("a component", () => {
+  // A tab, drawn on its own, and placed in a bar.
+  const bar = parse(`enum Selection = unselected | selected
+type Tab {
+  state selection: Selection
+}
+type Bar {
+  enum Section = first | second
+  state section: Section
+  has first: Tab {
+    selection = when section {
+      first -> selected
+      second -> unselected
+    }
+  }
+}
+record Evidence {
+  source: PenNode
+}
+actor DesignAgent records Evidence
+`);
+  const tab = (selection: string) => ({
+    context: { path: "Tab", dimensions: {}, parents: {}, states: { selection } },
+    actor: "DesignAgent",
+    source: { file: "design.pen", frame: "f", fingerprint: "a1" },
+  });
+  const stored = JSON.stringify([tab("unselected"), tab("selected")]);
+
+  it("is valid evidence of the type on its own, though another type contains it", () => {
+    expect(validate(bar, "Evidence", stored)).toEqual([]);
+  });
+
+  it("counts on its own, and covers itself where it is placed, in the same look", () => {
+    const covered = coverage(bar, "Evidence", [stored]);
+    expect(
+      covered.paths.map(({ path, combinations, present }) => [path, combinations, present]),
+    ).toEqual([
+      ["Tab", 2, 2],
+      ["Bar", 2, 0],
+      ["Bar.first", 2, 2],
     ]);
   });
 });

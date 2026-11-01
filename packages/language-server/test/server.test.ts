@@ -1075,7 +1075,7 @@ describe("the language server", () => {
       rmSync(folder, { recursive: true, force: true });
     }
   });
-  it("sets aside only the stored records with problems, and shows them where their element is written", async () => {
+  it("counts a component's records for it on its own, and for it where another type places it", async () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-apart-"));
     try {
       const text =
@@ -1087,7 +1087,7 @@ describe("the language server", () => {
         `{ "context": { "path": "${path}", "dimensions": {}, "parents": {}, "states": { "style": "plain" } }, "actor": "DesignAgent", "source": { "file": "design.txt", "frame": "f", "fingerprint": "${fingerprint}" } }`;
       mkdirSync(join(folder, "pen-evidence"));
       writeFileSync(join(folder, "pen-evidence", "button.json"), `[${entry("Button")}]`);
-      // Recorded when Tab was a tree of its own, before Bar held it.
+      // Tab, recorded on its own, which Bar places.
       writeFileSync(join(folder, "pen-evidence", "tab.json"), `[${entry("Tab")}]`);
       const uri = pathToFileURL(join(folder, "spec.dxn")).href;
       const editor = connect();
@@ -1108,12 +1108,9 @@ describe("the language server", () => {
       });
       expect(hints?.map(({ position, label }) => [position.line, label])).toEqual([
         [1, "PenEvidence 1 of 2"],
-        [
-          4,
-          'PenEvidence: 1 of 2 records with "Tab" is not a path: Tab is inside Bar; a path starts at a type nothing contains',
-        ],
+        [4, "PenEvidence 1 of 2"],
         [7, "PenEvidence 0 of 1"],
-        [8, "PenEvidence 0 of 2"],
+        [8, "PenEvidence 1 of 2"],
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
