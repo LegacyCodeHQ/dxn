@@ -78,6 +78,26 @@ export function parse(source: string): ParseResult {
     const token = next();
     if (token.kind !== "word" || token.text !== text) fail(token, expected);
   };
+  // A line carried on to the next, after a "|", a "," or an "and": the next
+  // line, unless it starts a declaration, which an unfinished line does not
+  // swallow.
+  const carryOn = () => {
+    const after = tokens[position + 1];
+    const declaration =
+      after?.kind === "word" &&
+      after.column === 1 &&
+      [
+        "enum",
+        "dimension",
+        "type",
+        "environment",
+        "profile",
+        "modifier",
+        "record",
+        "expect",
+      ].includes(after.text);
+    if (peek().kind === "newline" && !declaration) next();
+  };
   // The token after the last one read must be one of these.
   const end = (kinds: TokenKind[], expected: string) => {
     if (!kinds.includes(peek().kind))
@@ -118,7 +138,7 @@ export function parse(source: string): ParseResult {
       token.kind === separator || (token.kind === "word" && token.text === separator);
     while (separates(peek())) {
       next();
-      if (peek().kind === "newline") next();
+      carryOn();
       items.push(item(`"${separator}"`));
     }
     end(ends, `"${separator}" or ${ending}`);
@@ -184,7 +204,7 @@ export function parse(source: string): ParseResult {
       if (pipeNext()) next();
       if (peek().kind !== "|") break;
       next();
-      if (peek().kind === "newline") next();
+      carryOn();
       declaration.values.push(word('a value after "|"'));
     }
     // Inside a type, the type's closing brace can end it too.
@@ -239,7 +259,7 @@ export function parse(source: string): ParseResult {
       const operator = next();
       operators.push(operator);
       // A line can also end with it.
-      if (peek().kind === "newline") next();
+      carryOn();
       terms.push(term(subject, JSON.stringify(operator.text)));
     }
     const first = operators[0];
@@ -274,7 +294,7 @@ export function parse(source: string): ParseResult {
     if (peek().kind === "(") {
       next();
       // Inside brackets, lines can break after "(" and before ")".
-      if (peek().kind === "newline") next();
+      carryOn();
       const inner = junction(subject, '"("');
       if (peek().kind === "newline" && tokens[position + 1]?.kind === ")") next();
       expect(")", `")" after ${JSON.stringify(previous().text)}`);
@@ -596,7 +616,7 @@ export function parse(source: string): ParseResult {
       type.states.push(first);
       while (peek().kind === ",") {
         next();
-        if (peek().kind === "newline") next();
+        carryOn();
         type.states.push(field());
       }
       if (peek().kind === "=") {

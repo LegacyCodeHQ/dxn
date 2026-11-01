@@ -93,6 +93,22 @@ describe("diagnostics", () => {
     ]);
   });
 
+  it("do not carry a line on into a declaration at the start of the next", () => {
+    expect([
+      problems("enum E = a |\nenum F = c | d\ntype U {\n  state f: F\n}\n"),
+      problems("dimension P = m | t\ntype T needs P,\ntype U {}\n"),
+      problems("enum H = a | b\ntype T {\n  state h: H,\nenum F = c\ntype U {\n  state f: F\n}\n"),
+      problems(
+        "dimension P = m | t\nenum H = a | b\ntype T needs P {\n  state h: H\n  h = b only when P = m and\n}\nenum F = c\n",
+      ),
+    ]).toEqual([
+      ['1:13: syntax-error: expected a value after "|", found the end of the line'],
+      ['2:16: syntax-error: expected a dimension after ",", found the end of the line'],
+      ["3:14: syntax-error: expected a state name, found the end of the line"],
+      ['6:1: syntax-error: expected a dimension after "and", found "}"'],
+    ]);
+  });
+
   it("come in source order", () => {
     expect(
       parse("type Wordmark {\n  state hover: Hover\n}\nenum Size =\n").diagnostics.map(
