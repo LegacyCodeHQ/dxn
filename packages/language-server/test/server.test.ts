@@ -1,4 +1,8 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { PassThrough } from "node:stream";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   CompletionItemKind,
@@ -11,9 +15,11 @@ import {
   HoverRequest,
   InitializeRequest,
   type MessageConnection,
+  PrepareRenameRequest,
   PublishDiagnosticsNotification,
   type PublishDiagnosticsParams,
   ReferencesRequest,
+  RenameRequest,
   StreamMessageReader,
   StreamMessageWriter,
 } from "vscode-languageserver/node";
@@ -273,5 +279,62 @@ describe("the language server", () => {
         position: { line: 3, character: 3 },
       }),
     ).toBeNull();
+  });
+
+  it("renames a value in the file and in the stored records beside it, in one edit", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-rename-"));
+    try {
+      const text =
+        "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\nenum Actor = designer\nrecord Evidence with context {\n  actor: Actor\n}\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      mkdirSync(join(folder, "evidence"));
+      const stored = `[\n  {\n    "context": { "type": "Link", "profile": null, "dimensions": {}, "states": { "hover": "hovered" } },\n    "actor": "designer"\n  }\n]\n`;
+      writeFileSync(join(folder, "evidence", "link.json"), stored);
+      const editor = connect();
+      editors.push(editor);
+      const initialized = await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+      });
+      expect(initialized.capabilities.renameProvider).toEqual({ prepareProvider: true });
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const opened = published(editor);
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await opened;
+
+      // "hovered", in its enum.
+      const at = { textDocument: { uri }, position: { line: 0, character: 22 } };
+      expect(await editor.sendRequest(PrepareRenameRequest.type, at)).toEqual({
+        range: { start: { line: 0, character: 20 }, end: { line: 0, character: 27 } },
+        placeholder: "hovered",
+      });
+      const edit = await editor.sendRequest(RenameRequest.type, { ...at, newName: "over" });
+      const data = pathToFileURL(join(folder, "evidence", "link.json")).href;
+      expect(edit?.changes?.[uri]).toEqual([
+        {
+          range: { start: { line: 0, character: 20 }, end: { line: 0, character: 27 } },
+          newText: "over",
+        },
+      ]);
+      expect(edit?.changes?.[data]).toEqual([
+        {
+          range: { start: { line: 0, character: 0 }, end: { line: 6, character: 0 } },
+          newText: stored.replace('"hover": "hovered"', '"hover": "over"'),
+        },
+      ]);
+
+      // A state, which stored records name, is refused with the reason.
+      await expect(
+        editor.sendRequest(PrepareRenameRequest.type, {
+          textDocument: { uri },
+          position: { line: 2, character: 9 },
+        }),
+      ).rejects.toThrow("hover is a state, and stored records name it");
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
   });
 });

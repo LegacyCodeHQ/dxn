@@ -1,13 +1,25 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   type CompletionKind,
   completions,
   definition,
+  folderOf,
   hover,
+  parse,
+  renameAt,
+  renameable,
+  type StoredFile,
+  storedFiles,
   usages,
 } from "@legacycodehq/dxn-language";
 import {
   CompletionItemKind,
   type Connection,
+  ErrorCodes,
+  type Range,
+  ResponseError,
   TextDocumentSyncKind,
   TextDocuments,
 } from "vscode-languageserver/node";
@@ -17,8 +29,9 @@ import { rangeAt } from "./range.js";
 
 // Serves dxn to an editor over a connection: the problems in each open file,
 // published when it opens and whenever it changes, and cleared when it closes;
-// where a name in it is declared, and where it is used; what it is; and what
-// fits where the cursor is.
+// where a name in it is declared, and where it is used; what it is; what fits
+// where the cursor is; and renaming a name, in the file and in the stored
+// records beside it.
 export function serve(connection: Connection): void {
   const documents = new TextDocuments(TextDocument);
   // Whether the editor takes a link, which names the text it goes from, so
@@ -32,6 +45,7 @@ export function serve(connection: Connection): void {
         definitionProvider: true,
         referencesProvider: true,
         hoverProvider: true,
+        renameProvider: { prepareProvider: true },
         // Typing a name asks on its own; a dot starts the next part of a path.
         completionProvider: { triggerCharacters: ["."] },
       },
@@ -93,6 +107,46 @@ export function serve(connection: Connection): void {
       },
     };
   });
+  connection.onPrepareRename(({ textDocument, position }) => {
+    const document = documents.get(textDocument.uri);
+    if (document === undefined) return null;
+    const found = renameable(document.getText(), position.line + 1, position.character + 1);
+    if ("refusal" in found) throw new ResponseError(ErrorCodes.InvalidRequest, found.refusal);
+    return { range: rangeOf(found.from), placeholder: found.name };
+  });
+  connection.onRenameRequest(({ textDocument, position, newName }) => {
+    const document = documents.get(textDocument.uri);
+    if (document === undefined) return null;
+    const text = document.getText();
+    const renamed = renameAt(
+      text,
+      position.line + 1,
+      position.character + 1,
+      newName,
+      storedBeside(textDocument.uri, text),
+    );
+    if ("refusal" in renamed) throw new ResponseError(ErrorCodes.InvalidRequest, renamed.refusal);
+    const changes: Record<string, { range: Range; newText: string }[]> = {
+      [textDocument.uri]: renamed.edits.map(({ line, column, length, text: newText }) => ({
+        range: rangeOf({ line, column, length }),
+        newText,
+      })),
+    };
+    // A stored file is replaced whole, keeping its layout but for the values.
+    for (const data of renamed.data) {
+      const before = readFileSync(data.path, "utf8").split("\n");
+      changes[pathToFileURL(data.path).href] = [
+        {
+          range: {
+            start: { line: 0, character: 0 },
+            end: { line: before.length - 1, character: (before.at(-1) ?? "").length },
+          },
+          newText: data.source,
+        },
+      ];
+    }
+    return { changes };
+  });
   connection.onCompletion(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
@@ -120,3 +174,33 @@ const kinds: Record<CompletionKind, CompletionItemKind> = {
   action: CompletionItemKind.Method,
   child: CompletionItemKind.Property,
 };
+
+// The range of a span, both from one, as an editor's, from zero.
+function rangeOf({
+  line,
+  column,
+  length,
+}: {
+  line: number;
+  column: number;
+  length: number;
+}): Range {
+  return {
+    start: { line: line - 1, character: column - 1 },
+    end: { line: line - 1, character: column - 1 + length },
+  };
+}
+
+// The stored records of a file's records, by convention: the JSON files in each
+// record's folder, next to the file. None for a file that is not on disk.
+function storedBeside(uri: string, text: string): StoredFile[] {
+  if (!uri.startsWith("file:")) return [];
+  const directory = dirname(fileURLToPath(uri));
+  const records = [...new Set(parse(text).records.map(({ name }) => name))];
+  return records.flatMap((record) =>
+    (storedFiles(directory, record) ?? []).map((name) => {
+      const path = join(directory, folderOf(record), name);
+      return { record, path, source: readFileSync(path, "utf8") };
+    }),
+  );
+}
