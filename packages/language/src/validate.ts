@@ -2,9 +2,9 @@ import type { ParseResult, RecordDeclaration, Type } from "./ast.js";
 import { childPath, type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { states as evaluate, inPlace, type Placement, placement } from "./evaluate.js";
 import { type JsonNode, parseJson } from "./json.js";
-import { article, Names } from "./names.js";
+import { among, article, Names } from "./names.js";
 import { givenDimensions, profilesOf } from "./profiles.js";
-import { scalar } from "./scalars.js";
+import { penNode, scalar } from "./scalars.js";
 
 // How a JSON value reads in a message.
 const found: Record<JsonNode["kind"], string> = {
@@ -335,13 +335,14 @@ export function validate(file: ParseResult, recordName: string, source: string):
       } else {
         checkContext(context.value, childPath(path, "context"));
       }
+      checkActor(node, name, path);
     }
     // A derived field is not stored: its value follows from another's.
     const fields = record.fields
       .filter(({ derived }) => derived === undefined)
       .map((field) => field.name);
     for (const { key, value } of node.members) {
-      if (withContext && key.value === "context") continue;
+      if (withContext && (key.value === "context" || key.value === "actor")) continue;
       const at = childPath(path, key.value);
       const field = record.fields.find((candidate) => candidate.name === key.value);
       if (field?.derived !== undefined) {
@@ -371,10 +372,69 @@ export function validate(file: ParseResult, recordName: string, source: string):
     }
   };
 
+  // Who recorded a stored record: one of the actors who record it.
+  const checkActor = (node: JsonNode & { kind: "object" }, name: string, path: string) => {
+    const member = node.members.find(({ key }) => key.value === "actor");
+    const at = childPath(path, "actor");
+    if (member === undefined) {
+      diagnostics.report("missing-field", `${name} is missing actor`, path, node.span.start);
+      return;
+    }
+    const { value } = member;
+    if (value.kind !== "string") {
+      wrong(value, at, "an actor's name (a string)");
+      return;
+    }
+    const recording = file.actors.filter(({ records: recorded }) => recorded.name === name);
+    if (recording.some(({ name: actor }) => actor === value.value)) return;
+    const declared = file.actors.find(({ name: actor }) => actor === value.value);
+    const message =
+      declared === undefined
+        ? `${JSON.stringify(value.value)} is not an actor who records ${name}${among(
+            value.value,
+            recording.map(({ name: actor }) => actor),
+          )}`
+        : `${declared.name} records ${declared.records.name}, not ${name}`;
+    diagnostics.report("unknown-actor", message, at, value.span.start);
+  };
+
+  // A node of a design file: each of its fields, each of its type; node may
+  // be left out.
+  const checkPenNode = (node: JsonNode, path: string) => {
+    if (node.kind !== "object") {
+      wrong(node, path, "a PenNode (an object)");
+      return;
+    }
+    const known = penNode.fields.map(({ name }) => name);
+    for (const { key, value } of node.members) {
+      const field = penNode.fields.find(({ name }) => name === key.value);
+      const at = childPath(path, key.value);
+      if (field === undefined) {
+        diagnostics.report(
+          "unknown-field",
+          `PenNode has no field ${JSON.stringify(key.value)} (${known.join(", ")})`,
+          at,
+          key.span.start,
+        );
+      } else {
+        checkValue(value, field.type, at);
+      }
+    }
+    for (const { name, optional } of penNode.fields) {
+      if (!optional && !node.members.some(({ key }) => key.value === name)) {
+        diagnostics.report("missing-field", `PenNode is missing ${name}`, path, node.span.start);
+      }
+    }
+  };
+
   // A field's value: a record, a scalar's string, or one of an enum's values.
   const checkValue = (node: JsonNode, type: string, path: string) => {
     if (names.kindOf(type) === "record") {
       checkRecord(node, type, path);
+      return;
+    }
+    if (type === penNode.name) {
+      checkPenNode(node, path);
       return;
     }
     const builtIn = scalar(type);

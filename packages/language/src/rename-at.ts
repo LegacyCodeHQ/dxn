@@ -5,6 +5,7 @@ import { among, article } from "./names.js";
 import { parse } from "./parse.js";
 import {
   isValue,
+  renameActorInData,
   renameChildInData,
   renameDimensionInData,
   renameInData,
@@ -130,7 +131,9 @@ export function renameAt(
                 ? renameTypeInData(item.source, found.declared as Type, to)
                 : kind.kind === "profile" || kind.kind === "modifier"
                   ? renameProfileInData(item.source, kind.kind, name, to)
-                  : undefined;
+                  : kind.kind === "actor"
+                    ? renameActorInData(item.source, name, to)
+                    : undefined;
     if (renamed !== undefined && renamed.changed > 0) {
       data.push({ path: item.path, source: renamed.source, changed: renamed.changed });
     }
@@ -150,6 +153,10 @@ export function renameAt(
 
 // How each kind that can be renamed is named.
 const rules: Record<string, { pattern: RegExp; text: string }> = {
+  actor: {
+    pattern: /^[a-z][A-Za-z0-9-]*$/,
+    text: "a lowercase letter, then letters, digits and hyphens",
+  },
   record: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   dimension: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   profile: {
@@ -273,6 +280,7 @@ export function kindsOf(file: ParseResult): Map<Located, Kind> {
   for (const declaration of file.profiles) result.set(declaration, { kind: "profile" });
   for (const declaration of file.modifiers) result.set(declaration, { kind: "modifier" });
   for (const declaration of file.records) result.set(declaration, { kind: "record" });
+  for (const declaration of file.actors) result.set(declaration, { kind: "actor" });
   return result;
 }
 

@@ -53,7 +53,7 @@ const toggle = (overrides: Record<string, unknown> = {}) => ({
 // The problems in one stored Evidence record with this context, as
 // "code: path: message".
 const check = (context: unknown) =>
-  validate(schema, "Evidence", JSON.stringify([{ context }])).map(
+  validate(schema, "Evidence", JSON.stringify([{ context, actor: "evidence-recorder" }])).map(
     ({ code, path, message }) => `${code}: ${path}: ${message}`,
   );
 
@@ -146,6 +146,7 @@ describe("a context for a child", () => {
   it("is renamed with its parents' and its own states", () => {
     const data = JSON.stringify([
       {
+        actor: "evidence-recorder",
         context: toggle({
           parents: { layout: "compact", "menu.menu": "open" },
           states: { hover: "rest", focus: "blurred", expanded: "open" },

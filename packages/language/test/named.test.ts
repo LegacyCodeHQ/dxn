@@ -109,7 +109,7 @@ describe("a declaration by its name", () => {
       [
         "nothing is declared as Hovr; did you mean Hover?",
         "nothing is declared as Link.hovr; did you mean Link.hover?",
-        "nothing is declared as Nothing.here (Hover, Hover.rest, Hover.hovered, Actor, Actor.designer, Menu.State, Menu.State.closed, Menu.State.open, Pointer, Pointer.mouse, Pointer.touch, Link, Link.hover, Link.rest, Link.press, Menu, Menu.menu, Menu.close, Menu.Toggle, Menu.Toggle.hover, Device, phone, trackpad, Evidence)",
+        "nothing is declared as Nothing.here (Hover, Hover.rest, Hover.hovered, Actor, Actor.designer, Menu.State, Menu.State.closed, Menu.State.open, Pointer, Pointer.mouse, Pointer.touch, Link, Link.hover, Link.rest, Link.press, Menu, Menu.menu, Menu.close, Menu.Toggle, Menu.Toggle.hover, Device, phone, trackpad, Evidence, evidence-recorder)",
         "no state is declared as Hover (Link.hover, Menu.menu, Menu.Toggle.hover)",
       ]
     `);

@@ -3,7 +3,7 @@ import { checkTypes } from "./check-types.js";
 import { checkChosen, checkWhen, type Report } from "./check-values.js";
 import { among, article, Names } from "./names.js";
 import { environmentOf } from "./profiles.js";
-import { scalar } from "./scalars.js";
+import { penNode, scalar } from "./scalars.js";
 import { around } from "./scope.js";
 
 // Checks across declarations, scope by scope, adding to the file's
@@ -116,8 +116,9 @@ function checkDeclared(file: ParseResult, report: Report): void {
   const declared = new Map<string, Located>();
   for (const declaration of declarations) {
     const written = declaration.short ?? declaration.name;
-    if (scalar(written) !== undefined) {
-      report("reserved-name", `${written} is a built-in scalar; choose another name`, declaration);
+    if (scalar(written) !== undefined || written === penNode.name) {
+      const what = written === penNode.name ? "built in" : "a built-in scalar";
+      report("reserved-name", `${written} is ${what}; choose another name`, declaration);
       continue;
     }
     // Inside a type, a name cannot repeat one from around it either.
@@ -356,6 +357,13 @@ function checkRecords(file: ParseResult, names: Names, report: Report): void {
         report(
           "reserved-name",
           `context is ${record.name}'s context; choose another field name`,
+          field,
+        );
+      }
+      if (record.context && field.name === "actor") {
+        report(
+          "reserved-name",
+          `actor is who records ${record.name}; choose another field name`,
           field,
         );
       }

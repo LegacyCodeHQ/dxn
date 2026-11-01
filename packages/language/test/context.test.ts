@@ -6,7 +6,7 @@ describe("record with context", () => {
   it("marks a record as a fact about one combination, with its context implicit", () => {
     const source = `enum Actor = design-agent
 record Evidence {
-  actor: Actor
+  note: NonEmptyString
 }
 record Source {
   actor: Actor

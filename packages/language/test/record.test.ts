@@ -68,7 +68,7 @@ record Evidence { source: Source }
       ["5:12: unknown-type: Pointer is a dimension, not an enum, a record or a scalar"],
       ["4:9: unknown-type: Tol is not an enum, a record or a scalar; did you mean Tool?"],
       [
-        "2:9: unknown-type: Tool is not an enum, a record or a scalar (Source, Timestamp, NonEmptyString, RelativePath)",
+        "2:9: unknown-type: Tool is not an enum, a record or a scalar (Source, Timestamp, NonEmptyString, RelativePath, PenNode)",
       ],
     ]);
   });

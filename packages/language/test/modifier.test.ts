@@ -70,7 +70,10 @@ describe("modifier", () => {
 actor evidence-recorder records Evidence`);
     const context = (profile: string, hover: string) =>
       JSON.stringify([
-        { context: { type: "Wordmark", profile, dimensions: {}, states: { hover } } },
+        {
+          actor: "evidence-recorder",
+          context: { type: "Wordmark", profile, dimensions: {}, states: { hover } },
+        },
       ]);
     expect([
       validate(schema, "Evidence", context("tablet-portrait+magic-keyboard", "hovered")),
@@ -90,7 +93,10 @@ actor evidence-recorder records Evidence`);
 actor evidence-recorder records Evidence`);
     const context = (profile: string) =>
       JSON.stringify([
-        { context: { type: "Wordmark", profile, dimensions: {}, states: { hover: "hovered" } } },
+        {
+          actor: "evidence-recorder",
+          context: { type: "Wordmark", profile, dimensions: {}, states: { hover: "hovered" } },
+        },
       ]);
     expect([
       validate(schema, "Evidence", context("laptop")),

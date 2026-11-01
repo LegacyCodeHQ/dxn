@@ -4,9 +4,6 @@ import {
   type Check,
   type Combination,
   coverage,
-  Diagnostics,
-  fieldValue,
-  parseJson,
   placement,
   profilesOf,
   treePaths,
@@ -15,7 +12,7 @@ import { Fingerprints } from "../fingerprint.js";
 import { drawTable } from "../tables.js";
 import { type Command, command } from "./context.js";
 import { assignments, count, misused, options, Reporter, read } from "./report.js";
-import { loadStored, repositoryOf, toolOwner } from "./stored.js";
+import { loadStored, repositoryOf } from "./stored.js";
 import { usage } from "./usage.js";
 
 export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
@@ -32,73 +29,26 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   if (typeof parsed === "number") return parsed;
   const data = loadStored(parsed, file, cwd, report);
   if (typeof data === "number") return data;
-  // Whether an entry's frame is as recorded: its fingerprint now, against
-  // the one stored.
+  // Whether what an entry's PenNode points at is as recorded: its
+  // fingerprint now, of its node or, without one, its frame, against the one
+  // stored. A frame that no longer holds its node is gone.
   const repository = repositoryOf(file, cwd);
   const fingerprints = new Fingerprints();
-  const check: Check = ({ file: where, frame, fingerprint, tool }) => {
+  const check: Check = ({ file: where, frame, node, fingerprint }) => {
     const full = join(repository, where);
     if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) return "gone";
-    const now = fingerprints.of(full, frame, tool === "file" ? "file" : undefined);
+    if (node !== undefined && fingerprints.isPen(full) && !fingerprints.holds(full, frame, node)) {
+      return "gone";
+    }
+    const now = fingerprints.of(full, node ?? frame);
     if (now === undefined) return "gone";
     return now === fingerprint ? "present" : "stale";
   };
-  // By convention, a record is fingerprinted when it has a fingerprint field
-  // next to a source { file, frame }.
-  const fingerprinted = (name: string) => {
-    const declared = parsed.records.find((candidate) => candidate.name === name);
-    const source = parsed.records.find(
-      ({ name: inner }) =>
-        inner === declared?.fields.find(({ name: field }) => field === "source")?.type.name,
-    );
-    return (
-      declared?.fields.some(({ name: field }) => field === "fingerprint") === true &&
-      ["file", "frame"].every(
-        (field) => source?.fields.some(({ name: own }) => own === field) === true,
-      )
-    );
-  };
-  // By convention, a pen-dev entry's file is a pen.dev file.
-  let wrong = false;
-  for (const stored of data) {
-    const declared = parsed.records.find(({ name }) => name === stored.record);
-    if (declared === undefined) continue;
-    const entries = JSON.parse(stored.source) as Record<string, unknown>[];
-    const root = parseJson(stored.source).root;
-    entries.forEach((entry, index) => {
-      const where = (entry.source as { file?: string } | undefined)?.file;
-      if (fieldValue(declared, entry, "tool") !== "pen-dev" || where === undefined) return;
-      // A file that is not there is gone, which status counts.
-      const full = join(repository, where);
-      if (statSync(full, { throwIfNoEntry: false }) === undefined) return;
-      if (fingerprints.isPen(full)) return;
-      const element = root?.kind === "array" ? root.elements[index] : undefined;
-      const sourceNode =
-        element?.kind === "object"
-          ? element.members.find(({ key }) => key.value === "source")?.value
-          : undefined;
-      const fileNode =
-        sourceNode?.kind === "object"
-          ? sourceNode.members.find(({ key }) => key.value === "file")?.value
-          : undefined;
-      const located = new Diagnostics(stored.source);
-      const path = `$[${index}].source.file`;
-      const message = `${toolOwner(declared, entry)} records with pen-dev; ${JSON.stringify(where)} is not a pen.dev file`;
-      located.report("wrong-tool", message, path, fileNode?.span.start ?? 0);
-      const { line, column } = located.items[0] as { line: number; column: number };
-      report.problem({
-        file: stored.shown,
-        line,
-        column,
-        severity: "error",
-        code: "wrong-tool",
-        path,
-        message,
-      });
-      wrong = true;
-    });
-  }
-  if (wrong) return report.fail();
+  // A record is checked for staleness when it has a PenNode.
+  const fingerprinted = (name: string) =>
+    parsed.records
+      .find((candidate) => candidate.name === name)
+      ?.fields.some(({ type }) => type.name === "PenNode") === true;
   // Every element must be evaluable in place: a received state, provided.
   for (const path of treePaths(parsed)) {
     try {
@@ -155,11 +105,7 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     const notes = [
       ...(stale > 0 ? [`${stale} stale`] : []),
       ...(gone > 0 ? [`${gone} gone`] : []),
-      ...(coverage.fingerprinted
-        ? []
-        : [
-            `${record} has no fingerprint field next to a source { file, frame }, so staleness is not checked`,
-          ]),
+      ...(coverage.fingerprinted ? [] : [`${record} has no PenNode, so staleness is not checked`]),
     ];
     const summary = `${file}: ${record} for ${present} of ${count(combinations, "combination")}${notes.map((note) => `; ${note}`).join("")}`;
     return `${summary}\n\n${table}${

@@ -1,5 +1,5 @@
 import type { Declaration, ParseResult, Type } from "./ast.js";
-import { scalars } from "./scalars.js";
+import { penNode, scalars } from "./scalars.js";
 
 export type Kind =
   | "enum"
@@ -22,6 +22,7 @@ export class Names {
 
   constructor(private readonly file: ParseResult) {
     for (const { name } of scalars) this.kinds.set(name, "scalar");
+    this.kinds.set(penNode.name, "scalar");
     for (const [kind, list] of this.lists()) {
       for (const { name } of list) if (!this.kinds.has(name)) this.kinds.set(name, kind);
     }
@@ -43,7 +44,7 @@ export class Names {
   }
 
   private of(kind: Kind): string[] {
-    if (kind === "scalar") return scalars.map(({ name }) => name);
+    if (kind === "scalar") return [...scalars.map(({ name }) => name), penNode.name];
     const list = this.lists().find(([candidate]) => candidate === kind)?.[1] ?? [];
     return list.map(({ name }) => name);
   }

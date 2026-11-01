@@ -117,6 +117,7 @@ actor evidence-recorder records Evidence`;
     const context = (enabled: string, hover: string) =>
       JSON.stringify([
         {
+          actor: "evidence-recorder",
           context: {
             type: "Button",
             dimensions: { Pointer: "mouse" },

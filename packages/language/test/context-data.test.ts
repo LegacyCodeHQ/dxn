@@ -11,9 +11,8 @@ type Wordmark needs Pointer, Theme {
   hover = hovered only when Pointer = mouse
 }
 record Evidence {
-  actor: Actor
 }
-actor evidence-recorder records Evidence
+actor design-agent records Evidence
 `;
 const profiles = `environment Device = Pointer
 profile laptop: Device { Pointer = mouse }
@@ -146,7 +145,11 @@ actor review-recorder records Review`;
         parse(source),
         "Review",
         JSON.stringify([
-          { context: on("laptop", "dark", "rest"), source: { actor: "design-agent" } },
+          {
+            context: on("laptop", "dark", "rest"),
+            actor: "review-recorder",
+            source: { actor: "design-agent" },
+          },
         ]),
       ),
     ).toEqual([]);

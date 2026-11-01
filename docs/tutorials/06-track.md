@@ -32,8 +32,8 @@ spec/button.dxn: Evidence for 6 of 6 combinations
 
 ## Stale evidence
 
-Each entry keeps the file's fingerprint from when it was recorded. Change a
-file, and its evidence is **stale**: it shows a design that no longer
+Each entry keeps its node's fingerprint from when it was recorded. Change a
+node, and its evidence is **stale**: it shows a design that no longer
 exists. Redraw the hovered button, and ask again:
 
 ```
@@ -49,11 +49,12 @@ Stale:
   Button on Pointer mouse: enabled = enabled, hover = hovered
 ```
 
-Recording the frame again replaces the entry, with the fingerprint it has now:
+Recording the node again replaces the entry, with the fingerprint it has now:
 
 ```bash
-dxn attach spec/button.dxn Button --file design/hovered.png --frame hovered \
-  --field actor=designer Pointer=mouse enabled=enabled hover=hovered
+dxn attach spec/button.dxn Button --actor designer \
+  --data '{"at": "2026-11-01T10:30:00Z", "source": {"file": "design/button.pen", "frame": "states", "node": "hovered"}}' \
+  Pointer=mouse enabled=enabled hover=hovered
 ```
 
 ```
@@ -64,7 +65,7 @@ Attached 1 record to spec/evidence/button.json, replacing 1
 spec/button.dxn: Evidence for 6 of 6 combinations
 ```
 
-An entry whose file is deleted is **gone**. So `dxn status` answers, at any
+An entry whose file, frame or node is deleted is **gone**. So `dxn status` answers, at any
 moment: is every case drawn, and does every drawing still match?
 
 Next: [7. Test](07-test.md), to write down rules the model must always follow.

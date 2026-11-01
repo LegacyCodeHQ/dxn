@@ -439,3 +439,22 @@ export function renameDimensionInData(
   }
   return { source: replace(source, edits), changed: edits.length };
 }
+
+// Renames an actor in stored records: each one it recorded, by its name.
+// Data without problems.
+export function renameActorInData(
+  source: string,
+  from: string,
+  to: string,
+): { source: string; changed: number } {
+  const edits: { start: number; end: number; text: string }[] = [];
+  const { root } = parseJson(source);
+  if (root?.kind !== "array") return { source, changed: 0 };
+  for (const element of root.elements) {
+    if (element.kind !== "object") continue;
+    const actor = element.members.find(({ key }) => key.value === "actor")?.value;
+    if (actor?.kind !== "string" || actor.value !== from) continue;
+    edits.push({ start: actor.span.start, end: actor.span.end, text: JSON.stringify(to) });
+  }
+  return { source: replace(source, edits), changed: edits.length };
+}

@@ -3,7 +3,6 @@ import { dirname, join, resolve } from "node:path";
 import {
   folderOf,
   type ParseResult,
-  type RecordDeclaration,
   duplicates as repeated,
   storedFiles,
   validate,
@@ -95,13 +94,6 @@ function duplicates(stored: Stored[], report: Reporter): boolean {
     });
   }
   return found.length > 0;
-}
-
-// Who records with a record's tool, in messages: the value of the field the
-// tool is derived from, or the record.
-export function toolOwner(record: RecordDeclaration, entry: Record<string, unknown>): string {
-  const on = record.fields.find(({ name }) => name === "tool")?.derived?.on.name;
-  return on === undefined ? record.name : String(entry[on]);
 }
 
 // The repository a file is in: the nearest folder above it with a .git, or

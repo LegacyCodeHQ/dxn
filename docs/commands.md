@@ -74,16 +74,15 @@ Commands:
                                      records with every field given, each of its
                                      type, and no others. Print what it checked, or
                                      every problem with its line, column and path
-  attach <file> <path> --file <f> --frame <id> [--field <name>=<value>]... <key>=<value>...
-         [--record <name>] [--at <timestamp>]
-                                     Record a frame for each combination the
-                                     context's keys give (a|b lists several) that
-                                     exists in place, with its fingerprint; an
-                                     entry for the same combination, frame and
-                                     fields is replaced; --record names the record
-                                     when several have context, and --at the time
-                                     recorded, instead of now; with --dry-run, say
-                                     what it would write
+  attach <file> <path> --actor <name> --data <json> <key>=<value>...
+                                     Record, as the actor, the record it records,
+                                     for each combination the context's keys give
+                                     (a|b lists several) that exists in place:
+                                     --data gives its fields as JSON, and each
+                                     PenNode's fingerprint is taken now, of its
+                                     node or else its frame; an entry for the same
+                                     combination, actor and data is replaced; with
+                                     --dry-run, say what it would write
   status <file> [--missing]          Count, for each record an actor records, the
                                      combinations of every element in the file's
                                      trees, in place, and those a stored record is
@@ -179,10 +178,12 @@ dxn validate evidence.dxn
 
 ### attach
 
-Records a frame as evidence for an element, by its path, in each combination the context's keys give, with its fingerprint. `--record` names the record when several have context; `--at` gives the time recorded, instead of now.
+Records evidence for an element, by its path, in each combination the context's keys give, as an actor: the record that actor records, with the fields `--data` gives as JSON. Each `PenNode` field gets its fingerprint now, of its node, or of its frame when it has none; `dxn status` later tells, by it, whether the design still shows what was recorded.
 
 ```bash
-dxn attach toolbar.dxn Toolbar.menu.toggle --file design/website.pen --frame l5Z3Z --field actor=design-agent profile=phone "menu.menu=closed|open"
+dxn attach gazette.dxn Button --actor design-agent \
+  --data '{"source": {"file": "gazette.pen", "frame": "IeCCz", "node": "uqEAm"}}' \
+  style=filled press=pressed enabled=enabled
 ```
 
 ### status

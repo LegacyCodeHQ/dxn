@@ -30,18 +30,12 @@ environment Device = Pointer
 profile phone: Device { Pointer = touch }
 profile laptop: Device { Pointer = mouse }
 
-enum Actor = design-agent
-record Source {
-  file: RelativePath
-  frame: NonEmptyString
-}
 record Evidence {
-  actor: Actor
   at: Timestamp
-  source: Source
-  fingerprint: NonEmptyString
+  source: PenNode
 }
-actor evidence-recorder records Evidence
+actor design-agent records Evidence
+actor reviewer records Evidence
 `;
 const at = "2026-10-31T12:00:00Z";
 const hash = (content: string) =>
@@ -49,35 +43,60 @@ const hash = (content: string) =>
     .update(`blob ${Buffer.byteLength(content)}\0${content}`)
     .digest("hex");
 
-// A repository with the model in spec/ and a design file.
+// A pen.dev file: a frame holding the toggle's two states, and a frame
+// beside it.
+const pen = JSON.stringify({
+  version: "2.21",
+  children: [
+    {
+      id: "states",
+      type: "frame",
+      x: 0,
+      y: 0,
+      name: "Toggle states",
+      children: [
+        { id: "closed", type: "frame", name: "closed", fill: "#FFFFFF" },
+        { id: "open", type: "frame", name: "open", fill: "#000000" },
+      ],
+    },
+    { id: "other", type: "frame", x: 400, y: 0, name: "Other" },
+  ],
+});
+
+// A repository with the model in spec/, and design files.
 function project() {
-  const root = writeProject({ "spec/toolbar.dxn": schema, "design/toolbar.png": "drawn" });
+  const root = writeProject({
+    "spec/toolbar.dxn": schema,
+    "design/toolbar.png": "drawn",
+    "design/toolbar.pen": pen,
+  });
   mkdirSync(join(root, ".git"));
   const run = (...args: string[]) => capture(["attach", ...args], root);
   const stored = () =>
     JSON.parse(readFileSync(join(root, "spec", "evidence", "toolbar.json"), "utf8")) as {
       context: { states: Record<string, string>; parents: Record<string, string> };
-      fingerprint: string;
+      actor: string;
       at: string;
+      source: { file: string; frame: string; node?: string; fingerprint: string };
     }[];
   return { root, run, stored };
 }
-const attach = (...context: string[]) => [
+// Attaching, as an actor, a source, and a context.
+const attachAs = (actor: string, source: object, ...context: string[]) => [
   "spec/toolbar.dxn",
   "Toolbar.menu.toggle",
-  "--file",
-  "design/toolbar.png",
-  "--frame",
-  "phone-toggle",
-  "--field",
-  "actor=design-agent",
-  "--at",
-  at,
+  "--actor",
+  actor,
+  "--data",
+  JSON.stringify({ at, source }),
   ...context,
 ];
+const attach = (...context: string[]) =>
+  attachAs("design-agent", { file: "design/toolbar.png", frame: "phone-toggle" }, ...context);
+const closed = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
 
 describe("dxn attach", () => {
-  it("records an entry for each listed combination that exists in place, with its fingerprint", () => {
+  it("records, as an actor, an entry for each listed combination that exists in place", () => {
     const { run, stored } = project();
     const result = run(
       ...attach("profile=phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"),
@@ -87,6 +106,11 @@ describe("dxn attach", () => {
       "Attached 2 records to spec/evidence/toolbar.json\n",
       "",
     ]);
+    const source = {
+      file: "design/toolbar.png",
+      frame: "phone-toggle",
+      fingerprint: hash("drawn"),
+    };
     expect(stored()).toEqual([
       {
         context: {
@@ -98,8 +122,7 @@ describe("dxn attach", () => {
         },
         actor: "design-agent",
         at,
-        source: { file: "design/toolbar.png", frame: "phone-toggle" },
-        fingerprint: hash("drawn"),
+        source,
       },
       {
         context: {
@@ -111,29 +134,57 @@ describe("dxn attach", () => {
         },
         actor: "design-agent",
         at,
-        source: { file: "design/toolbar.png", frame: "phone-toggle" },
-        fingerprint: hash("drawn"),
+        source,
       },
     ]);
   });
 
-  it("replaces an entry recorded again for the same combination, frame and fields", () => {
+  it("fingerprints a pen.dev file's node, or its frame without one, and any other file whole", () => {
     const { root, run, stored } = project();
-    run(...attach("profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"));
-    writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
-    const result = run(
-      ...attach("profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"),
+    const file = join(root, "design", "toolbar.pen");
+    run(
+      ...attachAs(
+        "design-agent",
+        { file: "design/toolbar.pen", frame: "states", node: "closed" },
+        ...closed,
+      ),
     );
-    expect([result.stdout, stored().map(({ fingerprint }) => fingerprint)]).toEqual([
+    run(...attachAs("reviewer", { file: "design/toolbar.pen", frame: "states" }, ...closed));
+    run(...attachAs("design-agent", { file: "design/toolbar.png", frame: "drawing" }, ...closed));
+    const prints = new Fingerprints();
+    expect(stored().map(({ source }) => source.fingerprint)).toEqual([
+      prints.of(file, "closed"),
+      prints.of(file, "states"),
+      hash("drawn"),
+    ]);
+  });
+
+  it("replaces an entry recorded again for the same combination, actor and data", () => {
+    const { root, run, stored } = project();
+    run(...attach(...closed));
+    writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
+    const result = run(...attach(...closed));
+    expect([result.stdout, stored().map(({ source }) => source.fingerprint)]).toEqual([
       "Attached 1 record to spec/evidence/toolbar.json, replacing 1\n",
       [hash("redrawn")],
     ]);
   });
 
+  it("keeps an entry recorded by another actor, or with other data, beside it", () => {
+    const { run, stored } = project();
+    run(...attach(...closed));
+    run(...attachAs("reviewer", { file: "design/toolbar.png", frame: "phone-toggle" }, ...closed));
+    run(...attachAs("design-agent", { file: "design/toolbar.png", frame: "another" }, ...closed));
+    expect(stored().map(({ actor, source }) => `${actor} ${source.frame}`)).toEqual([
+      "design-agent phone-toggle",
+      "reviewer phone-toggle",
+      "design-agent another",
+    ]);
+  });
+
   it("replaces an entry written by hand with its keys in another order", () => {
     const { root, run, stored } = project();
-    const context = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
-    run(...attach(...context));
+    run(...attach(...closed));
     // The same entry, its keys and its context's keys written in reverse.
     const path = join(root, "spec", "evidence", "toolbar.json");
     const reversed = (value: unknown): unknown =>
@@ -146,42 +197,26 @@ describe("dxn attach", () => {
         : value;
     writeFileSync(path, `${JSON.stringify(stored().map(reversed), null, 2)}\n`);
     writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
-    const result = run(...attach(...context));
-    expect([result.stdout, stored().map(({ fingerprint }) => fingerprint)]).toEqual([
+    const result = run(...attach(...closed));
+    expect([result.stdout, stored().map(({ source }) => source.fingerprint)]).toEqual([
       "Attached 1 record to spec/evidence/toolbar.json, replacing 1\n",
       [hash("redrawn")],
-    ]);
-  });
-
-  it("replaces an entry recorded again at another time, whatever at it is given", () => {
-    const { run, stored } = project();
-    const context = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
-    run(...attach(...context));
-    const without = attach(...context).filter(
-      (arg, index, all) => arg !== "--at" && all[index - 1] !== "--at",
-    );
-    const result = run(...without, "--field", "at=2026-11-01T09:00:00Z");
-    expect([result.stdout, stored().map(({ at: when }) => when)]).toEqual([
-      "Attached 1 record to spec/evidence/toolbar.json, replacing 1\n",
-      ["2026-11-01T09:00:00Z"],
     ]);
   });
 
   it("replaces an entry where it is stored, in whichever of the record's files", () => {
     const { root, run } = project();
     const evidence = join(root, "spec", "evidence");
-    run(...attach("profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"));
+    run(...attach(...closed));
     renameSync(join(evidence, "toolbar.json"), join(evidence, "menus.json"));
     writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
-    const result = run(
-      ...attach("profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"),
-    );
+    const result = run(...attach(...closed));
     const moved = JSON.parse(readFileSync(join(evidence, "menus.json"), "utf8")) as {
-      fingerprint: string;
+      source: { fingerprint: string };
     }[];
     expect([
       result.stdout,
-      moved.map(({ fingerprint }) => fingerprint),
+      moved.map(({ source }) => source.fingerprint),
       existsSync(join(evidence, "toolbar.json")),
     ]).toEqual([
       "Attached 1 record to spec/evidence/menus.json, replacing 1\n",
@@ -195,115 +230,138 @@ describe("dxn attach", () => {
     const refusal = (...args: string[]) => run(...args).stderr;
     expect([
       refusal(...attach("profile=phone", "menu.menu=closed", "hover=rest")),
-      refusal(
-        ...attach(
-          "profile=phone",
-          "menu.menu=closed",
-          "hover=rest",
-          "expanded=closed",
-          "colour=red",
-        ),
-      ),
+      refusal(...attach(...closed, "colour=red")),
       refusal(...attach("profile=phone", "menu.menu=shut", "hover=rest", "expanded=closed")),
       refusal(...attach("profile=phone", "menu.menu=closed", "hover=hovered", "expanded=closed")),
-      refusal(
-        "spec/toolbar.dxn",
-        "Toolbar.menu.toggle",
-        "--file",
-        "design/missing.png",
-        "--frame",
-        "x",
-        "--field",
-        "actor=design-agent",
-        "profile=phone",
-        "menu.menu=closed",
-        "hover=rest",
-        "expanded=closed",
-      ),
-      refusal(
-        "spec/toolbar.dxn",
-        "Toolbar.menu.toggle",
-        "--file",
-        "design/toolbar.png",
-        "--frame",
-        "x",
-        "profile=phone",
-        "menu.menu=closed",
-        "hover=rest",
-        "expanded=closed",
-      ),
       existsSync(join(root, "spec", "evidence")),
     ]).toEqual([
       "dxn: give expanded, as expanded=<value>, or several as expanded=<a>|<b>\n",
       'dxn: "colour" is not part of a context of Toolbar.menu.toggle (profile, menu.menu, hover, expanded)\n',
       'dxn: "shut" is not a value of menu.menu (closed, open)\n',
       "dxn: no combination given exists for Toolbar.menu.toggle; dxn states spec/toolbar.dxn Toolbar.menu.toggle lists them\n",
-      'dxn: "design/missing.png" does not exist in the repository\n',
-      "dxn: give actor, as --field actor=<value>\n",
       false,
     ]);
   });
 
-  it("refuses a field the record does not have, a path that is not one, and a frame a pen.dev file lacks", () => {
+  it("refuses an actor that is not one, and what its design file does not have", () => {
     const { root, run } = project();
-    writeFileSync(
-      join(root, "design", "toolbar.pen"),
-      JSON.stringify({ version: "2.6", children: [] }),
-    );
-    const context = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
+    const refusal = (...args: string[]) => run(...args).stderr;
     expect([
-      run(...attach(...context), "--field", "colour=red").stderr,
-      run(
-        ...attach(...context).map((arg) =>
+      refusal(...attachAs("design-agnt", { file: "design/toolbar.png", frame: "x" }, ...closed)),
+      refusal(...attachAs("design-agent", { file: "design/missing.png", frame: "x" }, ...closed)),
+      refusal(
+        ...attachAs("design-agent", { file: "design/toolbar.pen", frame: "gone" }, ...closed),
+      ),
+      refusal(
+        ...attachAs(
+          "design-agent",
+          { file: "design/toolbar.pen", frame: "other", node: "closed" },
+          ...closed,
+        ),
+      ),
+      refusal(
+        ...attach(...closed).map((arg) =>
           arg === "Toolbar.menu.toggle" ? "Toolbar.menu.togle" : arg,
         ),
-      ).stderr,
-      run(
-        ...attach(...context).map((arg) =>
-          arg === "design/toolbar.png" ? "design/toolbar.pen" : arg,
-        ),
-      ).stderr,
+      ),
+      existsSync(join(root, "spec", "evidence")),
     ]).toEqual([
-      'dxn: Evidence has no field "colour" (actor, at, source, fingerprint)\n',
+      'dxn: "design-agnt" is not an actor; did you mean design-agent?\n',
+      'dxn: "design/missing.png" does not exist in the repository\n',
+      'dxn: frame "gone" is not in design/toolbar.pen\n',
+      'dxn: node "closed" is not in frame other of design/toolbar.pen\n',
       "dxn: togle is not a child of Menu; did you mean toggle?\n",
-      'dxn: frame "phone-toggle" is not in design/toolbar.pen\n',
+      false,
     ]);
   });
 
-  it("reads its options strictly, and names a field the record lacks before anything else", () => {
+  it("checks the data against the record it writes, and writes nothing when it does not fit", () => {
+    const { root, run } = project();
+    const data = (fields: object) => [
+      "spec/toolbar.dxn",
+      "Toolbar.menu.toggle",
+      "--actor",
+      "design-agent",
+      "--data",
+      JSON.stringify(fields),
+      ...closed,
+    ];
+    const problem = (fields: object) => {
+      const result = run(...data(fields));
+      return [result.code, result.stderr.replace(/:\d+:\d+:/, ":L:C:")];
+    };
+    expect([
+      problem({ at, source: { file: "design/toolbar.png", frame: "x" }, colour: "red" }),
+      problem({ source: { file: "design/toolbar.png", frame: "x" } }),
+      existsSync(join(root, "spec", "evidence")),
+    ]).toEqual([
+      [
+        1,
+        'spec/evidence/toolbar.json:L:C: unknown-field: $[0].colour: Evidence has no field "colour" (at, source)\n',
+      ],
+      [1, "spec/evidence/toolbar.json:L:C: missing-field: $[0]: Evidence is missing at\n"],
+      false,
+    ]);
+  });
+
+  it("reads its options strictly", () => {
     const { run } = project();
-    const context = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
-    const swap = (from: string, to: string[]) =>
-      attach(...context).flatMap((arg, index, all) =>
-        all[index - 1] === from ? [] : arg === from ? to : [arg],
-      );
     const misuse = (result: { code: number; stderr: string }) => [
       result.code,
       result.stderr.split("\n")[0],
     ];
     expect([
-      run(...swap("--field", ["--field", "actr=design-agent"])).stderr,
-      misuse(run(...swap("--field", ["--field", "actor"]))),
-      misuse(run(...attach(...context), "--file", "design/other.png")),
-      misuse(run(...swap("--file", ["--file=design/toolbar.png"]))),
-    ]).toEqual([
-      'dxn: Evidence has no field "actr" (actor, at, source, fingerprint)\n',
-      [2, 'dxn: --field takes <name>=<value>, found "actor"'],
-      [2, "dxn: give --file once"],
-      [2, 'dxn: write "--file design/toolbar.png", with a space, not "--file=design/toolbar.png"'],
-    ]);
+      misuse(run(...attach(...closed), "--actor", "reviewer")),
+      misuse(
+        run(...attach(...closed).map((arg) => (arg === "--actor" ? "--actor=design-agent" : arg))),
+      ),
+      misuse(
+        run(
+          "spec/toolbar.dxn",
+          "Toolbar.menu.toggle",
+          "--actor",
+          "design-agent",
+          "--data",
+          "{",
+          ...closed,
+        ),
+      ),
+      misuse(
+        run(
+          "spec/toolbar.dxn",
+          "Toolbar.menu.toggle",
+          "--actor",
+          "design-agent",
+          "--data",
+          "[]",
+          ...closed,
+        ),
+      ),
+    ]).toMatchInlineSnapshot(`
+      [
+        [
+          2,
+          "dxn: give --actor once",
+        ],
+        [
+          2,
+          "dxn: write "--actor design-agent", with a space, not "--actor=design-agent"",
+        ],
+        [
+          2,
+          "dxn: --data takes the record's fields as JSON, found "{"",
+        ],
+        [
+          2,
+          "dxn: --data takes the record's fields as a JSON object",
+        ],
+      ]
+    `);
   });
 
   it("shows what it would write with --dry-run, and writes nothing", () => {
     const { root } = project();
-    const result = capture(
-      [
-        "--dry-run",
-        "attach",
-        ...attach("profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"),
-      ],
-      root,
-    );
+    const result = capture(["--dry-run", "attach", ...attach(...closed)], root);
     expect([result.code, result.stdout, existsSync(join(root, "spec", "evidence"))]).toEqual([
       0,
       "Would attach 1 record to spec/evidence/toolbar.json\n",
@@ -311,11 +369,11 @@ describe("dxn attach", () => {
     ]);
   });
 
-  it("needs a file, a path, --file and --frame", () => {
+  it("needs a file, a path, --actor and --data", () => {
     const { run } = project();
     expect([
       run("spec/toolbar.dxn").code,
-      run("spec/toolbar.dxn", "Toolbar.menu.toggle", "profile=phone").code,
+      run("spec/toolbar.dxn", "Toolbar.menu.toggle", "--actor", "design-agent", ...closed).code,
     ]).toEqual([2, 2]);
   });
 
@@ -324,7 +382,7 @@ describe("dxn attach", () => {
     const result = run("spec/toolbar.dxn", "--json");
     expect([result.code, JSON.parse(result.stdout)]).toEqual([
       2,
-      { error: "give a file, a path, --file and --frame, and the context" },
+      { error: "give a file, a path, --actor, --data and the context" },
     ]);
   });
 });
@@ -334,7 +392,7 @@ describe("dxn status, with fingerprints", () => {
     const { root, run } = project();
     run(...attach("profile=phone", "menu.menu=closed|open", "hover=rest", "expanded=closed|open"));
     const status = (...args: string[]) => capture(["status", "spec/toolbar.dxn", ...args], root);
-    return { root, status };
+    return { root, run, status };
   };
 
   it("gives, with --json, each count as a number, and lists what is not present", () => {
@@ -355,14 +413,14 @@ describe("dxn status, with fingerprints", () => {
     ]);
   });
 
-  it("counts an entry as present while its frame is as it was recorded", () => {
+  it("counts an entry as present while what it points at is as it was recorded", () => {
     const { status } = recorded();
     expect(status().stdout.split("\n")[0]).toBe(
       "spec/toolbar.dxn: Evidence for 2 of 9 combinations",
     );
   });
 
-  it("counts an entry as stale once its frame has changed, and lists it with --missing", () => {
+  it("counts an entry as stale once its file has changed, and lists it with --missing", () => {
     const { root, status } = recorded();
     writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
     const lines = status("--missing").stdout.split("\n");
@@ -389,7 +447,41 @@ describe("dxn status, with fingerprints", () => {
     );
   });
 
-  it("says when a record has no fingerprint to check", () => {
+  it("judges a pen.dev entry by its node: stale once it changes, gone once its frame lacks it", () => {
+    const { root, run } = project();
+    const status = () => capture(["status", "spec/toolbar.dxn"], root).stdout.split("\n")[0] ?? "";
+    const node = (state: string) =>
+      attachAs(
+        "design-agent",
+        { file: "design/toolbar.pen", frame: "states", node: state },
+        "profile=phone",
+        `menu.menu=${state}`,
+        "hover=rest",
+        `expanded=${state}`,
+      );
+    run(...node("closed"));
+    run(...node("open"));
+    const file = join(root, "design", "toolbar.pen");
+    const edit = (change: (states: { id: string; fill?: string }[]) => unknown) => {
+      const document = JSON.parse(readFileSync(file, "utf8"));
+      change(document.children[0].children);
+      writeFileSync(file, JSON.stringify(document));
+    };
+    const snapshot: string[] = [status()];
+    edit((states) => {
+      (states[1] as { fill: string }).fill = "#333333";
+    });
+    snapshot.push(status());
+    edit((states) => states.splice(0, 1));
+    snapshot.push(status());
+    expect(snapshot).toEqual([
+      "spec/toolbar.dxn: Evidence for 2 of 9 combinations",
+      "spec/toolbar.dxn: Evidence for 1 of 9 combinations; 1 stale",
+      "spec/toolbar.dxn: Evidence for 0 of 9 combinations; 1 stale; 1 gone",
+    ]);
+  });
+
+  it("says when a record has no PenNode to check", () => {
     const root = writeProject({});
     writeFileSync(
       join(root, "plain.dxn"),
@@ -398,98 +490,11 @@ describe("dxn status, with fingerprints", () => {
     mkdirSync(join(root, "note"));
     writeFileSync(
       join(root, "note", "a.json"),
-      '[{ "context": { "type": "Card", "dimensions": {}, "states": {} } }]',
+      '[{ "context": { "type": "Card", "dimensions": {}, "states": {} }, "actor": "note-recorder" }]',
     );
     expect(capture(["status", "plain.dxn"], root).stdout.split("\n")[0]).toBe(
-      "plain.dxn: Note for 1 of 1 combination; Note has no fingerprint field next to a source { file, frame }, so staleness is not checked",
+      "plain.dxn: Note for 1 of 1 combination; Note has no PenNode, so staleness is not checked",
     );
-  });
-});
-
-describe("the tool convention", () => {
-  // The model, with two actors: a design agent drawing in pen.dev, and a
-  // reviewer whose evidence is a whole file.
-  const withTools = schema
-    .replace(
-      "enum Actor = design-agent",
-      "enum Actor = design-agent | reviewer\nenum Tool = pen-dev | file",
-    )
-    .replace(
-      "  actor: Actor\n",
-      "  actor: Actor\n  tool: Tool = when actor {\n    design-agent -> pen-dev\n    reviewer -> file\n  }\n",
-    );
-  const pen = JSON.stringify({
-    children: [{ id: "toggle", type: "frame", x: 0, y: 0, name: "Toggle" }],
-  });
-  const tooled = () => {
-    const result = project();
-    writeFileSync(join(result.root, "spec", "toolbar.dxn"), withTools);
-    writeFileSync(join(result.root, "design", "toolbar.pen"), pen);
-    return result;
-  };
-  const record = (actor: string, file: string, frame: string) => [
-    "spec/toolbar.dxn",
-    "Toolbar.menu.toggle",
-    "--file",
-    file,
-    "--frame",
-    frame,
-    "--field",
-    `actor=${actor}`,
-    "--at",
-    at,
-    "profile=phone",
-    "menu.menu=closed",
-    "hover=rest",
-    "expanded=closed",
-  ];
-
-  it("fingerprints a pen-dev actor's frame, and a file actor's whole file", () => {
-    const { root, run, stored } = tooled();
-    run(...record("design-agent", "design/toolbar.pen", "toggle"));
-    run(...record("reviewer", "design/toolbar.pen", "toggle"));
-    const frame = new Fingerprints().of(join(root, "design", "toolbar.pen"), "toggle");
-    expect(stored().map(({ fingerprint }) => fingerprint)).toEqual([frame, hash(pen)]);
-    expect(frame).not.toBe(hash(pen));
-    expect(Object.keys(stored()[0] ?? {})).not.toContain("tool");
-  });
-
-  it("refuses a derived field given with --field: it follows from another", () => {
-    const { run } = tooled();
-    expect(
-      run(...record("design-agent", "design/toolbar.pen", "toggle"), "--field", "tool=file").stderr,
-    ).toBe("dxn: tool follows from actor, so it is not given\n");
-  });
-
-  it("refuses a pen-dev actor's frame in a file that is not a pen.dev file", () => {
-    const { run } = tooled();
-    expect(run(...record("design-agent", "design/toolbar.png", "toggle")).stderr).toBe(
-      'dxn: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file\n',
-    );
-  });
-
-  it("counts a pen-dev entry as gone once its file is, rather than its tool's", () => {
-    const { root, run } = tooled();
-    run(...record("design-agent", "design/toolbar.pen", "toggle"));
-    rmSync(join(root, "design", "toolbar.pen"));
-    const result = capture(["status", "spec/toolbar.dxn"], root);
-    expect([result.code, result.stderr, result.stdout.split("\n")[0]]).toEqual([
-      0,
-      "",
-      "spec/toolbar.dxn: Evidence for 0 of 9 combinations; 1 gone",
-    ]);
-  });
-
-  it("reports, in dxn status, a stored entry whose file is not its tool's", () => {
-    const { root, run } = tooled();
-    run(...record("reviewer", "design/toolbar.png", "toggle"));
-    const path = join(root, "spec", "evidence", "toolbar.json");
-    writeFileSync(path, readFileSync(path, "utf8").replace('"reviewer"', '"design-agent"'));
-    const result = capture(["status", "spec/toolbar.dxn"], root);
-    expect([result.code, result.stderr.replace(/:\d+:\d+:/, ":L:C:")]).toEqual([
-      1,
-      'spec/evidence/toolbar.json:L:C: wrong-tool: $[0].source.file: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file\n',
-    ]);
   });
 });
 
@@ -504,14 +509,15 @@ describe("duplicate records", () => {
     return { root, path, entries, validate };
   };
 
-  it("are reported: the same in everything but when they were recorded", () => {
+  it("are reported: the same in everything but their fingerprints", () => {
     const { path, entries, validate } = twice();
-    const again = { ...entries[0], at: "2026-11-01T09:00:00Z", fingerprint: "other" };
+    const first = entries[0] as { source: object };
+    const again = { ...first, source: { ...first.source, fingerprint: "other" } };
     writeFileSync(path, JSON.stringify([...entries, again], null, 2));
     const result = validate();
     expect([result.code, result.stderr.replace(/:\d+:\d+:/, ":L:C:")]).toEqual([
       1,
-      "spec/evidence/toolbar.json:L:C: duplicate-record: $[2]: the same Evidence as $[0] in spec/evidence/toolbar.json, apart from at and fingerprint\n",
+      "spec/evidence/toolbar.json:L:C: duplicate-record: $[2]: the same Evidence as $[0] in spec/evidence/toolbar.json, apart from their fingerprints\n",
     ]);
   });
 
@@ -519,13 +525,13 @@ describe("duplicate records", () => {
     const { root, entries, validate } = twice();
     writeFileSync(join(root, "spec", "evidence", "more.json"), JSON.stringify([entries[1]]));
     expect(validate().stderr.replace(/:\d+:\d+:/, ":L:C:")).toBe(
-      "spec/evidence/toolbar.json:L:C: duplicate-record: $[1]: the same Evidence as $[0] in spec/evidence/more.json, apart from at and fingerprint\n",
+      "spec/evidence/toolbar.json:L:C: duplicate-record: $[1]: the same Evidence as $[0] in spec/evidence/more.json, apart from their fingerprints\n",
     );
   });
 
-  it("are not records that differ in anything else, such as their frame", () => {
+  it("are not records that differ in anything else, such as when they were recorded", () => {
     const { path, entries, validate } = twice();
-    const other = { ...entries[0], source: { file: "design/toolbar.png", frame: "another" } };
+    const other = { ...entries[0], at: "2026-11-01T09:00:00Z" };
     writeFileSync(path, JSON.stringify([...entries, other], null, 2));
     expect(validate().code).toBe(0);
   });

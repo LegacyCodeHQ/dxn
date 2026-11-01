@@ -43,3 +43,18 @@ export const scalars: Scalar[] = [
 
 export const scalar = (name: string): Scalar | undefined =>
   scalars.find((candidate) => candidate.name === name);
+
+// The one built-in type with fields: a node of a design file, which evidence
+// points at. Its fingerprint is what the node showed when it was recorded:
+// of the node when there is one, otherwise of the frame. Named for pen.dev,
+// whose files are fingerprinted node by node; any other file is fingerprinted
+// whole.
+export const penNode = {
+  name: "PenNode",
+  fields: [
+    { name: "file", type: "RelativePath", optional: false },
+    { name: "frame", type: "NonEmptyString", optional: false },
+    { name: "node", type: "NonEmptyString", optional: true },
+    { name: "fingerprint", type: "NonEmptyString", optional: false },
+  ],
+} as const;

@@ -536,11 +536,11 @@ actor evidence-recorder records Evidence
   const project = (files: Record<string, string>, at = "evidence.dxn") =>
     inProject({ [at]: schema, ...files }, "validate");
   const valid = {
-    "source/designs.json": `[{ ${card}, "tool": "pen-dev" }]`,
-    "source/code.json": `[{ ${card}, "tool": "code" }]`,
+    "source/designs.json": `[{ ${card}, "tool": "pen-dev", "actor": "source-recorder" }]`,
+    "source/code.json": `[{ ${card}, "tool": "code", "actor": "source-recorder" }]`,
     "source/notes.md": "not data",
     "source/old/ignored.json": "not checked",
-    "evidence/a.json": `[{ ${card}, "at": "2026-10-31T08:50:05Z" }]`,
+    "evidence/a.json": `[{ ${card}, "at": "2026-10-31T08:50:05Z", "actor": "evidence-recorder" }]`,
   };
 
   it("checks every JSON file in each record's folder, and says what it checked, a line a record", () => {
@@ -572,9 +572,9 @@ actor evidence-recorder records Evidence
 
   it("reports every problem in every file, with the file's path, and fails", () => {
     const result = project({
-      "source/a.json": `[{ ${card}, "tool": "figma" }]`,
-      "evidence/b.json": `[{ ${card}, "at": "yesterday" }]`,
-      "evidence/c.json": `{ ${card}, "at": "2026-10-31T08:50:05Z" }`,
+      "source/a.json": `[{ ${card}, "tool": "figma", "actor": "source-recorder" }]`,
+      "evidence/b.json": `[{ ${card}, "at": "yesterday", "actor": "evidence-recorder" }]`,
+      "evidence/c.json": `{ ${card}, "at": "2026-10-31T08:50:05Z", "actor": "evidence-recorder" }`,
     })("evidence.dxn");
     expect([result.code, result.stderr.split("\n"), result.stdout]).toEqual([
       1,
@@ -591,8 +591,8 @@ actor evidence-recorder records Evidence
   it("looks for the folders next to the file", () => {
     const result = project(
       {
-        "model/source/a.json": `[{ ${card}, "tool": "lisp" }]`,
-        "source/b.json": `[{ ${card}, "tool": "lisp" }]`,
+        "model/source/a.json": `[{ ${card}, "tool": "lisp", "actor": "source-recorder" }]`,
+        "source/b.json": `[{ ${card}, "tool": "lisp", "actor": "source-recorder" }]`,
       },
       "model/evidence.dxn",
     )("model/evidence.dxn");
@@ -625,10 +625,9 @@ actor evidence-recorder records Evidence
     });
 
     it("prints each problem in stored data with its file and JSON path", () => {
-      const result = project({ "source/a.json": `[{ ${card}, "tool": "figma" }]` })(
-        "evidence.dxn",
-        "--json",
-      );
+      const result = project({
+        "source/a.json": `[{ ${card}, "tool": "figma", "actor": "source-recorder" }]`,
+      })("evidence.dxn", "--json");
       expect([result.code, result.stderr, JSON.parse(result.stdout)]).toEqual([
         1,
         "",
@@ -786,14 +785,15 @@ type Card {
   state owner: Actor
 }
 record Evidence {
-  actor: Actor
 }
-actor evidence-recorder records Evidence
+actor design-agent records Evidence
+actor reviewer records Evidence
 `;
   const card = (owner: string) =>
     `"context": { "type": "Card", "dimensions": {}, "states": { "owner": "${owner}" } }`;
   const stored = `[{ ${card("design-agent")}, "actor": "design-agent" }, { ${card("reviewer")}, "actor": "reviewer" }]\n`;
-  const renamed = `[{ ${card("designer")}, "actor": "designer" }, { ${card("reviewer")}, "actor": "reviewer" }]\n`;
+  // The owner renamed; the actor, who recorded it, is not the owner's value.
+  const renamed = `[{ ${card("designer")}, "actor": "design-agent" }, { ${card("reviewer")}, "actor": "reviewer" }]\n`;
   const project = (data: string) => {
     const root = writeProject({ "evidence.dxn": schema, "evidence/page.json": data });
     const run = (...args: string[]) => capture(["rename", ...args], root);
@@ -807,7 +807,7 @@ actor evidence-recorder records Evidence
     const result = run("evidence.dxn", "Actor.design-agent", "designer");
     expect([result.code, result.stdout, read("evidence.dxn"), read("evidence/page.json")]).toEqual([
       0,
-      "Renamed value Actor.design-agent to designer in evidence.dxn, evidence/page.json (2 changes in stored records)\n",
+      "Renamed value Actor.design-agent to designer in evidence.dxn, evidence/page.json (1 change in stored records)\n",
       schema.replace("design-agent", "designer"),
       renamed,
     ]);
@@ -818,7 +818,7 @@ actor evidence-recorder records Evidence
     const result = dryRun("evidence.dxn", "Actor.design-agent", "designer");
     expect([result.code, result.stdout, read("evidence.dxn")]).toEqual([
       0,
-      "Would rename value Actor.design-agent to designer in evidence.dxn, evidence/page.json (2 changes in stored records)\n",
+      "Would rename value Actor.design-agent to designer in evidence.dxn, evidence/page.json (1 change in stored records)\n",
       schema,
     ]);
   });
@@ -833,12 +833,23 @@ actor evidence-recorder records Evidence
       run("evidence.dxn", "Actor.design-agent", "design agent").stderr,
       read("evidence.dxn"),
     ]).toEqual([
-      "dxn: nothing is declared as Actr.design-agent; did you mean Actor.design-agent?\n",
-      "dxn: nothing is declared as Evidence.design-agent (Actor, Actor.design-agent, Actor.reviewer, Card, Card.owner, Evidence)\n",
+      "dxn: nothing is declared as Actr.design-agent; did you mean Actor.design-agent or design-agent?\n",
+      "dxn: nothing is declared as Evidence.design-agent (Actor, Actor.design-agent, Actor.reviewer, Card, Card.owner, Evidence, design-agent, reviewer)\n",
       "dxn: nothing is declared as Actor.designer (Actor.design-agent, Actor.reviewer)\n",
       'evidence.dxn:1:25: duplicate-value: "reviewer" appears twice in Actor\ndxn: the rename would leave problems; nothing was written\n',
       'dxn: "design agent" is not a value name: a letter or digit, then letters, digits and hyphens\n',
       schema,
+    ]);
+  });
+
+  it("renames an actor, and every stored record it recorded", () => {
+    const { run, read } = project(stored);
+    const result = run("evidence.dxn", "design-agent", "designer");
+    expect([result.code, result.stdout, read("evidence.dxn"), read("evidence/page.json")]).toEqual([
+      0,
+      "Renamed actor design-agent to designer in evidence.dxn, evidence/page.json (1 change in stored records)\n",
+      schema.replace("actor design-agent", "actor designer"),
+      stored.replace('"actor": "design-agent"', '"actor": "designer"'),
     ]);
   });
 
@@ -847,7 +858,7 @@ actor evidence-recorder records Evidence
     const result = run("evidence.dxn", "Actor.design-agent", "designer");
     expect([result.code, result.stderr, read("evidence.dxn")]).toEqual([
       1,
-      'evidence/page.json:1:97: unknown-value: $[0].actor: "maker" is not a value of Actor (design-agent, reviewer)\n',
+      'evidence/page.json:1:97: unknown-actor: $[0].actor: "maker" is not an actor who records Evidence (design-agent, reviewer)\n',
       schema,
     ]);
   });
@@ -958,7 +969,7 @@ expect "Each m can be open" {
       "Renamed record Evidence to Proof in evidence.dxn, and moved evidence/ to proof/\n",
       schema
         .replace("record Evidence", "record Proof")
-        .replace("records Evidence", "records Proof"),
+        .replaceAll("records Evidence", "records Proof"),
       stored,
     ]);
   });
@@ -996,7 +1007,7 @@ expect "Each m can be open" {
           name: "Actor.design-agent",
           to: "designer",
           written: ["evidence.dxn", "evidence/page.json"],
-          records: 2,
+          records: 1,
           problems: [],
         },
       ]);
@@ -1042,10 +1053,13 @@ expect "Each m can be open" {
         ),
       ]).toEqual([
         1,
-        { error: "nothing is declared as Actr.design-agent; did you mean Actor.design-agent?" },
+        {
+          error:
+            "nothing is declared as Actr.design-agent; did you mean Actor.design-agent or design-agent?",
+        },
         1,
         "",
-        [["evidence/page.json", "unknown-value", "$[0].actor"]],
+        [["evidence/page.json", "unknown-actor", "$[0].actor"]],
       ]);
     });
   });
@@ -1137,7 +1151,7 @@ actor evidence-recorder records Evidence
   const project = (data: string) =>
     inProject({ "toolbar.dxn": schema, "evidence/toolbar.json": data }, "status");
   const link = (profile: string, hover: string) =>
-    `{ "context": { "path": "Toolbar.link", "profile": "${profile}", "dimensions": {}, "parents": {}, "states": { "hover": "${hover}" } } }`;
+    `{ "context": { "path": "Toolbar.link", "profile": "${profile}", "dimensions": {}, "parents": {}, "states": { "hover": "${hover}" } }, "actor": "evidence-recorder" }`;
 
   it("says how many combinations of each element have evidence", () => {
     const result = project(`[${link("phone", "rest")}, ${link("laptop", "hovered")}]`)(
@@ -1146,7 +1160,7 @@ actor evidence-recorder records Evidence
     expect([result.code, result.stdout]).toEqual([
       0,
       [
-        "toolbar.dxn: Evidence for 2 of 4 combinations; Evidence has no fingerprint field next to a source { file, frame }, so staleness is not checked",
+        "toolbar.dxn: Evidence for 2 of 4 combinations; Evidence has no PenNode, so staleness is not checked",
         "",
         "| path         | combinations | present | stale | gone | missing |",
         "| ------------ | ------------ | ------- | ----- | ---- | ------- |",

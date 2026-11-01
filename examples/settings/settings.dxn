@@ -87,10 +87,10 @@ modifier trackpad on phone { Pointer = mouse }
 
 # Evidence: who looked at one element in one combination, stored in
 # evidence/, next to this file.
-enum Actor = designer | reviewer
 actor designer records Evidence
+actor reviewer records Evidence
 record Evidence {
-  actor: Actor
+  # Who recorded it is its actor, one of the two above.
   note: NonEmptyString
 }
 

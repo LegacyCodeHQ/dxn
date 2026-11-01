@@ -56,6 +56,18 @@ export class Fingerprints {
       .digest("hex");
   }
 
+  // Whether a pen.dev file's frame holds a node, at any depth; a file that is
+  // not one holds none.
+  holds(path: string, frame: string, node: string): boolean {
+    const document = this.document(path);
+    const top = document?.nodes.get(frame);
+    if (top === undefined) return false;
+    const inside = (value: Json): boolean =>
+      Array.isArray(value.children) &&
+      value.children.some((child) => isObject(child) && (child.id === node || inside(child)));
+    return inside(top);
+  }
+
   private document(path: string): PenDocument | undefined {
     if (!this.documents.has(path)) this.documents.set(path, readPen(path));
     return this.documents.get(path);

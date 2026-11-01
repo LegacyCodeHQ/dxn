@@ -295,7 +295,7 @@ describe("the language server", () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-rename-"));
     try {
       const text =
-        "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\nenum Actor = designer\nrecord Evidence {\n  actor: Actor\n}\nactor evidence-recorder records Evidence\n";
+        "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\nenum Actor = designer\nrecord Evidence {\n}\nactor designer records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       const stored = `[\n  {\n    "context": { "type": "Link", "profile": null, "dimensions": {}, "states": { "hover": "hovered" } },\n    "actor": "designer"\n  }\n]\n`;
@@ -366,8 +366,7 @@ describe("the language server", () => {
   it("renames a record and moves its stored records' folder, where the editor can", async () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-rename-"));
     try {
-      const text =
-        "enum Actor = designer\nrecord Evidence {\n  actor: Actor\n}\nactor evidence-recorder records Evidence\n";
+      const text = "enum Actor = designer\nrecord Evidence {\n}\nactor designer records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       const uri = pathToFileURL(join(folder, "spec.dxn")).href;
@@ -406,7 +405,7 @@ describe("the language server", () => {
                 newText: "Proof",
               },
               {
-                range: { start: { line: 4, character: 32 }, end: { line: 4, character: 40 } },
+                range: { start: { line: 3, character: 23 }, end: { line: 3, character: 31 } },
                 newText: "Proof",
               },
             ],
@@ -549,7 +548,7 @@ describe("the language server", () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-evidence-"));
     try {
       const text =
-        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n  actor: Actor\n}\nactor evidence-recorder records Evidence\n";
+        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n}\nactor designer records Evidence\nactor reviewer records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       const record = (actor: string) =>
@@ -603,8 +602,8 @@ describe("the language server", () => {
       expect(about(data)).toEqual([
         [
           { line: 3, character: 13 },
-          "unknown-value",
-          '$[0].actor: "maker" is not a value of Actor (designer, reviewer)',
+          "unknown-actor",
+          '$[0].actor: "maker" is not an actor who records Evidence (designer, reviewer)',
           "dxn",
         ],
       ]);
@@ -724,13 +723,14 @@ describe("the language server", () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-duplicates-"));
     try {
       const text =
-        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n  actor: Actor\n  at: Timestamp\n}\nactor evidence-recorder records Evidence\n";
+        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n  source: PenNode\n}\nactor designer records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
-      const entry = (at: string) =>
-        `  {\n    "context": { "type": "Card", "dimensions": {}, "states": { "owner": "designer" } },\n    "actor": "designer",\n    "at": "${at}"\n  }`;
-      writeFileSync(join(folder, "evidence", "a.json"), `[\n${entry("2026-01-01T00:00:00Z")}\n]\n`);
-      writeFileSync(join(folder, "evidence", "b.json"), `[\n${entry("2026-02-01T00:00:00Z")}\n]\n`);
+      // The same record, its node fingerprinted at two times.
+      const entry = (fingerprint: string) =>
+        `  {\n    "context": { "type": "Card", "dimensions": {}, "states": { "owner": "designer" } },\n    "actor": "designer",\n    "source": { "file": "a.pen", "frame": "f", "fingerprint": "${fingerprint}" }\n  }`;
+      writeFileSync(join(folder, "evidence", "a.json"), `[\n${entry("one")}\n]\n`);
+      writeFileSync(join(folder, "evidence", "b.json"), `[\n${entry("two")}\n]\n`);
       const uri = pathToFileURL(join(folder, "spec.dxn")).href;
       const first = pathToFileURL(join(folder, "evidence", "a.json")).href;
       const second = pathToFileURL(join(folder, "evidence", "b.json")).href;
@@ -760,7 +760,7 @@ describe("the language server", () => {
           [
             { line: 1, character: 2 },
             "duplicate-record",
-            "$[0]: the same Evidence as $[0] in evidence/a.json, apart from at and fingerprint",
+            "$[0]: the same Evidence as $[0] in evidence/a.json, apart from their fingerprints",
           ],
         ],
       ]);

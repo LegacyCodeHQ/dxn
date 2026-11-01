@@ -78,7 +78,7 @@ folder. Seven commands work on a file, each introduced where it is needed:
 | `dxn states <file> <Type or path>`          | evaluates a type, or a child in place: its states in each profile    |
 | `dxn cases <file> <Type or path>`           | lists the cases that can be told apart, and what each covers         |
 | `dxn validate <file>`                       | checks every stored record against its declaration                   |
-| `dxn attach <file> <path> --file --frame …` | records evidence for an element in the combinations given            |
+| `dxn attach <file> <path> --actor --data …` | records evidence for an element in the combinations given            |
 | `dxn status <file>`                         | counts which combinations have evidence, and which are stale or gone |
 | `dxn rename <file> <Enum>.<value> <new>`    | renames an enum's value in the file and its stored records           |
 
@@ -975,31 +975,31 @@ tell it apart and every combination it covers.
 
 Everything so far describes the matrix: what an element's states are, and
 where each one exists. But the tools around the matrix also keep data about
-it. When a designer draws a combination, the evidence they record says who
-recorded it, when, and where the drawing is. That data has a shape, and a
-shape is worth checking just as much as the states are.
+it. When a designer draws a combination, the evidence they record says
+when, and where the drawing is; when a reviewer looks at it, the review says
+what they decided, and why. That data has a shape, and a shape is worth
+checking just as much as the states are.
 
 A **record** is that shape: a named group of typed fields.
 
 ```
-enum Actor = design-agent
+enum Verdict = approved | changes
 
-record Source {
-  # where the drawing is
-  file: RelativePath
-  frame: NonEmptyString
+record Comment {
+  # what the reviewer wrote
+  text: NonEmptyString
 }
 
-record Evidence {
-  actor: Actor
-  source: Source
+record Review {
+  verdict: Verdict
+  comment: Comment
 }
 ```
 
 A record's name is capitalized, like every other set of possibilities. Its
 fields come one to a line, each a lowercase name, a colon, and its type: an
-enum (`Actor`), another record (`Source`), or a scalar (`RelativePath` and
-`NonEmptyString`, below). A short record can sit on one line:
+enum (`Verdict`), another record (`Comment`), or a scalar (`NonEmptyString`,
+below). A short record can sit on one line:
 `record Note { text: NonEmptyString }`.
 
 A record is not a type. A type is an element: it needs dimensions and has
@@ -1009,7 +1009,7 @@ contain itself, directly or through other records: it could never be written
 down.
 
 ```
-recursive-record: Evidence contains itself: Evidence.source is a Source, and Source.back is an Evidence
+recursive-record: Review contains itself: Review.comment is a Comment, and Comment.reply is a Review
 ```
 
 ### Scalars: values that are checked, not listed
@@ -1024,45 +1024,49 @@ values are checked rather than listed:
 | `NonEmptyString` | at least one character, with no spaces at either end and no control characters                                                                                        |
 | `RelativePath`   | a path from the repository root: parts split by `/`, none of them empty, `.` or `..`, none with a `\` or spaces at either end, nor starting with a drive such as `C:` |
 
-With them, `Evidence` can hold everything an actor records: who, when, where
-the drawing is, and the drawing's fingerprint at that moment.
+Scalars only type a record's fields. A state or a dimension cannot have
+one: their values must be listed, so a type's combinations can always be
+counted. A scalar's name is built in, so a file cannot declare it.
+
+One record is built in as well: **`PenNode`**, a node of a pen.dev design
+file. It is how a record says where a drawing is, and what the drawing was
+when it was recorded:
+
+| Field         | What it holds                                                                         |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `file`        | the design file, a `RelativePath`                                                     |
+| `frame`       | the frame the drawing is in, a `NonEmptyString`                                       |
+| `node`        | the node inside the frame, a `NonEmptyString`; left out when the drawing is the frame |
+| `fingerprint` | the node's fingerprint, or the frame's without a node, when it was recorded           |
+
+The frame is there even with a node: when the node is deleted, the frame
+still says where it was. With them, `Evidence` can hold everything a designer
+records: when, and where the drawing is.
 
 ```
-enum Actor = design-agent
-
-record Source {
-  file: RelativePath
-  frame: NonEmptyString
-}
-
 record Evidence {
-  actor: Actor
   at: Timestamp
-  source: Source
-  fingerprint: NonEmptyString
+  source: PenNode
 }
 ```
 
-(Who records it is the next section but one.) Scalars only type a record's fields. A
-state or a dimension cannot have one: their values must be listed, so a
-type's combinations can always be counted. A scalar's name is built in, so a
-file cannot declare it.
+Who records it is the next section but one.
 
 ### Derived fields: what follows from another field
 
-Some of a record's data follows from another field: which tool an actor
-records with follows from the actor. A field can be derived with a `when`, as
-a state can:
+Some of a record's data follows from another field: what happens next
+follows from a review's verdict. A field can be derived with a `when`, as a
+state can:
 
 ```
-enum Actor = design-agent | reviewer
-enum Tool = pen-dev | file
+enum Verdict = approved | changes
+enum Next = ship | redraw
 
-record Evidence {
-  actor: Actor
-  tool: Tool = when actor {
-    design-agent -> pen-dev
-    reviewer -> file
+record Review {
+  verdict: Verdict
+  next: Next = when verdict {
+    approved -> ship
+    changes -> redraw
   }
 }
 ```
@@ -1139,7 +1143,8 @@ evidence/toolbar.json:14:21: unknown-value: $[0].context.states.expanded: "open"
 Only a record an actor records can be stored, since stored data is a fact
 about the matrix. Such a record cannot be a field of another record, which
 would give it a second context, and it cannot declare a field named
-`context`. A record no actor records, like `Source`, is a part of the facts
+`context`, nor, since the actor is stored with it, one named `actor`. A
+record no actor records, like `Comment`, is a part of the facts
 that contain it.
 
 ### Where records are stored, and checking them
@@ -1158,16 +1163,16 @@ evidence/
   menu-button.json
 ```
 
-A record with no folder is not stored: `Source` above only ever appears
-inside `Evidence`, so it needs none. Only a record an actor records can have
+A record with no folder is not stored: `Comment` above only ever appears
+inside `Review`, so it needs none. Only a record an actor records can have
 a folder; for any other, `dxn validate` stops before checking anything:
 
 ```
-dxn: Source is stored in source/, but no actor records it; declare "actor <name> records Source"
+dxn: Comment is stored in comment/, but no actor records it; declare "actor <name> records Comment"
 ```
 
-Each stored record is an object with its `context`, and a key for every
-field: a record field holds an object, an enum field one of the enum's values
+Each stored record is an object with its `context`, its `actor`, the name
+of an actor who records it, and a key for every field: a record field holds an object, an enum field one of the enum's values
 as a string, and a scalar field a string that is a valid value of the scalar.
 
 ```json
@@ -1181,8 +1186,11 @@ as a string, and a scalar field a string that is a valid value of the scalar.
     },
     "actor": "design-agent",
     "at": "2026-10-31T08:50:05Z",
-    "source": { "file": "design/website.pen", "frame": "R353q" },
-    "fingerprint": "8056e176dcb1b7aa7e3c6ce6aee142848862fa5a"
+    "source": {
+      "file": "design/website.pen",
+      "frame": "R353q",
+      "fingerprint": "8056e176dcb1b7aa7e3c6ce6aee142848862fa5a"
+    }
   }
 ]
 ```
@@ -1195,12 +1203,13 @@ dxn validate evidence.dxn
 
 ```
 evidence/wordmark.json:19:28: unknown-value: $[1].context.states.hover: "hovered" is not a value of hover on phone, Theme dark (rest)
-evidence/wordmark.json:21:14: unknown-value: $[1].actor: "designer" is not a value of Actor (design-agent)
+evidence/wordmark.json:21:14: unknown-actor: $[1].actor: "designer" is not an actor who records Evidence (design-agent)
 ```
 
-Every field must be given, each of its type, and no others. Two stored
-records that are the same in everything but `at` and `fingerprint`, which
-only say when one was recorded, are duplicates, in one file or across the
+Every field must be given, each of its type, and no others, and the actor
+must be one who records the record. Two stored records that are the same in
+everything but their PenNodes' fingerprints, which only say what a drawing
+was when it was recorded, are duplicates, in one file or across the
 record's files; `dxn attach` replaces an entry rather than making one. Each
 problem has its file, line and column, and its JSON path, so a person or an
 agent can go straight to it. When everything is valid, the command says what
@@ -1213,13 +1222,14 @@ evidence.dxn: Evidence, 2 records in 1 file in evidence/
 ### Attaching: recording evidence
 
 An actor records evidence with `dxn attach`: the element by its path, the
-frame, the record's other fields, and the context as `key=value` pairs, the
-same keys a context has. Every key is given, and `a|b` lists several values:
-it records one entry for each combination listed that exists in place.
+actor with `--actor`, the record's fields as one JSON object with `--data`,
+and the context as `key=value` pairs, the same keys a context has. Every key
+is given, and `a|b` lists several values: it records one entry for each
+combination listed that exists in place.
 
 ```bash
-dxn attach toolbar.dxn Toolbar.menu.toggle \
-  --file design/website.pen --frame l5Z3Z --field actor=design-agent \
+dxn attach toolbar.dxn Toolbar.menu.toggle --actor design-agent \
+  --data '{"at": "2026-10-31T08:50:05Z", "source": {"file": "design/website.pen", "frame": "l5Z3Z"}}' \
   profile=phone layout=compact "menu.menu=closed|open" \
   hover=rest focus=blurred "expanded=closed|open"
 ```
@@ -1229,24 +1239,20 @@ Attached 2 records to evidence/toolbar.json
 ```
 
 Of the four combinations listed, two exist: the toggle is expanded exactly
-when its menu is open. By convention, the record's `at` is the time now, its
-`source` the file and frame, and its `fingerprint` the frame's fingerprint: in
-a pen.dev file, the frame and the components and variables it uses; in any
-other file, the whole file. The other fields, here `actor`, are given with
-`--field`.
-
-By convention, a record's `tool` says how its frames are fingerprinted:
-`pen-dev`, a frame in a pen.dev file; `file`, the whole file, even a pen.dev
-one. A tool derived from the actor is how an actor's rules are written: a
-design agent records with pen-dev, so `dxn attach` refuses its frame in any
-other file, and `dxn status` reports a stored one.
+when its menu is open. The record is the one the actor records, here
+`Evidence`. Each PenNode is given without its fingerprint: `dxn attach`
+checks that the file is there, that the frame is in it and the node in the
+frame, and computes the fingerprint itself, of the node, or of the frame
+without one. In a pen.dev file, a fingerprint covers the node and the
+components and variables it uses, but not where it sits; in any other file,
+it is the whole file's.
 
 ```
-dxn: design-agent records with pen-dev; "design/toolbar.png" is not a pen.dev file
+dxn: node "OcEJ9" is not in frame l5Z3Z of design/website.pen
 ```
 
-Recording the same combination, frame and fields again replaces the entry,
-with the fingerprint the frame has now, in whichever of the record's files it
+Recording the same combination and fields again replaces the entry, with the
+fingerprint the node has now, in whichever of the record's files it
 is stored. The file is relative to the repository, and a new entry goes in
 the record's folder, in a file named after the type the path starts at.
 
@@ -1283,15 +1289,15 @@ the page has no dimensions, so it is one combination on every profile, and
 the menu is the same on a tablet with or without its keyboard. Evidence on
 any of a combination's profiles covers it.
 
-Each entry is also checked against its frame. By convention, a record with a
-`fingerprint` field next to a `source { file, frame }` is fingerprinted: an
-entry is **present** while its frame's fingerprint is the one recorded,
-**stale** once the frame has changed, and **gone** once the file or the frame
-is: a pen.dev file that is not there is gone, not the wrong tool. A
-combination is as its best entry is, or **missing** without one. A
-record without those fields is counted as recorded, and the first line says
-that staleness is not checked, so it never passes silently. Attaching the
-frame again records its fingerprint now, and the entry is present again.
+Each entry is also checked against its drawings: each PenNode it has. A
+PenNode is **present** while its fingerprint, of its node or, without one,
+its frame, is the one recorded, **stale** once that has changed, and
+**gone** once the file, the frame or the node is, or the node is no longer
+in its frame. An entry is as its least fresh PenNode is, and a combination
+as its best entry is, or **missing** without one. A record with no PenNode
+is counted as recorded, and the first line says that staleness is not
+checked, so it never passes silently. Attaching again records the
+fingerprint now, and the entry is present again.
 
 With `--missing`, it lists each combination that is not present, under
 Missing, Stale and Gone, in the words a context would use:
@@ -1315,11 +1321,11 @@ expectations and derived fields; and in every stored record's fields of that
 enum, nested ones included, and in the states of every context.
 
 ```bash
-dxn rename evidence.dxn Actor.design-agent designer
+dxn rename evidence.dxn Hover.hovered over
 ```
 
 ```
-Renamed Actor.design-agent to designer in evidence.dxn, evidence/wordmark.json (2 values)
+Renamed Hover.hovered to over in evidence.dxn, evidence/wordmark.json (2 values)
 ```
 
 It only touches the value where it means that enum's value: the same text in
@@ -1330,7 +1336,7 @@ the file or its stored records have problems, so a rename never mixes with
 them. A rename that would leave a problem of its own, such as a rule over
 elements whose states of one name come from different enums, is refused,
 with the problems it would leave. Add `--dry-run` to see what it would
-rename, without writing: `Would rename Actor.design-agent to designer in …`;
+rename, without writing: `Would rename Hover.hovered to over in …`;
 with `--json` as well, it prints every file it would write, in full.
 
 With these, evidence is checked by the language itself: its shape, its
@@ -1589,9 +1595,9 @@ document, each with its `file`, `line`, `column`, `severity`, `code` and
       "line": 21,
       "column": 14,
       "severity": "error",
-      "code": "unknown-value",
+      "code": "unknown-actor",
       "path": "$[1].actor",
-      "message": "\"designer\" is not a value of Actor (design-agent)"
+      "message": "\"designer\" is not an actor who records Evidence (design-agent)"
     }
   ]
 }
@@ -1647,9 +1653,9 @@ or under discussion but not part of it yet:
 - **Evidence against `alike`.** Two combinations of one case recorded with
   different frames, or two cases with one frame, are not reported yet.
 - **Kits.** Domain words that alias the core, such as a UI kit, so the same
-  language can describe other domains. `Actor` in the records above is already
-  the pattern: the core knows nothing about any actor or tool; a file or a kit
-  declares them. Events are the same: a UI kit could declare the usual ones,
+  language can describe other domains. Actors are already the pattern: the
+  core knows nothing about any particular actor; a file or a kit declares
+  them. `PenNode` is built in for now, and would belong to a design kit. Events are the same: a UI kit could declare the usual ones,
   such as `activate` and `escape`, for every type to use.
 
 ### What the language leaves out
@@ -1785,7 +1791,7 @@ comment     = "#" to the end of the line
 | `expectation-empty`                                                           | error    | an expectation picks nothing, so it would always pass                                            |
 | `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
 | `nested-context`                                                              | error    | a record's field is a record an actor records, which would be a second context                   |
-| `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a recorded record has a field named `context`     |
+| `reserved-name`                                                               | error    | a declaration has a built-in name, or a recorded record has a field named `context` or `actor`   |
 | `unused-need`                                                                 | warning  | a type needs a dimension that is alike throughout and that nothing in it uses                    |
 
 Checking stored records with `dxn validate` reports these, after any problem with the
@@ -1799,5 +1805,5 @@ JSON itself:
 | `unknown-value`    | an enum field's value is not one of the enum's; or a context's type, profile, dimension or state value is not one of the file's, or does not exist in that combination |
 | `invalid-value`    | a scalar field's value is not a valid value of the scalar                                                                                                              |
 | `derived-field`    | a stored record gives a derived field, whose value follows from another's                                                                                              |
-| `wrong-tool`       | (in `dxn status`) a pen-dev entry's file is not a pen.dev file                                                                                                         |
-| `duplicate-record` | two stored records are the same in everything but `at` and `fingerprint`                                                                                               |
+| `unknown-actor`    | a stored record's actor is not one who records it                                                                                                                      |
+| `duplicate-record` | two stored records are the same in everything but their PenNodes' fingerprints                                                                                         |

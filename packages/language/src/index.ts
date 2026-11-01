@@ -15,7 +15,7 @@ export { definition, usages } from "./definition.js";
 export { fieldValue } from "./derive.js";
 // Diagnostics in stored data, by JSON path.
 export { Diagnostics } from "./diagnostic.js";
-// Stored records that repeat others, apart from when they were recorded.
+// Stored records that repeat others, apart from their fingerprints.
 export { type Duplicate, duplicates, type StoredSource } from "./duplicates.js";
 // What a type's states are in each combination, and what a tree of types
 // is in place.

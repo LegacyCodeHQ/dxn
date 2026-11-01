@@ -34,7 +34,6 @@ modifier trackpad on phone { Pointer = mouse }
 
 enum Actor = designer | agent
 record Evidence {
-  actor: Actor
 }
 
 expect "A press takes the focus" {
@@ -43,7 +42,7 @@ expect "A press takes the focus" {
   on press
   then focus = focused
 }
-actor evidence-recorder records Evidence
+actor designer records Evidence
 `;
 
 const data = `[
@@ -366,14 +365,13 @@ type Card needs Pointer, Theme {
 environment Device = Pointer
 profile phone: Device { Pointer = touch }
 record Evidence {
-  actor: Actor
 }
 expect "A dark card is deep" {
   in Card
   when Theme = dark
   then shade = deep
 }
-actor evidence-recorder records Evidence
+actor designer records Evidence
 `;
     const records = `[
   {
@@ -478,14 +476,13 @@ type Page {
   has panel: Panel
 }
 record Evidence {
-  actor: Actor
 }
 expect "The link is selected on the blog" {
   in Page.panel.link
   when current = blog
   then selection = selected
 }
-actor evidence-recorder records Evidence
+actor designer records Evidence
 `;
     const records = `[
   {
@@ -574,7 +571,6 @@ record Source {
   file: RelativePath
 }
 record DesignReview {
-  actor: Actor
   source: Source
 }
 actor design-review-recorder records DesignReview

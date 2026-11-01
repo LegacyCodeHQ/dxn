@@ -1,7 +1,7 @@
 import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import {
-  fieldValue,
+  among,
   folderOf,
   givenDimensions,
   inPlace,
@@ -9,12 +9,13 @@ import {
   type Placement,
   placement,
   profilesOf,
+  type RecordDeclaration,
   validate,
 } from "@legacycodehq/dxn-language";
 import { canonical, Fingerprints } from "../fingerprint.js";
 import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
-import { loadStored, repositoryOf, toolOwner } from "./stored.js";
+import { loadStored, repositoryOf } from "./stored.js";
 import { usage } from "./usage.js";
 
 export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
@@ -23,10 +24,10 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
   const flags = new Map<string, string[]>();
   const pairs: string[] = [];
   const positional: string[] = [];
-  const valued = ["--file", "--frame", "--field", "--at", "--record"];
+  const valued = ["--actor", "--data"];
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index] as string;
-    // An option's value comes after a space; "--file=x" is not a context pair.
+    // An option's value comes after a space; "--actor=x" is not a context pair.
     const joined = valued.find((option) => arg.startsWith(`${option}=`));
     if (joined !== undefined) {
       return misused(
@@ -41,43 +42,48 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
     } else if (arg.includes("=")) pairs.push(arg);
     else positional.push(arg);
   }
-  // Each option once, but --field once for each field, as <name>=<value>.
   for (const [option, values] of flags) {
-    if (option !== "--field" && values.length > 1) {
-      return misused(io, json, `give ${option} once`);
-    }
-  }
-  const unpaired = flags.get("--field")?.find((pair) => !pair.includes("="));
-  if (unpaired !== undefined) {
-    return misused(io, json, `--field takes <name>=<value>, found ${JSON.stringify(unpaired)}`);
+    if (values.length > 1) return misused(io, json, `give ${option} once`);
   }
   const [file, path, ...extra] = positional;
-  const source = flags.get("--file")?.[0];
-  const frame = flags.get("--frame")?.[0];
-  if (file === undefined || path === undefined || extra.length > 0 || !source || !frame) {
-    return misused(io, json, "give a file, a path, --file and --frame, and the context");
+  const actorName = flags.get("--actor")?.[0];
+  const written = flags.get("--data")?.[0];
+  if (file === undefined || path === undefined || extra.length > 0 || !actorName || !written) {
+    return misused(io, json, "give a file, a path, --actor, --data and the context");
+  }
+  // The record's data, as JSON: an object, of the record's fields.
+  let supplied: Record<string, unknown>;
+  try {
+    supplied = JSON.parse(written);
+  } catch {
+    return misused(
+      io,
+      json,
+      `--data takes the record's fields as JSON, found ${JSON.stringify(written)}`,
+    );
+  }
+  if (typeof supplied !== "object" || supplied === null || Array.isArray(supplied)) {
+    return misused(io, json, "--data takes the record's fields as a JSON object");
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
   if (typeof parsed === "number") return parsed;
   const data = loadStored(parsed, file, cwd, report);
   if (typeof data === "number") return data;
-  // The record: the one given, or the only one an actor records.
-  const named = flags.get("--record")?.[0];
-  const candidates = parsed.records.filter(
-    ({ context, name }) => context && (named === undefined || name === named),
-  );
-  const record = candidates[0];
-  if (record === undefined || (named === undefined && candidates.length > 1)) {
+  // The actor, and the record it records.
+  const actor = parsed.actors.find(({ name }) => name === actorName);
+  if (actor === undefined) {
     return report.refuse(
-      named === undefined
-        ? `give the record, as --record <name> (${parsed.records
-            .filter(({ context }) => context)
-            .map(({ name }) => name)
-            .join(", ")})`
-        : `${named} is not a record an actor records`,
+      `${JSON.stringify(actorName)} is not an actor${among(
+        actorName,
+        parsed.actors.map(({ name }) => name),
+        "the file declares none",
+      )}`,
     );
   }
+  const record = parsed.records.find(
+    ({ name }) => name === actor.records.name,
+  ) as RecordDeclaration;
   let place: Placement;
   try {
     place = placement(parsed, path);
@@ -178,65 +184,32 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
       `no combination given exists for ${path}; dxn states ${file} ${path} lists them`,
     );
   }
-  // The frame, and its fingerprint now.
+  // The record's fields, as given; each PenNode's fingerprint is taken now,
+  // of its node or, without one, its frame.
   const repository = repositoryOf(file, cwd);
-  const full = join(repository, source);
-  if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) {
-    return report.refuse(`${JSON.stringify(source)} does not exist in the repository`);
-  }
-  // The record's fields: by convention, at is when, source where the frame is
-  // and fingerprint its fingerprint; a derived one is not stored; the others
-  // are given with --field.
-  const fields = new Map(
-    (flags.get("--field") ?? []).map((pair) => pair.split(/=(.*)/s) as [string, string]),
-  );
-  // A field the record does not have is named before what is missing.
-  for (const name of fields.keys()) {
-    if (!record.fields.some((field) => field.name === name)) {
-      return report.refuse(
-        `${record.name} has no field ${JSON.stringify(name)} (${record.fields.map((field) => field.name).join(", ")})`,
-      );
-    }
-  }
-  if (
-    !record.fields.some(({ name }) => name === "fingerprint") ||
-    !record.fields.some(({ name }) => name === "source")
-  ) {
-    return report.refuse(
-      `${record.name} has no fingerprint field next to a source { file, frame }; attach needs both`,
-    );
-  }
-  const stamp = flags.get("--at")?.[0] ?? new Date().toISOString();
-  const values: Record<string, unknown> = {};
-  for (const field of record.fields) {
-    // A derived field follows from another, so it is never given.
-    if (field.derived !== undefined) {
-      if (fields.has(field.name)) {
-        return report.refuse(
-          `${field.name} follows from ${field.derived.on.name}, so it is not given`,
-        );
-      }
-      continue;
-    }
-    if (field.name === "source") values.source = { file: source, frame };
-    else if (field.name === "fingerprint") values.fingerprint = "";
-    else if (field.name === "at" && !fields.has("at")) values.at = stamp;
-    else if (fields.has(field.name)) values[field.name] = fields.get(field.name);
-    else return report.refuse(`give ${field.name}, as --field ${field.name}=<value>`);
-  }
-  // By convention, the record's tool says how its frames are fingerprinted:
-  // pen-dev, a frame in a pen.dev file; file, the whole file.
   const fingerprints = new Fingerprints();
-  const tool = fieldValue(record, values, "tool");
-  if (tool === "pen-dev" && !fingerprints.isPen(full)) {
-    return report.refuse(
-      `${toolOwner(record, values)} records with pen-dev; ${JSON.stringify(source)} is not a pen.dev file`,
-    );
+  const values: Record<string, unknown> = { ...supplied };
+  for (const field of record.fields.filter(({ type }) => type.name === "PenNode")) {
+    const at = supplied[field.name] as
+      | { file?: unknown; frame?: unknown; node?: unknown }
+      | undefined;
+    if (typeof at !== "object" || at === null) continue;
+    const { file: where, frame, node } = at;
+    if (typeof where !== "string" || typeof frame !== "string") continue;
+    const full = join(repository, where);
+    if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) {
+      return report.refuse(`${JSON.stringify(where)} does not exist in the repository`);
+    }
+    const pen = fingerprints.isPen(full);
+    if (pen && fingerprints.of(full, frame) === undefined) {
+      return report.refuse(`frame ${JSON.stringify(frame)} is not in ${where}`);
+    }
+    if (pen && typeof node === "string" && !fingerprints.holds(full, frame, node)) {
+      return report.refuse(`node ${JSON.stringify(node)} is not in frame ${frame} of ${where}`);
+    }
+    const id = typeof node === "string" ? node : frame;
+    values[field.name] = { ...at, fingerprint: fingerprints.of(full, id) };
   }
-  const fingerprint = fingerprints.of(full, frame, tool === "file" ? "file" : undefined);
-  if (fingerprint === undefined)
-    return report.refuse(`frame ${JSON.stringify(frame)} is not in ${source}`);
-  values.fingerprint = fingerprint;
   // An entry for the same combination, frame and given fields is replaced
   // where it is stored, in whichever of the record's files; a new one goes
   // into the record's folder, in a file named after the path's type.
@@ -253,17 +226,24 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
   // Key order does not count: an entry written by hand is the same entry.
   const alike = (a: unknown, b: unknown) =>
     JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+  // A PenNode's fingerprint does not make it another entry: it is what the
+  // node shows now, which a new recording takes.
+  const pens = record.fields.filter(({ type }) => type.name === "PenNode").map(({ name }) => name);
+  const unprinted = (entry: Record<string, unknown>) =>
+    Object.fromEntries(
+      Object.entries(entry).map(([name, value]) => {
+        if (!pens.includes(name) || typeof value !== "object" || value === null)
+          return [name, value];
+        const { fingerprint: _fingerprint, ...rest } = value as Record<string, unknown>;
+        return [name, rest];
+      }),
+    );
   const same = (entry: Record<string, unknown>, context: object) =>
-    alike(entry.context, context) &&
-    alike(entry.source, values.source) &&
-    // When it was recorded does not make it another entry.
-    [...fields.keys()]
-      .filter((name) => name !== "at" && name !== "fingerprint")
-      .every((name) => entry[name] === fields.get(name));
+    alike(unprinted(entry), unprinted({ context, actor: actor.name, ...values }));
   const changed = new Set<string>();
   let replaced = 0;
   for (const context of contexts) {
-    const entry = { context, ...values };
+    const entry = { context, actor: actor.name, ...values };
     const holding = [...files].find(([, { entries }]) =>
       entries.some((candidate) => same(candidate, context)),
     );
@@ -312,7 +292,14 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
     writeFileSync(path, written);
   }
   return report.succeed(
-    { file, record: record.name, written: shown, records: contexts.length, replaced },
+    {
+      file,
+      actor: actor.name,
+      record: record.name,
+      written: shown,
+      records: contexts.length,
+      replaced,
+    },
     `Attached ${summary}\n`,
   );
 });

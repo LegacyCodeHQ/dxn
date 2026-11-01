@@ -1,7 +1,7 @@
 import type { ParseResult, Type } from "./ast.js";
-import { fieldValue } from "./derive.js";
 import { inPlace, states } from "./evaluate.js";
 import { givenDimensions } from "./profiles.js";
+import { penNode } from "./scalars.js";
 
 // One combination of an element in place: the profiles that share it, the
 // dimensions no profile gives, the parents' states that place it, and one
@@ -31,14 +31,15 @@ export interface Coverage {
   }[];
 }
 
-// Whether an entry's frame is as it was recorded, changed since, or no more.
+// Whether what an entry points at is as it was recorded, changed since, or no
+// more.
 export type Freshness = "present" | "stale" | "gone";
-export type Check = (entry: {
+// A PenNode as stored, which a check judges.
+export type Check = (node: {
   file: string;
   frame: string;
+  node?: string;
   fingerprint: string;
-  // By convention, how the frame is fingerprinted: pen-dev or file.
-  tool?: string;
 }) => Freshness;
 
 // Every element of the file's trees, by its path: each type that no type
@@ -142,37 +143,34 @@ export function coverage(
 ): Coverage {
   const given = givenDimensions(file);
   const declared = file.records.find(({ name }) => name === record);
+  // An entry is as fresh as the least fresh of its PenNodes: gone, then
+  // stale, then present.
+  const pens = (declared?.fields ?? [])
+    .filter(({ type }) => type.name === penNode.name)
+    .map(({ name }) => name);
+  const order: Freshness[] = ["gone", "stale", "present"];
+  const freshness = (entry: Record<string, unknown>): Freshness => {
+    if (check === undefined) return "present";
+    const judged = pens.flatMap((field) => {
+      const at = entry[field] as Parameters<Check>[0] | undefined;
+      return at === undefined ? [] : [check(at)];
+    });
+    return order.find((each) => judged.includes(each)) ?? "present";
+  };
   const contexts = sources.flatMap((source) =>
-    (
-      JSON.parse(source) as {
-        context: Record<string, unknown>;
-        source?: { file?: string; frame?: string };
-        fingerprint?: string;
-      }[]
-    )
-      .map((entry) => ({
-        ...entry,
-        tool: declared === undefined ? undefined : fieldValue(declared, entry, "tool"),
-      }))
-      .map(({ context, source: where, fingerprint, tool }) => ({
-        path: (context.path ?? context.type) as string,
-        profile: context.profile as string | undefined,
-        dimensions: (context.dimensions ?? {}) as Record<string, string>,
-        parents: (context.parents ?? {}) as Record<string, string>,
-        states: (context.states ?? {}) as Record<string, string>,
-        freshness:
-          check === undefined ||
-          where?.file === undefined ||
-          where.frame === undefined ||
-          fingerprint === undefined
-            ? ("present" as Freshness)
-            : check({
-                file: where.file,
-                frame: where.frame,
-                fingerprint,
-                ...(typeof tool === "string" ? { tool } : {}),
-              }),
-      })),
+    (JSON.parse(source) as ({ context: Record<string, unknown> } & Record<string, unknown>)[]).map(
+      (entry) => {
+        const { context } = entry;
+        return {
+          path: (context.path ?? context.type) as string,
+          profile: context.profile as string | undefined,
+          dimensions: (context.dimensions ?? {}) as Record<string, string>,
+          parents: (context.parents ?? {}) as Record<string, string>,
+          states: (context.states ?? {}) as Record<string, string>,
+          freshness: freshness(entry),
+        };
+      },
+    ),
   );
   const same = (a: Record<string, string>, b: Record<string, string>) =>
     Object.keys(a).length === Object.keys(b).length &&

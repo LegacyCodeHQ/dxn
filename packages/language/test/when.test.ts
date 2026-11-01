@@ -125,7 +125,10 @@ type Toolbar needs Breakpoint {
 actor evidence-recorder records Evidence`);
     const context = (Breakpoint: string, value: string) =>
       JSON.stringify([
-        { context: { type: "Toolbar", dimensions: { Breakpoint }, states: { layout: value } } },
+        {
+          actor: "evidence-recorder",
+          context: { type: "Toolbar", dimensions: { Breakpoint }, states: { layout: value } },
+        },
       ]);
     expect([
       validate(schema, "Evidence", context("base", "compact")),

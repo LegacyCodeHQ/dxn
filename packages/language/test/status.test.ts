@@ -25,7 +25,9 @@ profile phone: Device { Pointer = touch }
 profile laptop: Device { Pointer = mouse }
 profile studio: Device { Pointer = mouse }
 
-record Evidence {}
+record Evidence {
+  source: PenNode
+}
 actor evidence-recorder records Evidence
 `);
 const toggle = (profile: string, menu: string, hover: string) => ({
@@ -109,8 +111,7 @@ describe("coverage", () => {
   it("counts a combination as stale or gone when its only entries are", () => {
     const entry = (profile: string, menu: string, hover: string, frame: string) => ({
       ...toggle(profile, menu, hover),
-      source: { file: "design.pen", frame },
-      fingerprint: "then",
+      source: { file: "design.pen", frame, fingerprint: "then" },
     });
     const report = coverage(
       file,

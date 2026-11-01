@@ -18,8 +18,8 @@ export interface Duplicate {
   message: string;
 }
 
-// Two stored records of one record that are the same in everything but at and
-// fingerprint, which say when one was recorded, not what: each repeat, after
+// Two stored records of one record that are the same in everything but their
+// PenNodes' fingerprints, which dxn takes, not the actor: each repeat, after
 // the first, across the record's files in the order they are given. Data that
 // checks, so each file holds a list.
 export function duplicates(stored: StoredSource[]): Duplicate[] {
@@ -28,8 +28,7 @@ export function duplicates(stored: StoredSource[]): Duplicate[] {
   for (const { record, shown, source } of stored) {
     const root = parseJson(source).root;
     (JSON.parse(source) as Record<string, unknown>[]).forEach((entry, index) => {
-      const { at: _at, fingerprint: _fingerprint, ...what } = entry;
-      const key = `${record}\u0000${JSON.stringify(sorted(what))}`;
+      const key = `${record}\u0000${JSON.stringify(sorted(unprinted(entry)))}`;
       const earlier = seen.get(key);
       if (earlier === undefined) {
         seen.set(key, { shown, index });
@@ -38,13 +37,25 @@ export function duplicates(stored: StoredSource[]): Duplicate[] {
       const element = root?.kind === "array" ? root.elements[index] : undefined;
       const located = new Diagnostics(source);
       const path = `$[${index}]`;
-      const message = `the same ${record} as $[${earlier.index}] in ${earlier.shown}, apart from at and fingerprint`;
+      const message = `the same ${record} as $[${earlier.index}] in ${earlier.shown}, apart from their fingerprints`;
       located.report("duplicate-record", message, path, element?.span.start ?? 0);
       const { line, column } = located.items[0] as { line: number; column: number };
       result.push({ shown, line, column, path, message });
     });
   }
   return result;
+}
+
+// A stored record without the fingerprints of its PenNodes, which dxn takes
+// of what they point at, so that a recording taken again is the same record.
+function unprinted(entry: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(entry).map(([name, value]) => {
+      if (typeof value !== "object" || value === null || Array.isArray(value)) return [name, value];
+      const { fingerprint: _fingerprint, ...rest } = value as Record<string, unknown>;
+      return [name, rest];
+    }),
+  );
 }
 
 // The same value with object keys sorted, so key order does not count.
