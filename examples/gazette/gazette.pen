@@ -1008,6 +1008,180 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "rmtXt",
+      "x": 991,
+      "y": 0,
+      "name": "BackButton",
+      "reusable": true,
+      "cornerRadius": 8,
+      "gap": 2,
+      "padding": [
+        6,
+        10,
+        6,
+        4
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "icon",
+          "id": "e5W1Vt",
+          "name": "Chevron",
+          "width": 24,
+          "height": 24,
+          "icon": "chevron-left",
+          "library": "lucide",
+          "fill": "$accent"
+        },
+        {
+          "type": "text",
+          "id": "Wh9wc",
+          "name": "Label",
+          "fill": "$accent",
+          "content": "Back",
+          "fontFamily": "$font-ui",
+          "fontSize": 17,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "EF6VM",
+      "x": 0,
+      "y": 1486,
+      "name": "Back button states",
+      "clip": true,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "rCoHR",
+          "name": "columns",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Q49Ci",
+              "name": "Corner",
+              "width": 88,
+              "height": 16
+            },
+            {
+              "type": "text",
+              "id": "Q6QPw",
+              "name": "Idle column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 80,
+              "content": "Idle",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "ikmge",
+              "name": "Hovered column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 80,
+              "content": "Hovered",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "Q7Ukq",
+              "name": "Pressed column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 80,
+              "content": "Pressed",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "fFMCO",
+          "name": "back",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "Oedsn",
+              "name": "Back label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Back",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "O7qxj",
+              "type": "ref",
+              "ref": "rmtXt",
+              "name": "back / idle",
+              "fill": "#00000000",
+              "descendants": {
+                "e5W1Vt": {
+                  "fill": "$accent"
+                },
+                "Wh9wc": {
+                  "fill": "$accent"
+                }
+              }
+            },
+            {
+              "id": "q2MpTc",
+              "type": "ref",
+              "ref": "rmtXt",
+              "name": "back / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "e5W1Vt": {
+                  "fill": "$accent"
+                },
+                "Wh9wc": {
+                  "fill": "$accent"
+                }
+              }
+            },
+            {
+              "id": "z68ze",
+              "type": "ref",
+              "ref": "rmtXt",
+              "name": "back / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "e5W1Vt": {
+                  "fill": "$accent-pressed"
+                },
+                "Wh9wc": {
+                  "fill": "$accent-pressed"
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {

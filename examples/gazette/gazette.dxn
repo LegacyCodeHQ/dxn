@@ -5,6 +5,7 @@ record PenEvidence {
 }
 
 enum Interaction = idle | hovered | pressed | disabled
+enum Touch = idle | hovered | pressed
 
 type Button {
   enum Style = primary | secondary | tertiary
@@ -19,10 +20,9 @@ type Toggle {
 }
 
 type Tab {
-  enum TabInteraction = idle | hovered | pressed
   enum Selection = unselected | selected
 
-  state selection: Selection, interaction: TabInteraction
+  state selection: Selection, interaction: Touch
 }
 
 type TabBar {
@@ -50,4 +50,16 @@ type TabBar {
       else -> unselected
     }
   }
+}
+
+type BackButton {
+  state interaction: Touch
+}
+
+type NavigationBar {
+  enum Kind = root | pushed
+
+  state kind: Kind
+
+  has back: BackButton only when kind = pushed
 }

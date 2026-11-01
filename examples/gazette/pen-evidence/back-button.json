@@ -1,0 +1,53 @@
+[
+  {
+    "context": {
+      "path": "BackButton",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "EF6VM",
+      "node": "O7qxj",
+      "fingerprint": "9c72ff8c098bffe4989766825095e1e5e0b98457"
+    }
+  },
+  {
+    "context": {
+      "path": "BackButton",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "EF6VM",
+      "node": "q2MpTc",
+      "fingerprint": "3443787d553231fedda4ebac488090047f5248c2"
+    }
+  },
+  {
+    "context": {
+      "path": "BackButton",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "EF6VM",
+      "node": "z68ze",
+      "fingerprint": "a0d43ffc4489928720a55713df0d3abf280fdeb6"
+    }
+  }
+]
