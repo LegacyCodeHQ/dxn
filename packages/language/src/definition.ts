@@ -23,6 +23,13 @@ export interface Span {
   length: number;
 }
 
+// A span of the source that refers to a declaration, and the name in that
+// declaration it refers to.
+interface Link {
+  from: Span;
+  to: Located;
+}
+
 // Where the name at a line and a column of a source, both from one, is
 // declared: the name in its declaration, and the name it goes from, whole, or
 // the part of a path the column is in. Nothing for a declaration itself, a
@@ -32,40 +39,77 @@ export function definition(
   line: number,
   column: number,
 ): { from: Span; to: Located } | undefined {
+  return links(source).find(({ from }) => covers(from, line, column));
+}
+
+// Where the name at a line and a column of a source, both from one, is
+// declared, and every place it is used, in the order they are written: from
+// the declaration itself, or from any place it is used. Nothing at a keyword,
+// or a name the file does not declare.
+export function usages(
+  source: string,
+  line: number,
+  column: number,
+): { declaration: Span; usages: Span[] } | undefined {
+  const all = links(source);
+  const lines = source.split("\n");
+  const span = (at: Located): Span => ({
+    line: at.line,
+    column: at.column,
+    length: wordAt(lines, at.line, at.column).length,
+  });
+  const target =
+    all.find(({ from }) => covers(from, line, column))?.to ??
+    all.map(({ to }) => to).find((to) => covers(span(to), line, column));
+  if (target === undefined) return undefined;
+  return {
+    declaration: span(target),
+    usages: all.filter(({ to }) => to === target).map(({ from }) => from),
+  };
+}
+
+const covers = (span: Span, line: number, column: number) =>
+  span.line === line && column >= span.column && column <= span.column + span.length;
+
+// The word written at a line and a column: a name, a path of names, or a
+// profile with its modifiers.
+const wordAt = (lines: string[], line: number, column: number) =>
+  (lines[line - 1] ?? "").slice(column - 1).match(/^[A-Za-z0-9.+-]+/)?.[0] ?? "";
+
+// Every span of the source that refers to a declaration, in the order they are
+// written, each with the name it refers to; a path into children, a span for
+// each of its parts.
+function links(source: string): Link[] {
   const file = parse(source);
   const lines = source.split("\n");
+  const declared = declarations(file);
+  const result: Link[] = [];
   for (const reference of references(file)) {
     const { at } = reference;
-    if (at.line !== line) continue;
-    const written = (lines[line - 1] ?? "").slice(at.column - 1).match(/^[A-Za-z0-9.+-]+/)?.[0];
-    if (written === undefined || column < at.column || column > at.column + written.length) {
-      continue;
-    }
+    const written = wordAt(lines, at.line, at.column);
+    if (written === "") continue;
+    const whole = { line: at.line, column: at.column, length: written.length };
     if (reference.declared !== undefined) {
-      const to = declarations(file).get(reference.declared);
-      return to === undefined
-        ? undefined
-        : { from: { line, column: at.column, length: written.length }, to };
+      const to = declared.get(reference.declared);
+      if (to !== undefined) result.push({ from: whole, to });
     }
     if (reference.of !== undefined) {
-      const declaration = declarations(file).get(reference.of) as Enum | undefined;
+      const declaration = declared.get(reference.of) as Enum | undefined;
       const to = declaration?.values?.find(({ name }) => name === at.name);
-      return to === undefined
-        ? undefined
-        : { from: { line, column: at.column, length: written.length }, to };
+      if (to !== undefined) result.push({ from: whole, to });
     }
     if (reference.path !== undefined) {
-      // The part of the path the column is in: a child on the way, or its end.
       const parts = written.split(".");
-      const before = written.slice(0, column - at.column).split(".").length - 1;
-      const to = along(file, reference.path.from, parts, before, reference.path.to);
-      const start =
-        at.column + parts.slice(0, before).reduce((sum, part) => sum + part.length + 1, 0);
-      const length = parts[before]?.length ?? 0;
-      return to === undefined ? undefined : { from: { line, column: start, length }, to };
+      let column = at.column;
+      for (const [index, part] of parts.entries()) {
+        const to = along(file, reference.path.from, parts, index, reference.path.to);
+        if (to !== undefined)
+          result.push({ from: { line: at.line, column, length: part.length }, to });
+        column += part.length + 1;
+      }
     }
   }
-  return undefined;
+  return result.sort((a, b) => a.from.line - b.from.line || a.from.column - b.from.column);
 }
 
 // Follows a path from a type through its children to its part at an index:
@@ -165,7 +209,9 @@ function references(file: ParseResult): Reference[] {
       const inner = file.types.find(({ name }) => name === child.type.name);
       for (const binding of child.bindings ?? []) {
         if (inner !== undefined) own(inner, binding.state, "state");
-        own(type, binding.from, "state");
+        // A binding takes its values from a state, or a dimension.
+        if (/^[A-Z]/.test(binding.from.name)) declared(binding.from);
+        else own(type, binding.from, "state");
         for (const { values, result } of binding.map ?? []) {
           for (const branch of values) value(branch, valuesOf(type, binding.from.name));
           value(result, valuesOf(inner, binding.state.name));

@@ -10,6 +10,7 @@ import {
   type MessageConnection,
   PublishDiagnosticsNotification,
   type PublishDiagnosticsParams,
+  ReferencesRequest,
   StreamMessageReader,
   StreamMessageWriter,
 } from "vscode-languageserver/node";
@@ -154,5 +155,46 @@ describe("the language server", () => {
         targetSelectionRange: { start: { line: 3, character: 9 }, end: { line: 3, character: 19 } },
       },
     ]);
+  });
+
+  it("finds where a name is used, with its declaration when the editor asks", async () => {
+    const editor = connect();
+    editors.push(editor);
+    const initialized = await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    expect(initialized.capabilities.referencesProvider).toBe(true);
+    const uri = "file:///spec/button.dxn";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: {
+        uri,
+        languageId: "dxn",
+        version: 1,
+        text: "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n  action take-focus: focus blurred -> focused\n  event press\n  on press: take-focus\n}\n",
+      },
+    });
+    await opened;
+    const range = (line: number, start: number, end: number) => ({
+      uri,
+      range: { start: { line, character: start }, end: { line, character: end } },
+    });
+    // From the action's declaration: where it is used, and the declaration too
+    // when the editor asks for it.
+    const at = { textDocument: { uri }, position: { line: 3, character: 12 } };
+    expect(
+      await editor.sendRequest(ReferencesRequest.type, {
+        ...at,
+        context: { includeDeclaration: false },
+      }),
+    ).toEqual([range(5, 12, 22)]);
+    expect(
+      await editor.sendRequest(ReferencesRequest.type, {
+        ...at,
+        context: { includeDeclaration: true },
+      }),
+    ).toEqual([range(3, 9, 19), range(5, 12, 22)]);
   });
 });

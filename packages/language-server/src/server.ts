@@ -1,4 +1,4 @@
-import { definition } from "@legacycodehq/dxn-language";
+import { definition, usages } from "@legacycodehq/dxn-language";
 import { type Connection, TextDocumentSyncKind, TextDocuments } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { diagnose } from "./diagnostics.js";
@@ -6,7 +6,7 @@ import { rangeAt } from "./range.js";
 
 // Serves dxn to an editor over a connection: the problems in each open file,
 // published when it opens and whenever it changes, and cleared when it closes;
-// and where a name in it is declared.
+// and where a name in it is declared, and where it is used.
 export function serve(connection: Connection): void {
   const documents = new TextDocuments(TextDocument);
   // Whether the editor takes a link, which names the text it goes from, so
@@ -18,6 +18,7 @@ export function serve(connection: Connection): void {
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,
         definitionProvider: true,
+        referencesProvider: true,
       },
     };
   });
@@ -47,6 +48,20 @@ export function serve(connection: Connection): void {
         targetSelectionRange: target,
       },
     ];
+  });
+  connection.onReferences(({ textDocument, position, context }) => {
+    const document = documents.get(textDocument.uri);
+    if (document === undefined) return null;
+    const found = usages(document.getText(), position.line + 1, position.character + 1);
+    if (found === undefined) return null;
+    const spans = context.includeDeclaration ? [found.declaration, ...found.usages] : found.usages;
+    return spans.map(({ line, column, length }) => ({
+      uri: textDocument.uri,
+      range: {
+        start: { line: line - 1, character: column - 1 },
+        end: { line: line - 1, character: column - 1 + length },
+      },
+    }));
   });
   documents.listen(connection);
   connection.listen();
