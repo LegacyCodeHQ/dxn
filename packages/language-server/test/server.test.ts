@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   createConnection,
   createMessageConnection,
+  DefinitionRequest,
   DidChangeTextDocumentNotification,
   DidOpenTextDocumentNotification,
   InitializeRequest,
@@ -76,5 +77,44 @@ describe("the language server", () => {
       ],
     });
     expect((await changed).diagnostics).toEqual([]);
+  });
+
+  it("goes from a name to where the file declares it", async () => {
+    const editor = connect();
+    editors.push(editor);
+    const initialized = await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    expect(initialized.capabilities.definitionProvider).toBe(true);
+
+    const uri = "file:///spec/button.dxn";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: {
+        uri,
+        languageId: "dxn",
+        version: 1,
+        text: "enum Enabled = enabled | disabled\ntype Button {\n  state enabled: Enabled\n}\n",
+      },
+    });
+    await opened;
+    // From "Enabled" in the state, to its enum: lines and characters from zero.
+    expect(
+      await editor.sendRequest(DefinitionRequest.type, {
+        textDocument: { uri },
+        position: { line: 2, character: 19 },
+      }),
+    ).toEqual({
+      uri,
+      range: { start: { line: 0, character: 5 }, end: { line: 0, character: 12 } },
+    });
+    expect(
+      await editor.sendRequest(DefinitionRequest.type, {
+        textDocument: { uri },
+        position: { line: 2, character: 2 },
+      }),
+    ).toBeNull();
   });
 });

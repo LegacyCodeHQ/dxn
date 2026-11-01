@@ -7,6 +7,8 @@ export type { ParseResult, RecordDeclaration, Type } from "./ast.js";
 export { type Cases, cases } from "./cases.js";
 // What a rule's or a child's condition compares.
 export { subjects } from "./condition.js";
+// Where a name in a source is declared, for editors.
+export { definition } from "./definition.js";
 // A field's value in a stored record, derived or as stored.
 export { fieldValue } from "./derive.js";
 // Diagnostics in stored data, by JSON path.
