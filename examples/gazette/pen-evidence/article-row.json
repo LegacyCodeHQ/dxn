@@ -1,0 +1,110 @@
+[
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "unread",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "eOT2y",
+      "fingerprint": "500db7f36189692cf0325addc7c774e50257420c"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "unread",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "AXgkd",
+      "fingerprint": "05140ba6c65f65f5fe16ea83df1cb8ac329736e8"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "unread",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "lDsob",
+      "fingerprint": "080eba7df986e798609657720fbfe50290913e12"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "read",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "T8vA9",
+      "fingerprint": "8703d1176e5acddf0c0575639ab87a64e3bc9baa"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "read",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "JiowD",
+      "fingerprint": "e0c439ce0d7a58cadfe5b3573fcf2cf4800e34ee"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "read",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "WuNhD",
+      "fingerprint": "9575e1416737b2feb7a44f82f9333d82aee3e34f"
+    }
+  }
+]

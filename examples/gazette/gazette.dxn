@@ -63,3 +63,9 @@ type NavigationBar {
 
   has back: BackButton only when kind = pushed
 }
+
+type ArticleRow {
+  enum Reading = unread | read
+
+  state reading: Reading, interaction: Touch
+}

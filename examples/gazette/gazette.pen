@@ -1324,6 +1324,292 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "u3j6f8",
+      "x": 1621,
+      "y": 0,
+      "name": "ArticleRow",
+      "reusable": true,
+      "width": 390,
+      "fill": "$surface",
+      "stroke": "#1C1B1A1F",
+      "strokeWidth": {
+        "bottom": 1
+      },
+      "gap": 4,
+      "padding": [
+        12,
+        16,
+        12,
+        8
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "nGfcG",
+          "name": "Dot slot",
+          "width": 12,
+          "padding": [
+            6,
+            0,
+            0,
+            0
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "JGIOg",
+              "name": "Unread dot",
+              "width": 8,
+              "height": 8,
+              "fill": "$accent",
+              "cornerRadius": 4
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "QhRAl",
+          "name": "Content",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 4,
+          "children": [
+            {
+              "type": "text",
+              "id": "fWDe1",
+              "name": "Meta",
+              "fill": "$text-secondary",
+              "content": "The Verge · 2h",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "g8Q9o",
+              "name": "Headline",
+              "fill": "$text-primary",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Apple unveils a quieter iPhone, built to last longer between charges",
+              "lineHeight": 1.25,
+              "fontFamily": "$font-ui",
+              "fontSize": 17,
+              "fontWeight": "600"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "V97TZ",
+      "x": 0,
+      "y": 1954,
+      "name": "Article row states",
+      "clip": true,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "W0qDO",
+          "name": "columns",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "O24jxP",
+              "name": "Corner",
+              "width": 88,
+              "height": 16
+            },
+            {
+              "type": "text",
+              "id": "J75iHm",
+              "name": "Idle column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 390,
+              "content": "Idle",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "M1efhg",
+              "name": "Hovered column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 390,
+              "content": "Hovered",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "k1qv0",
+              "name": "Pressed column",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 390,
+              "content": "Pressed",
+              "textAlign": "center",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "zHCnz",
+          "name": "unread",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "SzXvX",
+              "name": "Unread label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Unread",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "eOT2y",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread / idle",
+              "fill": "$surface",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "g8Q9o": {
+                  "fontWeight": "600",
+                  "fill": "$text-primary"
+                }
+              }
+            },
+            {
+              "id": "AXgkd",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "g8Q9o": {
+                  "fontWeight": "600",
+                  "fill": "$text-primary"
+                }
+              }
+            },
+            {
+              "id": "lDsob",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "g8Q9o": {
+                  "fontWeight": "600",
+                  "fill": "$text-primary"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "tcJ0W",
+          "name": "read",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "Z50jj",
+              "name": "Read label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Read",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "T8vA9",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read / idle",
+              "fill": "$surface",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "g8Q9o": {
+                  "fontWeight": "400",
+                  "fill": "$text-secondary"
+                }
+              }
+            },
+            {
+              "id": "JiowD",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "g8Q9o": {
+                  "fontWeight": "400",
+                  "fill": "$text-secondary"
+                }
+              }
+            },
+            {
+              "id": "WuNhD",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "g8Q9o": {
+                  "fontWeight": "400",
+                  "fill": "$text-secondary"
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
