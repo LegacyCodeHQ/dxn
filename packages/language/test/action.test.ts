@@ -406,6 +406,31 @@ expect "Space can press it" {
   });
 });
 
+describe("an expectation on an event, into a combination", () => {
+  it("fails where the change would make a combination that cannot exist", () => {
+    const link = `dimension Pointer = mouse | touch
+enum Hover = rest | hovered
+type Link needs Pointer {
+  state hover: Hover
+  hover = hovered only when Pointer = mouse
+  on key H: hover -> hovered
+}
+type Page {
+  has link: Link
+}
+expect "H hovers the link" {
+  in Page.link
+  when Pointer = touch
+  on key H
+  then hover = hovered
+}
+`;
+    assert(problems(link)).toEqual([
+      "11:8: expectation-failed: H hovers the link: on key H, Page.link on Pointer touch would have hover = hovered, which it cannot have there",
+    ]);
+  });
+});
+
 describe("a change written in a trigger", () => {
   it("changes one of the type's own states to a value, with no action to name", () => {
     const source = pressing(

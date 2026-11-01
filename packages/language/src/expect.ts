@@ -194,14 +194,21 @@ function checkOne(
         `nothing happens on ${event} to ${element}${condition === "" ? "" : ` when ${condition}`}`,
       );
     }
-    return {
-      combination: {
-        ...combination,
-        states: { ...combination.states, [action.state.name]: action.to.name },
-      },
-      focus: trigger.focus?.name,
+    const changed = {
+      ...combination,
+      states: { ...combination.states, [action.state.name]: action.to.name },
     };
+    // The change must lead to a combination the element can have there.
+    if (!expand(file, element, given).some((candidate) => same(candidate, changed))) {
+      return failed(
+        `on ${event}, ${where(element, combination)} would have ${action.state.name} = ${action.to.name}, which it cannot have there`,
+      );
+    }
+    return { combination: changed, focus: trigger.focus?.name };
   };
+  // Two combinations alike in everything: profiles, dimensions, parents and
+  // states.
+  const same = (a: Combination, b: Combination) => JSON.stringify(a) === JSON.stringify(b);
   let picked = 0;
   for (const element of applicable) {
     const before = expand(file, element, given).filter((combination) =>
