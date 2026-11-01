@@ -47,6 +47,10 @@ as `dxn validate` prints it. The count
 follows the stored records and the designs they point at as they change on
 disk.
 
+
+Each count starts with a mark: `●` every look has evidence, `◐` some do, `○`
+none does, and `◌` something needs a decision: a drawing stale or gone, a
+record outdated, or records with problems.
 ## Formatting
 
 A `.dxn` file is formatted when it is saved, the one way `dxn fmt` writes it:

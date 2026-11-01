@@ -199,35 +199,59 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
     return stoppedBy(file, record, group.problems, readsOf(record));
   };
   const hints = counted.flatMap((place) => {
-    const parts = place.records.map((each) => {
+    const parts = place.records.flatMap((each): Part[] => {
       const problems = stopped.get(each.record);
-      if (problems !== undefined)
-        return stoppedBy(file, each.record, problems, readsOf(each.record));
-      const count = each.outdated.length === 0 ? countOf(each) : outdatedAt(each);
+      if (problems !== undefined) {
+        return [
+          { ...stoppedBy(file, each.record, problems, readsOf(each.record)), mark: "◌" as const },
+        ];
+      }
+      const outdated = each.outdated.length > 0;
+      const count = outdated ? outdatedAt(each) : countOf(each);
       const set = apartAt(place.line, place.column, each.record);
-      if (set === undefined) return count;
-      const without = set.label.slice(`${each.record}: `.length);
-      return {
-        label: `${count.label} · ${without}`,
-        details: `${count.details}\n\n${set.details}`,
-      };
+      // An element that never appears has nothing to show.
+      if (each.combinations === 0 && !outdated && set === undefined) return [];
+      const mark = outdated || each.stale > 0 || each.gone > 0 ? "◌" : moon(each);
+      if (set === undefined) return [{ ...count, mark }];
+      const label = `${count.label} · ${set.label.slice(`${each.record}: `.length)}`;
+      const [, ...rest] = count.details.split("\n\n");
+      return [{ label, details: [label, ...rest, set.details].join("\n\n"), mark: "◌" }];
     });
     if (parts.length === 0) return [];
-    return [
-      {
-        line: place.line,
-        column: place.column,
-        label: parts.map(({ label }) => label).join(" · "),
-        details: parts.map(({ details }) => details).join("\n\n"),
-      },
-    ];
+    return [{ line: place.line, column: place.column, ...joined(parts) }];
   });
   // Set-apart records about a type no tree has at its root, at the type.
   for (const { at, record, problems } of shown.values()) {
-    const { label, details } = stoppedBy(file, record, problems, readsOf(record));
-    hints.push({ line: at.line, column: at.column, label, details });
+    const part = { ...stoppedBy(file, record, problems, readsOf(record)), mark: "◌" as const };
+    hints.push({ line: at.line, column: at.column, ...joined([part]) });
   }
   return hints.sort((a, b) => a.line - b.line || a.column - b.column);
+}
+
+// What a hint shows of one record, and its mark: ● every look present, ◐
+// some, ○ none, ◌ something needing a decision, stale, gone, outdated or
+// with problems.
+interface Part {
+  label: string;
+  details: string;
+  mark: "●" | "◐" | "○" | "◌";
+}
+
+// How much of an element has evidence, as a moon.
+const moon = ({ present, combinations }: Progress["records"][number]): Part["mark"] =>
+  present === combinations ? "●" : present === 0 ? "○" : "◐";
+
+// A hint's label and details from its records', each marked, the details
+// starting with the line the label gives of it.
+function joined(parts: Part[]): { label: string; details: string } {
+  const marked = parts.map(({ label, details, mark }) => ({
+    label: `${mark} ${label}`,
+    details: details.startsWith(label) ? `${mark} ${details}` : details,
+  }));
+  return {
+    label: marked.map(({ label }) => label).join(" · "),
+    details: marked.map(({ details }) => details).join("\n\n"),
+  };
 }
 
 // A record's evidence at a place: its count, "PenEvidence 4 of 6, 1 stale",

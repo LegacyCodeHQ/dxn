@@ -79,6 +79,10 @@ as an inlay hint, which Zed only shows when its settings turn them on:
 The count follows the stored records and the designs they point at as they
 change on disk.
 
+
+Each count starts with a mark: `●` every look has evidence, `◐` some do, `○`
+none does, and `◌` something needs a decision: a drawing stale or gone, a
+record outdated, or records with problems.
 ## Indenting as you type and paste
 
 `languages/dxn/indents.scm` tells Zed what is inside each pair of braces and

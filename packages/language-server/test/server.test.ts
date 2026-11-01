@@ -895,8 +895,8 @@ describe("the language server", () => {
         return contents?.value;
       };
       expect([await hints(), await hovered()]).toEqual([
-        [[{ line: 1, character: 13 }, "PenEvidence 1 of 2", true]],
-        "PenEvidence 1 of 2\n\nMissing:\n- Button: style = plain",
+        [[{ line: 1, character: 13 }, "◐ PenEvidence 1 of 2", true]],
+        "◐ PenEvidence 1 of 2\n\nMissing:\n- Button: style = plain",
       ]);
 
       // The drawing changed: once the editor hears, its evidence is stale.
@@ -907,8 +907,8 @@ describe("the language server", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect([refreshed.length > 0, await hints(), await hovered()]).toEqual([
         true,
-        [[{ line: 1, character: 13 }, "PenEvidence 0 of 2, 1 stale", true]],
-        "PenEvidence 0 of 2, 1 stale\n\nMissing:\n- Button: style = plain\n\nStale:\n- Button: style = filled",
+        [[{ line: 1, character: 13 }, "◌ PenEvidence 0 of 2, 1 stale", true]],
+        "◌ PenEvidence 0 of 2, 1 stale\n\nMissing:\n- Button: style = plain\n\nStale:\n- Button: style = filled",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -958,11 +958,11 @@ describe("the language server", () => {
         [
           [
             { line: 1, character: 13 },
-            "PenEvidence 1 of 2 · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
+            "◌ PenEvidence 1 of 2 · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
           ],
         ],
         [
-          "PenEvidence 1 of 2",
+          "◌ PenEvidence 1 of 2 · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
           "",
           "Missing:",
           "- Button: style = secondary",
@@ -994,7 +994,7 @@ describe("the language server", () => {
         range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
       });
       expect(again?.map(({ label }) => label)).toEqual([
-        "PenEvidence 1 of 2 · 1 of 2 records still says style = plain, which Style no longer has (primary, secondary)",
+        "◌ PenEvidence 1 of 2 · 1 of 2 records still says style = plain, which Style no longer has (primary, secondary)",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1054,9 +1054,9 @@ describe("the language server", () => {
       });
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect([before, details, await label()]).toEqual([
-        ["PenEvidence 1 of 4 · 2 outdated: hover added"],
+        ["◌ PenEvidence 1 of 4 · 2 outdated: hover added"],
         [
-          "PenEvidence 1 of 4 · 2 outdated: hover added",
+          "◌ PenEvidence 1 of 4 · 2 outdated: hover added",
           "",
           "2 records are outdated: hover was added to Button after they were recorded, so they do not say which hover they show. Add each one's hover value to count it again.",
           "",
@@ -1069,7 +1069,7 @@ describe("the language server", () => {
           "- Button: style = primary, hover = hovered",
           "- Button: style = secondary, hover = hovered",
         ].join("\n"),
-        ["PenEvidence 1 of 4 · 1 of 2 records still says press, a state Button no longer has"],
+        ["◌ PenEvidence 1 of 4 · 1 of 2 records still says press, a state Button no longer has"],
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1107,10 +1107,52 @@ describe("the language server", () => {
         range: { start: { line: 0, character: 0 }, end: { line: 14, character: 0 } },
       });
       expect(hints?.map(({ position, label }) => [position.line, label])).toEqual([
-        [1, "PenEvidence 1 of 2"],
-        [4, "PenEvidence 1 of 2"],
-        [7, "PenEvidence 0 of 1"],
-        [8, "PenEvidence 1 of 2"],
+        [1, "◐ PenEvidence 1 of 2"],
+        [4, "◐ PenEvidence 1 of 2"],
+        [7, "○ PenEvidence 0 of 1"],
+        [8, "◐ PenEvidence 1 of 2"],
+      ]);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
+  it("marks each hint by how much has evidence: all of it, some or none", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-marks-"));
+    try {
+      const text =
+        "enum Style = plain | bold\ntype Back {\n  state style: Style\n}\ntype Bar {\n  has back: Back\n}\nrecord PenEvidence {\n  source: PenNode\n}\nactor DesignAgent records PenEvidence\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      writeFileSync(join(folder, "design.txt"), "drawn\n");
+      const fingerprint = createHash("sha1").update("blob 6\0drawn\n").digest("hex");
+      const entry = (style: string) =>
+        `{ "context": { "path": "Back", "dimensions": {}, "parents": {}, "states": { "style": "${style}" } }, "actor": "DesignAgent", "source": { "file": "design.txt", "frame": "f", "fingerprint": "${fingerprint}" } }`;
+      mkdirSync(join(folder, "pen-evidence"));
+      writeFileSync(
+        join(folder, "pen-evidence", "back.json"),
+        `[${entry("plain")}, ${entry("bold")}]`,
+      );
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const editor = connect();
+      editors.push(editor);
+      await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+      });
+      const opened = published(editor);
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await opened;
+      const hints = await editor.sendRequest(InlayHintRequest.type, {
+        textDocument: { uri },
+        range: { start: { line: 0, character: 0 }, end: { line: 14, character: 0 } },
+      });
+      expect(hints?.map(({ position, label }) => [position.line, label])).toEqual([
+        [1, "● PenEvidence 2 of 2"],
+        [4, "○ PenEvidence 0 of 1"],
+        [5, "● PenEvidence 2 of 2"],
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
