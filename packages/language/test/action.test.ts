@@ -589,3 +589,48 @@ expect "Space lights both" {
     assert(problems(rule)).toEqual([]);
   });
 });
+
+describe("an expectation on a child's state, after an event", () => {
+  const rule = (trigger: string, then: string) => `${several(trigger)}
+expect "Escape closes the menu and the toggle takes focus" {
+  in Page.menu
+  when menu = open
+  on key Escape
+  then ${then}
+}
+`;
+
+  it("checks what the event changes in a child, by the child's path", () => {
+    assert([
+      problems(
+        rule("on key Escape: close, toggle.take-focus", "menu = closed, toggle.ring = visible"),
+      ),
+      problems(
+        rule("on key Escape: close, toggle.take-focus", "menu = closed, toggle.ring = hidden"),
+      ),
+      problems(rule("on key Escape: close", "menu = closed, toggle.ring = visible")),
+    ]).toEqual([
+      [],
+      [
+        "23:8: expectation-failed: Escape closes the menu and the toggle takes focus: on key Escape, toggle.ring becomes visible, not hidden",
+      ],
+      [
+        "23:8: expectation-failed: Escape closes the menu and the toggle takes focus: on key Escape, toggle.ring does not change",
+      ],
+    ]);
+  });
+
+  it("names a child's state that is one, with one of its values", () => {
+    assert([
+      problems(rule("on key Escape: close, toggle.take-focus", "toggle.rng = visible")),
+      problems(rule("on key Escape: close, toggle.take-focus", "toggle.ring = vsible")),
+    ]).toEqual([
+      [
+        "23:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: no element in Page.menu has toggle.rng",
+      ],
+      [
+        '23:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: "vsible" is not a value of toggle.ring (hidden, visible)',
+      ],
+    ]);
+  });
+});

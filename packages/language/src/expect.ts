@@ -1,4 +1,4 @@
-import type { Expectation, ParseResult, Trigger } from "./ast.js";
+import type { Child, Expectation, ParseResult, Trigger, Type } from "./ast.js";
 import { eventText } from "./check.js";
 import { holds } from "./condition.js";
 import { placement } from "./evaluate.js";
@@ -85,9 +85,18 @@ function checkOne(
     }
     return combination.parents[key] ?? combination.states[key];
   };
+  // A child's state, by its path from the element, "<child>….<state>": its
+  // state, which only an event's changes say anything about.
+  const childState = (element: string, key: string) => {
+    const parts = key.split(".");
+    if (parts.length < 2) return undefined;
+    const at = childTypeAt(file, placement(file, element).target, parts.slice(0, -1));
+    return at?.states.find(({ name }) => name === parts.at(-1));
+  };
   const has = (element: string, key: string) => {
     const place = placement(file, element);
     if (key === "profile") return profiles.length > 0;
+    if (on !== undefined && childState(element, key) !== undefined) return true;
     if (/^[A-Z]/.test(key)) return place.dimensions.includes(key);
     return (
       place.parents.some((parent) => parent.key === key) ||
@@ -109,7 +118,8 @@ function checkOne(
     const place = placement(file, element);
     const state =
       place.parents.find((parent) => parent.key === key)?.state ??
-      place.target.states.find(({ name }) => name === key);
+      place.target.states.find(({ name }) => name === key) ??
+      childState(element, key);
     return (
       file.enums.find(({ name }) => name === state?.enum.name)?.values.map(({ name }) => name) ?? []
     );
@@ -151,7 +161,7 @@ function checkOne(
   // After the event: the element's own action it triggers in the
   // combination applied, and where focus went.
   const after = (element: string, combination: Combination) => {
-    if (on === undefined) return { combination, focus: undefined };
+    if (on === undefined) return { combination, focus: undefined, children: {} };
     const event = eventText(on);
     const type = placement(file, element).target;
     // The changes of the element's own a trigger makes here: a named action
@@ -190,7 +200,7 @@ function checkOne(
       (values.every(({ key, value }) => valueAt(combination, key.name) === value.name) &&
         !expectation.values.some(({ key }) => key.name === "focus"));
     if ((trigger === undefined || action === undefined) && unchanged) {
-      return { combination, focus: undefined };
+      return { combination, focus: undefined, children: {} };
     }
     if (trigger === undefined || action === undefined) {
       const condition = expectation.when
@@ -212,7 +222,17 @@ function checkOne(
         `on ${event}, ${where(element, combination)} would have ${action.state.name} = ${action.to.name}, which it cannot have there`,
       );
     }
-    return { combination: changed, focus: trigger.focus?.name };
+    // What it changes in a child, by the child's action: "<child>.<state>".
+    const children: Record<string, string> = {};
+    for (const effect of trigger.does) {
+      if (effect.kind !== "action" || !effect.name.name.includes(".")) continue;
+      const parts = effect.name.name.split(".");
+      const owner = parts.slice(0, -1).join(".");
+      const at = childTypeAt(file, type, parts.slice(0, -1));
+      const done = at?.actions.find(({ name }) => name.name === parts.at(-1));
+      if (done !== undefined) children[`${owner}.${done.state.name}`] = done.to.name;
+    }
+    return { combination: changed, focus: trigger.focus?.name, children };
   };
   // Two combinations alike in everything: profiles, dimensions, parents and
   // states.
@@ -225,11 +245,13 @@ function checkOne(
     picked += before.length;
     const chosen: Combination[] = [];
     const focused: (string | undefined)[] = [];
+    const inChildren: Record<string, string>[] = [];
     for (const combination of before) {
       const changed = after(element, combination);
       if ("code" in changed) return changed;
       chosen.push(changed.combination);
       focused.push(changed.focus);
+      inChildren.push(changed.children);
     }
     if (on !== undefined) {
       const focus = expectation.values.find(({ key }) => key.name === "focus");
@@ -241,10 +263,27 @@ function checkOne(
         );
       }
     }
+    // A child's state after the event is what the event changed it to.
+    const ofChild = (key: string) =>
+      valueAt(chosen[0] ?? ({} as Combination), key) === undefined &&
+      childState(element, key) !== undefined;
+    if (expectation.assertion === "then" && on !== undefined) {
+      for (const changed of inChildren) {
+        for (const { key, value } of values.filter(({ key }) => ofChild(key.name))) {
+          const became = changed[key.name];
+          if (became === undefined) {
+            return failed(`on ${eventText(on)}, ${key.name} does not change`);
+          }
+          if (became !== value.name) {
+            return failed(`on ${eventText(on)}, ${key.name} becomes ${became}, not ${value.name}`);
+          }
+        }
+      }
+    }
     if (expectation.assertion === "then") {
       for (const combination of chosen) {
         const wrong = values.find(
-          ({ key, value }) => valueAt(combination, key.name) !== value.name,
+          ({ key, value }) => !ofChild(key.name) && valueAt(combination, key.name) !== value.name,
         );
         if (wrong !== undefined) {
           return failed(
@@ -276,4 +315,14 @@ function checkOne(
     return empty(`no combination of ${path} has what its when names`);
   }
   return undefined;
+}
+
+// The type of a child, by its path from a type.
+function childTypeAt(file: ParseResult, type: Type, path: string[]): Type | undefined {
+  let at: Type | undefined = type;
+  for (const part of path) {
+    const child: Child | undefined = at?.children.find(({ name }) => name === part);
+    at = file.types.find(({ name }) => name === child?.type.name);
+  }
+  return at;
 }

@@ -1495,6 +1495,26 @@ expect "Escape closes the menu and returns focus to its button" {
 }
 ```
 
+After an event, `then` can also name a child's state by its path, and it is
+checked against what the event's trigger changes in that child, through the
+child's actions:
+
+```
+type Menu {
+  has toggle: Button
+  on key Escape: close, toggle.take-focus
+}
+
+expect "Escape closes the menu and the toggle takes focus" {
+  in Page.menu
+  when menu = open
+  on key Escape
+  then menu = closed, toggle.ring = visible
+}
+```
+
+A child's state the event does not change fails the rule, saying so.
+
 Where the event fires nothing in a combination picked, the element stays as
 it was, and the rule is checked on it unchanged: `when focus = blurred`, `on
 key Space`, `then press = released` holds for the button above. Where that
