@@ -37,7 +37,7 @@ environment Device = Breakpoint x Pointer x Keyboard
 profile Phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboard }
 profile TabletPortrait: Device { Breakpoint = sm, Pointer = touch, Keyboard = no-keyboard }
 profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
-modifier magic-keyboard on TabletPortrait { Pointer = mouse, Keyboard = keyboard }
+modifier MagicKeyboard on TabletPortrait { Pointer = mouse, Keyboard = keyboard }
 `);
 
 // Each row as [profiles, the parents' states, the child's states].
@@ -68,12 +68,12 @@ describe("evaluating a child in place", () => {
         { hover: ["rest"], focus: ["blurred"], expanded: ["open"] },
       ],
       [
-        ["TabletPortrait+magic-keyboard"],
+        ["TabletPortrait+MagicKeyboard"],
         { layout: "compact", "menu.menu": "closed" },
         { hover: ["rest", "hovered"], focus: ["blurred", "focused"], expanded: ["closed"] },
       ],
       [
-        ["TabletPortrait+magic-keyboard"],
+        ["TabletPortrait+MagicKeyboard"],
         { layout: "compact", "menu.menu": "open" },
         { hover: ["rest", "hovered"], focus: ["blurred", "focused"], expanded: ["open"] },
       ],
@@ -93,7 +93,7 @@ describe("evaluating a child in place", () => {
     expect(rows("Toolbar.menu.panel").map(([profiles, parents]) => [profiles, parents])).toEqual([
       [["Phone"], { layout: "compact", "menu.menu": "open" }],
       [["TabletPortrait"], { layout: "compact", "menu.menu": "open" }],
-      [["TabletPortrait+magic-keyboard"], { layout: "compact", "menu.menu": "open" }],
+      [["TabletPortrait+MagicKeyboard"], { layout: "compact", "menu.menu": "open" }],
     ]);
   });
 

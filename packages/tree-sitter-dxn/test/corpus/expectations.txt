@@ -33,7 +33,7 @@ Some, with a profile a modifier makes
 
 expect "A Tablet link can be hovered and focused at once" {
   in ArticlePage.toolbar.links.blog
-  when profile = Tablet+magic-keyboard, Theme = dark
+  when profile = Tablet+MagicKeyboard, Theme = dark
   some hover = hovered, focus = focused
 }
 

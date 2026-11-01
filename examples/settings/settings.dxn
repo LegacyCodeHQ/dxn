@@ -82,8 +82,8 @@ environment Device = Width x Pointer
 profile Phone: Device { Width = narrow, Pointer = touch }
 profile Laptop: Device { Width = wide, Pointer = mouse }
 
-# A trackpad, for a Phone in a case that has one.
-modifier trackpad on Phone { Pointer = mouse }
+# A Trackpad, for a Phone in a case that has one.
+modifier Trackpad on Phone { Pointer = mouse }
 
 # Evidence: who looked at one element in one combination, stored in
 # evidence/, next to this file.

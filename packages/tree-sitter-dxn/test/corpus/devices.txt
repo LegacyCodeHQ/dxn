@@ -53,7 +53,7 @@ profile Laptop: Device {
 A modifier on several profiles
 ================================================================================
 
-modifier magic-keyboard on Tablet, Phone {
+modifier MagicKeyboard on Tablet, Phone {
   Pointer = mouse, Keyboard = keyboard
 }
 

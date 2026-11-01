@@ -129,9 +129,10 @@ can list every one and tell you which you have not covered. An open set, like
 Two rules keep enums unambiguous:
 
 - **An enum's name starts with a capital letter.** In this language, a name
-  for a _set of possibilities_ is capitalized, as is a profile's or an
-  actor's, and a name for a _single thing_ (a value, a state) starts with a
-  lowercase letter. You can tell which one you are reading at a glance.
+  for a _set of possibilities_ is capitalized, as is every other name
+  declared at the top of a file (a profile, a modifier, an actor), and a name
+  for a _single thing_ inside one (a value, a state) starts with a lowercase
+  letter. You can tell which one you are reading at a glance.
 - **Each value appears once,** and each name is declared once in the file.
 
 ## Types and states
@@ -876,12 +877,12 @@ keyboard, and the wordmark can be hovered and focused on it. That is not a new
 device, and it fits more than one: it is a **modifier**.
 
 ```
-modifier magic-keyboard on Tablet {
+modifier MagicKeyboard on Tablet {
   Pointer = mouse, Keyboard = keyboard
 }
 ```
 
-A modifier's name is lowercase. After `on` come the
+A modifier's name is capitalized, like a profile's. After `on` come the
 profiles it fits, split by commas, and in braces the dimensions it sets, as in
 a profile; the dimensions it does not set keep the profile's values. For each
 profile it is on, it makes one more, named `<profile>+<modifier>`, and the
@@ -891,14 +892,14 @@ matrix has a row for it:
 | profiles                      | Pointer | Keyboard    | hover         | focus            |
 | ----------------------------- | ------- | ----------- | ------------- | ---------------- |
 | Phone, Tablet                 | touch   | no-keyboard | rest          | blurred          |
-| Laptop, Tablet+magic-keyboard | mouse   | keyboard    | rest, hovered | blurred, focused |
+| Laptop, Tablet+MagicKeyboard | mouse   | keyboard    | rest, hovered | blurred, focused |
 ```
 
 A tablet with the magic keyboard has the same values as the laptop, so the
 two are one combination, and share a row that names them both. Nothing about
 either is lost: both stay declared, and a context still names the one profile
 its evidence was recorded on, `"profile": "Laptop"` or
-`"profile": "Tablet+magic-keyboard"`, which then counts for the whole row. If
+`"profile": "Tablet+MagicKeyboard"`, which then counts for the whole row. If
 the two ever differ, the row splits, and each piece of evidence stays with the
 profile it named. In JSON, each row of `dxn states` lists its `profiles`.
 
@@ -907,7 +908,7 @@ of their values, and is on profiles that exist. One that changes nothing on a
 profile it is on is a warning, since that profile already exists:
 
 ```
-wordmark.dxn:20:19: warning: unchanged-profile: magic changes nothing on Laptop, which already has Keyboard = keyboard
+wordmark.dxn:20:19: warning: unchanged-profile: Magic changes nothing on Laptop, which already has Keyboard = keyboard
 ```
 
 ## Alike: what cannot be told apart
@@ -1306,7 +1307,7 @@ Missing, Stale and Gone, in the words a context would use:
 ```
 Missing:
   ArticlePage: current = blog
-  ArticlePage.toolbar.menu on TabletPortrait, TabletPortrait+magic-keyboard with toolbar.layout = compact: menu = closed
+  ArticlePage.toolbar.menu on TabletPortrait, TabletPortrait+MagicKeyboard with toolbar.layout = compact: menu = closed
 ```
 
 With `--json`, every count is a number, and each path lists the combinations
@@ -1505,7 +1506,7 @@ element by its path; with `and below`, every element under it too, each that
 has every key the rule names. `when` picks its combinations by the keys a
 context has: `profile`, a dimension, one of its states, or a parent's state
 by its key in place. A profile a modifier makes is named as `dxn states`
-names it: `when profile = TabletPortrait+magic-keyboard`. Then one
+names it: `when profile = TabletPortrait+MagicKeyboard`. Then one
 assertion:
 
 - **then**: every combination picked has these values;
@@ -1683,7 +1684,7 @@ case was drawn in, and later the rendering in the code.
 | profile     | `Laptop`                      | capital letter, then letters and digits             |
 | child       | `toggle`                      | lowercase letter                                    |
 | action      | `close`                       | lowercase letter                                    |
-| modifier    | `magic-keyboard`              | lowercase letter                                    |
+| modifier    | `MagicKeyboard`               | capital letter, then letters and digits             |
 | field       | `source`                      | lowercase letter                                    |
 | value       | `rest`, `no-keyboard`, `19px` | a letter or digit, then letters, digits and hyphens |
 
@@ -1738,64 +1739,64 @@ comment     = "#" to the end of the line
 
 ### Diagnostics
 
-| Code                                                                                                        | Severity | When                                                                                             |
-| ----------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
-| `syntax-error`                                                                                              | error    | the text does not follow the grammar                                                             |
-| `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name`, `actor-name`, `profile-name` | error    | the name does not start with a capital letter, or has more than letters and digits               |
-| `state-name`, `modifier-name`, `field-name`, `child-name`                                                   | error    | the name does not start with a lowercase letter                                                  |
-| `action-name`                                                                                               | error    | an action's name does not start with a lowercase letter                                          |
-| `duplicate-name`                                                                                            | error    | a name is declared twice in the file, or an expectation's title                                  |
-| `duplicate-value`                                                                                           | error    | a value appears twice in an enum, dimension, condition or `when`                                 |
-| `duplicate-state`                                                                                           | error    | a type has two states with one name                                                              |
-| `duplicate-rule`                                                                                            | error    | a state value has two rules; the message gives the one rule that joins them                      |
-| `duplicate-dimension`                                                                                       | error    | a dimension appears twice in a type's needs, an environment, a profile or a modifier             |
-| `unknown-enum`                                                                                              | error    | a state's values come from something that is not an enum                                         |
-| `unknown-dimension`                                                                                         | error    | a name used as a dimension is not one                                                            |
-| `unknown-state`                                                                                             | error    | a rule, a child's condition, a binding, a `provides` or an action names a state it does not have |
-| `unknown-value`                                                                                             | error    | a value is not one of its enum's or dimension's                                                  |
-| `unneeded-dimension`                                                                                        | error    | a rule, a `when`, a child condition or an event uses a dimension its type does not need          |
-| `incomplete-when`                                                                                           | error    | a `when` leaves out a value of its dimension                                                     |
-| `repeated-comparison`                                                                                       | error    | a dimension or state is compared twice in one `and`                                              |
-| `impossible-condition`                                                                                      | error    | a rule's or a child's condition is never true                                                    |
-| `vacuous-condition`                                                                                         | warning  | a rule's or a child's condition is always true                                                   |
-| `alike-one-value`                                                                                           | error    | an `alike` with `in` names one value, which is alike only with itself                            |
-| `rule-on-derived`                                                                                           | error    | a rule is on a state that a `when` or a value decides, or that is received                       |
-| `rule-cycle`                                                                                                | error    | a state depends on itself through rules' conditions on other states                              |
-| `unknown-field`                                                                                             | error    | a derived field's `when` is on a field the record does not have                                  |
-| `unknown-environment`                                                                                       | error    | a profile's environment is not one                                                               |
-| `incomplete-profile`                                                                                        | error    | a profile leaves out a dimension of its environment                                              |
-| `mixed-profiles`                                                                                            | error    | profiles are instances of different environments                                                 |
-| `unknown-profile`                                                                                           | error    | a modifier is on a profile that is not one                                                       |
-| `duplicate-profile`                                                                                         | error    | a modifier lists a profile twice                                                                 |
-| `unchanged-profile`                                                                                         | warning  | a modifier changes nothing on a profile it is on                                                 |
-| `duplicate-field`                                                                                           | error    | a record has two fields with one name                                                            |
-| `unknown-type`                                                                                              | error    | a field's type is not an enum, a record or a scalar, or a child's type is not a type             |
-| `recursive-record`                                                                                          | error    | a record contains itself                                                                         |
-| `duplicate-child`                                                                                           | error    | a type has two children, or a child and a state, with one name                                   |
-| `recursive-type`                                                                                            | error    | a type contains itself through its children                                                      |
-| `duplicate-binding`                                                                                         | error    | a binding sets a child's state twice                                                             |
-| `binding-mismatch`                                                                                          | error    | a binding's two states take their values from different enums                                    |
-| `bound-derived`                                                                                             | error    | a binding sets a child's state that a `when` or a value decides, or that it receives             |
-| `duplicate-provides`                                                                                        | error    | a type provides a state twice                                                                    |
-| `provides-received`                                                                                         | error    | a type provides a state it receives, not one of its own                                          |
-| `duplicate-action`                                                                                          | error    | an action has the name of another action, or of a state or a child of its type                   |
-| `bound-action`                                                                                              | error    | a binding sets a child's state that one of the child's actions changes                           |
-| `action-on-derived`                                                                                         | error    | an action changes a state that a `when` or a value decides, or that is received                  |
-| `unchanged-action`                                                                                          | error    | an action's from and to are one value, so it changes nothing                                     |
-| `unknown-child`                                                                                             | error    | an event, an action's path or a focus names a child that is not one                              |
-| `unknown-action`                                                                                            | error    | an `on` triggers an action its type does not have                                                |
-| `ambiguous-event`                                                                                           | error    | events that overlap trigger two actions that apply to one state's same value                     |
-| `duplicate-trigger`                                                                                         | error    | an event triggers the same action twice                                                          |
-| `unknown-event`                                                                                             | error    | an event in `on` is not one its type, or the child it names, declares                            |
-| `event-name`                                                                                                | error    | an event's name does not start with a lowercase letter                                           |
-| `duplicate-event`                                                                                           | error    | a type declares an event twice                                                                   |
-| `conflicting-change`                                                                                        | error    | a trigger changes one of its type's states twice                                                 |
-| `expectation-failed`                                                                                        | error    | the model breaks an expectation; the message gives a combination that breaks it                  |
-| `expectation-empty`                                                                                         | error    | an expectation picks nothing, so it would always pass                                            |
-| `derived-field`                                                                                             | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
-| `nested-context`                                                                                            | error    | a record's field is a record an actor records, which would be a second context                   |
-| `reserved-name`                                                                                             | error    | a declaration has a built-in name, or a recorded record has a field named `context` or `actor`   |
-| `unused-need`                                                                                               | warning  | a type needs a dimension that is alike throughout and that nothing in it uses                    |
+| Code                                                                                                                         | Severity | When                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `syntax-error`                                                                                                               | error    | the text does not follow the grammar                                                             |
+| `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name`, `actor-name`, `profile-name`, `modifier-name` | error    | the name does not start with a capital letter, or has more than letters and digits               |
+| `state-name`, `field-name`, `child-name`                                                                                     | error    | the name does not start with a lowercase letter                                                  |
+| `action-name`                                                                                                                | error    | an action's name does not start with a lowercase letter                                          |
+| `duplicate-name`                                                                                                             | error    | a name is declared twice in the file, or an expectation's title                                  |
+| `duplicate-value`                                                                                                            | error    | a value appears twice in an enum, dimension, condition or `when`                                 |
+| `duplicate-state`                                                                                                            | error    | a type has two states with one name                                                              |
+| `duplicate-rule`                                                                                                             | error    | a state value has two rules; the message gives the one rule that joins them                      |
+| `duplicate-dimension`                                                                                                        | error    | a dimension appears twice in a type's needs, an environment, a profile or a modifier             |
+| `unknown-enum`                                                                                                               | error    | a state's values come from something that is not an enum                                         |
+| `unknown-dimension`                                                                                                          | error    | a name used as a dimension is not one                                                            |
+| `unknown-state`                                                                                                              | error    | a rule, a child's condition, a binding, a `provides` or an action names a state it does not have |
+| `unknown-value`                                                                                                              | error    | a value is not one of its enum's or dimension's                                                  |
+| `unneeded-dimension`                                                                                                         | error    | a rule, a `when`, a child condition or an event uses a dimension its type does not need          |
+| `incomplete-when`                                                                                                            | error    | a `when` leaves out a value of its dimension                                                     |
+| `repeated-comparison`                                                                                                        | error    | a dimension or state is compared twice in one `and`                                              |
+| `impossible-condition`                                                                                                       | error    | a rule's or a child's condition is never true                                                    |
+| `vacuous-condition`                                                                                                          | warning  | a rule's or a child's condition is always true                                                   |
+| `alike-one-value`                                                                                                            | error    | an `alike` with `in` names one value, which is alike only with itself                            |
+| `rule-on-derived`                                                                                                            | error    | a rule is on a state that a `when` or a value decides, or that is received                       |
+| `rule-cycle`                                                                                                                 | error    | a state depends on itself through rules' conditions on other states                              |
+| `unknown-field`                                                                                                              | error    | a derived field's `when` is on a field the record does not have                                  |
+| `unknown-environment`                                                                                                        | error    | a profile's environment is not one                                                               |
+| `incomplete-profile`                                                                                                         | error    | a profile leaves out a dimension of its environment                                              |
+| `mixed-profiles`                                                                                                             | error    | profiles are instances of different environments                                                 |
+| `unknown-profile`                                                                                                            | error    | a modifier is on a profile that is not one                                                       |
+| `duplicate-profile`                                                                                                          | error    | a modifier lists a profile twice                                                                 |
+| `unchanged-profile`                                                                                                          | warning  | a modifier changes nothing on a profile it is on                                                 |
+| `duplicate-field`                                                                                                            | error    | a record has two fields with one name                                                            |
+| `unknown-type`                                                                                                               | error    | a field's type is not an enum, a record or a scalar, or a child's type is not a type             |
+| `recursive-record`                                                                                                           | error    | a record contains itself                                                                         |
+| `duplicate-child`                                                                                                            | error    | a type has two children, or a child and a state, with one name                                   |
+| `recursive-type`                                                                                                             | error    | a type contains itself through its children                                                      |
+| `duplicate-binding`                                                                                                          | error    | a binding sets a child's state twice                                                             |
+| `binding-mismatch`                                                                                                           | error    | a binding's two states take their values from different enums                                    |
+| `bound-derived`                                                                                                              | error    | a binding sets a child's state that a `when` or a value decides, or that it receives             |
+| `duplicate-provides`                                                                                                         | error    | a type provides a state twice                                                                    |
+| `provides-received`                                                                                                          | error    | a type provides a state it receives, not one of its own                                          |
+| `duplicate-action`                                                                                                           | error    | an action has the name of another action, or of a state or a child of its type                   |
+| `bound-action`                                                                                                               | error    | a binding sets a child's state that one of the child's actions changes                           |
+| `action-on-derived`                                                                                                          | error    | an action changes a state that a `when` or a value decides, or that is received                  |
+| `unchanged-action`                                                                                                           | error    | an action's from and to are one value, so it changes nothing                                     |
+| `unknown-child`                                                                                                              | error    | an event, an action's path or a focus names a child that is not one                              |
+| `unknown-action`                                                                                                             | error    | an `on` triggers an action its type does not have                                                |
+| `ambiguous-event`                                                                                                            | error    | events that overlap trigger two actions that apply to one state's same value                     |
+| `duplicate-trigger`                                                                                                          | error    | an event triggers the same action twice                                                          |
+| `unknown-event`                                                                                                              | error    | an event in `on` is not one its type, or the child it names, declares                            |
+| `event-name`                                                                                                                 | error    | an event's name does not start with a lowercase letter                                           |
+| `duplicate-event`                                                                                                            | error    | a type declares an event twice                                                                   |
+| `conflicting-change`                                                                                                         | error    | a trigger changes one of its type's states twice                                                 |
+| `expectation-failed`                                                                                                         | error    | the model breaks an expectation; the message gives a combination that breaks it                  |
+| `expectation-empty`                                                                                                          | error    | an expectation picks nothing, so it would always pass                                            |
+| `derived-field`                                                                                                              | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
+| `nested-context`                                                                                                             | error    | a record's field is a record an actor records, which would be a second context                   |
+| `reserved-name`                                                                                                              | error    | a declaration has a built-in name, or a recorded record has a field named `context` or `actor`   |
+| `unused-need`                                                                                                                | warning  | a type needs a dimension that is alike throughout and that nothing in it uses                    |
 
 Checking stored records with `dxn validate` reports these, after any problem with the
 JSON itself:

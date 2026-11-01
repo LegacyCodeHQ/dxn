@@ -31,8 +31,9 @@ import { scope } from "./scope.js";
 
 class ParseFailure extends Error {}
 
-// How a kind of name is written: sets of possibilities, and actors, are
-// capitalized; single things lowercase.
+// How a kind of name is written: what a file declares at its top, a set of
+// possibilities, a profile, a modifier or an actor, is capitalized; a single
+// thing inside one, lowercase.
 const capitalized = { pattern: /^[A-Z][A-Za-z0-9]*$/, rule: "a capital letter" };
 const lowercase = { pattern: /^[a-z]/, rule: "a lowercase letter" };
 
@@ -689,7 +690,7 @@ export function parse(source: string): ParseResult {
   // A modifier: "modifier <name> on <profile>, ... { <Dimension> = <value>, ... }".
   const modifierDeclaration = () => {
     next();
-    const named = name("modifier", 'a modifier name after "modifier"', lowercase);
+    const named = name("modifier", 'a modifier name after "modifier"', capitalized);
     const modifier = keep(result.modifiers, { ...named, on: [], values: [] });
     keyword("on", `"on" after ${JSON.stringify(named.name)}`);
     const profile = (after: string) => word(`a profile after ${after}`);

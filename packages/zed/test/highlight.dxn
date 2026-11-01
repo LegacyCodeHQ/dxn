@@ -48,7 +48,7 @@ type Page {
 environment Device = Breakpoint x Pointer
 profile Phone: Device { Breakpoint = base, Pointer = touch }
 profile Laptop: Device { Breakpoint = lg, Pointer = mouse }
-modifier trackpad on Phone { Pointer = mouse }
+modifier Trackpad on Phone { Pointer = mouse }
 
 actor Designer records Evidence
 record Evidence {
@@ -69,7 +69,7 @@ record Review {
 
 expect "Escape closes the open menu" {
   in Page.menu and below
-  when menu = open, profile = Phone+trackpad
+  when menu = open, profile = Phone+Trackpad
   on escape
   then menu = closed, link.focus = focused
 }

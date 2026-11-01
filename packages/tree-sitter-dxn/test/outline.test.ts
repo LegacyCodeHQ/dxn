@@ -101,7 +101,7 @@ describe("the outline", () => {
         "environment Device",
         "profile Phone",
         "profile Laptop",
-        "modifier trackpad",
+        "modifier Trackpad",
         "actor Designer",
         "record Evidence",
         "  at",

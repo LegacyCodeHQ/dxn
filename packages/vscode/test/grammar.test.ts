@@ -54,7 +54,7 @@ describe("the TextMate grammar", () => {
         "type Link needs Pointer receives current: Section {",
         "environment Device = Breakpoint x Pointer",
         "profile Phone: Device",
-        "modifier trackpad on Phone",
+        "modifier Trackpad on Phone",
         "actor Designer records Evidence",
         "record Evidence {",
       ),
@@ -107,7 +107,7 @@ describe("the TextMate grammar", () => {
         ],
         [
           "modifier keyword.control.dxn",
-          "trackpad variable.other.dxn",
+          "Trackpad entity.name.type.dxn",
           "on keyword.control.dxn",
           "Phone entity.name.type.dxn",
           "{ punctuation.bracket.dxn",
@@ -231,7 +231,7 @@ describe("the TextMate grammar", () => {
       await tokens(
         'expect "Escape closes the open menu" {',
         "  in Page.menu and below",
-        "  when menu = open, profile = Phone+trackpad",
+        "  when menu = open, profile = Phone+Trackpad",
         "  then menu = closed, link.focus = focused",
       ),
     ).toMatchInlineSnapshot(`
@@ -259,7 +259,7 @@ describe("the TextMate grammar", () => {
           "= keyword.operator.dxn",
           "Phone entity.name.type.dxn",
           "+ keyword.operator.dxn",
-          "trackpad variable.other.dxn",
+          "Trackpad entity.name.type.dxn",
         ],
         [
           "then keyword.control.dxn",

@@ -12,7 +12,7 @@ const file = (source: string) => inProject({ "wordmark.dxn": source });
 describe("dxn check", () => {
   it("says what a file declares, in one line, counting each kind it has", () => {
     const run = file(
-      "enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile Tablet: Device { Pointer = touch }\nmodifier trackpad on Tablet { Pointer = mouse }\nrecord Note {\n  hover: Hover\n}\n",
+      "enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile Tablet: Device { Pointer = touch }\nmodifier Trackpad on Tablet { Pointer = mouse }\nrecord Note {\n  hover: Hover\n}\n",
     );
     const result = run("check", "wordmark.dxn");
     expect([result.code, result.stdout, result.stderr]).toEqual([
@@ -202,11 +202,11 @@ expect "The menu is always closed" {
 
     it("prints the modifiers and records a file declares", () => {
       const run = file(
-        "enum Tool = pen-dev | code\ndimension Pointer = mouse | touch\nenvironment Device = Pointer\nprofile Tablet: Device { Pointer = touch }\nmodifier trackpad on Tablet { Pointer = mouse }\nrecord Source {\n  tool: Tool\n}\n",
+        "enum Tool = pen-dev | code\ndimension Pointer = mouse | touch\nenvironment Device = Pointer\nprofile Tablet: Device { Pointer = touch }\nmodifier Trackpad on Tablet { Pointer = mouse }\nrecord Source {\n  tool: Tool\n}\n",
       );
       const output = JSON.parse(run("check", "wordmark.dxn", "--json").stdout);
       expect([output.modifiers, output.records]).toEqual([
-        [{ name: "trackpad", on: ["Tablet"], values: { Pointer: "mouse" } }],
+        [{ name: "Trackpad", on: ["Tablet"], values: { Pointer: "mouse" } }],
         [{ name: "Source", context: false, fields: [{ name: "tool", type: "Tool" }] }],
       ]);
     });

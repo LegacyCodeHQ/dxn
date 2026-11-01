@@ -138,8 +138,8 @@ describe("expect", () => {
 
   it("picks a profile a modifier makes, by its name and the modifier's", () => {
     const rule = (profile: string) =>
-      `${model}modifier mouse on Phone {\n  Pointer = mouse\n}\nexpect "Hover with a mouse" {\n  in Page.toolbar.link\n  when profile = ${profile}\n  some hover = hovered\n}\n`;
-    expect([problems(rule("Phone+mouse")), problems(rule("Phone"))]).toEqual([
+      `${model}modifier Mouse on Phone {\n  Pointer = mouse\n}\nexpect "Hover with a mouse" {\n  in Page.toolbar.link\n  when profile = ${profile}\n  some hover = hovered\n}\n`;
+    expect([problems(rule("Phone+Mouse")), problems(rule("Phone"))]).toEqual([
       [],
       [
         "36:8: expectation-failed: Hover with a mouse: no combination of Page.toolbar.link on Phone has hover = hovered",

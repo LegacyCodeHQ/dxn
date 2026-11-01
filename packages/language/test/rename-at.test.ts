@@ -30,7 +30,7 @@ type Page {
 
 environment Device = Pointer
 profile Phone: Device { Pointer = touch }
-modifier trackpad on Phone { Pointer = mouse }
+modifier Trackpad on Phone { Pointer = mouse }
 
 enum Actor = designer | agent
 record Evidence {
@@ -38,7 +38,7 @@ record Evidence {
 
 expect "A press takes the focus" {
   in Page.menu.link
-  when hover = hovered, profile = Phone+trackpad
+  when hover = hovered, profile = Phone+Trackpad
   on press
   then focus = focused
 }
@@ -97,7 +97,7 @@ describe("renaming in the editor", () => {
     snapshot.push(renamed("action ", "take-focus", "grab-focus"));
     snapshot.push(renamed("  event ", "press", "tap"));
     snapshot.push(renamed("environment ", "Device", "Screen"));
-    snapshot.push(renamed("profile = Phone+", "trackpad", "mouse-pad"));
+    snapshot.push(renamed("profile = Phone+", "Trackpad", "MousePad"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
@@ -125,8 +125,8 @@ describe("renaming in the editor", () => {
           "profile Phone: Screen { Pointer = touch }",
         ],
         [
-          "modifier mouse-pad on Phone { Pointer = mouse }",
-          "when hover = hovered, profile = Phone+mouse-pad",
+          "modifier MousePad on Phone { Pointer = mouse }",
+          "when hover = hovered, profile = Phone+MousePad",
         ],
       ]
     `);
@@ -180,7 +180,7 @@ describe("renaming in the editor", () => {
         [
           "state pointing: Hover, focus: Focus",
           "pointing = hovered only when Pointer = mouse",
-          "when pointing = hovered, profile = Phone+trackpad",
+          "when pointing = hovered, profile = Phone+Trackpad",
         ],
         [
           ""parents": { "menu.menu": "open" }",
@@ -306,13 +306,13 @@ describe("renaming in the editor", () => {
       {
         record: "Evidence",
         path: "evidence/evidence.json",
-        source: `[\n${record("Phone")},\n${record("Phone+trackpad")}\n]\n`,
+        source: `[\n${record("Phone")},\n${record("Phone+Trackpad")}\n]\n`,
       },
     ];
     const snapshot: unknown[] = [];
     for (const [before, word, to] of [
       ["profile ", "Phone", "Handset"],
-      ["modifier ", "trackpad", "mouse-pad"],
+      ["modifier ", "Trackpad", "MousePad"],
     ] as const) {
       const result = renameAt(source, ...at(before, word), to, both);
       if ("refusal" in result) throw new Error(result.refusal);
@@ -332,20 +332,20 @@ describe("renaming in the editor", () => {
       [
         [
           "profile Handset: Device { Pointer = touch }",
-          "modifier trackpad on Handset { Pointer = mouse }",
-          "when hover = hovered, profile = Handset+trackpad",
+          "modifier Trackpad on Handset { Pointer = mouse }",
+          "when hover = hovered, profile = Handset+Trackpad",
         ],
         [
           ""profile": "Handset"",
-          ""profile": "Handset+trackpad"",
+          ""profile": "Handset+Trackpad"",
         ],
         [
-          "modifier mouse-pad on Phone { Pointer = mouse }",
-          "when hover = hovered, profile = Phone+mouse-pad",
+          "modifier MousePad on Phone { Pointer = mouse }",
+          "when hover = hovered, profile = Phone+MousePad",
         ],
         [
           ""profile": "Phone"",
-          ""profile": "Phone+mouse-pad"",
+          ""profile": "Phone+MousePad"",
         ],
       ]
     `);
@@ -633,6 +633,7 @@ actor DesignReviewRecorder records DesignReview
     snapshot.push(renamed("", "type", "kind"));
     snapshot.push(renamed("actor ", "Designer", "designer"));
     snapshot.push(renamed("profile ", "Phone", "phone"));
+    snapshot.push(renamed("modifier ", "Trackpad", "trackpad"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         ""hover" is not an enum name: a capital letter, then letters and digits",
@@ -643,6 +644,7 @@ actor DesignReviewRecorder records DesignReview
         "there is no name here to rename",
         ""designer" is not an actor name: a capital letter, then letters and digits",
         ""phone" is not a profile name: a capital letter, then letters and digits",
+        ""trackpad" is not a modifier name: a capital letter, then letters and digits",
       ]
     `);
   });

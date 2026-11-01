@@ -41,7 +41,7 @@ type Page {
 
 environment Device = Breakpoint x Pointer
 profile Phone: Device { Breakpoint = base, Pointer = touch }
-modifier trackpad on Phone { Pointer = mouse }
+modifier Trackpad on Phone { Pointer = mouse }
 
 record Source {
   section: Section
@@ -97,7 +97,7 @@ describe("definition", () => {
     snapshot.push(from("on escape: close, ", "link"));
     snapshot.push(from("on escape: close, link.", "take-focus"));
     snapshot.push(from("on link.", "activate"));
-    snapshot.push(from("modifier trackpad on ", "Phone"));
+    snapshot.push(from("modifier Trackpad on ", "Phone"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "take-focus",
@@ -135,7 +135,7 @@ describe("definition", () => {
       "dimension Pointer = mouse | touch",
       "Pointer",
     ]);
-    expect(go("modifier trackpad on ", "Phone")).toEqual([
+    expect(go("modifier Trackpad on ", "Phone")).toEqual([
       "profile Phone: Device { Breakpoint = base, Pointer = touch }",
       "Phone",
     ]);
@@ -208,7 +208,7 @@ describe("definition", () => {
     snapshot.push(go("when layout { compact -> ", "blurred"));
     // A profile's and a modifier's dimensions' values.
     snapshot.push(go("{ Breakpoint = ", "base"));
-    snapshot.push(go("trackpad on Phone { Pointer = ", "mouse"));
+    snapshot.push(go("Trackpad on Phone { Pointer = ", "mouse"));
     // A derived field's branches.
     snapshot.push(go("when kind { ", "draft"));
     snapshot.push(go("when kind { draft -> ", "home"));

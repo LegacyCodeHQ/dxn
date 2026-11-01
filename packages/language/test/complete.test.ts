@@ -93,7 +93,7 @@ describe("completions", () => {
     );
     snapshot.push(
       at(
-        "environment Device = Breakpoint x Pointer\nprofile Phone: Device { Breakpoint = base, Pointer = touch }\nmodifier trackpad on ‸",
+        "environment Device = Breakpoint x Pointer\nprofile Phone: Device { Breakpoint = base, Pointer = touch }\nmodifier Trackpad on ‸",
       ),
     );
     expect(snapshot).toMatchInlineSnapshot(`

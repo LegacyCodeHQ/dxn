@@ -29,7 +29,7 @@
   {
     "context": {
       "path": "Window.tabs.general",
-      "profile": "Phone+trackpad",
+      "profile": "Phone+Trackpad",
       "dimensions": {},
       "parents": { "current": "general" },
       "states": {
@@ -40,7 +40,7 @@
       }
     },
     "actor": "Reviewer",
-    "note": "The selected tab, focused, on a Phone with a trackpad."
+    "note": "The selected tab, focused, on a Phone with a Trackpad."
   },
   {
     "context": {

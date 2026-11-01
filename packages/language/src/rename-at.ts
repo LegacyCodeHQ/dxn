@@ -179,10 +179,7 @@ const rules: Record<string, { pattern: RegExp; text: string }> = {
     pattern: /^[a-z][A-Za-z0-9-]*$/,
     text: "a lowercase letter, then letters, digits and hyphens",
   },
-  modifier: {
-    pattern: /^[a-z][A-Za-z0-9-]*$/,
-    text: "a lowercase letter, then letters, digits and hyphens",
-  },
+  modifier: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   value: {
     pattern: { test: isValue } as unknown as RegExp,
     text: "a letter or digit, then letters, digits and hyphens",

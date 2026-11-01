@@ -105,26 +105,14 @@
           ]
         },
         {
-          "comment": "A profile, by its name, which is named as a type is.",
-          "match": "\\b(profile)\\s+([A-Z][A-Za-z0-9]*)",
+          "comment": "A profile or a modifier, by its name, which is named as a type is.",
+          "match": "\\b(profile|modifier)\\s+([A-Z][A-Za-z0-9]*)",
           "captures": {
             "1": {
               "name": "keyword.control.dxn"
             },
             "2": {
               "name": "entity.name.type.dxn"
-            }
-          }
-        },
-        {
-          "comment": "A modifier, by its name; a modifier's profiles.",
-          "match": "\\b(modifier)\\s+([a-z][A-Za-z0-9-]*)",
-          "captures": {
-            "1": {
-              "name": "keyword.control.dxn"
-            },
-            "2": {
-              "name": "variable.other.dxn"
             }
           }
         },
@@ -293,7 +281,7 @@
       "comment": "A value: after =, | or ->, but for a when; a profile with its modifiers after profile =.",
       "patterns": [
         {
-          "match": "\\b(profile)\\s*(=)\\s*([A-Z][A-Za-z0-9]*(?:\\+[a-z][A-Za-z0-9-]*)*)",
+          "match": "\\b(profile)\\s*(=)\\s*([A-Z][A-Za-z0-9]*(?:\\+[A-Z][A-Za-z0-9]*)*)",
           "captures": {
             "1": {
               "name": "keyword.control.dxn"
@@ -306,10 +294,6 @@
                 {
                   "match": "[A-Z][A-Za-z0-9]*",
                   "name": "entity.name.type.dxn"
-                },
-                {
-                  "match": "[a-z][A-Za-z0-9-]*",
-                  "name": "variable.other.dxn"
                 },
                 {
                   "match": "\\+",

@@ -119,7 +119,7 @@
 ; Profiles and modifiers
 
 (profile_declaration name: (identifier) @type)
-(modifier_declaration name: (identifier) @variable)
+(modifier_declaration name: (identifier) @type)
 (modifier_declaration profile: (identifier) @type)
 
 ; Values
@@ -127,7 +127,8 @@
 (value) @constant
 
 ; A profile an expectation names, on its own or with its modifiers, which
-; comes after values, so that it is a profile's and not a value's.
+; comes after values, so that each is a profile's or a modifier's, not a
+; value's.
 
 (pair
   key: (identifier) @_key
@@ -135,7 +136,7 @@
   (#eq? @_key "profile"))
 (pair
   key: (identifier) @_key
-  value: (profile_combination . (value) @type)
+  value: (profile_combination (value) @type)
   (#eq? @_key "profile"))
 
 ; Actors, and the record each records

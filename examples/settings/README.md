@@ -68,7 +68,7 @@ Each rename changes the file and the stored records in `evidence/` together.
   together, and the stored parents' and states' keys.
 - `help` in `Window` (line 77): stored paths and the parents' key
   `help.openness`.
-- `trackpad` and `Phone`: the stored profile `Phone+trackpad`, part by part.
+- `Trackpad` and `Phone`: the stored profile `Phone+Trackpad`, part by part.
 - `close` on line 47 or 67: one at a time; an event and an action share the
   name, and `dxn rename` asks which, as `event:Help.close`.
 - `Evidence` (line 92): moves `evidence/` to the new name's folder.
