@@ -1,4 +1,4 @@
-.PHONY: help install fmt fmt-check lint lint-check typecheck cycles security test coverage grammar build smoke check check-fast qa setup-hooks clean
+.PHONY: help install fmt fmt-check lint lint-check typecheck references cycles security test coverage grammar build smoke check check-fast qa setup-hooks clean
 
 help:
 	@echo "Targets:"
@@ -8,6 +8,7 @@ help:
 	@echo "  lint        - Run Biome lint rules"
 	@echo "  lint-check  - Run formatting, lint and type checks"
 	@echo "  typecheck   - Type-check both packages' sources and tests"
+	@echo "  references  - Fail when a TypeScript package is missing from tsconfig.build.json"
 	@echo "  cycles      - Fail on source-file dependency cycles (needs clarity; required in CI)"
 	@echo "  security    - Audit production dependencies for known vulnerabilities"
 	@echo "  test        - Run both packages' test suites"
@@ -39,6 +40,9 @@ typecheck:
 lint-check:
 	npx biome check .
 	$(MAKE) typecheck
+
+references:
+	node scripts/references/check.mjs
 
 cycles:
 	bash scripts/cycles/check.sh
@@ -73,9 +77,9 @@ smoke: build
 	node packages/cli/dist/main.js --version
 	node dist/main.js --version
 
-check: lint-check cycles security coverage grammar smoke
+check: lint-check references cycles security coverage grammar smoke
 
-check-fast: lint-check cycles test grammar smoke
+check-fast: lint-check references cycles test grammar smoke
 
 qa: check
 

@@ -43,6 +43,9 @@ jobs:
       - name: Check source
         run: make lint-check
 
+      - name: Check build references
+        run: make references
+
       - name: Audit dependencies
         run: make security
 
