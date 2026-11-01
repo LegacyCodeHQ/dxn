@@ -713,4 +713,53 @@ describe("the language server", () => {
       [8, "Run", "dxn.run", [uri, ["check", "--expect", "The menu can be open"]]],
     ]);
   });
+
+  it("shows a stored record that repeats another, across the record's files", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-duplicates-"));
+    try {
+      const text =
+        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence with context {\n  actor: Actor\n  at: Timestamp\n}\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      mkdirSync(join(folder, "evidence"));
+      const entry = (at: string) =>
+        `  {\n    "context": { "type": "Card", "dimensions": {}, "states": { "owner": "designer" } },\n    "actor": "designer",\n    "at": "${at}"\n  }`;
+      writeFileSync(join(folder, "evidence", "a.json"), `[\n${entry("2026-01-01T00:00:00Z")}\n]\n`);
+      writeFileSync(join(folder, "evidence", "b.json"), `[\n${entry("2026-02-01T00:00:00Z")}\n]\n`);
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const first = pathToFileURL(join(folder, "evidence", "a.json")).href;
+      const second = pathToFileURL(join(folder, "evidence", "b.json")).href;
+      const editor = connect();
+      editors.push(editor);
+      await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+      });
+      const notices: PublishDiagnosticsParams[] = [];
+      editor.onNotification(PublishDiagnosticsNotification.type, (params) => {
+        notices.push(params);
+      });
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const about = (target: string) =>
+        notices
+          .filter((notice) => notice.uri === target)
+          .at(-1)
+          ?.diagnostics.map(({ range, code, message }) => [range.start, code, message]);
+      expect([about(first), about(second)]).toEqual([
+        [],
+        [
+          [
+            { line: 1, character: 2 },
+            "duplicate-record",
+            "$[0]: the same Evidence as $[0] in evidence/a.json, apart from at and fingerprint",
+          ],
+        ],
+      ]);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
 });
