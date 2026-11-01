@@ -12,5 +12,12 @@
     "args": ["states", "$ZED_RELATIVE_FILE", "$ZED_CUSTOM_parent.$ZED_CUSTOM_type"],
     "cwd": "$ZED_WORKTREE_ROOT",
     "tags": ["dxn-nested-type"]
+  },
+  {
+    "label": "dxn check --expect $ZED_CUSTOM_title",
+    "command": "dxn",
+    "args": ["check", "$ZED_RELATIVE_FILE", "--expect", "$ZED_CUSTOM_title"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["dxn-expect"]
   }
 ]

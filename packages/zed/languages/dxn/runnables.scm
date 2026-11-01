@@ -1,5 +1,6 @@
 ; Where Zed shows a run button: on each type's name, with the name dxn states
-; takes, which the tasks in tasks.json run.
+; takes, and on each expectation's title, which dxn check --expect takes; the
+; tasks in tasks.json run them.
 
 ; A type at the top of the file: its own name.
 ((source_file
@@ -14,3 +15,8 @@
     (type_declaration
       name: (identifier) @run @type)))
   (#set! tag dxn-nested-type))
+
+; An expectation: its title, in its quotes, which dxn check --expect takes.
+((expect_declaration
+  title: (string) @run @title)
+  (#set! tag dxn-expect))

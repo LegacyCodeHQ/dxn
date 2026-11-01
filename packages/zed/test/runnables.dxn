@@ -12,3 +12,8 @@ type Menu {
 type Page {
   has menu: Menu
 }
+
+expect "The menu can be open" {
+  in Page.menu
+  some menu = open
+}

@@ -32,12 +32,13 @@ function matches(): string[] {
 }
 
 describe("the run buttons", () => {
-  it("are on each type's name, with its full name: its own, or the type it is in and its own", () => {
+  it("are on each type's name, with its full name, and on each expectation's title", () => {
     expect(matches()).toMatchInlineSnapshot(`
       [
         "run=Menu type=Menu",
         "parent=Menu run=Toggle type=Toggle",
         "run=Page type=Page",
+        "run="The menu can be open" title="The menu can be open"",
       ]
     `);
   });
