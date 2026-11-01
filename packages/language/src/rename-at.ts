@@ -1,5 +1,6 @@
 import type { Child, Enum, Located, ParseResult, State, Type } from "./ast.js";
 import { covers, links, type Span, wordAt } from "./definition.js";
+import { placement } from "./evaluate.js";
 import { article } from "./names.js";
 import { parse } from "./parse.js";
 import {
@@ -11,6 +12,7 @@ import {
   renameStateInData,
   renameTypeInData,
 } from "./rename.js";
+import { treePaths } from "./status.js";
 
 // A stored data file of a record, by its path, and its content.
 export interface StoredFile {
@@ -86,6 +88,18 @@ export function renameAt(
   if (left.length > 0) return { refusal: `the rename would leave a problem: ${left[0]}` };
   const data: { path: string; source: string }[] = [];
   for (const item of stored) {
+    // A state is renamed with the states it is provided to, or received from.
+    if (kind.kind === "state") {
+      let source = item.source;
+      let changed = 0;
+      for (const state of found.group) {
+        const renamed = renameStateInData(file, source, state as State, to);
+        source = renamed.source;
+        changed += renamed.changed;
+      }
+      if (changed > 0) data.push({ path: item.path, source });
+      continue;
+    }
     const renamed =
       kind.kind === "value" && kind.dimension && kind.of !== undefined
         ? renameDimensionInData(item.source, kind.of.name, to, name)
@@ -93,15 +107,13 @@ export function renameAt(
           ? renameDimensionInData(item.source, name, to)
           : kind.kind === "value" && kind.of !== undefined
             ? renameInData(file, item.record, item.source, kind.of.name, name, to)
-            : kind.kind === "state"
-              ? renameStateInData(file, item.source, found.declared as State, to)
-              : kind.kind === "child"
-                ? renameChildInData(file, item.source, found.declared as Child, to)
-                : kind.kind === "type"
-                  ? renameTypeInData(item.source, found.declared as Type, to)
-                  : kind.kind === "profile" || kind.kind === "modifier"
-                    ? renameProfileInData(item.source, kind.kind, name, to)
-                    : undefined;
+            : kind.kind === "child"
+              ? renameChildInData(file, item.source, found.declared as Child, to)
+              : kind.kind === "type"
+                ? renameTypeInData(item.source, found.declared as Type, to)
+                : kind.kind === "profile" || kind.kind === "modifier"
+                  ? renameProfileInData(item.source, kind.kind, name, to)
+                  : undefined;
     if (renamed !== undefined && renamed.changed > 0) {
       data.push({ path: item.path, source: renamed.source });
     }
@@ -161,7 +173,7 @@ function target(
   line: number,
   column: number,
 ):
-  | { kind: Kind; name: string; from: Span; spans: Span[]; declared: Located }
+  | { kind: Kind; name: string; from: Span; spans: Span[]; declared: Located; group: Located[] }
   | { refusal: string } {
   const lines = source.split("\n");
   const kinds = kindsOf(file);
@@ -185,10 +197,17 @@ function target(
       ? at
       : { line: at.line, column: at.column + dot + 1, length: at.length - dot - 1 };
   };
-  const spans = [
-    span(declared),
-    ...all.filter(({ to }) => to === declared).map(({ from }) => from),
-  ].map(last);
+  // A state provided to the types below, or received from one above, is
+  // matched to the others by its name: they are renamed together.
+  const group = kind.kind === "state" ? connected(file, declared as State) : [declared];
+  const spans = group
+    .flatMap((each) => [span(each), ...all.filter(({ to }) => to === each).map(({ from }) => from)])
+    .map(last)
+    .filter(
+      (each, index, list) =>
+        list.findIndex((other) => other.line === each.line && other.column === each.column) ===
+        index,
+    );
   const name = (declared as { short?: string }).short ?? declared.name;
   const from = last(link?.from ?? span(declared));
   if (rules[kind.kind] === undefined) {
@@ -202,20 +221,7 @@ function target(
         : "stored records name it";
     return { refusal: `${name} is ${what}, and ${why}; renaming it here is not supported yet` };
   }
-  // A provided state is received below by its name, and a received one is
-  // matched to the one provided above by its own.
-  const state = declared as State;
-  if (kind.kind === "state" && state.received) {
-    return {
-      refusal: `${name} is received by its name from a type above; renaming it here is not supported yet`,
-    };
-  }
-  if (kind.kind === "state" && kind.type?.provides.some((provided) => provided.name === name)) {
-    return {
-      refusal: `${name} is provided by its name to the types below; renaming it here is not supported yet`,
-    };
-  }
-  return { kind, name, from, spans, declared };
+  return { kind, name, from, spans, declared, group };
 }
 
 // Every declaration a name can be, with its kind.
@@ -254,4 +260,40 @@ function apply(source: string, edits: Edit[]): string {
     lines[line - 1] = `${content.slice(0, column - 1)}${text}${content.slice(column - 1 + length)}`;
   }
   return lines.join("\n");
+}
+
+// A state, and every state it is provided to or received from, wherever its
+// types are placed: a received state is matched to the nearest type above
+// that provides one of its name.
+function connected(file: ParseResult, state: State): State[] {
+  const pairs: [State, State][] = [];
+  for (const path of treePaths(file)) {
+    let place: ReturnType<typeof placement>;
+    try {
+      place = placement(file, path);
+    } catch {
+      continue;
+    }
+    for (const { level, name, from } of place.received) {
+      const below = place.steps[level]?.type.states.find(
+        (each) => each.name === name && each.received,
+      );
+      const above = place.steps[from]?.type.states.find(
+        (each) => each.name === name && !each.received,
+      );
+      if (below !== undefined && above !== undefined) pairs.push([below, above]);
+    }
+  }
+  const group = [state];
+  for (let added = true; added; ) {
+    added = false;
+    for (const [a, b] of pairs) {
+      const has = (each: State) => group.includes(each);
+      if (has(a) !== has(b)) {
+        group.push(has(a) ? b : a);
+        added = true;
+      }
+    }
+  }
+  return group;
 }

@@ -459,30 +459,107 @@ expect "A dark card is deep" {
     `);
   });
 
-  it("refuses, for now, a state that is provided or received, which is matched by its name", () => {
+  it("renames a provided state with every state that receives it, from any of them", () => {
     const shared = `enum Section = home | blog
+enum Selection = unselected | selected
+enum Actor = designer
 type Link receives current: Section {
+  state selection: Selection
+}
+type Panel receives current: Section {
+  has link: Link { selection = when current { blog -> selected, home -> unselected } }
 }
 type Page {
   state current: Section = blog
   provides current
-  has link: Link
+  has panel: Panel
+}
+record Evidence with context {
+  actor: Actor
+}
+expect "The link is selected on the blog" {
+  in Page.panel.link
+  when current = blog
+  then selection = selected
 }
 `;
-    const offset = (text: string, word: string) => {
-      const lines = shared.split("\n");
+    const records = `[
+  {
+    "context": {
+      "path": "Page.panel.link",
+      "dimensions": {},
+      "parents": { "current": "blog" },
+      "states": { "current": "blog", "selection": "selected" }
+    },
+    "actor": "designer"
+  }
+]
+`;
+    expect(validate(parse(shared), "Evidence", records)).toEqual([]);
+    const lines = shared.split("\n");
+    const where = (text: string): [number, number] => {
       const line = lines.findIndex((each) => each.includes(text));
-      return [line + 1, (lines[line] ?? "").indexOf(text) + text.indexOf(word) + 2] as const;
+      return [line + 1, (lines[line] ?? "").indexOf(text) + text.indexOf("current") + 2];
     };
-    expect(
+    const snapshot: unknown[] = [];
+    // From the provider's state, from what provides it, and from a receiver.
+    for (const text of ["state current", "provides current", "Link receives current"]) {
+      const result = renameAt(shared, ...where(text), "section", [
+        { record: "Evidence", path: "evidence/link.json", source: records },
+      ]);
+      if ("refusal" in result) throw new Error(result.refusal);
+      const after = [...lines];
+      const sorted = [...result.edits].sort((a, b) => b.line - a.line || b.column - a.column);
+      for (const { line, column, length, text: to } of sorted) {
+        const content = after[line - 1] ?? "";
+        after[line - 1] =
+          `${content.slice(0, column - 1)}${to}${content.slice(column - 1 + length)}`;
+      }
+      snapshot.push(
+        after.filter((line, index) => line !== lines[index]).map((line) => line.trim()),
+      );
+      const data = result.data[0]?.source ?? records;
+      snapshot.push(data.match(/"(parents|states)": \{[^}]*\}/g));
+      expect(validate(parse(after.join("\n")), "Evidence", data)).toEqual([]);
+    }
+    expect(snapshot).toMatchInlineSnapshot(`
       [
-        renameAt(shared, ...offset("receives current", "current"), "section"),
-        renameAt(shared, ...offset("state current", "current"), "section"),
-      ].map((result) => ("refusal" in result ? result.refusal : result)),
-    ).toMatchInlineSnapshot(`
-      [
-        "current is received by its name from a type above; renaming it here is not supported yet",
-        "current is provided by its name to the types below; renaming it here is not supported yet",
+        [
+          "type Link receives section: Section {",
+          "type Panel receives section: Section {",
+          "has link: Link { selection = when section { blog -> selected, home -> unselected } }",
+          "state section: Section = blog",
+          "provides section",
+          "when section = blog",
+        ],
+        [
+          ""parents": { "section": "blog" }",
+          ""states": { "section": "blog", "selection": "selected" }",
+        ],
+        [
+          "type Link receives section: Section {",
+          "type Panel receives section: Section {",
+          "has link: Link { selection = when section { blog -> selected, home -> unselected } }",
+          "state section: Section = blog",
+          "provides section",
+          "when section = blog",
+        ],
+        [
+          ""parents": { "section": "blog" }",
+          ""states": { "section": "blog", "selection": "selected" }",
+        ],
+        [
+          "type Link receives section: Section {",
+          "type Panel receives section: Section {",
+          "has link: Link { selection = when section { blog -> selected, home -> unselected } }",
+          "state section: Section = blog",
+          "provides section",
+          "when section = blog",
+        ],
+        [
+          ""parents": { "section": "blog" }",
+          ""states": { "section": "blog", "selection": "selected" }",
+        ],
       ]
     `);
   });
