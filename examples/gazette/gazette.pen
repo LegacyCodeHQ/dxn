@@ -1920,6 +1920,1224 @@
               }
             }
           ]
+        },
+        {
+          "type": "frame",
+          "id": "YesaW",
+          "name": "unread thumbnail",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "OoXzc",
+              "name": "Unread, thumbnail label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Unread, thumbnail",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "Im10R",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread thumbnail / idle",
+              "fill": "$surface",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "LhjUm",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "A1iyS",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "c4mlr0",
+                          "name": "Meta",
+                          "fill": "$text-secondary",
+                          "content": "The Verge · 2h",
+                          "fontFamily": "$font-ui",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "e3jLh",
+                          "name": "Headline",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VNXfF",
+                      "name": "Thumbnail",
+                      "metadata": {
+                        "type": "unsplash",
+                        "username": "camstejim",
+                        "link": "https://unsplash.com/@camstejim",
+                        "author": "camilo jimenez"
+                      },
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "dTciy",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "DKMgT",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread thumbnail / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "HdPWG",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "iLLuh",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NqSzY",
+                          "name": "Meta",
+                          "fill": "$text-secondary",
+                          "content": "The Verge · 2h",
+                          "fontFamily": "$font-ui",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "j0TxfZ",
+                          "name": "Headline",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "oCyx8",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "DYd6D",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "UVObE",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread thumbnail / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "Az0y9",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "AuKpu",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "LZ8en",
+                          "name": "Meta",
+                          "fill": "$text-secondary",
+                          "content": "The Verge · 2h",
+                          "fontFamily": "$font-ui",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "yVVFc",
+                          "name": "Headline",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "iaNrP",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "XAtun",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "xRWK8",
+          "name": "unread saved thumbnail",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "Aa7Fi",
+              "name": "Unread, saved, thumbnail label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Unread, saved, thumbnail",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "DI6Q5",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread saved thumbnail / idle",
+              "fill": "$surface",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "hhvWH",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "m6qov",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "zb2zP",
+                          "name": "Meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "L7IYy7",
+                              "name": "Meta text",
+                              "fill": "$text-secondary",
+                              "content": "The Verge · 2h",
+                              "fontFamily": "$font-ui",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "GH1V0",
+                              "name": "Bookmark",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "bookmark-check",
+                              "library": "lucide",
+                              "fill": "$accent"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "tULpU",
+                          "name": "Headline",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "drrdM",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "d7T7nb",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "C1CSN5",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread saved thumbnail / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "oDPcp",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "w5lVVR",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "LYmg0",
+                          "name": "Meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "vY16d",
+                              "name": "Meta text",
+                              "fill": "$text-secondary",
+                              "content": "The Verge · 2h",
+                              "fontFamily": "$font-ui",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "Wnbs2",
+                              "name": "Bookmark",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "bookmark-check",
+                              "library": "lucide",
+                              "fill": "$accent"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "KHho3",
+                          "name": "Headline",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "W4m8Cd",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "Fb7jI",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "RYGGJ",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread saved thumbnail / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "i12U4",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "tqn9D",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "i8UJph",
+                          "name": "Meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ZYd1B",
+                              "name": "Meta text",
+                              "fill": "$text-secondary",
+                              "content": "The Verge · 2h",
+                              "fontFamily": "$font-ui",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "qRu7b",
+                              "name": "Bookmark",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "bookmark-check",
+                              "library": "lucide",
+                              "fill": "$accent"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Vrynh",
+                          "name": "Headline",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vms5C",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "HlHTb",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "HV7FB",
+          "name": "read thumbnail",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "y58RC",
+              "name": "Read, thumbnail label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Read, thumbnail",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "p2TXhe",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read thumbnail / idle",
+              "fill": "$surface",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "tMs9v",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gI6rt",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "MgmCB",
+                          "name": "Meta",
+                          "fill": "$text-secondary",
+                          "content": "The Verge · 2h",
+                          "fontFamily": "$font-ui",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "SDU0x",
+                          "name": "Headline",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gcKHm",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "U8NOW",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "teaXQ",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read thumbnail / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "I3ggBn",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "L0DZuc",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mv9eh",
+                          "name": "Meta",
+                          "fill": "$text-secondary",
+                          "content": "The Verge · 2h",
+                          "fontFamily": "$font-ui",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "jekrL",
+                          "name": "Headline",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Aicne",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "KCOb2",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "i0V8t",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read thumbnail / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "KWP5Q",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "x0v5Xh",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "q3r1v",
+                          "name": "Meta",
+                          "fill": "$text-secondary",
+                          "content": "The Verge · 2h",
+                          "fontFamily": "$font-ui",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "xHktn",
+                          "name": "Headline",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Ippoo",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "j28H9",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "HRrK1",
+          "name": "read saved thumbnail",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "st9w8",
+              "name": "Read, saved, thumbnail label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Read, saved, thumbnail",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "oopzo",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read saved thumbnail / idle",
+              "fill": "$surface",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "OZlgS",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "v9wyV",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Q8NYWc",
+                          "name": "Meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "EfoCs",
+                              "name": "Meta text",
+                              "fill": "$text-secondary",
+                              "content": "The Verge · 2h",
+                              "fontFamily": "$font-ui",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "QPn7I",
+                              "name": "Bookmark",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "bookmark-check",
+                              "library": "lucide",
+                              "fill": "$accent"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "oQfL2",
+                          "name": "Headline",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "BmPJG",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "OsWWT",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "jhQ4A",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read saved thumbnail / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "RIcpU",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "K2dhI",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "GC35L",
+                          "name": "Meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "c7taj",
+                              "name": "Meta text",
+                              "fill": "$text-secondary",
+                              "content": "The Verge · 2h",
+                              "fontFamily": "$font-ui",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "qebX7",
+                              "name": "Bookmark",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "bookmark-check",
+                              "library": "lucide",
+                              "fill": "$accent"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "d2Djf",
+                          "name": "Headline",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "f7TUZ",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "U9Fbo",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "tM9MS",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read saved thumbnail / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "QhRAl": {
+                  "type": "frame",
+                  "id": "ovozc",
+                  "name": "Content",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "SVyx8",
+                      "name": "Text",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Knwo0",
+                          "name": "Meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "kDhT7",
+                              "name": "Meta text",
+                              "fill": "$text-secondary",
+                              "content": "The Verge · 2h",
+                              "fontFamily": "$font-ui",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "gaxRL",
+                              "name": "Bookmark",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "bookmark-check",
+                              "library": "lucide",
+                              "fill": "$accent"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Q9VJF4",
+                          "name": "Headline",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Apple unveils a quieter iPhone, built to last longer…",
+                          "lineHeight": 1.25,
+                          "fontFamily": "$font-ui",
+                          "fontSize": 17
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OVuCc",
+                      "name": "Thumbnail",
+                      "width": 60,
+                      "height": 60,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "https://images.unsplash.com/photo-1573152143286-0c422b4d2175?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3OTM1NTg5OTF8&ixlib=rb-4.1.0&q=80&w=1080",
+                        "mode": "cover"
+                      },
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ZRIDj",
+                          "x": 21,
+                          "y": 21,
+                          "name": "Image",
+                          "enabled": false,
+                          "width": 22,
+                          "height": 22,
+                          "icon": "image",
+                          "library": "lucide",
+                          "fill": "#1C1B1A40"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
         }
       ]
     }
@@ -1996,6 +3214,10 @@
     "press-tint": {
       "type": "color",
       "value": "#1C1B1A1A"
+    },
+    "thumbnail-placeholder": {
+      "type": "color",
+      "value": "#E3D9CC"
     }
   },
   "fileToken": "77ae2f9f-61ba-4878-9b55-acc6c60ad0dd"

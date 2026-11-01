@@ -7,6 +7,7 @@
       "states": {
         "reading": "unread",
         "bookmark": "unsaved",
+        "thumbnail": "without",
         "interaction": "idle"
       }
     },
@@ -26,6 +27,7 @@
       "states": {
         "reading": "unread",
         "bookmark": "unsaved",
+        "thumbnail": "without",
         "interaction": "hovered"
       }
     },
@@ -45,6 +47,7 @@
       "states": {
         "reading": "unread",
         "bookmark": "unsaved",
+        "thumbnail": "without",
         "interaction": "pressed"
       }
     },
@@ -64,6 +67,7 @@
       "states": {
         "reading": "read",
         "bookmark": "unsaved",
+        "thumbnail": "without",
         "interaction": "idle"
       }
     },
@@ -83,6 +87,7 @@
       "states": {
         "reading": "read",
         "bookmark": "unsaved",
+        "thumbnail": "without",
         "interaction": "hovered"
       }
     },
@@ -102,6 +107,7 @@
       "states": {
         "reading": "read",
         "bookmark": "unsaved",
+        "thumbnail": "without",
         "interaction": "pressed"
       }
     },
@@ -121,6 +127,7 @@
       "states": {
         "reading": "unread",
         "bookmark": "saved",
+        "thumbnail": "without",
         "interaction": "idle"
       }
     },
@@ -140,6 +147,7 @@
       "states": {
         "reading": "unread",
         "bookmark": "saved",
+        "thumbnail": "without",
         "interaction": "hovered"
       }
     },
@@ -159,6 +167,7 @@
       "states": {
         "reading": "unread",
         "bookmark": "saved",
+        "thumbnail": "without",
         "interaction": "pressed"
       }
     },
@@ -178,6 +187,7 @@
       "states": {
         "reading": "read",
         "bookmark": "saved",
+        "thumbnail": "without",
         "interaction": "idle"
       }
     },
@@ -197,6 +207,7 @@
       "states": {
         "reading": "read",
         "bookmark": "saved",
+        "thumbnail": "without",
         "interaction": "hovered"
       }
     },
@@ -216,6 +227,7 @@
       "states": {
         "reading": "read",
         "bookmark": "saved",
+        "thumbnail": "without",
         "interaction": "pressed"
       }
     },
@@ -225,6 +237,246 @@
       "frame": "V97TZ",
       "node": "LSv53",
       "fingerprint": "5f5bb6cf51dcf10c9599cd0ad4ea7e77565a56ec"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "unread",
+        "bookmark": "unsaved",
+        "thumbnail": "with",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "Im10R",
+      "fingerprint": "0d82750492157596e610ad7006a0813b89b578ad"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "unread",
+        "bookmark": "unsaved",
+        "thumbnail": "with",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "DKMgT",
+      "fingerprint": "efe8c7178d87eb19f41dbe33762f3b906fc5f16b"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "unread",
+        "bookmark": "unsaved",
+        "thumbnail": "with",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "UVObE",
+      "fingerprint": "f1f9470e5492dbf296b378e3086b1307c6900fc0"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "unread",
+        "bookmark": "saved",
+        "thumbnail": "with",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "DI6Q5",
+      "fingerprint": "334bd1242a14a5bd7880e685bc1ef504d145265c"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "unread",
+        "bookmark": "saved",
+        "thumbnail": "with",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "C1CSN5",
+      "fingerprint": "32d00e1a8e703ad5e5c4b98312f7b9fba027d23e"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "unread",
+        "bookmark": "saved",
+        "thumbnail": "with",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "RYGGJ",
+      "fingerprint": "4ad22f594f04a343b988b5a44ef9dae75d75f69a"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "read",
+        "bookmark": "unsaved",
+        "thumbnail": "with",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "p2TXhe",
+      "fingerprint": "2cf2afc79a60cd42ddba74ccd91abe9adc08de6c"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "read",
+        "bookmark": "unsaved",
+        "thumbnail": "with",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "teaXQ",
+      "fingerprint": "206788da736e74ce9002cafba80ffe480743f793"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "read",
+        "bookmark": "unsaved",
+        "thumbnail": "with",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "i0V8t",
+      "fingerprint": "b448aefe47513e53db2b807d64fb8ba46300cf52"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "read",
+        "bookmark": "saved",
+        "thumbnail": "with",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "oopzo",
+      "fingerprint": "b5cff74734823339f37018615f8c31db67d1ea5d"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "read",
+        "bookmark": "saved",
+        "thumbnail": "with",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "jhQ4A",
+      "fingerprint": "18f1cab08253d52b2b76e1d54925968f66443450"
+    }
+  },
+  {
+    "context": {
+      "path": "ArticleRow",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "reading": "read",
+        "bookmark": "saved",
+        "thumbnail": "with",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "V97TZ",
+      "node": "tM9MS",
+      "fingerprint": "613dfec302a732a7dec62492922a8cb5435ba293"
     }
   }
 ]

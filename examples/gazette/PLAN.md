@@ -59,8 +59,8 @@ In the order to build them: each from the ones before it, where it uses any.
 4. **Tab bar:** the three tabs, Feed, Saved and Sources, one of them selected.
 5. **Back button:** idle, hovered or pressed.
 6. **Navigation bar:** a screen's title, with a back button on the article.
-7. **Article row:** source, headline, time; read or unread; saved or not; with
-   or without a thumbnail; pressed or not.
+7. **Article row:** source, headline, time; unread or read; unsaved or saved;
+   without or with a thumbnail; idle, hovered or pressed.
 8. **Source row:** a source's name, with a toggle to follow it.
 
 Then the screens, from the components.
@@ -73,7 +73,7 @@ Then the screens, from the components.
 - [x] Tab bar
 - [x] Back button
 - [x] Navigation bar
-- [ ] Article row
+- [x] Article row
 - [ ] Source row
 - [ ] Feed
 - [ ] Article
