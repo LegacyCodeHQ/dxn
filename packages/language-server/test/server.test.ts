@@ -11,6 +11,7 @@ import {
   createMessageConnection,
   DefinitionRequest,
   DidChangeTextDocumentNotification,
+  DidCloseTextDocumentNotification,
   DidOpenTextDocumentNotification,
   DocumentSymbolRequest,
   HoverRequest,
@@ -485,5 +486,51 @@ describe("the language server", () => {
         },
       ],
     );
+  });
+
+  it("publishes problems with the version they are of, and answers from the latest text", async () => {
+    const editor = connect();
+    editors.push(editor);
+    await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    const uri = "file:///spec/button.dxn";
+    const hoverAt = { textDocument: { uri }, position: { line: 2, character: 16 } };
+    const text = (values: string) =>
+      `enum Focus = ${values}\ntype Button {\n  state focus: Focus\n}\n`;
+    const hovered = async () => {
+      const found = await editor.sendRequest(HoverRequest.type, hoverAt);
+      return (found?.contents as { value: string } | undefined)?.value.split("\n")[1];
+    };
+
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: { uri, languageId: "dxn", version: 1, text: text("blurred | focused") },
+    });
+    expect((await opened).version).toBe(1);
+    expect(await hovered()).toBe("enum Focus = blurred | focused");
+
+    // An edit: the problems are of its version, and requests see it.
+    const changed = published(editor);
+    await editor.sendNotification(DidChangeTextDocumentNotification.type, {
+      textDocument: { uri, version: 2 },
+      contentChanges: [{ text: text("blurred | focused | ringed") }],
+    });
+    expect((await changed).version).toBe(2);
+    expect(await hovered()).toBe("enum Focus = blurred | focused | ringed");
+
+    // Closed, and opened again with other text at version 1 again: nothing
+    // from before it was closed is kept.
+    const closed = published(editor);
+    await editor.sendNotification(DidCloseTextDocumentNotification.type, { textDocument: { uri } });
+    expect(await closed).toEqual({ uri, diagnostics: [] });
+    const reopened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: { uri, languageId: "dxn", version: 1, text: text("off | on") },
+    });
+    await reopened;
+    expect(await hovered()).toBe("enum Focus = off | on");
   });
 });

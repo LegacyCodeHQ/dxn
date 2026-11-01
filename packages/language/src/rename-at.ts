@@ -64,8 +64,9 @@ export function renameable(
   source: string,
   line: number,
   column: number,
+  file: ParseResult = parse(source),
 ): { from: Span; name: string } | { refusal: string } {
-  const found = target(parse(source), source, line, column);
+  const found = target(file, source, line, column);
   if ("refusal" in found) return found;
   return { from: found.from, name: found.name };
 }
@@ -81,8 +82,8 @@ export function renameAt(
   column: number,
   to: string,
   stored: StoredFile[] = [],
+  file: ParseResult = parse(source),
 ): Renamed {
-  const file = parse(source);
   const found = target(file, source, line, column);
   if ("refusal" in found) return found;
   const { kind, spans, name } = found;

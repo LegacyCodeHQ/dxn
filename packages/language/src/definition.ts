@@ -40,8 +40,9 @@ export function definition(
   source: string,
   line: number,
   column: number,
+  file: ParseResult = parse(source),
 ): { from: Span; to: Located } | undefined {
-  return links(source).find(({ from }) => covers(from, line, column));
+  return links(source, file).find(({ from }) => covers(from, line, column));
 }
 
 // Where the name at a line and a column of a source, both from one, is
@@ -52,8 +53,9 @@ export function usages(
   source: string,
   line: number,
   column: number,
+  file: ParseResult = parse(source),
 ): { declaration: Span; usages: Span[] } | undefined {
-  const all = links(source);
+  const all = links(source, file);
   const lines = source.split("\n");
   const span = (at: Located): Span => ({
     line: at.line,

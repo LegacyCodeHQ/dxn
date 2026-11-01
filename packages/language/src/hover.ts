@@ -16,8 +16,12 @@ export interface Hover {
 // declared, only what that line does not say: a state's enum, with its
 // values; nothing for any other declaration. Nothing over a keyword, or a name
 // the file does not declare.
-export function hover(source: string, line: number, column: number): Hover | undefined {
-  const file = parse(source);
+export function hover(
+  source: string,
+  line: number,
+  column: number,
+  file: ParseResult = parse(source),
+): Hover | undefined {
   const lines = source.split("\n");
   const described = describe(file, lines);
   const span = (at: Located): Span => ({

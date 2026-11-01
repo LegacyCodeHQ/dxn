@@ -9,6 +9,7 @@ import {
   type Edit,
   folderOf,
   hover,
+  type ParseResult,
   parse,
   renameAt,
   renameable,
@@ -45,6 +46,17 @@ export function serve(connection: Connection): void {
   // Whether the editor can move a folder, as renaming a record moves its
   // stored records'.
   let moves = false;
+  // Each open file's parse, with the version it is of: made once for each
+  // edit, used by every request until the next, and dropped when the file
+  // closes.
+  const parses = new Map<string, { version: number; file: ParseResult }>();
+  const parsed = (document: TextDocument): ParseResult => {
+    const kept = parses.get(document.uri);
+    if (kept?.version === document.version) return kept.file;
+    const file = parse(document.getText());
+    parses.set(document.uri, { version: document.version, file });
+    return file;
+  };
   connection.onInitialize(({ capabilities }) => {
     links = capabilities.textDocument?.definition?.linkSupport === true;
     const edits = capabilities.workspace?.workspaceEdit;
@@ -63,17 +75,22 @@ export function serve(connection: Connection): void {
       },
     };
   });
+  // Problems are of the version they are published for, so an editor can tell
+  // ones that are late.
   documents.onDidChangeContent(({ document }) => {
-    connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnose(document.getText()) });
+    const { uri, version } = document;
+    const diagnostics = diagnose(document.getText(), parsed(document));
+    connection.sendDiagnostics({ uri, version, diagnostics });
   });
   documents.onDidClose(({ document }) => {
+    parses.delete(document.uri);
     connection.sendDiagnostics({ uri: document.uri, diagnostics: [] });
   });
   connection.onDefinition(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
     const text = document.getText();
-    const found = definition(text, position.line + 1, position.character + 1);
+    const found = definition(text, position.line + 1, position.character + 1, parsed(document));
     if (found === undefined) return null;
     const target = rangeAt(text, found.to.line, found.to.column);
     if (!links) return { uri: textDocument.uri, range: target };
@@ -93,7 +110,12 @@ export function serve(connection: Connection): void {
   connection.onReferences(({ textDocument, position, context }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
-    const found = usages(document.getText(), position.line + 1, position.character + 1);
+    const found = usages(
+      document.getText(),
+      position.line + 1,
+      position.character + 1,
+      parsed(document),
+    );
     if (found === undefined) return null;
     const spans = context.includeDeclaration ? [found.declaration, ...found.usages] : found.usages;
     return spans.map(({ line, column, length }) => ({
@@ -107,7 +129,12 @@ export function serve(connection: Connection): void {
   connection.onHover(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
-    const found = hover(document.getText(), position.line + 1, position.character + 1);
+    const found = hover(
+      document.getText(),
+      position.line + 1,
+      position.character + 1,
+      parsed(document),
+    );
     if (found === undefined) return null;
     const { line, column, length } = found.from;
     const comment = found.comment === undefined ? "" : `\n\n${found.comment}`;
@@ -131,7 +158,12 @@ export function serve(connection: Connection): void {
   connection.onPrepareRename(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
-    const found = renameable(document.getText(), position.line + 1, position.character + 1);
+    const found = renameable(
+      document.getText(),
+      position.line + 1,
+      position.character + 1,
+      parsed(document),
+    );
     if ("refusal" in found) return refuse(found.refusal);
     return { range: rangeOf(found.from), placeholder: found.name };
   });
@@ -144,7 +176,8 @@ export function serve(connection: Connection): void {
       position.line + 1,
       position.character + 1,
       newName,
-      storedBeside(textDocument.uri, text),
+      storedBeside(textDocument.uri, parsed(document)),
+      parsed(document),
     );
     if ("refusal" in renamed) return refuse(renamed.refusal);
     const changes: Record<string, { range: Range; newText: string }[]> = {
@@ -217,14 +250,17 @@ export function serve(connection: Connection): void {
       selectionRange: rangeOf(symbol.at),
       children: symbol.children.map(editor),
     });
-    return symbols(document.getText()).map(editor);
+    return symbols(document.getText(), parsed(document)).map(editor);
   });
   connection.onCompletion(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
-    return completions(document.getText(), position.line + 1, position.character + 1).map(
-      ({ label, kind }) => ({ label, kind: kinds[kind], detail: kind }),
-    );
+    return completions(
+      document.getText(),
+      position.line + 1,
+      position.character + 1,
+      parsed(document),
+    ).map(({ label, kind }) => ({ label, kind: kinds[kind], detail: kind }));
   });
   documents.listen(connection);
   connection.listen();
@@ -265,10 +301,10 @@ function rangeOf({
 
 // The stored records of a file's records, by convention: the JSON files in each
 // record's folder, next to the file. None for a file that is not on disk.
-function storedBeside(uri: string, text: string): StoredFile[] {
+function storedBeside(uri: string, file: ParseResult): StoredFile[] {
   if (!uri.startsWith("file:")) return [];
   const directory = dirname(fileURLToPath(uri));
-  const records = [...new Set(parse(text).records.map(({ name }) => name))];
+  const records = [...new Set(file.records.map(({ name }) => name))];
   return records.flatMap((record) =>
     (storedFiles(directory, record) ?? []).map((name) => {
       const path = join(directory, folderOf(record), name);

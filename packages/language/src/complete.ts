@@ -51,8 +51,12 @@ const typeKeywords = ["state", "event", "action", "on", "has", "alike", "provide
 // What can be written at a line and a column of a source, both from one: the
 // names that fit there, by what the statement it is in has so far. The editor
 // narrows them by what is typed of the name.
-export function completions(source: string, line: number, column: number): Completion[] {
-  const file = parse(source);
+export function completions(
+  source: string,
+  line: number,
+  column: number,
+  file: ParseResult = parse(source),
+): Completion[] {
   const lines = source.split("\n");
   const before = (lines[line - 1] ?? "").slice(0, column - 1);
   // The statement so far, without the name being typed.

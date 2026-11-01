@@ -1,4 +1,4 @@
-import type { Located, Type } from "./ast.js";
+import type { Located, ParseResult, Type } from "./ast.js";
 import type { Span } from "./definition.js";
 import { parse } from "./parse.js";
 
@@ -19,8 +19,7 @@ export interface DocumentSymbol {
 // types it declares; inside a record, its fields; and its expectations, by
 // their titles. A file that does not parse to its end is outlined as far as it
 // is read.
-export function symbols(source: string): DocumentSymbol[] {
-  const file = parse(source);
+export function symbols(source: string, file: ParseResult = parse(source)): DocumentSymbol[] {
   const lines = source.split("\n");
   const symbol = (
     at: Located,
