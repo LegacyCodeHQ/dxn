@@ -46,6 +46,8 @@ with `--json`; problems are printed as `file:line:col: code: message`. Exit
 code 1 means the file has a problem or the command refused, 2 means the
 command line is wrong.
 
+- [tutorials](docs/tutorials/README.md): one button from nothing to a model
+  with evidence and tests, a step at a time
 - [guide.md](docs/language/guide.md): the language, one concept
   at a time, and every diagnostic code
 - [commands.md](docs/commands.md): every command, with its usage

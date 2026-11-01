@@ -4,7 +4,8 @@ This guide teaches dxn, the language of design and dimensions, one concept at
 a time. Each section adds one idea, says why you need it, and ends with a file
 you can check yourself. It covers the language as it is today; the last
 section lists what is still being designed. The decisions behind it, and
-the questions still open, are in [design.md](design.md).
+the questions still open, are in [design.md](design.md). To try it end to
+end first, with one button, see the [tutorials](../tutorials/README.md).
 
 ## Why a language
 
