@@ -108,18 +108,25 @@ export function expand(file: ParseResult, path: string, given: string[]): Combin
 // dimensions the element does not have. Two that differ in a dimension it
 // has, even one a profile gives, stay apart.
 function merged(file: ParseResult, path: string, given: string[]): Combination[] {
-  const full = expand(file, path, []);
-  const result: { key: string; combination: Combination }[] = [];
-  expand(file, path, given).forEach((combination, index) => {
-    const { profiles: _, ...rest } = full[index] as Combination;
+  const result: Combination[] = [];
+  const byKey = new Map<string, Combination>();
+  for (const full of expand(file, path, [])) {
+    const { profiles, ...rest } = full;
     const key = JSON.stringify(rest);
-    const same = result.find((each) => each.key === key);
-    if (same === undefined) result.push({ key, combination: { ...combination } });
-    else if (combination.profiles !== undefined) {
-      same.combination.profiles = [...(same.combination.profiles ?? []), ...combination.profiles];
+    const same = byKey.get(key);
+    if (same === undefined) {
+      // As a context gives it: without the dimensions the profiles give.
+      const dimensions = Object.fromEntries(
+        Object.entries(full.dimensions).filter(([name]) => !given.includes(name)),
+      );
+      const combination = { ...full, dimensions };
+      result.push(combination);
+      byKey.set(key, combination);
+    } else if (profiles !== undefined) {
+      same.profiles = [...(same.profiles ?? []), ...profiles];
     }
-  });
-  return result.map(({ combination }) => combination);
+  }
+  return result;
 }
 
 // How much of the trees a record with context covers: every combination of
@@ -170,14 +177,19 @@ export function coverage(
   const same = (a: Record<string, string>, b: Record<string, string>) =>
     Object.keys(a).length === Object.keys(b).length &&
     Object.entries(a).every(([name, value]) => b[name] === value);
+  // The stored contexts by the path they are about.
+  const byPath = new Map<string, typeof contexts>();
+  for (const context of contexts) {
+    byPath.set(context.path, [...(byPath.get(context.path) ?? []), context]);
+  }
   const paths = treePaths(file).map((path) => {
     const combinations = merged(file, path, given);
+    const about = byPath.get(path) ?? [];
     // A combination is as its best entry is: present, else stale, else gone.
     const state = (combination: Combination): Freshness | "missing" => {
-      const found = contexts
+      const found = about
         .filter(
           (context) =>
-            context.path === path &&
             (combination.profiles === undefined ||
               combination.profiles.includes(context.profile ?? "")) &&
             same(context.dimensions, combination.dimensions) &&

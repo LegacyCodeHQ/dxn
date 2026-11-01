@@ -34,13 +34,16 @@ export function cases(
   // Combinations that differ only in their profiles are one, with all of
   // their profiles: profiles differ in dimensions this one does not have.
   const combinations: Combination[] = [];
+  const byRest = new Map<string, Combination>();
   for (const combination of each) {
     const { profiles, ...rest } = combination;
-    const same = combinations.find(({ profiles: _, ...other }) => {
-      return JSON.stringify(other) === JSON.stringify(rest);
-    });
-    if (same === undefined) combinations.push({ ...combination });
-    else if (profiles !== undefined) {
+    const key = JSON.stringify(rest);
+    const same = byRest.get(key);
+    if (same === undefined) {
+      const first = { ...combination };
+      combinations.push(first);
+      byRest.set(key, first);
+    } else if (profiles !== undefined) {
       same.profiles = [...(same.profiles ?? []), ...profiles];
     }
   }
@@ -61,6 +64,7 @@ export function cases(
     return value;
   };
   const found: Cases["cases"] = [];
+  const byValues = new Map<string, Cases["cases"][number]>();
   for (const combination of combinations) {
     const values: Record<string, string> = {};
     // With alike set aside, every combination is its own case, told apart
@@ -81,9 +85,13 @@ export function cases(
       if (shown !== undefined) values[name] = shown;
     }
     const key = JSON.stringify(values);
-    const same = found.find((each) => JSON.stringify(each.values) === key);
+    const same = byValues.get(key);
     if (same !== undefined) same.combinations.push(combination);
-    else found.push({ values, combinations: [combination] });
+    else {
+      const first = { values, combinations: [combination] };
+      found.push(first);
+      byValues.set(key, first);
+    }
   }
   return {
     name: target,
