@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 interface Task {
   label: string;
   command: string;
-  args: string[];
+  args?: string[];
   cwd: string;
   tags: string[];
 }
@@ -22,8 +22,9 @@ describe("the run buttons' tasks", () => {
   it("offer, beside each type, to review the file's evidence and open each page written", () => {
     const review = tasks.find(({ label }) => label.startsWith("dxn review"));
     expect(review?.tags).toEqual(["dxn-type", "dxn-nested-type"]);
-    // Run as Zed runs it, with a dxn that writes two pages, and a zed that
-    // notes what it opens.
+    // Run as Zed runs it, the command and its arguments in single quotes for
+    // the user's shell, with a dxn that writes two pages, and a zed that notes
+    // what it opens.
     const folder = mkdtempSync(join(tmpdir(), "dxn-task-"));
     try {
       const opened = join(folder, "opened");
@@ -41,7 +42,8 @@ describe("the run buttons' tasks", () => {
         text
           .replaceAll("$ZED_RELATIVE_FILE", "spec/button.dxn")
           .replaceAll("$ZED_WORKTREE_ROOT", folder);
-      const run = spawnSync(value(review?.command ?? ""), (review?.args ?? []).map(value), {
+      const line = [review?.command ?? "", ...(review?.args ?? [])].map(value).join(" ");
+      const run = spawnSync("/bin/sh", ["-c", `sh -c '${line}'`], {
         cwd: value(review?.cwd ?? ""),
         env: { ...process.env, PATH: `${folder}:${process.env.PATH}` },
         encoding: "utf8",

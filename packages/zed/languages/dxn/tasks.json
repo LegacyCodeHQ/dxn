@@ -15,12 +15,7 @@
   },
   {
     "label": "dxn review $ZED_RELATIVE_FILE",
-    "command": "sh",
-    "args": [
-      "-c",
-      "dxn review \"$0\" | sed -n 's/^Wrote //p' | while IFS= read -r page; do zed \"$page\"; done",
-      "$ZED_RELATIVE_FILE"
-    ],
+    "command": "dxn review \"$ZED_RELATIVE_FILE\" | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
     "cwd": "$ZED_WORKTREE_ROOT",
     "tags": ["dxn-type", "dxn-nested-type"]
   },
