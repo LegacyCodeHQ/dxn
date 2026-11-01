@@ -13,7 +13,7 @@ impl zed::Extension for Dxn {
         worktree: &zed::Worktree,
     ) -> Result<zed::Command> {
         // Zed's settings may name the server and its arguments, under
-        // lsp.dxn-language-server.binary.
+        // lsp.dxn-lsp.binary.
         let binary = LspSettings::for_worktree(id.as_ref(), worktree)
             .ok()
             .and_then(|settings| settings.binary);
@@ -34,7 +34,7 @@ fn server(configured: Option<String>, found: Option<String>) -> Result<String> {
     configured.or(found).ok_or_else(|| {
         "dxn-language-server is not on the PATH; install it with \
          `npm install -g @legacycodehq/dxn-language-server`, or set \
-         lsp.dxn-language-server.binary.path in Zed's settings"
+         lsp.dxn-lsp.binary.path in Zed's settings"
             .into()
     })
 }
@@ -71,5 +71,6 @@ mod tests {
             error.contains("npm install -g @legacycodehq/dxn-language-server"),
             "{error}"
         );
+        assert!(error.contains("lsp.dxn-lsp.binary.path"), "{error}");
     }
 }

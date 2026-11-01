@@ -14,7 +14,8 @@ commit = "9dab968f1181c782c748baed22d9a92b6cb359d2"
 path = "packages/tree-sitter-dxn"
 
 # The language server in packages/language-server, for inline errors. The
-# extension starts the dxn-language-server it finds; see the README.
-[language_servers.dxn-language-server]
+# extension starts the dxn-language-server command it finds, as dxn-lsp; see
+# the README.
+[language_servers.dxn-lsp]
 name = "dxn language server"
 languages = ["dxn"]
