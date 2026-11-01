@@ -5,6 +5,8 @@
 export type { ParseResult, RecordDeclaration, Type } from "./ast.js";
 // What a type, or a child in place, has that can be told apart.
 export { type Cases, cases } from "./cases.js";
+// What fits where a cursor is, for editors.
+export { type Completion, type CompletionKind, completions } from "./complete.js";
 // What a rule's or a child's condition compares.
 export { subjects } from "./condition.js";
 // Where a name in a source is declared, and where it is used, for editors.

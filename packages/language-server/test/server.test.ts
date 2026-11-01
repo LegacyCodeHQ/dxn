@@ -1,6 +1,8 @@
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  CompletionItemKind,
+  CompletionRequest,
   createConnection,
   createMessageConnection,
   DefinitionRequest,
@@ -196,5 +198,39 @@ describe("the language server", () => {
         context: { includeDeclaration: true },
       }),
     ).toEqual([range(3, 9, 19), range(5, 12, 22)]);
+  });
+
+  it("suggests what fits where the cursor is, each with its kind", async () => {
+    const editor = connect();
+    editors.push(editor);
+    const initialized = await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    expect(initialized.capabilities.completionProvider?.triggerCharacters).toEqual(["."]);
+    const uri = "file:///spec/button.dxn";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: {
+        uri,
+        languageId: "dxn",
+        version: 1,
+        text: "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n  state ring: \n  focus = \n}\n",
+      },
+    });
+    await opened;
+    const at = (line: number, character: number) =>
+      editor.sendRequest(CompletionRequest.type, {
+        textDocument: { uri },
+        position: { line, character },
+      });
+    expect(await at(3, 14)).toEqual([
+      { label: "Focus", kind: CompletionItemKind.Enum, detail: "enum" },
+    ]);
+    expect(await at(4, 10)).toEqual([
+      { label: "blurred", kind: CompletionItemKind.EnumMember, detail: "value" },
+      { label: "focused", kind: CompletionItemKind.EnumMember, detail: "value" },
+    ]);
   });
 });
