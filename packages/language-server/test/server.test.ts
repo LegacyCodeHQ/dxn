@@ -956,7 +956,7 @@ describe("the language server", () => {
         [
           [
             { line: 1, character: 13 },
-            'PenEvidence: 3 problems, "filled" is not a value of style (primary, secondary)',
+            "PenEvidence: 3 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
           ],
         ],
         [
@@ -966,6 +966,25 @@ describe("the language server", () => {
           '- pen-evidence/button.json:8:75: $[1].context.states.style: "plain" is not a value of style (primary, secondary)',
           '- pen-evidence/button.json:13:75: $[2].context.states.style: "filled" is not a value of style (primary, secondary)',
         ].join("\n"),
+      ]);
+
+      // All of them alike: the hint says so of all of them.
+      writeFileSync(join(folder, "pen-evidence", "button.json"), `[\n${entry("plain")}\n]\n`);
+      await editor.sendNotification(DidChangeWatchedFilesNotification.type, {
+        changes: [
+          {
+            uri: pathToFileURL(join(folder, "pen-evidence", "button.json")).href,
+            type: FileChangeType.Changed,
+          },
+        ],
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const again = await editor.sendRequest(InlayHintRequest.type, {
+        textDocument: { uri },
+        range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
+      });
+      expect(again?.map(({ label }) => label)).toEqual([
+        "PenEvidence: 1 record still says style = plain, which Style no longer has (primary, secondary)",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
