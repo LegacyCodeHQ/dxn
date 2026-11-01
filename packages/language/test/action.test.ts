@@ -8,10 +8,12 @@ const model = `dimension Breakpoint = base | lg
 enum Focus = blurred | focused
 enum Layout = compact | inline
 type Button {
+  event activate
   state focus: Focus
   action take-focus: focus blurred -> focused
 }
 type Link {
+  event activate
   state focus: Focus
   action take-focus: focus blurred -> focused
 }
@@ -23,14 +25,14 @@ type Menu {
   }
   has toggle: Button
   has panel: Panel only when menu = open
-
+  event escape
   action open: menu closed -> open
   action close: menu open -> closed
 
-  on click toggle: open
-  on click toggle: close
-  on key Escape: close, toggle.take-focus
-  on click panel.blog: close, toggle.take-focus
+  on toggle.activate: open
+  on toggle.activate: close
+  on escape: close, toggle.take-focus
+  on panel.blog.activate: close, toggle.take-focus
 }
 
 type Toolbar needs Breakpoint {
@@ -41,9 +43,9 @@ type Toolbar needs Breakpoint {
   has wordmark: Link
   has link: Link only when layout = inline
   has menu: Menu only when layout = compact
-
-  on click wordmark: menu.close
-  on pointer outside: menu.close
+  event outside, escape
+  on wordmark.activate: menu.close
+  on outside: menu.close
   on Breakpoint = lg: menu.close, link.take-focus
 }
 
@@ -73,14 +75,14 @@ describe("actions and on", () => {
         ["close", "menu", "open", "closed"],
       ],
       [
-        ["click", "open"],
-        ["click", "close"],
-        ["key", "close, toggle.take-focus"],
-        ["click", "close, toggle.take-focus"],
+        ["named", "open"],
+        ["named", "close"],
+        ["named", "close, toggle.take-focus"],
+        ["named", "close, toggle.take-focus"],
       ],
       [
-        ["click", "menu.close"],
-        ["pointer-outside", "menu.close"],
+        ["named", "menu.close"],
+        ["named", "menu.close"],
         ["dimension", "menu.close, link.take-focus"],
       ],
     ]);
@@ -95,10 +97,10 @@ describe("actions and on", () => {
       action("action close: menus open -> closed"),
       action("action close: menu open -> open"),
     ]).toEqual([
-      ['22:30: unknown-value: "shut" is not a value of menu (closed, open)'],
-      ["23:10: duplicate-action: close is already an action of Menu"],
-      ["22:17: unknown-state: menus is not a state of Menu (menu)"],
-      ["22:30: unchanged-action: close changes nothing: menu is open before and after"],
+      ['24:30: unknown-value: "shut" is not a value of menu (closed, open)'],
+      ["25:10: duplicate-action: close is already an action of Menu"],
+      ["24:17: unknown-state: menus is not a state of Menu (menu)"],
+      ["24:30: unchanged-action: close changes nothing: menu is open before and after"],
     ]);
     assert(
       errors(
@@ -109,39 +111,36 @@ describe("actions and on", () => {
 
   it("is triggered by an event on the type: a child, a key, a pointer outside it, or a dimension", () => {
     const on = (line: string) =>
-      errors(model.replace("  on click wordmark: menu.close\n", `  ${line}\n`));
+      errors(model.replace("  on wordmark.activate: menu.close\n", `  ${line}\n`));
     assert([
-      on("on click wordmrk: menu.close"),
-      on("on click wordmark: menu.shut"),
-      on("on click wordmark: shut"),
+      on("on wordmrk.activate: menu.close"),
+      on("on wordmark.activate: menu.shut"),
+      on("on wordmark.activate: shut"),
       on("on Breakpoint = xl: menu.close"),
-      on("on click wordmark: menu.close, layout.take-focus"),
+      on("on wordmark.activate: menu.close, layout.take-focus"),
     ]).toEqual([
-      ["39:12: unknown-child: wordmrk is not a child of Toolbar (wordmark, link, menu)"],
-      ["39:22: unknown-action: shut is not an action of Menu (open, close)"],
-      ["39:22: unknown-action: shut is not an action of Toolbar; it has none"],
-      ['39:19: unknown-value: "xl" is not a value of Breakpoint (base, lg)'],
-      ["39:34: unknown-child: layout is not a child of Toolbar (wordmark, link, menu)"],
+      ["41:6: unknown-child: wordmrk is not a child of Toolbar (wordmark, link, menu)"],
+      ["41:25: unknown-action: shut is not an action of Menu (open, close)"],
+      ["41:25: unknown-action: shut is not an action of Toolbar; it has none"],
+      ['41:19: unknown-value: "xl" is not a value of Breakpoint (base, lg)'],
+      ["41:37: unknown-child: layout is not a child of Toolbar (wordmark, link, menu)"],
+    ]);
+    assert(
+      problems(
+        model.replace("  on escape: close, toggle.take-focus", "  on escape: close, focus toggle"),
+      ),
+    ).toEqual([
+      '28:21: syntax-error: "focus toggle" is not a change: move focus with an action of the child, such as toggle.take-focus',
     ]);
     assert(
       problems(
         model.replace(
-          "  on key Escape: close, toggle.take-focus",
-          "  on key Escape: close, focus toggle",
+          "  on escape: close, toggle.take-focus",
+          "  on escape: close, focus panel.blog",
         ),
       ),
     ).toEqual([
-      '26:25: syntax-error: "focus toggle" is not a change: move focus with an action of the child, such as toggle.take-focus',
-    ]);
-    assert(
-      problems(
-        model.replace(
-          "  on key Escape: close, toggle.take-focus",
-          "  on key Escape: close, focus panel.blog",
-        ),
-      ),
-    ).toEqual([
-      '26:25: syntax-error: "focus panel.blog" is not a change: move focus with an action of the child, such as panel.blog.take-focus',
+      '28:21: syntax-error: "focus panel.blog" is not a change: move focus with an action of the child, such as panel.blog.take-focus',
     ]);
   });
 
@@ -149,14 +148,15 @@ describe("actions and on", () => {
     assert(
       errors(`enum State = closed | open
 type Menu {
+  event escape
   state menu: State
   has toggle: Nope
   action close: menu open -> closed
-  on click toggle.x: close
-  on key Escape: toggle.y.close, toggle.z.take-focus
+  on toggle.x.activate: close
+  on escape: toggle.y.close, toggle.z.take-focus
 }
 `),
-    ).toEqual(["4:15: unknown-type: Nope is not a type (Menu)"]);
+    ).toEqual(["5:15: unknown-type: Nope is not a type (Menu)"]);
   });
 
   it("uses a dimension its event changes, which its type needs", () => {
@@ -191,8 +191,8 @@ type Menu${needs} {
         ),
       ),
     ]).toEqual([
-      ["23:10: duplicate-action: menu is already a state of Menu"],
-      ["23:10: duplicate-action: toggle is already a child of Menu"],
+      ["25:10: duplicate-action: menu is already a state of Menu"],
+      ["25:10: duplicate-action: toggle is already a child of Menu"],
     ]);
   });
 
@@ -217,12 +217,12 @@ type Menu {
     assert(
       errors(
         model.replace(
-          "  on click toggle: close\n",
-          "  on click toggle: close\n  action reopen: menu closed -> open\n  on click toggle: reopen\n",
+          "  on toggle.activate: close\n",
+          "  on toggle.activate: close\n  action reopen: menu closed -> open\n  on toggle.activate: reopen\n",
         ),
       ),
     ).toEqual([
-      "27:3: ambiguous-event: click toggle triggers both open and reopen when menu = closed",
+      "29:3: ambiguous-event: toggle.activate triggers both open and reopen when menu = closed",
     ]);
   });
 
@@ -238,17 +238,17 @@ type Menu {
       );
     assert([
       shut("on Breakpoint in (base, lg): menu.close\n  on Breakpoint = lg: menu.shut"),
-      shut("on key Escape: menu.close\n  on key Escape: menu.shut"),
-      shut("on key Escape: menu.close\n  on key Escape: menu.close"),
+      shut("on escape: menu.close\n  on escape: menu.shut"),
+      shut("on escape: menu.close\n  on escape: menu.close"),
       shut("on Breakpoint = base: menu.close\n  on Breakpoint = lg: menu.shut"),
     ]).toEqual([
       [
-        "43:3: ambiguous-event: Breakpoint = lg triggers both menu.close and menu.shut when menu.menu = open",
+        "45:3: ambiguous-event: Breakpoint = lg triggers both menu.close and menu.shut when menu.menu = open",
       ],
       [
-        "43:3: ambiguous-event: key Escape triggers both menu.close and menu.shut when menu.menu = open",
+        "45:3: ambiguous-event: escape triggers both menu.close and menu.shut when menu.menu = open",
       ],
-      ["43:3: duplicate-trigger: key Escape already triggers menu.close"],
+      ["45:3: duplicate-trigger: escape already triggers menu.close"],
       [],
     ]);
   });
@@ -258,7 +258,7 @@ type Menu {
 expect "Escape closes the menu and returns focus to its button" {
   in Page.toolbar.menu
   when menu = open
-  on key Escape
+  on escape
   then ${then}
 }
 `;
@@ -267,17 +267,17 @@ expect "Escape closes the menu and returns focus to its button" {
       problems(rule("menu = closed, toggle.focus = blurred")),
       problems(
         rule("menu = closed, toggle.focus = focused").replace(
-          "  on key Escape: close, toggle.take-focus\n",
+          "  on escape: close, toggle.take-focus\n",
           "",
         ),
       ),
     ]).toEqual([
       [],
       [
-        "48:8: expectation-failed: Escape closes the menu and returns focus to its button: on key Escape, toggle.focus becomes focused, not blurred",
+        "50:8: expectation-failed: Escape closes the menu and returns focus to its button: on escape, toggle.focus becomes focused, not blurred",
       ],
       [
-        "47:8: expectation-failed: Escape closes the menu and returns focus to its button: nothing happens on key Escape to Page.toolbar.menu when menu = open",
+        "49:8: expectation-failed: Escape closes the menu and returns focus to its button: nothing happens on escape to Page.toolbar.menu when menu = open",
       ],
     ]);
   });
@@ -285,12 +285,10 @@ expect "Escape closes the menu and returns focus to its button" {
   it("says what it expected when the syntax is wrong", () => {
     assert([
       problems(model.replace("action open: menu closed -> open", "action open: menu closed open")),
-      problems(model.replace("on key Escape: close", "on press Escape: close")),
+      problems(model.replace("on escape: close", "on press Escape: close")),
     ]).toEqual([
-      ['21:28: syntax-error: expected "->" after "closed", found "open"'],
-      [
-        '26:6: syntax-error: expected "click", "key", "pointer" or a dimension after "on", found "press"',
-      ],
+      ['23:28: syntax-error: expected "->" after "closed", found "open"'],
+      ['28:12: syntax-error: expected ":" after the event, found "Escape"'],
     ]);
   });
 });
@@ -300,6 +298,7 @@ enum Press = released | pressed
 enum Focus = blurred | focused
 
 type Button needs Keyboard {
+  event space
   state press: Press
   state focus: Focus
   focus = focused only when Keyboard = keyboard
@@ -313,7 +312,7 @@ type Page {
 
 describe("a trigger only when", () => {
   it("fires only where its condition holds", () => {
-    const source = button("on key Space: push only when focus = focused");
+    const source = button("on space: push only when focus = focused");
     const trigger = parse(source).types[0]?.triggers[0];
     assert([problems(source), trigger?.when?.kind, named(trigger?.does ?? [])]).toEqual([
       [],
@@ -324,14 +323,14 @@ describe("a trigger only when", () => {
 
   it("is checked as any condition is", () => {
     assert([
-      errors(button("on key Space: push only when fokus = focused")),
-      errors(button("on key Space: push only when focus = blurd")),
-      problems(button("on key Space: push only when focus in (blurred, focused)")),
+      errors(button("on space: push only when fokus = focused")),
+      errors(button("on space: push only when focus = blurd")),
+      problems(button("on space: push only when focus in (blurred, focused)")),
     ]).toEqual([
-      ["10:32: unknown-state: fokus is not a state of Button (press, focus)"],
-      ['10:40: unknown-value: "blurd" is not a value of focus (blurred, focused)'],
+      ["11:28: unknown-state: fokus is not a state of Button (press, focus)"],
+      ['11:36: unknown-value: "blurd" is not a value of focus (blurred, focused)'],
       [
-        "10:3: warning: vacuous-condition: focus in (blurred, focused) is always true, so the trigger always fires",
+        "11:3: warning: vacuous-condition: focus in (blurred, focused) is always true, so the trigger always fires",
       ],
     ]);
   });
@@ -341,8 +340,8 @@ describe("a trigger only when", () => {
       errors(
         button(
           "action hold: press released -> pressed",
-          `on key Space: push only when ${first}`,
-          `on key Space: hold only when ${second}`,
+          `on space: push only when ${first}`,
+          `on space: hold only when ${second}`,
         ),
       );
     assert([
@@ -350,17 +349,17 @@ describe("a trigger only when", () => {
       twice("focus = focused", "Keyboard = keyboard"),
     ]).toEqual([
       [],
-      ["12:3: ambiguous-event: key Space triggers both push and hold when press = released"],
+      ["13:3: ambiguous-event: space triggers both push and hold when press = released"],
     ]);
   });
 
   it("is applied by an expectation only where it holds, and nothing happens elsewhere", () => {
     const rule = (when: string, then: string) =>
-      `${button("on key Space: push only when focus = focused")}
+      `${button("on space: push only when focus = focused")}
 expect "Space presses the button only while it is focused" {
   in Page.button
   when ${when}
-  on key Space
+  on space
   then ${then}
 }
 `;
@@ -372,7 +371,7 @@ expect "Space presses the button only while it is focused" {
       [],
       [],
       [
-        "17:8: expectation-failed: Space presses the button only while it is focused: nothing happens on key Space to Page.button when focus = blurred, press = released",
+        "18:8: expectation-failed: Space presses the button only while it is focused: nothing happens on space to Page.button when focus = blurred, press = released",
       ],
     ]);
   });
@@ -384,6 +383,7 @@ enum Focus = blurred | focused
 enum Layout = compact | inline
 
 type Button needs Keyboard {
+  event space, escape
   state press: Press
   state focus: Focus
   state layout: Layout = when Keyboard { keyboard -> inline, no-keyboard -> compact }
@@ -398,11 +398,11 @@ type Page {
 describe("an expectation on an event", () => {
   it("finds some combination it changes, where nothing fires in others", () => {
     const rule = (assertion: string) =>
-      `${pressing("on key Space: press -> pressed only when focus = focused")}
+      `${pressing("on space: press -> pressed only when focus = focused")}
 expect "Space can press it" {
   in Page.button
   when press = released
-  on key Space
+  on space
   ${assertion}
 }
 `;
@@ -412,7 +412,7 @@ expect "Space can press it" {
     ]).toEqual([
       [],
       [
-        "18:8: expectation-failed: Space can press it: nothing happens on key Space to Page.button when press = released",
+        "19:8: expectation-failed: Space can press it: nothing happens on space to Page.button when press = released",
       ],
     ]);
   });
@@ -423,9 +423,10 @@ describe("an expectation on an event, into a combination", () => {
     const link = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered
 type Link needs Pointer {
+  event h
   state hover: Hover
   hover = hovered only when Pointer = mouse
-  on key H: hover -> hovered
+  on h: hover -> hovered
 }
 type Page {
   has link: Link
@@ -433,12 +434,12 @@ type Page {
 expect "H hovers the link" {
   in Page.link
   when Pointer = touch
-  on key H
+  on h
   then hover = hovered
 }
 `;
     assert(problems(link)).toEqual([
-      "11:8: expectation-failed: H hovers the link: on key H, Page.link on Pointer touch would have hover = hovered, which it cannot have there",
+      "12:8: expectation-failed: H hovers the link: on h, Page.link on Pointer touch would have hover = hovered, which it cannot have there",
     ]);
   });
 });
@@ -446,8 +447,8 @@ expect "H hovers the link" {
 describe("a change written in a trigger", () => {
   it("changes one of the type's own states to a value, with no action to name", () => {
     const source = pressing(
-      "on key Space: press -> pressed only when focus = focused",
-      "on key Escape: press -> released",
+      "on space: press -> pressed only when focus = focused",
+      "on escape: press -> released",
     );
     const [first] = parse(source).types[0]?.triggers[0]?.does ?? [];
     assert([
@@ -459,16 +460,16 @@ describe("a change written in a trigger", () => {
 
   it("is on a state of the type that a change can change, to one of its values", () => {
     assert([
-      errors(pressing("on key Space: pres -> pressed")),
-      errors(pressing("on key Space: press -> presed")),
-      errors(pressing("on key Space: layout -> compact")),
-      errors(pressing("on key Space: page.press -> pressed")),
+      errors(pressing("on space: pres -> pressed")),
+      errors(pressing("on space: press -> presed")),
+      errors(pressing("on space: layout -> compact")),
+      errors(pressing("on space: page.press -> pressed")),
     ]).toEqual([
-      ["11:17: unknown-state: pres is not a state of Button (press, focus, layout)"],
-      ['11:26: unknown-value: "presed" is not a value of press (released, pressed)'],
-      ["11:17: action-on-derived: layout is decided by its when; no change can change it"],
+      ["12:13: unknown-state: pres is not a state of Button (press, focus, layout)"],
+      ['12:22: unknown-value: "presed" is not a value of press (released, pressed)'],
+      ["12:13: action-on-derived: layout is decided by its when; no change can change it"],
       [
-        '11:17: syntax-error: a change is on one of the type\'s own states, not "page.press"; change a child through one of its actions',
+        '12:13: syntax-error: a change is on one of the type\'s own states, not "page.press"; change a child through one of its actions',
       ],
     ]);
   });
@@ -478,24 +479,24 @@ describe("a change written in a trigger", () => {
       errors(
         pressing(
           "action push: press released -> pressed",
-          "on key Space: push",
-          "on key Space: press -> pressed",
+          "on space: push",
+          "on space: press -> pressed",
         ),
       ),
-      errors(pressing("on key Space: press -> pressed", "on key Space: press -> pressed")),
+      errors(pressing("on space: press -> pressed", "on space: press -> pressed")),
     ]).toEqual([
-      ["13:3: duplicate-trigger: key Space already triggers press -> pressed"],
-      ["12:3: duplicate-trigger: key Space already triggers press -> pressed"],
+      ["14:3: duplicate-trigger: space already triggers press -> pressed"],
+      ["13:3: duplicate-trigger: space already triggers press -> pressed"],
     ]);
   });
 
   it("is applied by an expectation, wherever the state is not yet its value", () => {
     const rule = (then: string) =>
-      `${pressing("on key Space: press -> pressed only when focus = focused")}
+      `${pressing("on space: press -> pressed only when focus = focused")}
 expect "Space presses the focused button" {
   in Page.button
   when focus = focused
-  on key Space
+  on space
   then ${then}
 }
 `;
@@ -508,21 +509,22 @@ expect "Space presses the focused button" {
   it("cannot change a state its parent binds, and is renamed with its value", () => {
     const bound = `enum State = closed | open
 type Toggle {
+  event space
   state expanded: State
-  on key Space: expanded -> open
+  on space: expanded -> open
 }
 type Menu {
   state menu: State
   has toggle: Toggle { expanded = menu }
 }
 `;
-    const source = pressing("on key Space: press -> pressed");
+    const source = pressing("on space: press -> pressed");
     assert([
       errors(bound),
       renameInSource(parse(source), source, "Press", "pressed", "down"),
     ]).toEqual([
       [
-        "8:24: bound-action: expanded is bound here, so Toggle's change on key Space can never change it",
+        "9:24: bound-action: expanded is bound here, so Toggle's change on space can never change it",
       ],
       source.replace("released | pressed", "released | down").replace("-> pressed", "-> down"),
     ]);
@@ -539,6 +541,7 @@ type Button {
 }
 
 type Menu {
+  event escape, space
   state menu: Openness
   state lamp: Lit
   state bell: Lit
@@ -554,8 +557,8 @@ type Page {
 describe("a trigger with several changes", () => {
   it("makes each, its own actions, a child's, and changes in place", () => {
     const source = several(
-      "on key Escape: close, toggle.take-focus",
-      "on key Space: lamp -> on, bell -> on, toggle.take-focus",
+      "on escape: close, toggle.take-focus",
+      "on space: lamp -> on, bell -> on, toggle.take-focus",
     );
     const triggers = parse(source).types.find(({ name }) => name === "Menu")?.triggers ?? [];
     assert([
@@ -576,20 +579,20 @@ describe("a trigger with several changes", () => {
 
   it("checks each change, and changes one state once", () => {
     assert([
-      errors(several("on key Escape: close, toggle.take-focs")),
-      errors(several("on key Space: lamp -> on, lamp -> off")),
+      errors(several("on escape: close, toggle.take-focs")),
+      errors(several("on space: lamp -> on, lamp -> off")),
     ]).toEqual([
-      ["16:25: unknown-action: take-focs is not an action of Button (take-focus)"],
-      ["16:29: conflicting-change: key Space changes lamp twice"],
+      ["17:21: unknown-action: take-focs is not an action of Button (take-focus)"],
+      ["17:25: conflicting-change: space changes lamp twice"],
     ]);
   });
 
   it("is applied by an expectation, every change of the element's own", () => {
-    const rule = `${several("on key Space: lamp -> on, bell -> on")}
+    const rule = `${several("on space: lamp -> on, bell -> on")}
 expect "Space lights both" {
   in Page.menu
   when lamp = off, bell = off
-  on key Space
+  on space
   then lamp = on, bell = on
 }
 `;
@@ -602,41 +605,37 @@ describe("an expectation on a child's state, after an event", () => {
 expect "Escape closes the menu and the toggle takes focus" {
   in Page.menu
   when menu = open
-  on key Escape
+  on escape
   then ${then}
 }
 `;
 
   it("checks what the event changes in a child, by the child's path", () => {
     assert([
-      problems(
-        rule("on key Escape: close, toggle.take-focus", "menu = closed, toggle.ring = visible"),
-      ),
-      problems(
-        rule("on key Escape: close, toggle.take-focus", "menu = closed, toggle.ring = hidden"),
-      ),
-      problems(rule("on key Escape: close", "menu = closed, toggle.ring = visible")),
+      problems(rule("on escape: close, toggle.take-focus", "menu = closed, toggle.ring = visible")),
+      problems(rule("on escape: close, toggle.take-focus", "menu = closed, toggle.ring = hidden")),
+      problems(rule("on escape: close", "menu = closed, toggle.ring = visible")),
     ]).toEqual([
       [],
       [
-        "23:8: expectation-failed: Escape closes the menu and the toggle takes focus: on key Escape, toggle.ring becomes visible, not hidden",
+        "24:8: expectation-failed: Escape closes the menu and the toggle takes focus: on escape, toggle.ring becomes visible, not hidden",
       ],
       [
-        "23:8: expectation-failed: Escape closes the menu and the toggle takes focus: on key Escape, toggle.ring does not change",
+        "24:8: expectation-failed: Escape closes the menu and the toggle takes focus: on escape, toggle.ring does not change",
       ],
     ]);
   });
 
   it("names a child's state that is one, with one of its values", () => {
     assert([
-      problems(rule("on key Escape: close, toggle.take-focus", "toggle.rng = visible")),
-      problems(rule("on key Escape: close, toggle.take-focus", "toggle.ring = vsible")),
+      problems(rule("on escape: close, toggle.take-focus", "toggle.rng = visible")),
+      problems(rule("on escape: close, toggle.take-focus", "toggle.ring = vsible")),
     ]).toEqual([
       [
-        "23:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: no element in Page.menu has toggle.rng",
+        "24:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: no element in Page.menu has toggle.rng",
       ],
       [
-        '23:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: "vsible" is not a value of toggle.ring (hidden, visible)',
+        '24:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: "vsible" is not a value of toggle.ring (hidden, visible)',
       ],
     ]);
   });

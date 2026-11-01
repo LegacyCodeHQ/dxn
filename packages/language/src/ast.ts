@@ -71,6 +71,9 @@ export interface Type extends Declaration {
   // How its own states change, by name; and what triggers each change.
   actions: Action[];
   triggers: Trigger[];
+  // The events it can receive, by name; a parent names one as
+  // "<child>.<event>".
+  events: Located[];
   // What cannot be told apart: values of one of its states or needs, all of
   // them or some, everywhere or where a condition holds.
   alikes: Alike[];
@@ -92,12 +95,10 @@ export interface Action {
   to: Located;
 }
 
-// What can trigger an action: a click on a child, a key, a pointer outside
-// the type, or a dimension changing to one of these values.
+// What can trigger a change: an event the type declares, or a child's by
+// its path, or a dimension changing to one of these values.
 export type Event =
-  | { kind: "click"; target: Located }
-  | { kind: "key"; key: Located }
-  | { kind: "pointer-outside"; at: Located }
+  | { kind: "named"; name: Located }
   | { kind: "dimension"; dimension: Located; values: Located[] };
 
 // "on <event>: <change>, <change> … [only when <condition>]": what an event

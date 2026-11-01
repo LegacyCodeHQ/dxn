@@ -254,6 +254,14 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
   // it or of a child. One
   // event triggers one action in any state.
   const checkActions = (type: Type, needed: Set<string>, declare: string) => {
+    // The events it declares, each once.
+    const declared = new Set<string>();
+    for (const event of type.events) {
+      if (declared.has(event.name)) {
+        report("duplicate-event", `${event.name} is already an event of ${type.name}`, event);
+      }
+      declared.add(event.name);
+    }
     const named = new Set<string>();
     for (const action of type.actions) {
       // One name, one thing: an action's name is not a state's or a child's.
@@ -308,7 +316,26 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     }
     const resolved = type.triggers.map((trigger) => {
       const { event } = trigger;
-      if (event.kind === "click") childType(type, event.target);
+      // A named event: one the type declares, or a child's by its path.
+      if (event.kind === "named") {
+        const parts = event.name.name.split(".");
+        const path = parts.slice(0, -1).join(".");
+        const owner = parts.length === 1 ? type : childType(type, { ...event.name, name: path });
+        const named = parts.at(-1) as string;
+        // A broken type's events may not all have been read.
+        if (
+          owner !== undefined &&
+          !owner.broken &&
+          !owner.events.some(({ name }) => name === named)
+        ) {
+          const events = owner.events.map(({ name }) => name);
+          report(
+            "unknown-event",
+            `${named} is not an event of ${owner.name}${among(events, "it declares none")}`,
+            event.name,
+          );
+        }
+      }
       if (event.kind === "dimension") {
         if (!names.is(event.dimension.name, "dimension")) {
           report(
@@ -359,15 +386,14 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     // One event, one change: no two actions that events which overlap
     // trigger can both apply to one state, from one value.
     const overlap = (a: Event, b: Event) => {
-      if (a.kind === "click" && b.kind === "click") return a.target.name === b.target.name;
-      if (a.kind === "key" && b.kind === "key") return a.key.name === b.key.name;
+      if (a.kind === "named" && b.kind === "named") return a.name.name === b.name.name;
       if (a.kind === "dimension" && b.kind === "dimension") {
         return (
           a.dimension.name === b.dimension.name &&
           a.values.some(({ name }) => b.values.some((value) => value.name === name))
         );
       }
-      return a.kind === b.kind;
+      return false;
     };
     // Two triggers' conditions can both hold where they have values in
     // common; one without a condition holds everywhere.
@@ -1270,12 +1296,9 @@ function checkRecords(file: ParseResult, names: Names, report: Report): void {
   }
 }
 
-// An event, in words: "click toggle", "key Escape", "pointer outside",
-// "Breakpoint in (lg, xl)".
+// An event, in words: "escape", "toggle.activate", "Breakpoint in (lg, xl)".
 export function eventText(event: Event): string {
-  if (event.kind === "click") return `click ${event.target.name}`;
-  if (event.kind === "key") return `key ${event.key.name}`;
-  if (event.kind === "pointer-outside") return "pointer outside";
+  if (event.kind === "named") return event.name.name;
   const values = event.values.map(({ name }) => name);
   return `${event.dimension.name} ${values.length === 1 ? `= ${values[0]}` : `in (${values.join(", ")})`}`;
 }

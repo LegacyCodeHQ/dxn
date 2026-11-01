@@ -1343,6 +1343,7 @@ event triggers it:
 ```
 type Menu {
   enum State = closed | open
+  event escape
   state menu: State
   has toggle: Toggle { expanded = menu }
   has panel: Panel only when menu = open
@@ -1350,10 +1351,10 @@ type Menu {
   action open: menu closed -> open
   action close: menu open -> closed
 
-  on click toggle: open
-  on click toggle: close
-  on key Escape: close, toggle.take-focus
-  on click panel.blog: close, toggle.take-focus
+  on toggle.activate: open
+  on toggle.activate: close
+  on escape: close, toggle.take-focus
+  on panel.blog.activate: close, toggle.take-focus
 }
 ```
 
@@ -1372,9 +1373,10 @@ of the type's own states, and the value it changes to.
 
 ```
 type Button {
+  event activate, cancel
   state press: Press
-  on key Space: press -> pressed
-  on key Escape: press -> released
+  on activate: press -> pressed
+  on cancel: press -> released
 }
 ```
 
@@ -1387,13 +1389,19 @@ by Escape, a link and a click outside. Write it in place when it belongs to
 one trigger, where a name would only repeat the value. A change in place is
 always on the type's own states; a child's are changed through its actions.
 
-An event is one of:
+An event is a name the type declares, with `event`, lowercase like a state,
+each once: `event escape, outside`. The language gives no event a meaning of
+its own: `escape` is whatever the type says it is, so the same triggers
+describe a menu, an order or a connection. An event in `on` is one of:
 
-- **click** a child, by its path: `click toggle`, `click panel.blog`;
-- **key** a key: `key Escape`;
-- **pointer outside**: a press anywhere outside the type;
+- one the type declares: `on escape`;
+- one a child declares, by the child's path: `on toggle.activate`, `on
+  panel.blog.activate`. The child receives it, and the parent decides what it
+  does;
 - a change of a **dimension** the type needs: `Breakpoint in (lg, xl)`, or
   `Breakpoint = lg`.
+
+An event that is not declared is an `unknown-event`, with the ones there are.
 
 An `on` can trigger a child's action by its path, so a parent decides what
 its own events do to what it contains:
@@ -1401,8 +1409,8 @@ its own events do to what it contains:
 ```
 type Toolbar needs Breakpoint {
   ...
-  on click wordmark: menu.close
-  on pointer outside: menu.close
+  on wordmark.activate: menu.close
+  on outside: menu.close
   on Breakpoint in (lg, xl): menu.close, links.blog.take-focus
 }
 ```
@@ -1412,8 +1420,8 @@ its own actions, a child's, and changes in place. It changes each of its
 type's own states at most once:
 
 ```
-on key Escape: close, toggle.take-focus
-on key Space: lamp -> on, bell -> on
+on escape: close, toggle.take-focus
+on activate: lamp -> on, bell -> on
 ```
 
 A trigger can fire only where a condition holds, written at its end with
@@ -1421,7 +1429,7 @@ A trigger can fire only where a condition holds, written at its end with
 while it is focused:
 
 ```
-on key Space: press -> pressed only when focus = focused
+on activate: press -> pressed only when focus = focused
 ```
 
 The condition is checked as any other: on the type's states and the
@@ -1442,11 +1450,10 @@ type Toggle {
 
 One event makes one change: two actions that one event triggers, its own or
 a child's, cannot both apply to the same value, and one event does not
-trigger the same action twice. Events overlap when they are the same click,
-key or pointer, or a change of one dimension to a value they share:
-`Breakpoint in (base, lg)` and `Breakpoint = lg` overlap. A dimension an
-event changes is one the type needs, as for a rule. The event words are built
-into the language for now; they belong to a UI kit, once there are kits.
+trigger the same action twice. Events overlap when they are the same event,
+or a change of one dimension to a value they share: `Breakpoint in (base,
+lg)` and `Breakpoint = lg` overlap. A dimension an event changes is one the
+type needs, as for a rule.
 
 ## Expectations: rules the model must follow
 
@@ -1490,14 +1497,14 @@ assertion:
 With `on`, the assertion is about what happens after the event: the action
 the element's own type triggers on it is applied to every combination `when`
 picks. A trigger a parent has on
-the element's action, like the toolbar's `on click wordmark: menu.close`, is
+the element's action, like the toolbar's `on wordmark.activate: menu.close`, is
 not applied yet.
 
 ```
 expect "Escape closes the menu" {
   in ArticlePage.toolbar.menu
   when menu = open
-  on key Escape
+  on escape
   then menu = closed
 }
 ```
@@ -1509,13 +1516,13 @@ child's actions:
 ```
 type Menu {
   has toggle: Button
-  on key Escape: close, toggle.take-focus
+  on escape: close, toggle.take-focus
 }
 
 expect "Escape closes the menu and the toggle takes focus" {
   in Page.menu
   when menu = open
-  on key Escape
+  on escape
   then menu = closed, toggle.ring = visible
 }
 ```
@@ -1524,7 +1531,7 @@ A child's state the event does not change fails the rule, saying so.
 
 Where the event fires nothing in a combination picked, the element stays as
 it was, and the rule is checked on it unchanged: `when focus = blurred`, `on
-key Space`, `then press = released` holds for the button above. Where that
+activate`, `then press = released` holds for the button above. Where that
 does not hold, the rule fails, saying nothing happens.
 
 A change that breaks a rule is an error, with one combination that breaks
@@ -1628,8 +1635,8 @@ or under discussion but not part of it yet:
 - **Kits.** Domain words that alias the core, such as a UI kit, so the same
   language can describe other domains. `Actor` in the records above is already
   the pattern: the core knows nothing about any actor or tool; a file or a kit
-  declares them. The event words, `click`, `key` and `pointer outside`, are
-  the first that would move to one.
+  declares them. Events are the same: a UI kit could declare the usual ones,
+  such as `activate` and `escape`, for every type to use.
 
 ### What the language leaves out
 
@@ -1673,12 +1680,13 @@ file        = { blank-line | comment | enum | dimension | type | environment | p
 enum        = "enum" Name "=" [newline] [ "|" ] value { [newline] "|" [newline] value } newline
 dimension   = "dimension" Name "=" [newline] [ "|" ] value { [newline] "|" [newline] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" field { "," [newline] field } ]
-              "{" { blank-line | state | rule | enum | type | has | provides | action | on | alike } "}"
+              "{" { blank-line | state | rule | enum | type | has | provides | events | action | on | alike } "}"
 alike       = "alike" name [ "in" "(" value { "," value } ")" ] [ "when" condition ] newline
 action      = "action" action-name ":" state-name value "->" value newline
 on          = "on" event ":" change { "," change } [ "only" "when" condition ] newline
 change      = path | state-name "->" value                      # path: an action, or a child's
-event       = "click" path | "key" word | "pointer" "outside" | condition
+event       = path | comparison                                  # path: an event the type declares, or a child's
+events      = "event" event-name { "," event-name } newline
 provides    = "provides" state-name newline
 has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline
 bindings    = "{" { binding ( "," | newline ) } "}"
@@ -1755,6 +1763,9 @@ comment     = "#" to the end of the line
 | `unknown-action`                                                              | error    | an `on` triggers an action its type does not have                                                |
 | `ambiguous-event`                                                             | error    | events that overlap trigger two actions that apply to one state's same value                     |
 | `duplicate-trigger`                                                           | error    | an event triggers the same action twice                                                          |
+| `unknown-event`                                                               | error    | an event in `on` is not one its type, or the child it names, declares                            |
+| `event-name`                                                                  | error    | an event's name does not start with a lowercase letter                                           |
+| `duplicate-event`                                                             | error    | a type declares an event twice                                                                   |
 | `conflicting-change`                                                          | error    | a trigger changes one of its type's states twice                                                 |
 | `expectation-failed`                                                          | error    | the model breaks an expectation; the message gives a combination that breaks it                  |
 | `expectation-empty`                                                           | error    | an expectation picks nothing, so it would always pass                                            |

@@ -39,13 +39,10 @@ anything the core could not say.
 
 ## Open
 
-- **Events in the core.** Triggers name their events with built-in UI words
-  (`click`, `key`, `pointer outside`), and moving focus is a built-in effect.
-  Events should become plain names a type declares, so triggers work in any
-  domain, with the UI words in a kit. What triggers are for, by real use
-  case: interacting with a control, opening and closing, choosing and
-  navigating, adapting to the environment, managing focus, waiting on a
-  process, and timing.
+- **Events in a kit.** Events are names a type declares, and focus moves by
+  an action of the child that takes it, so the core gives no word a meaning
+  of its own. A UI kit could declare the usual events, such as `activate` and
+  `escape`, for every type to use.
 - **Provided state, checked by `dxn check`.** A receiving type placed where
   nothing provides its state is found only when its path is evaluated.
 - **Conditions checked against the matrix.** A condition is judged over all

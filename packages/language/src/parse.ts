@@ -366,18 +366,38 @@ export function parse(source: string): ParseResult {
   // "<Dimension> = <value>" or "<Dimension> in (<value>, ...)".
   const eventOf = (): Event => {
     const token = peek();
-    if (token.kind === "word" && token.text === "click") {
-      next();
-      return { kind: "click", target: qualified('a child after "click"') };
+    // The built-in words of before: what to declare and write instead.
+    const old = (said: string, instead: string) => {
+      result.diagnostics.push({
+        severity: "error",
+        code: "syntax-error",
+        message: `${JSON.stringify(said)} is not an event: ${instead}`,
+        line: token.line,
+        column: token.column,
+      });
+      throw new ParseFailure();
+    };
+    const after = tokens[position + 1];
+    if (token.text === "key" && after?.kind === "word") {
+      const name = after.text.toLowerCase();
+      old(`key ${after.text}`, `declare one, such as "event ${name}", and write "on ${name}"`);
     }
-    if (token.kind === "word" && token.text === "key") {
-      next();
-      return { kind: "key", key: word('a key after "key"') };
+    if (token.text === "click" && after?.kind === "word") {
+      let target = after.text;
+      for (
+        let at = position + 2;
+        tokens[at]?.kind === "." && tokens[at + 1]?.kind === "word";
+        at += 2
+      ) {
+        target += `.${tokens[at + 1]?.text}`;
+      }
+      old(
+        `click ${target}`,
+        `declare one in the child's type, such as "event activate", and write "on ${target}.activate"`,
+      );
     }
-    if (token.kind === "word" && token.text === "pointer") {
-      next();
-      keyword("outside", '"outside" after "pointer"');
-      return { kind: "pointer-outside", at: located(token) };
+    if (token.text === "pointer" && after?.text === "outside") {
+      old("pointer outside", 'declare one, such as "event outside", and write "on outside"');
     }
     if (token.kind === "word" && /^[A-Z]/.test(token.text)) {
       const dimension = word("a dimension");
@@ -395,7 +415,8 @@ export function parse(source: string): ParseResult {
       } else fail(operator, `"=" or "in" after ${JSON.stringify(dimension.name)}`);
       return { kind: "dimension", dimension, values };
     }
-    return fail(token, '"click", "key", "pointer" or a dimension after "on"');
+    if (token.kind === "word") return { kind: "named", name: qualified("an event") };
+    return fail(token, 'an event or a dimension after "on"');
   };
 
   // A child: "has <name>: <Type>", then "{ <state> = <state>, ... }" for the
@@ -455,6 +476,7 @@ export function parse(source: string): ParseResult {
       actions: [],
       triggers: [],
       alikes: [],
+      events: [],
     });
     const after = peek();
     if (after.kind === "word" && after.text === "needs") {
@@ -495,6 +517,17 @@ export function parse(source: string): ParseResult {
         expect("->", `"->" after ${JSON.stringify(from.name)}`);
         type.actions.push({ name: named, state, from, to: word('a value after "->"') });
         end(["newline", "}"], "the end of the line");
+        return;
+      }
+      // "event <name>, <name>"; a rule on a state named event has "=" next.
+      if (token.text === "event" && tokens[position + 1]?.kind !== "=") {
+        next();
+        type.events.push(
+          ...list(",", '"event"', (after) => name("event", `an event after ${after}`, lowercase), [
+            "newline",
+            "}",
+          ]),
+        );
         return;
       }
       if (token.text === "on") {
