@@ -67,34 +67,47 @@ export function check(file: ParseResult): void {
 function checkContainment(file: ParseResult, names: Names, report: Report): void {
   const byName = new Map<string, Type>();
   for (const type of file.types) if (!byName.has(type.name)) byName.set(type.name, type);
-  // The children that lead from a type back to the target, if any do.
-  const path = (
-    from: Type,
-    target: string,
-    visited: Set<string>,
-  ): { type: string; child: Located; of: string }[] | undefined => {
-    for (const child of from.children) {
+  // A type's children, each with its type.
+  const children = (type: Type): [Located, Type][] =>
+    type.children.flatMap((child) => {
       const inner =
         names.kindOf(child.type.name) === "type" ? byName.get(child.type.name) : undefined;
-      if (inner === undefined) continue;
-      const step = { type: from.name, child, of: inner.name };
-      if (inner.name === target) return [step];
-      if (visited.has(inner.name)) continue;
-      visited.add(inner.name);
-      const rest = path(inner, target, visited);
+      return inner === undefined ? [] : [[child, inner]];
+    });
+  for (const type of byName.values()) {
+    const steps = cycleFrom(type, children);
+    const first = steps?.[0];
+    if (steps === undefined || first === undefined) continue;
+    report("recursive-type", `${type.name} contains itself: ${through(steps)}`, first.edge);
+  }
+}
+
+// The edges that lead from a node back to itself, if any do: each step the
+// node it leaves, the edge it takes, and the node it reaches.
+function cycleFrom<Node extends { name: string }>(
+  start: Node,
+  edges: (node: Node) => [Located, Node][],
+): { from: Node; edge: Located; to: Node }[] | undefined {
+  const visited = new Set<string>();
+  const walk = (from: Node): { from: Node; edge: Located; to: Node }[] | undefined => {
+    for (const [edge, to] of edges(from)) {
+      const step = { from, edge, to };
+      if (to.name === start.name) return [step];
+      if (visited.has(to.name)) continue;
+      visited.add(to.name);
+      const rest = walk(to);
       if (rest !== undefined) return [step, ...rest];
     }
     return undefined;
   };
-  for (const type of byName.values()) {
-    const steps = path(type, type.name, new Set());
-    const first = steps?.[0];
-    if (steps === undefined || first === undefined) continue;
-    const through = steps
-      .map(({ type: owner, child, of }) => `${owner}.${child.name} is ${article(of)} ${of}`)
-      .join(", and ");
-    report("recursive-type", `${type.name} contains itself: ${through}`, first.child);
-  }
+  return walk(start);
+}
+
+// A cycle, in words: "A.b is a B, and B.a is an A".
+function through(steps: { from: { name: string }; edge: Located; to: { name: string } }[]): string {
+  return steps
+    .map(({ from, edge, to }) => `${from.name}.${edge.name} is ${article(to.name)} ${to.name}`)
+    .join(", and ");
 }
 
 // The file: each name declared once, and none a built-in scalar's.
@@ -1177,36 +1190,18 @@ function checkRecords(file: ParseResult, names: Names, report: Report): void {
   }
   const byName = new Map<string, RecordDeclaration>();
   for (const record of file.records) if (!byName.has(record.name)) byName.set(record.name, record);
-  // The fields that lead from a record back to the target, if any do.
-  const path = (
-    from: RecordDeclaration,
-    target: string,
-    visited: Set<string>,
-  ): { record: string; field: Field }[] | undefined => {
-    for (const field of from.fields) {
+  // A record's fields that are records, each with its record.
+  const fields = (record: RecordDeclaration): [Located, RecordDeclaration][] =>
+    record.fields.flatMap((field) => {
       const inner =
         names.kindOf(field.type.name) === "record" ? byName.get(field.type.name) : undefined;
-      if (inner === undefined) continue;
-      const step = { record: from.name, field };
-      if (inner.name === target) return [step];
-      if (visited.has(inner.name)) continue;
-      visited.add(inner.name);
-      const rest = path(inner, target, visited);
-      if (rest !== undefined) return [step, ...rest];
-    }
-    return undefined;
-  };
+      return inner === undefined ? [] : [[field, inner]];
+    });
   for (const record of byName.values()) {
-    const steps = path(record, record.name, new Set());
+    const steps = cycleFrom(record, fields);
     const first = steps?.[0];
     if (steps === undefined || first === undefined) continue;
-    const through = steps
-      .map(({ record: owner, field }) => {
-        const type = field.type.name;
-        return `${owner}.${field.name} is ${article(type)} ${type}`;
-      })
-      .join(", and ");
-    report("recursive-record", `${record.name} contains itself: ${through}`, first.field);
+    report("recursive-record", `${record.name} contains itself: ${through(steps)}`, first.edge);
   }
 }
 
