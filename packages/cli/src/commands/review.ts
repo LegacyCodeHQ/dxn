@@ -96,7 +96,7 @@ export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dr
     { file, written, ...(stale ? { clean } : {}) },
     [
       ...(dryRun ? [] : written.map((page) => `Wrote ${page}\n`)),
-      ...clean.map((root) => `${root}: nothing is stale or gone\n`),
+      ...clean.map((root) => `${root}: nothing is stale, gone or outdated\n`),
     ].join(""),
   );
 });

@@ -63,6 +63,7 @@ export {
   describe,
   type Judged,
   judge,
+  type Outdated,
   type Progress,
   progress,
   treePaths,

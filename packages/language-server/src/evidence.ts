@@ -13,7 +13,6 @@ import {
   type StoredSource,
   storedFiles,
   treePaths,
-  treePlaces,
   validate,
 } from "@legacycodehq/dxn-language";
 import { type Diagnostic, DiagnosticSeverity, type Range } from "vscode-languageserver/node";
@@ -33,6 +32,7 @@ interface Problem {
   code: string;
   path: string;
   message: string;
+  severity?: "warning";
 }
 
 // The stored files beside a file, each record's, and the problems in them:
@@ -67,7 +67,7 @@ function checked(
       for (const found of validate(file, record, source)) problems.push({ at, ...found });
     }
   }
-  if (problems.length === 0) {
+  if (problems.every(({ severity }) => severity === "warning")) {
     for (const { shown, line, column, path, message } of duplicates(read)) {
       const at = read.find((each) => each.shown === shown);
       if (at !== undefined) {
@@ -86,10 +86,10 @@ export function evidence(uri: string, file: ParseResult): Map<string, Diagnostic
   const found = checked(uri, file);
   if (found === undefined) return undefined;
   const result = new Map<string, Diagnostic[]>(found.read.map(({ uri: each }) => [each, []]));
-  for (const { at, line, column, code, path, message } of found.problems) {
+  for (const { at, line, column, code, path, message, severity } of found.problems) {
     result.get(at.uri)?.push({
       range: valueAt(at.source, line, column),
-      severity: DiagnosticSeverity.Error,
+      severity: severity === "warning" ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
       code,
       source: "dxn",
       message: `${path}: ${message}`,
@@ -137,41 +137,20 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
   } catch {
     return undefined;
   }
-  // Each record's problems. A record whose stored records' only problems
-  // are states and dimensions its elements gained since is counted, those
-  // records apart as outdated; any other cannot be counted.
-  const problemsOf = new Map<string, Problem[]>();
-  for (const problem of found.problems) {
-    problemsOf.set(problem.at.record, [...(problemsOf.get(problem.at.record) ?? []), problem]);
-  }
+  // The records that cannot be counted, each with its problems: those
+  // whose stored records have errors. Outdated records, a warning, leave
+  // their record counted, and are counted apart.
   const stopped = new Map<string, Problem[]>();
-  const outdated = new Map<string, Outdated[]>();
-  for (const [record, problems] of problemsOf) {
-    const each = outdatedOf(problems);
-    if (each === undefined) stopped.set(record, problems);
-    else outdated.set(record, each);
+  for (const problem of found.problems) {
+    if (problem.severity === "warning") continue;
+    stopped.set(problem.at.record, [...(stopped.get(problem.at.record) ?? []), problem]);
   }
-  // The stored records to count: those of records that can be, without
-  // those outdated.
-  const sources = found.read
-    .filter(({ record }) => !stopped.has(record))
-    .map((read) => {
-      const apart = new Set(
-        (outdated.get(read.record) ?? []).filter(({ at }) => at === read).map(({ index }) => index),
-      );
-      if (apart.size === 0) return read;
-      const list = JSON.parse(read.source) as unknown[];
-      return { ...read, source: JSON.stringify(list.filter((_, index) => !apart.has(index))) };
-    });
-  const counted = progress(file, sources, freshness(repositoryOf(fileURLToPath(uri))));
-  // The paths written at each place, for the outdated records about them.
-  const pathsAt = new Map<string, string[]>();
-  for (const { path, at } of treePlaces(file)) {
-    const key = `${at.line}:${at.column}`;
-    pathsAt.set(key, [...(pathsAt.get(key) ?? []), path]);
-  }
+  const counted = progress(
+    file,
+    found.read.filter(({ record }) => !stopped.has(record)),
+    freshness(repositoryOf(fileURLToPath(uri))),
+  );
   return counted.flatMap((place) => {
-    const paths = pathsAt.get(`${place.line}:${place.column}`) ?? [];
     const parts = place.records.map((each) => {
       const problems = stopped.get(each.record);
       if (problems !== undefined) {
@@ -182,10 +161,7 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
           found.read.filter(({ record }) => record === each.record),
         );
       }
-      const here = (outdated.get(each.record) ?? []).filter(({ element }) =>
-        paths.includes(element),
-      );
-      return here.length === 0 ? countOf(each) : outdatedAt(each, here);
+      return each.outdated.length === 0 ? countOf(each) : outdatedAt(each);
     });
     if (parts.length === 0) return [];
     return [
@@ -227,67 +203,16 @@ function countAndLists(each: Progress["records"][number]): { label: string; list
   return { label, lists };
 }
 
-// A stored record made before its element gained a state or a dimension: the
-// file it is in and its place there, its element, what it says, and the
-// names it does not.
-interface Outdated {
-  at: Read;
-  index: number;
-  element: string;
-  says: string;
-  added: string[];
-}
-
-// The stored records a record's problems make outdated, when every one of
-// them is a state or a dimension the record does not give; none otherwise.
-function outdatedOf(problems: Problem[]): Outdated[] | undefined {
-  const byEntry = new Map<string, Outdated>();
-  for (const problem of problems) {
-    const index = Number(problem.path.match(/^\$\[(\d+)\]\.context\.(?:states|dimensions)$/)?.[1]);
-    const name = problem.message.match(/ is missing (\S+)$/)?.[1];
-    const entry = Number.isNaN(index) ? undefined : entryAt(problem.at.source, index);
-    if (problem.code !== "missing-field" || name === undefined || entry === undefined) {
-      return undefined;
-    }
-    const key = `${problem.at.uri}#${index}`;
-    const known = byEntry.get(key) ?? { at: problem.at, index, ...entry, added: [] };
-    known.added.push(name);
-    byEntry.set(key, known);
-  }
-  return [...byEntry.values()];
-}
-
-// What a stored record is about: its element, and the values it gives, in
-// words: "style = primary, press = released".
-function entryAt(source: string, index: number): { element: string; says: string } | undefined {
-  try {
-    const list = JSON.parse(source) as {
-      context?: { path?: unknown; type?: unknown; dimensions?: object; states?: object };
-    }[];
-    const context = list[index]?.context;
-    const element = context?.path ?? context?.type;
-    if (typeof element !== "string") return undefined;
-    const says = Object.entries({ ...context?.dimensions, ...context?.states })
-      .map(([name, value]) => `${name} = ${String(value)}`)
-      .join(", ");
-    return { element, says };
-  } catch {
-    return undefined;
-  }
-}
-
 // A record's evidence at a place where some stored records are outdated:
 // its count and how many are, by what was added; then why, what to do, and
 // each one, by what it says; then what is missing, stale and gone.
-function outdatedAt(
-  each: Progress["records"][number],
-  here: Outdated[],
-): { label: string; details: string } {
+function outdatedAt(each: Progress["records"][number]): { label: string; details: string } {
+  const here = each.outdated;
   const { label: count, lists } = countAndLists(each);
   const names = [...new Set(here.flatMap(({ added }) => added))];
   const and = names.join(" and ");
   const or = names.join(" or ");
-  const elements = [...new Set(here.map(({ element }) => element))].join(" and ");
+  const elements = [...new Set(here.map(({ path }) => path))].join(" and ");
   const label = `${count} · ${here.length} outdated: ${names.join(", ")} added`;
   const one = here.length === 1;
   const why = `${one ? "1 record is" : `${here.length} records are`} outdated: ${and} ${

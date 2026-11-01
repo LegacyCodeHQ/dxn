@@ -1297,7 +1297,7 @@ PenNode is **present** while its fingerprint, of its node or, without one,
 its frame, is the one recorded, **stale** once that has changed, and
 **gone** once the file, the frame or the node is, or the node is no longer
 in its frame. An entry is as its least fresh PenNode is, and a combination
-as its best entry is, or **missing** without one. A record with no PenNode
+as its best entry is, or **missing** without one. A record made before its element gained a state or a dimension does not say which value of it the drawing shows, so it matches no combination: it is counted apart as **outdated**, and `dxn validate` warns of it rather than fails, until it is given the value. A record with no PenNode
 is counted as recorded, and the first line says that staleness is not
 checked, so it never passes silently. Attaching again records the
 fingerprint now, and the entry is present again.
@@ -1811,4 +1811,5 @@ JSON itself:
 | `invalid-value`    | a scalar field's value is not a valid value of the scalar                                                                                                              |
 | `derived-field`    | a stored record gives a derived field, whose value follows from another's                                                                                              |
 | `unknown-actor`    | a stored record's actor is not one who records it                                                                                                                      |
+| `outdated`         | (a warning) a stored record leaves out a state or a dimension its element gained since it was recorded                                                                 |
 | `duplicate-record` | two stored records are the same in everything but their PenNodes' fingerprints                                                                                         |

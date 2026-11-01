@@ -4,6 +4,8 @@ export interface Diagnostic {
   path: string;
   line: number;
   column: number;
+  // A warning: the data is usable, but needs attention. An error otherwise.
+  severity?: "warning";
 }
 
 export class Diagnostics {
@@ -11,7 +13,7 @@ export class Diagnostics {
 
   constructor(private readonly source: string) {}
 
-  report(code: string, message: string, path: string, offset: number): void {
+  report(code: string, message: string, path: string, offset: number, warning = false): void {
     let line = 1;
     let lineStart = 0;
     for (let i = 0; i < offset && i < this.source.length; i++) {
@@ -20,7 +22,14 @@ export class Diagnostics {
         lineStart = i + 1;
       }
     }
-    this.items.push({ code, message, path, line, column: offset - lineStart + 1 });
+    this.items.push({
+      code,
+      message,
+      path,
+      line,
+      column: offset - lineStart + 1,
+      ...(warning ? { severity: "warning" as const } : {}),
+    });
   }
 }
 

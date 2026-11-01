@@ -1,7 +1,7 @@
 import type { ParseResult } from "./ast.js";
 import { profilesOf } from "./profiles.js";
 import { penNode } from "./scalars.js";
-import { type Check, describe, type Judged, judge } from "./status.js";
+import { type Check, describe, type Judged, judge, type Outdated } from "./status.js";
 
 // A page to review a tree's evidence by: the tree's root, and the page as
 // Markdown.
@@ -45,33 +45,40 @@ export function reviewPages(
     if (roots !== undefined && !roots.includes(root)) continue;
     trees.set(root, [...(trees.get(root) ?? []), element]);
   }
+  // A row's picture, by its entry's node, or its frame without one.
+  const pictureOf = (entry: Record<string, unknown>) => {
+    const at = field === undefined ? undefined : (entry[field] as Record<string, unknown>);
+    const id = (at?.node ?? at?.frame) as string | undefined;
+    return id === undefined ? undefined : picture(id);
+  };
   return [...trees].map(([root, elements]) => {
     const all = elements.flatMap(({ combinations }) => combinations);
     const count = (state: Judged["state"]) => all.filter((each) => each.state === state).length;
+    const outdated = elements.reduce((sum, { outdated: each }) => sum + each.length, 0);
     const summary = [
       `${record} for ${count("present")} of ${all.length} combinations`,
       ...(count("stale") > 0 ? [`${count("stale")} stale`] : []),
       ...(count("gone") > 0 ? [`${count("gone")} gone`] : []),
+      ...(outdated > 0 ? [`${outdated} outdated`] : []),
     ].join("; ");
-    // The elements with combinations to show, each with only those.
-    const shown = elements
-      .map(({ path, combinations }) => ({
-        path,
-        combinations: combinations.filter(
-          ({ state }) => only === undefined || only.includes(state),
-        ),
-      }))
-      .filter(({ combinations }) => combinations.length > 0);
-    const sections = shown.map(({ path, combinations }) => {
-      const table = tableOf(file, path, combinations, every, (entry) => {
-        const at = field === undefined ? undefined : (entry[field] as Record<string, unknown>);
-        const id = (at?.node ?? at?.frame) as string | undefined;
-        return id === undefined ? undefined : picture(id);
-      });
-      return elements.length === 1 ? table : `## ${path}\n\n${table}`;
+    // The elements with something to show: their combinations, only those
+    // asked for, and their outdated records, which always need a decision.
+    const sections = elements.flatMap(({ path, combinations, outdated: old }) => {
+      const those = combinations.filter(({ state }) => only === undefined || only.includes(state));
+      if (those.length === 0 && old.length === 0) return [];
+      const parts = [
+        ...(those.length > 0 ? [tableOf(file, path, those, every, pictureOf)] : []),
+        ...(old.length > 0 ? [outdatedOf(path, old, pictureOf)] : []),
+      ].join("\n\n");
+      return [elements.length === 1 ? parts : `## ${path}\n\n${parts}`];
     });
-    const which = only === undefined ? "" : `: ${only.join(" and ")}`;
-    const none = only === undefined ? [] : [`Nothing is ${only.join(" or ")}.`];
+    const asked = only === undefined ? [] : [...only, "outdated"];
+    const listing = (words: string[], last: string) =>
+      words.length > 1
+        ? `${words.slice(0, -1).join(", ")} ${last} ${words.at(-1)}`
+        : (words[0] ?? "");
+    const which = only === undefined ? "" : `: ${listing(asked, "and")}`;
+    const none = only === undefined ? [] : [`Nothing is ${listing(asked, "or")}.`];
     return {
       root,
       empty: sections.length === 0,
@@ -135,4 +142,40 @@ function tableOf(
   return [header, header.map(() => "---"), ...rows]
     .map((row) => `| ${row.join(" | ")} |`)
     .join("\n");
+}
+
+// An element's outdated records as a table: why they are, what to do, then a
+// column for each name they give, what each needs, and its picture.
+function outdatedOf(
+  path: string,
+  old: Outdated[],
+  picture: (entry: Record<string, unknown>) => string | undefined,
+): string {
+  const contexts = old.map(({ entry }) => {
+    const context = entry.context as {
+      dimensions?: Record<string, string>;
+      states?: Record<string, string>;
+    };
+    return { ...context.dimensions, ...context.states };
+  });
+  const names = [...new Set(contexts.flatMap((each) => Object.keys(each)))];
+  const added = [...new Set(old.flatMap(({ added: each }) => each))].join(" and ");
+  const rows = old.map(({ added: needs, entry }, index) => {
+    const found = picture(entry);
+    const said = contexts[index] ?? {};
+    const alt = `${path}: ${Object.entries(said)
+      .map(([name, value]) => `${name} = ${value}`)
+      .join(", ")}`;
+    return [
+      ...names.map((name) => said[name] ?? ""),
+      needs.join(", "),
+      found === undefined ? "no picture" : `![${alt}](${found})`,
+    ];
+  });
+  const header = [...names, "needs", "as recorded"];
+  return [
+    `**Outdated**: recorded before ${path} had ${added}; give each its value to count it again.`,
+    "",
+    ...[header, header.map(() => "---"), ...rows].map((row) => `| ${row.join(" | ")} |`),
+  ].join("\n");
 }

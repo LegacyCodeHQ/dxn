@@ -54,7 +54,7 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       fingerprinted: fingerprinted(name),
     }));
   const blocks = records.map((coverage) => {
-    const { record, combinations, present, stale, gone, paths } = coverage;
+    const { record, combinations, present, stale, gone, outdated, paths } = coverage;
     const table = drawTable(
       ["path", "combinations", "present", "stale", "gone", "missing"],
       paths.map((path) => [
@@ -73,15 +73,23 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       );
       return lines.length === 0 ? "" : `\n${heading}:\n${lines.join("")}`;
     };
+    // Each record made before its element gained a state or a dimension.
+    const old = paths.flatMap((path) =>
+      path.outdated.map(
+        ({ says, added }) => `  ${path.path}: ${says}, recorded before ${added.join(", ")}\n`,
+      ),
+    );
+    const outdatedList = old.length === 0 ? "" : `\nOutdated:\n${old.join("")}`;
     const notes = [
       ...(stale > 0 ? [`${stale} stale`] : []),
       ...(gone > 0 ? [`${gone} gone`] : []),
+      ...(outdated > 0 ? [`${outdated} outdated`] : []),
       ...(coverage.fingerprinted ? [] : [`${record} has no PenNode, so staleness is not checked`]),
     ];
     const summary = `${file}: ${record} for ${present} of ${count(combinations, "combination")}${notes.map((note) => `; ${note}`).join("")}`;
     return `${summary}\n\n${table}${
       listMissing
-        ? `${listed("Missing", "missing")}${listed("Stale", "stale")}${listed("Gone", "gone")}`
+        ? `${listed("Missing", "missing")}${listed("Stale", "stale")}${listed("Gone", "gone")}${outdatedList}`
         : ""
     }`;
   });
@@ -99,7 +107,13 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       stale: path.stale.length,
       gone: path.gone.length,
       missing: path.missing.length,
-      listed: { stale: path.stale, gone: path.gone, missing: path.missing },
+      outdated: path.outdated.length,
+      listed: {
+        stale: path.stale,
+        gone: path.gone,
+        missing: path.missing,
+        outdated: path.outdated.map(({ says, added }) => ({ says, added })),
+      },
     })),
   }));
   return report.succeed({ file, records: counted }, text);

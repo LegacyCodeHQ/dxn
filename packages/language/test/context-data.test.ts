@@ -20,10 +20,11 @@ profile Phone: Device { Pointer = touch }
 `;
 
 // The problems in one stored Evidence record with this context, as
-// "code: path: message".
+// "code: path: message", a warning's with "warning: " before it.
 const check = (context: unknown, source = model + profiles) =>
   validate(parse(source), "Evidence", JSON.stringify([{ context, actor: "DesignAgent" }])).map(
-    ({ code, path, message }) => `${code}: ${path}: ${message}`,
+    ({ code, path, message, severity }) =>
+      `${severity === "warning" ? "warning: " : ""}${code}: ${path}: ${message}`,
   );
 const on = (profile: string, theme: string, hover: string) => ({
   type: "Wordmark",
@@ -80,7 +81,7 @@ describe("a stored record's context", () => {
       check({ ...on("Laptop", "dark", "rest"), dimensions: { Theme: "dark", Pointer: "mouse" } }),
       check({ ...on("Laptop", "dark", "rest"), dimensions: { Theme: "dim" } }),
     ]).toEqual([
-      ["missing-field: $[0].context.dimensions: context.dimensions is missing Theme"],
+      ["warning: outdated: $[0].context.dimensions: recorded before Wordmark needed Theme"],
       [
         "unknown-field: $[0].context.dimensions.Pointer: Pointer is given by the profile; context.dimensions has Theme",
       ],
@@ -95,7 +96,7 @@ describe("a stored record's context", () => {
       check(on("Laptop", "dark", "hoverd")),
       check(on("Phone", "dark", "hovered")),
     ]).toEqual([
-      ["missing-field: $[0].context.states: context.states is missing hover"],
+      ["warning: outdated: $[0].context.states: recorded before Wordmark had hover"],
       ['unknown-field: $[0].context.states.focus: Wordmark has no state "focus" (hover)'],
       [
         'unknown-value: $[0].context.states.hover: "hoverd" is not a value of hover (rest, hovered)',
@@ -132,7 +133,7 @@ describe("a stored record's context", () => {
       ],
       [
         'unknown-field: $[0].context.profile: context has no field "profile" (type, dimensions, states)',
-        "missing-field: $[0].context.dimensions: context.dimensions is missing Pointer",
+        "warning: outdated: $[0].context.dimensions: recorded before Wordmark needed Pointer",
       ],
     ]);
   });

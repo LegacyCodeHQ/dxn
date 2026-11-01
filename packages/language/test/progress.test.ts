@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
-import { progress } from "../src/status.js";
+import { coverage, progress } from "../src/status.js";
 
 const file = parse(`dimension Pointer = mouse | touch
 enum Hover = rest | hovered
@@ -94,5 +94,45 @@ describe("progress", () => {
 
   it("counts every entry as present without a check", () => {
     expect(progress(file, stored)[0]?.records[0]?.present).toBe(2);
+  });
+});
+
+describe("an outdated stored record", () => {
+  // A button that gained hover since one of its records was made.
+  const button = parse(`enum Style = filled | plain
+enum Hover = rest | hovered
+type Button {
+  state style: Style, hover: Hover
+}
+record Evidence {
+  source: PenNode
+}
+actor DesignAgent records Evidence
+`);
+  const entry = (states: Record<string, string>) => ({
+    context: { type: "Button", dimensions: {}, states },
+    actor: "DesignAgent",
+    source: { file: "design.pen", frame: "f", fingerprint: "a1" },
+  });
+  const stored = JSON.stringify([
+    entry({ style: "filled" }),
+    entry({ style: "plain", hover: "rest" }),
+  ]);
+
+  it("is counted apart, by what it says and what its element gained since", () => {
+    const covered = coverage(button, "Evidence", [stored]);
+    const [place] = progress(button, [{ record: "Evidence", source: stored }]);
+    expect([
+      [covered.present, covered.combinations, covered.outdated],
+      covered.paths.map(({ outdated }) => outdated.map(({ says, added }) => [says, added])),
+      place?.records.map(({ present, outdated }) => [
+        present,
+        outdated.map(({ says, added }) => [says, added]),
+      ]),
+    ]).toEqual([
+      [1, 4, 1],
+      [[["style = filled", ["hover"]]]],
+      [[1, [["style = filled", ["hover"]]]]],
+    ]);
   });
 });

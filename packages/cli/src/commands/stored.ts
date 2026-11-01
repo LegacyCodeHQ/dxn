@@ -65,13 +65,16 @@ export function loadStored(
 }
 
 // Checks stored data against the file, reporting every problem; whether all of
-// it is valid.
+// it is valid. A warning, such as a record made before its element gained a
+// state, leaves it valid.
 export function checkStored(parsed: ParseResult, stored: Stored[], report: Reporter): boolean {
   let valid = true;
   for (const { record, shown, source } of stored) {
-    for (const { line, column, code, path, message } of validate(parsed, record, source)) {
-      report.problem({ file: shown, line, column, severity: "error", code, path, message });
-      valid = false;
+    for (const found of validate(parsed, record, source)) {
+      const { line, column, code, path, message } = found;
+      const severity = found.severity ?? "error";
+      report.problem({ file: shown, line, column, severity, code, path, message });
+      if (severity === "error") valid = false;
     }
   }
   return valid && !duplicates(stored, report);

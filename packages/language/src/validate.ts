@@ -211,12 +211,25 @@ export function validate(file: ParseResult, recordName: string, source: string):
       }
       for (const name of names) {
         if (!value.members.some((entry) => entry.key.value === name)) {
-          diagnostics.report(
-            "missing-field",
-            `context.${key} is missing ${name}`,
-            at,
-            value.span.start,
-          );
+          // A state or a dimension the element gained since: the record is
+          // outdated, not wrong.
+          if (key === "parents") {
+            diagnostics.report(
+              "missing-field",
+              `context.${key} is missing ${name}`,
+              at,
+              value.span.start,
+            );
+          } else {
+            const had = key === "states" ? "had" : "needed";
+            diagnostics.report(
+              "outdated",
+              `recorded before ${label} ${had} ${name}`,
+              at,
+              value.span.start,
+              true,
+            );
+          }
           complete = false;
         }
       }

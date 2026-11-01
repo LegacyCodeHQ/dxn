@@ -13,12 +13,21 @@ export interface Combination {
   states: Record<string, string>;
 }
 
+// A stored record made before its element gained a state or a dimension:
+// what it says, "style = filled", what it does not, and the record.
+export interface Outdated {
+  says: string;
+  added: string[];
+  entry: Record<string, unknown>;
+}
+
 export interface Coverage {
   record: string;
   combinations: number;
   present: number;
   stale: number;
   gone: number;
+  outdated: number;
   paths: {
     path: string;
     combinations: number;
@@ -28,6 +37,7 @@ export interface Coverage {
     stale: Combination[];
     gone: Combination[];
     missing: Combination[];
+    outdated: Outdated[];
   }[];
 }
 
@@ -102,6 +112,9 @@ export interface Progress {
     stale: number;
     gone: number;
     listed: { missing: string[]; stale: string[]; gone: string[] };
+    // The stored records about the place made before its element gained a
+    // state or a dimension, each about one of its paths.
+    outdated: (Outdated & { path: string })[];
   }[];
 }
 
@@ -141,6 +154,7 @@ export function progress(
           stale: 0,
           gone: 0,
           listed: { missing: [], stale: [], gone: [] },
+          outdated: [],
         };
         place.records.push(counted);
       }
@@ -148,6 +162,7 @@ export function progress(
       counted.present += found.present;
       counted.stale += found.stale.length;
       counted.gone += found.gone.length;
+      counted.outdated.push(...found.outdated.map((each) => ({ ...each, path })));
       for (const of of ["missing", "stale", "gone"] as const) {
         counted.listed[of].push(
           ...found[of].map((combination) => describe(file, path, combination)),
@@ -245,7 +260,7 @@ export function judge(
   record: string,
   sources: string[],
   check?: Check,
-): { path: string; combinations: Judged[] }[] {
+): { path: string; combinations: Judged[]; outdated: Outdated[] }[] {
   const given = givenDimensions(file);
   const declared = file.records.find(({ name }) => name === record);
   // An entry is as fresh as the least fresh of its PenNodes: gone, then
@@ -303,7 +318,25 @@ export function judge(
       }
       return { combination, state: "missing" };
     };
-    return { path, combinations: merged(file, path, given).map(judged) };
+    const combinations = merged(file, path, given);
+    // The names a context of the path gives; an entry that gives some of
+    // them and nothing else, but not all, was made before the rest were.
+    const names = new Set(
+      combinations.flatMap(({ dimensions, states }) => [
+        ...Object.keys(dimensions),
+        ...Object.keys(states),
+      ]),
+    );
+    const outdated = about.flatMap(({ dimensions, states, entry }) => {
+      const given = [...Object.keys(dimensions), ...Object.keys(states)];
+      const added = [...names].filter((name) => !given.includes(name));
+      if (added.length === 0 || !given.every((name) => names.has(name))) return [];
+      const says = Object.entries({ ...dimensions, ...states })
+        .map(([name, value]) => `${name} = ${value}`)
+        .join(", ");
+      return [{ says, added, entry }];
+    });
+    return { path, combinations: combinations.map(judged), outdated };
   });
 }
 
@@ -318,7 +351,7 @@ export function coverage(
   sources: string[],
   check?: Check,
 ): Coverage {
-  const paths = judge(file, record, sources, check).map(({ path, combinations }) => {
+  const paths = judge(file, record, sources, check).map(({ path, combinations, outdated }) => {
     const those = (wanted: Freshness | "missing") =>
       combinations.filter(({ state }) => state === wanted).map(({ combination }) => combination);
     return {
@@ -328,6 +361,7 @@ export function coverage(
       stale: those("stale"),
       gone: those("gone"),
       missing: those("missing"),
+      outdated,
     };
   });
   const total = (of: (path: (typeof paths)[number]) => number) =>
@@ -338,6 +372,7 @@ export function coverage(
     present: total(({ present }) => present),
     stale: total(({ stale }) => stale.length),
     gone: total(({ gone }) => gone.length),
+    outdated: total(({ outdated }) => outdated.length),
     paths,
   };
 }
