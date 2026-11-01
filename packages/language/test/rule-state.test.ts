@@ -113,11 +113,11 @@ type Page {
 
   it("checks a stored context against the row its states are in", () => {
     const stored = `${disabled}record Evidence {}\n
-actor evidence-recorder records Evidence`;
+actor EvidenceRecorder records Evidence`;
     const context = (enabled: string, hover: string) =>
       JSON.stringify([
         {
-          actor: "evidence-recorder",
+          actor: "EvidenceRecorder",
           context: {
             type: "Button",
             dimensions: { Pointer: "mouse" },

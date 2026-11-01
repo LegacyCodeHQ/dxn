@@ -226,8 +226,8 @@ describe("completions", () => {
     expect([
       at("actor designer ‸"),
       at("actor designer rec‸"),
-      at("actor designer records ‸"),
-      at("record Evidence {\n  at: Timestamp\n}\nactor designer records Ev‸"),
+      at("actor Designer records ‸"),
+      at("record Evidence {\n  at: Timestamp\n}\nactor Designer records Ev‸"),
     ]).toMatchInlineSnapshot(`
       [
         [

@@ -12,9 +12,9 @@ record Evidence {
 record Review {
   verdict: Verdict
 }
-actor designer records Evidence
-actor design-agent records Evidence
-actor reviewer records Review
+actor Designer records Evidence
+actor DesignAgent records Evidence
+actor Reviewer records Review
 `;
 
 const file = parse(source);
@@ -29,14 +29,14 @@ const messages = (data: string) => validate(file, "Evidence", data).map(({ messa
 
 describe("the actor of a stored record", () => {
   it("is one of the actors who record it", () => {
-    expect([messages(stored("designer")), messages(stored("design-agent"))]).toEqual([[], []]);
+    expect([messages(stored("Designer")), messages(stored("DesignAgent"))]).toEqual([[], []]);
   });
 
   it("is required, and must be an actor who records that record", () => {
     expect([
       messages(stored()),
-      messages(stored("desginer")),
-      messages(stored("reviewer")),
+      messages(stored("Desginer")),
+      messages(stored("Reviewer")),
       messages(
         `[{ "context": { "type": "Card", "dimensions": {}, "states": {} }, "actor": 1, "note": "x" }]`,
       ),
@@ -46,10 +46,10 @@ describe("the actor of a stored record", () => {
           "Evidence is missing actor",
         ],
         [
-          ""desginer" is not an actor who records Evidence; did you mean designer?",
+          ""Desginer" is not an actor who records Evidence; did you mean Designer?",
         ],
         [
-          "reviewer records Review, not Evidence",
+          "Reviewer records Review, not Evidence",
         ],
         [
           "expected an actor's name (a string), found a number",
@@ -60,7 +60,7 @@ describe("the actor of a stored record", () => {
 
   it("is the language's, so a record an actor records cannot declare a field named actor", () => {
     expect(
-      problems("record Evidence {\n  actor: NonEmptyString\n}\nactor designer records Evidence\n"),
+      problems("record Evidence {\n  actor: NonEmptyString\n}\nactor Designer records Evidence\n"),
     ).toMatchInlineSnapshot(`
       [
         "2:3: reserved-name: actor is who records Evidence; choose another field name",

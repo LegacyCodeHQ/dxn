@@ -42,7 +42,7 @@ expect "A press takes the focus" {
   on press
   then focus = focused
 }
-actor designer records Evidence
+actor Designer records Evidence
 `;
 
 const data = `[
@@ -54,7 +54,7 @@ const data = `[
       "parents": { "menu.menu": "open" },
       "states": { "hover": "rest", "focus": "blurred" }
     },
-    "actor": "designer"
+    "actor": "Designer"
   }
 ]
 `;
@@ -300,7 +300,7 @@ describe("renaming in the editor", () => {
       "parents": { "menu.menu": "open" },
       "states": { "hover": "rest", "focus": "blurred" }
     },
-    "actor": "designer"
+    "actor": "Designer"
   }`;
     const both = [
       {
@@ -371,7 +371,7 @@ expect "A dark card is deep" {
   when Theme = dark
   then shade = deep
 }
-actor designer records Evidence
+actor Designer records Evidence
 `;
     const records = `[
   {
@@ -382,7 +382,7 @@ actor designer records Evidence
       "parents": {},
       "states": { "shade": "deep", "glow": "off" }
     },
-    "actor": "designer"
+    "actor": "Designer"
   }
 ]
 `;
@@ -482,7 +482,7 @@ expect "The link is selected on the blog" {
   when current = blog
   then selection = selected
 }
-actor designer records Evidence
+actor Designer records Evidence
 `;
     const records = `[
   {
@@ -492,7 +492,7 @@ actor designer records Evidence
       "parents": { "current": "blog" },
       "states": { "current": "blog", "selection": "selected" }
     },
-    "actor": "designer"
+    "actor": "Designer"
   }
 ]
 `;
@@ -573,7 +573,7 @@ record Source {
 record DesignReview {
   source: Source
 }
-actor design-review-recorder records DesignReview
+actor DesignReviewRecorder records DesignReview
 `;
     const lines = records.split("\n");
     const where = (text: string, word: string): [number, number] => {
@@ -613,7 +613,7 @@ actor design-review-recorder records DesignReview
         },
         [
           "record DesignReview {",
-          "actor design-review-recorder records DesignReview",
+          "actor DesignReviewRecorder records DesignReview",
         ],
         {
           "from": "design-review",
@@ -631,6 +631,7 @@ actor design-review-recorder records DesignReview
     snapshot.push(renamed("enum Hover = ", "rest", "hovered"));
     snapshot.push(renamed("enum ", "Focus", "Hover"));
     snapshot.push(renamed("", "type", "kind"));
+    snapshot.push(renamed("actor ", "Designer", "designer"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         ""hover" is not an enum name: a capital letter, then letters and digits",
@@ -639,6 +640,7 @@ actor design-review-recorder records DesignReview
         "the rename would leave a problem: "hovered" appears twice in Hover",
         "the rename would leave a problem: Hover is already declared at line 2",
         "there is no name here to rename",
+        ""designer" is not an actor name: a capital letter, then letters and digits",
       ]
     `);
   });

@@ -153,10 +153,7 @@ export function renameAt(
 
 // How each kind that can be renamed is named.
 const rules: Record<string, { pattern: RegExp; text: string }> = {
-  actor: {
-    pattern: /^[a-z][A-Za-z0-9-]*$/,
-    text: "a lowercase letter, then letters, digits and hyphens",
-  },
+  actor: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   record: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   dimension: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   profile: {

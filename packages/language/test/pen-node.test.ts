@@ -11,7 +11,7 @@ type Button {
 record PenEvidence {
   source: PenNode
 }
-actor design-agent records PenEvidence
+actor DesignAgent records PenEvidence
 `;
 
 const file = parse(source);
@@ -19,7 +19,7 @@ const file = parse(source);
 // A stored PenEvidence for a style, with this source.
 const entry = (style: string, at: unknown) => ({
   context: { type: "Button", dimensions: {}, states: { style } },
-  actor: "design-agent",
+  actor: "DesignAgent",
   source: at,
 });
 const messages = (...entries: unknown[]) =>

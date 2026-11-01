@@ -122,11 +122,11 @@ type Toolbar needs Breakpoint {
 
   it("is checked in a stored context: the value must be the one the when gives", () => {
     const schema = parse(`${layout}record Evidence {}\n
-actor evidence-recorder records Evidence`);
+actor EvidenceRecorder records Evidence`);
     const context = (Breakpoint: string, value: string) =>
       JSON.stringify([
         {
-          actor: "evidence-recorder",
+          actor: "EvidenceRecorder",
           context: { type: "Toolbar", dimensions: { Breakpoint }, states: { layout: value } },
         },
       ]);

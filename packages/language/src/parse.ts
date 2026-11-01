@@ -31,8 +31,8 @@ import { scope } from "./scope.js";
 
 class ParseFailure extends Error {}
 
-// How a kind of name is written: sets of possibilities are capitalized,
-// single things lowercase.
+// How a kind of name is written: sets of possibilities, and actors, are
+// capitalized; single things lowercase.
 const capitalized = { pattern: /^[A-Z][A-Za-z0-9]*$/, rule: "a capital letter" };
 const lowercase = { pattern: /^[a-z]/, rule: "a lowercase letter" };
 
@@ -701,7 +701,7 @@ export function parse(source: string): ParseResult {
   // An actor: "actor <name> records <Record>", the one record it records.
   const actorDeclaration = () => {
     next();
-    const named = name("actor", 'an actor name after "actor"', lowercase);
+    const named = name("actor", 'an actor name after "actor"', capitalized);
     keyword("records", `"records" after ${JSON.stringify(named.name)}`);
     const records = word('a record after "records"');
     keep(result.actors, { ...named, records });

@@ -35,7 +35,7 @@ expect "Escape closes the menu" {
   on escape
   then menu = closed
 }
-actor evidence-recorder records Evidence
+actor EvidenceRecorder records Evidence
 `;
 
 // Each symbol as its kind, its name, the lines it spans and where its name
@@ -69,7 +69,7 @@ describe("symbols", () => {
         "record Evidence 26-28 @26:8",
         "  field hover 27-27 @27:3",
         "expectation Escape closes the menu 30-34 @30:8",
-        "actor evidence-recorder 35-35 @35:7",
+        "actor EvidenceRecorder 35-35 @35:7",
       ]
     `);
   });

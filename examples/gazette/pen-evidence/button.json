@@ -10,7 +10,7 @@
         "enabled": "enabled"
       }
     },
-    "actor": "design-agent",
+    "actor": "DesignAgent",
     "source": {
       "file": "examples/gazette/gazette.pen",
       "frame": "IeCCz",
@@ -29,7 +29,7 @@
         "enabled": "enabled"
       }
     },
-    "actor": "design-agent",
+    "actor": "DesignAgent",
     "source": {
       "file": "examples/gazette/gazette.pen",
       "frame": "IeCCz",
@@ -48,7 +48,7 @@
         "enabled": "disabled"
       }
     },
-    "actor": "design-agent",
+    "actor": "DesignAgent",
     "source": {
       "file": "examples/gazette/gazette.pen",
       "frame": "IeCCz",
@@ -67,7 +67,7 @@
         "enabled": "enabled"
       }
     },
-    "actor": "design-agent",
+    "actor": "DesignAgent",
     "source": {
       "file": "examples/gazette/gazette.pen",
       "frame": "IeCCz",
@@ -86,7 +86,7 @@
         "enabled": "enabled"
       }
     },
-    "actor": "design-agent",
+    "actor": "DesignAgent",
     "source": {
       "file": "examples/gazette/gazette.pen",
       "frame": "IeCCz",
@@ -105,7 +105,7 @@
         "enabled": "disabled"
       }
     },
-    "actor": "design-agent",
+    "actor": "DesignAgent",
     "source": {
       "file": "examples/gazette/gazette.pen",
       "frame": "IeCCz",

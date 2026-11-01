@@ -32,7 +32,7 @@ expect "A pressed link is at rest" {
   on press
   then hover = rest
 }
-actor evidence-recorder records Evidence
+actor EvidenceRecorder records Evidence
 `;
 
 const lines = source.split("\n");

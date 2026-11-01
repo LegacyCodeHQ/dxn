@@ -144,7 +144,7 @@ describe("the command surface", () => {
     const root = writeProject({});
     writeFileSync(
       join(root, "toolbar.dxn"),
-      "type Toolbar {}\nrecord Evidence {}\nactor evidence-recorder records Evidence\n",
+      "type Toolbar {}\nrecord Evidence {}\nactor EvidenceRecorder records Evidence\n",
     );
     mkdirSync(join(root, "evidence"));
     writeFileSync(join(root, "evidence", "toolbar.json"), "[]");

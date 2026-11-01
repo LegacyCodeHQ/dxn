@@ -39,7 +39,7 @@ profile phone: Device { Breakpoint = base, Pointer = touch, Keyboard = no-keyboa
 profile laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
 
 record Evidence {}
-actor evidence-recorder records Evidence
+actor EvidenceRecorder records Evidence
 `;
 const schema = parse(source);
 const toggle = (overrides: Record<string, unknown> = {}) => ({
@@ -53,7 +53,7 @@ const toggle = (overrides: Record<string, unknown> = {}) => ({
 // The problems in one stored Evidence record with this context, as
 // "code: path: message".
 const check = (context: unknown) =>
-  validate(schema, "Evidence", JSON.stringify([{ context, actor: "evidence-recorder" }])).map(
+  validate(schema, "Evidence", JSON.stringify([{ context, actor: "EvidenceRecorder" }])).map(
     ({ code, path, message }) => `${code}: ${path}: ${message}`,
   );
 
@@ -146,7 +146,7 @@ describe("a context for a child", () => {
   it("is renamed with its parents' and its own states", () => {
     const data = JSON.stringify([
       {
-        actor: "evidence-recorder",
+        actor: "EvidenceRecorder",
         context: toggle({
           parents: { layout: "compact", "menu.menu": "open" },
           states: { hover: "rest", focus: "blurred", expanded: "open" },

@@ -17,7 +17,7 @@ record DesignReview {
 describe("actor", () => {
   it("declares who records a record: one record each, and a record by several", () => {
     const { actors, diagnostics } = parse(
-      `${records}actor design-agent records PenEvidence\nactor designer records DesignReview\nactor reviewer records DesignReview\n`,
+      `${records}actor DesignAgent records PenEvidence\nactor Designer records DesignReview\nactor Reviewer records DesignReview\n`,
     );
     expect([
       diagnostics,
@@ -25,16 +25,16 @@ describe("actor", () => {
     ]).toEqual([
       [],
       [
-        ["design-agent", "PenEvidence", 11],
-        ["designer", "DesignReview", 12],
-        ["reviewer", "DesignReview", 13],
+        ["DesignAgent", "PenEvidence", 11],
+        ["Designer", "DesignReview", 12],
+        ["Reviewer", "DesignReview", 13],
       ],
     ]);
   });
 
   it("gives the record it records a context: what it stores is about one combination", () => {
     const { records: declared } = parse(
-      `${records}actor design-agent records PenEvidence\nactor designer records DesignReview\n`,
+      `${records}actor DesignAgent records PenEvidence\nactor Designer records DesignReview\n`,
     );
     expect(declared.map(({ name, context }) => [name, context])).toEqual([
       ["Source", false],
@@ -53,23 +53,23 @@ describe("actor", () => {
 
   it("refuses an actor that records what is not a record, or no record", () => {
     expect([
-      problems(`${records}actor design-agent records PenEvidance\n`),
-      problems(`${records}actor design-agent records Verdict\n`),
-      problems(`${records}actor design-agent records Source\n`),
-      problems(`${records}actor design-agent\n`),
+      problems(`${records}actor DesignAgent records PenEvidance\n`),
+      problems(`${records}actor DesignAgent records Verdict\n`),
+      problems(`${records}actor DesignAgent records Source\n`),
+      problems(`${records}actor DesignAgent\n`),
     ]).toMatchInlineSnapshot(`
       [
         [
-          "11:28: unknown-record: PenEvidance is not a record; did you mean PenEvidence?",
+          "11:27: unknown-record: PenEvidance is not a record; did you mean PenEvidence?",
         ],
         [
-          "11:28: unknown-record: Verdict is an enum, not a record",
+          "11:27: unknown-record: Verdict is an enum, not a record",
         ],
         [
           "6:3: nested-context: PenEvidence.source is a Source, which has its own context",
         ],
         [
-          "11:19: syntax-error: expected "records" after "design-agent", found the end of the line",
+          "11:18: syntax-error: expected "records" after "DesignAgent", found the end of the line",
         ],
       ]
     `);
@@ -77,33 +77,35 @@ describe("actor", () => {
 
   it("records one record each, for now", () => {
     expect(
-      problems(`${records}actor designer records PenEvidence, DesignReview\n`),
+      problems(`${records}actor Designer records PenEvidence, DesignReview\n`),
     ).toMatchInlineSnapshot(`
       [
-        "11:35: syntax-error: an actor records one record, for now: designer records PenEvidence",
+        "11:35: syntax-error: an actor records one record, for now: Designer records PenEvidence",
       ]
     `);
   });
 
-  it("is named as a single thing is, lowercase, and once in the file", () => {
+  it("is named as records, enums and types are, capitalized, and once in the file", () => {
     expect([
-      problems(`${records}actor Designer records DesignReview\n`),
+      problems(`${records}actor designer records DesignReview\n`),
+      problems(`${records}actor Design-agent records DesignReview\n`),
       problems(
-        `${records}actor designer records DesignReview\nactor designer records PenEvidence\n`,
+        `${records}actor Designer records DesignReview\nactor Designer records PenEvidence\n`,
       ),
-      problems(
-        `${records}dimension Pointer = mouse | touch\nenvironment Device = Pointer\nprofile designer: Device { Pointer = mouse }\nactor designer records DesignReview\n`,
-      ),
+      problems(`${records}type Designer {\n}\nactor Designer records DesignReview\n`),
     ]).toMatchInlineSnapshot(`
       [
         [
-          "11:7: actor-name: actor names start with a lowercase letter: "Designer"",
+          "11:7: actor-name: actor names start with a capital letter: "designer"",
         ],
         [
-          "12:7: duplicate-name: designer is already declared at line 11",
+          "11:7: actor-name: actor names are letters and digits: "Design-agent"",
         ],
         [
-          "14:7: duplicate-name: designer is already declared at line 13",
+          "12:7: duplicate-name: Designer is already declared at line 11",
+        ],
+        [
+          "13:7: duplicate-name: Designer is already declared at line 11",
         ],
       ]
     `);

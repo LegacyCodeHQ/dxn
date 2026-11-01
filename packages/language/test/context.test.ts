@@ -11,7 +11,7 @@ record Evidence {
 record Source {
   actor: Actor
 }
-actor evidence-recorder records Evidence
+actor EvidenceRecorder records Evidence
 `;
     expect([
       problems(source),
@@ -28,7 +28,7 @@ actor evidence-recorder records Evidence
   it("cannot declare a field named context, which it already has", () => {
     expect(
       problems(
-        "record Evidence {\n  context: NonEmptyString\n}\nactor evidence-recorder records Evidence\n",
+        "record Evidence {\n  context: NonEmptyString\n}\nactor EvidenceRecorder records Evidence\n",
       ),
     ).toEqual(["2:3: reserved-name: context is Evidence's context; choose another field name"]);
     expect(problems("record Note {\n  context: NonEmptyString\n}\n")).toEqual([]);
@@ -37,7 +37,7 @@ actor evidence-recorder records Evidence
   it("cannot be inside another record, which would give it a second context", () => {
     expect(
       problems(
-        "record Evidence {\n  note: NonEmptyString\n}\nrecord Review {\n  evidence: Evidence\n}\nrecord Source {\n  evidence: Evidence\n}\nactor evidence-recorder records Evidence\nactor review-recorder records Review\n",
+        "record Evidence {\n  note: NonEmptyString\n}\nrecord Review {\n  evidence: Evidence\n}\nrecord Source {\n  evidence: Evidence\n}\nactor EvidenceRecorder records Evidence\nactor ReviewRecorder records Review\n",
       ),
     ).toEqual([
       "5:3: nested-context: Review.evidence is an Evidence, which has its own context",

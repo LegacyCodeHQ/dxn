@@ -30,7 +30,7 @@ record Note { text: NonEmptyString }
 A record an actor records, and a derived field
 ================================================================================
 
-actor designer records Evidence
+actor Designer records Evidence
 
 record Evidence {
   actor: Actor

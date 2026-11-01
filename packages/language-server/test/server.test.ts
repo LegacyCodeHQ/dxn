@@ -295,10 +295,10 @@ describe("the language server", () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-rename-"));
     try {
       const text =
-        "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\nenum Actor = designer\nrecord Evidence {\n}\nactor designer records Evidence\n";
+        "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\nenum Actor = designer\nrecord Evidence {\n}\nactor Designer records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
-      const stored = `[\n  {\n    "context": { "type": "Link", "profile": null, "dimensions": {}, "states": { "hover": "hovered" } },\n    "actor": "designer"\n  }\n]\n`;
+      const stored = `[\n  {\n    "context": { "type": "Link", "profile": null, "dimensions": {}, "states": { "hover": "hovered" } },\n    "actor": "Designer"\n  }\n]\n`;
       writeFileSync(join(folder, "evidence", "link.json"), stored);
       const editor = connect();
       editors.push(editor);
@@ -366,7 +366,7 @@ describe("the language server", () => {
   it("renames a record and moves its stored records' folder, where the editor can", async () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-rename-"));
     try {
-      const text = "enum Actor = designer\nrecord Evidence {\n}\nactor designer records Evidence\n";
+      const text = "enum Actor = designer\nrecord Evidence {\n}\nactor Designer records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       const uri = pathToFileURL(join(folder, "spec.dxn")).href;
@@ -459,7 +459,7 @@ describe("the language server", () => {
         uri,
         languageId: "dxn",
         version: 1,
-        text: "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n}\nrecord Evidence {\n}\nactor designer records Evidence\n",
+        text: "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n}\nrecord Evidence {\n}\nactor Designer records Evidence\n",
       },
     });
     await opened;
@@ -503,7 +503,7 @@ describe("the language server", () => {
           children: [],
         },
         {
-          name: "designer",
+          name: "Designer",
           detail: "actor",
           kind: SymbolKind.Interface,
           range: range(6, 0, 31),
@@ -564,7 +564,7 @@ describe("the language server", () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-evidence-"));
     try {
       const text =
-        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n}\nactor designer records Evidence\nactor reviewer records Evidence\n";
+        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n}\nactor Designer records Evidence\nactor Reviewer records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       const record = (actor: string) =>
@@ -619,13 +619,13 @@ describe("the language server", () => {
         [
           { line: 3, character: 13 },
           "unknown-actor",
-          '$[0].actor: "maker" is not an actor who records Evidence (designer, reviewer)',
+          '$[0].actor: "maker" is not an actor who records Evidence (Designer, Reviewer)',
           "dxn",
         ],
       ]);
 
       // Fixed on disk, as dxn attach or an edit outside the editor would.
-      writeFileSync(stored, record("reviewer"));
+      writeFileSync(stored, record("Reviewer"));
       await editor.sendNotification(DidChangeWatchedFilesNotification.type, {
         changes: [{ uri: data, type: FileChangeType.Changed }],
       });
@@ -663,7 +663,7 @@ describe("the language server", () => {
     const uri = "file:///spec/button.dxn";
     const opened = published(editor);
     const text =
-      "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n  action focus-in: focus blurred -> focused\n}\n";
+      "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n  action focus-in: focus blurred -> focused\n}\nrecord Evidence {\n}\nactor Designer records Evidence\n";
     await editor.sendNotification(DidOpenTextDocumentNotification.type, {
       textDocument: { uri, languageId: "dxn", version: 1, text },
     });
@@ -697,6 +697,9 @@ describe("the language server", () => {
       "focus property",
       "blurred enumMember",
       "focused enumMember",
+      "Evidence struct declaration",
+      "Designer class declaration",
+      "Evidence struct",
     ]);
   });
 
@@ -739,12 +742,12 @@ describe("the language server", () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-duplicates-"));
     try {
       const text =
-        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n  source: PenNode\n}\nactor designer records Evidence\n";
+        "enum Actor = designer | reviewer\ntype Card {\n  state owner: Actor\n}\nrecord Evidence {\n  source: PenNode\n}\nactor Designer records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
       // The same record, its node fingerprinted at two times.
       const entry = (fingerprint: string) =>
-        `  {\n    "context": { "type": "Card", "dimensions": {}, "states": { "owner": "designer" } },\n    "actor": "designer",\n    "source": { "file": "a.pen", "frame": "f", "fingerprint": "${fingerprint}" }\n  }`;
+        `  {\n    "context": { "type": "Card", "dimensions": {}, "states": { "owner": "designer" } },\n    "actor": "Designer",\n    "source": { "file": "a.pen", "frame": "f", "fingerprint": "${fingerprint}" }\n  }`;
       writeFileSync(join(folder, "evidence", "a.json"), `[\n${entry("one")}\n]\n`);
       writeFileSync(join(folder, "evidence", "b.json"), `[\n${entry("two")}\n]\n`);
       const uri = pathToFileURL(join(folder, "spec.dxn")).href;

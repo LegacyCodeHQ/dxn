@@ -118,13 +118,13 @@
         },
         {
           "comment": "An actor, and the record it records.",
-          "match": "\\b(actor)\\s+([a-z][A-Za-z0-9-]*)\\s+(records)\\s+([A-Z][A-Za-z0-9]*)",
+          "match": "\\b(actor)\\s+([A-Z][A-Za-z0-9]*)\\s+(records)\\s+([A-Z][A-Za-z0-9]*)",
           "captures": {
             "1": {
               "name": "keyword.control.dxn"
             },
             "2": {
-              "name": "variable.other.dxn"
+              "name": "entity.name.type.dxn"
             },
             "3": {
               "name": "keyword.control.dxn"

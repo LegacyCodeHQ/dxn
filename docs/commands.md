@@ -181,7 +181,7 @@ dxn validate evidence.dxn
 Records evidence for an element, by its path, in each combination the context's keys give, as an actor: the record that actor records, with the fields `--data` gives as JSON. Each `PenNode` field gets its fingerprint now, of its node, or of its frame when it has none; `dxn status` later tells, by it, whether the design still shows what was recorded.
 
 ```bash
-dxn attach gazette.dxn Button --actor design-agent \
+dxn attach gazette.dxn Button --actor DesignAgent \
   --data '{"source": {"file": "gazette.pen", "frame": "IeCCz", "node": "uqEAm"}}' \
   style=filled press=pressed enabled=enabled
 ```
@@ -210,7 +210,7 @@ event and an action, a kind before it says which (`event:Menu.close`). A name
 can also be given by its place in the file, as an editor does.
 
 ```bash
-dxn rename evidence.dxn Actor.design-agent designer
+dxn rename evidence.dxn Hover.hovered over
 dxn rename toolbar.dxn Toolbar.layout arrangement
 dxn rename toolbar.dxn:96:9 arrangement
 dxn rename toolbar.dxn Evidence Proof

@@ -34,8 +34,8 @@ record Evidence {
   at: Timestamp
   source: PenNode
 }
-actor design-agent records Evidence
-actor reviewer records Evidence
+actor DesignAgent records Evidence
+actor Reviewer records Evidence
 `;
 const at = "2026-10-31T12:00:00Z";
 const hash = (content: string) =>
@@ -92,7 +92,7 @@ const attachAs = (actor: string, source: object, ...context: string[]) => [
   ...context,
 ];
 const attach = (...context: string[]) =>
-  attachAs("design-agent", { file: "design/toolbar.png", frame: "phone-toggle" }, ...context);
+  attachAs("DesignAgent", { file: "design/toolbar.png", frame: "phone-toggle" }, ...context);
 const closed = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
 
 describe("dxn attach", () => {
@@ -120,7 +120,7 @@ describe("dxn attach", () => {
           parents: { "menu.menu": "closed" },
           states: { hover: "rest", expanded: "closed" },
         },
-        actor: "design-agent",
+        actor: "DesignAgent",
         at,
         source,
       },
@@ -132,7 +132,7 @@ describe("dxn attach", () => {
           parents: { "menu.menu": "open" },
           states: { hover: "rest", expanded: "open" },
         },
-        actor: "design-agent",
+        actor: "DesignAgent",
         at,
         source,
       },
@@ -144,13 +144,13 @@ describe("dxn attach", () => {
     const file = join(root, "design", "toolbar.pen");
     run(
       ...attachAs(
-        "design-agent",
+        "DesignAgent",
         { file: "design/toolbar.pen", frame: "states", node: "closed" },
         ...closed,
       ),
     );
-    run(...attachAs("reviewer", { file: "design/toolbar.pen", frame: "states" }, ...closed));
-    run(...attachAs("design-agent", { file: "design/toolbar.png", frame: "drawing" }, ...closed));
+    run(...attachAs("Reviewer", { file: "design/toolbar.pen", frame: "states" }, ...closed));
+    run(...attachAs("DesignAgent", { file: "design/toolbar.png", frame: "drawing" }, ...closed));
     const prints = new Fingerprints();
     expect(stored().map(({ source }) => source.fingerprint)).toEqual([
       prints.of(file, "closed"),
@@ -173,12 +173,12 @@ describe("dxn attach", () => {
   it("keeps an entry recorded by another actor, or with other data, beside it", () => {
     const { run, stored } = project();
     run(...attach(...closed));
-    run(...attachAs("reviewer", { file: "design/toolbar.png", frame: "phone-toggle" }, ...closed));
-    run(...attachAs("design-agent", { file: "design/toolbar.png", frame: "another" }, ...closed));
+    run(...attachAs("Reviewer", { file: "design/toolbar.png", frame: "phone-toggle" }, ...closed));
+    run(...attachAs("DesignAgent", { file: "design/toolbar.png", frame: "another" }, ...closed));
     expect(stored().map(({ actor, source }) => `${actor} ${source.frame}`)).toEqual([
-      "design-agent phone-toggle",
-      "reviewer phone-toggle",
-      "design-agent another",
+      "DesignAgent phone-toggle",
+      "Reviewer phone-toggle",
+      "DesignAgent another",
     ]);
   });
 
@@ -247,14 +247,12 @@ describe("dxn attach", () => {
     const { root, run } = project();
     const refusal = (...args: string[]) => run(...args).stderr;
     expect([
-      refusal(...attachAs("design-agnt", { file: "design/toolbar.png", frame: "x" }, ...closed)),
-      refusal(...attachAs("design-agent", { file: "design/missing.png", frame: "x" }, ...closed)),
-      refusal(
-        ...attachAs("design-agent", { file: "design/toolbar.pen", frame: "gone" }, ...closed),
-      ),
+      refusal(...attachAs("DesignAgnt", { file: "design/toolbar.png", frame: "x" }, ...closed)),
+      refusal(...attachAs("DesignAgent", { file: "design/missing.png", frame: "x" }, ...closed)),
+      refusal(...attachAs("DesignAgent", { file: "design/toolbar.pen", frame: "gone" }, ...closed)),
       refusal(
         ...attachAs(
-          "design-agent",
+          "DesignAgent",
           { file: "design/toolbar.pen", frame: "other", node: "closed" },
           ...closed,
         ),
@@ -266,7 +264,7 @@ describe("dxn attach", () => {
       ),
       existsSync(join(root, "spec", "evidence")),
     ]).toEqual([
-      'dxn: "design-agnt" is not an actor; did you mean design-agent?\n',
+      'dxn: "DesignAgnt" is not an actor; did you mean DesignAgent?\n',
       'dxn: "design/missing.png" does not exist in the repository\n',
       'dxn: frame "gone" is not in design/toolbar.pen\n',
       'dxn: node "closed" is not in frame other of design/toolbar.pen\n',
@@ -281,7 +279,7 @@ describe("dxn attach", () => {
       "spec/toolbar.dxn",
       "Toolbar.menu.toggle",
       "--actor",
-      "design-agent",
+      "DesignAgent",
       "--data",
       JSON.stringify(fields),
       ...closed,
@@ -311,16 +309,16 @@ describe("dxn attach", () => {
       result.stderr.split("\n")[0],
     ];
     expect([
-      misuse(run(...attach(...closed), "--actor", "reviewer")),
+      misuse(run(...attach(...closed), "--actor", "Reviewer")),
       misuse(
-        run(...attach(...closed).map((arg) => (arg === "--actor" ? "--actor=design-agent" : arg))),
+        run(...attach(...closed).map((arg) => (arg === "--actor" ? "--actor=DesignAgent" : arg))),
       ),
       misuse(
         run(
           "spec/toolbar.dxn",
           "Toolbar.menu.toggle",
           "--actor",
-          "design-agent",
+          "DesignAgent",
           "--data",
           "{",
           ...closed,
@@ -331,7 +329,7 @@ describe("dxn attach", () => {
           "spec/toolbar.dxn",
           "Toolbar.menu.toggle",
           "--actor",
-          "design-agent",
+          "DesignAgent",
           "--data",
           "[]",
           ...closed,
@@ -345,7 +343,7 @@ describe("dxn attach", () => {
         ],
         [
           2,
-          "dxn: write "--actor design-agent", with a space, not "--actor=design-agent"",
+          "dxn: write "--actor DesignAgent", with a space, not "--actor=DesignAgent"",
         ],
         [
           2,
@@ -373,7 +371,7 @@ describe("dxn attach", () => {
     const { run } = project();
     expect([
       run("spec/toolbar.dxn").code,
-      run("spec/toolbar.dxn", "Toolbar.menu.toggle", "--actor", "design-agent", ...closed).code,
+      run("spec/toolbar.dxn", "Toolbar.menu.toggle", "--actor", "DesignAgent", ...closed).code,
     ]).toEqual([2, 2]);
   });
 
@@ -452,7 +450,7 @@ describe("dxn status, with fingerprints", () => {
     const status = () => capture(["status", "spec/toolbar.dxn"], root).stdout.split("\n")[0] ?? "";
     const node = (state: string) =>
       attachAs(
-        "design-agent",
+        "DesignAgent",
         { file: "design/toolbar.pen", frame: "states", node: state },
         "profile=phone",
         `menu.menu=${state}`,
@@ -485,12 +483,12 @@ describe("dxn status, with fingerprints", () => {
     const root = writeProject({});
     writeFileSync(
       join(root, "plain.dxn"),
-      "type Card {}\nrecord Note {}\nactor note-recorder records Note\n",
+      "type Card {}\nrecord Note {}\nactor NoteRecorder records Note\n",
     );
     mkdirSync(join(root, "note"));
     writeFileSync(
       join(root, "note", "a.json"),
-      '[{ "context": { "type": "Card", "dimensions": {}, "states": {} }, "actor": "note-recorder" }]',
+      '[{ "context": { "type": "Card", "dimensions": {}, "states": {} }, "actor": "NoteRecorder" }]',
     );
     expect(capture(["status", "plain.dxn"], root).stdout.split("\n")[0]).toBe(
       "plain.dxn: Note for 1 of 1 combination; Note has no PenNode, so staleness is not checked",

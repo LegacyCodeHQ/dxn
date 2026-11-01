@@ -7,7 +7,7 @@
       "parents": {},
       "states": { "current": "general" }
     },
-    "actor": "designer",
+    "actor": "Designer",
     "note": "The window opens on the general section."
   },
   {
@@ -23,7 +23,7 @@
         "selection": "selected"
       }
     },
-    "actor": "designer",
+    "actor": "Designer",
     "note": "The selected tab, under the mouse."
   },
   {
@@ -39,7 +39,7 @@
         "selection": "selected"
       }
     },
-    "actor": "reviewer",
+    "actor": "Reviewer",
     "note": "The selected tab, focused, on a phone with a trackpad."
   },
   {
@@ -50,7 +50,7 @@
       "parents": {},
       "states": { "openness": "open" }
     },
-    "actor": "designer",
+    "actor": "Designer",
     "note": "The help, open, in the dark theme."
   },
   {
@@ -61,7 +61,7 @@
       "parents": { "help.openness": "open" },
       "states": { "shade": "deep" }
     },
-    "actor": "designer",
+    "actor": "Designer",
     "note": "The help's text, deep in the dark theme."
   },
   {
@@ -72,7 +72,7 @@
       "parents": { "help.openness": "closed" },
       "states": { "hover": "rest", "expanded": "closed" }
     },
-    "actor": "reviewer",
+    "actor": "Reviewer",
     "note": "The help's toggle, closed, on a phone."
   }
 ]

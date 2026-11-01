@@ -457,4 +457,5 @@ const tokenTypeOf: Record<string, string> = {
   event: "event",
   profile: "variable",
   modifier: "variable",
+  actor: "class",
 };

@@ -1,4 +1,4 @@
-actor design-agent records PenEvidence
+actor DesignAgent records PenEvidence
 
 record PenEvidence {
   source: PenNode

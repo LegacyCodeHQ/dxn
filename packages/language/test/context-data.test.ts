@@ -12,7 +12,7 @@ type Wordmark needs Pointer, Theme {
 }
 record Evidence {
 }
-actor design-agent records Evidence
+actor DesignAgent records Evidence
 `;
 const profiles = `environment Device = Pointer
 profile laptop: Device { Pointer = mouse }
@@ -22,7 +22,7 @@ profile phone: Device { Pointer = touch }
 // The problems in one stored Evidence record with this context, as
 // "code: path: message".
 const check = (context: unknown, source = model + profiles) =>
-  validate(parse(source), "Evidence", JSON.stringify([{ context, actor: "design-agent" }])).map(
+  validate(parse(source), "Evidence", JSON.stringify([{ context, actor: "DesignAgent" }])).map(
     ({ code, path, message }) => `${code}: ${path}: ${message}`,
   );
 const on = (profile: string, theme: string, hover: string) => ({
@@ -42,7 +42,7 @@ describe("a stored record's context", () => {
 
   it("is required, as an object", () => {
     expect([
-      validate(parse(model + profiles), "Evidence", '[{ "actor": "design-agent" }]').map(
+      validate(parse(model + profiles), "Evidence", '[{ "actor": "DesignAgent" }]').map(
         ({ code, message }) => `${code}: ${message}`,
       ),
       check("laptop"),
@@ -139,7 +139,7 @@ describe("a stored record's context", () => {
 
   it("is only on stored records: a nested record has none", () => {
     const source = `${model}${profiles}record Source {\n  actor: Actor\n}\nrecord Review {\n  source: Source\n}\n
-actor review-recorder records Review`;
+actor ReviewRecorder records Review`;
     expect(
       validate(
         parse(source),
@@ -147,7 +147,7 @@ actor review-recorder records Review`;
         JSON.stringify([
           {
             context: on("laptop", "dark", "rest"),
-            actor: "review-recorder",
+            actor: "ReviewRecorder",
             source: { actor: "design-agent" },
           },
         ]),

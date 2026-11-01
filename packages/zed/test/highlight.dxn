@@ -50,7 +50,7 @@ profile phone: Device { Breakpoint = base, Pointer = touch }
 profile laptop: Device { Breakpoint = lg, Pointer = mouse }
 modifier trackpad on phone { Pointer = mouse }
 
-actor designer records Evidence
+actor Designer records Evidence
 record Evidence {
   at: Timestamp
   source: PenNode
@@ -58,7 +58,7 @@ record Evidence {
 
 enum Verdict = approved | changes
 enum Next = ship | redraw
-actor reviewer records Review
+actor Reviewer records Review
 record Review {
   verdict: Verdict
   next: Next = when verdict {

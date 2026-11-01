@@ -127,7 +127,7 @@
 
 ; Actors, and the record each records
 
-(actor_declaration name: (identifier) @variable)
+(actor_declaration name: (identifier) @type)
 (actor_declaration record: (identifier) @type)
 
 ; Values

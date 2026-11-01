@@ -28,7 +28,7 @@ profile studio: Device { Pointer = mouse }
 record Evidence {
   source: PenNode
 }
-actor evidence-recorder records Evidence
+actor EvidenceRecorder records Evidence
 `);
 const toggle = (profile: string, menu: string, hover: string) => ({
   context: {

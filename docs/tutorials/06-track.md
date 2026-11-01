@@ -52,7 +52,7 @@ Stale:
 Recording the node again replaces the entry, with the fingerprint it has now:
 
 ```bash
-dxn attach spec/button.dxn Button --actor designer \
+dxn attach spec/button.dxn Button --actor Designer \
   --data '{"at": "2026-11-01T10:30:00Z", "source": {"file": "design/button.pen", "frame": "states", "node": "hovered"}}' \
   Pointer=mouse enabled=enabled hover=hovered
 ```
