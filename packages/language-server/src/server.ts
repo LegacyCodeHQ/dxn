@@ -16,6 +16,7 @@ import {
   type StoredFile,
   storedFiles,
   symbols,
+  tokens,
   usages,
 } from "@legacycodehq/dxn-language";
 import {
@@ -25,6 +26,7 @@ import {
   type DocumentSymbol,
   MessageType,
   type Range,
+  SemanticTokensBuilder,
   ShowMessageNotification,
   SymbolKind,
   TextDocumentSyncKind,
@@ -39,7 +41,7 @@ import { rangeAt } from "./range.js";
 // published when it opens and whenever it changes, and cleared when it closes;
 // where a name in it is declared, and where it is used; what it is; what fits
 // where the cursor is; renaming a name, in the file and in the stored records
-// beside it; and its outline.
+// beside it; its outline; and what each name in it is, for colouring.
 export function serve(connection: Connection): void {
   const documents = new TextDocuments(TextDocument);
   // Whether the editor takes a link, which names the text it goes from, so
@@ -76,6 +78,10 @@ export function serve(connection: Connection): void {
         hoverProvider: true,
         renameProvider: { prepareProvider: true },
         documentSymbolProvider: true,
+        semanticTokensProvider: {
+          legend: { tokenTypes, tokenModifiers: ["declaration"] },
+          full: true,
+        },
         // Typing a name asks on its own; a dot starts the next part of a path.
         completionProvider: { triggerCharacters: ["."] },
       },
@@ -288,6 +294,17 @@ export function serve(connection: Connection): void {
     });
     return symbols(document.getText(), parsed(document)).map(editor);
   });
+  // What each name is, so an editor colours it by that, not by how it looks.
+  connection.languages.semanticTokens.on(({ textDocument }) => {
+    const document = documents.get(textDocument.uri);
+    const builder = new SemanticTokensBuilder();
+    if (document === undefined) return builder.build();
+    for (const token of tokens(document.getText(), parsed(document))) {
+      const type = tokenTypes.indexOf(tokenTypeOf[token.kind] ?? "variable");
+      builder.push(token.line - 1, token.column - 1, token.length, type, token.declaration ? 1 : 0);
+    }
+    return builder.build();
+  });
   connection.onCompletion(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
@@ -368,4 +385,33 @@ const symbolKinds: Record<string, SymbolKind> = {
   action: SymbolKind.Method,
   child: SymbolKind.Property,
   field: SymbolKind.Field,
+};
+
+// The token types an editor colours names by, as the protocol names them, and
+// each kind of declaration's.
+const tokenTypes = [
+  "enum",
+  "class",
+  "struct",
+  "namespace",
+  "enumMember",
+  "property",
+  "method",
+  "event",
+  "variable",
+];
+const tokenTypeOf: Record<string, string> = {
+  enum: "enum",
+  dimension: "enum",
+  type: "class",
+  record: "struct",
+  environment: "namespace",
+  value: "enumMember",
+  state: "property",
+  child: "property",
+  field: "property",
+  action: "method",
+  event: "event",
+  profile: "variable",
+  modifier: "variable",
 };

@@ -50,7 +50,7 @@ export type Renamed =
 
 // What a declaration is, for renaming it: its kind, and for a value, the enum
 // or dimension it is of.
-interface Kind {
+export interface Kind {
   kind: string;
   of?: Enum;
   dimension?: boolean;
@@ -250,7 +250,7 @@ function target(
 }
 
 // Every declaration a name can be, with its kind.
-function kindsOf(file: ParseResult): Map<Located, Kind> {
+export function kindsOf(file: ParseResult): Map<Located, Kind> {
   const result = new Map<Located, Kind>();
   for (const declaration of file.enums) {
     result.set(declaration, { kind: "enum" });

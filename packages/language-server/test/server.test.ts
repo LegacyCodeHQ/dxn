@@ -25,6 +25,7 @@ import {
   ReferencesRequest,
   RegistrationRequest,
   RenameRequest,
+  SemanticTokensRequest,
   ShowMessageNotification,
   StreamMessageReader,
   StreamMessageWriter,
@@ -624,5 +625,56 @@ describe("the language server", () => {
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }
+  });
+
+  it("names what each name is, for an editor to colour it by", async () => {
+    const editor = connect();
+    editors.push(editor);
+    const initialized = await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    const provider = initialized.capabilities.semanticTokensProvider;
+    const legend = provider?.legend ?? { tokenTypes: [], tokenModifiers: [] };
+    expect([provider?.full, legend.tokenModifiers]).toEqual([true, ["declaration"]]);
+    const uri = "file:///spec/button.dxn";
+    const opened = published(editor);
+    const text =
+      "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n  action focus-in: focus blurred -> focused\n}\n";
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: { uri, languageId: "dxn", version: 1, text },
+    });
+    await opened;
+    const found = await editor.sendRequest(SemanticTokensRequest.type, {
+      textDocument: { uri },
+    });
+    const data = found?.data ?? [];
+    // Each token is five numbers, its line and start from the one before.
+    const lines = text.split("\n");
+    const decoded: string[] = [];
+    let line = 0;
+    let character = 0;
+    for (let at = 0; at < data.length; at += 5) {
+      const [deltaLine, deltaStart, length, type, modifiers] = data.slice(at, at + 5) as number[];
+      line += deltaLine as number;
+      character = deltaLine === 0 ? character + (deltaStart as number) : (deltaStart as number);
+      const word = (lines[line] ?? "").slice(character, character + (length as number));
+      decoded.push(
+        `${word} ${legend.tokenTypes[type as number]}${modifiers === 1 ? " declaration" : ""}`,
+      );
+    }
+    expect(decoded).toEqual([
+      "Focus enum declaration",
+      "blurred enumMember declaration",
+      "focused enumMember declaration",
+      "Button class declaration",
+      "focus property declaration",
+      "Focus enum",
+      "focus-in method declaration",
+      "focus property",
+      "blurred enumMember",
+      "focused enumMember",
+    ]);
   });
 });
