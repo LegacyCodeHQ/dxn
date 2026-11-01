@@ -166,6 +166,26 @@ type Menu${needs} {
     ]);
   });
 
+  it("has a name of its own, not one of a state or a child of its type", () => {
+    assert([
+      errors(
+        model.replace(
+          "  action close: menu open -> closed\n",
+          "  action close: menu open -> closed\n  action menu: menu open -> closed\n",
+        ),
+      ),
+      errors(
+        model.replace(
+          "  action close: menu open -> closed\n",
+          "  action close: menu open -> closed\n  action toggle: menu open -> closed\n",
+        ),
+      ),
+    ]).toEqual([
+      ["23:10: duplicate-action: menu is already a state of Menu"],
+      ["23:10: duplicate-action: toggle is already a child of Menu"],
+    ]);
+  });
+
   it("cannot change a state its parent binds", () => {
     assert(
       errors(`enum State = closed | open
@@ -270,7 +290,7 @@ type Button needs Keyboard {
   state press: Press
   state focus: Focus
   focus = focused only when Keyboard = keyboard
-  action press: press released -> pressed
+  action push: press released -> pressed
 ${lines.map((line) => `  ${line}\n`).join("")}}
 
 type Page {
@@ -280,23 +300,23 @@ type Page {
 
 describe("a trigger only when", () => {
   it("fires only where its condition holds", () => {
-    const source = button("on key Space: press only when focus = focused");
+    const source = button("on key Space: push only when focus = focused");
     const trigger = parse(source).types[0]?.triggers[0];
     assert([problems(source), trigger?.when?.kind, trigger?.action.name]).toEqual([
       [],
       "compare",
-      "press",
+      "push",
     ]);
   });
 
   it("is checked as any condition is", () => {
     assert([
-      errors(button("on key Space: press only when fokus = focused")),
-      errors(button("on key Space: press only when focus = blurd")),
-      problems(button("on key Space: press only when focus in (blurred, focused)")),
+      errors(button("on key Space: push only when fokus = focused")),
+      errors(button("on key Space: push only when focus = blurd")),
+      problems(button("on key Space: push only when focus in (blurred, focused)")),
     ]).toEqual([
-      ["10:33: unknown-state: fokus is not a state of Button (press, focus)"],
-      ['10:41: unknown-value: "blurd" is not a value of focus (blurred, focused)'],
+      ["10:32: unknown-state: fokus is not a state of Button (press, focus)"],
+      ['10:40: unknown-value: "blurd" is not a value of focus (blurred, focused)'],
       [
         "10:3: warning: vacuous-condition: focus in (blurred, focused) is always true, so the trigger always fires",
       ],
@@ -308,7 +328,7 @@ describe("a trigger only when", () => {
       errors(
         button(
           "action hold: press released -> pressed",
-          `on key Space: press only when ${first}`,
+          `on key Space: push only when ${first}`,
           `on key Space: hold only when ${second}`,
         ),
       );
@@ -317,13 +337,13 @@ describe("a trigger only when", () => {
       twice("focus = focused", "Keyboard = keyboard"),
     ]).toEqual([
       [],
-      ["12:3: ambiguous-event: key Space triggers both press and hold when press = released"],
+      ["12:3: ambiguous-event: key Space triggers both push and hold when press = released"],
     ]);
   });
 
   it("is applied by an expectation only where it holds, and nothing happens elsewhere", () => {
     const rule = (when: string, then: string) =>
-      `${button("on key Space: press only when focus = focused")}
+      `${button("on key Space: push only when focus = focused")}
 expect "Space presses the button only while it is focused" {
   in Page.button
   when ${when}

@@ -1357,7 +1357,9 @@ type Menu {
 }
 ```
 
-An action changes a state the type owns: not one a `when` or a value decides,
+An action's name is its own: not the name of one of the type's states or
+children, so a name in a type always means one thing. An action changes a
+state the type owns: not one a `when` or a value decides,
 nor one it receives. Those follow from something else, so no action can change
 them. Nor can a parent bind a state one of its child's actions changes: bound,
 its value is the parent's. An action changes something: its `from` and `to`
@@ -1390,7 +1392,7 @@ A trigger can fire only where a condition holds, written at its end with
 while it is focused:
 
 ```
-on key Space: press only when focus = focused
+on key Space: push only when focus = focused
 ```
 
 The condition is checked as any other: on the type's states and the
@@ -1688,7 +1690,7 @@ comment     = "#" to the end of the line
 | `bound-derived`                                                               | error    | a binding sets a child's state that a `when` or a value decides, or that it receives             |
 | `duplicate-provides`                                                          | error    | a type provides a state twice                                                                    |
 | `provides-received`                                                           | error    | a type provides a state it receives, not one of its own                                          |
-| `duplicate-action`                                                            | error    | a type has two actions with one name                                                             |
+| `duplicate-action`                                                            | error    | an action has the name of another action, or of a state or a child of its type                   |
 | `bound-action`                                                                | error    | a binding sets a child's state that one of the child's actions changes                           |
 | `action-on-derived`                                                           | error    | an action changes a state that a `when` or a value decides, or that is received                  |
 | `unchanged-action`                                                            | error    | an action's from and to are one value, so it changes nothing                                     |

@@ -176,10 +176,18 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
   const checkActions = (type: Type, needed: Set<string>, declare: string) => {
     const named = new Set<string>();
     for (const action of type.actions) {
-      if (named.has(action.name.name)) {
+      // One name, one thing: an action's name is not a state's or a child's.
+      const taken = type.states.some(({ name }) => name === action.name.name)
+        ? "a state"
+        : type.children.some(({ name }) => name === action.name.name)
+          ? "a child"
+          : named.has(action.name.name)
+            ? "an action"
+            : undefined;
+      if (taken !== undefined) {
         report(
           "duplicate-action",
-          `${action.name.name} is already an action of ${type.name}`,
+          `${action.name.name} is already ${taken} of ${type.name}`,
           action.name,
         );
       }
