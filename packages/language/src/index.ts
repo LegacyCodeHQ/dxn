@@ -47,4 +47,6 @@ export {
 export { type Check, type Combination, coverage, treePaths } from "./status.js";
 // Records stored as JSON beside a .dxn file.
 export { folderOf, storedFiles } from "./store.js";
+// The outline of a file, for editors.
+export { type DocumentSymbol, symbols } from "./symbols.js";
 export { validate } from "./validate.js";

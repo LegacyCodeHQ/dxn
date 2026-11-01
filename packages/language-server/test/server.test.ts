@@ -12,6 +12,7 @@ import {
   DefinitionRequest,
   DidChangeTextDocumentNotification,
   DidOpenTextDocumentNotification,
+  DocumentSymbolRequest,
   HoverRequest,
   InitializeRequest,
   type MessageConnection,
@@ -23,6 +24,7 @@ import {
   ShowMessageNotification,
   StreamMessageReader,
   StreamMessageWriter,
+  SymbolKind,
 } from "vscode-languageserver/node";
 import { serve } from "../src/server.js";
 
@@ -428,5 +430,60 @@ describe("the language server", () => {
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }
+  });
+
+  it("outlines a file: its declarations, and what each declares inside it", async () => {
+    const editor = connect();
+    editors.push(editor);
+    const initialized = await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    expect(initialized.capabilities.documentSymbolProvider).toBe(true);
+    const uri = "file:///spec/button.dxn";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: {
+        uri,
+        languageId: "dxn",
+        version: 1,
+        text: "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n}\n",
+      },
+    });
+    await opened;
+    const range = (line: number, start: number, end: number) => ({
+      start: { line, character: start },
+      end: { line, character: end },
+    });
+    expect(await editor.sendRequest(DocumentSymbolRequest.type, { textDocument: { uri } })).toEqual(
+      [
+        {
+          name: "Focus",
+          detail: "enum",
+          kind: SymbolKind.Enum,
+          range: range(0, 0, 30),
+          selectionRange: range(0, 5, 10),
+          children: [],
+        },
+        {
+          name: "Button",
+          detail: "type",
+          kind: SymbolKind.Class,
+          range: { start: { line: 1, character: 0 }, end: { line: 3, character: 1 } },
+          selectionRange: range(1, 5, 11),
+          children: [
+            {
+              name: "focus",
+              detail: "state",
+              kind: SymbolKind.Field,
+              range: range(2, 8, 20),
+              selectionRange: range(2, 8, 13),
+              children: [],
+            },
+          ],
+        },
+      ],
+    );
   });
 });

@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   type CompletionKind,
   completions,
+  type DocumentSymbol as Declared,
   definition,
   type Edit,
   folderOf,
@@ -13,14 +14,17 @@ import {
   renameable,
   type StoredFile,
   storedFiles,
+  symbols,
   usages,
 } from "@legacycodehq/dxn-language";
 import {
   CompletionItemKind,
   type Connection,
+  type DocumentSymbol,
   MessageType,
   type Range,
   ShowMessageNotification,
+  SymbolKind,
   TextDocumentSyncKind,
   TextDocuments,
 } from "vscode-languageserver/node";
@@ -31,8 +35,8 @@ import { rangeAt } from "./range.js";
 // Serves dxn to an editor over a connection: the problems in each open file,
 // published when it opens and whenever it changes, and cleared when it closes;
 // where a name in it is declared, and where it is used; what it is; what fits
-// where the cursor is; and renaming a name, in the file and in the stored
-// records beside it.
+// where the cursor is; renaming a name, in the file and in the stored records
+// beside it; and its outline.
 export function serve(connection: Connection): void {
   const documents = new TextDocuments(TextDocument);
   // Whether the editor takes a link, which names the text it goes from, so
@@ -53,6 +57,7 @@ export function serve(connection: Connection): void {
         referencesProvider: true,
         hoverProvider: true,
         renameProvider: { prepareProvider: true },
+        documentSymbolProvider: true,
         // Typing a name asks on its own; a dot starts the next part of a path.
         completionProvider: { triggerCharacters: ["."] },
       },
@@ -198,6 +203,22 @@ export function serve(connection: Connection): void {
       ],
     };
   });
+  connection.onDocumentSymbol(({ textDocument }) => {
+    const document = documents.get(textDocument.uri);
+    if (document === undefined) return null;
+    const editor = (symbol: Declared): DocumentSymbol => ({
+      name: symbol.name,
+      detail: symbol.kind,
+      kind: symbolKinds[symbol.kind] ?? SymbolKind.Variable,
+      range: {
+        start: { line: symbol.start.line - 1, character: symbol.start.column - 1 },
+        end: { line: symbol.end.line - 1, character: symbol.end.column - 1 },
+      },
+      selectionRange: rangeOf(symbol.at),
+      children: symbol.children.map(editor),
+    });
+    return symbols(document.getText()).map(editor);
+  });
   connection.onCompletion(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
@@ -259,3 +280,20 @@ function storedBeside(uri: string, text: string): StoredFile[] {
 // Whether a path is a folder.
 const isFolder = (path: string) =>
   statSync(path, { throwIfNoEntry: false })?.isDirectory() === true;
+
+// How an editor shows each kind of declaration in an outline.
+const symbolKinds: Record<string, SymbolKind> = {
+  enum: SymbolKind.Enum,
+  dimension: SymbolKind.Enum,
+  type: SymbolKind.Class,
+  record: SymbolKind.Struct,
+  environment: SymbolKind.Module,
+  profile: SymbolKind.Object,
+  modifier: SymbolKind.Object,
+  expectation: SymbolKind.Event,
+  state: SymbolKind.Field,
+  event: SymbolKind.Event,
+  action: SymbolKind.Method,
+  child: SymbolKind.Property,
+  field: SymbolKind.Field,
+};
