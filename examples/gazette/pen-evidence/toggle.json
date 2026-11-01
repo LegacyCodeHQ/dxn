@@ -1,0 +1,146 @@
+[
+  {
+    "context": {
+      "path": "Toggle",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "setting": "off",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "YhUCf",
+      "node": "bqDnC",
+      "fingerprint": "04311707cb20b3041af0d8b37ad50d2e7e99aab4"
+    }
+  },
+  {
+    "context": {
+      "path": "Toggle",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "setting": "off",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "YhUCf",
+      "node": "LP6S6",
+      "fingerprint": "eeca386563219aba17b14ba39a1fd86a5f47248b"
+    }
+  },
+  {
+    "context": {
+      "path": "Toggle",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "setting": "off",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "YhUCf",
+      "node": "yxLsE",
+      "fingerprint": "973e7e82e007b28a750d1622150e52d5bf5d1070"
+    }
+  },
+  {
+    "context": {
+      "path": "Toggle",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "setting": "off",
+        "interaction": "disabled"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "YhUCf",
+      "node": "u3Vmz",
+      "fingerprint": "9fda7b04089df0b695292a078fd952ecd5b34c17"
+    }
+  },
+  {
+    "context": {
+      "path": "Toggle",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "setting": "on",
+        "interaction": "idle"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "YhUCf",
+      "node": "IePD9",
+      "fingerprint": "dc983fec77860e32203bd413e4a41be3b20c6e7c"
+    }
+  },
+  {
+    "context": {
+      "path": "Toggle",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "setting": "on",
+        "interaction": "hovered"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "YhUCf",
+      "node": "Lk9XC",
+      "fingerprint": "308b845d74710bfaf424a3f2c74ebebaa0d9ebc6"
+    }
+  },
+  {
+    "context": {
+      "path": "Toggle",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "setting": "on",
+        "interaction": "pressed"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "YhUCf",
+      "node": "mxUep",
+      "fingerprint": "bcf9d162a8cd7c3cd56f74fcbd894ab2a870bf64"
+    }
+  },
+  {
+    "context": {
+      "path": "Toggle",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "setting": "on",
+        "interaction": "disabled"
+      }
+    },
+    "actor": "DesignAgent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "YhUCf",
+      "node": "TRzJf",
+      "fingerprint": "d3d463dd3372fa9d400fe027150ae719688c5467"
+    }
+  }
+]

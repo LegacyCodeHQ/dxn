@@ -10,3 +10,9 @@ enum Interaction = idle | hovered | pressed | disabled
 type Button {
   state style: Style, interaction: Interaction
 }
+
+enum Setting = off | on
+
+type Toggle {
+  state setting: Setting, interaction: Interaction
+}

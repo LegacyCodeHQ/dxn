@@ -273,6 +273,183 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "DwjDq",
+      "x": 252,
+      "y": 0,
+      "name": "Toggle",
+      "reusable": true,
+      "width": 51,
+      "height": 31,
+      "fill": "$toggle-off",
+      "cornerRadius": 15.5,
+      "padding": 2,
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "m3Npz",
+          "name": "Knob",
+          "width": 27,
+          "height": 27,
+          "fill": "#FFFFFF",
+          "cornerRadius": 13.5,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000002E",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 6
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "YhUCf",
+      "x": 0,
+      "y": 464,
+      "name": "Toggle states",
+      "clip": true,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "P7at2",
+          "name": "off",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "ECNrT",
+              "name": "Off label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Off",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "bqDnC",
+              "type": "ref",
+              "ref": "DwjDq",
+              "name": "off / idle",
+              "fill": "$toggle-off",
+              "justifyContent": "start",
+              "descendants": {
+                "m3Npz": {
+                  "width": 27
+                }
+              }
+            },
+            {
+              "id": "LP6S6",
+              "type": "ref",
+              "ref": "DwjDq",
+              "name": "off / hovered",
+              "fill": "$toggle-off-hover",
+              "justifyContent": "start"
+            },
+            {
+              "id": "yxLsE",
+              "type": "ref",
+              "ref": "DwjDq",
+              "name": "off / pressed",
+              "fill": "$toggle-off",
+              "justifyContent": "start",
+              "descendants": {
+                "m3Npz": {
+                  "width": 34
+                }
+              }
+            },
+            {
+              "id": "u3Vmz",
+              "type": "ref",
+              "ref": "DwjDq",
+              "name": "off / disabled",
+              "fill": "$toggle-off",
+              "justifyContent": "start",
+              "opacity": 0.5
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "t223E",
+          "name": "on",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "T2lYyv",
+              "name": "On label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "On",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "IePD9",
+              "type": "ref",
+              "ref": "DwjDq",
+              "name": "on / idle",
+              "fill": "$accent",
+              "justifyContent": "end",
+              "descendants": {
+                "m3Npz": {
+                  "width": 27
+                }
+              }
+            },
+            {
+              "id": "Lk9XC",
+              "type": "ref",
+              "ref": "DwjDq",
+              "name": "on / hovered",
+              "fill": "$accent-hover",
+              "justifyContent": "end"
+            },
+            {
+              "id": "mxUep",
+              "type": "ref",
+              "ref": "DwjDq",
+              "name": "on / pressed",
+              "fill": "$accent",
+              "justifyContent": "end",
+              "descendants": {
+                "m3Npz": {
+                  "width": 34
+                }
+              }
+            },
+            {
+              "id": "TRzJf",
+              "type": "ref",
+              "ref": "DwjDq",
+              "name": "on / disabled",
+              "fill": "$accent",
+              "justifyContent": "end",
+              "opacity": 0.5
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
@@ -331,6 +508,14 @@
     "accent-hover-tint": {
       "type": "color",
       "value": "#B3261E12"
+    },
+    "toggle-off": {
+      "type": "color",
+      "value": "#E3DED8"
+    },
+    "toggle-off-hover": {
+      "type": "color",
+      "value": "#D9D3CC"
     }
   },
   "fileToken": "77ae2f9f-61ba-4878-9b55-acc6c60ad0dd"

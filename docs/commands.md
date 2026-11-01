@@ -192,7 +192,7 @@ Records evidence for an element, by its path, in each combination the context's 
 ```bash
 dxn attach gazette.dxn Button --actor DesignAgent \
   --data '{"source": {"file": "gazette.pen", "frame": "IeCCz", "node": "uqEAm"}}' \
-  style=filled press=pressed enabled=enabled
+  style=primary interaction=pressed
 ```
 
 ### status

@@ -13,7 +13,7 @@ For each component, then each screen:
 2. **List its cases** with `dxn cases gazette.dxn <Type>`: the combinations
    that look different, each needing a design.
 3. **Design each case** as a frame in `gazette.pen`, in pen.dev.
-4. **Record each frame** as evidence with `dxn attach`, in `evidence/`.
+4. **Record each frame** as evidence with `dxn attach`, in `pen-evidence/`.
 5. **See what is covered** with `dxn status gazette.dxn`.
 
 dxn says what each component can be; the pen file shows how it looks. How
@@ -52,8 +52,8 @@ opens from a list.
 
 In the order to build them: each from the ones before it, where it uses any.
 
-1. **Button:** filled or plain; pressed or not; enabled or not.
-2. **Toggle:** on or off; pressed or not.
+1. **Button:** primary, secondary or tertiary; idle, hovered, pressed or disabled.
+2. **Toggle:** off or on; idle, hovered, pressed or disabled.
 3. **Tab:** one tab of the tab bar, with its icon and label; selected or not;
    pressed or not.
 4. **Tab bar:** the three tabs, Feed, Saved and Sources, one of them selected.
@@ -66,8 +66,8 @@ Then the screens, from the components.
 
 ## Progress
 
-- [ ] Button
-- [ ] Toggle
+- [x] Button
+- [x] Toggle
 - [ ] Tab
 - [ ] Tab bar
 - [ ] Navigation bar
