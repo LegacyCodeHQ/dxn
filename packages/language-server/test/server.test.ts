@@ -15,6 +15,7 @@ import {
   DidChangeWatchedFilesNotification,
   DidCloseTextDocumentNotification,
   DidOpenTextDocumentNotification,
+  DocumentFormattingRequest,
   DocumentSymbolRequest,
   FileChangeType,
   HoverRequest,
@@ -761,5 +762,40 @@ describe("the language server", () => {
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }
+  });
+
+  it("formats a file the one way, as dxn fmt does, in one edit, and leaves one that does not parse", async () => {
+    const editor = connect();
+    editors.push(editor);
+    const initialized = await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    expect(initialized.capabilities.documentFormattingProvider).toBe(true);
+    const open = async (uri: string, text: string) => {
+      const opened = published(editor);
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await opened;
+      return editor.sendRequest(DocumentFormattingRequest.type, {
+        textDocument: { uri },
+        options: { tabSize: 4, insertSpaces: false },
+      });
+    };
+    expect(
+      await open(
+        "file:///messy.dxn",
+        "enum   Hover=rest|hovered\ntype Link {\nstate hover: Hover\n}",
+      ),
+    ).toEqual([
+      {
+        range: { start: { line: 0, character: 0 }, end: { line: 3, character: 1 } },
+        newText: "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\n",
+      },
+    ]);
+    expect(await open("file:///tidy.dxn", "enum Hover = rest | hovered\n")).toEqual([]);
+    expect(await open("file:///broken.dxn", "enum Hover = rest hovered\n")).toEqual([]);
   });
 });

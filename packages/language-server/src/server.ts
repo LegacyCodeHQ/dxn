@@ -8,6 +8,7 @@ import {
   definition,
   type Edit,
   folderOf,
+  format,
   hover,
   type ParseResult,
   parse,
@@ -78,6 +79,7 @@ export function serve(connection: Connection): void {
         hoverProvider: true,
         renameProvider: { prepareProvider: true },
         documentSymbolProvider: true,
+        documentFormattingProvider: true,
         codeLensProvider: { resolveProvider: false },
         semanticTokensProvider: {
           legend: { tokenTypes, tokenModifiers: ["declaration"] },
@@ -294,6 +296,22 @@ export function serve(connection: Connection): void {
       children: symbol.children.map(editor),
     });
     return symbols(document.getText(), parsed(document)).map(editor);
+  });
+  // The one way the file is written, as dxn fmt writes it, in one edit: none
+  // when it is written that way, or does not parse. The editor's tab size is
+  // not asked: every file is written alike.
+  connection.onDocumentFormatting(({ textDocument }) => {
+    const document = documents.get(textDocument.uri);
+    if (document === undefined) return null;
+    const text = document.getText();
+    const formatted = format(text);
+    if (formatted === undefined || formatted === text) return [];
+    return [
+      {
+        range: { start: { line: 0, character: 0 }, end: document.positionAt(text.length) },
+        newText: formatted,
+      },
+    ];
   });
   // What can be run from where it is declared: a type's states, by its full
   // name, and an expectation, by its title. An editor that has the dxn.run
