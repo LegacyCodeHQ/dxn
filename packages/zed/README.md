@@ -79,6 +79,14 @@ as an inlay hint, which Zed only shows when its settings turn them on:
 The count follows the stored records and the designs they point at as they
 change on disk.
 
+## Indenting as you type and paste
+
+`languages/dxn/indents.scm` tells Zed what is inside each pair of braces and
+brackets, so a line typed or pasted inside a type, a record or a profile is
+indented one step, and its closing `}` comes back out. A line pasted in at the
+wrong depth still belongs where its braces put it, and formatting on save
+indents it.
+
 ## Formatting
 
 A `.dxn` file is formatted the one way `dxn fmt` writes it, by the language
