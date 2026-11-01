@@ -8,6 +8,7 @@ import {
   DefinitionRequest,
   DidChangeTextDocumentNotification,
   DidOpenTextDocumentNotification,
+  HoverRequest,
   InitializeRequest,
   type MessageConnection,
   PublishDiagnosticsNotification,
@@ -232,5 +233,45 @@ describe("the language server", () => {
       { label: "blurred", kind: CompletionItemKind.EnumMember, detail: "value" },
       { label: "focused", kind: CompletionItemKind.EnumMember, detail: "value" },
     ]);
+  });
+
+  it("shows what a name is, as dxn, with the comment above its declaration", async () => {
+    const editor = connect();
+    editors.push(editor);
+    const initialized = await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    expect(initialized.capabilities.hoverProvider).toBe(true);
+    const uri = "file:///spec/button.dxn";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: {
+        uri,
+        languageId: "dxn",
+        version: 1,
+        text: "# Whether it has the focus.\nenum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n}\n",
+      },
+    });
+    await opened;
+    expect(
+      await editor.sendRequest(HoverRequest.type, {
+        textDocument: { uri },
+        position: { line: 3, character: 16 },
+      }),
+    ).toEqual({
+      contents: {
+        kind: "markdown",
+        value: "```dxn\nenum Focus = blurred | focused\n```\n\nWhether it has the focus.",
+      },
+      range: { start: { line: 3, character: 15 }, end: { line: 3, character: 20 } },
+    });
+    expect(
+      await editor.sendRequest(HoverRequest.type, {
+        textDocument: { uri },
+        position: { line: 3, character: 3 },
+      }),
+    ).toBeNull();
   });
 });

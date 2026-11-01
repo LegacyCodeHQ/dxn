@@ -25,6 +25,8 @@ export {
   placement,
   states,
 } from "./evaluate.js";
+// What a name is, as its declaration is written, for editors.
+export { type Hover, hover } from "./hover.js";
 // The JSON reader stored data is read with.
 export { parseJson } from "./json.js";
 export { Names } from "./names.js";

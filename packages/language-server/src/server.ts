@@ -1,4 +1,10 @@
-import { type CompletionKind, completions, definition, usages } from "@legacycodehq/dxn-language";
+import {
+  type CompletionKind,
+  completions,
+  definition,
+  hover,
+  usages,
+} from "@legacycodehq/dxn-language";
 import {
   CompletionItemKind,
   type Connection,
@@ -11,8 +17,8 @@ import { rangeAt } from "./range.js";
 
 // Serves dxn to an editor over a connection: the problems in each open file,
 // published when it opens and whenever it changes, and cleared when it closes;
-// where a name in it is declared, and where it is used; and what fits where
-// the cursor is.
+// where a name in it is declared, and where it is used; what it is; and what
+// fits where the cursor is.
 export function serve(connection: Connection): void {
   const documents = new TextDocuments(TextDocument);
   // Whether the editor takes a link, which names the text it goes from, so
@@ -25,6 +31,7 @@ export function serve(connection: Connection): void {
         textDocumentSync: TextDocumentSyncKind.Incremental,
         definitionProvider: true,
         referencesProvider: true,
+        hoverProvider: true,
         // Typing a name asks on its own; a dot starts the next part of a path.
         completionProvider: { triggerCharacters: ["."] },
       },
@@ -70,6 +77,21 @@ export function serve(connection: Connection): void {
         end: { line: line - 1, character: column - 1 + length },
       },
     }));
+  });
+  connection.onHover(({ textDocument, position }) => {
+    const document = documents.get(textDocument.uri);
+    if (document === undefined) return null;
+    const found = hover(document.getText(), position.line + 1, position.character + 1);
+    if (found === undefined) return null;
+    const { line, column, length } = found.from;
+    const comment = found.comment === undefined ? "" : `\n\n${found.comment}`;
+    return {
+      contents: { kind: "markdown", value: `\`\`\`dxn\n${found.code}\n\`\`\`${comment}` },
+      range: {
+        start: { line: line - 1, character: column - 1 },
+        end: { line: line - 1, character: column - 1 + length },
+      },
+    };
   });
   connection.onCompletion(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);

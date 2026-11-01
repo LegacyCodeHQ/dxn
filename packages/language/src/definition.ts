@@ -68,19 +68,18 @@ export function usages(
   };
 }
 
-const covers = (span: Span, line: number, column: number) =>
+export const covers = (span: Span, line: number, column: number) =>
   span.line === line && column >= span.column && column <= span.column + span.length;
 
 // The word written at a line and a column: a name, a path of names, or a
 // profile with its modifiers.
-const wordAt = (lines: string[], line: number, column: number) =>
+export const wordAt = (lines: string[], line: number, column: number) =>
   (lines[line - 1] ?? "").slice(column - 1).match(/^[A-Za-z0-9.+-]+/)?.[0] ?? "";
 
 // Every span of the source that refers to a declaration, in the order they are
 // written, each with the name it refers to; a path into children, a span for
 // each of its parts.
-function links(source: string): Link[] {
-  const file = parse(source);
+export function links(source: string, file: ParseResult = parse(source)): Link[] {
   const lines = source.split("\n");
   const declared = declarations(file);
   const result: Link[] = [];
