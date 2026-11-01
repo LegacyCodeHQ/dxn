@@ -66,6 +66,7 @@ type NavigationBar {
 
 type ArticleRow {
   enum Reading = unread | read
+  enum Bookmark = unsaved | saved
 
-  state reading: Reading, interaction: Touch
+  state reading: Reading, bookmark: Bookmark, interaction: Touch
 }

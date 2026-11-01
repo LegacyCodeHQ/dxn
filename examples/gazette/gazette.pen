@@ -1542,6 +1542,162 @@
         },
         {
           "type": "frame",
+          "id": "ushjb",
+          "name": "unread saved",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "J2lYW",
+              "name": "Unread, saved label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Unread, saved",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "P7j2Q4",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread saved / idle",
+              "fill": "$surface",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "fWDe1": {
+                  "type": "frame",
+                  "id": "wL4KP",
+                  "name": "Meta",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "aKxzC",
+                      "name": "Meta text",
+                      "fill": "$text-secondary",
+                      "content": "The Verge · 2h",
+                      "fontFamily": "$font-ui",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "XFryp",
+                      "name": "Bookmark",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "bookmark-check",
+                      "library": "lucide",
+                      "fill": "$accent"
+                    }
+                  ]
+                },
+                "g8Q9o": {
+                  "fontWeight": "600",
+                  "fill": "$text-primary"
+                }
+              }
+            },
+            {
+              "id": "LwP4a",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread saved / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "fWDe1": {
+                  "type": "frame",
+                  "id": "FjqRf",
+                  "name": "Meta",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "z31mKV",
+                      "name": "Meta text",
+                      "fill": "$text-secondary",
+                      "content": "The Verge · 2h",
+                      "fontFamily": "$font-ui",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "N8gvFW",
+                      "name": "Bookmark",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "bookmark-check",
+                      "library": "lucide",
+                      "fill": "$accent"
+                    }
+                  ]
+                },
+                "g8Q9o": {
+                  "fontWeight": "600",
+                  "fill": "$text-primary"
+                }
+              }
+            },
+            {
+              "id": "vrkx5",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "unread saved / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": true
+                },
+                "fWDe1": {
+                  "type": "frame",
+                  "id": "S95sd",
+                  "name": "Meta",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wIDcj",
+                      "name": "Meta text",
+                      "fill": "$text-secondary",
+                      "content": "The Verge · 2h",
+                      "fontFamily": "$font-ui",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "lzXNv",
+                      "name": "Bookmark",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "bookmark-check",
+                      "library": "lucide",
+                      "fill": "$accent"
+                    }
+                  ]
+                },
+                "g8Q9o": {
+                  "fontWeight": "600",
+                  "fill": "$text-primary"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
           "id": "tcJ0W",
           "name": "read",
           "gap": 32,
@@ -1600,6 +1756,162 @@
               "descendants": {
                 "JGIOg": {
                   "enabled": false
+                },
+                "g8Q9o": {
+                  "fontWeight": "400",
+                  "fill": "$text-secondary"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "KVQmh",
+          "name": "read saved",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "G3F9j",
+              "name": "Read, saved label",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": 88,
+              "content": "Read, saved",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "600"
+            },
+            {
+              "id": "o4oDrA",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read saved / idle",
+              "fill": "$surface",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "fWDe1": {
+                  "type": "frame",
+                  "id": "G99c9z",
+                  "name": "Meta",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qlSlT",
+                      "name": "Meta text",
+                      "fill": "$text-secondary",
+                      "content": "The Verge · 2h",
+                      "fontFamily": "$font-ui",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "JFnCr",
+                      "name": "Bookmark",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "bookmark-check",
+                      "library": "lucide",
+                      "fill": "$accent"
+                    }
+                  ]
+                },
+                "g8Q9o": {
+                  "fontWeight": "400",
+                  "fill": "$text-secondary"
+                }
+              }
+            },
+            {
+              "id": "frfIj",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read saved / hovered",
+              "fill": "$hover-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "fWDe1": {
+                  "type": "frame",
+                  "id": "JWuSw",
+                  "name": "Meta",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "e6xZhm",
+                      "name": "Meta text",
+                      "fill": "$text-secondary",
+                      "content": "The Verge · 2h",
+                      "fontFamily": "$font-ui",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "p7QmJ",
+                      "name": "Bookmark",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "bookmark-check",
+                      "library": "lucide",
+                      "fill": "$accent"
+                    }
+                  ]
+                },
+                "g8Q9o": {
+                  "fontWeight": "400",
+                  "fill": "$text-secondary"
+                }
+              }
+            },
+            {
+              "id": "LSv53",
+              "type": "ref",
+              "ref": "u3j6f8",
+              "name": "read saved / pressed",
+              "fill": "$press-tint",
+              "descendants": {
+                "JGIOg": {
+                  "enabled": false
+                },
+                "fWDe1": {
+                  "type": "frame",
+                  "id": "u19F1",
+                  "name": "Meta",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hAK7J",
+                      "name": "Meta text",
+                      "fill": "$text-secondary",
+                      "content": "The Verge · 2h",
+                      "fontFamily": "$font-ui",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "ahEmr",
+                      "name": "Bookmark",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "bookmark-check",
+                      "library": "lucide",
+                      "fill": "$accent"
+                    }
+                  ]
                 },
                 "g8Q9o": {
                   "fontWeight": "400",
