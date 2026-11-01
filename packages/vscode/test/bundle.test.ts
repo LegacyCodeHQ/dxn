@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -48,10 +48,25 @@ function problems(text: string): Promise<{ code: string; message: string }[]> {
 }
 
 describe("the built extension", () => {
-  it("has the extension and the server it bundles", () => {
-    expect([existsSync(join(out, "extension.js")), existsSync(join(out, "server.mjs"))]).toEqual([
-      true,
-      true,
+  it("has the extension, and the server and the dxn command it bundles", () => {
+    expect(
+      ["extension.js", "server.mjs", "dxn.mjs"].map((file) => existsSync(join(out, file))),
+    ).toEqual([true, true, true]);
+  });
+
+  it("runs the bundled dxn command, as a code lens does", () => {
+    const playground = join(__dirname, "../../../playground");
+    const run = spawnSync(
+      process.execPath,
+      [join(out, "dxn.mjs"), "states", "settings.dxn", "Help.Toggle"],
+      {
+        cwd: playground,
+        encoding: "utf8",
+      },
+    );
+    expect([run.status, run.stdout.split("\n")[0]]).toEqual([
+      0,
+      "| profiles               | Pointer | hover         | expanded     |",
     ]);
   });
 

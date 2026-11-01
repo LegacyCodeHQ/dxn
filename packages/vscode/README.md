@@ -3,7 +3,9 @@
 Language support for [dxn](../../docs/language/guide.md) in VS Code. It
 recognizes `.dxn` files and gives them syntax highlighting, bracket matching
 and `#` line comments, and through the language server, inline errors, go to
-definition, find usages, hover, completion, rename and the outline.
+definition, find usages, hover, completion, rename and the outline. Above
+each type, a code lens runs its states, and above each expectation, one runs
+it alone.
 
 ## The language server
 
@@ -28,11 +30,20 @@ with. It colours what Zed's queries in
 colour, as near as the words on a line say: a TextMate grammar reads a line at
 a time, without the tree Zed's grammar has.
 
+## Running a type or an expectation
+
+"Run states" above a type runs `dxn states` for it, by its full name; "Run"
+above an expectation runs `dxn check --expect` for it. Each runs as a task, in
+the terminal panel, with the `dxn` command the extension bundles in
+`dist/dxn.mjs`, run with VS Code's own Node: it need not be installed.
+
 ## Trying it
 
 Build it with `make build`, which bundles the extension and the server into
 `dist/`, then open a folder of `.dxn` files, such as the
-[playground](../../playground), with this extension loaded for development:
+[playground](../../playground), as a folder, with this extension loaded for development. A folder, not a
+single file: VS Code then tells the server when stored records change on disk,
+as a rename makes them.
 
 ```bash
 code --extensionDevelopmentPath=/path/to/dxn/packages/vscode /path/to/project

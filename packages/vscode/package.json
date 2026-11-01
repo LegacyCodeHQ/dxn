@@ -57,7 +57,24 @@
           "description": "Arguments to the language server dxn.server.path names, such as the path to a development build's dist/main.js."
         }
       }
-    }
+    },
+    "taskDefinitions": [
+      {
+        "type": "dxn",
+        "required": [
+          "args"
+        ],
+        "properties": {
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What dxn runs, after its command the file: states and a type, or check, --expect and an expectation's title."
+          }
+        }
+      }
+    ]
   },
   "devDependencies": {
     "@types/vscode": "1.100.0",
