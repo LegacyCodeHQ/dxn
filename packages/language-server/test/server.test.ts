@@ -993,19 +993,23 @@ describe("the language server", () => {
       rmSync(folder, { recursive: true, force: true });
     }
   });
-  it("says of stored records made before a state was added, or after one was taken away, what they leave out or still say", async () => {
+  it("counts stored records made before a state was added as outdated, with the state that was, and still says what one taken away leaves", async () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-reworded-"));
     try {
       const text =
         "enum Style = primary | secondary\nenum Hover = rest | hovered\ntype Button {\n  state style: Style, hover: Hover\n}\nrecord PenEvidence {\n  source: PenNode\n}\nactor DesignAgent records PenEvidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "pen-evidence"));
+      // The drawing they point at, as it was recorded.
+      writeFileSync(join(folder, "design.txt"), "drawn\n");
+      const fingerprint = createHash("sha1").update("blob 6\0drawn\n").digest("hex");
       const stored = join(folder, "pen-evidence", "button.json");
       const entry = (states: string) =>
-        `{ "context": { "type": "Button", "dimensions": {}, "states": ${states} }, "actor": "DesignAgent", "source": { "file": "design.txt", "frame": "f", "fingerprint": "a1" } }`;
+        `{ "context": { "type": "Button", "dimensions": {}, "states": ${states} }, "actor": "DesignAgent", "source": { "file": "design.txt", "frame": "f", "fingerprint": "${fingerprint}" } }`;
+      // Two recorded before Button had hover, and one since.
       writeFileSync(
         stored,
-        `[${entry('{ "style": "primary" }')}, ${entry('{ "style": "secondary" }')}]`,
+        `[${entry('{ "style": "primary" }')}, ${entry('{ "style": "secondary" }')}, ${entry('{ "style": "secondary", "hover": "rest" }')}]`,
       );
       const uri = pathToFileURL(join(folder, "spec.dxn")).href;
       const editor = connect();
@@ -1028,6 +1032,11 @@ describe("the language server", () => {
           })
         )?.map(({ label }) => label);
       const before = await label();
+      const found = await editor.sendRequest(HoverRequest.type, {
+        textDocument: { uri },
+        position: { line: 2, character: 6 },
+      });
+      const details = (found?.contents as { value: string } | undefined)?.value;
       // A state the model no longer has, on one record.
       writeFileSync(
         stored,
@@ -1037,8 +1046,22 @@ describe("the language server", () => {
         changes: [{ uri: pathToFileURL(stored).href, type: FileChangeType.Changed }],
       });
       await new Promise((resolve) => setTimeout(resolve, 50));
-      expect([before, await label()]).toEqual([
-        ["PenEvidence: 2 of 2 records say nothing of hover, a state Button now has"],
+      expect([before, details, await label()]).toEqual([
+        ["PenEvidence 1 of 4 · 2 outdated: hover added"],
+        [
+          "PenEvidence 1 of 4 · 2 outdated: hover added",
+          "",
+          "2 records are outdated: hover was added to Button after they were recorded, so they do not say which hover they show. Add each one's hover value to count it again.",
+          "",
+          "Outdated:",
+          "- style = primary",
+          "- style = secondary",
+          "",
+          "Missing:",
+          "- Button: style = primary, hover = rest",
+          "- Button: style = primary, hover = hovered",
+          "- Button: style = secondary, hover = hovered",
+        ].join("\n"),
         ["PenEvidence: 1 of 2 records still says press, a state Button no longer has"],
       ]);
     } finally {

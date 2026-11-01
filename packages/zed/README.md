@@ -59,8 +59,11 @@ changing the setting, run `editor: restart language server`.
 After each element of the file's trees, the language server shows how many of
 its combinations have evidence, a record at a time, as `dxn status` counts
 them: `PenEvidence 4 of 6, 1 stale` after `type Button {`. Hovering over the
-element's name lists the combinations still missing, stale or gone. A record
-whose stored records have problems, such as a value renamed by hand, is not
+element's name lists the combinations still missing, stale or gone. Records
+made before the element gained a state or a dimension are counted apart, as
+outdated, with what was added: `PenEvidence 0 of 15 · 9 outdated: hover
+added`; the hover says why, what to do, and lists each. A record
+whose stored records have other problems, such as a value renamed by hand, is not
 counted: its hint says how many of its records have problems, of how many,
 and what most of them have, such as `PenEvidence: 3 of 6 records still say
 style = plain, which Style no longer has (primary, secondary)`, and the hover lists each problem,
