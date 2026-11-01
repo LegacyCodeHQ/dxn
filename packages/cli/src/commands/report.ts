@@ -87,6 +87,10 @@ export function misused(
 // A count of things, singular or plural: "1 record", "3 records".
 export const count = (n: number, thing: string) => `${n} ${thing}${n === 1 ? "" : "s"}`;
 
+// Names with their values, in words: "Pointer = mouse, hover = rest".
+export const assignments = (pairs: [string, string][]) =>
+  pairs.map(([name, value]) => `${name} = ${value}`).join(", ");
+
 // Reads and parses a file, reporting its problems; the exit code when it
 // cannot be used.
 export function read(file: string, cwd: string, report: Reporter): ParseResult | number {

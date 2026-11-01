@@ -1,7 +1,7 @@
 import { type Cases, cases } from "@legacycodehq/dxn-language";
 import { drawTable, NONE } from "../tables.js";
 import { type Command, command } from "./context.js";
-import { count, misused, options, Reporter, read } from "./report.js";
+import { assignments, count, misused, options, Reporter, read } from "./report.js";
 import { usage } from "./usage.js";
 
 // The cases of a type, or of a child in place, as a table: each case by the
@@ -38,11 +38,12 @@ export const casesCommand: Command = command(usage, (args, { io, cwd }) => {
     return (
       each.combinations
         .map((combination) =>
-          found.subjects
-            .map((name) => [name, combination.dimensions[name] ?? combination.states[name]])
-            .filter(([name, value]) => value !== undefined && each.values[name as string] !== value)
-            .map(([name, value]) => `${name} = ${value}`)
-            .join(", "),
+          assignments(
+            found.subjects.flatMap((name): [string, string][] => {
+              const value = combination.dimensions[name] ?? combination.states[name];
+              return value !== undefined && each.values[name] !== value ? [[name, value]] : [];
+            }),
+          ),
         )
         .filter((shown) => shown !== "")
         .join("; ") || NONE

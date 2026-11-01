@@ -36,37 +36,60 @@ export const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const evaluated = evaluateStates(parsed, typeName);
   const stateType = parsed.types.find(({ name }) => name === typeName) as Type;
   const children = stateType.children.map(({ name }) => name);
-  // Where a child is: there, not there, or for which values of a state.
-  const presence = (value: Presence | undefined) => {
-    if (value === undefined || value === false) return NONE;
-    if (value === true) return "✓";
-    if (typeof value === "string") return value;
-    return Object.entries(value)
-      .map(([state, values]) =>
-        values.length === 1 ? `${state} = ${values[0]}` : `${state} in (${values.join(", ")})`,
-      )
-      .join(", ");
-  };
-  const [split, own] = splitStates(stateType);
-  return report.succeed(
-    evaluated,
-    compactTable(parsed, {
-      name: typeName,
-      keys: [...evaluated.dimensions, ...split],
-      states: own,
-      children: children.map((child) => `has ${child}`),
-      rows: evaluated.rows.map((row) => ({
-        profiles: row.profiles,
-        keys: [
-          ...evaluated.dimensions.map((dimension) => row.when[dimension] ?? NONE),
-          ...split.map((state) => values(row.states[state])),
-        ],
-        states: own.map((state) => values(row.states[state])),
-        children: children.map((child) => presence(row.children?.[child])),
-      })),
-    }),
-  );
+  return report.succeed(evaluated, statesTable(parsed, typeName, stateType, evaluated, children));
 });
+
+// The states of a type, or of a child in place, as a compact table: each row
+// keyed by its dimensions, the states of its parents on the way and the
+// type's states that another depends on; then the type's other states; then
+// where each of the children given is.
+function statesTable(
+  parsed: ParseResult,
+  name: string,
+  type: Type,
+  evaluated: {
+    dimensions: string[];
+    rows: {
+      profiles?: string[];
+      when: Record<string, string>;
+      parents?: Record<string, string>;
+      states: Record<string, string[]>;
+      children?: Record<string, Presence>;
+    }[];
+  },
+  children: string[],
+): string {
+  const parents = [...new Set(evaluated.rows.flatMap((row) => Object.keys(row.parents ?? {})))];
+  const [split, own] = splitStates(type);
+  return compactTable(parsed, {
+    name,
+    keys: [...evaluated.dimensions, ...parents, ...split],
+    states: own,
+    children: children.map((child) => `has ${child}`),
+    rows: evaluated.rows.map((row) => ({
+      profiles: row.profiles,
+      keys: [
+        ...evaluated.dimensions.map((dimension) => row.when[dimension] ?? NONE),
+        ...parents.map((parent) => row.parents?.[parent] ?? NONE),
+        ...split.map((state) => values(row.states[state])),
+      ],
+      states: own.map((state) => values(row.states[state])),
+      children: children.map((child) => presence(row.children?.[child])),
+    })),
+  });
+}
+
+// Where a child is: there, not there, or for which values of a state.
+function presence(value: Presence | undefined): string {
+  if (value === undefined || value === false) return NONE;
+  if (value === true) return "✓";
+  if (typeof value === "string") return value;
+  return Object.entries(value)
+    .map(([state, values]) =>
+      values.length === 1 ? `${state} = ${values[0]}` : `${state} in (${values.join(", ")})`,
+    )
+    .join(", ");
+}
 
 // A type's states that another's rule depends on, which split its rows and so
 // say where a row is, and its other states.
@@ -151,25 +174,5 @@ function statesInPlace(parsed: ParseResult, path: string, report: Reporter): num
     return report.refuse((error as Error).message);
   }
   const type = parsed.types.find(({ name }) => name === evaluated.type) as Type;
-  const parents = [...new Set(evaluated.rows.flatMap((row) => Object.keys(row.parents)))];
-  const [split, own] = splitStates(type);
-  return report.succeed(
-    evaluated,
-    compactTable(parsed, {
-      name: path,
-      keys: [...evaluated.dimensions, ...parents, ...split],
-      states: own,
-      children: [],
-      rows: evaluated.rows.map((row) => ({
-        profiles: row.profiles,
-        keys: [
-          ...evaluated.dimensions.map((dimension) => row.when[dimension] ?? NONE),
-          ...parents.map((parent) => row.parents[parent] ?? NONE),
-          ...split.map((state) => values(row.states[state])),
-        ],
-        states: own.map((state) => values(row.states[state])),
-        children: [],
-      })),
-    }),
-  );
+  return report.succeed(evaluated, statesTable(parsed, path, type, evaluated, []));
 }

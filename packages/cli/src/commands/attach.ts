@@ -88,76 +88,79 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
   const names = new Names(parsed);
   const profiled = parsed.profiles.length > 0;
   const given = givenDimensions(parsed);
-  const keys: [string, string, string[]][] = [
+  const keys: {
+    name: string;
+    kind: "profile" | "dimension" | "parent" | "state";
+    values: string[];
+  }[] = [
     ...(profiled
-      ? ([["profile", "profile", profilesOf(parsed).map(({ name }) => name)]] as [
-          string,
-          string,
-          string[],
-        ][])
+      ? [
+          {
+            name: "profile",
+            kind: "profile" as const,
+            values: profilesOf(parsed).map(({ name }) => name),
+          },
+        ]
       : []),
     ...place.dimensions
       .filter((name) => !given.includes(name))
-      .map((name) => [name, "dimension", names.values(name) ?? []] as [string, string, string[]]),
-    ...place.parents.map(
-      ({ key, state }) =>
-        [key, "parent", names.values(state.enum.name) ?? []] as [string, string, string[]],
-    ),
-    ...place.target.states.map(
-      ({ name, enum: of }) =>
-        [name, "state", names.values(of.name) ?? []] as [string, string, string[]],
-    ),
+      .map((name) => ({ name, kind: "dimension" as const, values: names.values(name) ?? [] })),
+    ...place.parents.map(({ key, state }) => ({
+      name: key,
+      kind: "parent" as const,
+      values: names.values(state.enum.name) ?? [],
+    })),
+    ...place.target.states.map(({ name, enum: of }) => ({
+      name,
+      kind: "state" as const,
+      values: names.values(of.name) ?? [],
+    })),
   ];
   const chosen = new Map<string, string[]>();
   for (const pair of pairs) {
     const [key, value = ""] = pair.split(/=(.*)/s);
-    const entry = keys.find(([name]) => name === key);
+    const entry = keys.find(({ name }) => name === key);
     if (entry === undefined) {
       return report.refuse(
-        `${JSON.stringify(key)} is not part of a context of ${path} (${keys.map(([name]) => name).join(", ")})`,
+        `${JSON.stringify(key)} is not part of a context of ${path} (${keys.map(({ name }) => name).join(", ")})`,
       );
     }
     const values = value.split("|");
     for (const one of values) {
-      if (!entry[2].includes(one)) {
+      if (!entry.values.includes(one)) {
         const what = key === "profile" ? "a profile" : `a value of ${key}`;
-        return report.refuse(`${JSON.stringify(one)} is not ${what} (${entry[2].join(", ")})`);
+        return report.refuse(`${JSON.stringify(one)} is not ${what} (${entry.values.join(", ")})`);
       }
     }
     chosen.set(key as string, values);
   }
-  for (const [name] of keys) {
+  for (const { name } of keys) {
     if (!chosen.has(name)) {
       return report.refuse(`give ${name}, as ${name}=<value>, or several as ${name}=<a>|<b>`);
     }
   }
   // Every combination listed, kept where it exists in place.
   let combinations: Record<string, string>[] = [{}];
-  for (const [name] of keys) {
+  for (const { name } of keys) {
     combinations = combinations.flatMap((combination) =>
       (chosen.get(name) ?? []).map((value) => ({ ...combination, [name]: value })),
     );
   }
+  // A combination's values of the keys of one kind, by name.
+  const valuesOf = (kind: (typeof keys)[number]["kind"], combination: Record<string, string>) =>
+    Object.fromEntries(
+      keys
+        .filter((key) => key.kind === kind)
+        .map(({ name }) => [name, combination[name] as string]),
+    );
   const rows = inPlace(parsed, path).rows;
   const contexts = combinations
     .map((combination) => ({
       path,
       ...(profiled ? { profile: combination.profile as string } : {}),
-      dimensions: Object.fromEntries(
-        keys
-          .filter(([, kind]) => kind === "dimension")
-          .map(([name]) => [name, combination[name] as string]),
-      ),
-      parents: Object.fromEntries(
-        keys
-          .filter(([, kind]) => kind === "parent")
-          .map(([name]) => [name, combination[name] as string]),
-      ),
-      states: Object.fromEntries(
-        keys
-          .filter(([, kind]) => kind === "state")
-          .map(([name]) => [name, combination[name] as string]),
-      ),
+      dimensions: valuesOf("dimension", combination),
+      parents: valuesOf("parent", combination),
+      states: valuesOf("state", combination),
     }))
     .filter((context) =>
       rows.some(

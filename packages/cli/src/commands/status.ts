@@ -14,7 +14,7 @@ import {
 import { Fingerprints } from "../fingerprint.js";
 import { drawTable } from "../tables.js";
 import { type Command, command } from "./context.js";
-import { count, misused, options, Reporter, read } from "./report.js";
+import { assignments, count, misused, options, Reporter, read } from "./report.js";
 import { loadStored, repositoryOf, toolOwner } from "./stored.js";
 import { usage } from "./usage.js";
 
@@ -128,12 +128,8 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       ...(everyProfile.every((name) => covered.includes(name)) ? [] : covered),
       ...Object.entries(combination.dimensions).map(([name, value]) => `${name} ${value}`),
     ].join(", ");
-    const parents = Object.entries(combination.parents)
-      .map(([name, value]) => `${name} = ${value}`)
-      .join(", ");
-    const states = Object.entries(combination.states)
-      .map(([name, value]) => `${name} = ${value}`)
-      .join(", ");
+    const parents = assignments(Object.entries(combination.parents));
+    const states = assignments(Object.entries(combination.states));
     return `${path}${world === "" ? "" : ` on ${world}`}${parents === "" ? "" : ` with ${parents}`}${states === "" ? "" : `: ${states}`}`;
   };
   const blocks = records.map((coverage) => {
