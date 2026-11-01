@@ -69,12 +69,13 @@ wordmark.dxn: 2 enums, 1 type
 ```
 
 It needs no project, so you can try everything in this guide in an empty
-folder. Six commands work on a file, each introduced where it is needed:
+folder. Seven commands work on a file, each introduced where it is needed:
 
 | Command                                      | What it does                                                         |
 | -------------------------------------------- | -------------------------------------------------------------------- |
 | `lang check <file>`                          | reports every problem, or says what the file declares                |
 | `lang states <file> <Type or path>`          | evaluates a type, or a child in place: its states in each profile    |
+| `lang cases <file> <Type or path>`           | lists the cases that can be told apart, and what each covers         |
 | `lang validate <file>`                       | checks every stored record against its declaration                   |
 | `lang attach <file> <path> --file --frame …` | records evidence for an element in the combinations given            |
 | `lang status <file>`                         | counts which combinations have evidence, and which are stale or gone |
@@ -927,16 +928,17 @@ type Button needs Pointer {
 ```
 
 `alike Pointer` reads: combinations that differ only in the pointer cannot
-be told apart. `lang states --distinct` lists the cases that can, each with
-what it covers: its profiles, when the file has profiles, or otherwise each
-combination, by the values the case does not show:
+be told apart. `lang cases` lists the cases that can. Where a case covers
+more than one combination, it says what it covers: its profiles, when the
+file has profiles, or otherwise each combination, by the values the case
+does not show:
 
 ```bash
-dxn lang states button.dxn Button --distinct
+dxn lang cases button.dxn Button
 ```
 
 ```
-Button: 3 distinct of 5 combinations
+Button: 3 cases of 5 combinations
 
 | enabled  | hover   | combinations                     |
 | -------- | ------- | -------------------------------- |
@@ -945,7 +947,9 @@ Button: 3 distinct of 5 combinations
 | disabled | rest    | Pointer = mouse; Pointer = touch |
 ```
 
-Without `alike`, every combination is its own case. Only what a type
+Without `alike`, every combination is its own case, and `lang cases` lists
+them one by one: `Button: 5 cases`. With `--combinations`, it lists every
+combination even where some are alike, to see what `alike` merged. Only what a type
 declares can tell its combinations apart: its own states and the dimensions
 it needs. A dimension that only the types around it need never does. A logo
 drawn bigger on a large screen needs the screen size; an icon that is the
@@ -960,8 +964,8 @@ alike hover in (rest, hovered) when selection = selected
 ```
 
 It is on one of the type's states or a dimension it needs, and `in` names
-two or more of its values. With `--json`, each distinct case lists the
-values that tell it apart and every combination it covers.
+two or more of its values. With `--json`, each case lists the values that
+tell it apart and every combination it covers.
 
 ## Records: plain data
 

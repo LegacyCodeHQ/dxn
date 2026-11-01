@@ -3,14 +3,14 @@
 
 // Reading a .dxn file into declarations.
 export type { ParseResult, RecordDeclaration, Type } from "./ast.js";
+// What a type, or a child in place, has that can be told apart.
+export { type Cases, cases } from "./cases.js";
 // What a rule's or a child's condition compares.
 export { subjects } from "./condition.js";
 // What a tree of types is in place, and how its records are derived.
 export { fieldValue } from "./derive.js";
 // The JSON reader and diagnostics the language shares with the JSON prototype.
 export { childPath, Diagnostics, type FileDiagnostic } from "./diagnostic.js";
-// What a type, or a child in place, has that can be told apart.
-export { type Distinct, distinct } from "./distinct.js";
 export {
   type InPlace,
   inPlace,

@@ -573,26 +573,8 @@ record Part {
   });
 });
 
-describe("lang states --distinct", () => {
-  it("lists, without profiles, each combination a case covers, by the values it does not show", () => {
-    const run = file(
-      "dimension Pointer = mouse | touch\nenum Hover = rest | hovered\ntype Link needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n  alike Pointer\n}\n",
-    );
-    expect(run("states", "wordmark.dxn", "Link", "--distinct").stdout).toBe(
-      [
-        "Link: 2 distinct of 3 combinations",
-        "",
-        "| hover   | combinations                     |",
-        "| ------- | -------------------------------- |",
-        "| rest    | Pointer = mouse; Pointer = touch |",
-        "| hovered | Pointer = mouse                  |",
-        "",
-      ].join("\n"),
-    );
-  });
-
-  it("groups the combinations that are alike, each distinct case with the profiles it covers", () => {
-    const run = file(`dimension Pointer = mouse | touch
+describe("lang cases", () => {
+  const button = `dimension Pointer = mouse | touch
 enum Enabled = enabled | disabled
 enum Hover = rest | hovered
 type Button needs Pointer {
@@ -607,15 +589,51 @@ profile laptop: Device { Pointer = mouse }
 type Page {
   has button: Button
 }
-`);
+`;
+
+  it("lists each case, and nothing more when each is one combination", () => {
+    const run = file(
+      "enum Enabled = enabled | disabled\ntype Button {\n  state enabled: Enabled\n}\n",
+    );
+    expect(run("cases", "wordmark.dxn", "Button").stdout).toBe(
+      [
+        "Button: 2 cases",
+        "",
+        "| enabled  |",
+        "| -------- |",
+        "| enabled  |",
+        "| disabled |",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("lists, without profiles, each combination a case covers, by the values it does not show", () => {
+    const run = file(
+      "dimension Pointer = mouse | touch\nenum Hover = rest | hovered\ntype Link needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n  alike Pointer\n}\n",
+    );
+    expect(run("cases", "wordmark.dxn", "Link").stdout).toBe(
+      [
+        "Link: 2 cases of 3 combinations",
+        "",
+        "| hover   | combinations                     |",
+        "| ------- | -------------------------------- |",
+        "| rest    | Pointer = mouse; Pointer = touch |",
+        "| hovered | Pointer = mouse                  |",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("groups the combinations that are alike, each case with the profiles it covers", () => {
+    const run = file(button);
     expect([
-      run("states", "wordmark.dxn", "Button", "--distinct").stdout,
-      run("states", "wordmark.dxn", "Page.button", "--distinct").stdout.split("\n")[0],
-      JSON.parse(run("states", "wordmark.dxn", "Button", "--distinct", "--json").stdout).distinct
-        .length,
+      run("cases", "wordmark.dxn", "Button").stdout,
+      run("cases", "wordmark.dxn", "Page.button").stdout.split("\n")[0],
+      JSON.parse(run("cases", "wordmark.dxn", "Button", "--json").stdout).cases.length,
     ]).toEqual([
       [
-        "Button: 3 distinct of 5 combinations",
+        "Button: 3 cases of 5 combinations",
         "",
         "| enabled  | hover   | profiles      |",
         "| -------- | ------- | ------------- |",
@@ -624,9 +642,36 @@ type Page {
         "| enabled  | hovered | laptop        |",
         "",
       ].join("\n"),
-      "Page.button: 3 distinct of 5 combinations",
+      "Page.button: 3 cases of 5 combinations",
       3,
     ]);
+  });
+
+  it("lists every combination, with --combinations, as if nothing were alike", () => {
+    const run = file(button);
+    expect(run("cases", "wordmark.dxn", "Button", "--combinations").stdout).toBe(
+      [
+        "Button: 5 combinations",
+        "",
+        "| profiles | Pointer | enabled  | hover   |",
+        "| -------- | ------- | -------- | ------- |",
+        "| phone    | touch   | enabled  | rest    |",
+        "| phone    | touch   | disabled | rest    |",
+        "| laptop   | mouse   | enabled  | rest    |",
+        "| laptop   | mouse   | enabled  | hovered |",
+        "| laptop   | mouse   | disabled | rest    |",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("refuses what it cannot list, and needs a file and a type", () => {
+    const run = file(button);
+    expect([
+      run("cases", "wordmark.dxn", "Buton").stderr,
+      run("cases", "wordmark.dxn").code,
+      run("states", "wordmark.dxn", "Button", "--distinct").code,
+    ]).toEqual(["dxn: no type Buton\n", 2, 2]);
   });
 });
 

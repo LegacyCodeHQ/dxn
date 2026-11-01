@@ -1,12 +1,12 @@
 import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import {
+  type Cases,
   type Check,
   type Combination,
+  cases,
   coverage,
   Diagnostics,
-  type Distinct,
-  distinct,
   states as evaluateStates,
   fieldValue,
   folderOf,
@@ -63,16 +63,19 @@ Subcommands:
                                      or report every problem it has. Warnings
                                      are printed, but do not fail. Needs no
                                      project.
-  states <file> <type> [--distinct]  Evaluate a type: the states it has in each
+  states <file> <type>               Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
                                      as a Markdown table; or a child in place,
                                      given its path from a type, such as
                                      Toolbar.menu.toggle: where it is inside its
-                                     parents, with the states they give it;
-                                     with --distinct, the cases that can be
-                                     told apart, each with the combinations
-                                     it covers
+                                     parents, with the states they give it
+  cases <file> <type>                List the cases a type, or a child in place,
+        [--combinations]             has: those that can be told apart, each
+                                     with what it covers where it covers more
+                                     than one combination; with --combinations,
+                                     every combination, as if nothing were
+                                     alike
   validate <file>                    Check the stored records: each record's data is
                                      every JSON file in a folder named after it in
                                      kebab-case, next to the file, each a list of
@@ -293,14 +296,13 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const {
     json,
     rest: [file, typeName, ...rest],
-  } = options(args.filter((arg) => arg !== "--distinct"));
+  } = options(args);
   if (file === undefined || typeName === undefined || rest.length > 0) {
     return misused(io, json, "give a file and a type");
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
   if (typeof parsed === "number") return parsed;
-  if (args.includes("--distinct")) return distinctCases(parsed, typeName, report);
   // A path to a child, "<Type>.<child>...", is evaluated in place.
   if (typeName.split(".").some((segment) => /^[a-z]/.test(segment))) {
     return statesInPlace(parsed, typeName, report);
@@ -418,30 +420,43 @@ function compactTable(
   return said.length === 0 ? drawn : `In every row: ${said.join(", ")}\n\n${drawn}`;
 }
 
-// What can be told apart, as a table: each distinct case by the values that
-// tell it apart, and what it covers: its profiles, or, without profiles, each
-// combination, by the values the case does not show.
-function distinctCases(parsed: ParseResult, target: string, report: Reporter): number {
-  let found: Distinct;
+// The cases of a type, or of a child in place, as a table: each case by the
+// values that tell it apart, and, where a case covers several combinations,
+// what it covers: its profiles, or, without profiles, each combination, by
+// the values the case does not show. With --combinations, every combination,
+// as if nothing were alike.
+const casesCommand: Command = command(usage, (args, { io, cwd }) => {
+  const {
+    json,
+    rest: [file, target, ...rest],
+  } = options(args.filter((arg) => arg !== "--combinations"));
+  if (file === undefined || target === undefined || rest.length > 0) {
+    return misused(io, json, "give a file and a type");
+  }
+  const all = args.includes("--combinations");
+  const report = new Reporter(io, json, file);
+  const parsed = read(file, cwd, report);
+  if (typeof parsed === "number") return parsed;
+  let found: Cases;
   try {
-    found = distinct(parsed, target);
+    found = cases(parsed, target, { alike: !all });
   } catch (error) {
     return report.refuse((error as Error).message);
   }
-  const columns = [...new Set(found.distinct.flatMap(({ values }) => Object.keys(values)))];
-  const profiled = found.distinct.some(({ combinations }) =>
+  const columns = [...new Set(found.cases.flatMap(({ values }) => Object.keys(values)))];
+  const profiled = found.cases.some(({ combinations }) =>
     combinations.some(({ profiles }) => profiles !== undefined),
   );
-  const covered = ({ values, combinations }: Distinct["distinct"][number]) => {
-    if (profiled) {
-      return [...new Set(combinations.flatMap(({ profiles }) => profiles ?? []))].join(", ");
-    }
+  const profilesOfCase = ({ combinations }: Cases["cases"][number]) =>
+    [...new Set(combinations.flatMap(({ profiles }) => profiles ?? []))].join(", ");
+  const covered = (each: Cases["cases"][number]) => {
+    if (profiled) return profilesOfCase(each);
     return (
-      combinations
+      each.combinations
         .map((combination) =>
           found.subjects
             .map((name) => [name, combination.dimensions[name] ?? combination.states[name]])
-            .filter(([name, value]) => value !== undefined && values[name as string] !== value)
+            .filter(([name, value]) => value !== undefined && each.values[name as string] !== value)
             .map(([name, value]) => `${name} = ${value}`)
             .join(", "),
         )
@@ -449,18 +464,32 @@ function distinctCases(parsed: ParseResult, target: string, report: Reporter): n
         .join("; ") || NONE
     );
   };
-  const table = drawTable(
-    [...columns, profiled ? "profiles" : "combinations"],
-    found.distinct.map((each) => [
-      ...columns.map((column) => each.values[column] ?? NONE),
-      covered(each),
-    ]),
-  );
-  return report.succeed(
-    found,
-    `${target}: ${found.distinct.length} distinct of ${count(found.combinations, "combination")}\n\n${table}`,
-  );
-}
+  // Every combination its own case: its profiles first, as lang states
+  // shows them. Otherwise, what a case covers only where it covers more than
+  // one.
+  const single = found.cases.every(({ combinations }) => combinations.length === 1);
+  const table = all
+    ? drawTable(
+        [...(profiled ? ["profiles"] : []), ...columns],
+        found.cases.map((each) => [
+          ...(profiled ? [profilesOfCase(each)] : []),
+          ...columns.map((column) => each.values[column] ?? NONE),
+        ]),
+      )
+    : drawTable(
+        [...columns, ...(single ? [] : [profiled ? "profiles" : "combinations"])],
+        found.cases.map((each) => [
+          ...columns.map((column) => each.values[column] ?? NONE),
+          ...(single ? [] : [covered(each)]),
+        ]),
+      );
+  const counted = all
+    ? count(found.combinations, "combination")
+    : single
+      ? count(found.cases.length, "case")
+      : `${count(found.cases.length, "case")} of ${count(found.combinations, "combination")}`;
+  return report.succeed(found, `${target}: ${counted}\n\n${table}`);
+});
 
 // A child's states in place, as a table: each row a world and the states of
 // its parents on the way, then the child's own.
@@ -1173,6 +1202,7 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
 export const lang: Command = group(usage, {
   check,
   states: statesCommand,
+  cases: casesCommand,
   validate: validateCommand,
   rename: renameCommand,
   status: statusCommand,

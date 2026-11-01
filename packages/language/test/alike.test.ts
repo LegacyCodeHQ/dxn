@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { distinct } from "../src/distinct.js";
+import { cases as casesOf } from "../src/cases.js";
 import { parse } from "../src/parse.js";
 import { renameInSource } from "../src/rename.js";
 import { errors, problems } from "./support/language.js";
@@ -18,7 +18,7 @@ ${lines.map((line) => `  ${line}\n`).join("")}}
 // Each distinct case, by the values that tell it apart, and how many
 // combinations it covers.
 const cases = (source: string, target: string) => {
-  const { combinations, distinct: found } = distinct(parse(source), target);
+  const { combinations, cases: found } = casesOf(parse(source), target);
   return [
     combinations,
     found.map(({ values, combinations: covered }) => [

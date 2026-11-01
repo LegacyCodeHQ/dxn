@@ -745,16 +745,19 @@ Subcommands:
                                      or report every problem it has. Warnings
                                      are printed, but do not fail. Needs no
                                      project.
-  states <file> <type> [--distinct]  Evaluate a type: the states it has in each
+  states <file> <type>               Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
                                      as a Markdown table; or a child in place,
                                      given its path from a type, such as
                                      Toolbar.menu.toggle: where it is inside its
-                                     parents, with the states they give it;
-                                     with --distinct, the cases that can be
-                                     told apart, each with the combinations
-                                     it covers
+                                     parents, with the states they give it
+  cases <file> <type>                List the cases a type, or a child in place,
+        [--combinations]             has: those that can be told apart, each
+                                     with what it covers where it covers more
+                                     than one combination; with --combinations,
+                                     every combination, as if nothing were
+                                     alike
   validate <file>                    Check the stored records: each record's data is
                                      every JSON file in a folder named after it in
                                      kebab-case, next to the file, each a list of
