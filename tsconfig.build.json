@@ -1,8 +1,9 @@
 {
-  // Builds the language, then the dxn command that imports it.
+  // Builds the language, then the dxn command and the language server that import it.
   "files": [],
   "references": [
     { "path": "packages/language/tsconfig.build.json" },
-    { "path": "packages/cli/tsconfig.build.json" }
+    { "path": "packages/cli/tsconfig.build.json" },
+    { "path": "packages/language-server/tsconfig.build.json" }
   ]
 }

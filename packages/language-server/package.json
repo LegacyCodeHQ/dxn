@@ -1,0 +1,26 @@
+{
+  "name": "@legacycodehq/dxn-language-server",
+  "version": "0.0.0",
+  "description": "The dxn language server: problems in .dxn files as an editor shows them, for any editor that speaks the Language Server Protocol.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "dxn-language-server": "dist/main.js"
+  },
+  "files": [
+    "dist",
+    "!dist/tsconfig.build.tsbuildinfo"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc --build tsconfig.build.json"
+  },
+  "dependencies": {
+    "@legacycodehq/dxn-language": "0.0.0",
+    "vscode-languageserver": "11.0.0",
+    "vscode-languageserver-textdocument": "1.0.16"
+  }
+}
