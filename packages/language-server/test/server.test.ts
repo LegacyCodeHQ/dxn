@@ -117,4 +117,42 @@ describe("the language server", () => {
       }),
     ).toBeNull();
   });
+
+  it("names the whole name it goes from, to an editor that can underline it", async () => {
+    const editor = connect();
+    editors.push(editor);
+    await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: { textDocument: { definition: { linkSupport: true } } },
+    });
+    const uri = "file:///spec/button.dxn";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: {
+        uri,
+        languageId: "dxn",
+        version: 1,
+        text: "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n  action take-focus: focus blurred -> focused\n  event press\n  on press: take-focus\n}\n",
+      },
+    });
+    await opened;
+    // From "take-focus" in the trigger, hyphen and all, to the action.
+    expect(
+      await editor.sendRequest(DefinitionRequest.type, {
+        textDocument: { uri },
+        position: { line: 5, character: 13 },
+      }),
+    ).toEqual([
+      {
+        originSelectionRange: {
+          start: { line: 5, character: 12 },
+          end: { line: 5, character: 22 },
+        },
+        targetUri: uri,
+        targetRange: { start: { line: 3, character: 9 }, end: { line: 3, character: 19 } },
+        targetSelectionRange: { start: { line: 3, character: 9 }, end: { line: 3, character: 19 } },
+      },
+    ]);
+  });
 });

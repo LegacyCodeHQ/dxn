@@ -59,14 +59,44 @@ function go(before: string, word: string): [string, string] | undefined {
   const line = lines.findIndex((text) => text.includes(`${before}${word}`));
   const column = (lines[line] ?? "").indexOf(`${before}${word}`) + before.length + 1;
   // From the middle of the word, as an editor's cursor usually is.
-  const found = definition(source, line + 1, column + Math.floor(word.length / 2));
+  const found = definition(source, line + 1, column + Math.floor(word.length / 2))?.to;
   if (found === undefined) return undefined;
   const text = lines[found.line - 1] ?? "";
   const at = text.slice(found.column - 1).match(/^[A-Za-z0-9-]+/)?.[0] ?? "";
   return [text.trim(), at];
 }
 
+// The text that going to a definition from a word, in the first line holding
+// the text before it, goes from.
+function from(before: string, word: string): string | undefined {
+  const line = lines.findIndex((text) => text.includes(`${before}${word}`));
+  const column = (lines[line] ?? "").indexOf(`${before}${word}`) + before.length + 1;
+  const found = definition(source, line + 1, column + Math.floor(word.length / 2))?.from;
+  if (found === undefined) return undefined;
+  return (lines[found.line - 1] ?? "").slice(found.column - 1, found.column - 1 + found.length);
+}
+
 describe("definition", () => {
+  it("goes from the whole name under the cursor, or the part of a path it is in", () => {
+    const snapshot: (string | undefined)[] = [];
+    snapshot.push(from("on activate: ", "take-focus"));
+    snapshot.push(from("state hover: ", "Hover"));
+    snapshot.push(from("on escape: close, ", "link"));
+    snapshot.push(from("on escape: close, link.", "take-focus"));
+    snapshot.push(from("on link.", "activate"));
+    snapshot.push(from("modifier trackpad on ", "phone"));
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        "take-focus",
+        "Hover",
+        "link",
+        "take-focus",
+        "activate",
+        "phone",
+      ]
+    `);
+  });
+
   it("goes from a name to its declaration: an enum, a dimension, a type, a record", () => {
     expect(go("state hover: ", "Hover")).toEqual(["enum Hover = rest | hovered", "Hover"]);
     expect(go("type Link needs ", "Pointer")).toEqual([

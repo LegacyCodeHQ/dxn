@@ -12,10 +12,23 @@ interface Reference {
   path?: { from: Type; to: "state" | "action" | "event" | "child" };
 }
 
+// Where going to a definition goes from: a line and a column, both from one,
+// and how many characters.
+export interface Span {
+  line: number;
+  column: number;
+  length: number;
+}
+
 // Where the name at a line and a column of a source, both from one, is
-// declared: the name in its declaration. Nothing for a declaration itself, a
+// declared: the name in its declaration, and the name it goes from, whole, or
+// the part of a path the column is in. Nothing for a declaration itself, a
 // keyword, or a name the file does not declare.
-export function definition(source: string, line: number, column: number): Located | undefined {
+export function definition(
+  source: string,
+  line: number,
+  column: number,
+): { from: Span; to: Located } | undefined {
   const file = parse(source);
   const lines = source.split("\n");
   for (const reference of references(file)) {
@@ -25,12 +38,21 @@ export function definition(source: string, line: number, column: number): Locate
     if (written === undefined || column < at.column || column > at.column + written.length) {
       continue;
     }
-    if (reference.declared !== undefined) return declarations(file).get(reference.declared);
+    if (reference.declared !== undefined) {
+      const to = declarations(file).get(reference.declared);
+      return to === undefined
+        ? undefined
+        : { from: { line, column: at.column, length: written.length }, to };
+    }
     if (reference.path !== undefined) {
       // The part of the path the column is in: a child on the way, or its end.
       const parts = written.split(".");
       const before = written.slice(0, column - at.column).split(".").length - 1;
-      return along(file, reference.path.from, parts, before, reference.path.to);
+      const to = along(file, reference.path.from, parts, before, reference.path.to);
+      const start =
+        at.column + parts.slice(0, before).reduce((sum, part) => sum + part.length + 1, 0);
+      const length = parts[before]?.length ?? 0;
+      return to === undefined ? undefined : { from: { line, column: start, length }, to };
     }
   }
   return undefined;

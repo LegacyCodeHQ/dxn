@@ -9,9 +9,18 @@ import { rangeAt } from "./range.js";
 // and where a name in it is declared.
 export function serve(connection: Connection): void {
   const documents = new TextDocuments(TextDocument);
-  connection.onInitialize(() => ({
-    capabilities: { textDocumentSync: TextDocumentSyncKind.Incremental, definitionProvider: true },
-  }));
+  // Whether the editor takes a link, which names the text it goes from, so
+  // that it underlines a whole name, hyphens and all, rather than its words.
+  let links = false;
+  connection.onInitialize(({ capabilities }) => {
+    links = capabilities.textDocument?.definition?.linkSupport === true;
+    return {
+      capabilities: {
+        textDocumentSync: TextDocumentSyncKind.Incremental,
+        definitionProvider: true,
+      },
+    };
+  });
   documents.onDidChangeContent(({ document }) => {
     connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnose(document.getText()) });
   });
@@ -23,9 +32,21 @@ export function serve(connection: Connection): void {
     if (document === undefined) return null;
     const text = document.getText();
     const found = definition(text, position.line + 1, position.character + 1);
-    return found === undefined
-      ? null
-      : { uri: textDocument.uri, range: rangeAt(text, found.line, found.column) };
+    if (found === undefined) return null;
+    const target = rangeAt(text, found.to.line, found.to.column);
+    if (!links) return { uri: textDocument.uri, range: target };
+    const { line, column, length } = found.from;
+    return [
+      {
+        originSelectionRange: {
+          start: { line: line - 1, character: column - 1 },
+          end: { line: line - 1, character: column - 1 + length },
+        },
+        targetUri: textDocument.uri,
+        targetRange: target,
+        targetSelectionRange: target,
+      },
+    ];
   });
   documents.listen(connection);
   connection.listen();
