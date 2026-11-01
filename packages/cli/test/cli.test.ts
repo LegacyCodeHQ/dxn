@@ -45,6 +45,10 @@ describe("dxn cli", () => {
                                            are printed, but do not fail. With
                                            --expect, run only the expectation with
                                            that title, and say whether it holds
+        fmt <file>... [--check]            Write each file the one way a .dxn file is
+                                           written, and name the files changed; with
+                                           --check, write nothing, name the files not
+                                           written that way, and fail if there are any
         states <file> <type>               Evaluate a type: the states it has in each
                                            profile, or without profiles under each
                                            combination of the dimensions it needs,
@@ -126,6 +130,7 @@ describe("the command surface", () => {
     const commands = [...overview.matchAll(/^ {2}([a-z][a-z-]*)/gm)].map((match) => match[1]);
     expect(commands).toEqual([
       "check",
+      "fmt",
       "states",
       "cases",
       "validate",

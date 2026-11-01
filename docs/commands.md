@@ -17,7 +17,7 @@ in sync.
 
 ## Contents
 
-[check](#check), [states](#states), [cases](#cases), [validate](#validate), [attach](#attach), [status](#status), [rename](#rename)
+[check](#check), [fmt](#fmt), [states](#states), [cases](#cases), [validate](#validate), [attach](#attach), [status](#status), [rename](#rename)
 
 ## Usage
 
@@ -51,6 +51,10 @@ Commands:
                                      are printed, but do not fail. With
                                      --expect, run only the expectation with
                                      that title, and say whether it holds
+  fmt <file>... [--check]            Write each file the one way a .dxn file is
+                                     written, and name the files changed; with
+                                     --check, write nothing, name the files not
+                                     written that way, and fail if there are any
   states <file> <type>               Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
@@ -122,6 +126,32 @@ file is still checked: an expectation cannot hold in a file with problems.
 ```bash
 dxn check toolbar.dxn --expect "Escape closes the menu and returns focus to its button"
 ```
+
+### fmt
+
+Writes each file the one way a `.dxn` file is written, as `gofmt` does for Go,
+and names the files it changed. There are no options: every file reads the
+same, and a diff shows a change to the model, not to its spacing.
+
+- Two spaces of indentation for each `{`; a line starting with `}` steps back,
+  and one that goes on with `|`, `and` or `or` steps in one more.
+- One space between words and around `=`, `->` and `|`; none before `:` or
+  `,` and one after; none around `.` or `+`; none inside `( … )`; one inside
+  `{ … }` on a line.
+- Comments kept as written; one after code, two spaces after it.
+- At most one blank line in a row, and none at the start of the file, after a
+  `{` or before a `}`; line feeds, and one at the end.
+- Nothing reordered, joined or split. A file that does not parse is left
+  alone, and its problems are reported.
+
+```bash
+dxn fmt toolbar.dxn
+dxn fmt --check spec/*.dxn
+```
+
+With `--check`, it writes nothing, names the files that are not written that
+way, and exits 1 if there are any: for CI. The editor extensions format a file
+the same way when it is saved.
 
 ### states
 

@@ -1045,6 +1045,73 @@ expect "Each m can be open" {
   });
 });
 
+describe("dxn fmt", () => {
+  const messy = "enum   Hover=rest|hovered\ntype Link {\nstate hover: Hover\n}\n";
+  const tidy = "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\n";
+
+  it("writes each file the one way, and names the files it changed", () => {
+    const root = writeProject({ "messy.dxn": messy, "tidy.dxn": tidy });
+    const result = capture(["fmt", "messy.dxn", "tidy.dxn"], root);
+    expect([
+      result.code,
+      result.stdout,
+      readFileSync(join(root, "messy.dxn"), "utf8"),
+      readFileSync(join(root, "tidy.dxn"), "utf8"),
+    ]).toEqual([0, "messy.dxn\n", tidy, tidy]);
+  });
+
+  it("with --check, writes nothing, names the files it would change, and fails if any", () => {
+    const root = writeProject({ "messy.dxn": messy, "tidy.dxn": tidy });
+    const unformatted = capture(["fmt", "--check", "messy.dxn", "tidy.dxn"], root);
+    const formatted = capture(["fmt", "--check", "tidy.dxn"], root);
+    expect([
+      unformatted.code,
+      unformatted.stdout,
+      readFileSync(join(root, "messy.dxn"), "utf8"),
+      formatted.code,
+      formatted.stdout,
+    ]).toEqual([1, "messy.dxn\n", messy, 0, ""]);
+  });
+
+  it("leaves a file that does not parse alone, reports why, and still formats the others", () => {
+    const broken = "enum Hover = rest hovered\n";
+    const root = writeProject({ "broken.dxn": broken, "messy.dxn": messy });
+    const result = capture(["fmt", "broken.dxn", "messy.dxn"], root);
+    expect([
+      result.code,
+      result.stdout,
+      result.stderr,
+      readFileSync(join(root, "broken.dxn"), "utf8"),
+      readFileSync(join(root, "messy.dxn"), "utf8"),
+    ]).toEqual([
+      1,
+      "messy.dxn\n",
+      'broken.dxn:1:19: syntax-error: expected "|" or the end of the line after "rest", found "hovered"\n',
+      broken,
+      tidy,
+    ]);
+  });
+
+  it("prints what it changed, or would, with --json", () => {
+    const root = writeProject({ "messy.dxn": messy, "tidy.dxn": tidy });
+    const checked = capture(["fmt", "--check", "messy.dxn", "tidy.dxn", "--json"], root);
+    const written = capture(["fmt", "messy.dxn", "tidy.dxn", "--json"], root);
+    expect([JSON.parse(checked.stdout), JSON.parse(written.stdout)]).toEqual([
+      { unformatted: ["messy.dxn"], problems: [] },
+      { formatted: ["messy.dxn"], problems: [] },
+    ]);
+  });
+
+  it("needs a file, and refuses one that is not there", () => {
+    const root = writeProject({});
+    expect([
+      capture(["fmt"], root).code,
+      capture(["fmt", "--check"], root).code,
+      capture(["fmt", "missing.dxn"], root).stderr,
+    ]).toEqual([2, 2, 'dxn: file not found: "missing.dxn"\n']);
+  });
+});
+
 describe("dxn status", () => {
   const schema = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered
