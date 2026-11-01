@@ -321,6 +321,7 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   return report.succeed(
     evaluated,
     compactTable(parsed, {
+      name: typeName,
       keys: [...evaluated.dimensions, ...split],
       states: own,
       children: children.map((child) => `has ${child}`),
@@ -358,6 +359,8 @@ const values = (list: string[] | undefined) =>
 function compactTable(
   parsed: ParseResult,
   table: {
+    // What the table is of: a type, or a child by its path.
+    name: string;
     keys: string[];
     states: string[];
     children: string[];
@@ -394,6 +397,10 @@ function compactTable(
       : false;
   if (sameProfiles) said.unshift(profilesText(merged[0]?.profiles ?? []));
   const withProfiles = profiled && !sameProfiles;
+  // One combination with nothing in it has no table to draw.
+  if (columns.length === 0 && !withProfiles && said.length === 0) {
+    return `${table.name}: one combination, with no states\n`;
+  }
   const drawn = drawTable(
     [...(withProfiles ? ["profiles"] : []), ...columns.map(({ header }) => header)],
     merged.map(({ profiles, cells }) => [
@@ -419,6 +426,7 @@ function statesInPlace(parsed: ParseResult, path: string, report: Reporter): num
   return report.succeed(
     evaluated,
     compactTable(parsed, {
+      name: path,
       keys: [...evaluated.dimensions, ...parents, ...split],
       states: own,
       children: [],

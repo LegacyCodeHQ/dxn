@@ -197,6 +197,17 @@ type Wordmark needs Pointer, Keyboard {
     ]);
   });
 
+  it("says when a type, or a child in place, has one combination with nothing in it", () => {
+    const run = file("type Card {}\ntype Page {\n  has card: Card\n}\n");
+    expect([
+      run("states", "wordmark.dxn", "Card").stdout,
+      run("states", "wordmark.dxn", "Page.card").stdout,
+    ]).toEqual([
+      "Card: one combination, with no states\n",
+      "Page.card: one combination, with no states\n",
+    ]);
+  });
+
   it("shows where each child is: there, not there, or for which values of a state", () => {
     const run = file(`dimension Breakpoint = base | lg
 enum Layout = compact | inline
