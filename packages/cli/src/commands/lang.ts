@@ -1096,7 +1096,15 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   const stamp = flags.get("--at")?.[0] ?? new Date().toISOString();
   const values: Record<string, unknown> = {};
   for (const field of record.fields) {
-    if (field.derived !== undefined) continue;
+    // A derived field follows from another, so it is never given.
+    if (field.derived !== undefined) {
+      if (fields.has(field.name)) {
+        return report.refuse(
+          `${field.name} follows from ${field.derived.on.name}, so it is not given`,
+        );
+      }
+      continue;
+    }
     if (field.name === "source") values.source = { file: source, frame };
     else if (field.name === "fingerprint") values.fingerprint = "";
     else if (field.name === "at" && !fields.has("at")) values.at = stamp;
@@ -1139,7 +1147,10 @@ const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   const same = (entry: Record<string, unknown>, context: object) =>
     JSON.stringify(entry.context) === JSON.stringify(context) &&
     JSON.stringify(entry.source) === JSON.stringify(values.source) &&
-    [...fields.keys()].every((name) => entry[name] === fields.get(name));
+    // When it was recorded does not make it another entry.
+    [...fields.keys()]
+      .filter((name) => name !== "at" && name !== "fingerprint")
+      .every((name) => entry[name] === fields.get(name));
   const changed = new Set<string>();
   let replaced = 0;
   for (const context of contexts) {

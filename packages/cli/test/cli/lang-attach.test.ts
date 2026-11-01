@@ -133,6 +133,20 @@ describe("dxn attach", () => {
     ]);
   });
 
+  it("replaces an entry recorded again at another time, whatever at it is given", () => {
+    const { run, stored } = project();
+    const context = ["profile=phone", "menu.menu=closed", "hover=rest", "expanded=closed"];
+    run(...attach(...context));
+    const without = attach(...context).filter(
+      (arg, index, all) => arg !== "--at" && all[index - 1] !== "--at",
+    );
+    const result = run(...without, "--field", "at=2026-11-01T09:00:00Z");
+    expect([result.stdout, stored().map(({ at: when }) => when)]).toEqual([
+      "Attached 1 record to spec/evidence/toolbar.json, replacing 1\n",
+      ["2026-11-01T09:00:00Z"],
+    ]);
+  });
+
   it("replaces an entry where it is stored, in whichever of the record's files", () => {
     const { root, run } = project();
     const evidence = join(root, "spec", "evidence");
@@ -391,6 +405,13 @@ describe("the tool convention", () => {
     expect(stored().map(({ fingerprint }) => fingerprint)).toEqual([frame, hash(pen)]);
     expect(frame).not.toBe(hash(pen));
     expect(Object.keys(stored()[0] ?? {})).not.toContain("tool");
+  });
+
+  it("refuses a derived field given with --field: it follows from another", () => {
+    const { run } = tooled();
+    expect(
+      run(...record("design-agent", "design/toolbar.pen", "toggle"), "--field", "tool=file").stderr,
+    ).toBe("dxn: tool follows from actor, so it is not given\n");
   });
 
   it("refuses a pen-dev actor's frame in a file that is not a pen.dev file", () => {
