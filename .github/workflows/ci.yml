@@ -63,6 +63,10 @@ jobs:
       - name: Check the tree-sitter grammar
         run: make grammar
 
+      # Zed builds extensions for WebAssembly.
+      - name: Set up Rust for the Zed extension
+        run: rustup target add wasm32-wasip2
+
       # Needs full history, for the grammar commit extension.toml pins.
       - name: Check the Zed extension
         run: make zed

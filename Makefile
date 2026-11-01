@@ -69,7 +69,8 @@ grammar:
 
 # The Zed extension: extension.toml pins a commit whose grammar is the one in
 # packages/tree-sitter-dxn, and every query compiles against it and the sample
-# parses without errors.
+# parses without errors; and its Rust part, which starts the language server,
+# is formatted, lint-free, passes its tests, and builds for WebAssembly.
 zed:
 	@commit="$$(sed -n 's/^commit = "\(.*\)"/\1/p' packages/zed/extension.toml)" && \
 	  git diff --quiet "$$commit" -- packages/tree-sitter-dxn/grammar.js packages/tree-sitter-dxn/src || \
@@ -79,6 +80,11 @@ zed:
 	  for query in ../zed/languages/dxn/*.scm; do \
 	    npx tree-sitter query "$$query" ../zed/test/highlight.dxn > /dev/null || exit 1; \
 	  done
+	cd packages/zed && \
+	  cargo fmt --check && \
+	  cargo clippy --quiet --all-targets -- -D warnings && \
+	  cargo test --quiet && \
+	  cargo build --quiet --release --target wasm32-wasip2
 
 # The language, then the dxn command. dist/main.js at the root runs the built
 # command, for tooling that runs the CLI from the repository root.
