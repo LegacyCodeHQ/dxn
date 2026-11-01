@@ -1,7 +1,7 @@
 import type { Declaration, ParseResult, Type } from "./ast.js";
 import { type Placement, placement } from "./evaluate.js";
 import { parse } from "./parse.js";
-import { scalars } from "./scalars.js";
+import { penNode, scalars } from "./scalars.js";
 import { treePaths } from "./status.js";
 
 export type CompletionKind =
@@ -41,6 +41,7 @@ const topKeywords = [
   "enum",
   "type",
   "record",
+  "actor",
   "environment",
   "profile",
   "modifier",
@@ -118,6 +119,14 @@ export function completions(
     const name = type === undefined ? (header[1] as string) : `${type.name}.${header[1]}`;
     return names(visible(file, name, file.enums), "enum");
   }
+  // An actor's declaration: the word records, then the record it records.
+  if (/^actor\s+[A-Za-z0-9-]+\s+$/.test(statement)) return names(["records"], "keyword");
+  if (/^actor\s+[A-Za-z0-9-]+\s+records\s+$/.test(statement)) {
+    return names(
+      file.records.map(({ name }) => name),
+      "record",
+    );
+  }
   // Declarations at the top: an environment's dimensions, a profile's
   // environment, and the profiles a modifier fits.
   const product = statement.match(
@@ -169,7 +178,7 @@ export function completions(
   const changed = statement.match(/([A-Za-z0-9-]+)\s*->\s*$/);
   if (changed !== null && /^on\s/.test(statement)) return values(changed[1] as string);
 
-  // Inside a record: a field's type.
+  // Inside a record: a field's type, PenNode, the built-in record, too.
   if (inside?.kind === "record" && /^[A-Za-z0-9-]+\s*:\s*$/.test(statement)) {
     return [
       ...names(
@@ -184,6 +193,7 @@ export function completions(
         scalars.map(({ name }) => name),
         "scalar",
       ),
+      ...names([penNode.name], "record"),
     ];
   }
   // Inside a profile's or a modifier's values: a dimension, of the profile's

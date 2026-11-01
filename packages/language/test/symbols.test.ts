@@ -69,6 +69,7 @@ describe("symbols", () => {
         "record Evidence 26-28 @26:8",
         "  field hover 27-27 @27:3",
         "expectation Escape closes the menu 30-34 @30:8",
+        "actor evidence-recorder 35-35 @35:7",
       ]
     `);
   });

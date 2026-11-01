@@ -17,7 +17,7 @@ export interface DocumentSymbol {
 // The outline of a source: its declarations, in the order they are written;
 // inside a type, its states, events, children, actions, and the enums and
 // types it declares; inside a record, its fields; and its expectations, by
-// their titles. A file that does not parse to its end is outlined as far as it
+// their titles; and who records what, by each actor's name. A file that does not parse to its end is outlined as far as it
 // is read.
 export function symbols(source: string, file: ParseResult = parse(source)): DocumentSymbol[] {
   const lines = source.split("\n");
@@ -70,6 +70,7 @@ export function symbols(source: string, file: ParseResult = parse(source)): Docu
         record.fields.map((field) => symbol(field, "field", field.name)),
       ),
     ),
+    ...file.actors.map((each) => symbol(each, "actor", each.name)),
     ...file.expectations.map((each) => symbol(each, "expectation", each.title)),
   ]);
 }

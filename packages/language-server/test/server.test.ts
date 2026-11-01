@@ -459,7 +459,7 @@ describe("the language server", () => {
         uri,
         languageId: "dxn",
         version: 1,
-        text: "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n}\n",
+        text: "enum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n}\nrecord Evidence {\n}\nactor designer records Evidence\n",
       },
     });
     await opened;
@@ -493,6 +493,22 @@ describe("the language server", () => {
               children: [],
             },
           ],
+        },
+        {
+          name: "Evidence",
+          detail: "record",
+          kind: SymbolKind.Struct,
+          range: { start: { line: 4, character: 0 }, end: { line: 5, character: 1 } },
+          selectionRange: range(4, 7, 15),
+          children: [],
+        },
+        {
+          name: "designer",
+          detail: "actor",
+          kind: SymbolKind.Interface,
+          range: range(6, 0, 31),
+          selectionRange: range(6, 6, 14),
+          children: [],
         },
       ],
     );

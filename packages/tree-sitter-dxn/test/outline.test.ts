@@ -71,7 +71,7 @@ function outline(): string[] {
 }
 
 describe("the outline", () => {
-  it("lists the declarations, and inside a type its states, events, children and actions", () => {
+  it("lists the declarations, with each actor, inside a type its states, events, children and actions, and inside a record its fields", () => {
     expect(outline()).toMatchInlineSnapshot(`
       [
         "dimension Breakpoint",
@@ -102,17 +102,16 @@ describe("the outline", () => {
         "profile phone",
         "profile laptop",
         "modifier trackpad",
-        "enum Actor",
-        "enum Tool",
-        "record Source",
-        "  file",
-        "  frame",
         "actor designer",
         "record Evidence",
-        "  actor",
-        "  tool",
         "  at",
         "  source",
+        "enum Verdict",
+        "enum Next",
+        "actor reviewer",
+        "record Review",
+        "  verdict",
+        "  next",
         "expect "Escape closes the open menu"",
       ]
     `);

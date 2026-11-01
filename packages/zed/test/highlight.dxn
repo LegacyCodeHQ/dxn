@@ -50,20 +50,21 @@ profile phone: Device { Breakpoint = base, Pointer = touch }
 profile laptop: Device { Breakpoint = lg, Pointer = mouse }
 modifier trackpad on phone { Pointer = mouse }
 
-enum Actor = designer
-enum Tool = file
-record Source {
-  file: RelativePath
-  frame: NonEmptyString
-}
 actor designer records Evidence
 record Evidence {
-  actor: Actor
-  tool: Tool = when actor {
-    designer -> file
-  }
   at: Timestamp
-  source: Source
+  source: PenNode
+}
+
+enum Verdict = approved | changes
+enum Next = ship | redraw
+actor reviewer records Review
+record Review {
+  verdict: Verdict
+  next: Next = when verdict {
+    approved -> ship
+    changes -> redraw
+  }
 }
 
 expect "Escape closes the open menu" {

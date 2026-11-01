@@ -427,6 +427,7 @@ const symbolKinds: Record<string, SymbolKind> = {
   action: SymbolKind.Method,
   child: SymbolKind.Property,
   field: SymbolKind.Field,
+  actor: SymbolKind.Interface,
 };
 
 // The token types an editor colours names by, as the protocol names them, and

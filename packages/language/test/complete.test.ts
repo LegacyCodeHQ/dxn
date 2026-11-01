@@ -73,6 +73,7 @@ describe("completions", () => {
           "Timestamp scalar",
           "NonEmptyString scalar",
           "RelativePath scalar",
+          "PenNode record",
         ],
       ]
     `);
@@ -221,6 +222,31 @@ describe("completions", () => {
     `);
   });
 
+  it("suggest, in an actor's declaration, records and then the record it records", () => {
+    expect([
+      at("actor designer ‸"),
+      at("actor designer rec‸"),
+      at("actor designer records ‸"),
+      at("record Evidence {\n  at: Timestamp\n}\nactor designer records Ev‸"),
+    ]).toMatchInlineSnapshot(`
+      [
+        [
+          "records keyword",
+        ],
+        [
+          "records keyword",
+        ],
+        [
+          "Source record",
+        ],
+        [
+          "Source record",
+          "Evidence record",
+        ],
+      ]
+    `);
+  });
+
   it("suggest what starts a declaration, at the start of a line", () => {
     const snapshot: unknown[] = [];
     snapshot.push(at("‸"));
@@ -232,6 +258,7 @@ describe("completions", () => {
           "enum keyword",
           "type keyword",
           "record keyword",
+          "actor keyword",
           "environment keyword",
           "profile keyword",
           "modifier keyword",
