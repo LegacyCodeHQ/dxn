@@ -150,6 +150,51 @@ type Page needs Screen {
     ]);
   });
 
+  it("counts as one combination what differs only in profiles, by type and in place", () => {
+    const site = `dimension Screen = small | large
+dimension Pointer = mouse | touch
+enum Openness = closed | open
+type Menu {
+  state menu: Openness
+}
+type Bar needs Screen {
+  has menu: Menu
+}
+environment Device = Screen x Pointer
+profile phone: Device { Screen = small, Pointer = touch }
+profile tablet: Device { Screen = small, Pointer = mouse }
+profile laptop: Device { Screen = large, Pointer = mouse }
+`;
+    const listed = (target: string) => {
+      const found = casesOf(parse(site), target, { alike: false });
+      return [
+        found.combinations,
+        found.cases.map(({ values, combinations }) => [
+          Object.values(values).join(" "),
+          combinations.flatMap(({ profiles }) => profiles ?? []).join(", "),
+        ]),
+      ];
+    };
+    expect([cases(site, "Menu"), listed("Bar.menu")]).toEqual([
+      [
+        2,
+        [
+          ["menu = closed", 1],
+          ["menu = open", 1],
+        ],
+      ],
+      [
+        4,
+        [
+          ["small closed", "phone, tablet"],
+          ["small open", "phone, tablet"],
+          ["large closed", "laptop"],
+          ["large open", "laptop"],
+        ],
+      ],
+    ]);
+  });
+
   it("is renamed with the values it names", () => {
     const source = button("alike hover in (rest, hovered) when enabled = enabled");
     expect(renameInSource(parse(source), source, "Hover", "rest", "idle")).toBe(

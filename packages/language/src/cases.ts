@@ -29,7 +29,7 @@ export function cases(
     ? placement(file, target).target
     : file.types.find(({ name }) => name === target);
   if (type === undefined) throw new Error(`no type ${target}`);
-  const combinations: Combination[] = placed
+  const each: Combination[] = placed
     ? expand(file, target, [])
     : states(file, type.name).rows.flatMap((row) => {
         let expanded: Record<string, string>[] = [{}];
@@ -45,6 +45,19 @@ export function cases(
           states: own,
         }));
       });
+  // Combinations that differ only in their profiles are one, with all of
+  // their profiles: profiles differ in dimensions this one does not have.
+  const combinations: Combination[] = [];
+  for (const combination of each) {
+    const { profiles, ...rest } = combination;
+    const same = combinations.find(({ profiles: _, ...other }) => {
+      return JSON.stringify(other) === JSON.stringify(rest);
+    });
+    if (same === undefined) combinations.push({ ...combination });
+    else if (profiles !== undefined) {
+      same.profiles = [...(same.profiles ?? []), ...profiles];
+    }
+  }
   const valuesOf = (name: string) =>
     [...file.enums, ...file.dimensions]
       .find((declaration) => declaration.name === name)
@@ -71,6 +84,13 @@ export function cases(
   const found: Cases["cases"] = [];
   for (const combination of combinations) {
     const values: Record<string, string> = {};
+    // With alike set aside, every combination is its own case, told apart
+    // by all it has: every dimension, the parents' states and its own.
+    if (!alike) {
+      Object.assign(values, combination.dimensions, combination.parents, combination.states);
+      found.push({ values, combinations: [combination] });
+      continue;
+    }
     for (const { name } of type.needs) {
       const value = combination.dimensions[name];
       const shown = value === undefined ? undefined : told(name, value, combination);
