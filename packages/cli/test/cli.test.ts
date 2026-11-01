@@ -244,19 +244,6 @@ describe("the command surface", () => {
     ]);
   });
 
-  it("knows no lang command any more", () => {
-    const result = capture(["lang", "check", "x"]);
-    expect([result.code, result.stderr.split("\n")[0]]).toEqual([2, "dxn: unknown command: lang"]);
-  });
-
-  it("knows no prototype command any more", () => {
-    const result = capture(["prototype"]);
-    expect([result.code, result.stderr.split("\n")[0]]).toEqual([
-      2,
-      "dxn: unknown command: prototype",
-    ]);
-  });
-
   it("runs the language's status for a .dxn file at the top", () => {
     const root = writeProject({});
     writeFileSync(join(root, "toolbar.dxn"), "type Toolbar {}\nrecord Evidence with context {}\n");

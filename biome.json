@@ -26,7 +26,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/*/test/**", "packages/cli/src/commands/expectation.ts"],
+      "includes": ["packages/*/test/**"],
       "linter": {
         "rules": {
           "suspicious": {

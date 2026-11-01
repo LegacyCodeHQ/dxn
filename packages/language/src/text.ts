@@ -1,8 +1,7 @@
-// Checks on plain text that the language shares with the JSON prototype: names
-// that come from file names, and timestamps.
+// Checks on plain text in stored data: non-empty strings, and timestamps.
 
 // C0 and C1 control characters, including tab and newline.
-export function hasControlCharacter(text: string): boolean {
+function hasControlCharacter(text: string): boolean {
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i);
     if (code <= 0x1f || (code >= 0x7f && code <= 0x9f)) {

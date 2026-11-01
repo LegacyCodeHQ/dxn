@@ -1,6 +1,6 @@
 import { childPath, type Diagnostic, Diagnostics } from "./diagnostic.js";
 
-export interface Span {
+interface Span {
   start: number;
   end: number;
 }
@@ -11,7 +11,7 @@ export interface ObjectNode {
   span: Span;
 }
 
-export interface Member {
+interface Member {
   key: StringNode;
   value: JsonNode;
 }
@@ -28,19 +28,19 @@ export interface StringNode {
   span: Span;
 }
 
-export interface NumberNode {
+interface NumberNode {
   kind: "number";
   value: number;
   span: Span;
 }
 
-export interface BooleanNode {
+interface BooleanNode {
   kind: "boolean";
   value: boolean;
   span: Span;
 }
 
-export interface NullNode {
+interface NullNode {
   kind: "null";
   span: Span;
 }
@@ -67,7 +67,7 @@ const escapes: Record<string, string> = {
 
 // Deeper input is reported rather than parsed, so recursion here and in the
 // checkers cannot overflow the stack. 512 levels allows about 256 nested nodes.
-export const maxDepth = 512;
+const maxDepth = 512;
 
 const unpairedSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 

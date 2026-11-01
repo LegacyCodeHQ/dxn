@@ -9,8 +9,8 @@ export { type Cases, cases } from "./cases.js";
 export { subjects } from "./condition.js";
 // What a tree of types is in place, and how its records are derived.
 export { fieldValue } from "./derive.js";
-// The JSON reader and diagnostics the language shares with the JSON prototype.
-export { childPath, Diagnostics, type FileDiagnostic } from "./diagnostic.js";
+// Diagnostics in stored data, by JSON path.
+export { Diagnostics } from "./diagnostic.js";
 export {
   type InPlace,
   inPlace,
@@ -19,13 +19,8 @@ export {
   placement,
   states,
 } from "./evaluate.js";
-export {
-  type ArrayNode,
-  type JsonNode,
-  type ObjectNode,
-  parseJson,
-  type StringNode,
-} from "./json.js";
+// The JSON reader stored data is read with.
+export { parseJson } from "./json.js";
 export { Names } from "./names.js";
 export { parse } from "./parse.js";
 export { profilesOf } from "./profiles.js";
@@ -33,5 +28,4 @@ export { profilesOf } from "./profiles.js";
 export { isValue, renameInData, renameInSource } from "./rename.js";
 export { type Check, type Combination, coverage, treePaths } from "./status.js";
 export { folderOf, storedFiles } from "./store.js";
-export { hasControlCharacter, isName, isTimestamp } from "./text.js";
 export { validate } from "./validate.js";
