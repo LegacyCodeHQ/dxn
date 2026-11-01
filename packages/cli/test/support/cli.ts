@@ -1,4 +1,5 @@
 import { run } from "../../src/cli.js";
+import { type Files, writeProject } from "./project.js";
 
 // Runs the CLI in-process from the given working directory.
 export function capture(argv: string[], cwd: string = process.cwd()) {
@@ -14,4 +15,11 @@ export function capture(argv: string[], cwd: string = process.cwd()) {
     },
   });
   return { code, stdout, stderr };
+}
+
+// Runs the CLI in a throwaway directory holding these files, by path from it;
+// each command given is run before the arguments of each call.
+export function inProject(files: Files, ...command: string[]) {
+  const root = writeProject(files);
+  return (...args: string[]) => capture([...command, ...args], root);
 }

@@ -1,16 +1,13 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { capture } from "../support/cli.js";
+import { capture, inProject } from "../support/cli.js";
 import { cleanup, writeProject } from "../support/project.js";
 
 afterAll(cleanup);
 
-function file(source: string) {
-  const root = writeProject({});
-  writeFileSync(join(root, "wordmark.dxn"), source);
-  return (...args: string[]) => capture(args, root);
-}
+// Runs dxn beside wordmark.dxn, holding this source.
+const file = (source: string) => inProject({ "wordmark.dxn": source });
 
 describe("dxn check", () => {
   it("says what a file declares, in one line, counting each kind it has", () => {
@@ -436,16 +433,8 @@ record Part {
   // A stored record of Card, which has one combination.
   const card = '"context": { "type": "Card", "dimensions": {}, "states": {} }';
   // A folder with the schema in it, and these files, by path from it.
-  const project = (files: Record<string, string>, at = "evidence.dxn") => {
-    const root = writeProject({});
-    mkdirSync(join(root, dirname(at)), { recursive: true });
-    writeFileSync(join(root, at), schema);
-    for (const [path, content] of Object.entries(files)) {
-      mkdirSync(join(root, dirname(path)), { recursive: true });
-      writeFileSync(join(root, path), content);
-    }
-    return (...args: string[]) => capture(["validate", ...args], root);
-  };
+  const project = (files: Record<string, string>, at = "evidence.dxn") =>
+    inProject({ [at]: schema, ...files }, "validate");
   const valid = {
     "source/designs.json": `[{ ${card}, "tool": "pen-dev" }]`,
     "source/code.json": `[{ ${card}, "tool": "code" }]`,
@@ -704,10 +693,7 @@ record Evidence with context {
   const stored = `[{ ${card("design-agent")}, "actor": "design-agent" }, { ${card("reviewer")}, "actor": "reviewer" }]\n`;
   const renamed = `[{ ${card("designer")}, "actor": "designer" }, { ${card("reviewer")}, "actor": "reviewer" }]\n`;
   const project = (data: string) => {
-    const root = writeProject({});
-    writeFileSync(join(root, "evidence.dxn"), schema);
-    mkdirSync(join(root, "evidence"));
-    writeFileSync(join(root, "evidence", "page.json"), data);
+    const root = writeProject({ "evidence.dxn": schema, "evidence/page.json": data });
     const run = (...args: string[]) => capture(["rename", ...args], root);
     const dryRun = (...args: string[]) => capture(["--dry-run", "rename", ...args], root);
     const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -915,13 +901,8 @@ profile phone: Device { Pointer = touch }
 profile laptop: Device { Pointer = mouse }
 record Evidence with context {}
 `;
-  const project = (data: string) => {
-    const root = writeProject({});
-    writeFileSync(join(root, "toolbar.dxn"), schema);
-    mkdirSync(join(root, "evidence"));
-    writeFileSync(join(root, "evidence", "toolbar.json"), data);
-    return (...args: string[]) => capture(["status", ...args], root);
-  };
+  const project = (data: string) =>
+    inProject({ "toolbar.dxn": schema, "evidence/toolbar.json": data }, "status");
   const link = (profile: string, hover: string) =>
     `{ "context": { "path": "Toolbar.link", "profile": "${profile}", "dimensions": {}, "parents": {}, "states": { "hover": "${hover}" } } }`;
 

@@ -50,12 +50,8 @@ const hash = (content: string) =>
 
 // A repository with the model in spec/ and a design file.
 function project() {
-  const root = writeProject({});
+  const root = writeProject({ "spec/toolbar.dxn": schema, "design/toolbar.png": "drawn" });
   mkdirSync(join(root, ".git"));
-  mkdirSync(join(root, "spec"));
-  mkdirSync(join(root, "design"));
-  writeFileSync(join(root, "spec", "toolbar.dxn"), schema);
-  writeFileSync(join(root, "design", "toolbar.png"), "drawn");
   const run = (...args: string[]) => capture(["attach", ...args], root);
   const stored = () =>
     JSON.parse(readFileSync(join(root, "spec", "evidence", "toolbar.json"), "utf8")) as {
