@@ -1,15 +1,13 @@
 import { readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import {
-  Diagnostics,
   folderOf,
   type ParseResult,
-  parseJson,
   type RecordDeclaration,
+  duplicates as repeated,
   storedFiles,
   validate,
 } from "@legacycodehq/dxn-language";
-import { canonical } from "../fingerprint.js";
 import type { Reporter } from "./report.js";
 
 // A stored data file of a record: its path as shown, and its content.
@@ -84,37 +82,19 @@ export function checkStored(parsed: ParseResult, stored: Stored[], report: Repor
 // fingerprint, which say when one was recorded, not what: each repeat is
 // reported, across the record's files. Whether there was one.
 function duplicates(stored: Stored[], report: Reporter): boolean {
-  const seen = new Map<string, { shown: string; index: number }>();
-  let found = false;
-  for (const { record, shown, source } of stored) {
-    const root = parseJson(source).root;
-    (JSON.parse(source) as Record<string, unknown>[]).forEach((entry, index) => {
-      const { at: _at, fingerprint: _fingerprint, ...what } = entry;
-      const key = `${record}\u0000${JSON.stringify(canonical(what))}`;
-      const earlier = seen.get(key);
-      if (earlier === undefined) {
-        seen.set(key, { shown, index });
-        return;
-      }
-      const element = root?.kind === "array" ? root.elements[index] : undefined;
-      const located = new Diagnostics(source);
-      const path = `$[${index}]`;
-      const message = `the same ${record} as $[${earlier.index}] in ${earlier.shown}, apart from at and fingerprint`;
-      located.report("duplicate-record", message, path, element?.span.start ?? 0);
-      const { line, column } = located.items[0] as { line: number; column: number };
-      report.problem({
-        file: shown,
-        line,
-        column,
-        severity: "error",
-        code: "duplicate-record",
-        path,
-        message,
-      });
-      found = true;
+  const found = repeated(stored);
+  for (const { shown, line, column, path, message } of found) {
+    report.problem({
+      file: shown,
+      line,
+      column,
+      severity: "error",
+      code: "duplicate-record",
+      path,
+      message,
     });
   }
-  return found;
+  return found.length > 0;
 }
 
 // Who records with a record's tool, in messages: the value of the field the
