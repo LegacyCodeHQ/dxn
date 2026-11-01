@@ -47,9 +47,10 @@ jobs:
         run: make references
 
       # clarity, pinned to the version used locally; CI is set, so the
-      # cycles check fails rather than skips without it.
+      # cycles check fails rather than skips without it. The package skips
+      # downloading its binary when CI is set, so it is installed without it.
       - name: Install clarity
-        run: npm install -g @legacycodehq/clarity@0.34.2
+        run: env -u CI npm install -g @legacycodehq/clarity@0.34.2
 
       - name: Check file cycles
         run: make cycles
