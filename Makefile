@@ -1,11 +1,9 @@
-.PHONY: help install fmt fmt-check lint lint-check typecheck references cycles security test coverage grammar zed build smoke check check-fast qa setup-hooks clean
+.PHONY: help install fmt lint-check typecheck references cycles security test coverage grammar zed build smoke check check-fast setup-hooks clean
 
 help:
 	@echo "Targets:"
 	@echo "  install     - Install pinned dependencies from package-lock.json"
 	@echo "  fmt         - Format sources with Biome"
-	@echo "  fmt-check   - Check formatting with Biome"
-	@echo "  lint        - Run Biome lint rules"
 	@echo "  lint-check  - Run formatting, lint and type checks"
 	@echo "  typecheck   - Type-check both packages' sources and tests"
 	@echo "  references  - Fail when a TypeScript package is missing from tsconfig.build.json"
@@ -19,7 +17,6 @@ help:
 	@echo "  smoke       - Run every built command, and dist/main.js, once"
 	@echo "  check       - Run the full quality gate (the pre-push hook)"
 	@echo "  check-fast  - Run the quality gate without coverage"
-	@echo "  qa          - Alias for check"
 	@echo "  setup-hooks - Activate repository hooks for this clone"
 	@echo "  clean       - Remove build and coverage output"
 
@@ -28,12 +25,6 @@ install:
 
 fmt:
 	npx biome format --write .
-
-fmt-check:
-	npx biome format .
-
-lint:
-	npx biome lint .
 
 typecheck:
 	npx tsc --noEmit
@@ -101,8 +92,6 @@ smoke: build
 check: lint-check references cycles security coverage grammar zed smoke
 
 check-fast: lint-check references cycles test grammar zed smoke
-
-qa: check
 
 setup-hooks:
 	git config core.hooksPath .githooks

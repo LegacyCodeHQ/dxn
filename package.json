@@ -16,13 +16,8 @@
   },
   "scripts": {
     "build": "make build",
-    "check": "biome check . && tsc --noEmit",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "lint": "biome lint .",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "check": "make check",
+    "test": "make test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
