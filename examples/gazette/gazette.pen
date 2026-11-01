@@ -1,5 +1,188 @@
 {
   "version": "2.21",
-  "children": [],
+  "children": [
+    {
+      "type": "frame",
+      "id": "FBIeO",
+      "x": 0,
+      "y": 0,
+      "name": "Button",
+      "reusable": true,
+      "fill": "$accent",
+      "cornerRadius": "$radius-button",
+      "padding": [
+        14,
+        24
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "text",
+          "id": "Lesdz",
+          "name": "Label",
+          "fill": "$on-accent",
+          "content": "Follow sources",
+          "fontFamily": "$font-ui",
+          "fontSize": 17,
+          "fontWeight": "600"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "IeCCz",
+      "x": 0,
+      "y": 129,
+      "name": "Button states",
+      "clip": true,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "J7CDR7",
+          "name": "filled",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "OcEJ9",
+              "type": "ref",
+              "ref": "FBIeO",
+              "name": "filled / released / enabled",
+              "fill": "$accent",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$on-accent"
+                }
+              }
+            },
+            {
+              "id": "uqEAm",
+              "type": "ref",
+              "ref": "FBIeO",
+              "name": "filled / pressed / enabled",
+              "fill": "$accent-pressed",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$on-accent"
+                }
+              }
+            },
+            {
+              "id": "Pv7yt",
+              "type": "ref",
+              "ref": "FBIeO",
+              "name": "filled / released / disabled",
+              "fill": "$disabled-fill",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$disabled-text"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "qb6vb",
+          "name": "plain",
+          "gap": 32,
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "Aii8A",
+              "type": "ref",
+              "ref": "FBIeO",
+              "name": "plain / released / enabled",
+              "fill": "#00000000",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$accent"
+                }
+              }
+            },
+            {
+              "id": "Rmfi0",
+              "type": "ref",
+              "ref": "FBIeO",
+              "name": "plain / pressed / enabled",
+              "fill": "$accent-tint",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$accent-pressed"
+                }
+              }
+            },
+            {
+              "id": "gKYmP",
+              "type": "ref",
+              "ref": "FBIeO",
+              "name": "plain / released / disabled",
+              "fill": "#00000000",
+              "descendants": {
+                "Lesdz": {
+                  "fill": "$disabled-text"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "accent": {
+      "type": "color",
+      "value": "#B3261E"
+    },
+    "accent-pressed": {
+      "type": "color",
+      "value": "#8C1D17"
+    },
+    "accent-tint": {
+      "type": "color",
+      "value": "#B3261E1F"
+    },
+    "on-accent": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "surface": {
+      "type": "color",
+      "value": "#FBF8F4"
+    },
+    "text-primary": {
+      "type": "color",
+      "value": "#1C1B1A"
+    },
+    "text-secondary": {
+      "type": "color",
+      "value": "#6B6560"
+    },
+    "disabled-fill": {
+      "type": "color",
+      "value": "#E7E2DC"
+    },
+    "disabled-text": {
+      "type": "color",
+      "value": "#A8A19A"
+    },
+    "font-ui": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "font-title": {
+      "type": "string",
+      "value": "Source Serif 4"
+    },
+    "radius-button": {
+      "type": "number",
+      "value": 12
+    }
+  },
   "fileToken": "77ae2f9f-61ba-4878-9b55-acc6c60ad0dd"
 }

@@ -1,0 +1,116 @@
+[
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "filled",
+        "press": "released",
+        "enabled": "enabled"
+      }
+    },
+    "actor": "design-agent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "OcEJ9",
+      "fingerprint": "56b77e4d25c397093b3cc78d2ead55a6dc921ca1"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "filled",
+        "press": "pressed",
+        "enabled": "enabled"
+      }
+    },
+    "actor": "design-agent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "uqEAm",
+      "fingerprint": "3b121008d1c6fe11d199048c88540e036ff251e5"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "filled",
+        "press": "released",
+        "enabled": "disabled"
+      }
+    },
+    "actor": "design-agent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "Pv7yt",
+      "fingerprint": "f8519f6e3edfb4fce9d42627a05eb11dd137805e"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "plain",
+        "press": "released",
+        "enabled": "enabled"
+      }
+    },
+    "actor": "design-agent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "Aii8A",
+      "fingerprint": "4cbc71d56eb85941df3c5c1803479b6a4e95a35f"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "plain",
+        "press": "pressed",
+        "enabled": "enabled"
+      }
+    },
+    "actor": "design-agent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "Rmfi0",
+      "fingerprint": "f153312ba728a67b2f5b3d17bf53db6bfbfb0389"
+    }
+  },
+  {
+    "context": {
+      "path": "Button",
+      "dimensions": {},
+      "parents": {},
+      "states": {
+        "style": "plain",
+        "press": "released",
+        "enabled": "disabled"
+      }
+    },
+    "actor": "design-agent",
+    "source": {
+      "file": "examples/gazette/gazette.pen",
+      "frame": "IeCCz",
+      "node": "gKYmP",
+      "fingerprint": "7501f2af9f544ec57fc85d0cd88455780709f989"
+    }
+  }
+]

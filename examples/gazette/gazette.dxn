@@ -1,3 +1,9 @@
+actor design-agent records PenEvidence
+
+record PenEvidence {
+  source: PenNode
+}
+
 enum Style = filled | plain
 enum Press = released | pressed
 enum Enabled = enabled | disabled
