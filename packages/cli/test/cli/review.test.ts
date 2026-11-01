@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { reviewFolder } from "../../src/commands/review.js";
@@ -204,25 +204,11 @@ actor Designer records Evidence
 
   it("writes, with --stale, a page of only what is stale or gone, which needs a decision", () => {
     const { root, run, page } = project();
-    const before = run("review", "spec/button.dxn", "--stale");
-    const nothing = page("button.stale.md");
     writeFileSync(join(root, "design", "button.pen"), pen("#000000"));
-    const after = run("review", "spec/button.dxn", "--stale");
-    expect([before.stdout, after.stdout]).toEqual([
-      "Wrote <cache>/review/<repository>/spec/evidence/button.stale.md\n",
-      "Wrote <cache>/review/<repository>/spec/evidence/button.stale.md\n",
-    ]);
-    expect([nothing, page("button.stale.md")]).toMatchInlineSnapshot(`
-      [
-        "# Button: stale and gone
-
-      Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
-
-      Evidence for 1 of 2 combinations.
-
-      Nothing is stale or gone.
-      ",
-        "# Button: stale and gone
+    const result = run("review", "spec/button.dxn", "--stale");
+    expect(result.stdout).toBe("Wrote <cache>/review/<repository>/spec/evidence/button.stale.md\n");
+    expect(page("button.stale.md")).toMatchInlineSnapshot(`
+      "# Button: stale and gone
 
       Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
 
@@ -231,9 +217,27 @@ actor Designer records Evidence
       | style | status | as recorded |
       | --- | --- | --- |
       | filled | **stale** | ![Button: style = filled](pictures/filled.png) |
-      ",
-      ]
+      "
     `);
+  });
+
+  it("writes, with --stale, no page where nothing is stale or gone, and says so", () => {
+    const { root, run, folder } = project();
+    // A stale page from before, when something was.
+    writeFileSync(join(root, "design", "button.pen"), pen("#000000"));
+    run("review", "spec/button.dxn", "--stale");
+    writeFileSync(join(root, "design", "button.pen"), pen("#B3261E"));
+    const result = run("review", "spec/button.dxn", "--stale");
+    const json = run("review", "spec/button.dxn", "--stale", "--json");
+    expect([
+      result.stdout,
+      existsSync(join(folder, "button.stale.md")),
+      JSON.parse(json.stdout),
+    ]).toEqual([
+      "Button: nothing is stale or gone\n",
+      false,
+      { file: "spec/button.dxn", written: [], clean: ["Button"], problems: [] },
+    ]);
   });
 
   it("refuses a type the file does not declare", () => {

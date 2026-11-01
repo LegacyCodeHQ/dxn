@@ -24,9 +24,10 @@ const offered = (tag: string) =>
 
 // Runs a task as Zed does, the command and its arguments in single quotes for
 // the user's shell, with Zed's values for a file and a type, a dxn that says
-// it wrote two pages, and a zed that notes what it opens: what dxn was given,
-// and what zed opened.
-function runAsZed(task: Task): [number | null, string, string[]] {
+// it wrote two pages and that another tree has nothing stale, and a zed that
+// notes what it opens: what dxn was given, what zed opened, and what the
+// terminal shows.
+function runAsZed(task: Task): [number | null, string, string[], string] {
   const folder = mkdtempSync(join(tmpdir(), "dxn-task-"));
   try {
     const opened = join(folder, "opened");
@@ -37,7 +38,7 @@ function runAsZed(task: Task): [number | null, string, string[]] {
     };
     stub(
       "dxn",
-      `echo "$@" > "${given}"\necho "Wrote /cache/review/button.md"\necho "Wrote /cache/review/a card.md"`,
+      `echo "$@" > "${given}"\necho "Wrote /cache/review/button.md"\necho "Wrote /cache/review/a card.md"\necho "Banner: nothing is stale or gone"`,
     );
     stub("zed", `echo "$1" >> "${opened}"`);
     const value = (text: string) =>
@@ -59,7 +60,7 @@ function runAsZed(task: Task): [number | null, string, string[]] {
         return "";
       }
     };
-    return [run.status, read(given), read(opened).split("\n").filter(Boolean)];
+    return [run.status, read(given), read(opened).split("\n").filter(Boolean), run.stdout];
   } finally {
     rmSync(folder, { recursive: true, force: true });
   }
@@ -81,19 +82,20 @@ describe("the run buttons' tasks", () => {
     ]);
   });
 
-  it("review the type's tree, and open each page dxn wrote", () => {
+  it("review the type's tree, open each page dxn wrote, and show what else it says", () => {
     const task = (label: string) => tasks.find((each) => each.label === label) as Task;
     const pages = ["/cache/review/button.md", "/cache/review/a card.md"];
+    const shown = "Banner: nothing is stale or gone\n";
     expect([
       runAsZed(task("Recorded evidence: $ZED_CUSTOM_type")),
       runAsZed(task("Stale evidence: $ZED_CUSTOM_type")),
       runAsZed(task("Recorded evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type")),
       runAsZed(task("Stale evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type")),
     ]).toEqual([
-      [0, "review spec/button.dxn Toggle\n", pages],
-      [0, "review spec/button.dxn Toggle --stale\n", pages],
-      [0, "review spec/button.dxn Menu.Toggle\n", pages],
-      [0, "review spec/button.dxn Menu.Toggle --stale\n", pages],
+      [0, "review spec/button.dxn Toggle\n", pages, shown],
+      [0, "review spec/button.dxn Toggle --stale\n", pages, shown],
+      [0, "review spec/button.dxn Menu.Toggle\n", pages, shown],
+      [0, "review spec/button.dxn Menu.Toggle --stale\n", pages, shown],
     ]);
   });
 });

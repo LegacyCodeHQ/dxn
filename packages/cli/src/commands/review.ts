@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import {
   folderOf,
@@ -61,6 +61,8 @@ export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dr
   const full = resolve(cwd, file);
   const check = freshness(repositoryOf(full, cwd));
   const written: string[] = [];
+  // With --stale, the trees with nothing stale or gone, which have no page.
+  const clean: string[] = [];
   const records = parsed.records.filter(
     ({ context, fields }) => context && fields.some(({ type }) => type.name === "PenNode"),
   );
@@ -74,8 +76,14 @@ export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dr
       ...(roots === undefined ? {} : { roots }),
       ...(stale ? { only: ["stale", "gone"] as const } : {}),
     });
-    for (const { root, markdown } of pages) {
+    for (const { root, markdown, empty } of pages) {
       const page = join(folder, `${folderOf(root)}${stale ? ".stale" : ""}.md`);
+      if (empty) {
+        // Nothing to decide: no page, and none left from before.
+        if (!dryRun) rmSync(page, { force: true });
+        clean.push(root);
+        continue;
+      }
       if (dryRun) io.stdout(`Would write ${page}\n`);
       else {
         mkdirSync(folder, { recursive: true });
@@ -85,7 +93,10 @@ export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dr
     }
   }
   return report.succeed(
-    { file, written },
-    dryRun ? "" : written.map((page) => `Wrote ${page}\n`).join(""),
+    { file, written, ...(stale ? { clean } : {}) },
+    [
+      ...(dryRun ? [] : written.map((page) => `Wrote ${page}\n`)),
+      ...clean.map((root) => `${root}: nothing is stale or gone\n`),
+    ].join(""),
   );
 });

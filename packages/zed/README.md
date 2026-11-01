@@ -103,6 +103,7 @@ of it, a type inside another by its full name, `<Type>.<Name>`:
   picture of what was recorded.
 - **Stale evidence** does the same with `--stale`: a page of only what is
   stale or gone, each with its picture as recorded, which needs a decision.
+  When nothing is, it opens no page, and the terminal says so.
 
 The pages open in Zed with the `zed` command, which Zed installs with
 **cli: install**; **markdown: open preview to the side** shows their pictures. Each expectation has

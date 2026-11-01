@@ -8,13 +8,13 @@
   },
   {
     "label": "Recorded evidence: $ZED_CUSTOM_type",
-    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_type\" | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
+    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_type\" | while IFS= read -r line; do case \"$line\" in \"Wrote \"*) zed \"${line#Wrote }\";; *) echo \"$line\";; esac; done",
     "cwd": "$ZED_WORKTREE_ROOT",
     "tags": ["dxn-type"]
   },
   {
     "label": "Stale evidence: $ZED_CUSTOM_type",
-    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_type\" --stale | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
+    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_type\" --stale | while IFS= read -r line; do case \"$line\" in \"Wrote \"*) zed \"${line#Wrote }\";; *) echo \"$line\";; esac; done",
     "cwd": "$ZED_WORKTREE_ROOT",
     "tags": ["dxn-type"]
   },
@@ -27,13 +27,13 @@
   },
   {
     "label": "Recorded evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
-    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_parent.$ZED_CUSTOM_type\" | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
+    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_parent.$ZED_CUSTOM_type\" | while IFS= read -r line; do case \"$line\" in \"Wrote \"*) zed \"${line#Wrote }\";; *) echo \"$line\";; esac; done",
     "cwd": "$ZED_WORKTREE_ROOT",
     "tags": ["dxn-nested-type"]
   },
   {
     "label": "Stale evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
-    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_parent.$ZED_CUSTOM_type\" --stale | sed -n \"s/^Wrote //p\" | while IFS= read -r page; do zed \"$page\"; done",
+    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_parent.$ZED_CUSTOM_type\" --stale | while IFS= read -r line; do case \"$line\" in \"Wrote \"*) zed \"${line#Wrote }\";; *) echo \"$line\";; esac; done",
     "cwd": "$ZED_WORKTREE_ROOT",
     "tags": ["dxn-nested-type"]
   },

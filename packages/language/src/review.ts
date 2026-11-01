@@ -8,6 +8,8 @@ import { type Check, describe, type Judged, judge } from "./status.js";
 export interface ReviewPage {
   root: string;
   markdown: string;
+  // Whether it shows no combination: none is in the states asked for.
+  empty: boolean;
 }
 
 // Which pages to write: those of the trees with these roots, every tree's
@@ -72,6 +74,7 @@ export function reviewPages(
     const none = only === undefined ? [] : [`Nothing is ${only.join(" or ")}.`];
     return {
       root,
+      empty: sections.length === 0,
       markdown: [
         `# ${root}${which}`,
         "",
