@@ -50,6 +50,9 @@ export {
   renameable,
   type StoredFile,
 } from "./rename-at.js";
+// Pages to review each tree's evidence by, with the pictures of what was
+// recorded.
+export { type ReviewPage, reviewPages } from "./review.js";
 // What each name in a file is, for editors to colour it by.
 export { type Token, tokens } from "./semantic.js";
 // How many combinations of each element stored records are about.
@@ -58,6 +61,8 @@ export {
   type Combination,
   coverage,
   describe,
+  type Judged,
+  judge,
   type Progress,
   progress,
   treePaths,

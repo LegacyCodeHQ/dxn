@@ -81,6 +81,12 @@ describe("dxn cli", () => {
                                            combinations of every element in the file's
                                            trees, in place, and those a stored record is
                                            about; with --missing, list the others
+        review <file>                      Write, for each tree and each record with a
+                                           PenNode, a Markdown page of its combinations,
+                                           each with its status and the picture of what
+                                           was recorded, pictures/<node>.png beside the
+                                           page; pages go in dxn's cache, outside the
+                                           repository, and are named as they are written
         rename <file> <name> <new>         Rename a declaration where the file uses it
                                            and where stored records name it, once both
                                            check: <name> as dxn writes it (Hover,
@@ -135,6 +141,7 @@ describe("the command surface", () => {
       "validate",
       "attach",
       "status",
+      "review",
       "rename",
       "help",
     ]);

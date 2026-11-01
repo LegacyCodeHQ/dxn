@@ -1,0 +1,191 @@
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
+import { reviewFolder } from "../../src/commands/review.js";
+import { capture } from "../support/cli.js";
+import { cleanup, writeProject } from "../support/project.js";
+
+afterAll(cleanup);
+
+const schema = `enum Style = filled | plain
+type Button {
+  state style: Style
+}
+
+record Evidence {
+  source: PenNode
+}
+actor Designer records Evidence
+`;
+
+// A pen.dev file: a frame holding the button's two styles, each a node with
+// its fill.
+const pen = (filled: string) =>
+  JSON.stringify({
+    version: "2.21",
+    children: [
+      {
+        id: "states",
+        type: "frame",
+        name: "Button states",
+        children: [
+          { id: "filled", type: "frame", name: "filled", fill: filled },
+          { id: "plain", type: "frame", name: "plain", fill: "#FFFFFF" },
+        ],
+      },
+    ],
+  });
+
+// A repository with the model in spec/ and its design, the filled button's
+// evidence attached, and its picture exported beside the evidence.
+function project(model = schema, ...where: string[]) {
+  const root = writeProject({ "spec/button.dxn": model, "design/button.pen": pen("#B3261E") });
+  mkdirSync(join(root, ".git"));
+  // The cache, outside the repository.
+  const cache = writeProject({});
+  const shown = (text: string) =>
+    text.replaceAll(cache, "<cache>").replace(/review\/[^/]+\//g, "review/<repository>/");
+  const run = (...args: string[]) => {
+    const result = capture(args, root, cache);
+    return { ...result, stdout: shown(result.stdout) };
+  };
+  const attached = run(
+    "attach",
+    "spec/button.dxn",
+    ...(where.length > 0 ? where : ["Button"]),
+    "--actor",
+    "Designer",
+    "--data",
+    JSON.stringify({ source: { file: "design/button.pen", frame: "states", node: "filled" } }),
+    "style=filled",
+  );
+  expect(attached.code).toBe(0);
+  // The pictures and the pages, in the cache.
+  const folder = reviewFolder(cache, join(root, "spec", "button.dxn"), "Evidence");
+  mkdirSync(join(folder, "pictures"), { recursive: true });
+  writeFileSync(join(folder, "pictures", "filled.png"), "a picture");
+  const page = (name = "button.md") => readFileSync(join(folder, name), "utf8");
+  return { root, run, page, folder };
+}
+
+describe("dxn review", () => {
+  it("writes, for each tree, a page of its combinations, each with its status and picture", () => {
+    const { run, page } = project();
+    const result = run("review", "spec/button.dxn");
+    expect([result.code, result.stdout, result.stderr]).toEqual([
+      0,
+      "Wrote <cache>/review/<repository>/spec/evidence/button.md\n",
+      "",
+    ]);
+    expect(page()).toMatchInlineSnapshot(`
+      "# Button
+
+      Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
+
+      Evidence for 1 of 2 combinations.
+
+      | style | status | as recorded |
+      | --- | --- | --- |
+      | filled | present | ![Button: style = filled](pictures/filled.png) |
+      | plain | **missing** | — |
+      "
+    `);
+  });
+
+  it("marks a combination whose drawing changed since it was recorded stale, with its picture as recorded", () => {
+    const { root, run, page } = project();
+    writeFileSync(join(root, "design", "button.pen"), pen("#000000"));
+    expect(run("review", "spec/button.dxn").code).toBe(0);
+    expect(page()).toMatchInlineSnapshot(`
+      "# Button
+
+      Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
+
+      Evidence for 0 of 2 combinations; 1 stale.
+
+      | style | status | as recorded |
+      | --- | --- | --- |
+      | filled | **stale** | ![Button: style = filled](pictures/filled.png) |
+      | plain | **missing** | — |
+      "
+    `);
+  });
+
+  it("says when a recorded combination has no picture", () => {
+    const { run, page, folder } = project();
+    rmSync(join(folder, "pictures", "filled.png"));
+    expect(run("review", "spec/button.dxn").code).toBe(0);
+    expect(page()).toContain("| filled | present | no picture |");
+  });
+
+  it("gives an element in place its own section, with the states of the parents that place it", () => {
+    const { run, page } = project(
+      `enum Openness = closed | open
+enum Style = filled | plain
+type Button {
+  state style: Style
+}
+type Card {
+  state open: Openness
+  has button: Button only when open = open
+}
+
+record Evidence {
+  source: PenNode
+}
+actor Designer records Evidence
+`,
+      "Card.button",
+      "open=open",
+    );
+    expect(run("review", "spec/button.dxn").code).toBe(0);
+    expect(page("card.md")).toMatchInlineSnapshot(`
+      "# Card
+
+      Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
+
+      Evidence for 1 of 4 combinations.
+
+      ## Card
+
+      | open | status | as recorded |
+      | --- | --- | --- |
+      | closed | **missing** | — |
+      | open | **missing** | — |
+
+      ## Card.button
+
+      | open | style | status | as recorded |
+      | --- | --- | --- | --- |
+      | open | filled | present | ![Card.button with open = open: style = filled](pictures/filled.png) |
+      | open | plain | **missing** | — |
+      "
+    `);
+  });
+
+  it("prints, with --json, the pages it wrote", () => {
+    const { run } = project();
+    const result = run("review", "spec/button.dxn", "--json");
+    expect([result.code, JSON.parse(result.stdout), result.stderr]).toEqual([
+      0,
+      {
+        file: "spec/button.dxn",
+        written: ["<cache>/review/<repository>/spec/evidence/button.md"],
+        problems: [],
+      },
+      "",
+    ]);
+  });
+
+  it("needs one file, and refuses while its stored records have problems", () => {
+    const { root, run } = project();
+    const usage = run("review");
+    writeFileSync(join(root, "spec", "evidence", "button.json"), '[{ "actor": "Designer" }]\n');
+    const broken = run("review", "spec/button.dxn");
+    expect([usage.code, usage.stderr.split("\n")[0], broken.code]).toEqual([
+      2,
+      "dxn: give one file, whose evidence to review",
+      1,
+    ]);
+  });
+});

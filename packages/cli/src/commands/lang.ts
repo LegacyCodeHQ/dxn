@@ -4,6 +4,7 @@ import { checkCommand } from "./check.js";
 import type { Command } from "./context.js";
 import { fmtCommand } from "./fmt.js";
 import { renameCommand } from "./rename.js";
+import { reviewCommand } from "./review.js";
 import { statesCommand } from "./states.js";
 import { statusCommand } from "./status.js";
 import { validateCommand } from "./validate.js";
@@ -20,4 +21,5 @@ export const language: Record<string, Command> = {
   rename: renameCommand,
   status: statusCommand,
   attach: attachCommand,
+  review: reviewCommand,
 };

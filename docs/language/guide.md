@@ -80,6 +80,7 @@ folder. Seven commands work on a file, each introduced where it is needed:
 | `dxn validate <file>`                       | checks every stored record against its declaration                   |
 | `dxn attach <file> <path> --actor --data …` | records evidence for an element in the combinations given            |
 | `dxn status <file>`                         | counts which combinations have evidence, and which are stale or gone |
+| `dxn review <file>`                         | writes a page per tree to review its evidence by, with pictures      |
 | `dxn rename <file> <Enum>.<value> <new>`    | renames an enum's value in the file and its stored records           |
 
 Each prints a readable answer for you. A tool or an agent adds `--json` to any

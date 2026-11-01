@@ -1,3 +1,5 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { dispatch } from "./commands/context.js";
 import { commandList, language } from "./commands/lang.js";
 import type { Io } from "./io.js";
@@ -31,5 +33,15 @@ export function run(argv: string[], io: Io): number {
     io.stdout(`${JSON.stringify({ version })}\n`);
     return 0;
   }
-  return dispatch(args, { io, cwd, dryRun }, usage, language);
+  return dispatch(args, { io, cwd, cache: io.cache ?? userCache(), dryRun }, usage, language);
+}
+
+// The user's cache folder for dxn: ~/Library/Caches/dxn on macOS, under
+// LOCALAPPDATA on Windows, and elsewhere under XDG_CACHE_HOME or ~/.cache.
+function userCache(): string {
+  if (process.platform === "darwin") return join(homedir(), "Library", "Caches", "dxn");
+  if (process.platform === "win32") {
+    return join(process.env.LOCALAPPDATA ?? join(homedir(), "AppData", "Local"), "dxn");
+  }
+  return join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "dxn");
 }

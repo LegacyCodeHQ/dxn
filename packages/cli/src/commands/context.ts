@@ -4,6 +4,9 @@ import type { Io } from "../io.js";
 export interface Context {
   io: Io;
   cwd: string;
+  // Where dxn keeps what it makes for the user alone, outside every
+  // repository.
+  cache: string;
   // From --dry-run: print what would be written instead of writing it.
   dryRun: boolean;
 }

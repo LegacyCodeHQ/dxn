@@ -1,12 +1,14 @@
 import { run } from "../../src/cli.js";
 import { type Files, writeProject } from "./project.js";
 
-// Runs the CLI in-process from the given working directory.
-export function capture(argv: string[], cwd: string = process.cwd()) {
+// Runs the CLI in-process from the given working directory, keeping what it
+// caches in the given folder.
+export function capture(argv: string[], cwd: string = process.cwd(), cache?: string) {
   let stdout = "";
   let stderr = "";
   const code = run(argv, {
     cwd,
+    ...(cache === undefined ? {} : { cache }),
     stdout: (text) => {
       stdout += text;
     },

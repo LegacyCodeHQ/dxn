@@ -227,17 +227,25 @@ function merged(file: ParseResult, path: string, given: string[]): Combination[]
   return result;
 }
 
-// How much of the trees a record an actor records covers: every combination of
-// every element, in place, and which a stored record is about. Profiles that
-// share a row count as one. With a check, each entry is present, stale or
-// gone by its frame, and a combination is as its best entry is. The file and
-// the data must have no problems.
-export function coverage(
+// A combination of an element in place, as the stored records judge it: as
+// its best entry is, present, else stale, else gone; or missing without one;
+// with that entry.
+export interface Judged {
+  combination: Combination;
+  state: Freshness | "missing";
+  entry?: Record<string, unknown>;
+}
+
+// Every combination of every element of the trees, in place, by its path, as
+// a record's stored records judge it. Profiles that share a row count as one.
+// With a check, each entry is present, stale or gone by its PenNodes. The file
+// and the data must have no problems.
+export function judge(
   file: ParseResult,
   record: string,
   sources: string[],
   check?: Check,
-): Coverage {
+): { path: string; combinations: Judged[] }[] {
   const given = givenDimensions(file);
   const declared = file.records.find(({ name }) => name === record);
   // An entry is as fresh as the least fresh of its PenNodes: gone, then
@@ -265,6 +273,7 @@ export function coverage(
           parents: (context.parents ?? {}) as Record<string, string>,
           states: (context.states ?? {}) as Record<string, string>,
           freshness: freshness(entry),
+          entry,
         };
       },
     ),
@@ -277,28 +286,41 @@ export function coverage(
   for (const context of contexts) {
     byPath.set(context.path, [...(byPath.get(context.path) ?? []), context]);
   }
-  const paths = treePaths(file).map((path) => {
-    const combinations = merged(file, path, given);
+  return treePaths(file).map((path) => {
     const about = byPath.get(path) ?? [];
-    // A combination is as its best entry is: present, else stale, else gone.
-    const state = (combination: Combination): Freshness | "missing" => {
-      const found = about
-        .filter(
-          (context) =>
-            (combination.profiles === undefined ||
-              combination.profiles.includes(context.profile ?? "")) &&
-            same(context.dimensions, combination.dimensions) &&
-            same(context.parents, combination.parents) &&
-            same(context.states, combination.states),
-        )
-        .map(({ freshness }) => freshness);
-      return (
-        (["present", "stale", "gone"] as const).find((best) => found.includes(best)) ?? "missing"
+    const judged = (combination: Combination): Judged => {
+      const found = about.filter(
+        (context) =>
+          (combination.profiles === undefined ||
+            combination.profiles.includes(context.profile ?? "")) &&
+          same(context.dimensions, combination.dimensions) &&
+          same(context.parents, combination.parents) &&
+          same(context.states, combination.states),
       );
+      for (const best of ["present", "stale", "gone"] as const) {
+        const entry = found.find(({ freshness: each }) => each === best);
+        if (entry !== undefined) return { combination, state: best, entry: entry.entry };
+      }
+      return { combination, state: "missing" };
     };
-    const states = combinations.map((combination) => ({ combination, state: state(combination) }));
+    return { path, combinations: merged(file, path, given).map(judged) };
+  });
+}
+
+// How much of the trees a record an actor records covers: every combination of
+// every element, in place, and which a stored record is about. Profiles that
+// share a row count as one. With a check, each entry is present, stale or
+// gone by its frame, and a combination is as its best entry is. The file and
+// the data must have no problems.
+export function coverage(
+  file: ParseResult,
+  record: string,
+  sources: string[],
+  check?: Check,
+): Coverage {
+  const paths = judge(file, record, sources, check).map(({ path, combinations }) => {
     const those = (wanted: Freshness | "missing") =>
-      states.filter(({ state: found }) => found === wanted).map(({ combination }) => combination);
+      combinations.filter(({ state }) => state === wanted).map(({ combination }) => combination);
     return {
       path,
       combinations: combinations.length,
