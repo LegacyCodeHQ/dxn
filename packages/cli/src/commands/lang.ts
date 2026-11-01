@@ -35,31 +35,8 @@ import { canonical, Fingerprints } from "../fingerprint.js";
 import { drawTable, NONE } from "../tables.js";
 import { type Command, type Context, command } from "./context.js";
 
-const usage = `Usage: dxn <command> <file> [options]
-
-dxn, the language of design and dimensions, which grows one concept at a
-time: see docs/language/guide.md. A .dxn file declares enums, each a named
-set of values; dimensions, each listing the values the environment varies
-by; types with the dimensions they need, their states, rules for when a
-state's value exists, a when for a state the world decides, and the
-children they have; environments, each a product of dimensions; profiles,
-each an instance of an environment; modifiers, accessories that change
-some profiles; records, each a named group of typed fields; and
-expectations, rules checked against the tree in place. A # starts a
-comment, to the end of the line:
-
-  # The wordmark's hover only exists with a mouse.
-  enum Hover = rest | hovered
-  dimension Pointer = mouse | touch
-  type Wordmark needs Pointer {
-    state hover: Hover
-    hover = hovered only when Pointer = mouse
-  }
-  environment Device = Pointer
-  profile laptop: Device { Pointer = mouse }
-
-Commands:
-  check <file>                       Parse and check a file; say what it declares,
+// The commands, as the overview and each command's usage list them.
+export const commandList = `  check <file>                       Parse and check a file; say what it declares,
                                      or report every problem it has. Warnings
                                      are printed, but do not fail.
   states <file> <type>               Evaluate a type: the states it has in each
@@ -94,7 +71,33 @@ Commands:
                                      about; with --missing, list the others
   rename <file> <Enum>.<value> <new> Rename an enum's value in the file and in every
                                      stored record, once both check; with --dry-run,
-                                     say what it would write
+                                     say what it would write`;
+
+const usage = `Usage: dxn <command> <file> [options]
+
+dxn, the language of design and dimensions, which grows one concept at a
+time: see docs/language/guide.md. A .dxn file declares enums, each a named
+set of values; dimensions, each listing the values the environment varies
+by; types with the dimensions they need, their states, rules for when a
+state's value exists, a when for a state the world decides, and the
+children they have; environments, each a product of dimensions; profiles,
+each an instance of an environment; modifiers, accessories that change
+some profiles; records, each a named group of typed fields; and
+expectations, rules checked against the tree in place. A # starts a
+comment, to the end of the line:
+
+  # The wordmark's hover only exists with a mouse.
+  enum Hover = rest | hovered
+  dimension Pointer = mouse | touch
+  type Wordmark needs Pointer {
+    state hover: Hover
+    hover = hovered only when Pointer = mouse
+  }
+  environment Device = Pointer
+  profile laptop: Device { Pointer = mouse }
+
+Commands:
+${commandList}
 
 Options:
   --json                             Print one JSON document, for tools: the result
