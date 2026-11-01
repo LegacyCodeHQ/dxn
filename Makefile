@@ -1,4 +1,4 @@
-.PHONY: help install fmt fmt-check lint lint-check typecheck references cycles security test coverage grammar build smoke check check-fast qa setup-hooks clean
+.PHONY: help install fmt fmt-check lint lint-check typecheck references cycles security test coverage grammar zed build smoke check check-fast qa setup-hooks clean
 
 help:
 	@echo "Targets:"
@@ -14,6 +14,7 @@ help:
 	@echo "  test        - Run both packages' test suites"
 	@echo "  coverage    - Run the test suite with coverage thresholds"
 	@echo "  grammar     - Check the tree-sitter grammar's generated parser and run its corpus tests"
+	@echo "  zed         - Check the Zed extension's grammar commit and queries"
 	@echo "  build       - Compile packages/*/src/ to packages/*/dist/, and add dist/main.js"
 	@echo "  smoke       - Run every built command, and dist/main.js, once"
 	@echo "  check       - Run the full quality gate (the pre-push hook)"
@@ -66,6 +67,19 @@ grammar:
 	  { diff -r "$$generated" src || { echo "grammar: src/ is stale; run 'npx tree-sitter generate' in packages/tree-sitter-dxn" >&2; exit 1; }; } && \
 	  npx tree-sitter test
 
+# The Zed extension: extension.toml pins a commit whose grammar is the one in
+# packages/tree-sitter-dxn, and every query compiles against it and the sample
+# parses without errors.
+zed:
+	@commit="$$(sed -n 's/^commit = "\(.*\)"/\1/p' packages/zed/extension.toml)" && \
+	  git diff --quiet "$$commit" -- packages/tree-sitter-dxn/grammar.js packages/tree-sitter-dxn/src || \
+	  { echo "zed: extension.toml pins a grammar commit that differs from packages/tree-sitter-dxn; update its commit" >&2; exit 1; }
+	cd packages/tree-sitter-dxn && \
+	  npx tree-sitter parse --quiet ../zed/test/highlight.dxn && \
+	  for query in ../zed/languages/dxn/*.scm; do \
+	    npx tree-sitter query "$$query" ../zed/test/highlight.dxn > /dev/null || exit 1; \
+	  done
+
 # The language, then the dxn command. dist/main.js at the root runs the built
 # command, for tooling that runs the CLI from the repository root.
 build:
@@ -78,9 +92,9 @@ smoke: build
 	node scripts/smoke/run.mjs
 	node dist/main.js --version
 
-check: lint-check references cycles security coverage grammar smoke
+check: lint-check references cycles security coverage grammar zed smoke
 
-check-fast: lint-check references cycles test grammar smoke
+check-fast: lint-check references cycles test grammar zed smoke
 
 qa: check
 

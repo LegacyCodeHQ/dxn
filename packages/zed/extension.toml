@@ -1,0 +1,14 @@
+id = "dxn"
+name = "dxn"
+version = "0.0.1"
+schema_version = 1
+authors = ["Legacy Code Headquarters (OPC) Private Limited"]
+description = "Language support for dxn: syntax highlighting and bracket matching for .dxn files."
+repository = "https://github.com/LegacyCodeHQ/dxn"
+
+# The grammar, at the commit of packages/tree-sitter-dxn that these queries
+# are written against.
+[grammars.dxn]
+repository = "https://github.com/LegacyCodeHQ/dxn"
+commit = "9dab968f1181c782c748baed22d9a92b6cb359d2"
+path = "packages/tree-sitter-dxn"

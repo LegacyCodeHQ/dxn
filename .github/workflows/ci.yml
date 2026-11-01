@@ -63,5 +63,9 @@ jobs:
       - name: Check the tree-sitter grammar
         run: make grammar
 
+      # Needs full history, for the grammar commit extension.toml pins.
+      - name: Check the Zed extension
+        run: make zed
+
       - name: Smoke-test the CLI
         run: make smoke
