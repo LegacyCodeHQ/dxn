@@ -46,6 +46,14 @@ jobs:
       - name: Check build references
         run: make references
 
+      # clarity, pinned to the version used locally; CI is set, so the
+      # cycles check fails rather than skips without it.
+      - name: Install clarity
+        run: npm install -g @legacycodehq/clarity@0.34.2
+
+      - name: Check file cycles
+        run: make cycles
+
       - name: Audit dependencies
         run: make security
 
