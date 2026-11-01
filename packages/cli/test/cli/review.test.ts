@@ -86,10 +86,33 @@ describe("dxn review", () => {
 
       | style | status | as recorded |
       | --- | --- | --- |
-      | filled | present | ![Button: style = filled](pictures/filled.png) |
+      | filled |  | ![Button: style = filled](pictures/filled.png) |
       | plain | **missing** | — |
       "
     `);
+  });
+
+  it("leaves out the status where every combination is present, and leaves a present one's blank", () => {
+    const { run, page } = project();
+    run(
+      "attach",
+      "spec/button.dxn",
+      "Button",
+      "--actor",
+      "Designer",
+      "--data",
+      JSON.stringify({ source: { file: "design/button.pen", frame: "states", node: "plain" } }),
+      "style=plain",
+    );
+    expect(run("review", "spec/button.dxn").code).toBe(0);
+    expect(page()).toContain(
+      [
+        "| style | as recorded |",
+        "| --- | --- |",
+        "| filled | ![Button: style = filled](pictures/filled.png) |",
+        "| plain | no picture |",
+      ].join("\n"),
+    );
   });
 
   it("marks a combination whose drawing changed since it was recorded stale, with its picture as recorded", () => {
@@ -115,7 +138,7 @@ describe("dxn review", () => {
     const { run, page, folder } = project();
     rmSync(join(folder, "pictures", "filled.png"));
     expect(run("review", "spec/button.dxn").code).toBe(0);
-    expect(page()).toContain("| filled | present | no picture |");
+    expect(page()).toContain("| filled |  | no picture |");
   });
 
   it("gives an element in place its own section, with the states of the parents that place it", () => {
@@ -157,7 +180,7 @@ actor Designer records Evidence
 
       | open | style | status | as recorded |
       | --- | --- | --- | --- |
-      | open | filled | present | ![Card.button with open = open: style = filled](pictures/filled.png) |
+      | open | filled |  | ![Card.button with open = open: style = filled](pictures/filled.png) |
       | open | plain | **missing** | — |
       "
     `);

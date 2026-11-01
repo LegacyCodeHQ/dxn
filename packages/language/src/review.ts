@@ -97,7 +97,9 @@ export function reviewPages(
 
 // An element's combinations as a table: a column for the profiles when the
 // file has some, for each dimension, each parent's state that places it and
-// each of its own states, then its status and its picture.
+// each of its own states, then its status and its picture. The status says
+// only what needs attention, blank where a combination is present, and is
+// left out where every one is.
 function tableOf(
   file: ParseResult,
   path: string,
@@ -111,12 +113,13 @@ function tableOf(
   const dimensions = keys(({ combination }) => combination.dimensions);
   const parents = keys(({ combination }) => combination.parents);
   const states = keys(({ combination }) => combination.states);
+  const attention = combinations.some(({ state }) => state !== "present");
   const header = [
     ...(every.length > 0 ? ["profile"] : []),
     ...dimensions,
     ...parents,
     ...states,
-    "status",
+    ...(attention ? ["status"] : []),
     "as recorded",
   ];
   const rows = combinations.map((judged) => {
@@ -135,7 +138,7 @@ function tableOf(
       ...dimensions.map((name) => combination.dimensions[name] ?? ""),
       ...parents.map((name) => combination.parents[name] ?? ""),
       ...states.map((name) => combination.states[name] ?? ""),
-      state === "present" ? state : `**${state}**`,
+      ...(attention ? [state === "present" ? "" : `**${state}**`] : []),
       shown,
     ];
   });
