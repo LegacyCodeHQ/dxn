@@ -35,14 +35,15 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { diagnose } from "./diagnostics.js";
-import { evidence } from "./evidence.js";
+import { counted, evidence, left, progressBeside } from "./evidence.js";
 import { rangeAt } from "./range.js";
 
 // Serves dxn to an editor over a connection: the problems in each open file,
 // published when it opens and whenever it changes, and cleared when it closes;
 // where a name in it is declared, and where it is used; what it is; what fits
 // where the cursor is; renaming a name, in the file and in the stored records
-// beside it; its outline; and what each name in it is, for colouring.
+// beside it; its outline; what each name in it is, for colouring; and how
+// much of each element of its trees has evidence.
 export function serve(connection: Connection): void {
   const documents = new TextDocuments(TextDocument);
   // Whether the editor takes a link, which names the text it goes from, so
@@ -65,8 +66,12 @@ export function serve(connection: Connection): void {
   // Whether the editor can tell of changes to files on disk, as dxn attach
   // and edits outside the editor make to stored records.
   let watches = false;
+  // Whether the editor asks for inlay hints again when told to, as it must
+  // when a design or a stored record changes on disk.
+  let refreshes = false;
   connection.onInitialize(({ capabilities }) => {
     watches = capabilities.workspace?.didChangeWatchedFiles?.dynamicRegistration === true;
+    refreshes = capabilities.workspace?.inlayHint?.refreshSupport === true;
     links = capabilities.textDocument?.definition?.linkSupport === true;
     const edits = capabilities.workspace?.workspaceEdit;
     moves =
@@ -77,6 +82,7 @@ export function serve(connection: Connection): void {
         definitionProvider: true,
         referencesProvider: true,
         hoverProvider: true,
+        inlayHintProvider: true,
         renameProvider: { prepareProvider: true },
         documentSymbolProvider: true,
         documentFormattingProvider: true,
@@ -95,7 +101,7 @@ export function serve(connection: Connection): void {
   connection.onInitialized(() => {
     if (!watches) return;
     void connection.client.register(DidChangeWatchedFilesNotification.type, {
-      watchers: [{ globPattern: "**/*.json" }],
+      watchers: [{ globPattern: "**/*.json" }, { globPattern: "**/*.pen" }],
     });
   });
   // The stored records each open file's problems were published for, so those
@@ -127,9 +133,31 @@ export function serve(connection: Connection): void {
     }
     checked.delete(document.uri);
   });
-  // A stored record changed on disk: the open files' records are checked again.
+  // A stored record or a design changed on disk: the open files' records are
+  // checked again, and their evidence counted again.
   connection.onDidChangeWatchedFiles(() => {
     for (const document of documents.all()) checkEvidence(document);
+    if (refreshes) void connection.languages.inlayHint.refresh();
+  });
+  // After each element of the trees, at the end of the line its name is on,
+  // how much of it has evidence.
+  connection.languages.inlayHint.on(({ textDocument, range }) => {
+    const document = documents.get(textDocument.uri);
+    if (document === undefined) return null;
+    const lines = document.getText().split("\n");
+    return (progressBeside(document.uri, parsed(document)) ?? [])
+      .filter(
+        ({ line, records }) =>
+          records.length > 0 && line - 1 >= range.start.line && line - 1 <= range.end.line,
+      )
+      .map((place) => ({
+        position: {
+          line: place.line - 1,
+          character: (lines[place.line - 1] ?? "").trimEnd().length,
+        },
+        label: counted(place),
+        paddingLeft: true,
+      }));
   });
   connection.onDefinition(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
@@ -174,6 +202,25 @@ export function serve(connection: Connection): void {
   connection.onHover(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
+    // On the name of an element of the trees, where it is written: what is
+    // left of its evidence.
+    const text = document.getText().split("\n")[position.line] ?? "";
+    const named = (column: number) =>
+      text.slice(column - 1).match(/^[A-Za-z0-9-]+/)?.[0].length ?? 0;
+    const place = (progressBeside(document.uri, parsed(document)) ?? []).find(
+      ({ line, column, records }) =>
+        records.length > 0 &&
+        line - 1 === position.line &&
+        position.character >= column - 1 &&
+        position.character <= column - 1 + named(column),
+    );
+    if (place !== undefined) {
+      const start = { line: place.line - 1, character: place.column - 1 };
+      return {
+        contents: { kind: "markdown", value: left(place) },
+        range: { start, end: { ...start, character: start.character + named(place.column) } },
+      };
+    }
     const found = hover(
       document.getText(),
       position.line + 1,

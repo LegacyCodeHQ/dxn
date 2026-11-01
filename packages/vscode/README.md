@@ -30,6 +30,15 @@ with. It colours what Zed's queries in
 colour, as near as the words on a line say: a TextMate grammar reads a line at
 a time, without the tree Zed's grammar has.
 
+## How much of each element has evidence
+
+After each element of the file's trees, an inlay hint shows how many of its
+combinations have evidence, a record at a time, as `dxn status` counts them:
+`PenEvidence 4 of 6, 1 stale` after `type Button {`. Hovering over the
+element's name lists the combinations still missing, stale or gone. The count
+follows the stored records and the designs they point at as they change on
+disk.
+
 ## Formatting
 
 A `.dxn` file is formatted when it is saved, the one way `dxn fmt` writes it:

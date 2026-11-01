@@ -4,9 +4,15 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   duplicates,
   folderOf,
+  freshness,
   type ParseResult,
+  type Progress,
+  placement,
+  progress,
+  repositoryOf,
   type StoredSource,
   storedFiles,
+  treePaths,
   validate,
 } from "@legacycodehq/dxn-language";
 import { type Diagnostic, DiagnosticSeverity, type Range } from "vscode-languageserver/node";
@@ -79,3 +85,64 @@ function valueAt(source: string, line: number, column: number): Range {
   }
   return rangeAt(source, line, column);
 }
+
+// How much of each element of a file's trees has evidence, where it is
+// written, as dxn status counts it: each stored PenNode checked against what
+// it points at now. Nothing for a file with problems, whose stored records
+// have problems, or whose trees cannot be placed; none for a file that is not
+// on disk.
+export function progressBeside(uri: string, file: ParseResult): Progress[] | undefined {
+  if (!uri.startsWith("file:")) return [];
+  const problems = evidence(uri, file);
+  if (problems === undefined || [...problems.values()].some((found) => found.length > 0)) {
+    return undefined;
+  }
+  try {
+    for (const path of treePaths(file)) placement(file, path);
+  } catch {
+    return undefined;
+  }
+  const path = fileURLToPath(uri);
+  const directory = dirname(path);
+  const stored = [...new Set(file.records.map(({ name }) => name))].flatMap((record) =>
+    (storedFiles(directory, record) ?? []).flatMap((name) => {
+      try {
+        return [{ record, source: readFileSync(join(directory, folderOf(record), name), "utf8") }];
+      } catch {
+        return [];
+      }
+    }),
+  );
+  return progress(file, stored, freshness(repositoryOf(path)));
+}
+
+// What a place's evidence comes to, a record at a time: "PenEvidence 4 of 6,
+// 1 stale".
+export const counted = (place: Progress): string =>
+  place.records
+    .map(({ record, combinations, present, stale, gone }) =>
+      [
+        `${record} ${present} of ${combinations}`,
+        ...(stale > 0 ? [`${stale} stale`] : []),
+        ...(gone > 0 ? [`${gone} gone`] : []),
+      ].join(", "),
+    )
+    .join(" · ");
+
+// What is left at a place, a record at a time: its count, then the
+// combinations missing, stale and gone, each listed.
+export const left = (place: Progress): string =>
+  place.records
+    .map((each) => {
+      const lists = (
+        [
+          ["Missing", each.listed.missing],
+          ["Stale", each.listed.stale],
+          ["Gone", each.listed.gone],
+        ] as const
+      )
+        .filter(([, listed]) => listed.length > 0)
+        .map(([heading, listed]) => `${heading}:\n${listed.map((one) => `- ${one}`).join("\n")}`);
+      return [counted({ ...place, records: [each] }), ...lists].join("\n\n");
+    })
+    .join("\n\n");

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -20,6 +21,8 @@ import {
   FileChangeType,
   HoverRequest,
   InitializeRequest,
+  InlayHintRefreshRequest,
+  InlayHintRequest,
   type MessageConnection,
   PrepareRenameRequest,
   PublishDiagnosticsNotification,
@@ -591,7 +594,10 @@ describe("the language server", () => {
       });
       editor.sendNotification("initialized", {});
       expect(await watched).toEqual([
-        ["workspace/didChangeWatchedFiles", { watchers: [{ globPattern: "**/*.json" }] }],
+        [
+          "workspace/didChangeWatchedFiles",
+          { watchers: [{ globPattern: "**/*.json" }, { globPattern: "**/*.pen" }] },
+        ],
       ]);
 
       // Every notice the server publishes, by the file it is for.
@@ -831,5 +837,81 @@ describe("the language server", () => {
     ]);
     expect(await open("file:///tidy.dxn", "enum Hover = rest | hovered\n")).toEqual([]);
     expect(await open("file:///broken.dxn", "enum Hover = rest hovered\n")).toEqual([]);
+  });
+  it("shows after each element of the trees how much of it has evidence, and in its hover what is left", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-progress-"));
+    try {
+      const text =
+        "enum Style = filled | plain\ntype Button {\n  state style: Style\n}\nrecord PenEvidence {\n  source: PenNode\n}\nactor DesignAgent records PenEvidence\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      // A drawing, and evidence of the filled button with its fingerprint now.
+      const drawing = join(folder, "design.txt");
+      writeFileSync(drawing, "filled\n");
+      const blob = (content: string) =>
+        createHash("sha1").update(`blob ${content.length}\0`).update(content).digest("hex");
+      mkdirSync(join(folder, "pen-evidence"));
+      writeFileSync(
+        join(folder, "pen-evidence", "button.json"),
+        JSON.stringify([
+          {
+            context: { type: "Button", dimensions: {}, states: { style: "filled" } },
+            actor: "DesignAgent",
+            source: { file: "design.txt", frame: "f", fingerprint: blob("filled\n") },
+          },
+        ]),
+      );
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const editor = connect();
+      editors.push(editor);
+      const refreshed: unknown[] = [];
+      editor.onRequest(InlayHintRefreshRequest.method, () => {
+        refreshed.push(true);
+        return null;
+      });
+      const initialized = await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: { workspace: { inlayHint: { refreshSupport: true } } },
+      });
+      expect(initialized.capabilities.inlayHintProvider).toBe(true);
+      const opened = published(editor);
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await opened;
+      const hints = async () =>
+        (
+          await editor.sendRequest(InlayHintRequest.type, {
+            textDocument: { uri },
+            range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
+          })
+        )?.map(({ position, label, paddingLeft }) => [position, label, paddingLeft]);
+      const hovered = async () => {
+        const found = await editor.sendRequest(HoverRequest.type, {
+          textDocument: { uri },
+          position: { line: 1, character: 6 },
+        });
+        const contents = found?.contents as { value: string } | undefined;
+        return contents?.value;
+      };
+      expect([await hints(), await hovered()]).toEqual([
+        [[{ line: 1, character: 13 }, "PenEvidence 1 of 2", true]],
+        "PenEvidence 1 of 2\n\nMissing:\n- Button: style = plain",
+      ]);
+
+      // The drawing changed: once the editor hears, its evidence is stale.
+      writeFileSync(drawing, "filled, redrawn\n");
+      await editor.sendNotification(DidChangeWatchedFilesNotification.type, {
+        changes: [{ uri: pathToFileURL(drawing).href, type: FileChangeType.Changed }],
+      });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect([refreshed.length > 0, await hints(), await hovered()]).toEqual([
+        true,
+        [[{ line: 1, character: 13 }, "PenEvidence 0 of 2, 1 stale", true]],
+        "PenEvidence 0 of 2, 1 stale\n\nMissing:\n- Button: style = plain\n\nStale:\n- Button: style = filled",
+      ]);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
   });
 });

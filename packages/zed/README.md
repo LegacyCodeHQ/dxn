@@ -54,6 +54,23 @@ server names its tokens with the protocol's standard types, which Zed's
 themes already colour, so the extension needs no rules of its own. After
 changing the setting, run `editor: restart language server`.
 
+## How much of each element has evidence
+
+After each element of the file's trees, the language server shows how many of
+its combinations have evidence, a record at a time, as `dxn status` counts
+them: `PenEvidence 4 of 6, 1 stale` after `type Button {`. Hovering over the
+element's name lists the combinations still missing, stale or gone. It shows
+as an inlay hint, which Zed only shows when its settings turn them on:
+
+```json
+{
+  "inlay_hints": { "enabled": true }
+}
+```
+
+The count follows the stored records and the designs they point at as they
+change on disk.
+
 ## Formatting
 
 A `.dxn` file is formatted the one way `dxn fmt` writes it, by the language
