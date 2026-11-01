@@ -9,7 +9,12 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["packages/*/src/**/*.ts"],
-      exclude: ["packages/cli/src/main.ts", "packages/language-server/src/main.ts"],
+      exclude: [
+        "packages/cli/src/main.ts",
+        "packages/language-server/src/main.ts",
+        // Only VS Code can run it; what it starts is chosen in server.ts.
+        "packages/vscode/src/extension.ts",
+      ],
       reporter: ["text", "lcov"],
       thresholds: { lines: 70, functions: 85 },
     },

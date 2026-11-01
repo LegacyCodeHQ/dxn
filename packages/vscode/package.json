@@ -16,6 +16,10 @@
   "categories": [
     "Programming Languages"
   ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:dxn"
+  ],
   "contributes": {
     "languages": [
       {
@@ -35,10 +39,36 @@
         "scopeName": "source.dxn",
         "path": "./syntaxes/dxn.tmLanguage.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "dxn",
+      "properties": {
+        "dxn.server.path": {
+          "type": "string",
+          "default": "",
+          "description": "The language server to run instead of the one the extension bundles, such as node, or a dxn-language-server on the PATH."
+        },
+        "dxn.server.arguments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Arguments to the language server dxn.server.path names, such as the path to a development build's dist/main.js."
+        }
+      }
+    }
   },
   "devDependencies": {
+    "@types/vscode": "1.100.0",
+    "esbuild": "0.28.2",
     "vscode-oniguruma": "2.0.1",
     "vscode-textmate": "9.3.2"
+  },
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "vscode-languageclient": "11.0.0"
   }
 }

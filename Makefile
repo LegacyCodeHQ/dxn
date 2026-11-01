@@ -78,11 +78,13 @@ zed:
 	  cargo build --quiet --release --target wasm32-wasip2
 
 # The language, then the dxn command. dist/main.js at the root runs the built
-# command, for tooling that runs the CLI from the repository root.
+# command, for tooling that runs the CLI from the repository root. Then the VS
+# Code extension, with the language server bundled into it.
 build:
 	npx tsc --build tsconfig.build.json
 	mkdir -p dist
 	cp scripts/root-dist/main.js dist/main.js
+	npm run build --silent --workspace packages/vscode
 
 # Every command a package declares in its "bin", then the root's dist/main.js.
 smoke: build
