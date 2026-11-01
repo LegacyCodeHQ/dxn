@@ -290,14 +290,18 @@ exactly what to declare:
 wordmark.dxn:5:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Pointer"
 ```
 
-A need that nothing uses yet is allowed, but you will get a warning, so a
+A need is also a use on its own: a type that needs a dimension can differ
+by it, even with no rule on it. A wordmark drawn bigger on a large screen
+needs the screen size, and nothing more. A need that makes no difference at
+all, declared alike throughout and used by nothing else, is a warning, so a
 stale need does not linger unnoticed:
 
 ```
-wordmark.dxn:4:21: warning: unused-need: Wordmark needs Breakpoint, but nothing in it uses it
+logo.dxn:2:17: warning: unused-need: Logo needs Screen, but nothing in it uses it, and it is alike throughout
 ```
 
-A warning does not fail the check: the file is still usable.
+A warning does not fail the check: the file is still usable. `alike` comes
+later, in its own section.
 
 ## Only when: where a state's value exists
 
@@ -900,6 +904,63 @@ profile it is on is a warning, since that profile already exists:
 ```
 wordmark.dxn:20:19: warning: unchanged-profile: magic changes nothing on laptop, which already has Keyboard = keyboard
 ```
+
+## Alike: what cannot be told apart
+
+Two combinations can differ in the matrix and still be impossible to tell
+apart. A button at rest looks the same on a touch screen as with a mouse:
+the pointer decides whether it can be hovered, not how it looks at rest. To
+draw, build or test it, there are fewer cases than combinations. **alike**
+says which:
+
+```
+dimension Pointer = mouse | touch
+enum Enabled = enabled | disabled
+enum Hover = rest | hovered
+
+type Button needs Pointer {
+  state enabled: Enabled
+  state hover: Hover
+  hover = hovered only when Pointer = mouse and enabled = enabled
+  alike Pointer
+}
+```
+
+`alike Pointer` reads: combinations that differ only in the pointer cannot
+be told apart. `lang states --distinct` lists the cases that can, each with
+how many combinations it covers, or which profiles, when there are profiles:
+
+```bash
+dxn lang states button.dxn Button --distinct
+```
+
+```
+Button: 3 distinct of 5 combinations
+
+| enabled  | hover   | combinations |
+| -------- | ------- | ------------ |
+| enabled  | rest    | 2            |
+| enabled  | hovered | 1            |
+| disabled | rest    | 2            |
+```
+
+Without `alike`, every combination is its own case. Only what a type
+declares can tell its combinations apart: its own states and the dimensions
+it needs. A dimension that only the types around it need never does. A logo
+drawn bigger on a large screen needs the screen size; an icon that is the
+same on every screen does not, and it is one case wherever it is placed.
+
+`alike` can also make some values alike, with `in`, and only where a
+condition holds, with `when`:
+
+```
+alike Breakpoint in (lg, xl)                      # lg and xl cannot be told apart
+alike hover in (rest, hovered) when selection = selected
+```
+
+It is on one of the type's states or a dimension it needs, and `in` names
+two or more of its values. With `--json`, each distinct case lists the
+values that tell it apart and every combination it covers.
 
 ## Records: plain data
 
@@ -1533,7 +1594,8 @@ file        = { blank-line | comment | enum | dimension | type | environment | p
 enum        = "enum" Name "=" [newline] [ "|" ] value { [newline] "|" [newline] value } newline
 dimension   = "dimension" Name "=" [newline] [ "|" ] value { [newline] "|" [newline] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" field { "," [newline] field } ]
-              "{" { blank-line | state | rule | enum | type | has | provides | action | on } "}"
+              "{" { blank-line | state | rule | enum | type | has | provides | action | on | alike } "}"
+alike       = "alike" name [ "in" "(" value { "," value } ")" ] [ "when" condition ] newline
 action      = "action" action-name ":" state-name value "->" value newline
 on          = "on" event ":" path [ "," "focus" path ] newline     # path: an action, or a child's
 event       = "click" path | "key" word | "pointer" "outside" | condition
@@ -1585,6 +1647,7 @@ comment     = "#" to the end of the line
 | `repeated-comparison`                                                         | error    | a dimension or state is compared twice in one `and`                                              |
 | `impossible-condition`                                                        | error    | a rule's or a child's condition is never true                                                    |
 | `vacuous-condition`                                                           | warning  | a rule's or a child's condition is always true                                                   |
+| `alike-one-value`                                                             | error    | an `alike` with `in` names one value, which is alike only with itself                            |
 | `rule-on-derived`                                                             | error    | a rule is on a state that a `when` or a value decides, or that is received                       |
 | `rule-cycle`                                                                  | error    | a state depends on itself through rules' conditions on other states                              |
 | `unknown-field`                                                               | error    | a derived field's `when` is on a field the record does not have                                  |
@@ -1618,7 +1681,7 @@ comment     = "#" to the end of the line
 | `derived-field`                                                               | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
 | `nested-context`                                                              | error    | a record's field is a record with context, which would be a second context                       |
 | `reserved-name`                                                               | error    | a declaration has a built-in scalar's name, or a record with context has a field named `context` |
-| `unused-need`                                                                 | warning  | a type needs a dimension that no rule, `when`, child condition or event uses                     |
+| `unused-need`                                                                 | warning  | a type needs a dimension that is alike throughout and that nothing in it uses                    |
 
 Checking stored records with `lang validate` reports these, after any problem with the
 JSON itself:

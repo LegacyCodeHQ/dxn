@@ -71,6 +71,16 @@ export interface Type extends Declaration {
   // How its own states change, by name; and what triggers each change.
   actions: Action[];
   triggers: Trigger[];
+  // What cannot be told apart: values of one of its states or needs, all of
+  // them or some, everywhere or where a condition holds.
+  alikes: Alike[];
+}
+
+// "alike <state or dimension> [in (<value>, ...)] [when <condition>]".
+export interface Alike {
+  subject: Located;
+  values?: Located[];
+  when?: Condition;
 }
 
 // An action: a named change of one of a type's own states, from one value to

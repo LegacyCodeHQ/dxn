@@ -30,13 +30,13 @@ describe("lang check", () => {
 
   it("prints warnings, and still succeeds", () => {
     const run = file(
-      "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  state hover: Hover\n}\n",
+      "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  state hover: Hover\n  alike Breakpoint\n}\n",
     );
     const result = run("check", "wordmark.dxn");
     expect([result.code, result.stdout, result.stderr]).toEqual([
       0,
       "wordmark.dxn: 1 enum, 1 dimension, 1 type\n",
-      "wordmark.dxn:3:21: warning: unused-need: Wordmark needs Breakpoint, but nothing in it uses it\n",
+      "wordmark.dxn:3:21: warning: unused-need: Wordmark needs Breakpoint, but nothing in it uses it, and it is alike throughout\n",
     ]);
   });
 
@@ -118,7 +118,7 @@ describe("lang check", () => {
 
     it("puts warnings among the problems, and nothing on stderr", () => {
       const run = file(
-        "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  state hover: Hover\n}\n",
+        "dimension Breakpoint = base | lg\nenum Hover = rest | hovered\ntype Wordmark needs Breakpoint {\n  state hover: Hover\n  alike Breakpoint\n}\n",
       );
       const result = run("check", "wordmark.dxn", "--json");
       expect([result.code, result.stderr, JSON.parse(result.stdout).problems]).toEqual([
@@ -131,7 +131,8 @@ describe("lang check", () => {
             column: 21,
             severity: "warning",
             code: "unused-need",
-            message: "Wordmark needs Breakpoint, but nothing in it uses it",
+            message:
+              "Wordmark needs Breakpoint, but nothing in it uses it, and it is alike throughout",
           },
         ],
       ]);
@@ -569,6 +570,46 @@ record Part {
         },
       ]);
     });
+  });
+});
+
+describe("lang states --distinct", () => {
+  it("groups the combinations that are alike, each distinct case with the combinations it covers", () => {
+    const run = file(`dimension Pointer = mouse | touch
+enum Enabled = enabled | disabled
+enum Hover = rest | hovered
+type Button needs Pointer {
+  state enabled: Enabled
+  state hover: Hover
+  hover = hovered only when Pointer = mouse and enabled = enabled
+  alike Pointer
+}
+environment Device = Pointer
+profile phone: Device { Pointer = touch }
+profile laptop: Device { Pointer = mouse }
+type Page {
+  has button: Button
+}
+`);
+    expect([
+      run("states", "wordmark.dxn", "Button", "--distinct").stdout,
+      run("states", "wordmark.dxn", "Page.button", "--distinct").stdout.split("\n")[0],
+      JSON.parse(run("states", "wordmark.dxn", "Button", "--distinct", "--json").stdout).distinct
+        .length,
+    ]).toEqual([
+      [
+        "Button: 3 distinct of 5 combinations",
+        "",
+        "| enabled  | hover   | combinations  |",
+        "| -------- | ------- | ------------- |",
+        "| enabled  | rest    | phone, laptop |",
+        "| disabled | rest    | phone, laptop |",
+        "| enabled  | hovered | laptop        |",
+        "",
+      ].join("\n"),
+      "Page.button: 3 distinct of 5 combinations",
+      3,
+    ]);
   });
 });
 

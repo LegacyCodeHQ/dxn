@@ -49,7 +49,7 @@ describe("a rule on another state of its type", () => {
         ...[own.enabled, own.focus, own.hover].map((values) => values?.join("|")),
       ]),
     ]).toEqual([
-      ["6:19: warning: unused-need: Button needs Pointer, but nothing in it uses it"],
+      [],
       [
         ["mouse", "enabled", "blurred", "rest|hovered"],
         ["mouse", "enabled", "focused", "rest"],

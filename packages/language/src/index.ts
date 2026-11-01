@@ -9,6 +9,8 @@ export { subjects } from "./condition.js";
 export { fieldValue } from "./derive.js";
 // The JSON reader and diagnostics the language shares with the JSON prototype.
 export { childPath, Diagnostics, type FileDiagnostic } from "./diagnostic.js";
+// What a type, or a child in place, has that can be told apart.
+export { type Distinct, distinct } from "./distinct.js";
 export {
   type InPlace,
   inPlace,

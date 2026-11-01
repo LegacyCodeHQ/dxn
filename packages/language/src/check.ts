@@ -602,6 +602,10 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           ...type.triggers.flatMap(({ event }) =>
             event.kind === "dimension" ? [event.dimension.name] : [],
           ),
+          ...type.alikes.flatMap(({ subject, when }) => [
+            subject.name,
+            ...(when === undefined ? [] : subjects(when).map(({ name }) => name)),
+          ]),
         ].filter((name) => names.is(name, "dimension")),
       ),
     ];
@@ -609,12 +613,33 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
     const declare = `"type ${type.name} needs ${[
       ...new Set([...[...needed].filter((name) => names.is(name, "dimension")), ...used]),
     ].join(", ")}"`;
+    // A need tells the type's combinations apart unless it is alike
+    // throughout; one alike throughout that nothing else uses has no effect.
     if (!type.broken) {
+      const alikeThroughout = (name: string) =>
+        type.alikes.some(
+          ({ subject, values, when }) =>
+            subject.name === name && values === undefined && when === undefined,
+        );
+      const usedElsewhere = (name: string) =>
+        [
+          ...type.rules.map(({ when }) => when),
+          ...type.children.flatMap(({ when }) => (when === undefined ? [] : [when])),
+          ...type.alikes.flatMap(({ when }) => (when === undefined ? [] : [when])),
+        ].some((when) => subjects(when).some((subject) => subject.name === name)) ||
+        type.states.some(({ derived }) => derived?.dimension.name === name) ||
+        type.triggers.some(
+          ({ event }) => event.kind === "dimension" && event.dimension.name === name,
+        );
       for (const need of type.needs) {
-        if (names.is(need.name, "dimension") && !used.includes(need.name)) {
+        if (
+          names.is(need.name, "dimension") &&
+          alikeThroughout(need.name) &&
+          !usedElsewhere(need.name)
+        ) {
           report(
             "unused-need",
-            `${type.name} needs ${need.name}, but nothing in it uses it`,
+            `${type.name} needs ${need.name}, but nothing in it uses it, and it is alike throughout`,
             need,
             "warning",
           );
@@ -728,6 +753,56 @@ function checkTypes(file: ParseResult, names: Names, report: Report): void {
           continue;
         }
         depends.set(rule.state.name, [...(depends.get(rule.state.name) ?? []), subject.name]);
+      }
+    }
+    // What is alike: one of its states, or a dimension it needs, with two or
+    // more of its values, and its condition.
+    for (const alike of type.alikes) {
+      const start = file.diagnostics.length;
+      const { subject } = alike;
+      let of: string | undefined;
+      if (/^[a-z]/.test(subject.name)) {
+        const state = type.states.find(({ name }) => name === subject.name);
+        if (state === undefined) {
+          report(
+            "unknown-state",
+            `${subject.name} is not a state of ${type.name}${among(stateNames, "it has none")}`,
+            subject,
+          );
+        } else of = state.enum.name;
+      } else if (!names.is(subject.name, "dimension")) {
+        report("unknown-dimension", names.not(subject.name, "dimension"), subject);
+      } else {
+        if (!needed.has(subject.name) && !type.broken) {
+          report(
+            "unneeded-dimension",
+            `${type.name} does not need ${subject.name}; declare ${declare}`,
+            subject,
+          );
+        }
+        of = subject.name;
+      }
+      if (of !== undefined && alike.values !== undefined) {
+        checkChosen(alike.values, of, names, report, "the alike", subject.name);
+        if (alike.values.length === 1) {
+          report(
+            "alike-one-value",
+            `alike ${subject.name} in (${alike.values[0]?.name}) names one value, which is alike only with itself`,
+            subject,
+          );
+        }
+      }
+      if (alike.when !== undefined) {
+        checkCondition(
+          type,
+          alike.when,
+          needed,
+          declare,
+          true,
+          subject,
+          { never: "nothing is alike", always: "the when restricts nothing" },
+          start,
+        );
       }
     }
     checkChildren(type, needed, declare);

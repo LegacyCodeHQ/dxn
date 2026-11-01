@@ -5,6 +5,8 @@ import {
   type Combination,
   coverage,
   Diagnostics,
+  type Distinct,
+  distinct,
   states as evaluateStates,
   fieldValue,
   folderOf,
@@ -61,13 +63,16 @@ Subcommands:
                                      or report every problem it has. Warnings
                                      are printed, but do not fail. Needs no
                                      project.
-  states <file> <type>               Evaluate a type: the states it has in each
+  states <file> <type> [--distinct]  Evaluate a type: the states it has in each
                                      profile, or without profiles under each
                                      combination of the dimensions it needs,
                                      as a Markdown table; or a child in place,
                                      given its path from a type, such as
                                      Toolbar.menu.toggle: where it is inside its
-                                     parents, with the states they give it
+                                     parents, with the states they give it;
+                                     with --distinct, the cases that can be
+                                     told apart, each with the combinations
+                                     it covers
   validate <file>                    Check the stored records: each record's data is
                                      every JSON file in a folder named after it in
                                      kebab-case, next to the file, each a list of
@@ -110,9 +115,10 @@ function plain(value: unknown): unknown {
 // A type, with its nested enums and types, and its children, only when it
 // has any.
 function nestedOnly(type: Type): unknown {
-  const { enums, types, children, provides, actions, triggers, ...rest } = type;
+  const { enums, types, children, provides, actions, triggers, alikes, ...rest } = type;
   return {
     ...rest,
+    ...(alikes.length > 0 ? { alikes } : {}),
     ...(actions.length > 0 ? { actions } : {}),
     ...(triggers.length > 0 ? { triggers } : {}),
     ...(enums.length > 0 ? { enums } : {}),
@@ -287,13 +293,14 @@ const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const {
     json,
     rest: [file, typeName, ...rest],
-  } = options(args);
+  } = options(args.filter((arg) => arg !== "--distinct"));
   if (file === undefined || typeName === undefined || rest.length > 0) {
     return misused(io, json, "give a file and a type");
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
   if (typeof parsed === "number") return parsed;
+  if (args.includes("--distinct")) return distinctCases(parsed, typeName, report);
   // A path to a child, "<Type>.<child>...", is evaluated in place.
   if (typeName.split(".").some((segment) => /^[a-z]/.test(segment))) {
     return statesInPlace(parsed, typeName, report);
@@ -409,6 +416,34 @@ function compactTable(
     ]),
   );
   return said.length === 0 ? drawn : `In every row: ${said.join(", ")}\n\n${drawn}`;
+}
+
+// What can be told apart, as a table: each distinct case by the values that
+// tell it apart, and the combinations it covers, by their profiles, or how
+// many there are without profiles.
+function distinctCases(parsed: ParseResult, target: string, report: Reporter): number {
+  let found: Distinct;
+  try {
+    found = distinct(parsed, target);
+  } catch (error) {
+    return report.refuse((error as Error).message);
+  }
+  const columns = [...new Set(found.distinct.flatMap(({ values }) => Object.keys(values)))];
+  const covered = ({ combinations }: Distinct["distinct"][number]) => {
+    const profiles = [...new Set(combinations.flatMap(({ profiles }) => profiles ?? []))];
+    return profiles.length > 0 ? profiles.join(", ") : String(combinations.length);
+  };
+  const table = drawTable(
+    [...columns, "combinations"],
+    found.distinct.map((each) => [
+      ...columns.map((column) => each.values[column] ?? NONE),
+      covered(each),
+    ]),
+  );
+  return report.succeed(
+    found,
+    `${target}: ${found.distinct.length} distinct of ${count(found.combinations, "combination")}\n\n${table}`,
+  );
 }
 
 // A child's states in place, as a table: each row a world and the states of

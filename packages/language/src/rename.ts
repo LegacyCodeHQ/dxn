@@ -47,6 +47,19 @@ export function renameInSource(
         if (on?.enum.name === enumName) named.push(...values.filter(({ name }) => name === from));
       }
     }
+    // What is alike: the values of a state of that enum, and its condition.
+    for (const { subject, values, when } of type.alikes) {
+      const on = type.states.find(({ name }) => name === subject.name);
+      if (on?.enum.name === enumName) {
+        named.push(...(values ?? []).filter(({ name }) => name === from));
+      }
+      for (const compared of when === undefined ? [] : comparisons(when)) {
+        const state = type.states.find(({ name }) => name === compared.subject.name);
+        if (state?.enum.name === enumName) {
+          named.push(...compared.values.filter(({ name }) => name === from));
+        }
+      }
+    }
     for (const action of type.actions) {
       const state = type.states.find(({ name }) => name === action.state.name);
       if (state?.enum.name !== enumName) continue;

@@ -5,6 +5,7 @@
 // starts a declaration. Then check.ts checks what was read.
 
 import type {
+  Alike,
   Assignment,
   Child,
   Condition,
@@ -432,6 +433,7 @@ export function parse(source: string): ParseResult {
       provides: [],
       actions: [],
       triggers: [],
+      alikes: [],
     });
     const after = peek();
     if (after.kind === "word" && after.text === "needs") {
@@ -490,6 +492,31 @@ export function parse(source: string): ParseResult {
         }
         type.triggers.push(trigger);
         end(["newline", "}"], "the end of the line");
+        return;
+      }
+      // "alike <subject> [in (...)] [when ...]"; a rule on a state named
+      // alike has "=" next.
+      if (token.text === "alike" && tokens[position + 1]?.kind !== "=") {
+        next();
+        const alike: Alike = { subject: word('a state or a dimension after "alike"') };
+        if (peek().kind === "word" && peek().text === "in") {
+          next();
+          expect("(", '"(" after "in"');
+          const values = [word('a value after "("')];
+          while (peek().kind === ",") {
+            next();
+            values.push(word('a value after ","'));
+          }
+          expect(")", `"," or ")" after ${JSON.stringify(values.at(-1)?.name)}`);
+          alike.values = values;
+        }
+        if (peek().kind === "word" && peek().text === "when") {
+          next();
+          alike.when = condition("a state or a dimension");
+        } else {
+          end(["newline", "}"], '"in", "when" or the end of the line');
+        }
+        type.alikes.push(alike);
         return;
       }
       if (token.text === "provides") {
