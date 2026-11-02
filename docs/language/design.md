@@ -203,6 +203,20 @@ name, the hover lists what is missing, stale, gone, outdated or wrong. A review 
 a cache outside the repository, shows each look with the picture recorded,
 and `--stale` only what needs a decision.
 
+## Two readers
+
+The dxn command is read by agents, an editor by people, and each is written
+for its reader. Both say one vocabulary: the same word for the same thing,
+in the same meaning, so what an agent reads is what a person sees. What
+they say of it differs. The command says every fact, and the next step,
+in its text and in full in `--json`: an agent cannot see what is around a
+line, or infer what was left out. An editor may say less, where the place
+it is shown says the rest, as a hover over an element says which element it
+is about; but never something else. So what an editor says, the command
+says too, and more where an agent needs it. Every decision both make, and
+every word they say it in, is in the language package; the command and the
+language server only place it.
+
 ## Open
 
 - **Drawings are not checked against the model.** A drawing recorded for a
