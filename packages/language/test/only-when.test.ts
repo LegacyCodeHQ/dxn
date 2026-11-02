@@ -68,8 +68,8 @@ type BlogLink needs Breakpoint {
       errors(wordmark("hovr = hovered only when Pointer = mouse")),
       errors(wordmark("hover = hovred only when Pointer = mouse")),
     ]).toEqual([
-      ["7:3: unknown-state: hovr is not a state of Wordmark; did you mean hover?"],
-      ['7:11: unknown-value: "hovred" is not a value of hover (rest, hovered)'],
+      ["7:3: unknown-state: `hovr` is not a state of `Wordmark`; did you mean `hover`?"],
+      ["7:11: unknown-value: `hovred` is not a value of `hover` (`rest`, `hovered`)"],
     ]);
   });
 
@@ -80,10 +80,10 @@ type BlogLink needs Breakpoint {
       errors(wordmark("hover = hovered only when Pointer = mous")),
       errors(wordmark("hover = hovered only when Pointer in (mouse, mouse)")),
     ]).toEqual([
-      ["7:29: unknown-dimension: Pointr is not a dimension; did you mean Pointer?"],
-      ["7:29: unknown-dimension: Hover is an enum, not a dimension"],
-      ['7:39: unknown-value: "mous" is not a value of Pointer (mouse, touch)'],
-      ['7:48: duplicate-value: "mouse" appears twice in the condition'],
+      ["7:29: unknown-dimension: `Pointr` is not a dimension; did you mean `Pointer`?"],
+      ["7:29: unknown-dimension: `Hover` is an enum, not a dimension"],
+      ["7:39: unknown-value: `mous` is not a value of `Pointer` (`mouse`, `touch`)"],
+      ["7:48: duplicate-value: `mouse` appears twice in the condition"],
     ]);
   });
 
@@ -96,7 +96,7 @@ type BlogLink needs Breakpoint {
         ),
       ),
     ).toEqual([
-      '8:3: duplicate-rule: hover = hovered already has a condition at line 7; join them in one: "hover = hovered only when Pointer = mouse and Keyboard = keyboard"',
+      "8:3: duplicate-rule: `hover = hovered` already has a condition at line 7; join them in one: `hover = hovered only when Pointer = mouse and Keyboard = keyboard`",
     ]);
   });
 
@@ -108,11 +108,11 @@ type BlogLink needs Breakpoint {
       problems(wordmark("hover = hovered only when Pointer mouse")),
       problems(wordmark("hover = hovered only when Pointer in (mouse, touch")),
     ]).toEqual([
-      ['7:9: syntax-error: expected "=" after "hover", found "hovered"'],
-      ['7:19: syntax-error: expected "only" after "hovered", found "when"'],
-      ['7:24: syntax-error: expected "when" after "only", found "Pointer"'],
-      ['7:37: syntax-error: expected "=" or "in" after "Pointer", found "mouse"'],
-      ['7:53: syntax-error: expected "," or ")" after "touch", found the end of the line'],
+      ["7:9: syntax-error: expected `=` after `hover`, found `hovered`"],
+      ["7:19: syntax-error: expected `only` after `hovered`, found `when`"],
+      ["7:24: syntax-error: expected `when` after `only`, found `Pointer`"],
+      ["7:37: syntax-error: expected `=` or `in` after `Pointer`, found `mouse`"],
+      ["7:53: syntax-error: expected `,` or `)` after `touch`, found the end of the line"],
     ]);
   });
 });

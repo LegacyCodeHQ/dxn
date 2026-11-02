@@ -513,7 +513,7 @@ function reasonOf(file: ParseResult, { at, code, path, message }: Problem, index
   const group = path.match(/\.context\.(states|dimensions)(?:\.([A-Za-z0-9-]+))?$/);
   const element = index === undefined ? undefined : elementOf(at.source, index);
   if (code === "missing-field" && group !== null && element !== undefined) {
-    const name = message.match(/ is missing (\S+)$/)?.[1];
+    const name = message.match(/ is missing `([^`]+)`$/)?.[1];
     if (name !== undefined) {
       const has =
         group[1] === "states" ? `a state ${element} now has` : `which ${element} now needs`;
@@ -529,11 +529,12 @@ function reasonOf(file: ParseResult, { at, code, path, message }: Problem, index
     return as(`still say ${name}, ${had}`, `still says ${name}, ${had}`);
   }
   const state = group?.[2];
-  const said = message.match(/^"([^"]*)" is not a value of \S+( on .*)? (\([^)]*\))$/);
+  const said = message.match(/^`([^`]*)` is not a value of `[^`]+`( on .*)? (\([^)]*\))$/);
   if (code !== "unknown-value" || state === undefined || said === null) {
     return as(`with ${message}`);
   }
-  const [, value, where, values] = said;
+  // The reason is in words: the names the message quotes, as they are.
+  const [value, where, values] = said.slice(1).map((part) => part?.replaceAll("`", ""));
   const which =
     where !== undefined
       ? `which ${state} cannot be${where} ${values}`

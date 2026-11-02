@@ -25,7 +25,7 @@ type Wordmark needs Pointer {
 
   it("leave the lines and columns of everything else as they are", () => {
     expect(problems("# a comment\nenum hover = rest # another\n")).toEqual([
-      '2:6: enum-name: enum names start with a capital letter: "hover"',
+      "2:6: enum-name: enum names start with a capital letter: `hover`",
     ]);
   });
 

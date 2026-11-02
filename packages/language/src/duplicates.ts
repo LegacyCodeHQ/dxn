@@ -1,5 +1,6 @@
 import { Diagnostics } from "./diagnostic.js";
 import { parseJson } from "./json.js";
+import { message, words } from "./message.js";
 
 // A stored data file of a record, by the path it is shown by, and its
 // content.
@@ -37,10 +38,10 @@ export function duplicates(stored: StoredSource[]): Duplicate[] {
       const element = root?.kind === "array" ? root.elements[index] : undefined;
       const located = new Diagnostics(source);
       const path = `$[${index}]`;
-      const message = `the same ${record} as $[${earlier.index}] in ${earlier.shown}, apart from their fingerprints`;
-      located.report("duplicate-record", message, path, element?.span.start ?? 0);
+      const said = message`the same ${record} as $[${earlier.index}] in ${words(earlier.shown)}, apart from their fingerprints`;
+      located.error("duplicate-record", said, path, element?.span.start ?? 0);
       const { line, column } = located.items[0] as { line: number; column: number };
-      result.push({ shown, line, column, path, message });
+      result.push({ shown, line, column, path, message: said });
     });
   }
   return result;

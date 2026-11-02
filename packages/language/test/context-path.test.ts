@@ -72,7 +72,7 @@ describe("a context for a child", () => {
 
   it("names a child that is one, on the way from a type", () => {
     expect(check(toggle({ path: "Toolbar.menu.togle" }))).toEqual([
-      'unknown-value: $[0].context.path: "Toolbar.menu.togle" is not a path: togle is not a child of Menu; did you mean toggle?',
+      "unknown-value: $[0].context.path: `Toolbar.menu.togle` is not a path: `togle` is not a child of `Menu`; did you mean `toggle`?",
     ]);
   });
 
@@ -86,9 +86,9 @@ describe("a context for a child", () => {
       [],
       [],
       [
-        "missing-field: $[0].context.parents: context.parents is missing menu",
-        "unknown-field: $[0].context.parents.layout: layout does not decide where Menu.toggle is (menu)",
-        'unknown-field: $[0].context.parents["menu.menu"]: menu.menu does not decide where Menu.toggle is (menu)',
+        "missing-field: $[0].context.parents: `context.parents` is missing `menu`",
+        "unknown-field: $[0].context.parents.layout: `layout` does not decide where `Menu.toggle` is (`menu`)",
+        'unknown-field: $[0].context.parents["menu.menu"]: `menu.menu` does not decide where `Menu.toggle` is (`menu`)',
       ],
     ]);
   });
@@ -99,12 +99,12 @@ describe("a context for a child", () => {
       check(toggle({ parents: { layout: "compact", "menu.menu": "closed", "menu.size": "big" } })),
       check(toggle({ parents: { layout: "compact", "menu.menu": "shut" } })),
     ]).toEqual([
-      ["missing-field: $[0].context.parents: context.parents is missing menu.menu"],
+      ["missing-field: $[0].context.parents: `context.parents` is missing `menu.menu`"],
       [
-        'unknown-field: $[0].context.parents["menu.size"]: menu.size does not decide where Toolbar.menu.toggle is (layout, menu.menu)',
+        'unknown-field: $[0].context.parents["menu.size"]: `menu.size` does not decide where `Toolbar.menu.toggle` is (`layout`, `menu.menu`)',
       ],
       [
-        'unknown-value: $[0].context.parents["menu.menu"]: "shut" is not a value of menu.menu (closed, open)',
+        'unknown-value: $[0].context.parents["menu.menu"]: `shut` is not a value of `menu.menu` (`closed`, `open`)',
       ],
     ]);
   });
@@ -120,10 +120,10 @@ describe("a context for a child", () => {
       ),
     ]).toEqual([
       [
-        "unknown-value: $[0].context.parents: Toolbar.menu.toggle is not there on Phone with layout = inline, menu.menu = closed",
+        "unknown-value: $[0].context.parents: `Toolbar.menu.toggle` is not there on `Phone` with `layout = inline`, `menu.menu = closed`",
       ],
       [
-        "unknown-value: $[0].context.parents: Toolbar.menu.toggle is not there on Laptop with layout = compact, menu.menu = closed",
+        "unknown-value: $[0].context.parents: `Toolbar.menu.toggle` is not there on `Laptop` with `layout = compact`, `menu.menu = closed`",
       ],
     ]);
   });
@@ -132,7 +132,7 @@ describe("a context for a child", () => {
     expect(
       check(toggle({ states: { hover: "rest", focus: "blurred", expanded: "open" } })),
     ).toEqual([
-      'unknown-value: $[0].context.states.expanded: "open" is not a value of expanded on Phone with layout = compact, menu.menu = closed (closed)',
+      "unknown-value: $[0].context.states.expanded: `open` is not a value of `expanded` on `Phone` with `layout = compact`, `menu.menu = closed` (`closed`)",
     ]);
   });
 
@@ -141,8 +141,8 @@ describe("a context for a child", () => {
       check({ ...toggle(), type: "Menu.Toggle" }),
       check({ profile: "Phone", dimensions: {}, states: {} }),
     ]).toEqual([
-      ["unknown-field: $[0].context.type: context has both type and path; give one"],
-      ["missing-field: $[0].context: context is missing type or path"],
+      ["unknown-field: $[0].context.type: `context` has both `type` and `path`; give one"],
+      ["missing-field: $[0].context: `context` is missing `type` or `path`"],
     ]);
   });
 

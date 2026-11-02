@@ -33,7 +33,7 @@ describe("dxn check", () => {
     expect([result.code, result.stdout, result.stderr]).toEqual([
       0,
       "wordmark.dxn: 1 enum, 1 dimension, 1 type\n",
-      "wordmark.dxn:3:21: warning: unused-need: Wordmark needs Breakpoint, but nothing in it uses it, and it is alike throughout\n",
+      "wordmark.dxn:3:21: warning: unused-need: `Wordmark` needs `Breakpoint`, but nothing in it uses it, and it is alike throughout\n",
     ]);
   });
 
@@ -43,8 +43,8 @@ describe("dxn check", () => {
     expect([result.code, result.stderr, result.stdout]).toEqual([
       1,
       [
-        'wordmark.dxn:1:6: enum-name: enum names start with a capital letter: "hover"',
-        'wordmark.dxn:2:20: duplicate-value: "none" appears twice in Ring',
+        "wordmark.dxn:1:6: error: enum-name: enum names start with a capital letter: `hover`",
+        "wordmark.dxn:2:20: error: duplicate-value: `none` appears twice in `Ring`",
         "",
       ].join("\n"),
       "",
@@ -103,7 +103,7 @@ expect "The menu is always closed" {
       expect([result.code, result.stdout, result.stderr.split("\n")[0]]).toEqual([
         1,
         "",
-        "wordmark.dxn:9:8: expectation-failed: The menu is always closed: Menu has menu = open",
+        "wordmark.dxn:9:8: error: expectation-failed: The menu is always closed: `Menu` has `menu = open`",
       ]);
     });
 
@@ -116,7 +116,7 @@ expect "The menu is always closed" {
       );
       expect([result.code, result.stderr]).toEqual([
         1,
-        'wordmark.dxn:13:19: duplicate-value: "a" appears twice in Broken\n',
+        "wordmark.dxn:13:19: error: duplicate-value: `a` appears twice in `Broken`\n",
       ]);
     });
 
@@ -227,7 +227,7 @@ expect "The menu is always closed" {
             severity: "warning",
             code: "unused-need",
             message:
-              "Wordmark needs Breakpoint, but nothing in it uses it, and it is alike throughout",
+              "`Wordmark` needs `Breakpoint`, but nothing in it uses it, and it is alike throughout",
           },
         ],
       ]);
@@ -247,7 +247,7 @@ expect "The menu is always closed" {
               column: 6,
               severity: "error",
               code: "enum-name",
-              message: 'enum names start with a capital letter: "hover"',
+              message: "enum names start with a capital letter: `hover`",
             },
           ],
         },
@@ -382,7 +382,7 @@ profile Laptop: Device { Breakpoint = lg, Pointer = mouse }
         "| open      | rest  | open     |",
         "",
       ].join("\n"),
-      "dxn: togle is not a child of Menu; did you mean toggle?\n",
+      "dxn: `togle` is not a child of `Menu`; did you mean `toggle`?\n",
     ]);
   });
 
@@ -459,8 +459,8 @@ type Button needs Pointer {
       file(wordmark)("states", "wordmark.dxn", "Wordmrk").stderr,
       file("enum hover = rest\n")("states", "wordmark.dxn", "Wordmark").stderr,
     ]).toEqual([
-      'dxn: no type "Wordmrk" in wordmark.dxn (Wordmark)\n',
-      'wordmark.dxn:1:6: enum-name: enum names start with a capital letter: "hover"\n',
+      "dxn: no type `Wordmrk` in wordmark.dxn (`Wordmark`)\n",
+      "wordmark.dxn:1:6: error: enum-name: enum names start with a capital letter: `hover`\n",
     ]);
   });
 
@@ -506,7 +506,7 @@ type Button needs Pointer {
         JSON.parse(failed.stdout).problems.map(({ code }: { code: string }) => code),
       ]).toEqual([
         1,
-        { error: 'no type "Wordmrk" in wordmark.dxn (Wordmark)' },
+        { error: "no type `Wordmrk` in wordmark.dxn (`Wordmark`)" },
         1,
         "",
         ["enum-name"],
@@ -565,7 +565,7 @@ actor EvidenceRecorder records Evidence
     const result = project({ "part/a.json": '[{ "tool": "code" }]' })("evidence.dxn");
     expect([result.code, result.stderr, result.stdout]).toEqual([
       1,
-      'dxn: Part is stored in part/, but no actor records it; declare "actor <name> records Part"\n',
+      "dxn: `Part` is stored in part/, but no actor records it; declare `actor <name> records Part`\n",
       "",
     ]);
   });
@@ -579,9 +579,9 @@ actor EvidenceRecorder records Evidence
     expect([result.code, result.stderr.split("\n"), result.stdout]).toEqual([
       1,
       [
-        'source/a.json:1:75: unknown-value: $[0].tool: "figma" is not a value of Tool (pen-dev, code)',
-        'evidence/b.json:1:73: invalid-value: $[0].at: "yesterday" is not a Timestamp: an ISO 8601 date and time with a time zone, e.g. 2026-10-31T08:50:05Z',
-        "evidence/c.json:1:1: wrong-kind: $: expected a list of Evidence records, found an object",
+        "source/a.json:1:75: error: unknown-value: $[0].tool: `figma` is not a value of `Tool` (`pen-dev`, `code`)",
+        'evidence/b.json:1:73: error: invalid-value: $[0].at: "yesterday" is not a `Timestamp`: an ISO 8601 date and time with a time zone, e.g. 2026-10-31T08:50:05Z',
+        "evidence/c.json:1:1: error: wrong-kind: $: expected a list of `Evidence` records, found an object",
         "",
       ],
       "",
@@ -597,7 +597,7 @@ actor EvidenceRecorder records Evidence
       "model/evidence.dxn",
     )("model/evidence.dxn");
     expect(result.stderr).toBe(
-      'model/source/a.json:1:75: unknown-value: $[0].tool: "lisp" is not a value of Tool (pen-dev, code)\n',
+      "model/source/a.json:1:75: error: unknown-value: $[0].tool: `lisp` is not a value of `Tool` (`pen-dev`, `code`)\n",
     );
   });
 
@@ -641,7 +641,7 @@ actor EvidenceRecorder records Evidence
               severity: "error",
               code: "unknown-value",
               path: "$[0].tool",
-              message: '"figma" is not a value of Tool (pen-dev, code)',
+              message: "`figma` is not a value of `Tool` (`pen-dev`, `code`)",
             },
           ],
         },
@@ -655,7 +655,7 @@ actor EvidenceRecorder records Evidence
         "",
         {
           error:
-            'Part is stored in part/, but no actor records it; declare "actor <name> records Part"',
+            "`Part` is stored in part/, but no actor records it; declare `actor <name> records Part`",
         },
       ]);
     });
@@ -760,7 +760,7 @@ type Page {
       run("cases", "wordmark.dxn", "Buton").stderr,
       run("cases", "wordmark.dxn").code,
       run("states", "wordmark.dxn", "Button", "--distinct").code,
-    ]).toEqual(["dxn: no type Buton\n", 2, 2]);
+    ]).toEqual(["dxn: no type `Buton`\n", 2, 2]);
   });
 });
 
@@ -833,11 +833,11 @@ actor Reviewer records Evidence
       run("evidence.dxn", "Actor.design-agent", "design agent").stderr,
       read("evidence.dxn"),
     ]).toEqual([
-      "dxn: nothing is declared as Actr.design-agent; did you mean Actor.design-agent?\n",
-      "dxn: nothing is declared as Evidence.design-agent (Actor, Actor.design-agent, Actor.reviewer, Card, Card.owner, Evidence, DesignAgent, Reviewer)\n",
-      "dxn: nothing is declared as Actor.designer (Actor.design-agent, Actor.reviewer)\n",
-      'evidence.dxn:1:25: duplicate-value: "reviewer" appears twice in Actor\ndxn: the rename would leave problems; nothing was written\n',
-      'dxn: "design agent" is not a value name: a letter or digit, then letters, digits and hyphens\n',
+      "dxn: nothing is declared as `Actr.design-agent`; did you mean `Actor.design-agent`?\n",
+      "dxn: nothing is declared as `Evidence.design-agent` (`Actor`, `Actor.design-agent`, `Actor.reviewer`, `Card`, `Card.owner`, `Evidence`, `DesignAgent`, `Reviewer`)\n",
+      "dxn: nothing is declared as `Actor.designer` (`Actor.design-agent`, `Actor.reviewer`)\n",
+      "evidence.dxn:1:25: error: duplicate-value: `reviewer` appears twice in `Actor`\ndxn: the rename would leave problems; nothing was written\n",
+      "dxn: `design agent` is not a value name: a letter or digit, then letters, digits and hyphens\n",
       schema,
     ]);
   });
@@ -858,7 +858,7 @@ actor Reviewer records Evidence
     const result = run("evidence.dxn", "Actor.design-agent", "designer");
     expect([result.code, result.stderr, read("evidence.dxn")]).toEqual([
       1,
-      'evidence/page.json:1:97: unknown-actor: $[0].actor: "maker" is not an actor who records Evidence (DesignAgent, Reviewer)\n',
+      "evidence/page.json:1:97: error: unknown-actor: $[0].actor: `maker` is not an actor who records `Evidence` (`DesignAgent`, `Reviewer`)\n",
       schema,
     ]);
   });
@@ -892,7 +892,7 @@ expect "Each m can be open" {
     ]).toEqual([
       1,
       "",
-      "page.dxn:13:8: expectation-failed: Each m can be open: no combination of Page.b has m = shown\ndxn: the rename would leave problems; nothing was written\n",
+      "page.dxn:13:8: error: expectation-failed: Each m can be open: no combination of `Page.b` has `m = shown`\ndxn: the rename would leave problems; nothing was written\n",
       source,
     ]);
   });
@@ -988,7 +988,7 @@ expect "Each m can be open" {
       readFileSync(join(root, "menu.dxn"), "utf8"),
     ]).toEqual([
       1,
-      "dxn: Menu.close names an action and an event; say which: action:Menu.close or event:Menu.close\n",
+      "dxn: `Menu.close` names an action and an event; say which: `action:Menu.close` or `event:Menu.close`\n",
       0,
       source.replace("event close", "event shut"),
     ]);
@@ -1054,7 +1054,7 @@ expect "Each m can be open" {
       ]).toEqual([
         1,
         {
-          error: "nothing is declared as Actr.design-agent; did you mean Actor.design-agent?",
+          error: "nothing is declared as `Actr.design-agent`; did you mean `Actor.design-agent`?",
         },
         1,
         "",
@@ -1105,7 +1105,7 @@ describe("dxn fmt", () => {
     ]).toEqual([
       1,
       "messy.dxn\n",
-      'broken.dxn:1:19: syntax-error: expected "|" or the end of the line after "rest", found "hovered"\n',
+      "broken.dxn:1:19: error: syntax-error: expected `|` or the end of the line after `rest`, found `hovered`\n",
       broken,
       tidy,
     ]);
@@ -1202,7 +1202,7 @@ describe("dxn status, with a received state", () => {
       "enum Section = home | blog\ntype Links receives current: Section {}\ntype Toolbar {\n  has links: Links\n}\nrecord Evidence {}\nactor EvidenceRecorder records Evidence\n",
     );
     expect(capture(["status", "site.dxn"], root).stderr).toBe(
-      "dxn: Toolbar.links: current is received by Links, but nothing above it provides it\n",
+      "dxn: `Toolbar.links`: `current` is received by `Links`, but nothing above it provides it\n",
     );
   });
 });

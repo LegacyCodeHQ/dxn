@@ -636,15 +636,15 @@ actor DesignReviewRecorder records DesignReview
     snapshot.push(renamed("modifier ", "Trackpad", "trackpad"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        ""hover" is not an enum name: a capital letter, then letters and digits",
-        ""Take" is not an action name: a lowercase letter, then letters, digits and hyphens",
-        ""a b" is not a value name: a letter or digit, then letters, digits and hyphens",
-        "the rename would leave a problem: "hovered" appears twice in Hover",
-        "the rename would leave a problem: Hover is already declared at line 2",
+        "\`hover\` is not an enum name: a capital letter, then letters and digits",
+        "\`Take\` is not an action name: a lowercase letter, then letters, digits and hyphens",
+        "\`a b\` is not a value name: a letter or digit, then letters, digits and hyphens",
+        "the rename would leave a problem: \`hovered\` appears twice in \`Hover\`",
+        "the rename would leave a problem: \`Hover\` is already declared at line 2",
         "there is no name here to rename",
-        ""designer" is not an actor name: a capital letter, then letters and digits",
-        ""phone" is not a profile name: a capital letter, then letters and digits",
-        ""trackpad" is not a modifier name: a capital letter, then letters and digits",
+        "\`designer\` is not an actor name: a capital letter, then letters and digits",
+        "\`phone\` is not a profile name: a capital letter, then letters and digits",
+        "\`trackpad\` is not a modifier name: a capital letter, then letters and digits",
       ]
     `);
   });

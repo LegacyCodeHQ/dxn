@@ -58,10 +58,10 @@ describe("a state with when", () => {
       problems(toolbar("base, sm -> compact", "lg, xxl -> inline", "xl -> inline")),
       problems(toolbar("base, sm -> compact", "lg, xl -> wide")),
     ]).toEqual([
-      ["4:31: incomplete-when: when Breakpoint does not cover xl"],
-      ['6:5: duplicate-value: "sm" is already covered by the when'],
-      ['6:9: unknown-value: "xxl" is not a value of Breakpoint (base, sm, lg, xl)'],
-      ['6:15: unknown-value: "wide" is not a value of layout (compact, inline)'],
+      ["4:31: incomplete-when: `when Breakpoint` does not cover `xl`"],
+      ["6:5: duplicate-value: `sm` is already covered by the when"],
+      ["6:9: unknown-value: `xxl` is not a value of `Breakpoint` (`base`, `sm`, `lg`, `xl`)"],
+      ["6:15: unknown-value: `wide` is not a value of `layout` (`compact`, `inline`)"],
     ]);
   });
 
@@ -75,7 +75,7 @@ describe("a state with when", () => {
 `;
     expect([problems(unneeded), problems(layout)]).toEqual([
       [
-        '4:31: unneeded-dimension: Toolbar does not need Breakpoint; declare "type Toolbar needs Breakpoint"',
+        "4:31: unneeded-dimension: `Toolbar` does not need `Breakpoint`; declare `type Toolbar needs Breakpoint`",
       ],
       [],
     ]);
@@ -87,7 +87,7 @@ describe("a state with when", () => {
       "  }\n  layout = compact only when Breakpoint in (base, sm)\n}\n",
     );
     expect(errors(source)).toEqual([
-      "8:3: rule-on-derived: layout is decided by its when; it cannot also have a rule",
+      "8:3: rule-on-derived: `layout` is decided by its when; it cannot also have a rule",
     ]);
   });
 
@@ -100,7 +100,7 @@ type Toolbar needs Breakpoint {
 }
 `),
     ).toEqual([
-      '5:38: syntax-error: expected "," or the end of the line after "Layout" (a state with when has a line of its own), found "="',
+      "5:38: syntax-error: expected `,` or the end of the line after `Layout` (a state with when has a line of its own), found `=`",
     ]);
   });
 
@@ -112,10 +112,10 @@ type Toolbar needs Breakpoint {
       problems(toolbar("base, sm compact", "lg, xl -> inline")),
       problems(toolbar("base, sm -> compact inline", "lg, xl -> inline")),
     ]).toEqual([
-      ['4:26: syntax-error: expected "when" after "=", found "Breakpoint"'],
-      ['5:14: syntax-error: expected "," or "->" after "sm", found "compact"'],
+      ["4:26: syntax-error: expected `when` after `=`, found `Breakpoint`"],
+      ["5:14: syntax-error: expected `,` or `->` after `sm`, found `compact`"],
       [
-        '5:25: syntax-error: expected ",", the end of the line or "}" after "compact", found "inline"',
+        "5:25: syntax-error: expected `,`, the end of the line or `}` after `compact`, found `inline`",
       ],
     ]);
   });
@@ -133,7 +133,7 @@ actor EvidenceRecorder records Evidence`);
     expect([
       validate(schema, "Evidence", context("base", "compact")),
       validate(schema, "Evidence", context("base", "inline")).map(({ message }) => message),
-    ]).toEqual([[], ['"inline" is not a value of layout on Breakpoint base (compact)']]);
+    ]).toEqual([[], ["`inline` is not a value of `layout` on `Breakpoint base` (`compact`)"]]);
   });
 
   it("is renamed with its enum's value", () => {
@@ -199,11 +199,11 @@ type Bar {
       problems(toolbar("base, sm -> compact", "lg, xl -> inline", "else -> compact")),
     ]).toEqual([
       [
-        '6:5: syntax-error: expected "}" after the else, which is the last branch of a when, found "base"',
+        "6:5: syntax-error: expected `}` after the else, which is the last branch of a when, found `base`",
       ],
-      ['6:13: unknown-value: "wide" is not a value of layout (compact, inline)'],
+      ["6:13: unknown-value: `wide` is not a value of `layout` (`compact`, `inline`)"],
       [
-        "7:5: warning: unused-else: else covers nothing: the other branches cover every value of Breakpoint",
+        "7:5: warning: unused-else: `else` covers nothing: the other branches cover every value of `Breakpoint`",
       ],
     ]);
   });

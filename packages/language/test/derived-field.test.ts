@@ -40,9 +40,9 @@ describe("a field with when", () => {
       problems(record("    design-agent -> pen-dev\n    reviewer -> figma")),
       problems(record("    design-agent, reviewer -> pen-dev\n    reviewer -> file")),
     ]).toEqual([
-      ["5:21: incomplete-when: when actor does not cover reviewer"],
-      ['7:17: unknown-value: "figma" is not a value of tool (pen-dev, file)'],
-      ['7:5: duplicate-value: "reviewer" is already covered by the when'],
+      ["5:21: incomplete-when: `when actor` does not cover `reviewer`"],
+      ["7:17: unknown-value: `figma` is not a value of `tool` (`pen-dev`, `file`)"],
+      ["7:5: duplicate-value: `reviewer` is already covered by the when"],
     ]);
   });
 
@@ -56,9 +56,11 @@ describe("a field with when", () => {
         "enum Actor = design-agent\nrecord Review {\n  actor: Actor\n  note: NonEmptyString = when actor {\n    design-agent -> x\n  }\n}\n",
       ),
     ]).toEqual([
-      ["5:21: unknown-field: actr is not a field of Review; did you mean actor?"],
-      ["4:21: derived-field: tool is derived from note, whose values are not an enum's"],
-      ["4:9: derived-field: note is derived, so its values must be an enum's, not NonEmptyString"],
+      ["5:21: unknown-field: `actr` is not a field of `Review`; did you mean `actor`?"],
+      ["4:21: derived-field: `tool` is derived from `note`, whose values are not an enum's"],
+      [
+        "4:9: derived-field: `note` is derived, so its values must be an enum's, not `NonEmptyString`",
+      ],
     ]);
   });
 
@@ -67,8 +69,8 @@ describe("a field with when", () => {
       problems(both.replace("when actor {", "when tool {")),
       problems(both.replace("tool: Tool = when", "tool: Tol = when")),
     ]).toEqual([
-      ["5:21: derived-field: tool cannot be derived from itself"],
-      ["5:9: unknown-type: Tol is not an enum, a record or a scalar; did you mean Tool?"],
+      ["5:21: derived-field: `tool` cannot be derived from itself"],
+      ["5:9: unknown-type: `Tol` is not an enum, a record or a scalar; did you mean `Tool`?"],
     ]);
   });
 
@@ -79,6 +81,6 @@ describe("a field with when", () => {
       validate(schema, "Review", '[{ "actor": "reviewer", "tool": "file" }]').map(
         ({ code, message }) => `${code}: ${message}`,
       ),
-    ]).toEqual([[], ["derived-field: tool is derived from actor; it is not stored"]]);
+    ]).toEqual([[], ["derived-field: `tool` is derived from `actor`; it is not stored"]]);
   });
 });

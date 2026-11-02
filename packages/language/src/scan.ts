@@ -1,4 +1,5 @@
 import type { Located } from "./ast.js";
+import { type Words, words } from "./message.js";
 
 export type TokenKind =
   | "word"
@@ -123,11 +124,13 @@ export function scan(source: string): Token[] {
 }
 
 // How a token reads in a message: its text quoted, or what it stands for.
-export function describe(token: Token): string {
-  if (token.kind === "newline") return "the end of the line";
-  if (token.kind === "end") return "the end of the file";
-  if (token.kind === "unclosed") return "an unclosed quote";
-  return JSON.stringify(token.text);
+export function describe(token: Token): string | Words {
+  if (token.kind === "newline") return words("the end of the line");
+  if (token.kind === "end") return words("the end of the file");
+  if (token.kind === "unclosed") return words("an unclosed quote");
+  // A string, with its quotes, as it is written.
+  if (token.kind === "string") return `"${token.text}"`;
+  return token.text;
 }
 
 // A word's text, where it is.

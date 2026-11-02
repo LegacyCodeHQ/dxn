@@ -73,10 +73,10 @@ describe("a rule on another state of its type", () => {
       errors(button("hover = hovered only when enabld = enabled")),
     ]).toEqual([
       [
-        "10:29: rule-cycle: focus depends on hover, which depends on focus; no state can depend on itself",
+        "10:29: rule-cycle: `focus` depends on `hover`, which depends on `focus`; no state can depend on itself",
       ],
-      ["9:29: rule-cycle: hover depends on hover; no state can depend on itself"],
-      ["9:29: unknown-state: enabld is not a state of Button; did you mean enabled?"],
+      ["9:29: rule-cycle: `hover` depends on `hover`; no state can depend on itself"],
+      ["9:29: unknown-state: `enabld` is not a state of `Button`; did you mean `enabled`?"],
     ]);
   });
 
@@ -130,7 +130,7 @@ actor EvidenceRecorder records Evidence`;
       validate(parse(stored), "Evidence", context("disabled", "hovered")).map(
         ({ message }) => message,
       ),
-    ]).toEqual([[], ['"hovered" is not a value of hover on Pointer mouse (rest)']]);
+    ]).toEqual([[], ["`hovered` is not a value of `hover` on `Pointer mouse` (`rest`)"]]);
   });
 
   it("is renamed with the values it names", () => {

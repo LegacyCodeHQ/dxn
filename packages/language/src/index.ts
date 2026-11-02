@@ -38,6 +38,8 @@ export { format } from "./format.js";
 export { type Hover, hover } from "./hover.js";
 // The JSON reader stored data is read with.
 export { parseJson } from "./json.js";
+// How a problem or a refusal is written, with what it mentions quoted.
+export { type Mentioned, message, Words, words } from "./message.js";
 export { among, Names } from "./names.js";
 export { parse } from "./parse.js";
 export { givenDimensions, profilesOf } from "./profiles.js";

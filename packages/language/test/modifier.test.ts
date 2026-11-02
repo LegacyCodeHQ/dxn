@@ -83,7 +83,7 @@ actor EvidenceRecorder records Evidence`);
     ]).toEqual([
       [],
       [
-        '"Phone+MagicKeyboard" is not a profile (Phone, TabletPortrait, TabletLandscape, Laptop, TabletPortrait+MagicKeyboard, TabletLandscape+MagicKeyboard)',
+        "`Phone+MagicKeyboard` is not a profile (`Phone`, `TabletPortrait`, `TabletLandscape`, `Laptop`, `TabletPortrait+MagicKeyboard`, `TabletLandscape+MagicKeyboard`)",
       ],
     ]);
   });
@@ -111,12 +111,12 @@ actor EvidenceRecorder records Evidence`);
       problems(`${device}modifier Magic on Tablet {\n  Keyboard = keyboard\n}\n`),
       problems(`${device}modifier Magic on Phone, Phone {\n  Keyboard = keyboard\n}\n`),
     ]).toEqual([
-      ['9:10: modifier-name: modifier names start with a capital letter: "magic"'],
-      ["9:10: duplicate-name: Laptop is already declared at line 8"],
+      ["9:10: modifier-name: modifier names start with a capital letter: `magic`"],
+      ["9:10: duplicate-name: `Laptop` is already declared at line 8"],
       [
-        "9:19: unknown-profile: Tablet is not a profile (Phone, TabletPortrait, TabletLandscape, Laptop)",
+        "9:19: unknown-profile: `Tablet` is not a profile (`Phone`, `TabletPortrait`, `TabletLandscape`, `Laptop`)",
       ],
-      ["9:26: duplicate-profile: Phone is already listed in Magic"],
+      ["9:26: duplicate-profile: `Phone` is already listed in `Magic`"],
     ]);
   });
 
@@ -129,10 +129,10 @@ actor EvidenceRecorder records Evidence`);
       set("Keyboard = yes"),
     ]).toEqual([
       [
-        "10:3: unknown-dimension: Theme is not a dimension of Device (Breakpoint, Pointer, Keyboard)",
+        "10:3: unknown-dimension: `Theme` is not a dimension of `Device` (`Breakpoint`, `Pointer`, `Keyboard`)",
       ],
-      ["10:24: duplicate-dimension: Keyboard is already set by Magic"],
-      ['10:14: unknown-value: "yes" is not a value of Keyboard (keyboard, no-keyboard)'],
+      ["10:24: duplicate-dimension: `Keyboard` is already set by `Magic`"],
+      ["10:14: unknown-value: `yes` is not a value of `Keyboard` (`keyboard`, `no-keyboard`)"],
     ]);
   });
 
@@ -142,8 +142,8 @@ actor EvidenceRecorder records Evidence`);
       "  Pointer = mouse, Colour = red\n}",
     );
     expect(problems(source).map((problem) => problem.split(": ").slice(1).join(": "))).toEqual([
-      "unknown-environment: Devise is not an environment; did you mean Device?",
-      "unknown-dimension: Colour is not a dimension of Device (Breakpoint, Pointer, Keyboard)",
+      "unknown-environment: `Devise` is not an environment; did you mean `Device`?",
+      "unknown-dimension: `Colour` is not a dimension of `Device` (`Breakpoint`, `Pointer`, `Keyboard`)",
     ]);
   });
 
@@ -151,7 +151,7 @@ actor EvidenceRecorder records Evidence`);
     expect(
       problems(`${device}modifier Magic on Laptop, Phone {\n  Keyboard = keyboard\n}\n`),
     ).toEqual([
-      "9:19: warning: unchanged-profile: Magic changes nothing on Laptop, which already has Keyboard = keyboard",
+      "9:19: warning: unchanged-profile: `Magic` changes nothing on `Laptop`, which already has `Keyboard = keyboard`",
     ]);
   });
 
@@ -160,8 +160,8 @@ actor EvidenceRecorder records Evidence`);
       problems(`${device}modifier Magic Phone {\n  Keyboard = keyboard\n}\n`),
       problems(`${device}modifier Magic on Phone TabletPortrait {\n  Keyboard = keyboard\n}\n`),
     ]).toEqual([
-      ['9:16: syntax-error: expected "on" after "Magic", found "Phone"'],
-      ['9:25: syntax-error: expected "," or "{" after "Phone", found "TabletPortrait"'],
+      ["9:16: syntax-error: expected `on` after `Magic`, found `Phone`"],
+      ["9:25: syntax-error: expected `,` or `{` after `Phone`, found `TabletPortrait`"],
     ]);
   });
 });

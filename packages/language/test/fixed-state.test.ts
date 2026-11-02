@@ -32,8 +32,8 @@ describe("a fixed state", () => {
           .replace("type ArticlePage {", "type ArticlePage needs Pointer {"),
       ),
     ]).toEqual([
-      ['3:28: unknown-value: "news" is not a value of current (home, blog)'],
-      ["5:3: rule-on-derived: current is decided by its value; it cannot also have a rule"],
+      ["3:28: unknown-value: `news` is not a value of `current` (`home`, `blog`)"],
+      ["5:3: rule-on-derived: `current` is decided by its value; it cannot also have a rule"],
     ]);
   });
 
@@ -42,6 +42,6 @@ describe("a fixed state", () => {
       problems(
         `${page}type Site {\n  state section: Section\n  has page: ArticlePage { current = section }\n}\n`,
       ),
-    ).toEqual(["7:27: bound-derived: current is decided by its value; it cannot also be bound"]);
+    ).toEqual(["7:27: bound-derived: `current` is decided by its value; it cannot also be bound"]);
   });
 });

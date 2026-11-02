@@ -9,6 +9,7 @@ import {
 import { eventText } from "./check-types.js";
 import { holds } from "./condition.js";
 import { placement } from "./evaluate.js";
+import { message, words } from "./message.js";
 import { valuesOf as declaredValues } from "./names.js";
 import { givenDimensions, profilesOf } from "./profiles.js";
 import { type Combination, expand, treePaths } from "./status.js";
@@ -59,9 +60,7 @@ function checkOne(
   const keys = [...expectation.when, ...values];
   for (const { key, value } of keys) {
     if (key.name === "profile" && !profiles.some(({ name }) => name === value.name)) {
-      return empty(
-        `${JSON.stringify(value.name)} is not a profile (${profiles.map(({ name }) => name).join(", ")})`,
-      );
+      return empty(message`${value.name} is not a profile (${profiles.map(({ name }) => name)})`);
     }
   }
   // The elements: the path, and with "and below" every element under it.
@@ -69,14 +68,14 @@ function checkOne(
     (candidate) => candidate === path || (expectation.below && candidate.startsWith(`${path}.`)),
   );
   if (elements.length === 0)
-    return empty(`${path} is not in a tree from a type that nothing contains`);
+    return empty(message`${path} is not in a tree from a type that nothing contains`);
   // Every element below must be placeable too: one that is not, such as one
   // receiving a state nothing above it provides, cannot be evaluated.
   for (const element of elements) {
     try {
       placement(file, element);
     } catch (error) {
-      return empty(`${element}: ${(error as Error).message}`);
+      return empty(message`${element}: ${words((error as Error).message)}`);
     }
   }
   // A key's value in a combination: the profile, a dimension, a parent's
@@ -110,7 +109,9 @@ function checkOne(
   const applicable = elements.filter((element) => keys.every(({ key }) => has(element, key.name)));
   if (applicable.length === 0) {
     const missing = keys.find(({ key }) => !elements.some((element) => has(element, key.name)));
-    return empty(`no element in ${path} has ${missing?.key.name ?? "every key it names"}`);
+    return empty(
+      message`no element in ${path} has ${missing === undefined ? words("every key it names") : missing.key.name}`,
+    );
   }
   // A profile is any of a row's: profiles with the same values share one.
   // Each value must be one its key can have: a mistyped one would pick or
@@ -128,9 +129,7 @@ function checkOne(
     if (key.name === "profile") continue;
     const values = valuesOf(applicable[0] as string, key.name);
     if (!values.includes(value.name)) {
-      return empty(
-        `${JSON.stringify(value.name)} is not a value of ${key.name} (${values.join(", ")})`,
-      );
+      return empty(message`${value.name} is not a value of ${key.name} (${values})`);
     }
   }
   const matches = (combination: Combination, pairs: Expectation["when"]) =>
@@ -141,8 +140,8 @@ function checkOne(
     );
   const named = expectation.when.find(({ key }) => key.name === "profile")?.value.name;
   // Where a combination is: "<path> on <profile>, <Dimension> <value> with
-  // <parent> = <value>".
-  const where = (element: string, combination: Combination) => {
+  // <parent> = <value>"; around, all of it but the path.
+  const around = (combination: Combination) => {
     const world = [
       ...(combination.profiles === undefined
         ? []
@@ -152,12 +151,14 @@ function checkOne(
               : (combination.profiles[0] as string),
           ]),
       ...Object.entries(combination.dimensions).map(([name, value]) => `${name} ${value}`),
-    ].join(", ");
-    const parents = Object.entries(combination.parents)
-      .map(([name, value]) => `${name} = ${value}`)
-      .join(", ");
-    return `${element}${world === "" ? "" : ` on ${world}`}${parents === "" ? "" : ` with ${parents}`}`;
+    ];
+    const parents = Object.entries(combination.parents).map(
+      ([name, value]) => `${name} = ${value}`,
+    );
+    return `${world.length === 0 ? "" : message` on ${world}`}${parents.length === 0 ? "" : message` with ${parents}`}`;
   };
+  const where = (element: string, combination: Combination) =>
+    message`${element}${words(around(combination))}`;
   // An element's combinations, worked out once, and each as a key, to find a
   // combination among them: alike in everything, profiles, dimensions,
   // parents and states.
@@ -214,11 +215,9 @@ function checkOne(
       return { combination, children: {} };
     }
     if (trigger === undefined || action === undefined) {
-      const condition = expectation.when
-        .map(({ key, value }) => `${key.name} = ${value.name}`)
-        .join(", ");
+      const condition = expectation.when.map(({ key, value }) => `${key.name} = ${value.name}`);
       return failed(
-        `nothing happens on ${event} to ${element}${condition === "" ? "" : ` when ${condition}`}`,
+        message`nothing happens on ${event} to ${element}${words(condition.length === 0 ? "" : message` when ${condition}`)}`,
       );
     }
     // Every change of the element's own that applies here.
@@ -230,7 +229,7 @@ function checkOne(
     // The change must lead to a combination the element can have there.
     if (!combinationsOf(element).keys.has(JSON.stringify(changed))) {
       return failed(
-        `on ${event}, ${where(element, combination)} would have ${action.state.name} = ${action.to.name}, which it cannot have there`,
+        message`on ${event}, ${words(where(element, combination))} would have ${`${action.state.name} = ${action.to.name}`}, which it cannot have there`,
       );
     }
     // What it changes in a child, by the child's action: "<child>.<state>".
@@ -268,10 +267,12 @@ function checkOne(
         for (const { key, value } of values.filter(({ key }) => ofChild(key.name))) {
           const became = changed[key.name];
           if (became === undefined) {
-            return failed(`on ${eventText(on)}, ${key.name} does not change`);
+            return failed(message`on ${eventText(on)}, ${key.name} does not change`);
           }
           if (became !== value.name) {
-            return failed(`on ${eventText(on)}, ${key.name} becomes ${became}, not ${value.name}`);
+            return failed(
+              message`on ${eventText(on)}, ${key.name} becomes ${became}, not ${value.name}`,
+            );
           }
         }
       }
@@ -283,7 +284,7 @@ function checkOne(
         );
         if (wrong !== undefined) {
           return failed(
-            `${where(element, combination)} has ${wrong.key.name} = ${valueAt(combination, wrong.key.name)}`,
+            message`${words(where(element, combination))} has ${`${wrong.key.name} = ${valueAt(combination, wrong.key.name)}`}`,
           );
         }
       }
@@ -291,24 +292,25 @@ function checkOne(
       if (!chosen.some((combination) => matches(combination, values))) {
         const condition = expectation.when
           .map(({ key, value }) =>
-            key.name === "profile" ? `on ${value.name}` : `with ${key.name} = ${value.name}`,
+            key.name === "profile"
+              ? message`on ${value.name}`
+              : message`with ${`${key.name} = ${value.name}`}`,
           )
           .join(" ");
-        const wanted = values.map(({ key, value }) => `${key.name} = ${value.name}`).join(", ");
+        const wanted = values.map(({ key, value }) => `${key.name} = ${value.name}`);
         return failed(
-          `no combination of ${element}${condition === "" ? "" : ` ${condition}`} has ${wanted}`,
+          message`no combination of ${element}${words(condition === "" ? "" : ` ${condition}`)} has ${wanted}`,
         );
       }
     } else {
       const there = chosen[0];
       if (there !== undefined) {
-        const description = where(element, there);
-        return failed(`${element} is there${description.slice(element.length)}`);
+        return failed(message`${element} is there${words(around(there))}`);
       }
     }
   }
   if (picked === 0 && expectation.assertion !== "absent") {
-    return empty(`no combination of ${path} has what its when names`);
+    return empty(message`no combination of ${path} has what its when names`);
   }
   return undefined;
 }

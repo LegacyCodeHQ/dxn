@@ -130,35 +130,35 @@ actor DesignAgent records Evidence
 
   it("is an error, at the child, where it is drawn more often than the model has it", () => {
     expect(problems(entry("FeedScreen", { content: "articles" }, "articles"))).toEqual([
-      "12:7: drawing-mismatch: content = articles: the drawing shows 2 ArticleRow instances, but article is a single ArticleRow; make it a list, [ArticleRow], or draw one",
+      "12:7: drawing-mismatch: `content = articles`: the drawing shows 2 `ArticleRow` instances, but `article` is a single `ArticleRow`; make it a list, `[ArticleRow]`, or draw one",
     ]);
   });
 
   it("is an error, at the child, where it is drawn in a look it is not there in", () => {
     expect(problems(entry("NavigationBar", { kind: "root" }, "pushed"))).toEqual([
-      "6:7: drawing-mismatch: kind = root: the drawing shows 1 BackButton instance, but back is there only when kind = pushed",
+      "6:7: drawing-mismatch: `kind = root`: the drawing shows 1 `BackButton` instance, but `back` is there only when `kind = pushed`",
     ]);
   });
 
   it("is an error, at the child, where it is not drawn", () => {
     expect(problems(entry("NavigationBar", { kind: "pushed" }, "root"))).toEqual([
-      "6:7: drawing-mismatch: kind = pushed: the drawing shows no BackButton instance, but back is a single BackButton",
+      "6:7: drawing-mismatch: `kind = pushed`: the drawing shows no `BackButton` instance, but `back` is a single `BackButton`",
     ]);
   });
 
   it("is an error, at the list, where it is not drawn", () => {
     expect(problems(entry("ListScreen", { content: "articles" }, "pushed"))).toEqual([
-      "14:6: drawing-mismatch: content = articles: the drawing shows 1 BackButton instance, which ListScreen does not have",
-      "16:7: drawing-mismatch: content = articles: the drawing shows no NavigationBar instance, but navigation is a single NavigationBar",
-      "17:7: drawing-mismatch: content = articles: the drawing shows no ArticleRow instance, but articles is a list, one or more ArticleRow",
+      "14:6: drawing-mismatch: `content = articles`: the drawing shows 1 `BackButton` instance, which `ListScreen` does not have",
+      "16:7: drawing-mismatch: `content = articles`: the drawing shows no `NavigationBar` instance, but `navigation` is a single `NavigationBar`",
+      "17:7: drawing-mismatch: `content = articles`: the drawing shows no `ArticleRow` instance, but `articles` is a list, one or more `ArticleRow`",
     ]);
   });
 
   it("is an error, at the type, where a component of the model is drawn that it does not have", () => {
     expect(problems(entry("NavigationBar", { kind: "pushed" }, "articles"))).toEqual([
-      "4:6: drawing-mismatch: kind = pushed: the drawing shows 1 NavigationBar instance, which NavigationBar does not have",
-      "4:6: drawing-mismatch: kind = pushed: the drawing shows 2 ArticleRow instances, which NavigationBar does not have",
-      "6:7: drawing-mismatch: kind = pushed: the drawing shows no BackButton instance, but back is a single BackButton",
+      "4:6: drawing-mismatch: `kind = pushed`: the drawing shows 1 `NavigationBar` instance, which `NavigationBar` does not have",
+      "4:6: drawing-mismatch: `kind = pushed`: the drawing shows 2 `ArticleRow` instances, which `NavigationBar` does not have",
+      "6:7: drawing-mismatch: `kind = pushed`: the drawing shows no `BackButton` instance, but `back` is a single `BackButton`",
     ]);
   });
 
@@ -173,9 +173,9 @@ actor DesignAgent records Evidence
 
   it("is an error where a mixed list has no row, or one of a member not there in the look", () => {
     expect(problems(entry("MixScreen", { plan: "paid" }, "pushed"))).toEqual([
-      "22:7: drawing-mismatch: plan = paid: the drawing shows no NavigationBar instance, but navigation is a single NavigationBar",
-      "25:5: drawing-mismatch: plan = paid: the drawing shows 1 BackButton instance, but feed.back is there only when plan = free",
-      "23:7: drawing-mismatch: plan = paid: the drawing shows no ArticleRow instance, but feed is a list, one or more of article",
+      "22:7: drawing-mismatch: `plan = paid`: the drawing shows no `NavigationBar` instance, but `navigation` is a single `NavigationBar`",
+      "25:5: drawing-mismatch: `plan = paid`: the drawing shows 1 `BackButton` instance, but `feed.back` is there only when `plan = free`",
+      "23:7: drawing-mismatch: `plan = paid`: the drawing shows no `ArticleRow` instance, but `feed` is a list, one or more of `article`",
     ]);
   });
 

@@ -76,6 +76,6 @@ describe("the built extension", () => {
         code,
         message,
       ]),
-    ).toEqual([["unknown-enum", "Nope is not an enum; the file declares none"]]);
+    ).toEqual([["unknown-enum", "`Nope` is not an enum; the file declares none"]]);
   });
 });

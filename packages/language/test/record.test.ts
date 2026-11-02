@@ -50,10 +50,10 @@ record Evidence { source: Source }
       problems(`${enums}record Source {\n  Tool: Tool\n}\n`),
       problems(`${enums}record Source {\n  tool: Tool\n  tool: Verdict\n}\n`),
     ]).toEqual([
-      ['3:8: record-name: record names start with a capital letter: "source"'],
-      ["3:8: duplicate-name: Tool is already declared at line 1"],
-      ['4:3: field-name: field names start with a lowercase letter: "Tool"'],
-      ["5:3: duplicate-field: tool is already a field of Source"],
+      ["3:8: record-name: record names start with a capital letter: `source`"],
+      ["3:8: duplicate-name: `Tool` is already declared at line 1"],
+      ["4:3: field-name: field names start with a lowercase letter: `Tool`"],
+      ["5:3: duplicate-field: `tool` is already a field of `Source`"],
     ]);
   });
 
@@ -65,10 +65,10 @@ record Evidence { source: Source }
       problems(`${enums}record Source {\n  tool: Tol\n}\n`),
       problems("record Source {\n  tool: Tool\n}\n"),
     ]).toEqual([
-      ["5:12: unknown-type: Pointer is a dimension, not an enum, a record or a scalar"],
-      ["4:9: unknown-type: Tol is not an enum, a record or a scalar; did you mean Tool?"],
+      ["5:12: unknown-type: `Pointer` is a dimension, not an enum, a record or a scalar"],
+      ["4:9: unknown-type: `Tol` is not an enum, a record or a scalar; did you mean `Tool`?"],
       [
-        "2:9: unknown-type: Tool is not an enum, a record or a scalar (Source, Timestamp, NonEmptyString, RelativePath, PenNode)",
+        "2:9: unknown-type: `Tool` is not an enum, a record or a scalar (`Source`, `Timestamp`, `NonEmptyString`, `RelativePath`, `PenNode`)",
       ],
     ]);
   });
@@ -78,10 +78,10 @@ record Evidence { source: Source }
       problems("record Evidence {\n  source: Evidence\n}\n"),
       problems("record Evidence {\n  source: Source\n}\nrecord Source {\n  back: Evidence\n}\n"),
     ]).toEqual([
-      ["2:3: recursive-record: Evidence contains itself: Evidence.source is an Evidence"],
+      ["2:3: recursive-record: `Evidence` contains itself: `Evidence.source` is an `Evidence`"],
       [
-        "2:3: recursive-record: Evidence contains itself: Evidence.source is a Source, and Source.back is an Evidence",
-        "5:3: recursive-record: Source contains itself: Source.back is an Evidence, and Evidence.source is a Source",
+        "2:3: recursive-record: `Evidence` contains itself: `Evidence.source` is a `Source`, and `Source.back` is an `Evidence`",
+        "5:3: recursive-record: `Source` contains itself: `Source.back` is an `Evidence`, and `Evidence.source` is a `Source`",
       ],
     ]);
   });
@@ -91,7 +91,7 @@ record Evidence { source: Source }
       problems(
         `${enums}record Source {\n  tool: Tool\n}\ntype Link {\n  state source: Source\n}\n`,
       ),
-    ).toEqual(["7:17: unknown-enum: Source is a record, not an enum"]);
+    ).toEqual(["7:17: unknown-enum: `Source` is a record, not an enum"]);
   });
 
   it("says what it expected when the syntax is wrong", () => {
@@ -101,10 +101,10 @@ record Evidence { source: Source }
       problems(`${enums}record Source {\n  tool: Tool, verdict: Verdict\n}\n`),
       problems(`${enums}record Source {\n  tool: Tool\n`),
     ]).toEqual([
-      ['3:14: syntax-error: expected "{" after the record name, found the end of the line'],
-      ['4:8: syntax-error: expected ":" after "tool", found "Tool"'],
-      ['4:13: syntax-error: expected the end of the line after "Tool", found ","'],
-      ['5:1: syntax-error: expected "}" to close Source, found the end of the file'],
+      ["3:14: syntax-error: expected `{` after the record name, found the end of the line"],
+      ["4:8: syntax-error: expected `:` after `tool`, found `Tool`"],
+      ["4:13: syntax-error: expected the end of the line after `Tool`, found `,`"],
+      ["5:1: syntax-error: expected `}` to close Source, found the end of the file"],
     ]);
   });
 });

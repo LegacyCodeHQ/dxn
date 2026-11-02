@@ -1,6 +1,7 @@
 import type { ParseResult } from "./ast.js";
 import { holds } from "./condition.js";
 import { placement } from "./evaluate.js";
+import { message } from "./message.js";
 import { enumOf, valuesOf } from "./names.js";
 import { alone, type Combination, expand } from "./status.js";
 
@@ -29,7 +30,7 @@ export function cases(
   const type = placed
     ? placement(file, target).target
     : file.types.find(({ name }) => name === target);
-  if (type === undefined) throw new Error(`no type ${target}`);
+  if (type === undefined) throw new Error(message`no type ${target}`);
   const each: Combination[] = placed ? expand(file, target, []) : alone(file, type.name);
   // Combinations that differ only in their profiles are one, with all of
   // their profiles: profiles differ in dimensions this one does not have.

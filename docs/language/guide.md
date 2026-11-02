@@ -184,8 +184,8 @@ The checker holds you to what you declared. Misspell a state's enum, or name
 a state with a capital letter, and it says so, with the line and column:
 
 ```
-wordmark.dxn:3:23: state-name: state names start with a lowercase letter: "Focus"
-wordmark.dxn:3:30: unknown-enum: Focus is not an enum (Hover)
+wordmark.dxn:3:23: error: state-name: state names start with a lowercase letter: `Focus`
+wordmark.dxn:3:30: error: unknown-enum: `Focus` is not an enum (`Hover`)
 ```
 
 ## Nested declarations: what belongs to a type
@@ -233,7 +233,7 @@ Written `state menu: State` in `Toolbar`, it is reported, with the names that
 would do:
 
 ```
-menu.dxn:14:15: unknown-enum: State is not an enum (Hover, Menu.State)
+menu.dxn:14:15: error: unknown-enum: `State` is not an enum (`Hover`, `Menu.State`)
 ```
 
 And it cannot repeat a name from around it, so a bare name always means one
@@ -291,7 +291,7 @@ uses a dimension the type does not need, the error is at that rule, and says
 exactly what to declare:
 
 ```
-wordmark.dxn:5:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Pointer"
+wordmark.dxn:5:29: error: unneeded-dimension: `Wordmark` does not need `Pointer`; declare `type Wordmark needs Pointer`
 ```
 
 A need is also a use on its own: a type that needs a dimension can differ
@@ -301,7 +301,7 @@ all, declared alike throughout and used by nothing else, is a warning, so a
 stale need does not linger unnoticed:
 
 ```
-logo.dxn:2:17: warning: unused-need: Logo needs Screen, but nothing in it uses it, and it is alike throughout
+logo.dxn:2:17: warning: unused-need: `Logo` needs `Screen`, but nothing in it uses it, and it is alike throughout
 ```
 
 A warning does not fail the check: the file is still usable. `alike` comes
@@ -365,7 +365,7 @@ left to a rule of precedence. Without them, the error gives both ways to
 bracket it:
 
 ```
-link.dxn:7:65: syntax-error: "and" and "or" need brackets to mix: write "(Pointer = mouse and Breakpoint = lg) or Breakpoint = xl" or "Pointer = mouse and (Breakpoint = lg or Breakpoint = xl)"
+link.dxn:7:65: error: syntax-error: `and` and `or` need brackets to mix: write `(Pointer = mouse and Breakpoint = lg) or Breakpoint = xl` or `Pointer = mouse and (Breakpoint = lg or Breakpoint = xl)`
 ```
 
 Brackets nest, and a pair around a whole condition, or around one comparison,
@@ -382,8 +382,8 @@ other rules, its fixed and derived states, and its profiles. A condition on
 `enabled = enabled` is never true where another rule leaves only `disabled`:
 
 ```
-link.dxn:7:3: impossible-condition: (Pointer = mouse and Breakpoint = lg) and (Pointer = touch and Breakpoint = lg) is never true, so hovered exists nowhere
-link.dxn:7:3: warning: vacuous-condition: Pointer = mouse or Pointer = touch is always true, so the rule restricts nothing
+link.dxn:7:3: error: impossible-condition: `(Pointer = mouse and Breakpoint = lg) and (Pointer = touch and Breakpoint = lg)` is never true, so `hovered` exists nowhere
+link.dxn:7:3: warning: vacuous-condition: `Pointer = mouse or Pointer = touch` is always true, so the rule restricts nothing
 ```
 
 Each state value has at most one rule, so there is a single place to read
@@ -392,7 +392,7 @@ narrows it or replaces it. A second rule for the same value is an error,
 which gives the one rule to write instead:
 
 ```
-link.dxn:8:3: duplicate-rule: hover = hovered already has a condition at line 7; join them in one: "hover = hovered only when Pointer = mouse and Keyboard = keyboard"
+link.dxn:8:3: error: duplicate-rule: `hover = hovered` already has a condition at line 7; join them in one: `hover = hovered only when Pointer = mouse and Keyboard = keyboard`
 ```
 
 A long condition carries on to the next line, before or after an `and` or an
@@ -438,7 +438,7 @@ A state can depend on one that depends on another, but no state can depend
 on itself, directly or through others:
 
 ```
-button.dxn:7:29: rule-cycle: focus depends on hover, which depends on focus; no state can depend on itself
+button.dxn:7:29: error: rule-cycle: `focus` depends on `hover`, which depends on `focus`; no state can depend on itself
 ```
 
 ## When: a state the world decides
@@ -479,7 +479,7 @@ exactly once, so the state has exactly one value in each row:
 A value left out is reported, not quietly given a default:
 
 ```
-toolbar.dxn:7:31: incomplete-when: when Breakpoint does not cover xl
+toolbar.dxn:7:31: error: incomplete-when: `when Breakpoint` does not cover `xl`
 ```
 
 Unless the `when` says so with `else`, its last branch, which gives one value
@@ -757,7 +757,7 @@ path where nothing above provides it is refused, by `dxn states`, by
 `dxn status`, and by an expectation that reaches it:
 
 ```
-dxn: current is received by Links, but nothing above it provides it
+dxn: `current` is received by `Links`, but nothing above it provides it
 ```
 
 ### In place: a child inside its parents
@@ -920,8 +920,8 @@ once, with one of its values. All profiles in a file share one environment, so
 they can be compared row by row.
 
 ```
-wordmark.dxn:16:54: unknown-value: "pen" is not a value of Pointer (mouse, touch)
-wordmark.dxn:18:9: incomplete-profile: Laptop does not give Keyboard, which Device requires
+wordmark.dxn:16:54: error: unknown-value: `pen` is not a value of `Pointer` (`mouse`, `touch`)
+wordmark.dxn:18:9: error: incomplete-profile: `Laptop` does not give `Keyboard`, which `Device` requires
 ```
 
 A type can need a dimension that the profiles do not give. The theme, for
@@ -994,7 +994,7 @@ of their values, and is on profiles that exist. One that changes nothing on a
 profile it is on is a warning, since that profile already exists:
 
 ```
-wordmark.dxn:20:19: warning: unchanged-profile: Magic changes nothing on Laptop, which already has Keyboard = keyboard
+wordmark.dxn:20:19: warning: unchanged-profile: `Magic` changes nothing on `Laptop`, which already has `Keyboard = keyboard`
 ```
 
 ## Alike: what cannot be told apart
@@ -1096,7 +1096,7 @@ contain itself, directly or through other records: it could never be written
 down.
 
 ```
-recursive-record: Review contains itself: Review.comment is a Comment, and Comment.reply is a Review
+recursive-record: `Review` contains itself: `Review.comment` is a `Comment`, and `Comment.reply` is a `Review`
 ```
 
 ### Scalars: values that are checked, not listed
@@ -1225,7 +1225,7 @@ checked against the child in place: it must be there in that world, with
 those parents, and its bound states must be the ones its parents give it.
 
 ```
-evidence/toolbar.json:14:21: unknown-value: $[0].context.states.expanded: "open" is not a value of expanded on Phone with layout = compact, menu.menu = closed (closed)
+evidence/toolbar.json:14:21: error: unknown-value: $[0].context.states.expanded: `open` is not a value of `expanded` on `Phone` with `layout = compact`, `menu.menu = closed` (`closed`)
 ```
 
 Only a record an actor records can be stored, since stored data is a fact
@@ -1256,7 +1256,7 @@ inside `Review`, so it needs none. Only a record an actor records can have
 a folder; for any other, `dxn validate` stops before checking anything:
 
 ```
-dxn: Comment is stored in comment/, but no actor records it; declare "actor <name> records Comment"
+dxn: `Comment` is stored in comment/, but no actor records it; declare `actor <name> records Comment`
 ```
 
 Each stored record is an object with its `context`, its `actor`, the name
@@ -1290,8 +1290,8 @@ dxn validate evidence.dxn
 ```
 
 ```
-evidence/wordmark.json:19:28: unknown-value: $[1].context.states.hover: "hovered" is not a value of hover on Phone, Theme dark (rest)
-evidence/wordmark.json:21:14: unknown-actor: $[1].actor: "Designer" is not an actor who records Evidence (DesignAgent)
+evidence/wordmark.json:19:28: error: unknown-value: $[1].context.states.hover: `hovered` is not a value of `hover` on `Phone`, `Theme dark` (`rest`)
+evidence/wordmark.json:21:14: error: unknown-actor: $[1].actor: `Designer` is not an actor who records `Evidence` (`DesignAgent`)
 ```
 
 Every field must be given, each of its type, and no others, and the actor
@@ -1655,7 +1655,7 @@ A change that breaks a rule is an error, with one combination that breaks
 it:
 
 ```
-toolbar.dxn:154:8: expectation-failed: Touch screens never show hover: ArticlePage.toolbar.wordmark on Phone has hover = hovered
+toolbar.dxn:154:8: error: expectation-failed: Touch screens never show hover: `ArticlePage.toolbar.wordmark` on `Phone` has `hover = hovered`
 ```
 
 A rule that picks nothing would always pass, so it is an error too: a
@@ -1663,22 +1663,22 @@ profile that is not one, a key no element has, a value its key does not
 have, a path that leads nowhere, or one to an element that cannot be placed.
 
 ```
-toolbar.dxn:194:8: expectation-empty: Nothing tests nothing: no element in ArticlePage.toolbar.links has colour
+toolbar.dxn:194:8: error: expectation-empty: Nothing tests nothing: no element in `ArticlePage.toolbar.links` has `colour`
 ```
 
 ## When something is wrong
 
-Every problem is reported as `file:line:column: code: message`, in the order
-it appears in the file, and every one is reported at once, so you can fix them
-all in one pass. A problem in stored data also has its JSON path:
-`file:line:column: code: path: message`. The code is stable, for tools; the
+Every problem is reported as `file:line:column: severity: code: message`, in
+the order it appears in the file, and every one is reported at once, so you can
+fix them all in one pass. A problem in stored data also has its JSON path:
+`file:line:column: severity: code: path: message`. The code is stable, for tools; the
 message is for reading, and usually says what was expected or what to write
 instead.
 
 There are two kinds:
 
-- An **error** means the file cannot be used: every command exits with code
-  1, and nothing is evaluated, validated or renamed.
+- An **error** has `error:` before its code. The file cannot be used: every
+  command exits with code 1, and nothing is evaluated, validated or renamed.
 - A **warning** has `warning:` before its code. The file is still usable, and
   the command still succeeds.
 
@@ -1697,7 +1697,7 @@ document, each with its `file`, `line`, `column`, `severity`, `code` and
       "severity": "error",
       "code": "unknown-actor",
       "path": "$[1].actor",
-      "message": "\"Designer\" is not an actor who records Evidence (DesignAgent)"
+      "message": "`Designer` is not an actor who records `Evidence` (`DesignAgent`)"
     }
   ]
 }
@@ -1716,7 +1716,7 @@ type Wordmark {
 ```
 
 ```
-wordmark.dxn:1:19: syntax-error: expected "|" or the end of the line after "rest", found "hovered"
+wordmark.dxn:1:19: error: syntax-error: expected `|` or the end of the line after `rest`, found `hovered`
 ```
 
 Only the real mistake is reported: the missing `|`. `Hover` is still known to

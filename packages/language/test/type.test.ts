@@ -60,18 +60,18 @@ type wordmark {
 }
 `),
     ).toEqual([
-      "3:6: duplicate-name: Hover is already declared at line 1",
-      '4:6: type-name: type names start with a capital letter: "wordmark"',
-      "5:16: unknown-enum: Hovr is not an enum; did you mean Hover?",
-      '5:22: state-name: state names start with a lowercase letter: "Focus"',
-      "5:36: duplicate-state: hover is already a state of wordmark",
+      "3:6: duplicate-name: `Hover` is already declared at line 1",
+      "4:6: type-name: type names start with a capital letter: `wordmark`",
+      "5:16: unknown-enum: `Hovr` is not an enum; did you mean `Hover`?",
+      "5:22: state-name: state names start with a lowercase letter: `Focus`",
+      "5:36: duplicate-state: `hover` is already a state of `wordmark`",
     ]);
   });
 
   it("refuses a type where an enum belongs", () => {
     expect(
       problems(`${enums}type Toolbar {}\ntype Wordmark {\n  state hover: Toolbar\n}\n`),
-    ).toEqual(["5:16: unknown-enum: Toolbar is a type, not an enum"]);
+    ).toEqual(["5:16: unknown-enum: `Toolbar` is a type, not an enum"]);
   });
 
   it("says what it expected when the syntax is wrong, and goes on after the type", () => {
@@ -80,12 +80,12 @@ type wordmark {
       problems(`${enums}type Wordmark {\n  state hover Hover\n}\nenum Ring = none | none\n`),
       problems(`${enums}type Wordmark {\n  state hover: Hover\n`),
     ]).toEqual([
-      ['1:15: syntax-error: expected "{" after the type name, found "state"'],
+      ["1:15: syntax-error: expected `{` after the type name, found `state`"],
       [
-        '4:15: syntax-error: expected ":" after "hover", found "Hover"',
-        '6:20: duplicate-value: "none" appears twice in Ring',
+        "4:15: syntax-error: expected `:` after `hover`, found `Hover`",
+        "6:20: duplicate-value: `none` appears twice in `Ring`",
       ],
-      ['5:1: syntax-error: expected "}" to close Wordmark, found the end of the file'],
+      ["5:1: syntax-error: expected `}` to close Wordmark, found the end of the file"],
     ]);
   });
 
@@ -111,12 +111,12 @@ type Link {
     it("declares each state once, whichever lines it is on", () => {
       expect(
         problems(`${enums}type Link {\n  state hover: Hover\n  state hover: Focus\n}\n`),
-      ).toEqual(["5:9: duplicate-state: hover is already a state of Link"]);
+      ).toEqual(["5:9: duplicate-state: `hover` is already a state of `Link`"]);
     });
 
     it("is one keyword for one or more states: states is not", () => {
       expect(problems(`${enums}type Link {\n  states hover: Hover\n}\n`)).toEqual([
-        '4:3: syntax-error: expected "state", found "states"',
+        "4:3: syntax-error: expected `state`, found `states`",
       ]);
     });
   });

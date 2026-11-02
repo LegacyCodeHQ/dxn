@@ -2,11 +2,13 @@ import {
   states as evaluateStates,
   type InPlace,
   inPlace,
+  message,
   type ParseResult,
   type Presence,
   profilesOf,
   subjects,
   type Type,
+  words,
 } from "@legacycodehq/dxn-language";
 import { drawTable, NONE } from "../tables.js";
 import { type Command, command } from "./context.js";
@@ -30,7 +32,7 @@ export const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   }
   if (!parsed.types.some(({ name }) => name === typeName)) {
     return report.refuse(
-      `no type ${JSON.stringify(typeName)} in ${file} (${parsed.types.map(({ name }) => name).join(", ")})`,
+      message`no type ${typeName} in ${words(file)} (${parsed.types.map(({ name }) => name)})`,
     );
   }
   const evaluated = evaluateStates(parsed, typeName);

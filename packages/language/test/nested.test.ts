@@ -37,7 +37,7 @@ describe("nested declarations", () => {
 }
 `;
     expect(problems(source)).toEqual([
-      "15:15: unknown-enum: State is not an enum (Hover, Menu.State)",
+      "15:15: unknown-enum: `State` is not an enum (`Hover`, `Menu.State`)",
     ]);
   });
 
@@ -61,9 +61,9 @@ record Snapshot {
       problems("type Menu {\n  enum State = closed | open\n  enum State = shut\n}\n"),
       problems("type Menu {\n  enum state = closed | open\n}\n"),
     ]).toEqual([
-      ["3:8: duplicate-name: Hover is already declared at line 1"],
-      ["3:8: duplicate-name: State is already declared at line 2"],
-      ['2:8: enum-name: enum names start with a capital letter: "state"'],
+      ["3:8: duplicate-name: `Hover` is already declared at line 1"],
+      ["3:8: duplicate-name: `State` is already declared at line 2"],
+      ["2:8: enum-name: enum names start with a capital letter: `state`"],
     ]);
   });
 
@@ -157,12 +157,12 @@ type Tab {
         "dimension D = x | y\nenum E = a | b\ntype Menu needs D {\n  state profile: E\n  profile = b only when D = x\n}\n",
       ),
     ]).toEqual([
-      ['2:20: syntax-error: expected a name after ".", found the end of the line'],
+      ["2:20: syntax-error: expected a name after `.`, found the end of the line"],
       [
-        '2:3: syntax-error: expected "state", "has", "action", "on", "provides", "enum", "type", a rule or "}", found "record"',
+        "2:3: syntax-error: expected `state`, `has`, `action`, `on`, `provides`, `enum`, `type`, a rule or `}`, found `record`",
       ],
       [
-        '2:3: syntax-error: expected "state", "has", "action", "on", "provides", "enum", "type", a rule or "}", found "|"',
+        "2:3: syntax-error: expected `state`, `has`, `action`, `on`, `provides`, `enum`, `type`, a rule or `}`, found `|`",
       ],
       [],
       [],

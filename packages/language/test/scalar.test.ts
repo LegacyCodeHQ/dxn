@@ -26,8 +26,8 @@ describe("Timestamp", () => {
       problems("enum Timestamp = now | later\n"),
       problems("record Timestamp {\n  at: Timestamp\n}\n"),
     ]).toEqual([
-      ["1:6: reserved-name: Timestamp is a built-in scalar; choose another name"],
-      ["1:8: reserved-name: Timestamp is a built-in scalar; choose another name"],
+      ["1:6: reserved-name: `Timestamp` is a built-in scalar; choose another name"],
+      ["1:8: reserved-name: `Timestamp` is a built-in scalar; choose another name"],
     ]);
   });
 
@@ -36,8 +36,8 @@ describe("Timestamp", () => {
       problems("type Link {\n  state at: Timestamp\n}\n"),
       problems("environment Device = Timestamp\n"),
     ]).toEqual([
-      ["2:13: unknown-enum: Timestamp is a scalar, not an enum"],
-      ["1:22: unknown-dimension: Timestamp is a scalar, not a dimension"],
+      ["2:13: unknown-enum: `Timestamp` is a scalar, not an enum"],
+      ["1:22: unknown-dimension: `Timestamp` is a scalar, not a dimension"],
     ]);
   });
 
@@ -47,7 +47,7 @@ describe("Timestamp", () => {
 
   it("reports a value that is not a real date and time with a time zone", () => {
     const message = (index: number, value: string) =>
-      `invalid-value: $[${index}].value: ${JSON.stringify(value)} is not a Timestamp: an ISO 8601 date and time with a time zone, e.g. 2026-10-31T08:50:05Z`;
+      `invalid-value: $[${index}].value: ${JSON.stringify(value)} is not a \`Timestamp\`: an ISO 8601 date and time with a time zone, e.g. 2026-10-31T08:50:05Z`;
     expect(data("Timestamp", "2026-10-31", "2026-10-31T08:50:05", "2026-02-30T08:50:05Z")).toEqual([
       message(0, "2026-10-31"),
       message(1, "2026-10-31T08:50:05"),
@@ -57,7 +57,7 @@ describe("Timestamp", () => {
 
   it("reports a value that is not a string", () => {
     expect(data("Timestamp", 20261031)).toEqual([
-      "wrong-kind: $[0].value: expected a Timestamp (a string), found a number",
+      "wrong-kind: $[0].value: expected a `Timestamp` (a string), found a number",
     ]);
   });
 });
@@ -73,7 +73,7 @@ describe("NonEmptyString", () => {
 
   it("is built in, so its name cannot be declared", () => {
     expect(problems("dimension NonEmptyString = yes | no\n")).toEqual([
-      "1:11: reserved-name: NonEmptyString is a built-in scalar; choose another name",
+      "1:11: reserved-name: `NonEmptyString` is a built-in scalar; choose another name",
     ]);
   });
 
@@ -82,8 +82,8 @@ describe("NonEmptyString", () => {
       problems("type Link {\n  state frame: NonEmptyString\n}\n"),
       problems("environment Device = NonEmptyString\n"),
     ]).toEqual([
-      ["2:16: unknown-enum: NonEmptyString is a scalar, not an enum"],
-      ["1:22: unknown-dimension: NonEmptyString is a scalar, not a dimension"],
+      ["2:16: unknown-enum: `NonEmptyString` is a scalar, not an enum"],
+      ["1:22: unknown-dimension: `NonEmptyString` is a scalar, not a dimension"],
     ]);
   });
 
@@ -93,7 +93,7 @@ describe("NonEmptyString", () => {
 
   it("reports a value that is empty, has spaces at an end, or has a control character", () => {
     const message = (index: number, value: string) =>
-      `invalid-value: $[${index}].value: ${JSON.stringify(value)} is not a NonEmptyString: at least one character, with no spaces at either end and no control characters`;
+      `invalid-value: $[${index}].value: ${JSON.stringify(value)} is not a \`NonEmptyString\`: at least one character, with no spaces at either end and no control characters`;
     expect(data("NonEmptyString", "", " R353q", "R353q ", "R35\n3q")).toEqual([
       message(0, ""),
       message(1, " R353q"),
@@ -104,7 +104,7 @@ describe("NonEmptyString", () => {
 
   it("reports a value that is not a string", () => {
     expect(data("NonEmptyString", null)).toEqual([
-      "wrong-kind: $[0].value: expected a NonEmptyString (a string), found null",
+      "wrong-kind: $[0].value: expected a `NonEmptyString` (a string), found null",
     ]);
   });
 });
@@ -120,7 +120,7 @@ describe("RelativePath", () => {
 
   it("is built in, so its name cannot be declared", () => {
     expect(problems("record RelativePath {\n  at: Timestamp\n}\n")).toEqual([
-      "1:8: reserved-name: RelativePath is a built-in scalar; choose another name",
+      "1:8: reserved-name: `RelativePath` is a built-in scalar; choose another name",
     ]);
   });
 
@@ -129,8 +129,8 @@ describe("RelativePath", () => {
       problems("type Link {\n  state file: RelativePath\n}\n"),
       problems("environment Device = RelativePath\n"),
     ]).toEqual([
-      ["2:15: unknown-enum: RelativePath is a scalar, not an enum"],
-      ["1:22: unknown-dimension: RelativePath is a scalar, not a dimension"],
+      ["2:15: unknown-enum: `RelativePath` is a scalar, not an enum"],
+      ["1:22: unknown-dimension: `RelativePath` is a scalar, not a dimension"],
     ]);
   });
 
@@ -156,14 +156,14 @@ describe("RelativePath", () => {
     expect(data("RelativePath", ...paths)).toEqual(
       paths.map(
         (path, index) =>
-          `invalid-value: $[${index}].value: ${JSON.stringify(path)} is not a RelativePath: a path from the repository root: parts split by /, none of them empty, . or .., and none with a \\ or spaces at either end, nor starting with a drive such as C:`,
+          `invalid-value: $[${index}].value: ${JSON.stringify(path)} is not a \`RelativePath\`: a path from the repository root: parts split by /, none of them empty, . or .., and none with a \\ or spaces at either end, nor starting with a drive such as C:`,
       ),
     );
   });
 
   it("reports a value that is not a string", () => {
     expect(data("RelativePath", ["design", "website.pen"])).toEqual([
-      "wrong-kind: $[0].value: expected a RelativePath (a string), found a list",
+      "wrong-kind: $[0].value: expected a `RelativePath` (a string), found a list",
     ]);
   });
 });

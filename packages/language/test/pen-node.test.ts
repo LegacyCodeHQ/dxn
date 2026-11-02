@@ -37,10 +37,10 @@ describe("PenNode", () => {
       [
         [],
         [
-          "1:8: reserved-name: PenNode is built in; choose another name",
+          "1:8: reserved-name: \`PenNode\` is built in; choose another name",
         ],
         [
-          "2:11: unknown-type: PenNod is not an enum, a record or a scalar; did you mean PenNode?",
+          "2:11: unknown-type: \`PenNod\` is not an enum, a record or a scalar; did you mean \`PenNode\`?",
         ],
       ]
     `);
@@ -63,11 +63,11 @@ describe("PenNode", () => {
       ),
     ).toMatchInlineSnapshot(`
       [
-        "$[0].source: PenNode is missing fingerprint",
-        "$[1].source.file: "../gazette.pen" is not a RelativePath: a path from the repository root: parts split by /, none of them empty, . or .., and none with a \\ or spaces at either end, nor starting with a drive such as C:",
-        "$[2].source.frame: "" is not a NonEmptyString: at least one character, with no spaces at either end and no control characters",
-        "$[3].source.page: PenNode has no field "page" (file, frame, node, fingerprint)",
-        "$[4].source: expected a PenNode (an object), found a string",
+        "$[0].source: \`PenNode\` is missing \`fingerprint\`",
+        "$[1].source.file: "../gazette.pen" is not a \`RelativePath\`: a path from the repository root: parts split by /, none of them empty, . or .., and none with a \\ or spaces at either end, nor starting with a drive such as C:",
+        "$[2].source.frame: "" is not a \`NonEmptyString\`: at least one character, with no spaces at either end and no control characters",
+        "$[3].source.page: \`PenNode\` has no field \`page\` (\`file\`, \`frame\`, \`node\`, \`fingerprint\`)",
+        "$[4].source: expected a \`PenNode\` (an object), found a string",
       ]
     `);
   });

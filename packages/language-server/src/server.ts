@@ -10,6 +10,7 @@ import {
   folderOf,
   format,
   hover,
+  message,
   type ParseResult,
   parse,
   renameAt,
@@ -19,6 +20,7 @@ import {
   symbols,
   tokens,
   usages,
+  words,
 } from "@legacycodehq/dxn-language";
 import {
   CompletionItemKind,
@@ -322,12 +324,12 @@ export function serve(connection: Connection): void {
       renamed.edits.length > 0 ? document.getText(rangeOf(renamed.edits[0] as Edit)) : "";
     if (existsSync(to)) {
       return refuse(
-        `${folder.to}/ is already next to the file; ${record}'s stored records cannot move there`,
+        message`${words(folder.to)}/ is already next to the file; ${record}'s stored records cannot move there`,
       );
     }
     if (!moves) {
       return refuse(
-        `the editor cannot move ${folder.from}/, where ${record}'s stored records are, to ${folder.to}/`,
+        message`the editor cannot move ${words(folder.from)}/, where ${record}'s stored records are, to ${words(folder.to)}/`,
       );
     }
     return {

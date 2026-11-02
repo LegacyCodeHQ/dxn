@@ -1,6 +1,7 @@
 import type { Child, Diagnostic, Enum, Located, ParseResult, State, Type, Union } from "./ast.js";
 import { covers, links, type Span, wordAt } from "./definition.js";
 import { placement } from "./evaluate.js";
+import { message, words } from "./message.js";
 import { among, article } from "./names.js";
 import { parse } from "./parse.js";
 import {
@@ -91,10 +92,10 @@ export function renameAt(
   const rule = rules[kind.kind];
   if (rule !== undefined && !rule.pattern.test(to)) {
     return {
-      refusal: `${JSON.stringify(to)} is not ${article(kind.kind)} ${kind.kind} name: ${rule.text}`,
+      refusal: message`${to} is not ${words(article(kind.kind))} ${words(kind.kind)} name: ${words(rule.text)}`,
     };
   }
-  if (to === name) return { refusal: `${name} is already its name` };
+  if (to === name) return { refusal: message`${name} is already its name` };
   const edits = spans.map((span) => ({ ...span, text: to }));
   // The rename must leave the file as sound as it was.
   const renamedSource = apply(source, edits);
@@ -350,9 +351,9 @@ export function declarationNamed(
     return { line: only.at.line, column: only.at.column };
   }
   if (found.length > 1) {
-    const kinds = found.map((each) => `${each.kind}:${name}`);
+    const kinds = found.map((each) => message`${`${each.kind}:${name}`}`);
     return {
-      refusal: `${name} names ${found.map((each) => `${article(each.kind)} ${each.kind}`).join(" and ")}; say which: ${kinds.join(" or ")}`,
+      refusal: message`${name} names ${words(found.map((each) => `${article(each.kind)} ${each.kind}`).join(" and "))}; say which: ${words(kinds.join(" or "))}`,
     };
   }
   const names = named
@@ -371,5 +372,5 @@ export function declarationNamed(
     siblings.length > 0
       ? among(name, siblings, "", last.length)
       : among(name, [...new Set(names)], "the file declares none");
-  return { refusal: `${nothing} is declared as ${name}${suggested}` };
+  return { refusal: message`${words(nothing)} is declared as ${name}${suggested}` };
 }

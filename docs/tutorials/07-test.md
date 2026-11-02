@@ -36,7 +36,7 @@ Both hold. Now break the model: delete the rule
 `hover = hovered only when Pointer = mouse`, as someone might while tidying up.
 
 ```
-spec/button.dxn:38:8: expectation-failed: Touch screens never show hover: Button on Pointer touch has hover = hovered
+spec/button.dxn:38:8: error: expectation-failed: Touch screens never show hover: `Button` on `Pointer touch` has `hover = hovered`
 ```
 
 The rule caught it, and says which combination breaks it. The model still

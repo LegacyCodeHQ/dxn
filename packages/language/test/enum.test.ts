@@ -66,10 +66,10 @@ describe("enum", () => {
       problems("enum Size = xs |\n  | sm\n"),
       problems("enum Size =\n  | xs\n  md\n"),
     ]).toEqual([
-      ['1:12: syntax-error: expected a value after "=", found the end of the line'],
-      ['2:3: syntax-error: expected a value after "|", found "|"'],
+      ["1:12: syntax-error: expected a value after `=`, found the end of the line"],
+      ["2:3: syntax-error: expected a value after `|`, found `|`"],
       [
-        '3:3: syntax-error: expected "enum", "dimension", "type", "environment", "profile", "modifier", "record", "actor" or "expect", found "md"',
+        "3:3: syntax-error: expected `enum`, `dimension`, `type`, `environment`, `profile`, `modifier`, `record`, `actor` or `expect`, found `md`",
       ],
     ]);
   });
@@ -81,10 +81,10 @@ describe("enum", () => {
       problems("enum Hover = rest | hover_ed\n"),
       problems("enum Hover-State = rest\n"),
     ]).toEqual([
-      ['1:6: enum-name: enum names start with a capital letter: "hover"'],
-      ['1:21: syntax-error: expected a value after "|", found "-"'],
-      ['1:26: syntax-error: expected "|" or the end of the line after "hover", found "_"'],
-      ['1:6: enum-name: enum names are letters and digits: "Hover-State"'],
+      ["1:6: enum-name: enum names start with a capital letter: `hover`"],
+      ["1:21: syntax-error: expected a value after `|`, found `-`"],
+      ["1:26: syntax-error: expected `|` or the end of the line after `hover`, found `_`"],
+      ["1:6: enum-name: enum names are letters and digits: `Hover-State`"],
     ]);
   });
 
@@ -93,8 +93,8 @@ describe("enum", () => {
       problems("enum Breakpoint = base | sm | lg | lg\n"),
       problems("enum Ring = none | focus\nenum Ring = none\n"),
     ]).toEqual([
-      ['1:36: duplicate-value: "lg" appears twice in Breakpoint'],
-      ["2:6: duplicate-name: Ring is already declared at line 1"],
+      ["1:36: duplicate-value: `lg` appears twice in `Breakpoint`"],
+      ["2:6: duplicate-name: `Ring` is already declared at line 1"],
     ]);
   });
 
@@ -106,12 +106,12 @@ describe("enum", () => {
       problems("enum Focus = blurred |\n"),
       problems("enumm Focus = blurred\n"),
     ]).toEqual([
-      ['1:21: syntax-error: expected "|" or the end of the line after "blurred", found ","'],
-      ['1:12: syntax-error: expected "=" after the enum name, found "blurred"'],
-      ['1:13: syntax-error: expected a value after "=", found the end of the line'],
-      ['2:1: syntax-error: expected a value after "|", found the end of the file'],
+      ["1:21: syntax-error: expected `|` or the end of the line after `blurred`, found `,`"],
+      ["1:12: syntax-error: expected `=` after the enum name, found `blurred`"],
+      ["1:13: syntax-error: expected a value after `=`, found the end of the line"],
+      ["2:1: syntax-error: expected a value after `|`, found the end of the file"],
       [
-        '1:1: syntax-error: expected "enum", "dimension", "type", "environment", "profile", "modifier", "record", "actor" or "expect", found "enumm"',
+        "1:1: syntax-error: expected `enum`, `dimension`, `type`, `environment`, `profile`, `modifier`, `record`, `actor` or `expect`, found `enumm`",
       ],
     ]);
   });

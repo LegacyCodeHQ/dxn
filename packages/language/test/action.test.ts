@@ -97,16 +97,18 @@ describe("actions and on", () => {
       action("action close: menus open -> closed"),
       action("action close: menu open -> open"),
     ]).toEqual([
-      ['24:30: unknown-value: "shut" is not a value of menu (closed, open)'],
-      ["25:10: duplicate-action: close is already an action of Menu"],
-      ["24:17: unknown-state: menus is not a state of Menu; did you mean menu?"],
-      ["24:30: unchanged-action: close changes nothing: menu is open before and after"],
+      ["24:30: unknown-value: `shut` is not a value of `menu` (`closed`, `open`)"],
+      ["25:10: duplicate-action: `close` is already an action of `Menu`"],
+      ["24:17: unknown-state: `menus` is not a state of `Menu`; did you mean `menu`?"],
+      ["24:30: unchanged-action: `close` changes nothing: `menu` is `open` before and after"],
     ]);
     assert(
       errors(
         "dimension Breakpoint = base | lg\nenum Layout = compact | inline\ntype Toolbar needs Breakpoint {\n  state layout: Layout = when Breakpoint {\n    base -> compact\n    lg -> inline\n  }\n  action squeeze: layout inline -> compact\n}\n",
       ),
-    ).toEqual(["8:19: action-on-derived: layout is decided by its when; no action can change it"]);
+    ).toEqual([
+      "8:19: action-on-derived: `layout` is decided by its when; no action can change it",
+    ]);
   });
 
   it("is triggered by an event on the type: a child, a key, a pointer outside it, or a dimension", () => {
@@ -119,18 +121,18 @@ describe("actions and on", () => {
       on("on Breakpoint = xl: menu.close"),
       on("on wordmark.activate: menu.close, layout.take-focus"),
     ]).toEqual([
-      ["41:6: unknown-child: wordmrk is not a child of Toolbar; did you mean wordmark?"],
-      ["41:25: unknown-action: shut is not an action of Menu (open, close)"],
-      ["41:25: unknown-action: shut is not an action of Toolbar; it has none"],
-      ['41:19: unknown-value: "xl" is not a value of Breakpoint (base, lg)'],
-      ["41:37: unknown-child: layout is not a child of Toolbar (wordmark, link, menu)"],
+      ["41:6: unknown-child: `wordmrk` is not a child of `Toolbar`; did you mean `wordmark`?"],
+      ["41:25: unknown-action: `shut` is not an action of `Menu` (`open`, `close`)"],
+      ["41:25: unknown-action: `shut` is not an action of `Toolbar`; it has none"],
+      ["41:19: unknown-value: `xl` is not a value of `Breakpoint` (`base`, `lg`)"],
+      ["41:37: unknown-child: `layout` is not a child of `Toolbar` (`wordmark`, `link`, `menu`)"],
     ]);
     assert(
       problems(
         model.replace("  on escape: close, toggle.take-focus", "  on escape: close, focus toggle"),
       ),
     ).toEqual([
-      '28:21: syntax-error: "focus toggle" is not a change: move focus with an action of the child, such as toggle.take-focus',
+      "28:21: syntax-error: `focus toggle` is not a change: move focus with an action of the child, such as `toggle.take-focus`",
     ]);
     assert(
       problems(
@@ -140,7 +142,7 @@ describe("actions and on", () => {
         ),
       ),
     ).toEqual([
-      '28:21: syntax-error: "focus panel.blog" is not a change: move focus with an action of the child, such as panel.blog.take-focus',
+      "28:21: syntax-error: `focus panel.blog` is not a change: move focus with an action of the child, such as `panel.blog.take-focus`",
     ]);
   });
 
@@ -156,7 +158,7 @@ type Menu {
   on escape: toggle.y.close, toggle.z.take-focus
 }
 `),
-    ).toEqual(["5:15: unknown-type: Nope is not a type (Menu)"]);
+    ).toEqual(["5:15: unknown-type: `Nope` is not a type (`Menu`)"]);
   });
 
   it("uses a dimension its event changes, which its type needs", () => {
@@ -171,7 +173,7 @@ type Menu${needs} {
     assert([problems(menu(" needs Breakpoint")), problems(menu(""))]).toEqual([
       [],
       [
-        '6:6: unneeded-dimension: Menu does not need Breakpoint; declare "type Menu needs Breakpoint"',
+        "6:6: unneeded-dimension: `Menu` does not need `Breakpoint`; declare `type Menu needs Breakpoint`",
       ],
     ]);
   });
@@ -191,8 +193,8 @@ type Menu${needs} {
         ),
       ),
     ]).toEqual([
-      ["25:10: duplicate-action: menu is already a state of Menu"],
-      ["25:10: duplicate-action: toggle is already a child of Menu"],
+      ["25:10: duplicate-action: `menu` is already a state of `Menu`"],
+      ["25:10: duplicate-action: `toggle` is already a child of `Menu`"],
     ]);
   });
 
@@ -209,7 +211,7 @@ type Menu {
 }
 `),
     ).toEqual([
-      "8:24: bound-action: expanded is bound here, so Toggle's action flip can never change it",
+      "8:24: bound-action: `expanded` is bound here, so `Toggle`'s action `flip` can never change it",
     ]);
   });
 
@@ -222,7 +224,7 @@ type Menu {
         ),
       ),
     ).toEqual([
-      "29:3: ambiguous-event: toggle.activate triggers both open and reopen when menu = closed",
+      "29:3: ambiguous-event: `toggle.activate` triggers both `open` and `reopen` when `menu = closed`",
     ]);
   });
 
@@ -243,12 +245,12 @@ type Menu {
       shut("on Breakpoint = base: menu.close\n  on Breakpoint = lg: menu.shut"),
     ]).toEqual([
       [
-        "45:3: ambiguous-event: Breakpoint = lg triggers both menu.close and menu.shut when menu.menu = open",
+        "45:3: ambiguous-event: `Breakpoint = lg` triggers both `menu.close` and `menu.shut` when `menu.menu = open`",
       ],
       [
-        "45:3: ambiguous-event: escape triggers both menu.close and menu.shut when menu.menu = open",
+        "45:3: ambiguous-event: `escape` triggers both `menu.close` and `menu.shut` when `menu.menu = open`",
       ],
-      ["45:3: duplicate-trigger: escape already triggers menu.close"],
+      ["45:3: duplicate-trigger: `escape` already triggers `menu.close`"],
       [],
     ]);
   });
@@ -287,10 +289,10 @@ expect "Escape closes the menu and returns focus to its button" {
     ]).toEqual([
       [],
       [
-        "50:8: expectation-failed: Escape closes the menu and returns focus to its button: on escape, toggle.focus becomes focused, not blurred",
+        "50:8: expectation-failed: Escape closes the menu and returns focus to its button: on `escape`, `toggle.focus` becomes `focused`, not `blurred`",
       ],
       [
-        "49:8: expectation-failed: Escape closes the menu and returns focus to its button: nothing happens on escape to Page.toolbar.menu when menu = open",
+        "49:8: expectation-failed: Escape closes the menu and returns focus to its button: nothing happens on `escape` to `Page.toolbar.menu` when `menu = open`",
       ],
     ]);
   });
@@ -300,8 +302,8 @@ expect "Escape closes the menu and returns focus to its button" {
       problems(model.replace("action open: menu closed -> open", "action open: menu closed open")),
       problems(model.replace("on escape: close", "on press Escape: close")),
     ]).toEqual([
-      ['23:28: syntax-error: expected "->" after "closed", found "open"'],
-      ['28:12: syntax-error: expected ":" after the event, found "Escape"'],
+      ["23:28: syntax-error: expected `->` after `closed`, found `open`"],
+      ["28:12: syntax-error: expected `:` after the event, found `Escape`"],
     ]);
   });
 });
@@ -340,10 +342,10 @@ describe("a trigger only when", () => {
       errors(button("on space: push only when focus = blurd")),
       problems(button("on space: push only when focus in (blurred, focused)")),
     ]).toEqual([
-      ["11:28: unknown-state: fokus is not a state of Button; did you mean focus?"],
-      ['11:36: unknown-value: "blurd" is not a value of focus (blurred, focused)'],
+      ["11:28: unknown-state: `fokus` is not a state of `Button`; did you mean `focus`?"],
+      ["11:36: unknown-value: `blurd` is not a value of `focus` (`blurred`, `focused`)"],
       [
-        "11:3: warning: vacuous-condition: focus in (blurred, focused) is always true, so the trigger always fires",
+        "11:3: warning: vacuous-condition: `focus in (blurred, focused)` is always true, so the trigger always fires",
       ],
     ]);
   });
@@ -362,7 +364,7 @@ describe("a trigger only when", () => {
       twice("focus = focused", "Keyboard = keyboard"),
     ]).toEqual([
       [],
-      ["13:3: ambiguous-event: space triggers both push and hold when press = released"],
+      ["13:3: ambiguous-event: `space` triggers both `push` and `hold` when `press = released`"],
     ]);
   });
 
@@ -384,7 +386,7 @@ expect "Space presses the button only while it is focused" {
       [],
       [],
       [
-        "18:8: expectation-failed: Space presses the button only while it is focused: nothing happens on space to Page.button when focus = blurred, press = released",
+        "18:8: expectation-failed: Space presses the button only while it is focused: nothing happens on `space` to `Page.button` when `focus = blurred`, `press = released`",
       ],
     ]);
   });
@@ -425,7 +427,7 @@ expect "Space can press it" {
     ]).toEqual([
       [],
       [
-        "19:8: expectation-failed: Space can press it: nothing happens on space to Page.button when press = released",
+        "19:8: expectation-failed: Space can press it: nothing happens on `space` to `Page.button` when `press = released`",
       ],
     ]);
   });
@@ -452,7 +454,7 @@ expect "H hovers the link" {
 }
 `;
     assert(problems(link)).toEqual([
-      "12:8: expectation-failed: H hovers the link: on h, Page.link on Pointer touch would have hover = hovered, which it cannot have there",
+      "12:8: expectation-failed: H hovers the link: on `h`, `Page.link` on `Pointer touch` would have `hover = hovered`, which it cannot have there",
     ]);
   });
 });
@@ -478,11 +480,11 @@ describe("a change written in a trigger", () => {
       errors(pressing("on space: layout -> compact")),
       errors(pressing("on space: page.press -> pressed")),
     ]).toEqual([
-      ["12:13: unknown-state: pres is not a state of Button; did you mean press?"],
-      ['12:22: unknown-value: "presed" is not a value of press (released, pressed)'],
-      ["12:13: action-on-derived: layout is decided by its when; no change can change it"],
+      ["12:13: unknown-state: `pres` is not a state of `Button`; did you mean `press`?"],
+      ["12:22: unknown-value: `presed` is not a value of `press` (`released`, `pressed`)"],
+      ["12:13: action-on-derived: `layout` is decided by its when; no change can change it"],
       [
-        '12:13: syntax-error: a change is on one of the type\'s own states, not "page.press"; change a child through one of its actions',
+        "12:13: syntax-error: a change is on one of the type's own states, not `page.press`; change a child through one of its actions",
       ],
     ]);
   });
@@ -498,8 +500,8 @@ describe("a change written in a trigger", () => {
       ),
       errors(pressing("on space: press -> pressed", "on space: press -> pressed")),
     ]).toEqual([
-      ["14:3: duplicate-trigger: space already triggers press -> pressed"],
-      ["13:3: duplicate-trigger: space already triggers press -> pressed"],
+      ["14:3: duplicate-trigger: `space` already triggers `press -> pressed`"],
+      ["13:3: duplicate-trigger: `space` already triggers `press -> pressed`"],
     ]);
   });
 
@@ -537,7 +539,7 @@ type Menu {
       renameInSource(parse(source), source, "Press", "pressed", "down"),
     ]).toEqual([
       [
-        "9:24: bound-action: expanded is bound here, so Toggle's change on space can never change it",
+        "9:24: bound-action: `expanded` is bound here, so `Toggle`'s change on `space` can never change it",
       ],
       source.replace("released | pressed", "released | down").replace("-> pressed", "-> down"),
     ]);
@@ -595,8 +597,10 @@ describe("a trigger with several changes", () => {
       errors(several("on escape: close, toggle.take-focs")),
       errors(several("on space: lamp -> on, lamp -> off")),
     ]).toEqual([
-      ["17:21: unknown-action: take-focs is not an action of Button; did you mean take-focus?"],
-      ["17:25: conflicting-change: space changes lamp twice"],
+      [
+        "17:21: unknown-action: `take-focs` is not an action of `Button`; did you mean `take-focus`?",
+      ],
+      ["17:25: conflicting-change: `space` changes `lamp` twice"],
     ]);
   });
 
@@ -631,10 +635,10 @@ expect "Escape closes the menu and the toggle takes focus" {
     ]).toEqual([
       [],
       [
-        "24:8: expectation-failed: Escape closes the menu and the toggle takes focus: on escape, toggle.ring becomes visible, not hidden",
+        "24:8: expectation-failed: Escape closes the menu and the toggle takes focus: on `escape`, `toggle.ring` becomes `visible`, not `hidden`",
       ],
       [
-        "24:8: expectation-failed: Escape closes the menu and the toggle takes focus: on escape, toggle.ring does not change",
+        "24:8: expectation-failed: Escape closes the menu and the toggle takes focus: on `escape`, `toggle.ring` does not change",
       ],
     ]);
   });
@@ -645,10 +649,10 @@ expect "Escape closes the menu and the toggle takes focus" {
       problems(rule("on escape: close, toggle.take-focus", "toggle.ring = vsible")),
     ]).toEqual([
       [
-        "24:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: no element in Page.menu has toggle.rng",
+        "24:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: no element in `Page.menu` has `toggle.rng`",
       ],
       [
-        '24:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: "vsible" is not a value of toggle.ring (hidden, visible)',
+        "24:8: expectation-empty: Escape closes the menu and the toggle takes focus tests nothing: `vsible` is not a value of `toggle.ring` (`hidden`, `visible`)",
       ],
     ]);
   });

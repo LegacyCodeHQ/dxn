@@ -30,9 +30,8 @@ export class Reporter {
     this.problems.push(problem);
     if (this.json) return;
     const { file, line, column, severity, code, path, message } = problem;
-    const warning = severity === "warning" ? "warning: " : "";
     const at = path === undefined ? "" : `${path}: `;
-    this.io.stderr(`${file}:${line}:${column}: ${warning}${code}: ${at}${message}\n`);
+    this.io.stderr(`${file}:${line}:${column}: ${severity}: ${code}: ${at}${message}\n`);
   }
 
   get failed(): boolean {

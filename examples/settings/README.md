@@ -27,7 +27,7 @@ Line numbers are those of `settings.dxn` as committed.
 
 - Keywords, types, states, actions, events, profiles and values each have
   their colour; comments are dimmed.
-- Change `Hover` on line 21 to `Hovr`: a squiggle, and "did you mean Hover?".
+- Change `Hover` on line 21 to `Hovr`: a squiggle, and "did you mean `Hover`?".
 
 ### Outline
 

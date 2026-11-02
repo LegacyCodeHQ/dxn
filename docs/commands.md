@@ -120,7 +120,7 @@ Each command prints a readable answer by default, and one JSON document with `--
 
 ### check
 
-Says what a file declares, in one line, or prints each problem as `<file>:<line>:<column>: <code>: <message>` and exits 1.
+Says what a file declares, in one line, or prints each problem as `<file>:<line>:<column>: <severity>: <code>: <message>` and exits 1.
 
 ```bash
 dxn check wordmark.dxn

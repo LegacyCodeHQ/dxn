@@ -31,7 +31,7 @@ describe("help", () => {
   it("rejects help for an unknown command", () => {
     expect(help("help", "nope")).toEqual({
       code: 2,
-      stderr: `dxn: unknown command: nope\n\n${help("--help").stdout}`,
+      stderr: `dxn: unknown command: \`nope\`\n\n${help("--help").stdout}`,
       stdout: "",
     });
   });

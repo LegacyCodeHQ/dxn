@@ -197,63 +197,63 @@ describe("json parser", () => {
     snapshot.push(result.diagnostics);
 
     expect(snapshot).toMatchInlineSnapshot(`
-  [
-    {
-      "kind": "object",
-      "members": [
+      [
         {
-          "key": {
-            "kind": "string",
-            "span": {
-              "end": 5,
-              "start": 2,
+          "kind": "object",
+          "members": [
+            {
+              "key": {
+                "kind": "string",
+                "span": {
+                  "end": 5,
+                  "start": 2,
+                },
+                "value": "a",
+              },
+              "value": {
+                "kind": "number",
+                "span": {
+                  "end": 8,
+                  "start": 7,
+                },
+                "value": 1,
+              },
             },
-            "value": "a",
-          },
-          "value": {
-            "kind": "number",
-            "span": {
-              "end": 8,
-              "start": 7,
+            {
+              "key": {
+                "kind": "string",
+                "span": {
+                  "end": 13,
+                  "start": 10,
+                },
+                "value": "a",
+              },
+              "value": {
+                "kind": "number",
+                "span": {
+                  "end": 16,
+                  "start": 15,
+                },
+                "value": 2,
+              },
             },
-            "value": 1,
+          ],
+          "span": {
+            "end": 18,
+            "start": 0,
           },
         },
-        {
-          "key": {
-            "kind": "string",
-            "span": {
-              "end": 13,
-              "start": 10,
-            },
-            "value": "a",
+        [
+          {
+            "code": "duplicate-key",
+            "column": 11,
+            "line": 1,
+            "message": "duplicate key \`a\`",
+            "path": "$.a",
           },
-          "value": {
-            "kind": "number",
-            "span": {
-              "end": 16,
-              "start": 15,
-            },
-            "value": 2,
-          },
-        },
-      ],
-      "span": {
-        "end": 18,
-        "start": 0,
-      },
-    },
-    [
-      {
-        "code": "duplicate-key",
-        "column": 11,
-        "line": 1,
-        "message": "duplicate key "a"",
-        "path": "$.a",
-      },
-    ],
-  ]
-`);
+        ],
+      ]
+    `);
   });
 
   it("parses 512 levels of nesting", () => {

@@ -37,10 +37,10 @@ describe("needs", () => {
       problems(wordmark(" needs Pointer, Pointer", "hover = hovered only when Pointer = mouse")),
       problems(wordmark(" needs Pointer Keyboard")),
     ]).toEqual([
-      ["5:21: unknown-dimension: Hover is an enum, not a dimension"],
-      ["5:21: unknown-dimension: Theme is not a dimension (Breakpoint, Pointer, Keyboard)"],
-      ["5:30: duplicate-dimension: Pointer is already a need of Wordmark"],
-      ['5:29: syntax-error: expected "," or "{" after "Pointer", found "Keyboard"'],
+      ["5:21: unknown-dimension: `Hover` is an enum, not a dimension"],
+      ["5:21: unknown-dimension: `Theme` is not a dimension (`Breakpoint`, `Pointer`, `Keyboard`)"],
+      ["5:30: duplicate-dimension: `Pointer` is already a need of `Wordmark`"],
+      ["5:29: syntax-error: expected `,` or `{` after `Pointer`, found `Keyboard`"],
     ]);
   });
 
@@ -56,11 +56,11 @@ describe("needs", () => {
       ),
     ]).toEqual([
       [
-        '7:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Pointer"',
+        "7:29: unneeded-dimension: `Wordmark` does not need `Pointer`; declare `type Wordmark needs Pointer`",
       ],
       [
-        '7:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Breakpoint, Pointer, Keyboard"',
-        '8:26: unneeded-dimension: Wordmark does not need Keyboard; declare "type Wordmark needs Breakpoint, Pointer, Keyboard"',
+        "7:29: unneeded-dimension: `Wordmark` does not need `Pointer`; declare `type Wordmark needs Breakpoint, Pointer, Keyboard`",
+        "8:26: unneeded-dimension: `Wordmark` does not need `Keyboard`; declare `type Wordmark needs Breakpoint, Pointer, Keyboard`",
       ],
     ]);
   });
@@ -69,8 +69,8 @@ describe("needs", () => {
     expect(
       problems(wordmark(" needs Pointr", "hover = hovered only when Pointer = mouse")),
     ).toEqual([
-      "5:21: unknown-dimension: Pointr is not a dimension; did you mean Pointer?",
-      '7:29: unneeded-dimension: Wordmark does not need Pointer; declare "type Wordmark needs Pointer"',
+      "5:21: unknown-dimension: `Pointr` is not a dimension; did you mean `Pointer`?",
+      "7:29: unneeded-dimension: `Wordmark` does not need `Pointer`; declare `type Wordmark needs Pointer`",
     ]);
   });
 

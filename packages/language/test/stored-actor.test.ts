@@ -43,13 +43,13 @@ describe("the actor of a stored record", () => {
     ]).toMatchInlineSnapshot(`
       [
         [
-          "Evidence is missing actor",
+          "\`Evidence\` is missing \`actor\`",
         ],
         [
-          ""Desginer" is not an actor who records Evidence; did you mean Designer?",
+          "\`Desginer\` is not an actor who records \`Evidence\`; did you mean \`Designer\`?",
         ],
         [
-          "Reviewer records Review, not Evidence",
+          "\`Reviewer\` records \`Review\`, not \`Evidence\`",
         ],
         [
           "expected an actor's name (a string), found a number",
@@ -63,7 +63,7 @@ describe("the actor of a stored record", () => {
       problems("record Evidence {\n  actor: NonEmptyString\n}\nactor Designer records Evidence\n"),
     ).toMatchInlineSnapshot(`
       [
-        "2:3: reserved-name: actor is who records Evidence; choose another field name",
+        "2:3: reserved-name: \`actor\` is who records \`Evidence\`; choose another field name",
       ]
     `);
     expect(problems("record Note {\n  actor: NonEmptyString\n}\n")).toEqual([]);

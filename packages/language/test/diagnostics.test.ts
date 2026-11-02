@@ -15,11 +15,11 @@ describe("diagnostics", () => {
         "enum Hover = rest | hovered\ndimension Pointer = mouse\ntype Wordmark needs Pointer {\n  hover = hovered only when Pointer = mouse\n}\n",
       ),
     ]).toEqual([
-      ["2:16: unknown-enum: Hover is not an enum; the file declares none"],
-      ["4:29: unknown-dimension: Pointer is not a dimension; the file declares none"],
-      ["1:22: unknown-dimension: Pointer is not a dimension; the file declares none"],
-      ["1:17: unknown-environment: Device is not an environment; the file declares none"],
-      ["4:3: unknown-state: hover is not a state of Wordmark; it has none"],
+      ["2:16: unknown-enum: `Hover` is not an enum; the file declares none"],
+      ["4:29: unknown-dimension: `Pointer` is not a dimension; the file declares none"],
+      ["1:22: unknown-dimension: `Pointer` is not a dimension; the file declares none"],
+      ["1:17: unknown-environment: `Device` is not an environment; the file declares none"],
+      ["4:3: unknown-state: `hover` is not a state of `Wordmark`; it has none"],
     ]);
   });
 
@@ -43,25 +43,25 @@ describe("diagnostics", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
-          "5:16: unknown-enum: Hovr is not an enum; did you mean Hover?",
+          "5:16: unknown-enum: \`Hovr\` is not an enum; did you mean \`Hover\`?",
         ],
         [
-          "5:16: unknown-enum: Fcous is not an enum; did you mean Focus?",
+          "5:16: unknown-enum: \`Fcous\` is not an enum; did you mean \`Focus\`?",
         ],
         [
-          "5:16: unknown-enum: hover is not an enum; did you mean Hover?",
+          "5:16: unknown-enum: \`hover\` is not an enum; did you mean \`Hover\`?",
         ],
         [
-          "6:16: unknown-enum: Hovere is not an enum; did you mean Hover or Hovers?",
+          "6:16: unknown-enum: \`Hovere\` is not an enum; did you mean \`Hover\` or \`Hovers\`?",
         ],
         [
-          "5:16: unknown-enum: Pointer is not an enum (Hover, Focus, Selection)",
+          "5:16: unknown-enum: \`Pointer\` is not an enum (\`Hover\`, \`Focus\`, \`Selection\`)",
         ],
         [
-          "8:6: unknown-event: pres is not an event of Link; did you mean press?",
-          "8:12: unknown-action: blurr is not an action of Link; did you mean blur?",
-          "9:3: unknown-state: hovr is not a state of Link; did you mean hover?",
-          "14:14: unknown-child: lnk is not a child of Menu; did you mean link?",
+          "8:6: unknown-event: \`pres\` is not an event of \`Link\`; did you mean \`press\`?",
+          "8:12: unknown-action: \`blurr\` is not an action of \`Link\`; did you mean \`blur\`?",
+          "9:3: unknown-state: \`hovr\` is not a state of \`Link\`; did you mean \`hover\`?",
+          "14:14: unknown-child: \`lnk\` is not a child of \`Menu\`; did you mean \`link\`?",
         ],
       ]
     `);
@@ -85,13 +85,13 @@ describe("diagnostics", () => {
         "dimension Pointer = mouse\nenvironment Device = Pointer\nprofile Laptop: Device { Pointer = }\nprofile Laptop: Device { Pointer = mouse }\n",
       ),
     ]).toEqual([
-      ['1:19: syntax-error: expected "|" or the end of the line after "rest", found "hovered"'],
-      ['2:27: syntax-error: expected "|" or the end of the line after "mouse", found "touch"'],
-      ['3:30: syntax-error: expected "x" or the end of the line after "Pointer", found "Keyboard"'],
-      ['5:15: syntax-error: expected ":" after "hover", found "Hover"'],
+      ["1:19: syntax-error: expected `|` or the end of the line after `rest`, found `hovered`"],
+      ["2:27: syntax-error: expected `|` or the end of the line after `mouse`, found `touch`"],
+      ["3:30: syntax-error: expected `x` or the end of the line after `Pointer`, found `Keyboard`"],
+      ["5:15: syntax-error: expected `:` after `hover`, found `Hover`"],
       [
-        '3:36: syntax-error: expected a value after "=", found "}"',
-        "4:9: duplicate-name: Laptop is already declared at line 3",
+        "3:36: syntax-error: expected a value after `=`, found `}`",
+        "4:9: duplicate-name: `Laptop` is already declared at line 3",
       ],
     ]);
   });
@@ -108,9 +108,9 @@ describe("diagnostics", () => {
         "enum Actor = agent | person |\nenum Tool = pen | file\nrecord Note {\n  actor: Actor\n  tool: Tool = when actor {\n    agent -> pen\n    person -> file\n  }\n}\n",
       ),
     ]).toEqual([
-      ['1:21: syntax-error: expected a value after "|", found the end of the line'],
-      ['2:19: syntax-error: expected a value after "|", found the end of the line'],
-      ['1:30: syntax-error: expected a value after "|", found the end of the line'],
+      ["1:21: syntax-error: expected a value after `|`, found the end of the line"],
+      ["2:19: syntax-error: expected a value after `|`, found the end of the line"],
+      ["1:30: syntax-error: expected a value after `|`, found the end of the line"],
     ]);
   });
 
@@ -123,11 +123,11 @@ describe("diagnostics", () => {
       problems("enum Hover = rest\ntype Wordmark\n  state hover: Hover\n}\n"),
     ]).toEqual([
       [
-        '1:6: syntax-error: expected a type name after "type", found "{"',
+        "1:6: syntax-error: expected a type name after `type`, found `{`",
         // Hover is still declared, after the skipped type.
       ],
-      ['3:16: syntax-error: expected ":" after "Laptop", found "Device"'],
-      ['2:14: syntax-error: expected "{" after the type name, found the end of the line'],
+      ["3:16: syntax-error: expected `:` after `Laptop`, found `Device`"],
+      ["2:14: syntax-error: expected `{` after the type name, found the end of the line"],
     ]);
     expect(parse("type {\n}\nenum Hover = rest\n").enums.map(({ name }) => name)).toEqual([
       "Hover",
@@ -147,11 +147,11 @@ describe("diagnostics", () => {
       ),
     ]).toEqual([
       [
-        '5:1: syntax-error: expected "}" to close A, found "type"',
-        "10:12: unknown-enum: Nope is not an enum (E, F)",
+        "5:1: syntax-error: expected `}` to close A, found `type`",
+        "10:12: unknown-enum: `Nope` is not an enum (`E`, `F`)",
       ],
-      ['2:23: syntax-error: expected "|" or the end of the line after "closed", found "open"'],
-      ['4:9: syntax-error: expected "=" after "bogus", found "line"'],
+      ["2:23: syntax-error: expected `|` or the end of the line after `closed`, found `open`"],
+      ["4:9: syntax-error: expected `=` after `bogus`, found `line`"],
     ]);
   });
 
@@ -164,10 +164,10 @@ describe("diagnostics", () => {
         "dimension P = m | t\nenum H = a | b\ntype T needs P {\n  state h: H\n  h = b only when P = m and\n}\nenum F = c\n",
       ),
     ]).toEqual([
-      ['1:13: syntax-error: expected a value after "|", found the end of the line'],
-      ['2:16: syntax-error: expected a dimension after ",", found the end of the line'],
+      ["1:13: syntax-error: expected a value after `|`, found the end of the line"],
+      ["2:16: syntax-error: expected a dimension after `,`, found the end of the line"],
       ["3:14: syntax-error: expected a state name, found the end of the line"],
-      ['6:1: syntax-error: expected a dimension after "and", found "}"'],
+      ["6:1: syntax-error: expected a dimension after `and`, found `}`"],
     ]);
   });
 

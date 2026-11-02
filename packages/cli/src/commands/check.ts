@@ -1,4 +1,4 @@
-import { among, type Type } from "@legacycodehq/dxn-language";
+import { among, type Type, words } from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
 import { usage } from "./usage.js";
@@ -42,7 +42,7 @@ export const checkCommand: Command = command(usage, (args, { io, cwd }) => {
   const [file, ...rest] =
     flag === -1 ? given : given.filter((_, at) => at !== flag && at !== flag + 1);
   if (file === undefined || rest.length > 0 || (flag !== -1 && title === undefined)) {
-    return misused(io, json, "give one file to check, and with --expect, an expectation's title");
+    return misused(io, json, "give one file to check, and with `--expect`, an expectation's title");
   }
   const report = new Reporter(io, json, file);
   // With --expect, the other expectations' failures are not reported.
@@ -56,7 +56,7 @@ export const checkCommand: Command = command(usage, (args, { io, cwd }) => {
     const titles = parsed.expectations.map((expectation) => JSON.stringify(expectation.title));
     if (!titles.includes(JSON.stringify(title))) {
       return report.refuse(
-        `no expectation is titled ${JSON.stringify(title)}${among(JSON.stringify(title), titles, "the file has none")}`,
+        `no expectation is titled ${JSON.stringify(title)}${among(JSON.stringify(title), titles, "the file has none", JSON.stringify(title).length, words).text}`,
       );
     }
     return report.succeed({ file, expectation: title, holds: true }, `${file}: ${title} holds\n`);

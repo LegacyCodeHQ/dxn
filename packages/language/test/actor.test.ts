@@ -46,7 +46,7 @@ describe("actor", () => {
   it("is what gives a record its context, which with context no longer does", () => {
     expect(problems("record Note with context {\n}\n")).toMatchInlineSnapshot(`
       [
-        "1:13: syntax-error: a record has context when an actor records it, not with context: "actor <name> records Note"",
+        "1:13: syntax-error: a record has context when an actor records it, not with context: \`actor <name> records Note\`",
       ]
     `);
   });
@@ -60,16 +60,16 @@ describe("actor", () => {
     ]).toMatchInlineSnapshot(`
       [
         [
-          "11:27: unknown-record: PenEvidance is not a record; did you mean PenEvidence?",
+          "11:27: unknown-record: \`PenEvidance\` is not a record; did you mean \`PenEvidence\`?",
         ],
         [
-          "11:27: unknown-record: Verdict is an enum, not a record",
+          "11:27: unknown-record: \`Verdict\` is an enum, not a record",
         ],
         [
-          "6:3: nested-context: PenEvidence.source is a Source, which has its own context",
+          "6:3: nested-context: \`PenEvidence.source\` is a \`Source\`, which has its own context",
         ],
         [
-          "11:18: syntax-error: expected "records" after "DesignAgent", found the end of the line",
+          "11:18: syntax-error: expected \`records\` after \`DesignAgent\`, found the end of the line",
         ],
       ]
     `);
@@ -80,7 +80,7 @@ describe("actor", () => {
       problems(`${records}actor Designer records PenEvidence, DesignReview\n`),
     ).toMatchInlineSnapshot(`
       [
-        "11:35: syntax-error: an actor records one record, for now: Designer records PenEvidence",
+        "11:35: syntax-error: an actor records one record, for now: \`Designer records PenEvidence\`",
       ]
     `);
   });
@@ -96,16 +96,16 @@ describe("actor", () => {
     ]).toMatchInlineSnapshot(`
       [
         [
-          "11:7: actor-name: actor names start with a capital letter: "designer"",
+          "11:7: actor-name: actor names start with a capital letter: \`designer\`",
         ],
         [
-          "11:7: actor-name: actor names are letters and digits: "Design-agent"",
+          "11:7: actor-name: actor names are letters and digits: \`Design-agent\`",
         ],
         [
-          "12:7: duplicate-name: Designer is already declared at line 11",
+          "12:7: duplicate-name: \`Designer\` is already declared at line 11",
         ],
         [
-          "13:7: duplicate-name: Designer is already declared at line 11",
+          "13:7: duplicate-name: \`Designer\` is already declared at line 11",
         ],
       ]
     `);

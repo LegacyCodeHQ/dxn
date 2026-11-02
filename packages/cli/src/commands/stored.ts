@@ -4,11 +4,13 @@ import {
   type Drawn,
   drawings,
   folderOf,
+  message,
   type ParseResult,
   duplicates as repeated,
   repositoryOf,
   storedFiles,
   validate,
+  words,
 } from "@legacycodehq/dxn-language";
 import type { Reporter } from "./report.js";
 
@@ -48,7 +50,7 @@ function storedWithoutContext(parsed: ParseResult, file: string, cwd: string): s
     .filter(({ name, context }) => !context && storedFiles(directory, name) !== undefined)
     .map(
       ({ name }) =>
-        `${name} is stored in ${folderOf(name)}/, but no actor records it; declare "actor <name> records ${name}"`,
+        message`${name} is stored in ${words(folderOf(name))}/, but no actor records it; declare ${`actor <name> records ${name}`}`,
     );
 }
 

@@ -1,6 +1,6 @@
 import { readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { declarationNamed, parse, renameAt } from "@legacycodehq/dxn-language";
+import { declarationNamed, message, parse, renameAt, words } from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
 import { checkStored, loadStored } from "./stored.js";
@@ -66,7 +66,7 @@ export const renameCommand: Command = command(usage, (args, { io, cwd, dryRun })
       : undefined;
   if (move !== undefined && statSync(join(directory, move.to), { throwIfNoEntry: false })) {
     return report.refuse(
-      `${move.to}/ is already next to ${file}; ${renamed.name}'s stored records cannot move there`,
+      message`${words(move.to)}/ is already next to ${words(file)}; ${renamed.name}'s stored records cannot move there`,
     );
   }
   // The renamed file and stored records must check, before anything is

@@ -61,13 +61,13 @@ describe("a list", () => {
 
   it("closes its brackets", () => {
     expect(errors(feed("[Row only when content = articles"))).toEqual([
-      '9:18: syntax-error: expected "]" after "Row", found "only"',
+      "9:18: syntax-error: expected `]` after `Row`, found `only`",
     ]);
   });
 
   it("has nothing after its brackets but bindings and only when", () => {
     expect(errors(feed("[Row]+"))).toEqual([
-      '9:18: syntax-error: expected "only when" or the end of the line after "]", found "+"',
+      "9:18: syntax-error: expected `only when` or the end of the line after `]`, found `+`",
     ]);
   });
 });
@@ -180,25 +180,25 @@ describe("a list of several members", () => {
 
   it("has at least one member", () => {
     expect(errors(mixed(""))).toEqual([
-      '10:3: syntax-error: expected a member, such as "article: <Type>", found "]"',
+      "10:3: syntax-error: expected a member, such as `article: <Type>`, found `]`",
     ]);
   });
 
   it("has members of types, not lists", () => {
     expect(errors(mixed("    rows: [ArticleRow]\n"))).toEqual([
-      '10:11: syntax-error: expected a type after ":" (a member is not a list), found "["',
+      "10:11: syntax-error: expected a type after `:` (a member is not a list), found `[`",
     ]);
   });
 
   it("takes no bindings after it, which its members take", () => {
     expect(errors(mixed(both, " { reading = read }"))).toEqual([
-      '12:5: syntax-error: expected "only when" or the end of the line after "]" (bind each member\'s states on its line), found "{"',
+      "12:5: syntax-error: expected `only when` or the end of the line after `]` (bind each member's states on its line), found `{`",
     ]);
   });
 
   it("names each member once", () => {
     expect(errors(mixed("    ad: AdRow\n    ad: AdRow\n"))).toEqual([
-      "11:5: duplicate-child: feed.ad is already a child of Feed",
+      "11:5: duplicate-child: `feed.ad` is already a child of `Feed`",
     ]);
   });
 
@@ -226,13 +226,13 @@ describe("a list of several members", () => {
       ),
     ]).toEqual([
       [
-        "10:5: warning: redundant-member: big adds no rows: any binds nothing, so it already allows every ArticleRow, the big ones too; remove big, or narrow any",
+        "10:5: warning: redundant-member: `big` adds no rows: `any` binds nothing, so it already allows every `ArticleRow`, the `big` ones too; remove `big`, or narrow `any`",
       ],
       [
-        "11:5: warning: redundant-member: again adds no rows: fresh binds the same as again, so it already allows every row again does; remove again, or narrow fresh",
+        "11:5: warning: redundant-member: `again` adds no rows: `fresh` binds the same as `again`, so it already allows every row `again` does; remove `again`, or narrow `fresh`",
       ],
       [
-        "11:5: warning: redundant-member: fresh adds no rows: unread binds only reading = unread, so it already allows every row fresh does; remove fresh, or narrow unread",
+        "11:5: warning: redundant-member: `fresh` adds no rows: `unread` binds only `reading = unread`, so it already allows every row `fresh` does; remove `fresh`, or narrow `unread`",
       ],
     ]);
   });

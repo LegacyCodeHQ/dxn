@@ -31,10 +31,10 @@ type Menu {
 `),
     ]).toEqual([
       [
-        "8:3: impossible-condition: Pointer = mouse and enabled = enabled is never true, so hovered exists nowhere",
+        "8:3: impossible-condition: `Pointer = mouse and enabled = enabled` is never true, so `hovered` exists nowhere",
       ],
-      ["6:3: impossible-condition: layout = inline is never true, so hovered exists nowhere"],
-      ["5:7: impossible-condition: layout = inline is never true, so panel is never there"],
+      ["6:3: impossible-condition: `layout = inline` is never true, so `hovered` exists nowhere"],
+      ["5:7: impossible-condition: `layout = inline` is never true, so `panel` is never there"],
     ]);
   });
 
@@ -49,7 +49,7 @@ type Button {
 }
 `),
     ).toEqual([
-      "6:3: warning: vacuous-condition: layout = compact is always true, so the rule restricts nothing",
+      "6:3: warning: vacuous-condition: `layout = compact` is always true, so the rule restricts nothing",
     ]);
   });
 });
@@ -61,8 +61,8 @@ describe("a condition never true in one type", () => {
         "dimension Pointer = mouse | touch\nenum Hover = rest | hovered\ntype Link needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\ntype Card needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile Phone: Device { Pointer = touch }\n",
       ),
     ).toEqual([
-      "5:3: impossible-condition: Pointer = mouse is never true, so hovered exists nowhere",
-      "9:3: impossible-condition: Pointer = mouse is never true, so hovered exists nowhere",
+      "5:3: impossible-condition: `Pointer = mouse` is never true, so `hovered` exists nowhere",
+      "9:3: impossible-condition: `Pointer = mouse` is never true, so `hovered` exists nowhere",
     ]);
   });
 });
@@ -99,7 +99,7 @@ type T needs Breakpoint {
 }
 `),
     ).toEqual([
-      "5:3: impossible-condition: Breakpoint = lg is never true on Breakpoint = base, so the trigger never fires",
+      "5:3: impossible-condition: `Breakpoint = lg` is never true on `Breakpoint = base`, so the trigger never fires",
     ]);
   });
 
@@ -115,8 +115,8 @@ type T {
 }
 `);
     expect([pair("on k: s -> z", "on k: a"), pair("on k: a", "on k: s -> z")]).toEqual([
-      ["7:3: duplicate-trigger: k already triggers a"],
-      ["7:3: duplicate-trigger: k already triggers s -> z"],
+      ["7:3: duplicate-trigger: `k` already triggers `a`"],
+      ["7:3: duplicate-trigger: `k` already triggers `s -> z`"],
     ]);
   });
 });

@@ -3,6 +3,7 @@ import { conditionText, holds } from "./condition.js";
 import { childPath, type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { states as evaluate, inPlace, type Placement, placement } from "./evaluate.js";
 import { type JsonNode, parseJson } from "./json.js";
+import { message, words } from "./message.js";
 import { among, article, Names } from "./names.js";
 import { givenDimensions, profilesOf } from "./profiles.js";
 import { penNode, scalar } from "./scalars.js";
@@ -18,7 +19,7 @@ interface Look {
 // How many instances of a component a drawing shows, as a message says it:
 // "no Tab instance", "1 Tab instance", "3 Tab instances".
 const instances = (count: number, name: string) =>
-  `${count === 0 ? "no" : count} ${name} ${count <= 1 ? "instance" : "instances"}`;
+  message`${count === 0 ? words("no") : count} ${name} ${words(count <= 1 ? "instance" : "instances")}`;
 
 // How a JSON value reads in a message.
 const found: Record<JsonNode["kind"], string> = {
@@ -75,7 +76,7 @@ export function validate(
   for (const record of file.records)
     if (!records.has(record.name)) records.set(record.name, record);
   const wrong = (node: JsonNode, path: string, expected: string) =>
-    diagnostics.report(
+    diagnostics.error(
       "wrong-kind",
       `expected ${expected}, found ${found[node.kind]}`,
       path,
@@ -94,16 +95,21 @@ export function validate(
     const typed = member("type");
     const placed = member("path");
     if (typed !== undefined && placed !== undefined) {
-      diagnostics.report(
+      diagnostics.error(
         "unknown-field",
-        "context has both type and path; give one",
+        message`${"context"} has both ${"type"} and ${"path"}; give one`,
         childPath(path, "type"),
         typed.key.span.start,
       );
       return;
     }
     if (typed === undefined && placed === undefined) {
-      diagnostics.report("missing-field", "context is missing type or path", path, node.span.start);
+      diagnostics.error(
+        "missing-field",
+        message`${"context"} is missing ${"type"} or ${"path"}`,
+        path,
+        node.span.start,
+      );
       return;
     }
     const profiled = file.profiles.length > 0;
@@ -116,9 +122,9 @@ export function validate(
     ];
     for (const { key } of node.members) {
       if (!keys.includes(key.value)) {
-        diagnostics.report(
+        diagnostics.error(
           "unknown-field",
-          `context has no field ${JSON.stringify(key.value)} (${keys.join(", ")})`,
+          message`${"context"} has no field ${key.value} (${keys})`,
           childPath(path, key.value),
           key.span.start,
         );
@@ -126,20 +132,31 @@ export function validate(
     }
     for (const key of keys) {
       if (member(key) === undefined) {
-        diagnostics.report("missing-field", `context is missing ${key}`, path, node.span.start);
+        diagnostics.error(
+          "missing-field",
+          message`${"context"} is missing ${key}`,
+          path,
+          node.span.start,
+        );
       }
     }
     // A string among the choices, or a problem; the string when it is one.
-    const choose = (key: string, of: string, choices: string[], at: string, value?: JsonNode) => {
+    const choose = (
+      key: string,
+      wanted: string,
+      choices: string[],
+      at: string,
+      value?: JsonNode,
+    ) => {
       if (value === undefined) return undefined;
       if (value.kind !== "string") {
-        wrong(value, at, `${article(of)} ${of} (a string)`);
+        wrong(value, at, `${wanted} (a string)`);
         return undefined;
       }
       if (!choices.includes(value.value)) {
-        diagnostics.report(
+        diagnostics.error(
           "unknown-value",
-          `${JSON.stringify(value.value)} is not ${key} (${choices.join(", ")})`,
+          message`${value.value} is not ${words(key)} (${choices})`,
           at,
           value.span.start,
         );
@@ -163,9 +180,9 @@ export function validate(
         // type another contains, on its own.
         place = placedAt(placed.value.value);
       } catch (error) {
-        diagnostics.report(
+        diagnostics.error(
           "unknown-value",
-          `${JSON.stringify(placed.value.value)} is not a path: ${(error as Error).message}`,
+          message`${placed.value.value} is not a path: ${words((error as Error).message)}`,
           at,
           placed.value.span.start,
         );
@@ -176,7 +193,7 @@ export function validate(
     } else {
       const typeName = choose(
         "a type",
-        "type",
+        "a type",
         file.types.map(({ name }) => name),
         childPath(path, "type"),
         typed?.value,
@@ -189,7 +206,7 @@ export function validate(
     const profile = profiled
       ? choose(
           "a profile",
-          "profile",
+          "a profile",
           profileNames,
           childPath(path, "profile"),
           member("profile")?.value,
@@ -221,7 +238,7 @@ export function validate(
       for (const entry of value.members) {
         const entryAt = childPath(at, entry.key.value);
         if (!names.includes(entry.key.value)) {
-          diagnostics.report(
+          diagnostics.error(
             "unknown-field",
             unknown(entry.key.value),
             entryAt,
@@ -236,36 +253,41 @@ export function validate(
           // A state or a dimension the element gained since: the record is
           // outdated, not wrong.
           if (key === "parents") {
-            diagnostics.report(
+            diagnostics.error(
               "missing-field",
-              `context.${key} is missing ${name}`,
+              message`${`context.${key}`} is missing ${name}`,
               at,
               value.span.start,
             );
           } else {
             const had = key === "states" ? "had" : "needed";
-            diagnostics.report(
+            diagnostics.warn(
               "outdated",
-              `recorded before ${label} ${had} ${name}`,
+              message`recorded before ${label} ${words(had)} ${name}`,
               at,
               value.span.start,
-              true,
             );
           }
           complete = false;
         }
       }
     };
-    const has = expected.length > 0 ? expected.join(", ") : "nothing";
+    const has = expected.length > 0 ? message`${expected}` : "nothing";
     group(
       "dimensions",
       expected,
       (name) =>
         given.includes(name)
-          ? `${name} is given by the profile; context.dimensions has ${has}`
-          : `${label} does not need ${name}; context.dimensions has ${has}`,
+          ? message`${name} is given by the profile; ${"context.dimensions"} has ${words(has)}`
+          : message`${label} does not need ${name}; ${"context.dimensions"} has ${words(has)}`,
       (name, value, at) => {
-        const result = choose(`a value of ${name}`, name, names.values(name) ?? [], at, value);
+        const result = choose(
+          message`a value of ${name}`,
+          message`${words(article(name))} ${name}`,
+          names.values(name) ?? [],
+          at,
+          value,
+        );
         if (result !== undefined) chosen[name] = result;
         return result !== undefined;
       },
@@ -276,11 +298,17 @@ export function validate(
       group(
         "parents",
         all,
-        (name) => `${name} does not decide where ${label} is (${all.join(", ")})`,
+        (name) => message`${name} does not decide where ${label} is (${all})`,
         (name, value, at) => {
           const state = deciding.find(({ key }) => key === name)?.state;
           const values = names.values(state?.enum.name ?? "") ?? [];
-          const result = choose(`a value of ${name}`, name, values, at, value);
+          const result = choose(
+            message`a value of ${name}`,
+            message`${words(article(name))} ${name}`,
+            values,
+            at,
+            value,
+          );
           if (result !== undefined) parents[name] = result;
           return result !== undefined;
         },
@@ -292,11 +320,17 @@ export function validate(
     group(
       "states",
       states,
-      (name) => `${owner.name} has no state ${JSON.stringify(name)} (${states.join(", ")})`,
+      (name) => message`${owner.name} has no state ${name} (${states})`,
       (name, value, at) => {
         const state = owner.states.find((candidate) => candidate.name === name);
         const values = names.values(state?.enum.name ?? "") ?? [];
-        const result = choose(`a value of ${name}`, name, values, at, value);
+        const result = choose(
+          message`a value of ${name}`,
+          message`${words(article(name))} ${name}`,
+          values,
+          at,
+          value,
+        );
         if (result !== undefined)
           pending.push({ name, value: result, at, start: value.span.start });
         return result !== undefined;
@@ -306,7 +340,7 @@ export function validate(
     const world = [
       ...(profile === undefined ? [] : [profile]),
       ...expected.map((name) => `${name} ${chosen[name]}`),
-    ].join(", ");
+    ];
     const inWorld = (row: { profiles?: string[]; when: Record<string, string> }) =>
       (profile === undefined || row.profiles?.includes(profile) === true) &&
       expected.every((name) => row.when[name] === chosen[name]);
@@ -314,12 +348,10 @@ export function validate(
     // the child, there; in one of its rows, when they are split by a state
     // another depends on.
     let rows: Record<string, string[]>[];
-    let where = world;
+    let where = message`${world}`;
     if (place !== undefined) {
-      const settled = Object.entries(parents)
-        .map(([name, value]) => `${name} = ${value}`)
-        .join(", ");
-      where = `${world} with ${settled}`;
+      const settled = Object.entries(parents).map(([name, value]) => `${name} = ${value}`);
+      where = message`${world} with ${settled}`;
       const there = inPlaceOf(label).rows.filter(
         (candidate) =>
           inWorld(candidate) &&
@@ -327,9 +359,9 @@ export function validate(
       );
       if (there.length === 0) {
         const parentsAt = member("parents")?.value;
-        diagnostics.report(
+        diagnostics.error(
           "unknown-value",
-          `${label} is not there on ${where}`,
+          message`${label} is not there on ${words(where)}`,
           childPath(path, "parents"),
           parentsAt?.span.start ?? node.span.start,
         );
@@ -348,9 +380,9 @@ export function validate(
       if (fitting.length > 0) rows = fitting;
       else {
         sound = false;
-        diagnostics.report(
+        diagnostics.error(
           "unknown-value",
-          `${JSON.stringify(value)} is not a value of ${name} on ${where} (${values.join(", ")})`,
+          message`${value} is not a value of ${name} on ${words(where)} (${values})`,
           at,
           start,
         );
@@ -362,13 +394,13 @@ export function validate(
     for (const { name, value } of pending) values[name] = value;
     // The look, as a problem names it: its profile, dimensions and states.
     const named = [
-      ...(profile === undefined ? [] : [`on ${profile}`]),
+      ...(profile === undefined ? [] : [message`on ${profile}`]),
       ...[
         ...expected.map((name) => [name, chosen[name]]),
         ...pending.map(({ name, value }) => [name, value]),
-      ].map(([name, value]) => `${name} = ${value}`),
+      ].map(([name, value]) => message`${`${name} = ${value}`}`),
     ].join(", ");
-    return { type: owner, values, named: named === "" ? owner.name : named };
+    return { type: owner, values, named: named === "" ? message`${owner.name}` : named };
   };
 
   // A stored record's drawings, each against its element's children in its
@@ -397,12 +429,11 @@ export function validate(
       );
       if (shown === undefined) continue;
       const report = (message: string, element: Located) =>
-        diagnostics.report(
+        diagnostics.error(
           "drawing-mismatch",
           `${look.named}: ${message}`,
           childPath(path, field.name),
           member.value.span.start,
-          false,
           { line: element.line, column: element.column },
         );
       checkShown(look, shown, report);
@@ -426,13 +457,15 @@ export function validate(
     for (const [name, count] of shown) {
       if (modeled.has(name) && !kinds.includes(name)) {
         report(
-          `the drawing shows ${instances(count, name)}, which ${type.name} does not have`,
+          message`the drawing shows ${words(instances(count, name))}, which ${type.name} does not have`,
           type,
         );
       }
     }
     const and = (names: string[]) =>
-      names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+      names.length === 1
+        ? message`${names[0]}`
+        : message`${names.slice(0, -1)} and ${names.at(-1)}`;
     const isThere = (child: Child) =>
       child.when === undefined || holds(child.when, (name) => values[name]);
     for (const kind of kinds) {
@@ -460,19 +493,19 @@ export function validate(
         // Drawn where it is not there.
         const away = children[0] as (typeof children)[number];
         const when = away.when === undefined ? "" : conditionText(away.when);
-        report(`${drew}, but ${away.name} is there only when ${when}`, away);
+        report(message`${words(drew)}, but ${away.name} is there only when ${when}`, away);
       } else if (lists.length > 0) {
         report(
-          `${drew}, but ${and(there.map(({ name }) => name))} is a list, one or more ${kind}`,
+          message`${words(drew)}, but ${words(and(there.map(({ name }) => name)))} is a list, one or more ${kind}`,
           lists[0] as Located,
         );
       } else if (exact === 1 && count > 1) {
         report(
-          `${drew}, but ${first.name} is a single ${kind}; make it a list, [${kind}], or draw one`,
+          message`${words(drew)}, but ${first.name} is a single ${kind}; make it a list, ${`[${kind}]`}, or draw one`,
           first,
         );
       } else if (exact === 1) {
-        report(`${drew}, but ${first.name} is a single ${kind}`, first);
+        report(message`${words(drew)}, but ${first.name} is a single ${kind}`, first);
       } else {
         report(
           `${drew}, but ${and(singles.map(({ name }) => name))} are ${instances(exact, kind)}`,
@@ -497,24 +530,33 @@ export function validate(
         return sum + Math.max(0, (shown.get(kind) ?? 0) - singles);
       }, 0);
       if (rows > 0) continue;
-      const none = `no ${kindsThere.join(" or ")} instance`;
+      const none = message`no ${words(kindsThere.map((kind) => message`${kind}`).join(" or "))} instance`;
       const tags = there.map((member) => member.short ?? member.name);
-      const of = tags.length === 1 ? tags[0] : `${tags.slice(0, -1).join(", ")} or ${tags.at(-1)}`;
-      report(`the drawing shows ${none}, but ${union.name} is a list, one or more of ${of}`, union);
+      const of =
+        tags.length === 1 ? message`${tags[0]}` : message`${tags.slice(0, -1)} or ${tags.at(-1)}`;
+      report(
+        message`the drawing shows ${words(none)}, but ${union.name} is a list, one or more of ${words(of)}`,
+        union,
+      );
     }
   };
 
   const checkRecord = (node: JsonNode, name: string, path: string, stored = false) => {
     const record = records.get(name) as RecordDeclaration;
     if (node.kind !== "object") {
-      wrong(node, path, `${article(name)} ${name} record (an object)`);
+      wrong(node, path, message`${words(article(name))} ${name} record (an object)`);
       return;
     }
     const withContext = stored && record.context;
     if (withContext) {
       const context = node.members.find(({ key }) => key.value === "context");
       if (context === undefined) {
-        diagnostics.report("missing-field", `${name} is missing context`, path, node.span.start);
+        diagnostics.error(
+          "missing-field",
+          message`${name} is missing ${"context"}`,
+          path,
+          node.span.start,
+        );
       } else {
         const look = checkContext(context.value, childPath(path, "context"));
         if (look !== undefined) checkDrawings(node, look, record, path);
@@ -530,18 +572,18 @@ export function validate(
       const at = childPath(path, key.value);
       const field = record.fields.find((candidate) => candidate.name === key.value);
       if (field?.derived !== undefined) {
-        diagnostics.report(
+        diagnostics.error(
           "derived-field",
-          `${field.name} is derived from ${field.derived.on.name}; it is not stored`,
+          message`${field.name} is derived from ${field.derived.on.name}; it is not stored`,
           at,
           key.span.start,
         );
         continue;
       }
       if (field === undefined) {
-        diagnostics.report(
+        diagnostics.error(
           "unknown-field",
-          `${name} has no field ${JSON.stringify(key.value)} (${fields.join(", ")})`,
+          message`${name} has no field ${key.value} (${fields})`,
           at,
           key.span.start,
         );
@@ -551,7 +593,12 @@ export function validate(
     }
     for (const field of fields) {
       if (!node.members.some(({ key }) => key.value === field)) {
-        diagnostics.report("missing-field", `${name} is missing ${field}`, path, node.span.start);
+        diagnostics.error(
+          "missing-field",
+          message`${name} is missing ${field}`,
+          path,
+          node.span.start,
+        );
       }
     }
   };
@@ -561,7 +608,12 @@ export function validate(
     const member = node.members.find(({ key }) => key.value === "actor");
     const at = childPath(path, "actor");
     if (member === undefined) {
-      diagnostics.report("missing-field", `${name} is missing actor`, path, node.span.start);
+      diagnostics.error(
+        "missing-field",
+        message`${name} is missing ${"actor"}`,
+        path,
+        node.span.start,
+      );
       return;
     }
     const { value } = member;
@@ -572,21 +624,21 @@ export function validate(
     const recording = file.actors.filter(({ records: recorded }) => recorded.name === name);
     if (recording.some(({ name: actor }) => actor === value.value)) return;
     const declared = file.actors.find(({ name: actor }) => actor === value.value);
-    const message =
+    const said =
       declared === undefined
-        ? `${JSON.stringify(value.value)} is not an actor who records ${name}${among(
+        ? message`${value.value} is not an actor who records ${name}${among(
             value.value,
             recording.map(({ name: actor }) => actor),
           )}`
-        : `${declared.name} records ${declared.records.name}, not ${name}`;
-    diagnostics.report("unknown-actor", message, at, value.span.start);
+        : message`${declared.name} records ${declared.records.name}, not ${name}`;
+    diagnostics.error("unknown-actor", said, at, value.span.start);
   };
 
   // A node of a design file: each of its fields, each of its type; node may
   // be left out.
   const checkPenNode = (node: JsonNode, path: string) => {
     if (node.kind !== "object") {
-      wrong(node, path, "a PenNode (an object)");
+      wrong(node, path, message`a ${penNode.name} (an object)`);
       return;
     }
     const known = penNode.fields.map(({ name }) => name);
@@ -594,9 +646,9 @@ export function validate(
       const field = penNode.fields.find(({ name }) => name === key.value);
       const at = childPath(path, key.value);
       if (field === undefined) {
-        diagnostics.report(
+        diagnostics.error(
           "unknown-field",
-          `PenNode has no field ${JSON.stringify(key.value)} (${known.join(", ")})`,
+          message`${penNode.name} has no field ${key.value} (${known})`,
           at,
           key.span.start,
         );
@@ -606,7 +658,12 @@ export function validate(
     }
     for (const { name, optional } of penNode.fields) {
       if (!optional && !node.members.some(({ key }) => key.value === name)) {
-        diagnostics.report("missing-field", `PenNode is missing ${name}`, path, node.span.start);
+        diagnostics.error(
+          "missing-field",
+          message`${penNode.name} is missing ${name}`,
+          path,
+          node.span.start,
+        );
       }
     }
   };
@@ -624,11 +681,11 @@ export function validate(
     const builtIn = scalar(type);
     if (builtIn !== undefined) {
       if (node.kind !== "string") {
-        wrong(node, path, `${article(type)} ${type} (a string)`);
+        wrong(node, path, message`${words(article(type))} ${type} (a string)`);
       } else if (!builtIn.valid(node.value)) {
-        diagnostics.report(
+        diagnostics.error(
           "invalid-value",
-          `${JSON.stringify(node.value)} is not ${article(type)} ${type}: ${builtIn.definition}`,
+          message`${words(JSON.stringify(node.value))} is not ${words(article(type))} ${type}: ${words(builtIn.definition)}`,
           path,
           node.span.start,
         );
@@ -636,14 +693,14 @@ export function validate(
       return;
     }
     if (node.kind !== "string") {
-      wrong(node, path, `a value of ${type} (a string)`);
+      wrong(node, path, message`a value of ${type} (a string)`);
       return;
     }
     const values = names.values(type) ?? [];
     if (!values.includes(node.value)) {
-      diagnostics.report(
+      diagnostics.error(
         "unknown-value",
-        `${JSON.stringify(node.value)} is not a value of ${type} (${values.join(", ")})`,
+        message`${node.value} is not a value of ${type} (${values})`,
         path,
         node.span.start,
       );
@@ -652,7 +709,7 @@ export function validate(
 
   const root = parsed.root;
   if (root.kind !== "array") {
-    wrong(root, "$", `a list of ${recordName} records`);
+    wrong(root, "$", message`a list of ${recordName} records`);
   } else {
     root.elements.forEach((element, index) => {
       checkRecord(element, recordName, `$[${index}]`, true);

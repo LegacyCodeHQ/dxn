@@ -4,12 +4,14 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import {
   folderOf,
   freshness,
+  message,
   Names,
   placement,
   repositoryOf,
   reviewPages,
   treePaths,
   treePlaces,
+  words,
 } from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
 import { misused, options, Reporter, read } from "./report.js";
@@ -47,7 +49,7 @@ export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dr
     try {
       placement(parsed, path);
     } catch (error) {
-      return report.refuse(`${path}: ${(error as Error).message}`);
+      return report.refuse(message`${path}: ${words((error as Error).message)}`);
     }
   }
   // With a type, only its own tree, where it has one, a component's or a

@@ -235,10 +235,10 @@ describe("dxn attach", () => {
       refusal(...attach("profile=Phone", "menu.menu=closed", "hover=hovered", "expanded=closed")),
       existsSync(join(root, "spec", "evidence")),
     ]).toEqual([
-      "dxn: give expanded, as expanded=<value>, or several as expanded=<a>|<b>\n",
-      'dxn: "colour" is not part of a context of Toolbar.menu.toggle (profile, menu.menu, hover, expanded)\n',
-      'dxn: "shut" is not a value of menu.menu (closed, open)\n',
-      "dxn: no combination given exists for Toolbar.menu.toggle; dxn states spec/toolbar.dxn Toolbar.menu.toggle lists them\n",
+      "dxn: give `expanded`, as `expanded=<value>`, or several as `expanded=<a>|<b>`\n",
+      "dxn: `colour` is not part of a context of `Toolbar.menu.toggle` (`profile`, `menu.menu`, `hover`, `expanded`)\n",
+      "dxn: `shut` is not a value of `menu.menu` (`closed`, `open`)\n",
+      "dxn: no combination given exists for `Toolbar.menu.toggle`; `dxn states spec/toolbar.dxn Toolbar.menu.toggle` lists them\n",
       false,
     ]);
   });
@@ -264,11 +264,11 @@ describe("dxn attach", () => {
       ),
       existsSync(join(root, "spec", "evidence")),
     ]).toEqual([
-      'dxn: "DesignAgnt" is not an actor; did you mean DesignAgent?\n',
+      "dxn: `DesignAgnt` is not an actor; did you mean `DesignAgent`?\n",
       'dxn: "design/missing.png" does not exist in the repository\n',
       'dxn: frame "gone" is not in design/toolbar.pen\n',
       'dxn: node "closed" is not in frame other of design/toolbar.pen\n',
-      "dxn: togle is not a child of Toolbar.Menu; did you mean toggle?\n",
+      "dxn: `togle` is not a child of `Toolbar.Menu`; did you mean `toggle`?\n",
       false,
     ]);
   });
@@ -295,9 +295,12 @@ describe("dxn attach", () => {
     ]).toEqual([
       [
         1,
-        'spec/evidence/toolbar.json:L:C: unknown-field: $[0].colour: Evidence has no field "colour" (at, source)\n',
+        "spec/evidence/toolbar.json:L:C: error: unknown-field: $[0].colour: `Evidence` has no field `colour` (`at`, `source`)\n",
       ],
-      [1, "spec/evidence/toolbar.json:L:C: missing-field: $[0]: Evidence is missing at\n"],
+      [
+        1,
+        "spec/evidence/toolbar.json:L:C: error: missing-field: $[0]: `Evidence` is missing `at`\n",
+      ],
       false,
     ]);
   });
@@ -339,19 +342,19 @@ describe("dxn attach", () => {
       [
         [
           2,
-          "dxn: give --actor once",
+          "dxn: give \`--actor\` once",
         ],
         [
           2,
-          "dxn: write "--actor DesignAgent", with a space, not "--actor=DesignAgent"",
+          "dxn: write \`--actor DesignAgent\`, with a space, not \`--actor=DesignAgent\`",
         ],
         [
           2,
-          "dxn: --data takes the record's fields as JSON, found "{"",
+          "dxn: \`--data\` takes the record's fields as JSON, found \`{\`",
         ],
         [
           2,
-          "dxn: --data takes the record's fields as a JSON object",
+          "dxn: \`--data\` takes the record's fields as a JSON object",
         ],
       ]
     `);
@@ -380,7 +383,7 @@ describe("dxn attach", () => {
     const result = run("spec/toolbar.dxn", "--json");
     expect([result.code, JSON.parse(result.stdout)]).toEqual([
       2,
-      { error: "give a file, a path, --actor, --data and the context" },
+      { error: "give a file, a path, `--actor`, `--data` and the context" },
     ]);
   });
 });
@@ -515,7 +518,7 @@ describe("duplicate records", () => {
     const result = validate();
     expect([result.code, result.stderr.replace(/:\d+:\d+:/, ":L:C:")]).toEqual([
       1,
-      "spec/evidence/toolbar.json:L:C: duplicate-record: $[2]: the same Evidence as $[0] in spec/evidence/toolbar.json, apart from their fingerprints\n",
+      "spec/evidence/toolbar.json:L:C: error: duplicate-record: $[2]: the same `Evidence` as $[0] in spec/evidence/toolbar.json, apart from their fingerprints\n",
     ]);
   });
 
@@ -523,7 +526,7 @@ describe("duplicate records", () => {
     const { root, entries, validate } = twice();
     writeFileSync(join(root, "spec", "evidence", "more.json"), JSON.stringify([entries[1]]));
     expect(validate().stderr.replace(/:\d+:\d+:/, ":L:C:")).toBe(
-      "spec/evidence/toolbar.json:L:C: duplicate-record: $[1]: the same Evidence as $[0] in spec/evidence/more.json, apart from their fingerprints\n",
+      "spec/evidence/toolbar.json:L:C: error: duplicate-record: $[1]: the same `Evidence` as $[0] in spec/evidence/more.json, apart from their fingerprints\n",
     );
   });
 

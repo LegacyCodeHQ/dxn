@@ -46,9 +46,9 @@ describe("an event", () => {
       errors(site("on toggle.activat: open")),
       errors(site("on togle.activate: open")),
     ]).toEqual([
-      ["14:6: unknown-event: escpe is not an event of Menu; did you mean escape?"],
-      ["14:6: unknown-event: activat is not an event of Toggle; did you mean activate?"],
-      ["14:6: unknown-child: togle is not a child of Menu; did you mean toggle?"],
+      ["14:6: unknown-event: `escpe` is not an event of `Menu`; did you mean `escape`?"],
+      ["14:6: unknown-event: `activat` is not an event of `Toggle`; did you mean `activate`?"],
+      ["14:6: unknown-child: `togle` is not a child of `Menu`; did you mean `toggle`?"],
     ]);
   });
 
@@ -57,8 +57,8 @@ describe("an event", () => {
       errors(site().replace("event escape, outside", "event Escape, outside")),
       errors(site().replace("event escape, outside", "event escape, escape")),
     ]).toEqual([
-      ['9:9: event-name: event names start with a lowercase letter: "Escape"'],
-      ["9:17: duplicate-event: escape is already an event of Menu"],
+      ["9:9: event-name: event names start with a lowercase letter: `Escape`"],
+      ["9:17: duplicate-event: `escape` is already an event of `Menu`"],
     ]);
   });
 
@@ -69,13 +69,13 @@ describe("an event", () => {
       problems(site("on pointer outside: close")),
     ]).toEqual([
       [
-        '14:6: syntax-error: "key Escape" is not an event: declare one, such as "event escape", and write "on escape"',
+        "14:6: syntax-error: `key Escape` is not an event: declare one, such as `event escape`, and write `on escape`",
       ],
       [
-        '14:6: syntax-error: "click toggle" is not an event: declare one in the child\'s type, such as "event activate", and write "on toggle.activate"',
+        "14:6: syntax-error: `click toggle` is not an event: declare one in the child's type, such as `event activate`, and write `on toggle.activate`",
       ],
       [
-        '14:6: syntax-error: "pointer outside" is not an event: declare one, such as "event outside", and write "on outside"',
+        "14:6: syntax-error: `pointer outside` is not an event: declare one, such as `event outside`, and write `on outside`",
       ],
     ]);
   });

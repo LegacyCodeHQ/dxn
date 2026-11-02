@@ -8,6 +8,7 @@ import {
   type Type,
 } from "./ast.js";
 import { conditionText, holds, subjects } from "./condition.js";
+import { message, words } from "./message.js";
 import { among, valuesOf as declaredValues } from "./names.js";
 import { profilesOf } from "./profiles.js";
 
@@ -41,7 +42,7 @@ export function states(file: ParseResult, typeName: string): TypeStates {
     throw new Error("cannot evaluate a file with problems");
   }
   const type = file.types.find(({ name }) => name === typeName);
-  if (type === undefined) throw new Error(`no type ${typeName}`);
+  if (type === undefined) throw new Error(message`no type ${typeName}`);
   // Where each child is in a row: by a dimension's value, or by the values a
   // state of the type has there.
   const withChildren = (row: TypeStates["rows"][number]): TypeStates["rows"][number] => {
@@ -380,7 +381,7 @@ export function placement(file: ParseResult, path: string): Placement {
   const first = segments.findIndex((segment) => /^[a-z]/.test(segment));
   const rootName = segments.slice(0, first === -1 ? segments.length : first).join(".");
   const root = file.types.find(({ name }) => name === rootName);
-  if (root === undefined) throw new Error(`no type ${rootName}`);
+  if (root === undefined) throw new Error(message`no type ${rootName}`);
   const steps: Placement["steps"] = [{ type: root, prefix: "" }];
   const rest = first === -1 ? [] : segments.slice(first);
   for (let at = 0; at < rest.length; ) {
@@ -391,7 +392,7 @@ export function placement(file: ParseResult, path: string): Placement {
     if (child === undefined) {
       const children = parent.children.map((candidate) => candidate.name);
       throw new Error(
-        `${name} is not a child of ${parent.name}${among(name, children, "it has none")}`,
+        message`${name} is not a child of ${parent.name}${among(name, children, "it has none")}`,
       );
     }
     at = (found as { next: number }).next;
@@ -421,7 +422,7 @@ export function placement(file: ParseResult, path: string): Placement {
       }
       if (from < 0) {
         throw new Error(
-          `${wanted.name} is received by ${type.name}, but nothing above it provides it`,
+          message`${wanted.name} is received by ${type.name}, but nothing above it provides it`,
         );
       }
       const above = (steps[from] as Placement["steps"][number]).type;
@@ -430,7 +431,7 @@ export function placement(file: ParseResult, path: string): Placement {
       if (state.enum.name !== wanted.enum.name) {
         const a = (name: string) => (/^[AEIOU]/.test(name) ? "an" : "a");
         throw new Error(
-          `${type.name} receives ${wanted.name} as ${a(wanted.enum.name)} ${wanted.enum.name}, but ${above.name} provides it as ${a(state.enum.name)} ${state.enum.name}`,
+          message`${type.name} receives ${wanted.name} as ${words(a(wanted.enum.name))} ${wanted.enum.name}, but ${above.name} provides it as ${words(a(state.enum.name))} ${state.enum.name}`,
         );
       }
       const key = keyAt(from, wanted.name);
@@ -477,7 +478,7 @@ export function placement(file: ParseResult, path: string): Placement {
   );
   if (shadowed !== undefined && target !== root) {
     throw new Error(
-      `${target.name} has a state ${shadowed.name}, and so does ${root.name} above it; rename one, so that each can be told apart`,
+      message`${target.name} has a state ${shadowed.name}, and so does ${root.name} above it; rename one, so that each can be told apart`,
     );
   }
   return {

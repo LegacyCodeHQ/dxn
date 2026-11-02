@@ -3,9 +3,11 @@ import {
   coverage,
   describe,
   freshness,
+  message,
   placement,
   repositoryOf,
   treePaths,
+  words,
 } from "@legacycodehq/dxn-language";
 import { drawTable } from "../tables.js";
 import { type Command, command } from "./context.js";
@@ -39,7 +41,7 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     try {
       placement(parsed, path);
     } catch (error) {
-      return report.refuse(`${path}: ${(error as Error).message}`);
+      return report.refuse(message`${path}: ${words((error as Error).message)}`);
     }
   }
   const records = parsed.records

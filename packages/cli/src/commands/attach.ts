@@ -8,6 +8,7 @@ import {
   folderOf,
   givenDimensions,
   inPlace,
+  message,
   Names,
   type Placement,
   placement,
@@ -15,6 +16,7 @@ import {
   type RecordDeclaration,
   repositoryOf,
   validate,
+  words,
 } from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
@@ -36,7 +38,7 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
       return misused(
         io,
         json,
-        `write "${joined} ${arg.slice(joined.length + 1)}", with a space, not "${arg}"`,
+        message`write ${`${joined} ${arg.slice(joined.length + 1)}`}, with a space, not ${arg}`,
       );
     }
     if (valued.includes(arg)) {
@@ -46,13 +48,13 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
     else positional.push(arg);
   }
   for (const [option, values] of flags) {
-    if (values.length > 1) return misused(io, json, `give ${option} once`);
+    if (values.length > 1) return misused(io, json, message`give ${option} once`);
   }
   const [file, path, ...extra] = positional;
   const actorName = flags.get("--actor")?.[0];
   const written = flags.get("--data")?.[0];
   if (file === undefined || path === undefined || extra.length > 0 || !actorName || !written) {
-    return misused(io, json, "give a file, a path, --actor, --data and the context");
+    return misused(io, json, "give a file, a path, `--actor`, `--data` and the context");
   }
   // The record's data, as JSON: an object, of the record's fields.
   let supplied: Record<string, unknown>;
@@ -62,11 +64,11 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
     return misused(
       io,
       json,
-      `--data takes the record's fields as JSON, found ${JSON.stringify(written)}`,
+      message`${"--data"} takes the record's fields as JSON, found ${written}`,
     );
   }
   if (typeof supplied !== "object" || supplied === null || Array.isArray(supplied)) {
-    return misused(io, json, "--data takes the record's fields as a JSON object");
+    return misused(io, json, "`--data` takes the record's fields as a JSON object");
   }
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
@@ -77,7 +79,7 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
   const actor = parsed.actors.find(({ name }) => name === actorName);
   if (actor === undefined) {
     return report.refuse(
-      `${JSON.stringify(actorName)} is not an actor${among(
+      message`${actorName} is not an actor${among(
         actorName,
         parsed.actors.map(({ name }) => name),
         "the file declares none",
@@ -131,21 +133,23 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
     const entry = keys.find(({ name }) => name === key);
     if (entry === undefined) {
       return report.refuse(
-        `${JSON.stringify(key)} is not part of a context of ${path} (${keys.map(({ name }) => name).join(", ")})`,
+        message`${key} is not part of a context of ${path} (${keys.map(({ name }) => name)})`,
       );
     }
     const values = value.split("|");
     for (const one of values) {
       if (!entry.values.includes(one)) {
-        const what = key === "profile" ? "a profile" : `a value of ${key}`;
-        return report.refuse(`${JSON.stringify(one)} is not ${what} (${entry.values.join(", ")})`);
+        const what = key === "profile" ? "a profile" : message`a value of ${key}`;
+        return report.refuse(message`${one} is not ${words(what)} (${entry.values})`);
       }
     }
     chosen.set(key as string, values);
   }
   for (const { name } of keys) {
     if (!chosen.has(name)) {
-      return report.refuse(`give ${name}, as ${name}=<value>, or several as ${name}=<a>|<b>`);
+      return report.refuse(
+        message`give ${name}, as ${`${name}=<value>`}, or several as ${`${name}=<a>|<b>`}`,
+      );
     }
   }
   // Every combination listed, kept where it exists in place.
@@ -184,7 +188,7 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
     );
   if (contexts.length === 0) {
     return report.refuse(
-      `no combination given exists for ${path}; dxn states ${file} ${path} lists them`,
+      message`no combination given exists for ${path}; ${`dxn states ${file} ${path}`} lists them`,
     );
   }
   // The record's fields, as given; each PenNode's fingerprint is taken now,

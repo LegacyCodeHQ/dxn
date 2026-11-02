@@ -29,14 +29,14 @@ describe("duplicate stored records", () => {
         {
           "column": 3,
           "line": 4,
-          "message": "the same Evidence as $[0] in evidence/a.json, apart from their fingerprints",
+          "message": "the same \`Evidence\` as $[0] in evidence/a.json, apart from their fingerprints",
           "path": "$[2]",
           "shown": "evidence/a.json",
         },
         {
           "column": 3,
           "line": 2,
-          "message": "the same Evidence as $[1] in evidence/a.json, apart from their fingerprints",
+          "message": "the same \`Evidence\` as $[1] in evidence/a.json, apart from their fingerprints",
           "path": "$[0]",
           "shown": "evidence/b.json",
         },

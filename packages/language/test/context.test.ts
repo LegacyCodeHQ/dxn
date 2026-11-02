@@ -30,7 +30,7 @@ actor EvidenceRecorder records Evidence
       problems(
         "record Evidence {\n  context: NonEmptyString\n}\nactor EvidenceRecorder records Evidence\n",
       ),
-    ).toEqual(["2:3: reserved-name: context is Evidence's context; choose another field name"]);
+    ).toEqual(["2:3: reserved-name: `context` is `Evidence`'s context; choose another field name"]);
     expect(problems("record Note {\n  context: NonEmptyString\n}\n")).toEqual([]);
   });
 
@@ -40,8 +40,8 @@ actor EvidenceRecorder records Evidence
         "record Evidence {\n  note: NonEmptyString\n}\nrecord Review {\n  evidence: Evidence\n}\nrecord Source {\n  evidence: Evidence\n}\nactor EvidenceRecorder records Evidence\nactor ReviewRecorder records Review\n",
       ),
     ).toEqual([
-      "5:3: nested-context: Review.evidence is an Evidence, which has its own context",
-      "8:3: nested-context: Source.evidence is an Evidence, which has its own context",
+      "5:3: nested-context: `Review.evidence` is an `Evidence`, which has its own context",
+      "8:3: nested-context: `Source.evidence` is an `Evidence`, which has its own context",
     ]);
   });
 
@@ -51,10 +51,10 @@ actor EvidenceRecorder records Evidence
       problems("record Evidence with context\n}\n"),
     ]).toEqual([
       [
-        '1:17: syntax-error: a record has context when an actor records it, not with context: "actor <name> records Evidence"',
+        "1:17: syntax-error: a record has context when an actor records it, not with context: `actor <name> records Evidence`",
       ],
       [
-        '1:17: syntax-error: a record has context when an actor records it, not with context: "actor <name> records Evidence"',
+        "1:17: syntax-error: a record has context when an actor records it, not with context: `actor <name> records Evidence`",
       ],
     ]);
   });

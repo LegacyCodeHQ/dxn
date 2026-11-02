@@ -62,11 +62,11 @@ describe("a binding to a when", () => {
       problems(site("when current { blog -> selected, home -> chosen }")),
       problems(site("when current { blog -> selected, news -> unselected }")),
     ]).toEqual([
-      ["9:37: incomplete-when: when current does not cover home"],
-      ['9:73: unknown-value: "chosen" is not a value of selection (unselected, selected)'],
+      ["9:37: incomplete-when: `when current` does not cover `home`"],
+      ["9:73: unknown-value: `chosen` is not a value of `selection` (`unselected`, `selected`)"],
       [
-        "9:37: incomplete-when: when current does not cover home",
-        '9:65: unknown-value: "news" is not a value of current (home, blog)',
+        "9:37: incomplete-when: `when current` does not cover `home`",
+        "9:65: unknown-value: `news` is not a value of `current` (`home`, `blog`)",
       ],
     ]);
   });
@@ -83,8 +83,8 @@ describe("a binding to a when", () => {
         ),
       ),
     ]).toEqual([
-      ["9:20: bound-derived: selection is decided by its value; it cannot also be bound"],
-      ["8:20: bound-derived: selection is received; it cannot also be bound"],
+      ["9:20: bound-derived: `selection` is decided by its value; it cannot also be bound"],
+      ["8:20: bound-derived: `selection` is received; it cannot also be bound"],
     ]);
   });
 

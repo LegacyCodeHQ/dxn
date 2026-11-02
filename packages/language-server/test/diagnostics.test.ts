@@ -18,7 +18,7 @@ describe("diagnose", () => {
         severity: DiagnosticSeverity.Error,
         code: "unknown-enum",
         source: "dxn",
-        message: "Enabld is not an enum; did you mean Enabled?",
+        message: "`Enabld` is not an enum; did you mean `Enabled`?",
       },
     ]);
   });

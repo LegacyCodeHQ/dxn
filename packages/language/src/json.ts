@@ -1,4 +1,5 @@
 import { childPath, type Diagnostic, Diagnostics } from "./diagnostic.js";
+import { message } from "./message.js";
 
 interface Span {
   start: number;
@@ -81,7 +82,7 @@ export function parseJson(source: string): ParseResult {
   let depth = 0;
 
   function fail(code: string, message: string, offset: number): never {
-    diagnostics.report(code, message, "$", offset);
+    diagnostics.error(code, message, "$", offset);
     throw new SyntaxFailure(message);
   }
 
@@ -89,7 +90,7 @@ export function parseJson(source: string): ParseResult {
     if (pos >= source.length) {
       fail("unexpected-end", "unexpected end of input", pos);
     }
-    fail("unexpected-token", `unexpected ${JSON.stringify(source[pos])}`, pos);
+    fail("unexpected-token", message`unexpected ${source[pos]}`, pos);
   }
 
   function skipWhitespace(): void {
@@ -151,9 +152,9 @@ export function parseJson(source: string): ParseResult {
       const memberPath = childPath(path, key.value);
       checkSurrogates(key, memberPath);
       if (seen.has(key.value)) {
-        diagnostics.report(
+        diagnostics.error(
           "duplicate-key",
-          `duplicate key ${JSON.stringify(key.value)}`,
+          message`duplicate key ${key.value}`,
           memberPath,
           key.span.start,
         );
@@ -245,7 +246,7 @@ export function parseJson(source: string): ParseResult {
   // Escapes such as "\\ud800" can decode to a lone surrogate, which is not text.
   function checkSurrogates(item: StringNode, path: string): StringNode {
     if (unpairedSurrogate.test(item.value)) {
-      diagnostics.report(
+      diagnostics.error(
         "invalid-surrogate",
         "string contains an unpaired surrogate",
         path,
@@ -267,7 +268,7 @@ export function parseJson(source: string): ParseResult {
   }
 
   if (source.startsWith("\uFEFF")) {
-    diagnostics.report(
+    diagnostics.error(
       "byte-order-mark",
       "file starts with a byte order mark; save it as UTF-8 without a BOM",
       "$",

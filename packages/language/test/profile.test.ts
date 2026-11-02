@@ -35,10 +35,10 @@ describe("environment", () => {
       problems(`${dimensions}enum Hover = rest | hovered\nenvironment Device = Hover\n`),
       problems(`${dimensions}environment Device = Pointer x Pointer\n`),
     ]).toEqual([
-      ['4:13: environment-name: environment names start with a capital letter: "device"'],
-      ["4:22: unknown-dimension: Pointr is not a dimension; did you mean Pointer?"],
-      ["5:22: unknown-dimension: Hover is an enum, not a dimension"],
-      ["4:32: duplicate-dimension: Pointer is already part of Device"],
+      ["4:13: environment-name: environment names start with a capital letter: `device`"],
+      ["4:22: unknown-dimension: `Pointr` is not a dimension; did you mean `Pointer`?"],
+      ["5:22: unknown-dimension: `Hover` is an enum, not a dimension"],
+      ["4:32: duplicate-dimension: `Pointer` is already part of `Device`"],
     ]);
   });
 
@@ -47,8 +47,8 @@ describe("environment", () => {
       problems(`${dimensions}environment Device Pointer\n`),
       problems(`${dimensions}environment Device = Pointer Keyboard\n`),
     ]).toEqual([
-      ['4:20: syntax-error: expected "=" after the environment name, found "Pointer"'],
-      ['4:30: syntax-error: expected "x" or the end of the line after "Pointer", found "Keyboard"'],
+      ["4:20: syntax-error: expected `=` after the environment name, found `Pointer`"],
+      ["4:30: syntax-error: expected `x` or the end of the line after `Pointer`, found `Keyboard`"],
     ]);
   });
 
@@ -58,10 +58,10 @@ describe("environment", () => {
       problems(`${dimensions}environment Device = Breakpoint * Pointer\n`),
       problems(`${dimensions}environment Device = BreakpointxPointer\n`),
     ]).toEqual([
-      ['4:33: syntax-error: expected "x" or the end of the line after "Breakpoint", found "×"'],
-      ['4:33: syntax-error: expected "x" or the end of the line after "Breakpoint", found "*"'],
+      ["4:33: syntax-error: expected `x` or the end of the line after `Breakpoint`, found `×`"],
+      ["4:33: syntax-error: expected `x` or the end of the line after `Breakpoint`, found `*`"],
       [
-        "4:22: unknown-dimension: BreakpointxPointer is not a dimension (Breakpoint, Pointer, Keyboard)",
+        "4:22: unknown-dimension: `BreakpointxPointer` is not a dimension (`Breakpoint`, `Pointer`, `Keyboard`)",
       ],
     ]);
   });
@@ -128,9 +128,9 @@ profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
       problems(`${pointing}${phone.replace("Phone", "Tablet-portrait")}`),
       problems(`${pointing}${phone}${phone}`),
     ]).toEqual([
-      ['5:9: profile-name: profile names start with a capital letter: "phone"'],
-      ['5:9: profile-name: profile names are letters and digits: "Tablet-portrait"'],
-      ["6:9: duplicate-name: Phone is already declared at line 5"],
+      ["5:9: profile-name: profile names start with a capital letter: `phone`"],
+      ["5:9: profile-name: profile names are letters and digits: `Tablet-portrait`"],
+      ["6:9: duplicate-name: `Phone` is already declared at line 5"],
     ]);
   });
 
@@ -140,9 +140,9 @@ profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
       problems(`${pointing}profile Phone: Pointer { Pointer = touch }\n`),
       problems(`${pointing}type Wordmark {}\nprofile Phone: Wordmark { Pointer = touch }\n`),
     ]).toEqual([
-      ["5:16: unknown-environment: Devce is not an environment; did you mean Device?"],
-      ["5:16: unknown-environment: Pointer is a dimension, not an environment"],
-      ["6:16: unknown-environment: Wordmark is a type, not an environment"],
+      ["5:16: unknown-environment: `Devce` is not an environment; did you mean `Device`?"],
+      ["5:16: unknown-environment: `Pointer` is a dimension, not an environment"],
+      ["6:16: unknown-environment: `Wordmark` is a type, not an environment"],
     ]);
   });
 
@@ -154,12 +154,14 @@ profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
       problems(`${device}profile Laptop: Device { Pointer = mouse }\n`),
     ]).toEqual([
       [
-        "5:9: incomplete-profile: Phone does not give Pointer, which Device requires",
-        "5:25: unknown-dimension: Pointr is not a dimension of Device (Pointer)",
+        "5:9: incomplete-profile: `Phone` does not give `Pointer`, which `Device` requires",
+        "5:25: unknown-dimension: `Pointr` is not a dimension of `Device` (`Pointer`)",
       ],
-      ['5:35: unknown-value: "tuch" is not a value of Pointer (mouse, touch)'],
-      ["5:42: duplicate-dimension: Pointer is already given in Phone"],
-      ["5:9: incomplete-profile: Laptop does not give Breakpoint, Keyboard, which Device requires"],
+      ["5:35: unknown-value: `tuch` is not a value of `Pointer` (`mouse`, `touch`)"],
+      ["5:42: duplicate-dimension: `Pointer` is already given in `Phone`"],
+      [
+        "5:9: incomplete-profile: `Laptop` does not give `Breakpoint`, `Keyboard`, which `Device` requires",
+      ],
     ]);
   });
 
@@ -176,10 +178,10 @@ profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
       ),
     ]).toEqual([
       [
-        "7:9: mixed-profiles: Desk is an Input, but Phone is a Device; all profiles share one environment",
+        "7:9: mixed-profiles: `Desk` is an `Input`, but `Phone` is a `Device`; all profiles share one environment",
       ],
       [],
-      ["5:16: unknown-environment: Nowhere is not an environment (Device)"],
+      ["5:16: unknown-environment: `Nowhere` is not an environment (`Device`)"],
     ]);
   });
 
@@ -189,9 +191,9 @@ profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
       problems(`${pointing}profile Phone: Device { Pointer touch }\n`),
       problems(`${pointing}profile Phone: Device { Pointer = touch\n`),
     ]).toEqual([
-      ['5:15: syntax-error: expected ":" after "Phone", found "Device"'],
-      ['5:33: syntax-error: expected "=" after "Pointer", found "touch"'],
-      ['6:1: syntax-error: expected "}" to close Phone, found the end of the file'],
+      ["5:15: syntax-error: expected `:` after `Phone`, found `Device`"],
+      ["5:33: syntax-error: expected `=` after `Pointer`, found `touch`"],
+      ["6:1: syntax-error: expected `}` to close Phone, found the end of the file"],
     ]);
   });
 });

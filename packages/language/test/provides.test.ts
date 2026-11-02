@@ -49,13 +49,13 @@ describe("a provided state", () => {
 
   it("must come from above, with the enum the receiver expects", () => {
     expect(() => inPlace(parse(site), "Toolbar.links")).toThrow(
-      "current is received by Links, but nothing above it provides it",
+      "`current` is received by `Links`, but nothing above it provides it",
     );
     const mismatched = parse(
       site.replace("state current: Section = blog", "state current: Layout = inline"),
     );
     expect(() => inPlace(mismatched, "ArticlePage.toolbar.links")).toThrow(
-      "Links receives current as a Section, but ArticlePage provides it as a Layout",
+      "`Links` receives `current` as a `Section`, but `ArticlePage` provides it as a `Layout`",
     );
   });
 
@@ -65,9 +65,11 @@ describe("a provided state", () => {
       problems(site.replace("provides current", "provides current\n  provides current")),
       problems(site.replace("  has blog: Link", "  provides current\n  has blog: Link")),
     ]).toEqual([
-      ["16:12: unknown-state: curent is not a state of ArticlePage; did you mean current?"],
-      ["17:12: duplicate-provides: current is already provided by ArticlePage"],
-      ["7:12: provides-received: Links receives current; it can only provide a state of its own"],
+      ["16:12: unknown-state: `curent` is not a state of `ArticlePage`; did you mean `current`?"],
+      ["17:12: duplicate-provides: `current` is already provided by `ArticlePage`"],
+      [
+        "7:12: provides-received: `Links` receives `current`; it can only provide a state of its own",
+      ],
     ]);
   });
 
@@ -87,9 +89,9 @@ describe("a provided state", () => {
       ),
       problems("type Links receives current: Sectin {}\n"),
     ]).toEqual([
-      ["7:9: duplicate-state: current is already a state of Links"],
-      ["12:22: bound-derived: current is received; it cannot also be bound"],
-      ["1:30: unknown-enum: Sectin is not an enum; the file declares none"],
+      ["7:9: duplicate-state: `current` is already a state of `Links`"],
+      ["12:22: bound-derived: `current` is received; it cannot also be bound"],
+      ["1:30: unknown-enum: `Sectin` is not an enum; the file declares none"],
     ]);
   });
 });

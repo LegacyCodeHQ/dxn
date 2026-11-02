@@ -271,7 +271,7 @@ actor Designer records Evidence
     const result = run("review", "spec/button.dxn", "Buton");
     expect([result.code, result.stderr]).toEqual([
       1,
-      "dxn: Buton is not a type; did you mean Button?\n",
+      "dxn: `Buton` is not a type; did you mean `Button`?\n",
     ]);
   });
 
@@ -291,7 +291,7 @@ actor Designer records Evidence
     const status = run("status", "spec/button.dxn", "--missing");
     expect([validated.code, validated.stderr, status.code, status.stdout.split("\n")[0]]).toEqual([
       0,
-      "spec/evidence/button.json:7:17: warning: outdated: $[0].context.states: recorded before Button had hover\n",
+      "spec/evidence/button.json:7:17: warning: outdated: $[0].context.states: recorded before `Button` had `hover`\n",
       0,
       "spec/button.dxn: Evidence for 0 of 4 combinations; 1 outdated",
     ]);

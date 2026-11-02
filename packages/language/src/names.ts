@@ -1,4 +1,5 @@
 import type { Declaration, ParseResult, Type } from "./ast.js";
+import { message, type Words, words } from "./message.js";
 import { penNode, scalars } from "./scalars.js";
 
 export type Kind =
@@ -65,11 +66,14 @@ export class Names {
     const wanted =
       each.length > 1 ? `${each.slice(0, -1).join(", ")} or ${each.at(-1)}` : (each[0] ?? "");
     const actual = this.kinds.get(name);
-    if (actual !== undefined) return `${name} is ${article(actual)} ${actual}, not ${wanted}`;
-    return `${name} is not ${wanted}${among(
+    if (actual !== undefined) {
+      return message`${name} is ${words(`${article(actual)} ${actual}`)}, not ${words(wanted)}`;
+    }
+    const others = among(
       name,
       kinds.flatMap((kind) => this.of(kind)),
-    )}`;
+    );
+    return message`${name} is not ${words(wanted)}${others}`;
   }
 
   // The values of an enum or a dimension, unless it is broken.
@@ -103,22 +107,25 @@ export function enumOf(type: Type, subject: string): string | undefined {
 // a suggestion, closest first; or, when none is close, all of them.
 // How close is close is measured on so many of the written name's characters:
 // all of them, or only those of its last part, when the names to choose from
-// share the rest.
+// share the rest. Each is quoted, unless shown as words, as a title already
+// in its quotes is.
 export function among(
   written: string,
   names: string[],
   none = "the file declares none",
   measured = written.length,
-): string {
-  if (names.length === 0) return `; ${none}`;
+  shown: (name: string) => string | Words = (name) => name,
+): Words {
+  if (names.length === 0) return words(`; ${none}`);
   const close = names
     .map((name) => ({ name, distance: distance(written, name) }))
     .filter(({ distance: apart }) => apart <= Math.max(1, Math.floor(measured / 3)))
     .sort((a, b) => a.distance - b.distance);
-  if (close.length === 0) return ` (${names.join(", ")})`;
-  const each = close.map(({ name }) => name);
-  const said = each.length > 1 ? `${each.slice(0, -1).join(", ")} or ${each.at(-1)}` : each[0];
-  return `; did you mean ${said}?`;
+  if (close.length === 0) return words(message` (${names.map(shown)})`);
+  const each = close.map(({ name }) => shown(name));
+  const said =
+    each.length > 1 ? message`${each.slice(0, -1)} or ${each.at(-1)}` : message`${each[0]}`;
+  return words(message`; did you mean ${words(said)}?`);
 }
 
 // How many edits apart two names are: a character added, removed, changed, or

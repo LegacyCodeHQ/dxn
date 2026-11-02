@@ -68,14 +68,14 @@ describe("a condition with and and or", () => {
         link("hover = hovered only when Pointer = mouse and Breakpoint = lg or Breakpoint = xl"),
       ),
     ).toEqual([
-      '9:65: syntax-error: "and" and "or" need brackets to mix: write "(Pointer = mouse and Breakpoint = lg) or Breakpoint = xl" or "Pointer = mouse and (Breakpoint = lg or Breakpoint = xl)"',
+      "9:65: syntax-error: `and` and `or` need brackets to mix: write `(Pointer = mouse and Breakpoint = lg) or Breakpoint = xl` or `Pointer = mouse and (Breakpoint = lg or Breakpoint = xl)`",
     ]);
     expect([
       problems(link("hover = hovered only when (Pointer = mouse")),
       problems(link("hover = hovered only when Pointer = mouse and")),
     ]).toEqual([
-      ['9:45: syntax-error: expected ")" after "mouse", found the end of the line'],
-      ['10:1: syntax-error: expected a dimension after "and", found "}"'],
+      ["9:45: syntax-error: expected `)` after `mouse`, found the end of the line"],
+      ["10:1: syntax-error: expected a dimension after `and`, found `}`"],
     ]);
   });
 
@@ -106,7 +106,7 @@ describe("a condition with and and or", () => {
       problems(menu("menu = open\n    and Breakpoint = base")),
     ]).toEqual([
       [
-        '10:5: syntax-error: "and" and "or" need brackets to mix: write "(Pointer = mouse and Breakpoint = lg) or Breakpoint = xl" or "Pointer = mouse and (Breakpoint = lg or Breakpoint = xl)"',
+        "10:5: syntax-error: `and` and `or` need brackets to mix: write `(Pointer = mouse and Breakpoint = lg) or Breakpoint = xl` or `Pointer = mouse and (Breakpoint = lg or Breakpoint = xl)`",
       ],
       [],
     ]);
@@ -218,19 +218,19 @@ type Menu needs Breakpoint {
       problems(menu("menu = open and menu = closed")),
       problems(menu("menu = open or menu = closed")),
     ]).toEqual([
-      ["9:49: unknown-dimension: Theme is not a dimension (Breakpoint, Pointer, Keyboard)"],
-      ['9:62: unknown-value: "sm" is not a value of Breakpoint (base, lg, xl)'],
+      ["9:49: unknown-dimension: `Theme` is not a dimension (`Breakpoint`, `Pointer`, `Keyboard`)"],
+      ["9:62: unknown-value: `sm` is not a value of `Breakpoint` (`base`, `lg`, `xl`)"],
       [
-        "9:49: repeated-comparison: Pointer is already compared in this and; give its values once, with in (…)",
+        "9:49: repeated-comparison: `Pointer` is already compared in this `and`; give its values once, with `in (…)`",
       ],
       [
-        "9:3: warning: vacuous-condition: Pointer = mouse or Pointer = touch is always true, so the rule restricts nothing",
+        "9:3: warning: vacuous-condition: `Pointer = mouse or Pointer = touch` is always true, so the rule restricts nothing",
       ],
       [
-        "11:46: repeated-comparison: menu is already compared in this and; give its values once, with in (…)",
+        "11:46: repeated-comparison: `menu` is already compared in this `and`; give its values once, with `in (…)`",
       ],
       [
-        "11:7: warning: vacuous-condition: menu = open or menu = closed is always true, so panel is always there",
+        "11:7: warning: vacuous-condition: `menu = open or menu = closed` is always true, so `panel` is always there",
       ],
     ]);
     expect([
@@ -242,10 +242,10 @@ type Menu needs Breakpoint {
       problems(menu("menu = open and Breakpoint in (base, lg, xl) and menu in (closed, open)")),
     ]).toEqual([
       [
-        "9:3: warning: vacuous-condition: Pointer in (mouse, touch) and Breakpoint in (base, lg, xl) is always true, so the rule restricts nothing",
+        "9:3: warning: vacuous-condition: `Pointer in (mouse, touch) and Breakpoint in (base, lg, xl)` is always true, so the rule restricts nothing",
       ],
       [
-        "11:79: repeated-comparison: menu is already compared in this and; give its values once, with in (…)",
+        "11:79: repeated-comparison: `menu` is already compared in this `and`; give its values once, with `in (…)`",
       ],
     ]);
   });
@@ -263,7 +263,7 @@ type Menu needs Breakpoint {
         ),
       ),
     ).toEqual([
-      "9:3: impossible-condition: (Pointer = mouse and Keyboard = keyboard) and (Pointer = touch and Keyboard = keyboard) is never true, so hovered exists nowhere",
+      "9:3: impossible-condition: `(Pointer = mouse and Keyboard = keyboard) and (Pointer = touch and Keyboard = keyboard)` is never true, so `hovered` exists nowhere",
     ]);
   });
 
@@ -275,7 +275,7 @@ type Link needs Pointer {
 }
 `;
     expect(errors(unneeded)).toEqual([
-      '9:49: unneeded-dimension: Link does not need Breakpoint; declare "type Link needs Pointer, Breakpoint"',
+      "9:49: unneeded-dimension: `Link` does not need `Breakpoint`; declare `type Link needs Pointer, Breakpoint`",
     ]);
     const source = menu("menu = open and Breakpoint = base");
     expect(renameInSource(parse(source), source, "Menu.State", "open", "shown")).toBe(

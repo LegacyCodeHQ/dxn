@@ -1,3 +1,4 @@
+import { message, words } from "@legacycodehq/dxn-language";
 import type { Io } from "../io.js";
 
 // What every command receives besides its own arguments.
@@ -44,7 +45,7 @@ export function dispatch(
     }
     const target = commands[name];
     if (target === undefined) {
-      io.stderr(`dxn: unknown command: ${name}\n\n${usage}`);
+      io.stderr(message`dxn: unknown command: ${name}\n\n${words(usage)}`);
       return 2;
     }
     io.stdout(target.usage);
@@ -52,7 +53,7 @@ export function dispatch(
   }
   const command = commands[first];
   if (command === undefined) {
-    io.stderr(`dxn: unknown command: ${first}\n\n${usage}`);
+    io.stderr(message`dxn: unknown command: ${first}\n\n${words(usage)}`);
     return 2;
   }
   // --help anywhere after a command prints its usage.

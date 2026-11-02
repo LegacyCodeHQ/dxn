@@ -120,7 +120,7 @@ type Page needs Screen {
     ]).toEqual([
       [],
       [
-        "2:17: warning: unused-need: Logo needs Screen, but nothing in it uses it, and it is alike throughout",
+        "2:17: warning: unused-need: `Logo` needs `Screen`, but nothing in it uses it, and it is alike throughout",
       ],
     ]);
   });
@@ -133,20 +133,20 @@ type Page needs Screen {
       errors(button("alike hover in (rest)")),
       errors(button("alike hover when enabld = enabled")),
     ]).toEqual([
-      ["9:9: unknown-state: enabld is not a state of Button; did you mean enabled?"],
-      ["9:9: unknown-dimension: Theme is not a dimension (Pointer)"],
-      ['9:25: unknown-value: "hoverd" is not a value of hover (rest, hovered)'],
+      ["9:9: unknown-state: `enabld` is not a state of `Button`; did you mean `enabled`?"],
+      ["9:9: unknown-dimension: `Theme` is not a dimension (`Pointer`)"],
+      ["9:25: unknown-value: `hoverd` is not a value of `hover` (`rest`, `hovered`)"],
       [
-        "9:9: alike-one-value: alike hover in (rest) names one value, which is alike only with itself",
+        "9:9: alike-one-value: `alike hover in (rest)` names one value, which is alike only with itself",
       ],
-      ["9:20: unknown-state: enabld is not a state of Button; did you mean enabled?"],
+      ["9:20: unknown-state: `enabld` is not a state of `Button`; did you mean `enabled`?"],
     ]);
     expect(
       errors(
         "dimension Screen = small | large\ndimension Theme = light | dark\ntype Logo needs Screen {\n  alike Theme\n}\n",
       ),
     ).toEqual([
-      '4:9: unneeded-dimension: Logo does not need Theme; declare "type Logo needs Screen, Theme"',
+      "4:9: unneeded-dimension: `Logo` does not need `Theme`; declare `type Logo needs Screen, Theme`",
     ]);
   });
 

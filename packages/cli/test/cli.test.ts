@@ -126,7 +126,7 @@ describe("dxn cli", () => {
     const result = capture(["frobnicate"]);
     expect([result.code, result.stderr, result.stdout]).toEqual([
       2,
-      `dxn: unknown command: frobnicate\n\n${capture(["--help"]).stdout}`,
+      `dxn: unknown command: \`frobnicate\`\n\n${capture(["--help"]).stdout}`,
       "",
     ]);
   });

@@ -15,10 +15,10 @@ describe("the text of a file", () => {
 
   it("counts a character outside the basic plane as one column", () => {
     expect(problems("enum E = a | b\ntype T {\n  state s: E 😀\n}\n")).toEqual([
-      '3:14: syntax-error: expected "," or the end of the line after "E", found "😀"',
+      "3:14: syntax-error: expected `,` or the end of the line after `E`, found `😀`",
     ]);
     expect(problems('expect "😀" { x\n')).toEqual([
-      '1:14: syntax-error: expected "in", "when", "then", "some", "absent" or "}", found "x"',
+      "1:14: syntax-error: expected `in`, `when`, `then`, `some`, `absent` or `}`, found `x`",
     ]);
   });
 });

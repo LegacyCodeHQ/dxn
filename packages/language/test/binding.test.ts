@@ -42,19 +42,19 @@ describe("a binding", () => {
       problems(menu("{ expanded = men }")),
       problems(menu("{ expanded = layout }")),
     ]).toEqual([
-      ["14:24: unknown-state: expnded is not a state of Menu.Toggle; did you mean expanded?"],
+      ["14:24: unknown-state: `expnded` is not a state of `Menu.Toggle`; did you mean `expanded`?"],
       [
-        "14:35: unknown-state: men is not a state of Menu, nor a value of expanded (closed, open); did you mean menu?",
+        "14:35: unknown-state: `men` is not a state of `Menu`, nor a value of `expanded` (`closed`, `open`); did you mean `menu`?",
       ],
       [
-        "14:24: binding-mismatch: expanded's values come from Menu.State, but layout's from Layout; a binding needs one enum",
+        "14:24: binding-mismatch: `expanded`'s values come from `Menu.State`, but `layout`'s from `Layout`; a binding needs one enum",
       ],
     ]);
   });
 
   it("sets each of the child's states once", () => {
     expect(problems(menu("{ expanded = menu, expanded = menu }"))).toEqual([
-      "14:41: duplicate-binding: expanded is already bound",
+      "14:41: duplicate-binding: `expanded` is already bound",
     ]);
   });
 
@@ -73,14 +73,14 @@ type Menu {
 }
 `;
     expect(problems(source)).toEqual([
-      "11:22: bound-derived: layout is decided by its when; it cannot also be bound",
+      "11:22: bound-derived: `layout` is decided by its when; it cannot also be bound",
     ]);
   });
 
   it("says what it expected when the syntax is wrong", () => {
     expect([problems(menu("{ expanded menu }")), problems(menu("{ expanded = }"))]).toEqual([
-      ['14:33: syntax-error: expected "=" after "expanded", found "menu"'],
-      ['14:35: syntax-error: expected a state or a value after "=", found "}"'],
+      ["14:33: syntax-error: expected `=` after `expanded`, found `menu`"],
+      ["14:35: syntax-error: expected a state or a value after `=`, found `}`"],
     ]);
   });
 });
@@ -100,10 +100,10 @@ describe("a fixed binding", () => {
       problems(menu("{ expanded = open }", ", open: Hover")),
     ]).toEqual([
       [
-        "14:35: unknown-state: opn is not a state of Menu, nor a value of expanded (closed, open); did you mean open?",
+        "14:35: unknown-state: `opn` is not a state of `Menu`, nor a value of `expanded` (`closed`, `open`); did you mean `open`?",
       ],
       [
-        "14:35: ambiguous-binding: open is both a state of Menu and a value of expanded; rename one of them",
+        "14:35: ambiguous-binding: `open` is both a state of `Menu` and a value of `expanded`; rename one of them",
       ],
     ]);
   });

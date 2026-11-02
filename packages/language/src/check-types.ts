@@ -14,14 +14,14 @@ import type {
 import { childAt, fixes } from "./ast.js";
 import { checkChosen, checkWhen, type Report } from "./check-values.js";
 import { comparisons, conditionText, coverage, subjects } from "./condition.js";
+import { message, words } from "./message.js";
 import { among, enumOf, type Names } from "./names.js";
 
 // What checking a file's types needs at hand: the file, its names, and where
 // to report a problem.
-interface Context {
+interface Context extends Report {
   file: ParseResult;
   names: Names;
-  report: Report;
 }
 
 // One type being checked: the dimensions it needs, and the needs to declare
@@ -49,7 +49,7 @@ type Triggered = { trigger: Trigger; change: Change; path: string };
 // itself; what is alike in it; its children; its events, actions and
 // triggers; and the states it provides. Problems are reported in that order.
 export function checkTypes(file: ParseResult, names: Names, report: Report): void {
-  const context: Context = { file, names, report };
+  const context: Context = { file, names, ...report };
   for (const type of file.types) {
     const needed = checkNeeds(context, type);
     const checking: TypeContext = {
@@ -71,20 +71,20 @@ export function checkTypes(file: ParseResult, names: Names, report: Report): voi
 }
 
 // A type's needs: each a dimension, once. The dimensions it needs.
-function checkNeeds({ names, report }: Context, type: Type): Set<string> {
+function checkNeeds({ names, error }: Context, type: Type): Set<string> {
   const needed = new Set<string>();
   for (const need of type.needs) {
     if (!names.is(need.name, "dimension")) {
-      report("unknown-dimension", names.not(need.name, "dimension"), need);
+      error("unknown-dimension", names.not(need.name, "dimension"), need);
     } else if (needed.has(need.name)) {
-      report("duplicate-dimension", `${need.name} is already a need of ${type.name}`, need);
+      error("duplicate-dimension", message`${need.name} is already a need of ${type.name}`, need);
     }
     needed.add(need.name);
   }
   return needed;
 }
 
-// The needs a type should declare, quoted for messages: those that are
+// The needs a type should declare, as a declaration: those that are
 // dimensions, and those its rules, derived states, children, events and
 // alikes use, in the order first used.
 function declare({ names }: Context, type: Type, needed: Set<string>): string {
@@ -109,15 +109,15 @@ function declare({ names }: Context, type: Type, needed: Set<string>): string {
       ].filter((name) => names.is(name, "dimension")),
     ),
   ];
-  return `"type ${type.name} needs ${[
+  return `type ${type.name} needs ${[
     ...new Set([...[...needed].filter((name) => names.is(name, "dimension")), ...used]),
-  ].join(", ")}"`;
+  ].join(", ")}`;
 }
 
 // A need tells the type's combinations apart unless it is alike throughout;
 // one alike throughout that nothing else uses has no effect, and is a
 // warning.
-function checkUnusedNeeds({ names, report, type }: TypeContext): void {
+function checkUnusedNeeds({ names, warn, type }: TypeContext): void {
   const alikeThroughout = (name: string) =>
     type.alikes.some(
       ({ subject, values, when }) =>
@@ -138,11 +138,10 @@ function checkUnusedNeeds({ names, report, type }: TypeContext): void {
       alikeThroughout(need.name) &&
       !usedElsewhere(need.name)
     ) {
-      report(
+      warn(
         "unused-need",
-        `${type.name} needs ${need.name}, but nothing in it uses it, and it is alike throughout`,
+        message`${type.name} needs ${need.name}, but nothing in it uses it, and it is alike throughout`,
         need,
-        "warning",
       );
     }
   }
@@ -151,23 +150,23 @@ function checkUnusedNeeds({ names, report, type }: TypeContext): void {
 // A type's states: each once, its values from an enum; a derived one's when
 // checked, and a fixed one's value one of its enum's.
 function checkStates(checking: TypeContext): void {
-  const { names, report, type } = checking;
+  const { names, error, type } = checking;
   const seen = new Set<string>();
   for (const state of type.states) {
     if (seen.has(state.name)) {
-      report("duplicate-state", `${state.name} is already a state of ${type.name}`, state);
+      error("duplicate-state", message`${state.name} is already a state of ${type.name}`, state);
     }
     seen.add(state.name);
     if (!names.is(state.enum.name, "enum")) {
-      report("unknown-enum", names.not(state.enum.name, "enum"), state.enum);
+      error("unknown-enum", names.not(state.enum.name, "enum"), state.enum);
     }
     if (state.derived !== undefined) checkDerived(checking, state);
     if (state.fixed !== undefined) {
       const values = names.values(state.enum.name);
       if (values !== undefined && !values.includes(state.fixed.name)) {
-        report(
+        error(
           "unknown-value",
-          `${JSON.stringify(state.fixed.name)} is not a value of ${state.name} (${values.join(", ")})`,
+          message`${state.fixed.name} is not a value of ${state.name} (${values})`,
           state.fixed,
         );
       }
@@ -178,7 +177,7 @@ function checkStates(checking: TypeContext): void {
 // A derived state: on a dimension the type needs, covering each of its
 // values once, each branch giving a value of the state's enum.
 function checkDerived(checking: TypeContext, state: State): void {
-  const { names, report } = checking;
+  const { names } = checking;
   const { dimension, branches } = state.derived as Derived;
   const known = subjectOf(checking, dimension, false) !== undefined;
   // A dimension that is not one has no values to check the branches against.
@@ -187,27 +186,31 @@ function checkDerived(checking: TypeContext, state: State): void {
     dimension,
     { name: dimension.name, values: known ? names.values(dimension.name) : undefined },
     { name: state.name, values: names.values(state.enum.name) },
-    report,
+    checking,
   );
 }
 
 // A type's rules: each on a state the type sets, with one of its values,
 // one rule for each state value, and its condition checked.
 function checkRules(checking: TypeContext): void {
-  const { file, names, report, type } = checking;
+  const { file, names, error, type } = checking;
   const conditioned = new Map<string, Rule>();
   for (const rule of type.rules) {
     const start = file.diagnostics.length;
     const state = stateOf(checking, type, rule.state);
     const why = state === undefined ? undefined : decidedBy(state);
     if (state !== undefined && why !== undefined) {
-      report("rule-on-derived", `${state.name} ${why}; it cannot also have a rule`, rule.state);
+      error(
+        "rule-on-derived",
+        message`${state.name} ${words(why)}; it cannot also have a rule`,
+        rule.state,
+      );
     }
     const values = state === undefined ? undefined : names.values(state.enum.name);
     if (values !== undefined && !values.includes(rule.value.name)) {
-      report(
+      error(
         "unknown-value",
-        `${JSON.stringify(rule.value.name)} is not a value of ${rule.state.name} (${values.join(", ")})`,
+        message`${rule.value.name} is not a value of ${rule.state.name} (${values})`,
         rule.value,
       );
     }
@@ -222,9 +225,9 @@ function checkRules(checking: TypeContext): void {
           when.kind === "and" ? when.terms : [when],
         ),
       };
-      report(
+      error(
         "duplicate-rule",
-        `${rule.state.name} = ${rule.value.name} already has a condition at line ${earlier.state.line}; join them in one: "${rule.state.name} = ${rule.value.name} only when ${conditionText(both)}"`,
+        message`${`${rule.state.name} = ${rule.value.name}`} already has a condition at line ${earlier.state.line}; join them in one: ${`${rule.state.name} = ${rule.value.name} only when ${conditionText(both)}`}`,
         rule.state,
       );
     } else {
@@ -234,7 +237,7 @@ function checkRules(checking: TypeContext): void {
       checking,
       rule.when,
       rule.state,
-      { never: `${rule.value.name} exists nowhere`, always: "the rule restricts nothing" },
+      { never: message`${rule.value.name} exists nowhere`, always: "the rule restricts nothing" },
       start,
     );
   }
@@ -242,7 +245,7 @@ function checkRules(checking: TypeContext): void {
 
 // No state depends on itself, through its rules' conditions on other
 // states: each dependency is reported where it would close a cycle.
-function checkRuleCycles({ report, type }: TypeContext): void {
+function checkRuleCycles({ error, type }: TypeContext): void {
   const depends = new Map<string, string[]>();
   const path = (from: string, to: string, seen = new Set<string>()): string[] | undefined => {
     if (from === to) return [to];
@@ -263,10 +266,14 @@ function checkRuleCycles({ report, type }: TypeContext): void {
         const said = chain
           .slice(1)
           .map((name, index) =>
-            index === 0 ? ` depends on ${name}` : `, which depends on ${name}`,
+            index === 0 ? message` depends on ${name}` : message`, which depends on ${name}`,
           )
           .join("");
-        report("rule-cycle", `${chain[0]}${said}; no state can depend on itself`, subject);
+        error(
+          "rule-cycle",
+          message`${chain[0]}${words(said)}; no state can depend on itself`,
+          subject,
+        );
         continue;
       }
       depends.set(rule.state.name, [...(depends.get(rule.state.name) ?? []), subject.name]);
@@ -277,17 +284,17 @@ function checkRuleCycles({ report, type }: TypeContext): void {
 // What is alike: one of its states, or a dimension it needs, with two or
 // more of its values, and its condition.
 function checkAlikes(checking: TypeContext): void {
-  const { file, names, report, type } = checking;
+  const { file, names, error, type } = checking;
   for (const alike of type.alikes) {
     const start = file.diagnostics.length;
     const { subject } = alike;
     const of = subjectOf(checking, subject);
     if (of !== undefined && alike.values !== undefined) {
-      checkChosen(alike.values, of, names, report, "the alike", subject.name);
+      checkChosen(alike.values, of, names, checking, "the alike", subject.name);
       if (alike.values.length === 1) {
-        report(
+        error(
           "alike-one-value",
-          `alike ${subject.name} in (${alike.values[0]?.name}) names one value, which is alike only with itself`,
+          message`${`alike ${subject.name} in (${alike.values[0]?.name})`} names one value, which is alike only with itself`,
           subject,
         );
       }
@@ -311,7 +318,7 @@ function checkAlikes(checking: TypeContext): void {
 // its type allows too, there wherever it is and binding only what it binds,
 // to the same values. A member and its double: the later adds nothing.
 function checkMembers(checking: TypeContext): void {
-  const { report, type } = checking;
+  const { warn, type } = checking;
   const covers = (wider: Child, narrower: Child) =>
     wider.type.name === narrower.type.name &&
     (wider.when === undefined ||
@@ -336,40 +343,43 @@ function checkMembers(checking: TypeContext): void {
       if (wider === undefined) return;
       const [narrow, wide] = [member.short, wider.short];
       const bound = wider.bindings ?? [];
-      const only = bound.map(({ state, from }) => `${state.name} = ${from.name}`).join(", ");
+      const only = bound.map(({ state, from }) => `${state.name} = ${from.name}`);
       const why =
         bound.length === 0
-          ? `${wide} binds nothing, so it already allows every ${member.type.name}, the ${narrow} ones too`
+          ? message`${wide} binds nothing, so it already allows every ${member.type.name}, the ${narrow} ones too`
           : bound.length === (member.bindings ?? []).length
-            ? `${wide} binds the same as ${narrow}, so it already allows every row ${narrow} does`
-            : `${wide} binds only ${only}, so it already allows every row ${narrow} does`;
-      report(
+            ? message`${wide} binds the same as ${narrow}, so it already allows every row ${narrow} does`
+            : message`${wide} binds only ${only}, so it already allows every row ${narrow} does`;
+      warn(
         "redundant-member",
-        `${narrow} adds no rows: ${why}; remove ${narrow}, or narrow ${wide}`,
+        message`${narrow} adds no rows: ${words(why)}; remove ${narrow}, or narrow ${wide}`,
         member,
-        "warning",
       );
     });
   }
 }
 
 function checkChildren(checking: TypeContext): void {
-  const { names, report, type } = checking;
+  const { names, error, type } = checking;
   const taken = new Map<string, string>(type.states.map(({ name }) => [name, "state"]));
   for (const child of type.children) {
     const earlier = taken.get(child.name);
     if (earlier !== undefined) {
-      report("duplicate-child", `${child.name} is already a ${earlier} of ${type.name}`, child);
+      error(
+        "duplicate-child",
+        message`${child.name} is already a ${words(earlier)} of ${type.name}`,
+        child,
+      );
     }
     taken.set(child.name, "child");
     if (!names.is(child.type.name, "type")) {
-      report("unknown-type", names.not(child.type.name, "type"), child.type);
+      error("unknown-type", names.not(child.type.name, "type"), child.type);
     }
     checkBindings(checking, child);
     if (child.when === undefined) continue;
     checkCondition(checking, child.when, child, {
-      never: `${child.name} is never there`,
-      always: `${child.name} is always there`,
+      never: message`${child.name} is never there`,
+      always: message`${child.name} is always there`,
     });
   }
 }
@@ -379,13 +389,13 @@ function checkChildren(checking: TypeContext): void {
 // fixed to one of the child's state's values, which is not also a state of
 // the type.
 function checkBindings(checking: TypeContext, child: Child): void {
-  const { file, names, report, type } = checking;
+  const { file, names, error, type } = checking;
   const inner = file.types.find(({ name }) => name === child.type.name);
   const bound = new Set<string>();
   for (const binding of child.bindings ?? []) {
     const { state, from } = binding;
     if (bound.has(state.name)) {
-      report("duplicate-binding", `${state.name} is already bound`, state);
+      error("duplicate-binding", message`${state.name} is already bound`, state);
       continue;
     }
     bound.add(state.name);
@@ -393,9 +403,9 @@ function checkBindings(checking: TypeContext, child: Child): void {
     const values = target === undefined ? undefined : names.values(target.enum.name);
     const owned = type.states.find(({ name }) => name === from.name);
     if (owned !== undefined && binding.map === undefined && values?.includes(from.name)) {
-      report(
+      error(
         "ambiguous-binding",
-        `${from.name} is both a state of ${type.name} and a value of ${state.name}; rename one of them`,
+        message`${from.name} is both a state of ${type.name} and a value of ${state.name}; rename one of them`,
         from,
       );
       continue;
@@ -405,9 +415,9 @@ function checkBindings(checking: TypeContext, child: Child): void {
       if (!values.includes(from.name) && !type.broken) {
         const states = type.states.map(({ name }) => name);
         const close = among(from.name, [...states, ...values]);
-        report(
+        error(
           "unknown-state",
-          `${from.name} is not a state of ${type.name}, nor a value of ${state.name} (${values.join(", ")})${close.startsWith(";") ? close : ""}`,
+          message`${from.name} is not a state of ${type.name}, nor a value of ${state.name} (${values})${close.text.startsWith(";") ? close : words("")}`,
           from,
         );
         continue;
@@ -418,7 +428,7 @@ function checkBindings(checking: TypeContext, child: Child): void {
     // Mapped or not, a binding cannot set a state the child decides.
     const why = decidedBy(target);
     if (why !== undefined) {
-      report("bound-derived", `${target.name} ${why}; it cannot also be bound`, state);
+      error("bound-derived", message`${target.name} ${words(why)}; it cannot also be bound`, state);
       continue;
     }
     // Bound, its value is the parent's: no action or change of the child
@@ -430,15 +440,15 @@ function checkBindings(checking: TypeContext, child: Child): void {
       ),
     );
     if (action !== undefined) {
-      report(
+      error(
         "bound-action",
-        `${target.name} is bound here, so ${inner?.name}'s action ${action.name.name} can never change it`,
+        message`${target.name} is bound here, so ${inner?.name}'s action ${action.name.name} can never change it`,
         state,
       );
     } else if (changing !== undefined) {
-      report(
+      error(
         "bound-action",
-        `${target.name} is bound here, so ${inner?.name}'s change on ${eventText(changing.event)} can never change it`,
+        message`${target.name} is bound here, so ${inner?.name}'s change on ${eventText(changing.event)} can never change it`,
         state,
       );
     }
@@ -450,12 +460,12 @@ function checkBindings(checking: TypeContext, child: Child): void {
         from,
         { name: source.name, values: names.values(source.enum.name) },
         { name: target.name, values: names.values(target.enum.name) },
-        report,
+        checking,
       );
     } else if (target.enum.name !== source.enum.name) {
-      report(
+      error(
         "binding-mismatch",
-        `${target.name}'s values come from ${target.enum.name}, but ${source.name}'s from ${source.enum.name}; a binding needs one enum`,
+        message`${target.name}'s values come from ${target.enum.name}, but ${source.name}'s from ${source.enum.name}; a binding needs one enum`,
         state,
       );
     }
@@ -474,11 +484,11 @@ function checkActions(checking: TypeContext): void {
 }
 
 // The events a type declares, each once.
-function checkEvents({ report, type }: TypeContext): void {
+function checkEvents({ error, type }: TypeContext): void {
   const declared = new Set<string>();
   for (const event of type.events) {
     if (declared.has(event.name)) {
-      report("duplicate-event", `${event.name} is already an event of ${type.name}`, event);
+      error("duplicate-event", message`${event.name} is already an event of ${type.name}`, event);
     }
     declared.add(event.name);
   }
@@ -488,7 +498,7 @@ function checkEvents({ report, type }: TypeContext): void {
 // children, and each a change of one of its own states that it sets, from
 // one of its values to another.
 function checkActionDeclarations(checking: TypeContext): void {
-  const { names, report, type } = checking;
+  const { names, error, type } = checking;
   const named = new Set<string>();
   for (const action of type.actions) {
     // One name, one thing: an action's name is not a state's or a child's.
@@ -500,9 +510,9 @@ function checkActionDeclarations(checking: TypeContext): void {
           ? "an action"
           : undefined;
     if (taken !== undefined) {
-      report(
+      error(
         "duplicate-action",
-        `${action.name.name} is already ${taken} of ${type.name}`,
+        message`${action.name.name} is already ${words(taken)} of ${type.name}`,
         action.name,
       );
     }
@@ -511,18 +521,29 @@ function checkActionDeclarations(checking: TypeContext): void {
     if (state === undefined) continue;
     const why = decidedBy(state);
     if (why !== undefined) {
-      report("action-on-derived", `${state.name} ${why}; no action can change it`, action.state);
+      error(
+        "action-on-derived",
+        message`${state.name} ${words(why)}; no action can change it`,
+        action.state,
+      );
       continue;
     }
     if (action.from.name === action.to.name) {
-      report(
+      error(
         "unchanged-action",
-        `${action.name.name} changes nothing: ${state.name} is ${action.from.name} before and after`,
+        message`${action.name.name} changes nothing: ${state.name} is ${action.from.name} before and after`,
         action.to,
       );
       continue;
     }
-    checkChosen([action.from, action.to], state.enum.name, names, report, "the action", state.name);
+    checkChosen(
+      [action.from, action.to],
+      state.enum.name,
+      names,
+      checking,
+      "the action",
+      state.name,
+    );
   }
 }
 
@@ -530,7 +551,7 @@ function checkActionDeclarations(checking: TypeContext): void {
 // dimension the type needs to some of its values; what it changes, each
 // state once; and its condition. The changes it makes that were found.
 function checkTrigger(checking: TypeContext, trigger: Trigger): Triggered[] {
-  const { file, names, report, type } = checking;
+  const { file, names, error, type } = checking;
   const { event } = trigger;
   // A named event: one the type declares, or a child's by its path.
   if (event.kind === "named") {
@@ -542,15 +563,15 @@ function checkTrigger(checking: TypeContext, trigger: Trigger): Triggered[] {
     // A broken type's events may not all have been read.
     if (owner !== undefined && !owner.broken && !owner.events.some(({ name }) => name === named)) {
       const events = owner.events.map(({ name }) => name);
-      report(
+      error(
         "unknown-event",
-        `${named} is not an event of ${owner.name}${among(named, events, "it declares none")}`,
+        message`${named} is not an event of ${owner.name}${among(named, events, "it declares none")}`,
         event.name,
       );
     }
   }
   if (event.kind === "dimension" && subjectOf(checking, event.dimension, false) !== undefined) {
-    checkChosen(event.values, event.dimension.name, names, report, "the event");
+    checkChosen(event.values, event.dimension.name, names, checking, "the event");
   }
   // What it changes: each a named action, the type's own or a child's by
   // its path; or one of the type's own states, to one of its values.
@@ -566,9 +587,9 @@ function checkTrigger(checking: TypeContext, trigger: Trigger): Triggered[] {
         .slice(0, index)
         .some((earlier) => earlier.path === path && earlier.change.state === change.state)
     ) {
-      report(
+      error(
         "conflicting-change",
-        `${eventText(trigger.event)} changes ${path === "" ? change.state : `${path}.${change.state}`} twice`,
+        message`${eventText(trigger.event)} changes ${path === "" ? change.state : `${path}.${change.state}`} twice`,
         at,
       );
     }
@@ -586,9 +607,9 @@ function checkTrigger(checking: TypeContext, trigger: Trigger): Triggered[] {
       trigger.event.kind === "dimension" &&
       coverage({ kind: "and", terms: firing(trigger) }, valuesIn(checking)) === "never"
     ) {
-      report(
+      error(
         "impossible-condition",
-        `${conditionText(trigger.when)} is never true on ${eventText(trigger.event)}, so the trigger never fires`,
+        message`${conditionText(trigger.when)} is never true on ${eventText(trigger.event)}, so the trigger never fires`,
         trigger,
       );
     }
@@ -599,7 +620,7 @@ function checkTrigger(checking: TypeContext, trigger: Trigger): Triggered[] {
 // One event, one change: no two actions that events which overlap trigger
 // can both apply to one state, from one value.
 function checkOverlaps(checking: TypeContext, triggered: Triggered[]): void {
-  const { report } = checking;
+  const { error } = checking;
   triggered.forEach(({ trigger, change, path }, index) => {
     const of = (name: string) => (path === "" ? name : `${path}.${name}`);
     for (const earlier of triggered.slice(0, index)) {
@@ -627,15 +648,15 @@ function checkOverlaps(checking: TypeContext, triggered: Triggered[]): void {
       const same =
         other.named && change.named ? other.label === change.label : other.to === change.to;
       if (same) {
-        report(
+        error(
           "duplicate-trigger",
-          `${eventText(trigger.event)} already triggers ${change.label}`,
+          message`${eventText(trigger.event)} already triggers ${change.label}`,
           trigger,
         );
       } else {
-        report(
+        error(
           "ambiguous-event",
-          `${eventText(trigger.event)} triggers both ${other.label} and ${change.label} when ${of(change.state)} = ${common[0]}`,
+          message`${eventText(trigger.event)} triggers both ${other.label} and ${change.label} when ${`${of(change.state)} = ${common[0]}`}`,
           trigger,
         );
       }
@@ -692,10 +713,10 @@ function checkCondition(
   // whole.
   before = checking.file.diagnostics.length,
 ): void {
-  const { file, names, report, type } = checking;
+  const { file, names, error, warn, type } = checking;
   for (const { subject, values } of comparisons(condition)) {
     const of = subjectOf(checking, subject);
-    if (of !== undefined) checkChosen(values, of, names, report, "the condition", subject.name);
+    if (of !== undefined) checkChosen(values, of, names, checking, "the condition", subject.name);
   }
   const repeated = (part: Condition) => {
     if (part.kind === "compare") return;
@@ -703,9 +724,9 @@ function checkCondition(
     for (const term of part.terms) {
       if (term.kind !== "compare" || part.kind !== "and") continue;
       if (seen.has(term.subject.name)) {
-        report(
+        error(
           "repeated-comparison",
-          `${term.subject.name} is already compared in this and; give its values once, with in (…)`,
+          message`${term.subject.name} is already compared in this \`and\`; give its values once, with \`in (…)\``,
           term.subject,
         );
       }
@@ -726,42 +747,41 @@ function checkCondition(
     declarationOf(subject)?.values.map(({ name }) => name) ?? [];
   const holding = coverage(condition, valuesOf);
   if (holding === "never") {
-    report(
+    error(
       "impossible-condition",
-      `${conditionText(condition)} is never true, so ${then.never}`,
+      message`${conditionText(condition)} is never true, so ${words(then.never)}`,
       at,
     );
   } else if (holding === "always") {
-    report(
+    warn(
       "vacuous-condition",
-      `${conditionText(condition)} is always true, so ${then.always}`,
+      message`${conditionText(condition)} is always true, so ${words(then.always)}`,
       at,
-      "warning",
     );
   }
 }
 
 // What a provided state is: one of the type's own states, not received, each
 // provided once.
-function checkProvides({ report, type }: TypeContext): void {
+function checkProvides({ error, type }: TypeContext): void {
   const provided = new Set<string>();
   for (const name of type.provides) {
     const own = type.states.filter(({ received }) => received === undefined);
     if (type.states.some((state) => state.received && state.name === name.name)) {
-      report(
+      error(
         "provides-received",
-        `${type.name} receives ${name.name}; it can only provide a state of its own`,
+        message`${type.name} receives ${name.name}; it can only provide a state of its own`,
         name,
       );
     } else if (!own.some((state) => state.name === name.name)) {
       const states = own.map((state) => state.name);
-      report(
+      error(
         "unknown-state",
-        `${name.name} is not a state of ${type.name}${among(name.name, states, "it has none")}`,
+        message`${name.name} is not a state of ${type.name}${among(name.name, states, "it has none")}`,
         name,
       );
     } else if (provided.has(name.name)) {
-      report("duplicate-provides", `${name.name} is already provided by ${type.name}`, name);
+      error("duplicate-provides", message`${name.name} is already provided by ${type.name}`, name);
     }
     provided.add(name.name);
   }
@@ -770,13 +790,13 @@ function checkProvides({ report, type }: TypeContext): void {
 // One of a type's states, by name; undefined, reported, when it has none of
 // that name. A broken type's states may not all have been read, so a name it
 // lacks is not reported.
-function stateOf({ report }: Context, type: Type, named: Located): State | undefined {
+function stateOf({ error }: Context, type: Type, named: Located): State | undefined {
   const state = type.states.find(({ name }) => name === named.name);
   if (state === undefined && !type.broken) {
     const all = type.states.map(({ name }) => name);
-    report(
+    error(
       "unknown-state",
-      `${named.name} is not a state of ${type.name}${among(named.name, all, "it has none")}`,
+      message`${named.name} is not a state of ${type.name}${among(named.name, all, "it has none")}`,
       named,
     );
   }
@@ -789,16 +809,16 @@ function stateOf({ report }: Context, type: Type, named: Located): State | undef
 // only a dimension. A dimension the type does not need is reported, with the
 // needs to declare; a broken type's needs may not all have been read.
 function subjectOf(checking: TypeContext, subject: Located, states = true): string | undefined {
-  const { names, report, type, needed, declare } = checking;
+  const { names, error, type, needed, declare } = checking;
   if (states && /^[a-z]/.test(subject.name)) return stateOf(checking, type, subject)?.enum.name;
   if (!names.is(subject.name, "dimension")) {
-    report("unknown-dimension", names.not(subject.name, "dimension"), subject);
+    error("unknown-dimension", names.not(subject.name, "dimension"), subject);
     return undefined;
   }
   if (!needed.has(subject.name) && !type.broken) {
-    report(
+    error(
       "unneeded-dimension",
-      `${type.name} does not need ${subject.name}; declare ${declare}`,
+      message`${type.name} does not need ${subject.name}; declare ${declare}`,
       subject,
     );
   }
@@ -807,7 +827,7 @@ function subjectOf(checking: TypeContext, subject: Located, states = true): stri
 
 // A child of a type by its path, "<child>.<child>...": its type, or
 // undefined, reported, when a part is not a child.
-function childType({ file, report }: Context, type: Type, path: Located): Type | undefined {
+function childType({ file, error }: Context, type: Type, path: Located): Type | undefined {
   let at: Type | undefined = type;
   const parts = path.name.split(".");
   for (let index = 0; index < parts.length; ) {
@@ -819,9 +839,9 @@ function childType({ file, report }: Context, type: Type, path: Located): Type |
     if (found === undefined || child === undefined) {
       if (at.broken) return undefined;
       const children = at.children.map(({ name }) => name);
-      report(
+      error(
         "unknown-child",
-        `${part} is not a child of ${at.name}${among(part, children, "it has none")}`,
+        message`${part} is not a child of ${at.name}${among(part, children, "it has none")}`,
         path,
       );
       return undefined;
@@ -859,7 +879,7 @@ function valuesIn({ names, type }: TypeContext): (subject: string) => string[] {
 // child's by its path, or one of the type's own states changed in place to
 // one of its values. Where it is, and what it changes from and to.
 function changeOf(checking: TypeContext, effect: Effect): Found | undefined {
-  const { names, report, type } = checking;
+  const { names, error, type } = checking;
   if (effect.kind === "action") {
     const parts = effect.name.name.split(".");
     const actionName = parts.at(-1) as string;
@@ -870,9 +890,9 @@ function changeOf(checking: TypeContext, effect: Effect): Found | undefined {
     // A broken type's actions may not all have been read.
     if (owner !== undefined && action === undefined && !owner.broken) {
       const actions = owner.actions.map(({ name }) => name.name);
-      report(
+      error(
         "unknown-action",
-        `${actionName} is not an action of ${owner.name}${among(actionName, actions, "it has none")}`,
+        message`${actionName} is not an action of ${owner.name}${among(actionName, actions, "it has none")}`,
         effect.name,
       );
     }
@@ -894,16 +914,16 @@ function changeOf(checking: TypeContext, effect: Effect): Found | undefined {
   if (state === undefined) return undefined;
   const why = decidedBy(state);
   if (why !== undefined) {
-    report("action-on-derived", `${state.name} ${why}; no change can change it`, named);
+    error(
+      "action-on-derived",
+      message`${state.name} ${words(why)}; no change can change it`,
+      named,
+    );
     return undefined;
   }
   const values = names.values(state.enum.name) ?? [];
   if (!values.includes(to.name)) {
-    report(
-      "unknown-value",
-      `${JSON.stringify(to.name)} is not a value of ${state.name} (${values.join(", ")})`,
-      to,
-    );
+    error("unknown-value", message`${to.name} is not a value of ${state.name} (${values})`, to);
     return undefined;
   }
   // It applies wherever the state is not yet its value.

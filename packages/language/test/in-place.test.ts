@@ -104,9 +104,9 @@ describe("evaluating a child in place", () => {
       "Keyboard",
     ]);
     expect(() => inPlace(toolbar, "Toolbar.menu.togle")).toThrow(
-      "togle is not a child of Menu; did you mean toggle?",
+      "`togle` is not a child of `Menu`; did you mean `toggle`?",
     );
-    expect(() => inPlace(toolbar, "Toolbr.menu")).toThrow("no type Toolbr");
+    expect(() => inPlace(toolbar, "Toolbr.menu")).toThrow("no type `Toolbr`");
   });
 
   it("has no rows below a child where the child cannot be, as it is bound", () => {
@@ -175,7 +175,7 @@ type Root {
 }
 `);
     expect(() => inPlace(shadowed, "Root.inner")).toThrow(
-      "Inner has a state mode, and so does Root above it; rename one, so that each can be told apart",
+      "`Inner` has a state `mode`, and so does `Root` above it; rename one, so that each can be told apart",
     );
   });
 });

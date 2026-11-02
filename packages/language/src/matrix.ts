@@ -1,5 +1,7 @@
 import type { Condition, Diagnostic, Located, ParseResult, Type } from "./ast.js";
+import { reportTo } from "./check-values.js";
 import { conditionText, coverage, holds } from "./condition.js";
+import { message, words } from "./message.js";
 import { enumOf, valuesOf } from "./names.js";
 import { alone } from "./status.js";
 
@@ -13,6 +15,7 @@ export function conditionsInMatrix(file: ParseResult): void {
   // Every type is judged before any finding is recorded: a recorded error is
   // a problem, and a file with problems cannot be evaluated.
   const found: Diagnostic[] = [];
+  const report = reportTo(found);
   for (const type of file.types) {
     // Every combination of the type: a value for each of its states, and for
     // each dimension it needs, with every rule applied.
@@ -27,25 +30,21 @@ export function conditionsInMatrix(file: ParseResult): void {
       const real = holding === 0 ? "never" : holding === combinations.length ? "always" : undefined;
       // What judging by values alone said is reported already.
       if (real === undefined || coverage(condition, valuesIn(type)) === real) return;
-      found.push({
-        severity: real === "never" ? "error" : "warning",
-        code: real === "never" ? "impossible-condition" : "vacuous-condition",
-        message: `${conditionText(condition)} is ${real === "never" ? "never" : "always"} true, so ${then[real]}`,
-        line: at.line,
-        column: at.column,
-      });
+      const said = message`${conditionText(condition)} is ${words(real)} true, so ${words(then[real])}`;
+      if (real === "never") report.error("impossible-condition", said, at);
+      else report.warn("vacuous-condition", said, at);
     };
     for (const rule of type.rules) {
       judge(rule.when, rule.state, {
-        never: `${rule.value.name} exists nowhere`,
+        never: message`${rule.value.name} exists nowhere`,
         always: "the rule restricts nothing",
       });
     }
     for (const child of type.children) {
       if (child.when === undefined) continue;
       judge(child.when, child, {
-        never: `${child.name} is never there`,
-        always: `${child.name} is always there`,
+        never: message`${child.name} is never there`,
+        always: message`${child.name} is always there`,
       });
     }
     for (const trigger of type.triggers) {

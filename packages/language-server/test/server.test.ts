@@ -360,7 +360,7 @@ describe("the language server", () => {
       const name = shown(editor);
       expect(await editor.sendRequest(RenameRequest.type, { ...at, newName: "a b" })).toBeNull();
       expect(await name).toBe(
-        '"a b" is not a value name: a letter or digit, then letters, digits and hyphens',
+        "`a b` is not a value name: a letter or digit, then letters, digits and hyphens",
       );
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -429,7 +429,7 @@ describe("the language server", () => {
       });
       expect(await still.sendRequest(RenameRequest.type, { ...at, newName: "Proof" })).toBeNull();
       expect(await message).toBe(
-        "the editor cannot move evidence/, where Evidence's stored records are, to proof/",
+        "the editor cannot move evidence/, where `Evidence`'s stored records are, to proof/",
       );
 
       // Nor is a folder moved onto one that is there.
@@ -440,7 +440,7 @@ describe("the language server", () => {
       });
       expect(await blocked.sendRequest(RenameRequest.type, { ...at, newName: "Proof" })).toBeNull();
       expect(await there).toBe(
-        "proof/ is already next to the file; Evidence's stored records cannot move there",
+        "proof/ is already next to the file; `Evidence`'s stored records cannot move there",
       );
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -626,7 +626,7 @@ describe("the language server", () => {
         [
           { line: 3, character: 13 },
           "unknown-actor",
-          '$[0].actor: "maker" is not an actor who records Evidence (Designer, Reviewer)',
+          "$[0].actor: `maker` is not an actor who records `Evidence` (`Designer`, `Reviewer`)",
           "dxn",
         ],
       ]);
@@ -796,7 +796,7 @@ describe("the language server", () => {
           [
             { line: 1, character: 2 },
             "duplicate-record",
-            "$[0]: the same Evidence as $[0] in evidence/a.json, apart from their fingerprints",
+            "$[0]: the same `Evidence` as $[0] in evidence/a.json, apart from their fingerprints",
           ],
         ],
       ]);
@@ -970,9 +970,9 @@ describe("the language server", () => {
           "",
           "Not counted until their problems are fixed:",
           "",
-          '- pen-evidence/button.json:3:75: $[0].context.states.style: "filled" is not a value of style (primary, secondary)',
-          '- pen-evidence/button.json:8:75: $[1].context.states.style: "plain" is not a value of style (primary, secondary)',
-          '- pen-evidence/button.json:13:75: $[2].context.states.style: "filled" is not a value of style (primary, secondary)',
+          "- pen-evidence/button.json:3:75: $[0].context.states.style: `filled` is not a value of `style` (`primary`, `secondary`)",
+          "- pen-evidence/button.json:8:75: $[1].context.states.style: `plain` is not a value of `style` (`primary`, `secondary`)",
+          "- pen-evidence/button.json:13:75: $[2].context.states.style: `filled` is not a value of `style` (`primary`, `secondary`)",
         ].join("\n"),
       ]);
 
@@ -1272,7 +1272,7 @@ describe("the language server", () => {
           [
             { start: { line: 2, character: 6 }, end: { line: 2, character: 9 } },
             1,
-            "Screen: the drawing shows 2 Row instances, but row is a single Row; make it a list, [Row], or draw one, in pen-evidence/screen.json:1",
+            "`Screen`: the drawing shows 2 `Row` instances, but `row` is a single `Row`; make it a list, `[Row]`, or draw one, in pen-evidence/screen.json:1",
           ],
         ],
         [

@@ -40,8 +40,8 @@ type Button {
 ```
 
 ```
-button.dxn:5:18: unknown-enum: Enabld is not an enum; did you mean Enabled?
-button.dxn:7:29: unknown-dimension: Pointer is not a dimension; the file declares none
+button.dxn:5:18: error: unknown-enum: `Enabld` is not an enum; did you mean `Enabled`?
+button.dxn:7:29: error: unknown-dimension: `Pointer` is not a dimension; the file declares none
 ```
 
 Every problem has its line and column, a code for tools, and a message that

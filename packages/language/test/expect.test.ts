@@ -102,9 +102,9 @@ describe("expect", () => {
         "has panel: Panel only when menu in (closed, open)",
       );
     assert(errors(broken)).toEqual([
-      "33:8: expectation-failed: Touch screens never show hover: Page.toolbar.link on Phone has hover = hovered",
-      "45:8: expectation-failed: On a Phone the menu link is only ever at rest and blurred: Page.toolbar.menu.panel.blog on Phone with toolbar.menu.menu = closed has hover = hovered",
-      "51:8: expectation-failed: The menu panel only exists while the menu is open: Page.toolbar.menu.panel is there on Phone with toolbar.menu.menu = closed",
+      "33:8: expectation-failed: Touch screens never show hover: `Page.toolbar.link` on `Phone` has `hover = hovered`",
+      "45:8: expectation-failed: On a Phone the menu link is only ever at rest and blurred: `Page.toolbar.menu.panel.blog` on `Phone` with `toolbar.menu.menu = closed` has `hover = hovered`",
+      "51:8: expectation-failed: The menu panel only exists while the menu is open: `Page.toolbar.menu.panel` is there on `Phone` with `toolbar.menu.menu = closed`",
     ]);
   });
 
@@ -113,7 +113,7 @@ describe("expect", () => {
       .replace("some hover = hovered, focus = focused", "some hover = hovered, focus = blurred")
       .replace("profile = Desktop", "profile = Phone");
     assert(problems(never)).toEqual([
-      "40:8: expectation-failed: A Desktop link can be hovered and focused at once: no combination of Page.toolbar.link on Phone has hover = hovered, focus = blurred",
+      "40:8: expectation-failed: A Desktop link can be hovered and focused at once: no combination of `Page.toolbar.link` on `Phone` has `hover = hovered`, `focus = blurred`",
     ]);
   });
 
@@ -125,13 +125,13 @@ describe("expect", () => {
       problems(rule("  in Page.toolbar.lnk\n  then hover = rest")),
     ]).toEqual([
       [
-        '34:8: expectation-empty: Nothing tests nothing: "Laptop" is not a profile (Phone, Desktop)',
+        "34:8: expectation-empty: Nothing tests nothing: `Laptop` is not a profile (`Phone`, `Desktop`)",
       ],
       [
-        "34:8: expectation-empty: Nothing tests nothing: no element in Page.toolbar.link has colour",
+        "34:8: expectation-empty: Nothing tests nothing: no element in `Page.toolbar.link` has `colour`",
       ],
       [
-        "34:8: expectation-empty: Nothing tests nothing: lnk is not a child of Toolbar; did you mean link?",
+        "34:8: expectation-empty: Nothing tests nothing: `lnk` is not a child of `Toolbar`; did you mean `link`?",
       ],
     ]);
   });
@@ -142,7 +142,7 @@ describe("expect", () => {
     expect([problems(rule("Phone+Mouse")), problems(rule("Phone"))]).toEqual([
       [],
       [
-        "36:8: expectation-failed: Hover with a mouse: no combination of Page.toolbar.link on Phone has hover = hovered",
+        "36:8: expectation-failed: Hover with a mouse: no combination of `Page.toolbar.link` on `Phone` has `hover = hovered`",
       ],
     ]);
   });
@@ -155,13 +155,13 @@ describe("expect", () => {
       problems(rule("  in Page.toolbar.link\n  some hover = hoverd")),
     ]).toEqual([
       [
-        '33:8: expectation-empty: Mistyped tests nothing: "clsoed" is not a value of toolbar.menu.menu (closed, open)',
+        "33:8: expectation-empty: Mistyped tests nothing: `clsoed` is not a value of `toolbar.menu.menu` (`closed`, `open`)",
       ],
       [
-        '33:8: expectation-empty: Mistyped tests nothing: "tuch" is not a value of Pointer (mouse, touch)',
+        "33:8: expectation-empty: Mistyped tests nothing: `tuch` is not a value of `Pointer` (`mouse`, `touch`)",
       ],
       [
-        '33:8: expectation-empty: Mistyped tests nothing: "hoverd" is not a value of hover (rest, hovered)',
+        "33:8: expectation-empty: Mistyped tests nothing: `hoverd` is not a value of `hover` (`rest`, `hovered`)",
       ],
     ]);
   });
@@ -179,8 +179,10 @@ describe("expect", () => {
       problems(rule("absent")),
     ]).toEqual([
       [],
-      ["34:8: expectation-failed: A Laptop link: Page.toolbar.link on Laptop has hover = hovered"],
-      ["34:8: expectation-failed: A Laptop link: Page.toolbar.link is there on Laptop"],
+      [
+        "34:8: expectation-failed: A Laptop link: `Page.toolbar.link` on `Laptop` has `hover = hovered`",
+      ],
+      ["34:8: expectation-failed: A Laptop link: `Page.toolbar.link` is there on `Laptop`"],
     ]);
   });
 
@@ -198,7 +200,7 @@ expect "Every h is a" {
 }
 `;
     assert(problems(unprovided)).toEqual([
-      "8:8: expectation-empty: Every h is a tests nothing: P.l: c is received by L, but nothing above it provides it",
+      "8:8: expectation-empty: Every h is a tests nothing: `P.l`: `c` is received by `L`, but nothing above it provides it",
     ]);
   });
 
@@ -211,10 +213,10 @@ expect "Every h is a" {
       ),
       problems(`${model}expect "A {\n`),
     ]).toEqual([
-      ['33:8: syntax-error: expected a title, in quotes, after "expect", found "Touch"'],
-      ['35:1: syntax-error: expected "then", "some" or "absent" in "A", found "}"'],
+      ["33:8: syntax-error: expected a title, in quotes, after `expect`, found `Touch`"],
+      ['35:1: syntax-error: expected `then`, `some` or `absent` in "A", found `}`'],
       ['37:8: duplicate-name: the expectation "A" is already at line 33'],
-      ['33:8: syntax-error: expected a title, in quotes, after "expect", found an unclosed quote'],
+      ["33:8: syntax-error: expected a title, in quotes, after `expect`, found an unclosed quote"],
     ]);
   });
 });

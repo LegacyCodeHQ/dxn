@@ -42,7 +42,7 @@ Wordmark: 3 cases
 
 `dxn validate`, `attach`, `status` and `rename` work on the records stored
 beside a file. Every command prints a readable answer, or one JSON document
-with `--json`; problems are printed as `file:line:col: code: message`. Exit
+with `--json`; problems are printed as `file:line:col: severity: code: message`. Exit
 code 1 means the file has a problem or the command refused, 2 means the
 command line is wrong.
 

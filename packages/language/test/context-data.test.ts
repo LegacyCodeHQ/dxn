@@ -48,7 +48,7 @@ describe("a stored record's context", () => {
       ),
       check("Laptop"),
     ]).toEqual([
-      ["missing-field: Evidence is missing context"],
+      ["missing-field: `Evidence` is missing `context`"],
       ["wrong-kind: $[0].context: expected a context (an object), found a string"],
     ]);
   });
@@ -58,9 +58,9 @@ describe("a stored record's context", () => {
       check({ type: "Wordmark", profile: "Laptop", states: { hover: "rest" } }),
       check({ ...on("Laptop", "dark", "rest"), node: "wordmark" }),
     ]).toEqual([
-      ["missing-field: $[0].context: context is missing dimensions"],
+      ["missing-field: $[0].context: `context` is missing `dimensions`"],
       [
-        'unknown-field: $[0].context.node: context has no field "node" (type, profile, dimensions, states)',
+        "unknown-field: $[0].context.node: `context` has no field `node` (`type`, `profile`, `dimensions`, `states`)",
       ],
     ]);
   });
@@ -70,8 +70,8 @@ describe("a stored record's context", () => {
       check({ ...on("Laptop", "dark", "rest"), type: "Wordmrk" }),
       check(on("watch", "dark", "rest")),
     ]).toEqual([
-      ['unknown-value: $[0].context.type: "Wordmrk" is not a type (Wordmark)'],
-      ['unknown-value: $[0].context.profile: "watch" is not a profile (Laptop, Phone)'],
+      ["unknown-value: $[0].context.type: `Wordmrk` is not a type (`Wordmark`)"],
+      ["unknown-value: $[0].context.profile: `watch` is not a profile (`Laptop`, `Phone`)"],
     ]);
   });
 
@@ -81,11 +81,13 @@ describe("a stored record's context", () => {
       check({ ...on("Laptop", "dark", "rest"), dimensions: { Theme: "dark", Pointer: "mouse" } }),
       check({ ...on("Laptop", "dark", "rest"), dimensions: { Theme: "dim" } }),
     ]).toEqual([
-      ["warning: outdated: $[0].context.dimensions: recorded before Wordmark needed Theme"],
+      ["warning: outdated: $[0].context.dimensions: recorded before `Wordmark` needed `Theme`"],
       [
-        "unknown-field: $[0].context.dimensions.Pointer: Pointer is given by the profile; context.dimensions has Theme",
+        "unknown-field: $[0].context.dimensions.Pointer: `Pointer` is given by the profile; `context.dimensions` has `Theme`",
       ],
-      ['unknown-value: $[0].context.dimensions.Theme: "dim" is not a value of Theme (light, dark)'],
+      [
+        "unknown-value: $[0].context.dimensions.Theme: `dim` is not a value of `Theme` (`light`, `dark`)",
+      ],
     ]);
   });
 
@@ -96,13 +98,13 @@ describe("a stored record's context", () => {
       check(on("Laptop", "dark", "hoverd")),
       check(on("Phone", "dark", "hovered")),
     ]).toEqual([
-      ["warning: outdated: $[0].context.states: recorded before Wordmark had hover"],
-      ['unknown-field: $[0].context.states.focus: Wordmark has no state "focus" (hover)'],
+      ["warning: outdated: $[0].context.states: recorded before `Wordmark` had `hover`"],
+      ["unknown-field: $[0].context.states.focus: `Wordmark` has no state `focus` (`hover`)"],
       [
-        'unknown-value: $[0].context.states.hover: "hoverd" is not a value of hover (rest, hovered)',
+        "unknown-value: $[0].context.states.hover: `hoverd` is not a value of `hover` (`rest`, `hovered`)",
       ],
       [
-        'unknown-value: $[0].context.states.hover: "hovered" is not a value of hover on Phone, Theme dark (rest)',
+        "unknown-value: $[0].context.states.hover: `hovered` is not a value of `hover` on `Phone`, `Theme dark` (`rest`)",
       ],
     ]);
   });
@@ -129,11 +131,11 @@ describe("a stored record's context", () => {
     ]).toEqual([
       [],
       [
-        'unknown-value: $[0].context.states.hover: "hovered" is not a value of hover on Pointer touch, Theme dark (rest)',
+        "unknown-value: $[0].context.states.hover: `hovered` is not a value of `hover` on `Pointer touch`, `Theme dark` (`rest`)",
       ],
       [
-        'unknown-field: $[0].context.profile: context has no field "profile" (type, dimensions, states)',
-        "warning: outdated: $[0].context.dimensions: recorded before Wordmark needed Pointer",
+        "unknown-field: $[0].context.profile: `context` has no field `profile` (`type`, `dimensions`, `states`)",
+        "warning: outdated: $[0].context.dimensions: recorded before `Wordmark` needed `Pointer`",
       ],
     ]);
   });

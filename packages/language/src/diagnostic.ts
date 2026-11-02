@@ -16,12 +16,34 @@ export class Diagnostics {
 
   constructor(private readonly source: string) {}
 
-  report(
+  // An error: the data is not usable as it is.
+  error(
     code: string,
     message: string,
     path: string,
     offset: number,
-    warning = false,
+    element?: { line: number; column: number },
+  ): void {
+    this.add(code, message, path, offset, false, element);
+  }
+
+  // A warning: the data is usable, but needs attention.
+  warn(
+    code: string,
+    message: string,
+    path: string,
+    offset: number,
+    element?: { line: number; column: number },
+  ): void {
+    this.add(code, message, path, offset, true, element);
+  }
+
+  private add(
+    code: string,
+    message: string,
+    path: string,
+    offset: number,
+    warning: boolean,
     element?: { line: number; column: number },
   ): void {
     let line = 1;
