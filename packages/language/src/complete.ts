@@ -225,11 +225,15 @@ export function completions(
     "dimension",
   );
 
-  // Inside a type: a state's enum, and a child's type.
+  // Inside a type: a state's enum, and a child's type, a list's, or its empty
+  // view's.
   if (/^state\s+/.test(statement) && /:\s*$/.test(statement)) {
     return names(visible(file, type.name, file.enums), "enum");
   }
-  if (/^has\s+[A-Za-z0-9-]+\s*:\s*$/.test(statement)) {
+  if (
+    /^has\s+[A-Za-z0-9-]+\s*:\s*\[?\s*$/.test(statement) ||
+    /^has\s+[A-Za-z0-9-]+\s*:\s*\[.*\bor\s+[A-Za-z0-9-]+\s*:\s*$/.test(statement)
+  ) {
     const around = new Set(chain(file, type.name));
     return names(
       visible(file, type.name, file.types).filter(
@@ -359,7 +363,10 @@ function opened(file: ParseResult, lines: string[], line: number, column: number
       const parent = types.at(-1)?.name;
       const typeHead = head.match(/^type\s+([A-Za-z0-9-]+)/);
       const recordHead = head.match(/^record\s+([A-Za-z0-9-]+)/);
-      const childHead = head.match(/^has\s+[A-Za-z0-9-]+\s*:\s*([A-Za-z0-9.-]+)/);
+      // A child's type; a list's, in its brackets; or its empty view's.
+      const childHead =
+        head.match(/^has\s+[A-Za-z0-9-]+\s*:\s*\[.*\bor\s+[A-Za-z0-9-]+\s*:\s*([A-Za-z0-9.-]+)$/) ??
+        head.match(/^has\s+[A-Za-z0-9-]+\s*:\s*\[?\s*([A-Za-z0-9.-]+)/);
       const profileHead = head.match(/^profile\s+[A-Za-z0-9-]+\s*:\s*([A-Za-z0-9-]+)/);
       if (/\bwhen\s+[A-Za-z0-9-]+\s*$/.test(head)) stack.push({ kind: "other" });
       else if (/^expect\b/.test(head)) stack.push({ kind: "expect", line: row + 1 });

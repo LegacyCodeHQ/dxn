@@ -638,6 +638,47 @@ one of its values. A name that is both, a state of the parent and a value of
 the child's state, is reported, `ambiguous-binding`, rather than read one way
 or the other: rename one of them.
 
+### Lists: rows of a type, and what shows when there are none
+
+A feed shows articles, as many as there are. A child in brackets is a
+**list**: rows of its type, any number of them.
+
+```
+type FeedScreen {
+  has articles: [ArticleRow] or empty: EmptyFeed
+}
+```
+
+Each row can be in any of `ArticleRow`'s looks, so the list adds none of its
+own: five rows are not five times the states. What the list adds is its
+**count**, a state of the type named after it, `articles`, whose values are
+`empty` and `some`. The rows are there where it is `some`. A list that can
+be empty must say what shows when it is, after `or`: a child of its own,
+there where the count is `empty`, or `or nothing` for a type that shows
+nothing then, which is still a decision written down. A list without one is
+a syntax error. A list that is never empty is written with a `+`, and has no
+count:
+
+```
+type Carousel {
+  has slides: [Slide]+
+}
+```
+
+The count is used as any state is. Another child can be there only while
+there are rows:
+
+```
+type FeedScreen {
+  has articles: [ArticleRow] or empty: EmptyFeed
+  has refresh: RefreshIndicator only when articles = some
+}
+```
+
+Bindings set every row's states, after the brackets: `[ArticleRow] { reading
+= unread } or ...`. The empty view takes bindings of its own, after its
+type. An `only when` at the end is the whole list's, its empty view's too.
+
 ### Provided and received: a state from far above
 
 A state lives in the lowest type that all its users share: the menu's in the
@@ -1755,7 +1796,10 @@ change      = path | state-name "->" value                      # path: an actio
 event       = path | comparison                                  # path: an event the type declares, or a child's
 events      = "event" event-name { "," event-name } newline
 provides    = "provides" state-name newline
-has         = "has" child-name ":" Name { "." Name } [ bindings ] [ "only" "when" condition ] newline
+has         = "has" child-name ":" ( type-name [ bindings ] | list ) [ "only" "when" condition ] newline
+list        = "[" type-name "]" "+" [ bindings ]                    # never empty
+            | "[" type-name "]" [ bindings ] "or" ( child-name ":" type-name [ bindings ] | "nothing" )
+type-name   = Name { "." Name }
 bindings    = "{" { binding ( "," | newline ) } "}"
 binding     = state-name "=" state-name                # or a value of the child's state, which fixes it
             | state-name "=" "when" state-name "{" { branch ( "," | newline ) } "}"

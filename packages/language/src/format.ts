@@ -75,20 +75,21 @@ function split(line: string): { pieces: Piece[]; comment?: string } {
 
 // A line's pieces, spaced: one space between them, but none before a comma, a
 // colon or a closing bracket, none around a dot or a plus, and none inside
-// brackets.
+// brackets; a plus after a list's "]" is spaced from what follows it.
 function joined(pieces: Piece[]): string {
   let text = "";
   pieces.forEach((piece, index) => {
     const before = pieces[index - 1];
-    if (before !== undefined && spaced(before.text, piece.text)) text += " ";
+    const list = before?.text === "+" && pieces[index - 2]?.text === "]";
+    if (before !== undefined && (list || spaced(before.text, piece.text))) text += " ";
     text += piece.text;
   });
   return text;
 }
 
 function spaced(before: string, after: string): boolean {
-  if ([",", ":", ")", ".", "+"].includes(after)) return false;
-  if (["(", ".", "+"].includes(before)) return false;
+  if ([",", ":", ")", "]", ".", "+"].includes(after)) return false;
+  if (["(", "[", ".", "+"].includes(before)) return false;
   return true;
 }
 

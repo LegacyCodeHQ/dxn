@@ -281,6 +281,30 @@
           }
         ]
       },
+      "empty": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "empty_child",
+            "named": true
+          },
+          {
+            "type": "nothing",
+            "named": true
+          }
+        ]
+      },
+      "list": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "list",
+            "named": true
+          }
+        ]
+      },
       "name": {
         "multiple": false,
         "required": true,
@@ -293,7 +317,7 @@
       },
       "type": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "identifier",
@@ -357,6 +381,46 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "empty_child",
+    "named": true,
+    "fields": {
+      "bindings": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "bindings",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "qualified_name",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -501,6 +565,26 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "list",
+    "named": true,
+    "fields": {
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "qualified_name",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -1273,6 +1357,14 @@
     "named": false
   },
   {
+    "type": "[",
+    "named": false
+  },
+  {
+    "type": "]",
+    "named": false
+  },
+  {
     "type": "absent_clause",
     "named": true
   },
@@ -1340,6 +1432,10 @@
   {
     "type": "needs",
     "named": false
+  },
+  {
+    "type": "nothing",
+    "named": true
   },
   {
     "type": "on",

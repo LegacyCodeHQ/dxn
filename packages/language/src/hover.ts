@@ -1,4 +1,12 @@
-import type { Enum, Located, ParseResult, Type } from "./ast.js";
+import {
+  countAt,
+  type Enum,
+  type Located,
+  listOf,
+  listText,
+  type ParseResult,
+  type Type,
+} from "./ast.js";
 import { conditionText } from "./condition.js";
 import { covers, links, type Span, wordAt } from "./definition.js";
 import { parse } from "./parse.js";
@@ -34,7 +42,10 @@ export function hover(
     const found = described.get(link.to);
     return found === undefined ? undefined : { from: link.from, ...found };
   }
-  const declared = [...described.keys()].find((at) => covers(span(at), line, column));
+  // What a list declares for itself is not where its name is.
+  const declared = [...described.keys()].find(
+    (at) => covers(span(at), line, column) && !countAt(file, at),
+  );
   const state = file.types
     .flatMap(({ states }) => states)
     .find((candidate) => candidate === declared);
@@ -115,7 +126,7 @@ function describeType(
   add: (at: Located, code: string, line?: number) => void,
   enumText: (name: string) => string | undefined,
 ): void {
-  const own = type.states.filter(({ received }) => !received);
+  const own = type.states.filter(({ received, count }) => !received && !count);
   const received = type.states.filter(({ received: is }) => is);
   const header = [
     `type ${type.name}`,
@@ -131,11 +142,22 @@ function describeType(
     ...(own.length > 0
       ? [`  state ${own.map(({ name, enum: of }) => `${name}: ${of.name}`).join(", ")}`]
       : []),
-    ...type.children.map(({ name, type: of }) => `  has ${name}: ${of.name}`),
+    ...type.children
+      .filter(({ emptyOf }) => emptyOf === undefined)
+      .map((child) => `  has ${child.name}: ${listText(type, child)}`),
     ...type.actions.map(({ name }) => `  action ${name.name}`),
   ];
   add(type, [header, ...body].join("\n"));
   for (const state of type.states) {
+    // A list's count shows the list, and its values.
+    const list = listOf(type, state);
+    if (list !== undefined) {
+      add(
+        state,
+        `has ${type.name}.${list.name}: ${listText(type, list)}\n${list.name} = empty | some`,
+      );
+      continue;
+    }
     const value =
       state.fixed !== undefined
         ? ` = ${state.fixed.name}`
@@ -162,6 +184,10 @@ function describeType(
   }
   for (const event of type.events) add(event, `event ${type.name}.${event.name}`);
   for (const child of type.children) {
+    if (child.list !== undefined) {
+      add(child, `has ${type.name}.${child.name}: ${listText(type, child)}`);
+      continue;
+    }
     const when = child.when === undefined ? "" : ` only when ${conditionText(child.when)}`;
     add(child, `has ${type.name}.${child.name}: ${child.type.name}${when}`);
   }

@@ -44,12 +44,14 @@ export function symbols(source: string, file: ParseResult = parse(source)): Docu
   };
   const ofType = (type: Type): DocumentSymbol =>
     symbol(type, "type", type.short ?? type.name, [
-      ...type.states.map((state) => symbol(state, "state", state.name, [], true)),
+      ...type.states
+        .filter(({ count }) => !count)
+        .map((state) => symbol(state, "state", state.name, [], true)),
       ...type.events.map((event) => symbol(event, "event", event.name, [], true)),
       ...type.children.map((child) => symbol(child, "child", child.name)),
       ...type.actions.map((action) => symbol(action.name, "action", action.name.name)),
       ...file.enums
-        .filter(({ scope }) => scope === type.name)
+        .filter(({ scope, count }) => scope === type.name && !count)
         .map((declaration) => symbol(declaration, "enum", declaration.short ?? declaration.name)),
       ...file.types.filter(({ scope }) => scope === type.name).map(ofType),
     ]);

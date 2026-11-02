@@ -106,6 +106,20 @@ the parent's state when the parent has one of that name, and otherwise a
 value of the child's state; a name that is both is an error, never read one
 way silently.
 
+### Lists
+
+A list, `has articles: [ArticleRow] or empty: EmptyFeed`, is rows of a type.
+The rows add no looks: each is in any of its type's looks, counted once,
+however many rows a drawing shows. What a list adds is its **count**, a
+state of its type named after it, `empty` or `some`, so emptiness belongs to
+the list, not to a state the type declares beside it and keeps in step by
+hand. The declaration forces the empty view: a list that can be empty says
+what shows when it is, a child after `or`, or `or nothing`, and one that
+cannot is `[ArticleRow]+`, with no count. Why it is empty, when there is
+more than one reason, is a state of the type, which matters only where the
+count is `empty`. A count that tells one row from many is left out until a
+list needs it.
+
 ### When and else
 
 A `when` gives a value for every value of its subject, and a value left out

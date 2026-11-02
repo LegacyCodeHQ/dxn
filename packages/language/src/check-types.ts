@@ -311,7 +311,9 @@ function checkChildren(checking: TypeContext): void {
   const taken = new Map<string, string>(type.states.map(({ name }) => [name, "state"]));
   for (const child of type.children) {
     const earlier = taken.get(child.name);
-    if (earlier !== undefined) {
+    // A list that can be empty is named as its count is.
+    const counts = type.states.some(({ name, count }) => count && name === child.name);
+    if (earlier !== undefined && !(earlier === "state" && counts && child.list !== undefined)) {
       report("duplicate-child", `${child.name} is already a ${earlier} of ${type.name}`, child);
     }
     taken.set(child.name, "child");

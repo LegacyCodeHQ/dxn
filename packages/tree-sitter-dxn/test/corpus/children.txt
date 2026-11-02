@@ -104,3 +104,47 @@ type Links receives current: Section {
           (binding
             state: (identifier)
             from: (identifier)))))))
+
+================================================================================
+Lists: never empty, with an empty view, or with nothing when empty
+================================================================================
+
+type Feed {
+  has pinned: [Row]+ only when mode = live
+  has rows: [Row] { reading = read } or follow: Button { style = primary }
+  has older: [Row] or nothing
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_declaration
+    name: (identifier)
+    body: (type_body
+      (child_declaration
+        name: (identifier)
+        list: (list
+          type: (identifier))
+        condition: (comparison
+          subject: (identifier)
+          (value)))
+      (child_declaration
+        name: (identifier)
+        list: (list
+          type: (identifier))
+        bindings: (bindings
+          (binding
+            state: (identifier)
+            from: (identifier)))
+        empty: (empty_child
+          name: (identifier)
+          type: (identifier)
+          bindings: (bindings
+            (binding
+              state: (identifier)
+              from: (identifier)))))
+      (child_declaration
+        name: (identifier)
+        list: (list
+          type: (identifier))
+        empty: (nothing)))))
