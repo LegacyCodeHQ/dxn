@@ -49,14 +49,23 @@ which kind of name it is, so a reader, the parser and the editors can tell
 type inside another makes it part of that type; declaring it at the top makes
 it shareable.
 
+A capitalized name may be all capitals, or start with an acronym: `HOVER`
+and `UIState` are names as `Hover` is. No one style is required.
+
 A value is lowercase letters and digits, with single hyphens only between
 them: `rest`, `no-keyboard`, `19px`, but not `Rest`, `a-` or `a--b`. With no
-capitals, two values never differ only in case. A value may be a keyword,
-such as `only` or `when`; where it stands says which it is.
+capitals, two values never differ only in case. A value may be only digits,
+`2` or `700`, as column counts and weights are written. A value may be a
+keyword, such as `only` or `when`; where it stands says which it is. A
+built-in scalar's name, such as `Timestamp`, may not be declared: it shares
+one namespace with what a file declares, and a field typed with it could not
+tell the two apart.
 
-An enum written over several lines may have comments and blank lines between
-its values, so a value can be commented out. An enum that no type uses is a
-warning, not an error.
+An enum is its name, `=` and its values: `=`, not `:`, since `:` says what a
+state or a field takes its values from. Written over several lines, each line
+may start with `|`, or end with one and carry on; comments and blank lines
+may come between its values, so a value can be commented out. An enum that
+no type uses is a warning, not an error.
 
 ## Nesting
 
