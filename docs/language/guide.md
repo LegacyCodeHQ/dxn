@@ -1915,6 +1915,7 @@ lines       = newline { blank-line | comment newline }   # in an enum or a dimen
 | `derived-field`                                                                                                              | error    | a derived field is not an enum's, or is on a field that is not an enum's, or is derived          |
 | `nested-context`                                                                                                             | error    | a record's field is a record an actor records, which would be a second context                   |
 | `reserved-name`                                                                                                              | error    | a declaration has a built-in name, or a recorded record has a field named `context` or `actor`   |
+| `unrecorded-record`                                                                                                          | error    | records are stored for a record no actor records; its stored records are not checked             |
 | `unused-need`                                                                                                                | warning  | a type needs a dimension that is alike throughout and that nothing in it uses                    |
 
 Checking stored records with `dxn validate` reports these, after any problem with the

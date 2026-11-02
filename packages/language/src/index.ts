@@ -77,7 +77,15 @@ export {
   treePlaces,
 } from "./status.js";
 // Records stored as JSON beside a .dxn file.
-export { folderOf, storedBeside, storedFiles, withoutContext } from "./store.js";
+export {
+  checkStored,
+  folderOf,
+  type StoredProblem,
+  storedBeside,
+  storedFiles,
+  type Unrecorded,
+  withoutContext,
+} from "./store.js";
 // The outline of a file, for editors.
 export { type DocumentSymbol, symbols } from "./symbols.js";
 export { type Drawn, validate } from "./validate.js";

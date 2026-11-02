@@ -1,9 +1,8 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
+  checkStored,
   drawings,
-  duplicates,
   fixes,
   folderOf,
   freshness,
@@ -15,10 +14,10 @@ import {
   repositoryOf,
   type StoredSource,
   sourceLines,
-  storedFiles,
+  storedBeside,
   treePaths,
   treePlaces,
-  validate,
+  type Unrecorded,
 } from "@legacycodehq/dxn-language";
 import { type Diagnostic, DiagnosticSeverity, type Range } from "vscode-languageserver/node";
 import { rangeAt } from "./range.js";
@@ -41,48 +40,43 @@ interface Problem {
   element?: { line: number; column: number };
 }
 
-// The stored files beside a file, each record's, and the problems in them:
-// each against its declaration, and, once they all check, each record that
-// repeats another across them. Nothing for a file with problems, which
-// records cannot be checked against; none for a file that is not on disk.
+// The stored files beside a file, each record's, and the problems in them,
+// as dxn checks them: the records stored that no actor records; each file
+// against its record; and, once they all check, each record that repeats
+// another across them. Nothing for a file with problems, which records cannot
+// be checked against; none for a file that is not on disk.
 function checked(
   uri: string,
   file: ParseResult,
-): { read: Read[]; problems: Problem[] } | undefined {
-  if (!uri.startsWith("file:")) return { read: [], problems: [] };
+): { read: Read[]; problems: Problem[]; withoutContext: Unrecorded[] } | undefined {
+  if (!uri.startsWith("file:")) return { read: [], problems: [], withoutContext: [] };
   if (file.diagnostics.some(({ severity }) => severity === "error")) return undefined;
-  const directory = dirname(fileURLToPath(uri));
-  const read: Read[] = [];
-  const problems: Problem[] = [];
-  const drawn = drawings(repositoryOf(fileURLToPath(uri)));
-  for (const record of new Set(file.records.map(({ name }) => name))) {
-    for (const name of storedFiles(directory, record) ?? []) {
-      const path = join(directory, folderOf(record), name);
-      let source: string;
-      try {
-        source = readFileSync(path, "utf8");
-      } catch {
-        continue;
-      }
-      const at = {
-        record,
-        shown: join(folderOf(record), name),
-        source,
-        uri: pathToFileURL(path).href,
-      };
-      read.push(at);
-      for (const found of validate(file, record, source, drawn)) problems.push({ at, ...found });
+  const stored = storedBeside(file, dirname(fileURLToPath(uri))).map((item) => ({
+    ...item,
+    shown: join(folderOf(item.record), basename(item.path)),
+  }));
+  const { withoutContext, problems } = checkStored(
+    file,
+    stored,
+    drawings(repositoryOf(fileURLToPath(uri))),
+  );
+  // Each file read, by its path; but not those of a record no actor records,
+  // which are not checked.
+  const unrecorded = new Set(withoutContext.map(({ name }) => name));
+  const byPath = new Map<string, Read>();
+  for (const { record, shown, source, path } of stored) {
+    if (!unrecorded.has(record)) {
+      byPath.set(path, { record, shown, source, uri: pathToFileURL(path).href });
     }
   }
-  if (problems.every(({ severity }) => severity === "warning")) {
-    for (const { shown, line, column, path, message } of duplicates(read)) {
-      const at = read.find((each) => each.shown === shown);
-      if (at !== undefined) {
-        problems.push({ at, line, column, code: "duplicate-record", path, message });
-      }
-    }
-  }
-  return { read, problems };
+  return {
+    read: [...byPath.values()],
+    withoutContext,
+    problems: problems.flatMap(({ file: path, ...problem }) => {
+      const at = byPath.get(path);
+      return at === undefined ? [] : [{ at, ...problem }];
+    }),
+  };
 }
 
 // The problems in the stored records beside a file, as an editor shows them:
@@ -100,9 +94,16 @@ export function evidence(
   if (found === undefined) return undefined;
   const result = new Map<string, Diagnostic[]>(found.read.map(({ uri: each }) => [each, []]));
   if (source !== undefined) {
-    result.set(
-      uri,
-      found.problems.flatMap(({ at, line, code, message, severity, element }) =>
+    result.set(uri, [
+      // A record stored that no actor records, where it is declared.
+      ...found.withoutContext.map(({ line, column, message }) => ({
+        range: rangeAt(source, line, column),
+        severity: DiagnosticSeverity.Error,
+        code: "unrecorded-record",
+        source: "dxn",
+        message,
+      })),
+      ...found.problems.flatMap(({ at, line, code, message, severity, element }) =>
         element === undefined
           ? []
           : [
@@ -116,7 +117,7 @@ export function evidence(
               },
             ],
       ),
-    );
+    ]);
   }
   for (const { at, line, column, code, path, message, severity } of found.problems) {
     result.get(at.uri)?.push({

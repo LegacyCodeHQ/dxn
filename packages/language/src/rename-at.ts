@@ -1,7 +1,5 @@
 import type { Child, Diagnostic, Enum, Located, ParseResult, State, Type, Union } from "./ast.js";
 import { covers, links, type Span } from "./definition.js";
-import type { Diagnostic as DataDiagnostic } from "./diagnostic.js";
-import { duplicates } from "./duplicates.js";
 import { placement } from "./evaluate.js";
 import { message, words } from "./message.js";
 import { among, article } from "./names.js";
@@ -18,10 +16,17 @@ import {
 } from "./rename.js";
 import { sourceLines } from "./scan.js";
 import { treePaths } from "./status.js";
-import { folderOf, type StoredFile, withoutContext } from "./store.js";
-import { type Drawn, validate } from "./validate.js";
+import {
+  checkStored,
+  folderOf,
+  type StoredFile,
+  type StoredProblem,
+  shownOf,
+  withoutContext,
+} from "./store.js";
+import type { Drawn } from "./validate.js";
 
-export type { StoredFile };
+export type { StoredFile, StoredProblem };
 
 // An edit to a source: the text at a line and a column, both from one, for so
 // many characters, replaced.
@@ -30,11 +35,6 @@ export interface Edit {
   column: number;
   length: number;
   text: string;
-}
-
-// A problem in a stored data file, by its path.
-export interface StoredProblem extends DataDiagnostic {
-  file: string;
 }
 
 export type Renamed =
@@ -103,7 +103,7 @@ export function renameAt(
   }
   // Records stored for a record no actor records are moved or declared first.
   const [unrecorded] = withoutContext(file, stored);
-  if (unrecorded !== undefined) return { refusal: unrecorded };
+  if (unrecorded !== undefined) return { refusal: unrecorded.message };
   const found = target(file, source, line, column);
   if ("refusal" in found) return found;
   const { kind, spans, name } = found;
@@ -324,28 +324,9 @@ export function kindsOf(file: ParseResult): Map<Located, Kind> {
   return result;
 }
 
-// The errors in stored data files, checked against a file without errors:
-// each file's against its record, and then any record stored twice.
-function storedProblemsOf(file: ParseResult, stored: StoredFile[], drawn?: Drawn): StoredProblem[] {
-  const shown = stored.map((item) => ({ ...item, shown: shownOf(item.path) }));
-  const found: StoredProblem[] = shown.flatMap((item) =>
-    validate(file, item.record, item.source, drawn)
-      .filter(({ severity }) => severity === undefined)
-      .map((problem) => ({ ...problem, file: item.path })),
-  );
-  if (found.length > 0) return found;
-  return duplicates(shown).map((repeat) => ({
-    code: "duplicate-record",
-    message: repeat.message,
-    line: repeat.line,
-    column: repeat.column,
-    path: repeat.path,
-    file: shown.find((item) => item.shown === repeat.shown)?.path ?? repeat.shown,
-  }));
-}
-
-// A stored data file as a message names it: its folder and its name.
-const shownOf = (path: string) => path.split(/[\\/]/).slice(-2).join("/");
+// The errors in stored data files, checked as dxn and an editor check them.
+const storedProblemsOf = (file: ParseResult, stored: StoredFile[], drawn?: Drawn) =>
+  checkStored(file, stored, drawn).problems.filter(({ severity }) => severity === undefined);
 
 // A source with edits made, each line keeping how it ends.
 function apply(source: string, edits: Edit[]): string {
