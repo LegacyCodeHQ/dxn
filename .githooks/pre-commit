@@ -13,3 +13,4 @@ fi
 gitleaks git --pre-commit --staged --redact --verbose
 make lint-check
 make cycles
+make vocabulary

@@ -55,6 +55,9 @@ jobs:
       - name: Check file cycles
         run: make cycles
 
+      - name: Check the model's words are said only in packages/language
+        run: make vocabulary
+
       - name: Audit dependencies
         run: make security
 

@@ -1,0 +1,12 @@
+# The words of the model's vocabulary for evidence, which packages/language
+# says for dxn and an editor alike. One per line, matched as a whole word in
+# any case.
+recorded
+drawn
+stale
+gone
+outdated
+combination
+combinations
+missing
+present

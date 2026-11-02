@@ -1,4 +1,4 @@
-.PHONY: help install fmt lint-check typecheck references cycles security test coverage grammar zed build smoke check check-fast setup-hooks clean
+.PHONY: help install fmt lint-check typecheck references cycles vocabulary security test coverage grammar zed build smoke check check-fast setup-hooks clean
 
 help:
 	@echo "Targets:"
@@ -8,6 +8,7 @@ help:
 	@echo "  typecheck   - Type-check both packages' sources and tests"
 	@echo "  references  - Fail when a TypeScript package is missing from tsconfig.build.json"
 	@echo "  cycles      - Fail on source-file dependency cycles (needs clarity; required in CI)"
+	@echo "  vocabulary  - Fail on a word of the model written in the CLI or the language server"
 	@echo "  security    - Audit production dependencies for known vulnerabilities"
 	@echo "  test        - Run both packages' test suites"
 	@echo "  coverage    - Run the test suite with coverage thresholds"
@@ -38,6 +39,11 @@ references:
 
 cycles:
 	bash scripts/cycles/check.sh
+
+# The model's words are said in packages/language, for the dxn command and an
+# editor alike: never written in either.
+vocabulary:
+	node scripts/vocabulary/check.mjs
 
 security:
 	npm audit --omit=dev --audit-level=moderate
@@ -91,9 +97,9 @@ smoke: build
 	node scripts/smoke/run.mjs
 	node dist/main.js --version
 
-check: lint-check references cycles security coverage grammar zed smoke
+check: lint-check references cycles vocabulary security coverage grammar zed smoke
 
-check-fast: lint-check references cycles test grammar zed smoke
+check-fast: lint-check references cycles vocabulary test grammar zed smoke
 
 setup-hooks:
 	git config core.hooksPath .githooks

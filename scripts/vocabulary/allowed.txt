@@ -1,0 +1,11 @@
+# Strings in the dxn command and the language server that use a word of the
+# vocabulary but are not the model's wording, each as "<path>: <string>".
+#
+# A whole file, by its path, is its own interface: the command's usage.
+packages/cli/src/commands/usage.ts
+#
+# Commands no editor feature mirrors, which word what only they say.
+packages/cli/src/commands/attach.ts: no combination given exists for …; … lists them
+packages/cli/src/commands/review.ts: …: nothing is stale, gone or outdated\n
+# dxn states, which an editor's code lens runs as it is.
+packages/cli/src/commands/states.ts: …: one combination, with no states\n
