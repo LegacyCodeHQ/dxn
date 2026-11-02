@@ -1,4 +1,4 @@
-import type { Child, Diagnostic, Enum, Located, ParseResult, State, Type } from "./ast.js";
+import type { Child, Diagnostic, Enum, Located, ParseResult, State, Type, Union } from "./ast.js";
 import { covers, links, type Span, wordAt } from "./definition.js";
 import { placement } from "./evaluate.js";
 import { among, article } from "./names.js";
@@ -126,7 +126,7 @@ export function renameAt(
           : kind.kind === "value" && kind.of !== undefined
             ? renameInData(file, item.record, item.source, kind.of.name, name, to)
             : kind.kind === "child"
-              ? renameChildInData(file, item.source, found.declared as Child, to)
+              ? renameChildInData(file, item.source, found.declared as Child | Union, to)
               : kind.kind === "type"
                 ? renameTypeInData(item.source, found.declared as Type, to)
                 : kind.kind === "profile" || kind.kind === "modifier"
@@ -266,6 +266,8 @@ export function kindsOf(file: ParseResult): Map<Located, Kind> {
     for (const action of type.actions) result.set(action.name, { kind: "action", type });
     for (const event of type.events) result.set(event, { kind: "event", type });
     for (const child of type.children) result.set(child, { kind: "child", type });
+    // A list of several is renamed as a child is, with each member's path.
+    for (const union of type.unions) result.set(union, { kind: "child", type });
   }
   for (const declaration of file.environments) result.set(declaration, { kind: "environment" });
   for (const declaration of file.profiles) result.set(declaration, { kind: "profile" });

@@ -1,4 +1,4 @@
-import type { Declaration, ParseResult, Type } from "./ast.js";
+import { childAt, type Declaration, type ParseResult, type Type } from "./ast.js";
 import { type Placement, placement } from "./evaluate.js";
 import { parse } from "./parse.js";
 import { penNode, scalars } from "./scalars.js";
@@ -229,7 +229,10 @@ export function completions(
   if (/^state\s+/.test(statement) && /:\s*$/.test(statement)) {
     return names(visible(file, type.name, file.enums), "enum");
   }
-  if (/^has\s+[A-Za-z0-9-]+\s*:\s*\[?\s*$/.test(statement)) {
+  if (
+    /^has\s+[A-Za-z0-9-]+\s*:\s*\[?\s*$/.test(statement) ||
+    (inList(lines, line) && /^[a-z][A-Za-z0-9-]*\s*:\s*$/.test(statement))
+  ) {
     const around = new Set(chain(file, type.name));
     return names(
       visible(file, type.name, file.types).filter(
@@ -302,11 +305,11 @@ function valuesOf(
 // The type a path of children leads to, from a type.
 function along(file: ParseResult, from: Type, parts: string[]): Type | undefined {
   let type: Type | undefined = from;
-  for (const part of parts) {
-    const child: Type["children"][number] | undefined = type?.children.find(
-      ({ name }) => name === part,
-    );
-    type = child === undefined ? undefined : typeNamed(file, child.type.name);
+  for (let index = 0; index < parts.length; ) {
+    const found = type === undefined ? undefined : childAt(type, parts, index);
+    if (found === undefined) return undefined;
+    index = found.next;
+    type = typeNamed(file, found.child.type.name);
   }
   return type;
 }
@@ -346,6 +349,18 @@ function resolve(file: ParseResult, type: string, name: string): string {
 
 // What is open at a line and a column, from the braces before it: each brace
 // is what the line it opens on starts with.
+// Whether a line is a member's of a list of several: below a "has" line that
+// ends with "[", and other members, before its "]".
+function inList(lines: string[], line: number): boolean {
+  for (let row = line - 2; row >= 0; row--) {
+    const text = (lines[row] ?? "").replace(/#.*$/, "").trim();
+    if (text === "") continue;
+    if (/^has\s/.test(text)) return text.endsWith("[");
+    if (text.startsWith("]") || text.endsWith("{") || text.startsWith("}")) return false;
+  }
+  return false;
+}
+
 function opened(file: ParseResult, lines: string[], line: number, column: number): Open[] {
   const stack: Open[] = [];
   for (let row = 0; row < line; row++) {
@@ -359,8 +374,10 @@ function opened(file: ParseResult, lines: string[], line: number, column: number
       const parent = types.at(-1)?.name;
       const typeHead = head.match(/^type\s+([A-Za-z0-9-]+)/);
       const recordHead = head.match(/^record\s+([A-Za-z0-9-]+)/);
-      // A child's type, or a list's, in its brackets.
-      const childHead = head.match(/^has\s+[A-Za-z0-9-]+\s*:\s*\[?\s*([A-Za-z0-9.-]+)/);
+      // A child's type, a list's, in its brackets, or a member's of a list.
+      const childHead =
+        head.match(/^has\s+[A-Za-z0-9-]+\s*:\s*\[?\s*([A-Za-z0-9.-]+)/) ??
+        (inList(lines, row + 1) ? head.match(/^[a-z][A-Za-z0-9-]*\s*:\s*([A-Za-z0-9.-]+)$/) : null);
       const profileHead = head.match(/^profile\s+[A-Za-z0-9-]+\s*:\s*([A-Za-z0-9-]+)/);
       if (/\bwhen\s+[A-Za-z0-9-]+\s*$/.test(head)) stack.push({ kind: "other" });
       else if (/^expect\b/.test(head)) stack.push({ kind: "expect", line: row + 1 });

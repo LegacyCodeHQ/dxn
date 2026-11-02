@@ -1,4 +1,4 @@
-import type { Located, ParseResult, RecordDeclaration, Type } from "./ast.js";
+import type { Child, Located, ParseResult, RecordDeclaration, Type } from "./ast.js";
 import { conditionText, holds } from "./condition.js";
 import { childPath, type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { states as evaluate, inPlace, type Placement, placement } from "./evaluate.js";
@@ -433,17 +433,29 @@ export function validate(
     }
     const and = (names: string[]) =>
       names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+    const isThere = (child: Child) =>
+      child.when === undefined || holds(child.when, (name) => values[name]);
     for (const kind of kinds) {
       const children = type.children.filter((child) => short(child.type.name) === kind);
-      const there = children.filter(
-        (child) => child.when === undefined || holds(child.when, (name) => values[name]),
-      );
-      const exact = there.filter(({ list }) => !list).length;
+      const there = children.filter(isThere);
+      // A single child is drawn once, a list one or more times, and a
+      // member of a list of several any number of times, the list as a whole
+      // checked after.
+      const singles = there.filter(({ list, member }) => !list && member === undefined);
+      const exact = singles.length;
       const lists = there.filter(({ list }) => list);
+      const members = there.filter(({ member }) => member !== undefined);
       const count = shown.get(kind) ?? 0;
-      if (lists.length > 0 ? count >= exact + 1 : count === exact) continue;
+      if (
+        lists.length > 0
+          ? count >= exact + 1
+          : members.length > 0
+            ? count >= exact
+            : count === exact
+      )
+        continue;
       const drew = `the drawing shows ${instances(count, kind)}`;
-      const [first] = there;
+      const [first] = singles.length > 0 ? singles : there;
       if (first === undefined) {
         // Drawn where it is not there.
         const away = children[0] as (typeof children)[number];
@@ -463,10 +475,32 @@ export function validate(
         report(`${drew}, but ${first.name} is a single ${kind}`, first);
       } else {
         report(
-          `${drew}, but ${and(there.map(({ name }) => name))} are ${instances(exact, kind)}`,
+          `${drew}, but ${and(singles.map(({ name }) => name))} are ${instances(exact, kind)}`,
           first,
         );
       }
+    }
+    // A list of several has one row or more, of its members there: the rows
+    // of their types beyond the single children of those types.
+    for (const union of type.unions) {
+      const there = union.members.filter(isThere);
+      if (there.length === 0) continue;
+      const kindsThere = [...new Set(there.map((member) => short(member.type.name)))];
+      const rows = kindsThere.reduce((sum, kind) => {
+        const singles = type.children.filter(
+          (child) =>
+            short(child.type.name) === kind &&
+            !child.list &&
+            child.member === undefined &&
+            isThere(child),
+        ).length;
+        return sum + Math.max(0, (shown.get(kind) ?? 0) - singles);
+      }, 0);
+      if (rows > 0) continue;
+      const none = `no ${kindsThere.join(" or ")} instance`;
+      const tags = there.map((member) => member.short ?? member.name);
+      const of = tags.length === 1 ? tags[0] : `${tags.slice(0, -1).join(", ")} or ${tags.at(-1)}`;
+      report(`the drawing shows ${none}, but ${union.name} is a list, one or more of ${of}`, union);
     }
   };
 

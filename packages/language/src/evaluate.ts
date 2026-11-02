@@ -1,4 +1,12 @@
-import { type Branch, type Child, fixes, type ParseResult, type State, type Type } from "./ast.js";
+import {
+  type Branch,
+  type Child,
+  childAt,
+  fixes,
+  type ParseResult,
+  type State,
+  type Type,
+} from "./ast.js";
 import { conditionText, holds, subjects } from "./condition.js";
 import { among, valuesOf as declaredValues } from "./names.js";
 import { profilesOf } from "./profiles.js";
@@ -374,17 +382,25 @@ export function placement(file: ParseResult, path: string): Placement {
   const root = file.types.find(({ name }) => name === rootName);
   if (root === undefined) throw new Error(`no type ${rootName}`);
   const steps: Placement["steps"] = [{ type: root, prefix: "" }];
-  for (const name of first === -1 ? [] : segments.slice(first)) {
+  const rest = first === -1 ? [] : segments.slice(first);
+  for (let at = 0; at < rest.length; ) {
+    const name = rest[at] as string;
     const { type: parent, prefix: previous } = steps.at(-1) as Placement["steps"][number];
-    const child = parent.children.find((candidate) => candidate.name === name);
+    const found = childAt(parent, rest, at);
+    const child = found?.child;
     if (child === undefined) {
       const children = parent.children.map((candidate) => candidate.name);
       throw new Error(
         `${name} is not a child of ${parent.name}${among(name, children, "it has none")}`,
       );
     }
+    at = (found as { next: number }).next;
     const type = file.types.find(({ name }) => name === child.type.name) as Type;
-    steps.push({ type, child, prefix: previous === "" ? name : `${previous}.${name}` });
+    steps.push({
+      type,
+      child,
+      prefix: previous === "" ? child.name : `${previous}.${child.name}`,
+    });
   }
   const keyAt = (level: number, name: string) => {
     const prefix = steps[level]?.prefix ?? "";

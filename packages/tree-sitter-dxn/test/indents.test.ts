@@ -37,7 +37,7 @@ describe("the indents", () => {
         .replace(/"[^"]*"/g, (quoted) => " ".repeat(quoted.length))
         .replace(/#.*$/, "");
       for (const [column, char] of [...code].entries()) {
-        if (char === "}" || char === ")") closing.push(`end ${row}:${column}`);
+        if (char === "}" || char === ")" || char === "]") closing.push(`end ${row}:${column}`);
       }
     });
     const found = captures();

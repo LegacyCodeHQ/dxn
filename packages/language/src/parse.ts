@@ -22,6 +22,7 @@ import type {
   State,
   Trigger,
   Type,
+  Union,
 } from "./ast.js";
 import { check } from "./check.js";
 import { conditionText } from "./condition.js";
@@ -452,11 +453,13 @@ export function parse(source: string): ParseResult {
   // child's states the type sets, and "only when <condition>" when it is not
   // always there. A list, "has <name>: [<Type>]", is one or more of its type,
   // and its bindings set every one's states.
-  const child = (): Child => {
+  const child = (): { placed: Child } | { union: Union } => {
     const named = name("child", "a child name", lowercase);
     expect(":", `":" after ${JSON.stringify(named.name)}`);
     const opens = peek().text === "[";
     if (opens) next();
+    // A list of several members, one on each line, to its "]".
+    if (opens && peek().kind === "newline") return { union: union(named) };
     const placed: Child = {
       ...named,
       type: qualified(opens ? 'a type after "["' : 'a type after ":"'),
@@ -477,7 +480,58 @@ export function parse(source: string): ParseResult {
     } else {
       end(["newline", "}"], '"only when" or the end of the line');
     }
-    return placed;
+    return { placed };
+  };
+
+  // A list's members, after "[" and the end of its line: "<tag>: <Type>
+  // [{ <bindings> }] [only when <condition>]", one on each line, to "]"; then
+  // the whole list's only when, which is every member's too.
+  const union = (named: Located): Union => {
+    const members: Child[] = [];
+    for (;;) {
+      while (peek().kind === "newline") next();
+      if (peek().text === "]" && members.length > 0) break;
+      if (peek().kind !== "word") fail(peek(), 'a member, such as "article: <Type>"');
+      const tag = name("child", 'a member, such as "article: <Type>"', lowercase);
+      expect(":", `":" after ${JSON.stringify(tag.name)}`);
+      if (peek().text === "[") fail(peek(), 'a type after ":" (a member is not a list)');
+      const member: Child = {
+        ...tag,
+        name: `${named.name}.${tag.name}`,
+        short: tag.name,
+        member: named.name,
+        type: qualified('a type after ":"'),
+      };
+      if (peek().kind === "{") {
+        next();
+        member.bindings = bindingsOf(tag.name);
+      }
+      if (peek().kind === "word" && peek().text === "only") {
+        next();
+        keyword("when", '"when" after "only"');
+        member.when = condition("a state or a dimension");
+      }
+      end(["newline"], '"only when" or the end of the line');
+      members.push(member);
+    }
+    next();
+    if (peek().kind === "word" && peek().text === "only") {
+      next();
+      keyword("when", '"when" after "only"');
+      const whole = condition("a state or a dimension");
+      for (const member of members) {
+        member.when =
+          member.when === undefined ? whole : { kind: "and", terms: [member.when, whole] };
+      }
+    } else if (peek().kind === "{") {
+      fail(
+        peek(),
+        `"only when" or the end of the line after "]" (bind each member's states on its line)`,
+      );
+    } else {
+      end(["newline", "}"], '"only when" or the end of the line');
+    }
+    return { ...named, members };
   };
 
   // A type: "type <Name> needs <Dimension>, ... { state <field>, ... <rule> ... }",
@@ -493,6 +547,7 @@ export function parse(source: string): ParseResult {
       enums: [],
       types: [],
       children: [],
+      unions: [],
       provides: [],
       actions: [],
       triggers: [],
@@ -629,7 +684,12 @@ export function parse(source: string): ParseResult {
       }
       if (token.text === "has") {
         next();
-        type.children.push(child());
+        const read = child();
+        if ("placed" in read) type.children.push(read.placed);
+        else {
+          type.unions.push(read.union);
+          type.children.push(...read.union.members);
+        }
         return;
       }
       // An enum or a type inside it.

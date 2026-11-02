@@ -135,3 +135,40 @@ type Feed {
         condition: (comparison
           subject: (identifier)
           (value))))))
+
+================================================================================
+A list of several members, each with its own bindings and only when
+================================================================================
+
+type Feed {
+  has feed: [
+    article: ArticleRow { reading = unread }
+    ad: AdRow only when plan = free
+  ] only when content = articles
+}
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (type_declaration
+    name: (identifier)
+    body: (type_body
+      (child_declaration
+        name: (identifier)
+        union: (union
+          (member
+            tag: (identifier)
+            type: (identifier)
+            bindings: (bindings
+              (binding
+                state: (identifier)
+                from: (identifier))))
+          (member
+            tag: (identifier)
+            type: (identifier)
+            condition: (comparison
+              subject: (identifier)
+              (value))))
+        condition: (comparison
+          subject: (identifier)
+          (value))))))

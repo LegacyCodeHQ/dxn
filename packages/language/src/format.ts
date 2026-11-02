@@ -5,7 +5,7 @@ import { parse } from "./parse.js";
 type Piece = { kind: "word" | "string" | "sign"; text: string };
 
 // The one way a .dxn file is written, as gofmt writes Go: two spaces of
-// indentation for each brace, and one more for a line that continues the one
+// indentation for each brace or bracket left open, and one more for a line that continues the one
 // above it; one way to space each sign; comments kept as written; at most one
 // blank line in a row; line feeds, and one at the end. Nothing is reordered,
 // joined or split. A file that does not parse is left alone: nothing.
@@ -16,20 +16,21 @@ export function format(source: string): string | undefined {
   for (const line of source.replace(/^﻿/, "").split(/\r\n|\r|\n/)) {
     const { pieces, comment } = split(line);
     const [first] = pieces;
-    // A closing brace steps back; a line that goes on with |, and or or, in.
-    const closes = first?.text === "}";
+    // A closing brace or bracket steps back; a line that goes on with |, and
+    // or or, in.
+    const closes = first?.text === "}" || first?.text === "]";
     const continues = first !== undefined && ["|", "and", "or"].includes(first.text);
     const indent = "  ".repeat(Math.max(0, depth - (closes ? 1 : 0)) + (continues ? 1 : 0));
     const code = joined(pieces);
     const after = comment === undefined ? "" : code === "" ? comment : `  ${comment}`;
     written.push({
       text: code === "" && comment === undefined ? "" : `${indent}${code}${after}`,
-      opens: pieces.at(-1)?.text === "{",
+      opens: pieces.at(-1)?.text === "{" || pieces.at(-1)?.text === "[",
       closes,
     });
     for (const { text } of pieces) {
-      if (text === "{") depth += 1;
-      if (text === "}") depth = Math.max(0, depth - 1);
+      if (text === "{" || text === "[") depth += 1;
+      if (text === "}" || text === "]") depth = Math.max(0, depth - 1);
     }
   }
   return `${blanks(written).join("\n")}\n`;

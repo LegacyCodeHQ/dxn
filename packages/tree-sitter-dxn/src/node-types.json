@@ -314,6 +314,16 @@
             "named": true
           }
         ]
+      },
+      "union": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "union",
+            "named": true
+          }
+        ]
       }
     }
   },
@@ -517,6 +527,72 @@
     "type": "list",
     "named": true,
     "fields": {
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "qualified_name",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "member",
+    "named": true,
+    "fields": {
+      "bindings": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "bindings",
+            "named": true
+          }
+        ]
+      },
+      "condition": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "and_condition",
+            "named": true
+          },
+          {
+            "type": "comparison",
+            "named": true
+          },
+          {
+            "type": "or_condition",
+            "named": true
+          }
+        ]
+      },
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
       "type": {
         "multiple": false,
         "required": true,
@@ -1198,6 +1274,21 @@
         },
         {
           "type": "receives",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "union",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "member",
           "named": true
         }
       ]

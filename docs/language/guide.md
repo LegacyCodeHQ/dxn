@@ -663,6 +663,35 @@ does here, and shows something else there, or nothing. A list without an
 Bindings set every row's states: `[ArticleRow] { reading = unread }` is a
 list of unread rows.
 
+A list can have rows of several kinds. Its **members** go one on each line
+inside the brackets, each a tag and a type, with its own bindings and its own
+`only when`:
+
+```
+type FeedScreen {
+  enum Plan = free | paid
+  state plan: Plan
+
+  has feed: [
+    article: ArticleRow
+    ad: AdRow only when plan = free
+  ]
+}
+```
+
+Each row is one of the members: an article or, on the free plan, an ad, in
+any mix, and the list has at least one row. This is a **tagged union**: the
+choices are closed, nothing but what the list names, and each carries its
+tag, which tells them apart even when two are of one type,
+`unread: ArticleRow { reading = unread }` and `read: ArticleRow { reading =
+read }`. Each member is a child of the type in place, by its path,
+`FeedScreen.feed.ad`, counted and recorded as any child is; the list itself
+has no looks. An `only when` after the `]` is the whole list's, every
+member's too. Bindings go on each member's line, never after the `]`, since
+the members may be of different types. A member that adds no rows, whose
+every row another member of its type allows too, is a warning,
+`redundant-member`.
+
 ### Provided and received: a state from far above
 
 A state lives in the lowest type that all its users share: the menu's in the
@@ -1780,7 +1809,9 @@ change      = path | state-name "->" value                      # path: an actio
 event       = path | comparison                                  # path: an event the type declares, or a child's
 events      = "event" event-name { "," event-name } newline
 provides    = "provides" state-name newline
-has         = "has" child-name ":" ( type-name | "[" type-name "]" ) [ bindings ] [ "only" "when" condition ] newline   # [ ]: one or more
+has         = "has" child-name ":" ( ( type-name | "[" type-name "]" ) [ bindings ] | members ) [ "only" "when" condition ] newline   # [ ]: one or more
+members     = "[" newline member { member } "]"                     # a tagged union: each row one of them
+member      = child-name ":" type-name [ bindings ] [ "only" "when" condition ] newline
 type-name   = Name { "." Name }
 bindings    = "{" { binding ( "," | newline ) } "}"
 binding     = state-name "=" state-name                # or a value of the child's state, which fixes it
@@ -1887,3 +1918,4 @@ JSON itself:
 | `outdated`         | (a warning) a stored record leaves out a state or a dimension its element gained since it was recorded                                                                 |
 | `duplicate-record` | two stored records are the same in everything but their PenNodes' fingerprints                                                                                         |
 | `drawing-mismatch` | a stored record's pen.dev drawing shows a type of the model more or less often than its element has it in its look                                                     |
+| `redundant-member` | (a warning) a list's member allows no row another member of its type does not                                                                                          |

@@ -119,17 +119,33 @@ module.exports = grammar({
       ),
 
     // "has <child>: <Type> [{ <bindings> }] [only when <condition>]", or a
-    // list, one or more of its type: "has <child>: [<Type>] ...".
+    // list, one or more of its type: "has <child>: [<Type>] ...", or of
+    // several members, a tagged union, one on each line, each with its own
+    // bindings and only when: "has <child>: [ <tag>: <Type> ... ] ...".
     child_declaration: ($) =>
       seq(
         "has",
         field("name", $.identifier),
         ":",
-        choice(field("type", $._type_name), field("list", $.list)),
-        optional(field("bindings", $.bindings)),
+        choice(
+          seq(
+            choice(field("type", $._type_name), field("list", $.list)),
+            optional(field("bindings", $.bindings)),
+          ),
+          field("union", $.union),
+        ),
         optional(seq("only", "when", field("condition", $._condition))),
       ),
     list: ($) => seq("[", field("type", $._type_name), "]"),
+    union: ($) => seq("[", repeat1($.member), "]"),
+    member: ($) =>
+      seq(
+        field("tag", $.identifier),
+        ":",
+        field("type", $._type_name),
+        optional(field("bindings", $.bindings)),
+        optional(seq("only", "when", field("condition", $._condition))),
+      ),
     bindings: ($) => seq("{", repeat(seq($.binding, optional(","))), "}"),
     binding: ($) =>
       seq(

@@ -43,6 +43,10 @@ type Page {
   state current: Section = blog
   provides current
   has menu: Menu
+  has items: [
+    link: Link
+    menu: Menu
+  ]
 }
 
 environment Device = Breakpoint x Pointer

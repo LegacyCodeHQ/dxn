@@ -1,6 +1,6 @@
 ; The outline of a dxn file: its declarations, and inside a type, the states,
-; events, children, actions, enums and types it declares; inside a record, its
-; fields.
+; events, children, actions, enums and types it declares, a list's members
+; inside it; inside a record, its fields.
 
 (dimension_declaration "dimension" @context name: (identifier) @name) @item
 (enum_declaration "enum" @context name: (identifier) @name) @item
@@ -16,6 +16,7 @@
 (state_declaration "state" @context (state_field name: (identifier) @name) @item)
 (event_declaration "event" @context name: (identifier) @name @item)
 (child_declaration "has" @context name: (identifier) @name) @item
+(member tag: (identifier) @name) @item
 (action_declaration "action" @context name: (identifier) @name) @item
 
 (record_field name: (identifier) @name) @item

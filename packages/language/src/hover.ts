@@ -131,9 +131,18 @@ function describeType(
     ...(own.length > 0
       ? [`  state ${own.map(({ name, enum: of }) => `${name}: ${of.name}`).join(", ")}`]
       : []),
-    ...type.children.map(
-      ({ name, type: of, list }) => `  has ${name}: ${list ? `[${of.name}]` : of.name}`,
-    ),
+    ...type.children
+      .filter(({ member }) => member === undefined)
+      .map(({ name, type: of, list }) => `  has ${name}: ${list ? `[${of.name}]` : of.name}`),
+    // A list of several, as written: its members, each with its own only when.
+    ...type.unions.flatMap(({ name, members }) => [
+      `  has ${name}: [`,
+      ...members.map(({ short, type: of, when }) => {
+        const only = when === undefined ? "" : ` only when ${conditionText(when)}`;
+        return `    ${short}: ${of.name}${only}`;
+      }),
+      "  ]",
+    ]),
     ...type.actions.map(({ name }) => `  action ${name.name}`),
   ];
   add(type, [header, ...body].join("\n"));

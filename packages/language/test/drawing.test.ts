@@ -90,6 +90,15 @@ type ListScreen {
   has navigation: NavigationBar { kind = root }
   has articles: [ArticleRow] only when content = articles
 }
+enum Plan = free | paid
+type MixScreen {
+  state plan: Plan
+  has navigation: NavigationBar { kind = root }
+  has feed: [
+    article: ArticleRow
+    back: BackButton only when plan = free
+  ]
+}
 record Evidence {
   source: PenNode
 }
@@ -150,6 +159,23 @@ actor DesignAgent records Evidence
       "4:6: drawing-mismatch: kind = pushed: the drawing shows 1 NavigationBar instance, which NavigationBar does not have",
       "4:6: drawing-mismatch: kind = pushed: the drawing shows 2 ArticleRow instances, which NavigationBar does not have",
       "6:7: drawing-mismatch: kind = pushed: the drawing shows no BackButton instance, but back is a single BackButton",
+    ]);
+  });
+
+  it("agrees where a mixed list has a row of any of its members, in any mix", () => {
+    expect(
+      problems(
+        entry("MixScreen", { plan: "paid" }, "articles"),
+        entry("MixScreen", { plan: "free" }, "articles"),
+      ),
+    ).toEqual([]);
+  });
+
+  it("is an error where a mixed list has no row, or one of a member not there in the look", () => {
+    expect(problems(entry("MixScreen", { plan: "paid" }, "pushed"))).toEqual([
+      "22:7: drawing-mismatch: plan = paid: the drawing shows no NavigationBar instance, but navigation is a single NavigationBar",
+      "25:5: drawing-mismatch: plan = paid: the drawing shows 1 BackButton instance, but feed.back is there only when plan = free",
+      "23:7: drawing-mismatch: plan = paid: the drawing shows no ArticleRow instance, but feed is a list, one or more of article",
     ]);
   });
 

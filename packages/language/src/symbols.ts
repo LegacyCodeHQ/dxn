@@ -46,7 +46,23 @@ export function symbols(source: string, file: ParseResult = parse(source)): Docu
     symbol(type, "type", type.short ?? type.name, [
       ...type.states.map((state) => symbol(state, "state", state.name, [], true)),
       ...type.events.map((event) => symbol(event, "event", event.name, [], true)),
-      ...type.children.map((child) => symbol(child, "child", child.name)),
+      ...type.children
+        .filter(({ member }) => member === undefined)
+        .map((child) => symbol(child, "child", child.name)),
+      // A list of several, to its "]", its members inside it.
+      ...type.unions.map((union) => {
+        const members = union.members.map((member) =>
+          symbol(member, "child", member.short ?? member.name),
+        );
+        const list = symbol(union, "child", union.name, members);
+        const close =
+          (lines.slice(union.line).findIndex((text) => text.trim().startsWith("]")) ?? 0) +
+          union.line +
+          1;
+        // A Windows line's \r is its end, not a character on it.
+        const text = (lines[close - 1] ?? "").replace(/\r$/, "");
+        return { ...list, end: { line: close, column: text.length + 1 } };
+      }),
       ...type.actions.map((action) => symbol(action.name, "action", action.name.name)),
       ...file.enums
         .filter(({ scope }) => scope === type.name)

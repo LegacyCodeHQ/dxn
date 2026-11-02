@@ -1,4 +1,13 @@
-import { type Child, fixes, type Located, type ParseResult, type State, type Type } from "./ast.js";
+import {
+  type Child,
+  childAt,
+  fixes,
+  type Located,
+  type ParseResult,
+  type State,
+  type Type,
+  type Union,
+} from "./ast.js";
 import { comparisons } from "./condition.js";
 import { type Placement, placement } from "./evaluate.js";
 import { childTypeAt } from "./expect.js";
@@ -281,23 +290,40 @@ export function renameStateInData(
 export function renameChildInData(
   file: ParseResult,
   source: string,
-  child: Child,
+  child: Child | Union,
   to: string,
 ): { source: string; changed: number } {
   const edits: { start: number; end: number; text: string }[] = [];
   // The parts of a path of children from a type, that child's renamed; none
-  // when no part is.
+  // when no part is. A member of a list is two parts, the list's name and its
+  // tag: a member renamed is its tag, a list its name.
   const renamedFrom = (from: Type | undefined, parts: string[]) => {
     let type = from;
     let changed = false;
-    const result = parts.map((part) => {
-      const found: Child | undefined = type?.children.find(({ name }) => name === part);
-      const inner: string | undefined = found?.type.name;
+    const result: string[] = [];
+    for (let at = 0; at < parts.length; ) {
+      const found = type === undefined ? undefined : childAt(type, parts, at);
+      if (found === undefined) {
+        result.push(...parts.slice(at));
+        break;
+      }
+      const written = parts.slice(at, found.next);
+      if (found.child === child) {
+        written[written.length - 1] = to;
+        changed = true;
+      } else if (
+        written.length === 2 &&
+        "members" in child &&
+        child.members.includes(found.child)
+      ) {
+        written[0] = to;
+        changed = true;
+      }
+      result.push(...written);
+      at = found.next;
+      const inner: string = found.child.type.name;
       type = file.types.find(({ name }) => name === inner);
-      if (found !== child) return part;
-      changed = true;
-      return to;
-    });
+    }
     return changed ? result : undefined;
   };
   const context = (node: JsonNode) => {

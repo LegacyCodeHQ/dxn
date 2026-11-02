@@ -17,7 +17,8 @@ function plain(value: unknown): unknown {
 // A type, with its nested enums and types, and its children, only when it
 // has any.
 function nestedOnly(type: Type): unknown {
-  const { enums, types, children, provides, actions, triggers, alikes, events, ...rest } = type;
+  const { enums, types, children, unions, provides, actions, triggers, alikes, events, ...rest } =
+    type;
   return {
     ...rest,
     ...(events.length > 0 ? { events } : {}),
@@ -27,6 +28,7 @@ function nestedOnly(type: Type): unknown {
     ...(enums.length > 0 ? { enums } : {}),
     ...(types.length > 0 ? { types: types.map(nestedOnly) } : {}),
     ...(children.length > 0 ? { children } : {}),
+    ...(unions.length > 0 ? { unions } : {}),
     ...(provides.length > 0 ? { provides } : {}),
   };
 }

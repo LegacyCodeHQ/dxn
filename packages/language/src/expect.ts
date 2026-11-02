@@ -1,4 +1,11 @@
-import type { Child, Expectation, ParseResult, Trigger, Type } from "./ast.js";
+import {
+  type Child,
+  childAt,
+  type Expectation,
+  type ParseResult,
+  type Trigger,
+  type Type,
+} from "./ast.js";
 import { eventText } from "./check-types.js";
 import { holds } from "./condition.js";
 import { placement } from "./evaluate.js";
@@ -309,9 +316,12 @@ function checkOne(
 // The type of a child, by its path from a type.
 export function childTypeAt(file: ParseResult, type: Type, path: string[]): Type | undefined {
   let at: Type | undefined = type;
-  for (const part of path) {
-    const child: Child | undefined = at?.children.find(({ name }) => name === part);
-    at = file.types.find(({ name }) => name === child?.type.name);
+  for (let index = 0; index < path.length; ) {
+    const found: { child: Child; next: number } | undefined =
+      at === undefined ? undefined : childAt(at, path, index);
+    if (found === undefined) return undefined;
+    index = found.next;
+    at = file.types.find(({ name }) => name === found.child.type.name);
   }
   return at;
 }

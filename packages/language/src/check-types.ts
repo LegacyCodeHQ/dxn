@@ -11,7 +11,7 @@ import type {
   Trigger,
   Type,
 } from "./ast.js";
-import { fixes } from "./ast.js";
+import { childAt, fixes } from "./ast.js";
 import { checkChosen, checkWhen, type Report } from "./check-values.js";
 import { comparisons, conditionText, coverage, subjects } from "./condition.js";
 import { among, enumOf, type Names } from "./names.js";
@@ -64,6 +64,7 @@ export function checkTypes(file: ParseResult, names: Names, report: Report): voi
     checkRuleCycles(checking);
     checkAlikes(checking);
     checkChildren(checking);
+    checkMembers(checking);
     checkActions(checking);
     checkProvides(checking);
   }
@@ -306,6 +307,43 @@ function checkAlikes(checking: TypeContext): void {
 // A type's children: each named once, among its children and its states,
 // of a type, and there only when one of its states, or a dimension it
 // needs, has one of the values given.
+// A list's members that add no rows: every row one allows, another member of
+// its type allows too, there wherever it is and binding only what it binds,
+// to the same values. A member and its double: the later adds nothing.
+function checkMembers(checking: TypeContext): void {
+  const { report, type } = checking;
+  const covers = (wider: Child, narrower: Child) =>
+    wider.type.name === narrower.type.name &&
+    (wider.when === undefined ||
+      (narrower.when !== undefined &&
+        conditionText(wider.when) === conditionText(narrower.when))) &&
+    (wider.bindings ?? []).every(
+      (binding) =>
+        fixes(type, binding) &&
+        (narrower.bindings ?? []).some(
+          ({ state, from, map }) =>
+            map === undefined &&
+            state.name === binding.state.name &&
+            from.name === binding.from.name,
+        ),
+    );
+  for (const { members } of type.unions) {
+    members.forEach((member, index) => {
+      const wider = members.find(
+        (other, at) =>
+          other !== member && covers(other, member) && (!covers(member, other) || at < index),
+      );
+      if (wider === undefined) return;
+      report(
+        "redundant-member",
+        `${member.short} adds no rows: every ${member.type.name} it allows, ${wider.short} allows too`,
+        member,
+        "warning",
+      );
+    });
+  }
+}
+
 function checkChildren(checking: TypeContext): void {
   const { names, report, type } = checking;
   const taken = new Map<string, string>(type.states.map(({ name }) => [name, "state"]));
@@ -762,11 +800,14 @@ function subjectOf(checking: TypeContext, subject: Located, states = true): stri
 // undefined, reported, when a part is not a child.
 function childType({ file, report }: Context, type: Type, path: Located): Type | undefined {
   let at: Type | undefined = type;
-  for (const part of path.name.split(".")) {
+  const parts = path.name.split(".");
+  for (let index = 0; index < parts.length; ) {
+    const part = parts[index] as string;
     // A child whose type is not one, or a broken type, is reported already.
     if (at === undefined) return undefined;
-    const child: Child | undefined = at.children.find(({ name }) => name === part);
-    if (child === undefined) {
+    const found = childAt(at, parts, index);
+    const child: Child | undefined = found?.child;
+    if (found === undefined || child === undefined) {
       if (at.broken) return undefined;
       const children = at.children.map(({ name }) => name);
       report(
@@ -776,6 +817,7 @@ function childType({ file, report }: Context, type: Type, path: Located): Type |
       );
       return undefined;
     }
+    index = found.next;
     at = file.types.find(({ name }) => name === child.type.name);
   }
   return at;

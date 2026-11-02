@@ -75,6 +75,9 @@ export interface Type extends Declaration {
   types: Type[];
   // The elements it contains.
   children: Child[];
+  // Its lists of several members, each a tagged union: one or more rows,
+  // each one of its members, which are among its children.
+  unions: Union[];
   // Its states that the types inside it can receive.
   provides: Located[];
   // How its own states change, by name; and what triggers each change.
@@ -135,11 +138,36 @@ export interface Child extends Located {
   // A list: one or more of its type, each in any of its looks; none is the
   // list not there.
   list?: true;
+  // A member of a list of several: the list's name. The member is a child of
+  // the type, named "<list>.<tag>", its tag as written its short name.
+  member?: string;
+  short?: string;
   when?: Condition;
   // The child's states the type sets, each from one of its own states:
   // without a map, both with their values from the same enum; with a map,
   // the child's state takes the value its branch gives for the type's state.
   bindings?: Binding[];
+}
+
+// A list of several members: its name, as written, and its members, in order.
+export interface Union extends Located {
+  members: Child[];
+}
+
+// The child of a type a path names from one of its parts on: by its name, or,
+// for a member of a list, by the list's and its tag, "<list>.<tag>"; and the
+// part after it.
+export function childAt(
+  type: Type,
+  parts: string[],
+  at: number,
+): { child: Child; next: number } | undefined {
+  const one = type.children.find(({ name }) => name === parts[at]);
+  if (one !== undefined) return { child: one, next: at + 1 };
+  if (at + 1 >= parts.length) return undefined;
+  const named = `${parts[at]}.${parts[at + 1]}`;
+  const two = type.children.find(({ name, member }) => member !== undefined && name === named);
+  return two === undefined ? undefined : { child: two, next: at + 2 };
 }
 
 // A child's state the type sets: from one of its own states, or a dimension;

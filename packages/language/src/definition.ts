@@ -1,6 +1,7 @@
 import {
   type Child,
   type Condition,
+  childAt,
   type Declaration,
   type Enum,
   fixes,
@@ -138,7 +139,9 @@ export function links(source: string, file: ParseResult = parse(source)): Link[]
 }
 
 // Follows a path from a type through its children to its part at an index:
-// a child, or, at its end, what the path names.
+// Follows a path from a type through its children to its part at an index:
+// a child, a list of several members by its name, a member by its tag, or,
+// at its end, what the path names.
 function along(
   file: ParseResult,
   from: Type,
@@ -147,10 +150,10 @@ function along(
   to: "state" | "action" | "event" | "child",
 ): Located | undefined {
   let type: Type | undefined = from;
-  for (const [at, part] of parts.entries()) {
+  for (let at = 0; at < parts.length; ) {
     if (type === undefined) return undefined;
-    const last = at === parts.length - 1;
-    if (last && to !== "child") {
+    const part = parts[at] as string;
+    if (at === parts.length - 1 && to !== "child") {
       const own: Located[] =
         to === "state"
           ? type.states
@@ -159,9 +162,16 @@ function along(
             : type.events;
       return at === index ? own.find(({ name }) => name === part) : undefined;
     }
-    const child: Child | undefined = type.children.find(({ name }) => name === part);
-    if (at === index) return child;
-    const inner: string | undefined = child?.type.name;
+    const found = childAt(type, parts, at);
+    if (found?.child.member !== undefined && found.next === at + 2) {
+      if (at === index) return type.unions.find(({ name }) => name === part);
+      if (at + 1 === index) return found.child;
+    } else if (at === index) {
+      return found?.child;
+    }
+    if (found === undefined) return undefined;
+    at = found.next;
+    const inner: string = found.child.type.name;
     type = file.types.find(({ name }) => name === inner);
   }
   return undefined;

@@ -122,6 +122,18 @@ a state of the type that holds the list, which also names why it is empty.
 A list with its own count was tried and left out: a type could then declare
 a state for the same thing, and nothing could tell the two apart.
 
+A list of several members is a non-empty list of a **tagged union**: each
+row is one of its members, a tag and a type with its own bindings and
+`only when`, in any mix. The choices are closed, so each can be checked to be
+drawn; the tag names the choice, so a record's path, `FeedScreen.feed.ad`,
+says which type it is about even when two members share one. Its members'
+looks add, never multiply, and the list has none of its own. Which members
+exist can depend on the type's states, a union indexed by state, and is
+still known for every look. A member that adds no rows to another is a
+warning: the model says less than it seems to. Rows chosen by the data, a
+list of records whose field picks the member, are left for when a model
+needs it.
+
 ### When and else
 
 A `when` gives a value for every value of its subject, and a value left out
