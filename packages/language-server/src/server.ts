@@ -202,35 +202,48 @@ export function serve(connection: Connection): void {
   connection.onHover(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
-    // On the name of an element of the trees, where it is written: what is
-    // left of its evidence.
+    const file = parsed(document);
     const text = document.getText().split("\n")[position.line] ?? "";
+    // The length of the name written at a column, path parts and all.
     const named = (column: number) =>
-      text.slice(column - 1).match(/^[A-Za-z0-9-]+/)?.[0].length ?? 0;
-    const place = (hintsBeside(document.uri, parsed(document)) ?? []).find(
-      ({ line, column }) =>
-        line - 1 === position.line &&
-        position.character >= column - 1 &&
-        position.character <= column - 1 + named(column),
+      text.slice(column - 1).match(/^[A-Za-z0-9.-]+/)?.[0].length ?? 0;
+    const over = (line: number, column: number) =>
+      line - 1 === position.line &&
+      position.character >= column - 1 &&
+      position.character <= column - 1 + named(column);
+    const hints = hintsBeside(document.uri, file) ?? [];
+    // On a type's name where it is declared: what is left of its evidence.
+    const declared = hints.find(
+      (hint) =>
+        over(hint.line, hint.column) &&
+        file.types.some(({ line, column }) => line === hint.line && column === hint.column),
     );
-    if (place !== undefined) {
-      const start = { line: place.line - 1, character: place.column - 1 };
+    if (declared !== undefined) {
+      const start = { line: declared.line - 1, character: declared.column - 1 };
       return {
-        contents: { kind: "markdown", value: place.details },
-        range: { start, end: { ...start, character: start.character + named(place.column) } },
+        contents: { kind: "markdown", value: declared.details },
+        range: { start, end: { ...start, character: start.character + named(declared.column) } },
       };
     }
-    const found = hover(
-      document.getText(),
-      position.line + 1,
-      position.character + 1,
-      parsed(document),
-    );
+    const found = hover(document.getText(), position.line + 1, position.character + 1, file);
     if (found === undefined) return null;
     const { line, column, length } = found.from;
     const comment = found.comment === undefined ? "" : `\n\n${found.comment}`;
+    // On a child's type on a has line: the type, and the child's evidence
+    // there, which a has line has over its type's name, not over the child's.
+    const child = file.types
+      .flatMap(({ children }) => children)
+      .find((each) => over(each.type.line, each.type.column));
+    const placed =
+      child === undefined
+        ? undefined
+        : hints.find((hint) => hint.line === child.line && hint.column === child.column);
+    const evidence = placed === undefined ? "" : `\n\n---\n\n${placed.details}`;
     return {
-      contents: { kind: "markdown", value: `\`\`\`dxn\n${found.code}\n\`\`\`${comment}` },
+      contents: {
+        kind: "markdown",
+        value: `\`\`\`dxn\n${found.code}\n\`\`\`${comment}${evidence}`,
+      },
       range: {
         start: { line: line - 1, character: column - 1 },
         end: { line: line - 1, character: column - 1 + length },

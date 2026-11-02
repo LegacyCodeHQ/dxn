@@ -86,7 +86,8 @@ record outdated, or records with problems.
 
 A `has` line whose child is a component, such as the tabs of a tab bar, has
 no hint of its own: the component's own line counts its looks. Hovering
-over the child's name shows its count there.
+over the component's name on that line shows its declaration, with its
+count there.
 ## Indenting as you type and paste
 
 `languages/dxn/indents.scm` tells Zed what is inside each pair of braces and

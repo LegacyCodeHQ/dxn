@@ -1106,21 +1106,30 @@ describe("the language server", () => {
         textDocument: { uri },
         range: { start: { line: 0, character: 0 }, end: { line: 14, character: 0 } },
       });
-      // Bar's tab is a usage of the Tab component: no hint, but its hover.
-      const found = await editor.sendRequest(HoverRequest.type, {
-        textDocument: { uri },
-        position: { line: 8, character: 7 },
-      });
+      // Bar's tab is a usage of the Tab component: no hint, but over the
+      // component's name its declaration and its evidence there; over the
+      // child's name, no evidence.
+      const hovered = async (character: number) =>
+        (
+          (
+            await editor.sendRequest(HoverRequest.type, {
+              textDocument: { uri },
+              position: { line: 8, character },
+            })
+          )?.contents as { value: string } | undefined
+        )?.value;
       expect([
         hints?.map(({ position, label }) => [position.line, label]),
-        (found?.contents as { value: string } | undefined)?.value.split("\n")[0],
+        await hovered(12),
+        await hovered(7),
       ]).toEqual([
         [
           [1, "◐ PenEvidence 1 of 2"],
           [4, "◐ PenEvidence 1 of 2"],
           [7, "○ PenEvidence 0 of 1"],
         ],
-        "◐ PenEvidence 1 of 2",
+        "```dxn\ntype Tab\n  state style: Style\n```\n\n---\n\n◐ PenEvidence 1 of 2\n\nMissing:\n- Bar.tab: style = bold",
+        undefined,
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
