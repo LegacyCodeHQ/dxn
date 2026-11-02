@@ -39,8 +39,11 @@ function checkUsedEnums(file: ParseResult, names: Names, { warn }: Report): void
       ...file.records.flatMap(({ fields }) => fields.map((field) => field.type.name)),
     ].flatMap((name) => (names.kindOf(name) === undefined ? near(name, enums) : [name])),
   );
+  // An enum declared twice is reported as that, and is warned of once.
+  const warned = new Set<string>();
   for (const declared of file.enums) {
-    if (!used.has(declared.name)) {
+    if (!used.has(declared.name) && !warned.has(declared.name)) {
+      warned.add(declared.name);
       warn(
         "unused-enum",
         message`${declared.name} is not used: no state or record field takes its values`,
