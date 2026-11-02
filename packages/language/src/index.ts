@@ -3,6 +3,8 @@
 
 // Reading a .dxn file into declarations.
 export type { Diagnostic, Located, ParseResult, RecordDeclaration, Type } from "./ast.js";
+// Whether a binding fixes its child's state to one of its values.
+export { fixes } from "./ast.js";
 // What a type, or a child in place, has that can be told apart.
 export { type Cases, cases } from "./cases.js";
 // What fits where a cursor is, for editors.

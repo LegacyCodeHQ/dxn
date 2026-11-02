@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   duplicates,
+  fixes,
   folderOf,
   freshness,
   type Located,
@@ -201,6 +202,25 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
     shown.delete(`${line}:${column}#${record}`);
     return stoppedBy(file, record, group.problems, readsOf(record));
   };
+  // The records whose evidence is a drawing.
+  const drawn = new Set(
+    file.records
+      .filter(({ fields }) => fields.some(({ type }) => type.name === "PenNode"))
+      .map(({ name }) => name),
+  );
+  // Where a usage is: the type whose has line it is, and what that line
+  // pins of the child, "in FeedScreen, with kind = root".
+  const whereOf = ({ line, column }: Progress) => {
+    for (const type of file.types) {
+      const child = type.children.find((each) => each.line === line && each.column === column);
+      if (child === undefined) continue;
+      const pins = (child.bindings ?? [])
+        .filter((binding) => fixes(type, binding))
+        .map(({ state, from }) => `${state.name} = ${from.name}`);
+      return `in ${type.name}${pins.length === 0 ? "" : `, with ${pins.join(", ")}`}`;
+    }
+    return "";
+  };
   const hints = counted.flatMap((place) => {
     const parts = place.records.flatMap((each): Part[] => {
       const problems = stopped.get(each.record);
@@ -210,7 +230,11 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
         ];
       }
       const outdated = each.outdated.length > 0;
-      const count = outdated ? outdatedAt(each) : countOf(each);
+      const wording: Wording = {
+        verb: drawn.has(each.record) ? "drawn" : "recorded",
+        ...(place.usage ? { where: whereOf(place) } : {}),
+      };
+      const count = outdated ? outdatedAt(each, wording) : countOf(each, wording);
       const set = apartAt(place.line, place.column, each.record);
       // An element that never appears has nothing to show.
       if (each.combinations === 0 && !outdated && set === undefined) return [];
@@ -257,19 +281,42 @@ function joined(parts: Part[]): { label: string; details: string } {
   };
 }
 
+// How a count is worded: what was done to a state with evidence, drawn for a
+// record with a PenNode and recorded for any other; and, for a usage of a
+// component, where it is, "in FeedScreen, with kind = root".
+interface Wording {
+  verb: "drawn" | "recorded";
+  where?: string;
+}
+
 // A record's evidence at a place: its count, "PenEvidence 4 of 6, 1 stale",
 // then the combinations missing, stale and gone, each listed.
-function countOf(each: Progress["records"][number]): { label: string; details: string } {
-  const { label, lists } = countAndLists(each);
+function countOf(
+  each: Progress["records"][number],
+  wording: Wording,
+): { label: string; details: string } {
+  const { label, lists } = countAndLists(each, wording);
   return { label, details: [label, ...lists].join("\n\n") };
 }
 
 // A record's count at a place, and its lists of what is missing, stale and
 // gone.
-function countAndLists(each: Progress["records"][number]): { label: string; lists: string[] } {
+function countAndLists(
+  each: Progress["records"][number],
+  wording: Wording,
+): { label: string; lists: string[] } {
   const { record, combinations, present, stale, gone, listed } = each;
+  const states = combinations === 1 ? "state" : "states";
+  // A usage says whether all its states there are drawn, where it is and
+  // what pins it; a declaration, how many of its own.
+  const counted =
+    wording.where === undefined
+      ? `${record} ${present} of ${combinations} ${states} ${wording.verb}`
+      : present === combinations && stale === 0 && gone === 0
+        ? `${record}: all states ${wording.verb} ${wording.where}`
+        : `${record}: ${present} of ${combinations} ${states} ${wording.verb} ${wording.where}`;
   const label = [
-    `${record} ${present} of ${combinations}`,
+    counted,
     ...(stale > 0 ? [`${stale} stale`] : []),
     ...(gone > 0 ? [`${gone} gone`] : []),
   ].join(", ");
@@ -288,9 +335,12 @@ function countAndLists(each: Progress["records"][number]): { label: string; list
 // A record's evidence at a place where some stored records are outdated:
 // its count and how many are, by what was added; then why, what to do, and
 // each one, by what it says; then what is missing, stale and gone.
-function outdatedAt(each: Progress["records"][number]): { label: string; details: string } {
+function outdatedAt(
+  each: Progress["records"][number],
+  wording: Wording,
+): { label: string; details: string } {
   const here = each.outdated;
-  const { label: count, lists } = countAndLists(each);
+  const { label: count, lists } = countAndLists(each, wording);
   const names = [...new Set(here.flatMap(({ added }) => added))];
   const and = names.join(" and ");
   const or = names.join(" or ");
