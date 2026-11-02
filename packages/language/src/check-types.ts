@@ -334,9 +334,18 @@ function checkMembers(checking: TypeContext): void {
           other !== member && covers(other, member) && (!covers(member, other) || at < index),
       );
       if (wider === undefined) return;
+      const [narrow, wide] = [member.short, wider.short];
+      const bound = wider.bindings ?? [];
+      const only = bound.map(({ state, from }) => `${state.name} = ${from.name}`).join(", ");
+      const why =
+        bound.length === 0
+          ? `${wide} binds nothing, so it already allows every ${member.type.name}, the ${narrow} ones too`
+          : bound.length === (member.bindings ?? []).length
+            ? `${wide} binds the same as ${narrow}, so it already allows every row ${narrow} does`
+            : `${wide} binds only ${only}, so it already allows every row ${narrow} does`;
       report(
         "redundant-member",
-        `${member.short} adds no rows: every ${member.type.name} it allows, ${wider.short} allows too`,
+        `${narrow} adds no rows: ${why}; remove ${narrow}, or narrow ${wide}`,
         member,
         "warning",
       );

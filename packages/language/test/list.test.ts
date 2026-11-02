@@ -203,12 +203,37 @@ describe("a list of several members", () => {
   });
 
   it("warns of a member that adds no rows: every row it allows, another allows too", () => {
-    expect(
+    const touch = (source: string) =>
+      source.replace(
+        "  state reading: Reading\n",
+        "  enum Touch = idle | pressed\n  state reading: Reading, interaction: Touch\n",
+      );
+    expect([
       problems(
         mixed("    big: ArticleRow { reading = read }\n    any: ArticleRow\n    ad: AdRow\n"),
       ),
-    ).toEqual([
-      "10:5: warning: redundant-member: big adds no rows: every ArticleRow it allows, any allows too",
+      problems(
+        mixed(
+          "    fresh: ArticleRow { reading = unread }\n    again: ArticleRow { reading = unread }\n",
+        ),
+      ),
+      problems(
+        touch(
+          mixed(
+            "    fresh: ArticleRow { reading = unread, interaction = idle }\n    unread: ArticleRow { reading = unread }\n",
+          ),
+        ),
+      ),
+    ]).toEqual([
+      [
+        "10:5: warning: redundant-member: big adds no rows: any binds nothing, so it already allows every ArticleRow, the big ones too; remove big, or narrow any",
+      ],
+      [
+        "11:5: warning: redundant-member: again adds no rows: fresh binds the same as again, so it already allows every row again does; remove again, or narrow fresh",
+      ],
+      [
+        "11:5: warning: redundant-member: fresh adds no rows: unread binds only reading = unread, so it already allows every row fresh does; remove fresh, or narrow unread",
+      ],
     ]);
   });
 
