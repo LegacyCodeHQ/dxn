@@ -93,6 +93,9 @@ type FeedScreen {
 
   has navigation: NavigationBar { kind = root }
   has tabs: TabBar { section = feed }
-  has article: ArticleRow only when content = articles
+  has articles: [
+    unread: ArticleRow { reading = unread }
+    read: ArticleRow { reading = read }
+  ] only when content = articles
   has follow: Button { style = primary } only when content = empty
 }
