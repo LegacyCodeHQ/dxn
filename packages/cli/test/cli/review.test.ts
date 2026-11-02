@@ -296,7 +296,7 @@ actor Designer records Evidence
       "spec/button.dxn: Evidence 0 of 4 states drawn · 1 outdated: hover added",
     ]);
     expect(status.stdout).toContain(
-      "\nOutdated:\n  Button: style = filled, recorded before hover\n",
+      "\nOutdated: 1 record; give each the values it lacks to count it again.\n  Button: style = filled, without hover\n",
     );
     expect(run("review", "spec/button.dxn").code).toBe(0);
     expect(run("review", "spec/button.dxn", "--stale").code).toBe(0);

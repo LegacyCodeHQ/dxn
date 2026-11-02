@@ -320,7 +320,7 @@ function disagreeing(
   const label = `${count.label}, ${records.size} ${matches} the model`;
   const [, ...rest] = count.details.split("\n\n");
   const listed = [
-    "Drawn otherwise than the model has it:",
+    `${evidenceHeadings.mismatched}:`,
     "",
     ...problems.map(
       ({ at, line, column, message }) => `- ${at.shown}:${line}:${column}: ${message}`,

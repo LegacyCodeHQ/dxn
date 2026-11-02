@@ -88,12 +88,23 @@ export function outdatedWhy(outdated: OutdatedAt[]): string {
   } to count it again.`;
 }
 
+// Outdated records, for an agent: how many, and what to do about them.
+export const outdatedSummary = (count: number): string =>
+  `${count === 1 ? "1 record" : `${count} records`}; give each the values it lacks to count it again`;
+
+// One outdated record, for an agent: its element, what it says, and what it
+// lacks, each state or dimension added since it was recorded.
+export const outdatedItem = ({ path, says, added }: OutdatedAt): string =>
+  `${path}: ${says}, without ${added.join(", ")}`;
+
 // The headings of what a count leaves out, each listed under one.
 export const evidenceHeadings = {
   missing: "Missing",
   stale: "Stale",
   gone: "Gone",
   outdated: "Outdated",
+  // Stored records whose drawings show the element otherwise than the model.
+  mismatched: "Drawn otherwise than the model has it",
 } as const;
 
 // The columns of a table of evidence, an element to a row.

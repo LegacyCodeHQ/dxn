@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
-import { evidenceColumns, evidenceLabel, isDrawn, outdatedWhy } from "../src/vocabulary.js";
+import {
+  evidenceColumns,
+  evidenceLabel,
+  isDrawn,
+  outdatedItem,
+  outdatedSummary,
+  outdatedWhy,
+} from "../src/vocabulary.js";
 
 // The words dxn and an editor both say a count of evidence in: one place, so
 // neither says it otherwise.
@@ -56,6 +63,22 @@ describe("the words for evidence", () => {
       [
         "1 record is outdated: focus was added to Link after it was recorded, so it does not say which focus it shows. Add its focus value to count it again.",
         "2 records are outdated: focus and size were added to Link and Menu after they were recorded, so they do not say which focus or size they show. Add each one's focus and size values to count it again.",
+      ]
+    `);
+  });
+
+  it("list outdated records for an agent: how many, what to do, and each with what it lacks", () => {
+    expect([
+      outdatedSummary(1),
+      outdatedSummary(3),
+      outdatedItem({ path: "Button", says: "style = filled", added: ["hover"] }),
+      outdatedItem({ path: "Link", says: "hover = rest", added: ["focus", "Theme"] }),
+    ]).toMatchInlineSnapshot(`
+      [
+        "1 record; give each the values it lacks to count it again",
+        "3 records; give each the values it lacks to count it again",
+        "Button: style = filled, without hover",
+        "Link: hover = rest, without focus, Theme",
       ]
     `);
   });

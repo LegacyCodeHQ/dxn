@@ -99,6 +99,8 @@ export {
   evidenceVerb,
   isDrawn,
   type OutdatedAt,
+  outdatedItem,
+  outdatedSummary,
   outdatedWhy,
   type Usage,
 } from "./vocabulary.js";
