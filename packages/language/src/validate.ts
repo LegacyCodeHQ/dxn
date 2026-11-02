@@ -15,6 +15,11 @@ interface Look {
   named: string;
 }
 
+// How many instances of a component a drawing shows, as a message says it:
+// "no Tab instance", "1 Tab instance", "3 Tab instances".
+const instances = (count: number, name: string) =>
+  `${count === 0 ? "no" : count} ${name} ${count <= 1 ? "instance" : "instances"}`;
+
 // How a JSON value reads in a message.
 const found: Record<JsonNode["kind"], string> = {
   object: "an object",
@@ -420,7 +425,10 @@ export function validate(
     const kinds = [...new Set(type.children.map((child) => short(child.type.name)))];
     for (const [name, count] of shown) {
       if (modeled.has(name) && !kinds.includes(name)) {
-        report(`the drawing shows ${count} ${name}, which ${type.name} does not have`, type);
+        report(
+          `the drawing shows ${instances(count, name)}, which ${type.name} does not have`,
+          type,
+        );
       }
     }
     const and = (names: string[]) =>
@@ -434,7 +442,7 @@ export function validate(
       const lists = there.filter(({ list }) => list);
       const count = shown.get(kind) ?? 0;
       if (lists.length > 0 ? count >= exact + 1 : count === exact) continue;
-      const drew = `the drawing shows ${count === 0 ? "no" : count} ${kind}`;
+      const drew = `the drawing shows ${instances(count, kind)}`;
       const [first] = there;
       if (first === undefined) {
         // Drawn where it is not there.
@@ -443,15 +451,21 @@ export function validate(
         report(`${drew}, but ${away.name} is there only when ${when}`, away);
       } else if (lists.length > 0) {
         report(
-          `${drew}, but ${and(there.map(({ name }) => name))} is one or more`,
+          `${drew}, but ${and(there.map(({ name }) => name))} is a list, one or more ${kind}`,
           lists[0] as Located,
         );
       } else if (exact === 1 && count > 1) {
-        report(`${drew}, but ${first.name} is one; make it a list, [${kind}], or draw one`, first);
+        report(
+          `${drew}, but ${first.name} is a single ${kind}; make it a list, [${kind}], or draw one`,
+          first,
+        );
       } else if (exact === 1) {
-        report(`${drew}, but ${first.name} is there`, first);
+        report(`${drew}, but ${first.name} is a single ${kind}`, first);
       } else {
-        report(`${drew}, but ${and(there.map(({ name }) => name))} are ${exact}`, first);
+        report(
+          `${drew}, but ${and(there.map(({ name }) => name))} are ${instances(exact, kind)}`,
+          first,
+        );
       }
     }
   };

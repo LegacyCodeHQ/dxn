@@ -1272,7 +1272,7 @@ describe("the language server", () => {
           [
             { start: { line: 2, character: 6 }, end: { line: 2, character: 9 } },
             1,
-            "Screen: the drawing shows 2 Row, but row is one; make it a list, [Row], or draw one (pen-evidence/screen.json:1)",
+            "Screen: the drawing shows 2 Row instances, but row is a single Row; make it a list, [Row], or draw one, in pen-evidence/screen.json:1",
           ],
         ],
         [

@@ -111,7 +111,7 @@ export function evidence(
                   severity === "warning" ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
                 code,
                 source: "dxn",
-                message: `${message} (${at.shown}:${line})`,
+                message: `${message}, in ${at.shown}:${line}`,
               },
             ],
       ),
