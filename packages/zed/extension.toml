@@ -10,7 +10,7 @@ repository = "https://github.com/LegacyCodeHQ/dxn"
 # are written against.
 [grammars.dxn]
 repository = "https://github.com/LegacyCodeHQ/dxn"
-commit = "acdc318edaf5649b38a6dad5a8e519e468cfdc54"
+commit = "e9623d3966d9851a36245f5d24e55e45383cf317"
 path = "packages/tree-sitter-dxn"
 
 # The language server in packages/language-server, for inline errors. The
