@@ -128,6 +128,9 @@ export interface Hint {
   column: number;
   label: string;
   details: string;
+  // A usage of a component, whose own declaration has the hint: shown over
+  // its name, not as a hint of its own.
+  usage: boolean;
 }
 
 export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined {
@@ -218,12 +221,12 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
       return [{ label, details: [label, ...rest, set.details].join("\n\n"), mark: "◌" }];
     });
     if (parts.length === 0) return [];
-    return [{ line: place.line, column: place.column, ...joined(parts) }];
+    return [{ line: place.line, column: place.column, usage: place.usage, ...joined(parts) }];
   });
   // Set-apart records about a type no tree has at its root, at the type.
   for (const { at, record, problems } of shown.values()) {
     const part = { ...stoppedBy(file, record, problems, readsOf(record)), mark: "◌" as const };
-    hints.push({ line: at.line, column: at.column, ...joined([part]) });
+    hints.push({ line: at.line, column: at.column, usage: false, ...joined([part]) });
   }
   return hints.sort((a, b) => a.line - b.line || a.column - b.column);
 }

@@ -64,17 +64,29 @@ export function treePaths(file: ParseResult): string[] {
 // component, a tree of its own though another type contains it: what it is
 // wherever it is placed, unless it needs what its parent provides. A type
 // declared inside another is only in place.
-export function treePlaces(file: ParseResult): { path: string; type: string; at: Located }[] {
+// An element of a tree: its path, its type, where its name is written, and
+// whether it is in the own tree of the type whose declaration writes it,
+// that type's root or a child it declares, not a child of a child.
+export interface TreePlace {
+  path: string;
+  type: string;
+  at: Located;
+  own: boolean;
+}
+
+export function treePlaces(file: ParseResult): TreePlace[] {
   const contained = new Set(
     file.types.flatMap(({ children }) => children.map(({ type }) => type.name)),
   );
   const byName = new Map(file.types.map((type) => [type.name, type]));
-  const places: { path: string; type: string; at: Located }[] = [];
-  const walk = (type: Type, path: string, at: Located) => {
-    places.push({ path, type: type.name, at });
+  const places: TreePlace[] = [];
+  const walk = (type: Type, path: string, at: Located, own: boolean) => {
+    places.push({ path, type: type.name, at, own });
     for (const child of type.children) {
       const inner = byName.get(child.type.name);
-      if (inner !== undefined) walk(inner, `${path}.${child.name}`, child);
+      // A child is in its declaring type's own tree when that type is the
+      // tree's root.
+      if (inner !== undefined) walk(inner, `${path}.${child.name}`, child, path === type.name);
     }
   };
   // A component stands on its own when nothing in it needs a state from
@@ -88,8 +100,8 @@ export function treePlaces(file: ParseResult): { path: string; type: string; at:
     }
   };
   for (const type of file.types) {
-    if (!contained.has(type.name)) walk(type, type.name, type);
-    else if (type.scope === undefined && alone(type)) walk(type, type.name, type);
+    if (!contained.has(type.name)) walk(type, type.name, type, true);
+    else if (type.scope === undefined && alone(type)) walk(type, type.name, type, true);
   }
   return places;
 }
@@ -115,12 +127,16 @@ export function describe(file: ParseResult, path: string, combination: Combinati
 
 // Where each element of the trees is written, how much of it each record an
 // actor records covers: its combinations, how many are present, stale and
-// gone, and those not present, described. An element written in one place
-// and placed in several, as a child of a type that is, counts all of them
-// there. The file and the data must have no problems.
+// gone, and those not present, described. A line counts within the own tree
+// of the type that declares it, where that type has one; a line in a type
+// that is only ever placed counts every place it is in. The file and the
+// data must have no problems.
 export interface Progress {
   line: number;
   column: number;
+  // Whether it is a usage of a component, a child whose type is a tree of its
+  // own, which counts its looks where it is declared.
+  usage: boolean;
   records: {
     record: string;
     combinations: number;
@@ -154,14 +170,25 @@ export function progress(
     ),
   );
   const byPlace = new Map<string, Progress>();
-  for (const { path, at } of treePlaces(file)) {
-    const key = `${at.line}:${at.column}`;
-    const place = byPlace.get(key) ?? { line: at.line, column: at.column, records: [] };
-    byPlace.set(key, place);
+  const places = treePlaces(file);
+  // A line counts within its declaring type's own tree, where that type has
+  // one; else every place it is in.
+  const keyOf = ({ at }: TreePlace) => `${at.line}:${at.column}`;
+  const owned = new Set(places.filter(({ own }) => own).map(keyOf));
+  // The types that are trees of their own: a child of one is a usage of a
+  // component, whose looks its own declaration counts.
+  const trees = new Set(places.filter(({ path, type }) => path === type).map(({ type }) => type));
+  for (const place of places) {
+    const { path, at } = place;
+    const key = keyOf(place);
+    if (owned.has(key) && !place.own) continue;
+    const usage = path !== place.type && trees.has(place.type);
+    const entry = byPlace.get(key) ?? { line: at.line, column: at.column, usage, records: [] };
+    byPlace.set(key, entry);
     for (const report of covered) {
       const found = report.paths.find((each) => each.path === path);
       if (found === undefined) continue;
-      let counted = place.records.find(({ record }) => record === report.record);
+      let counted = entry.records.find(({ record }) => record === report.record);
       if (counted === undefined) {
         counted = {
           record: report.record,
@@ -172,7 +199,7 @@ export function progress(
           listed: { missing: [], stale: [], gone: [] },
           outdated: [],
         };
-        place.records.push(counted);
+        entry.records.push(counted);
       }
       counted.combinations += found.combinations;
       counted.present += found.present;

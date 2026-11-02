@@ -145,13 +145,19 @@ export function serve(connection: Connection): void {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
     const lines = document.getText().split("\n");
-    return (hintsBeside(document.uri, parsed(document)) ?? [])
-      .filter(({ line }) => line - 1 >= range.start.line && line - 1 <= range.end.line)
-      .map(({ line, label }) => ({
-        position: { line: line - 1, character: (lines[line - 1] ?? "").trimEnd().length },
-        label,
-        paddingLeft: true,
-      }));
+    return (
+      (hintsBeside(document.uri, parsed(document)) ?? [])
+        // A usage of a component has its count on the component, and over its
+        // name.
+        .filter(
+          ({ line, usage }) => !usage && line - 1 >= range.start.line && line - 1 <= range.end.line,
+        )
+        .map(({ line, label }) => ({
+          position: { line: line - 1, character: (lines[line - 1] ?? "").trimEnd().length },
+          label,
+          paddingLeft: true,
+        }))
+    );
   });
   connection.onDefinition(({ textDocument, position }) => {
     const document = documents.get(textDocument.uri);

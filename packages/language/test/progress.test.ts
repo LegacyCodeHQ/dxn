@@ -67,10 +67,10 @@ describe("progress", () => {
         ),
       ]),
     ).toEqual([
-      // Menu, a component on its own, and its toggle, there and in Toolbar's
-      // menu, which its records cover in both.
+      // Menu, a component on its own, and its toggle in Menu's own tree, not
+      // again in Toolbar's menu.
       [4, 6, ["Evidence 0 of 2, 0 stale, 0 gone"]],
-      [12, 7, ["Evidence 2 of 12, 2 stale, 0 gone"]],
+      [12, 7, ["Evidence 1 of 6, 1 stale, 0 gone"]],
       [15, 6, ["Evidence 0 of 1, 0 stale, 0 gone"]],
       [16, 7, ["Evidence 0 of 2, 0 stale, 0 gone"]],
     ]);
@@ -88,22 +88,17 @@ describe("progress", () => {
           "Menu.toggle on Laptop: hover = rest, expanded = closed",
           "Menu.toggle on Laptop: hover = hovered, expanded = closed",
           "Menu.toggle on Laptop: hover = rest, expanded = open",
-          "Toolbar.menu.toggle on Phone: hover = rest, expanded = open",
-          "Toolbar.menu.toggle on Laptop: hover = rest, expanded = closed",
-          "Toolbar.menu.toggle on Laptop: hover = hovered, expanded = closed",
-          "Toolbar.menu.toggle on Laptop: hover = rest, expanded = open",
         ],
         "stale": [
           "Menu.toggle on Laptop: hover = hovered, expanded = open",
-          "Toolbar.menu.toggle on Laptop: hover = hovered, expanded = open",
         ],
       }
     `);
   });
 
   it("counts every entry as present without a check", () => {
-    // Each, in Menu on its own and in Toolbar's menu.
-    expect(progress(file, stored).find(({ line }) => line === 12)?.records[0]?.present).toBe(4);
+    // In Menu's own tree.
+    expect(progress(file, stored).find(({ line }) => line === 12)?.records[0]?.present).toBe(2);
   });
 });
 
@@ -226,6 +221,40 @@ actor DesignAgent records Evidence
       ["Tab", 2, 2],
       ["Bar", 2, 0],
       ["Bar.first", 2, 2],
+    ]);
+  });
+});
+
+describe("a line placed in several trees", () => {
+  // A bar with a tab, and a screen that pins the bar to one section.
+  const screen = parse(`enum Selection = unselected | selected
+type Tab {
+  state selection: Selection
+}
+type Bar {
+  enum Section = first | second
+  state section: Section
+  has first: Tab {
+    selection = when section {
+      first -> selected
+      else -> unselected
+    }
+  }
+}
+type Screen {
+  has bar: Bar { section = first }
+}
+record Evidence {
+  source: PenNode
+}
+actor DesignAgent records Evidence
+`);
+
+  it("counts each look of its child once, wherever it appears", () => {
+    const line = progress(screen, []).find(({ line: at }) => at === 8);
+    expect([line?.records[0]?.combinations, line?.records[0]?.listed.missing]).toEqual([
+      2,
+      ["Bar.first: selection = selected", "Bar.first: selection = unselected"],
     ]);
   });
 });

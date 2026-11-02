@@ -32,9 +32,9 @@ a time, without the tree Zed's grammar has.
 
 ## How much of each element has evidence
 
-After each element of the file's trees, an inlay hint shows how many of its
+After each type, and each part placed in a type, an inlay hint shows how many of its
 combinations have evidence, a record at a time, as `dxn status` counts them:
-`PenEvidence 4 of 6, 1 stale` after `type Button {`. Hovering over the
+`◌ PenEvidence 4 of 6, 1 stale` after `type Button {`. Hovering over the
 element's name lists the combinations still missing, stale or gone. Records
 made before the element gained a state or a dimension are counted apart, as
 outdated, with what was added: `PenEvidence 0 of 15 · 9 outdated: hover
@@ -51,6 +51,10 @@ disk.
 Each count starts with a mark: `●` every look has evidence, `◐` some do, `○`
 none does, and `◌` something needs a decision: a drawing stale or gone, a
 record outdated, or records with problems.
+
+A `has` line whose child is a component, such as the tabs of a tab bar, has
+no hint of its own: the component's own line counts its looks. Hovering
+over the child's name shows its count there.
 ## Formatting
 
 A `.dxn` file is formatted when it is saved, the one way `dxn fmt` writes it:
