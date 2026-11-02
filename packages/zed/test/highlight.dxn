@@ -10,7 +10,7 @@ enum Openness = closed | open
 enum Selection = unselected | selected
 enum Layout = compact | inline
 enum Focus = blurred | focused
-enum Timing = when | only |
+enum Timing = on | only |
   # in |
   soon | late
 

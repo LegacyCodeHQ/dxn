@@ -137,7 +137,9 @@ Three rules keep enums unambiguous:
   letter. You can tell which one you are reading at a glance.
 - **A value is lowercase letters and digits,** with single hyphens only
   between them: `rest`, `no-keyboard`, `19px`, but not `Rest`, `hovered-` or
-  `hov--ered`. So no two values differ only in case.
+  `hov--ered`. So no two values differ only in case. A value can be a
+  keyword, such as `on`, but not `when` or `else`, which start a derived
+  state and a `when`'s last branch.
 - **Each value appears once,** and each name is declared once in the file.
 
 ## Types and states
@@ -1856,7 +1858,7 @@ lines       = newline { blank-line | comment newline }   # in an enum or a dimen
 | `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name`, `actor-name`, `profile-name`, `modifier-name` | error    | the name does not start with a capital letter, or has more than letters and digits               |
 | `state-name`, `field-name`, `child-name`                                                                                     | error    | the name does not start with a lowercase letter                                                  |
 | `action-name`                                                                                                                | error    | an action's name does not start with a lowercase letter                                          |
-| `value-name`                                                                                                                 | error    | a value is not lowercase letters and digits, with single hyphens between them                    |
+| `value-name`                                                                                                                 | error    | a value is not lowercase letters and digits, with single hyphens between, or is `when` or `else` |
 | `duplicate-name`                                                                                                             | error    | a name is declared twice in the file, or an expectation's title                                  |
 | `duplicate-value`                                                                                                            | error    | a value appears twice in an enum, dimension, condition or `when`                                 |
 | `duplicate-state`                                                                                                            | error    | a type has two states with one name                                                              |

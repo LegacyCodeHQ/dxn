@@ -56,7 +56,13 @@ A value is lowercase letters and digits, with single hyphens only between
 them: `rest`, `no-keyboard`, `19px`, but not `Rest`, `a-` or `a--b`. With no
 capitals, two values never differ only in case. A value may be only digits,
 `2` or `700`, as column counts and weights are written. A value may be a
-keyword, such as `only` or `when`; where it stands says which it is. A
+keyword, such as `on` or `only`, since where it stands says which it is;
+but not `when` or `else`. After `=`, `when` starts a derived state, and in a
+`when`, `else` starts its last branch, so neither could ever be read as a
+value there. No other keyword is read otherwise where a value stands. If
+another becomes a problem, a keyword written as a value could be quoted, as
+Kotlin quotes one in backticks; that is not done yet, as it adds a kind of
+token for two words. A
 built-in scalar's name, such as `Timestamp`, may not be declared: it shares
 one namespace with what a file declares, and a field typed with it could not
 tell the two apart.

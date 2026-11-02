@@ -170,6 +170,10 @@ describe("enum", () => {
     snapshot.push(errors("enum Hover = rest | hovered-\n"));
     snapshot.push(errors("enum Hover = rest | hov--ered\n"));
     snapshot.push(errors("enum Hover = -rest | --hovered\n"));
+    // when and else are the two keywords a value cannot be; the rest can.
+    snapshot.push(errors("enum Timing = when | soon\n"));
+    snapshot.push(errors("enum Branch = else | then\n"));
+    snapshot.push(errors("enum Setting = off | on | in | only\n"));
     snapshot.push(errors("dimension Pointer = Mouse | touch\n"));
     snapshot.push(errors("type Menu {\n  enum State = Closed | open\n}\n"));
     expect(snapshot).toMatchInlineSnapshot(`
@@ -191,6 +195,13 @@ describe("enum", () => {
           "1:14: value-name: values start with a lowercase letter or a digit: \`-rest\`",
           "1:22: value-name: values start with a lowercase letter or a digit: \`--hovered\`",
         ],
+        [
+          "1:15: value-name: a value cannot be \`when\`, which starts a derived state",
+        ],
+        [
+          "1:15: value-name: a value cannot be \`else\`, which starts a when's last branch",
+        ],
+        [],
         [
           "1:21: value-name: values start with a lowercase letter or a digit: \`Mouse\`",
         ],

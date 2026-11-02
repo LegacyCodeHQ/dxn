@@ -30,7 +30,7 @@ import { conditionText } from "./condition.js";
 import { expectations } from "./expect.js";
 import { conditionsInMatrix } from "./matrix.js";
 import { message, words } from "./message.js";
-import { isValue } from "./naming.js";
+import { isValue, reserved } from "./naming.js";
 import { describe, located, scan, type Token, type TokenKind } from "./scan.js";
 import { scope } from "./scope.js";
 
@@ -193,9 +193,11 @@ export function parse(source: string): ParseResult {
       result.diagnostics.push({
         severity: "error",
         code: "value-name",
-        message: /^[a-z0-9]/.test(named.name)
-          ? message`values are lowercase letters and digits, with single hyphens between them: ${named.name}`
-          : message`values start with a lowercase letter or a digit: ${named.name}`,
+        message: reserved.has(named.name)
+          ? message`a value cannot be ${named.name}, ${words(reserved.get(named.name) ?? "")}`
+          : /^[a-z0-9]/.test(named.name)
+            ? message`values are lowercase letters and digits, with single hyphens between them: ${named.name}`
+            : message`values start with a lowercase letter or a digit: ${named.name}`,
         line: named.line,
         column: named.column,
       });

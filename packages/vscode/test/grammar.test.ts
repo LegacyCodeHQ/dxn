@@ -228,14 +228,14 @@ describe("the TextMate grammar", () => {
 
   it("colours an enum's values as values, on the lines it carries on to and when they are keywords", async () => {
     expect(
-      await tokens("enum Timing = when | only |", "  # in |", "  soon | late"),
+      await tokens("enum Timing = on | only |", "  # in |", "  soon | late"),
     ).toMatchInlineSnapshot(`
         [
           [
             "enum keyword.control.dxn",
             "Timing entity.name.type.dxn",
             "= keyword.operator.dxn",
-            "when constant.other.dxn",
+            "on constant.other.dxn",
             "| keyword.operator.dxn",
             "only constant.other.dxn",
             "| keyword.operator.dxn",

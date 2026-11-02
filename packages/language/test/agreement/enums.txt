@@ -67,7 +67,19 @@ enum Size = 19px | 2xl | no-keyboard
 parse.ts: ok
 tree-sitter: ok
 ---
-enum Timing = when | only | in | enum
+enum Timing = on | only | in | enum
+
+=== A value named when
+parse.ts: error
+tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+---
+enum Timing = when | soon
+
+=== A value named else
+parse.ts: error
+tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+---
+enum Branch = else | then
 
 === An enum inside a type, closed on its line
 parse.ts: ok

@@ -630,6 +630,7 @@ actor DesignReviewRecorder records DesignReview
     snapshot.push(renamed("enum Hover = rest | ", "hovered", "a b"));
     snapshot.push(renamed("enum Hover = rest | ", "hovered", "Hovered"));
     snapshot.push(renamed("enum Hover = rest | ", "hovered", "hovered-"));
+    snapshot.push(renamed("enum Hover = rest | ", "hovered", "when"));
     snapshot.push(renamed("enum Hover = ", "rest", "hovered"));
     snapshot.push(renamed("enum ", "Focus", "Hover"));
     snapshot.push(renamed("", "type", "kind"));
@@ -640,9 +641,10 @@ actor DesignReviewRecorder records DesignReview
       [
         "\`hover\` is not an enum name: a capital letter, then letters and digits",
         "\`Take\` is not an action name: a lowercase letter, then letters, digits and hyphens",
-        "\`a b\` is not a value name: lowercase letters and digits, with single hyphens between them",
-        "\`Hovered\` is not a value name: lowercase letters and digits, with single hyphens between them",
-        "\`hovered-\` is not a value name: lowercase letters and digits, with single hyphens between them",
+        "\`a b\` is not a value name: lowercase letters and digits, with single hyphens between them, and not \`when\` or \`else\`",
+        "\`Hovered\` is not a value name: lowercase letters and digits, with single hyphens between them, and not \`when\` or \`else\`",
+        "\`hovered-\` is not a value name: lowercase letters and digits, with single hyphens between them, and not \`when\` or \`else\`",
+        "\`when\` is not a value name: lowercase letters and digits, with single hyphens between them, and not \`when\` or \`else\`",
         "the rename would leave a problem: \`hovered\` appears twice in \`Hover\`",
         "the rename would leave a problem: \`Hover\` is already declared at line 2",
         "there is no name here to rename",
