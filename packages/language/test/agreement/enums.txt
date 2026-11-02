@@ -1,0 +1,162 @@
+=== One line
+parse.ts: ok
+tree-sitter: ok
+---
+enum Hover = rest | hovered
+
+=== Carried on after a pipe
+parse.ts: ok
+tree-sitter: ok
+---
+enum Size = xs | sm |
+  lg | xl
+
+=== A pipe before each value, on lines of their own
+parse.ts: ok
+tree-sitter: ok
+---
+enum Size =
+  | xs
+  | sm
+
+=== A pipe before the first value, on the first line
+parse.ts: ok
+tree-sitter: ok
+---
+enum Size = | xs | sm
+
+=== A value commented out after a pipe
+parse.ts: ok
+tree-sitter: ok
+---
+enum Size = xs |
+  # sm |
+  md
+
+=== A value commented out before a pipe
+parse.ts: ok
+tree-sitter: ok
+---
+enum Size =
+  | xs
+  # | sm
+  | md
+
+=== A blank line between values
+parse.ts: ok
+tree-sitter: ok
+---
+enum Size =
+  | xs
+
+  | md
+
+=== A single value
+parse.ts: ok
+tree-sitter: ok
+---
+enum Actor = design-agent
+
+=== Values with digits and hyphens
+parse.ts: ok
+tree-sitter: ok
+---
+enum Size = 19px | 2xl | no-keyboard
+
+=== Values named after keywords
+parse.ts: ok
+tree-sitter: ok
+---
+enum Timing = when | only | in | enum
+
+=== An enum inside a type, closed on its line
+parse.ts: ok
+tree-sitter: ok
+---
+type Menu { enum State = closed | open }
+
+=== A value that ends with a hyphen
+parse.ts: error
+tree-sitter: error
+---
+enum Size = xs | sm-
+
+=== A value with two hyphens in a row
+parse.ts: error
+tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+---
+enum Size = xs | s--m
+
+=== A capitalized value
+parse.ts: error
+tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+---
+enum Hover = Rest | hovered
+
+=== A lowercase enum name
+parse.ts: error
+tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+---
+enum hover = rest | hovered
+
+=== A value with an underscore
+parse.ts: error
+tree-sitter: error
+---
+enum Hover = rest | hover_ed
+
+=== A value with a letter outside ASCII
+parse.ts: error
+tree-sitter: error
+---
+enum Size = café | sm
+
+=== Values split by a comma
+parse.ts: error
+tree-sitter: error
+---
+enum Focus = blurred, focused
+
+=== Two values with no pipe between them
+parse.ts: error
+tree-sitter: error
+---
+enum Focus = blurred focused
+
+=== No equals sign
+parse.ts: error
+tree-sitter: error
+---
+enum Focus blurred | focused
+
+=== Nothing after the equals sign
+parse.ts: error
+tree-sitter: error
+---
+enum Focus =
+
+=== A pipe with no value after it, at the end of the file
+parse.ts: error
+tree-sitter: error
+---
+enum Focus = blurred |
+
+=== Two pipes in a row
+parse.ts: error
+tree-sitter: error
+---
+enum Size = xs || sm
+
+=== Values on the line after the equals sign, with no pipe before them
+parse.ts: error
+tree-sitter: ok (line breaks are whitespace to the grammar)
+---
+enum Size =
+  xs | sm
+
+=== A pipe with no value, before the next declaration
+parse.ts: error
+tree-sitter: error
+---
+enum Size = xs |
+enum Gap = sm

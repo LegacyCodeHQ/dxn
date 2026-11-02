@@ -37,7 +37,9 @@ generates and runs the corpus tests; `make check` and CI run it.
 ## Where it differs from parse.ts
 
 The grammar is for reading a file's structure, not for checking it, so it is
-more permissive than `parse.ts` in a few places:
+more permissive than `parse.ts` in a few places. The snippets in
+`packages/language/test/agreement/` say what each of the two reads without an
+error, and why where they differ; both test suites read them.
 
 - Line breaks are whitespace. Statements that `parse.ts` requires on lines of
   their own can share a line (`state a: A state b: B`), and a line can break
