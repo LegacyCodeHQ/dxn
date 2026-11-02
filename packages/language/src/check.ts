@@ -28,8 +28,9 @@ export function check(file: ParseResult): void {
 }
 
 // Enums: each the values of a state or of a record's field, or it is not used.
-// A name that is not an enum uses the enums it may be a misspelling of; and a
-// syntax error may hide what uses one, so then none is reported.
+// A name that is not an enum uses the enums it may be a misspelling of; a
+// syntax error may hide what uses one, so then none is reported; and one
+// declared twice is reported as that.
 function checkUsedEnums(file: ParseResult, names: Names, { warn }: Report): void {
   if (file.diagnostics.some(({ code }) => code === "syntax-error")) return;
   const enums = file.enums.map(({ name }) => name);
@@ -39,11 +40,14 @@ function checkUsedEnums(file: ParseResult, names: Names, { warn }: Report): void
       ...file.records.flatMap(({ fields }) => fields.map((field) => field.type.name)),
     ].flatMap((name) => (names.kindOf(name) === undefined ? near(name, enums) : [name])),
   );
-  // An enum declared twice is reported as that, and is warned of once.
-  const warned = new Set<string>();
+  // An enum declared twice is that error alone, until one of the two goes.
+  const twice = new Set(
+    file.enums
+      .map(({ name }) => name)
+      .filter((name, index, names) => names.indexOf(name) !== index),
+  );
   for (const declared of file.enums) {
-    if (!used.has(declared.name) && !warned.has(declared.name)) {
-      warned.add(declared.name);
+    if (!used.has(declared.name) && !twice.has(declared.name)) {
       warn(
         "unused-enum",
         message`${declared.name} is not used: no state or record field takes its values`,

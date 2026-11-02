@@ -226,8 +226,8 @@ describe("enum", () => {
     snapshot.push(
       problems("enum Size = sm\nenum Hover = rest\ntype Link {\n  state hover: Hover = rset\n}\n"),
     );
-    // An enum declared twice is warned of once, at its first declaration.
-    snapshot.push(problems("enum Hover = rest\nenum Hover = hovered\n"));
+    // An enum declared twice is that error alone; another unused one warns.
+    snapshot.push(problems("enum Hover = rest\nenum Hover = hovered\nenum Size = sm\n"));
     // A syntax error may hide what uses an enum: none is reported.
     snapshot.push(
       problems(
@@ -257,8 +257,8 @@ describe("enum", () => {
           "4:24: unknown-value: \`rset\` is not a value of \`hover\` (\`rest\`)",
         ],
         [
-          "1:6: warning: unused-enum: \`Hover\` is not used: no state or record field takes its values",
           "2:6: duplicate-name: \`Hover\` is already declared at line 1",
+          "3:6: warning: unused-enum: \`Size\` is not used: no state or record field takes its values",
         ],
         [
           "3:32: syntax-error: expected \`=\` or \`in\` after \`hover\`, found \`rest\`",
