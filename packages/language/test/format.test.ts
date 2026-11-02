@@ -17,6 +17,16 @@ describe("format", () => {
     );
   });
 
+  it("indents a line that continues one ending in |, and or or", () => {
+    expect(
+      format(
+        "enum Size = xs | sm |\nlg | xl\ntype Menu {\nstate size: Size\nsize = xs only when size = sm and\nsize = lg\n}\n",
+      ),
+    ).toBe(
+      "enum Size = xs | sm |\n  lg | xl\ntype Menu {\n  state size: Size\n  size = xs only when size = sm and\n    size = lg\n}\n",
+    );
+  });
+
   it("spaces a line's words and signs one way", () => {
     expect(
       format(

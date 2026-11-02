@@ -13,13 +13,19 @@ export function format(source: string): string | undefined {
   if (parse(source).diagnostics.some(({ code }) => code === "syntax-error")) return undefined;
   const written: Written[] = [];
   let depth = 0;
+  // Whether the last line with code ended with |, and or or, so the next one
+  // goes on with it.
+  let carried = false;
   for (const line of source.replace(/^﻿/, "").split(/\r\n|\r|\n/)) {
     const { pieces, comment } = split(line);
     const [first] = pieces;
     // A closing brace or bracket steps back; a line that goes on with |, and
-    // or or, in.
+    // or or, or after a line that ends with one, in.
     const closes = first?.text === "}" || first?.text === "]";
-    const continues = first !== undefined && ["|", "and", "or"].includes(first.text);
+    const goesOn = (piece: Piece | undefined) =>
+      piece !== undefined && ["|", "and", "or"].includes(piece.text);
+    const continues = first !== undefined && (goesOn(first) || carried);
+    if (first !== undefined) carried = goesOn(pieces.at(-1));
     const indent = "  ".repeat(Math.max(0, depth - (closes ? 1 : 0)) + (continues ? 1 : 0));
     const code = joined(pieces);
     const after = comment === undefined ? "" : code === "" ? comment : `  ${comment}`;
