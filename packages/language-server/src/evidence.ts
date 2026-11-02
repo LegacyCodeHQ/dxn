@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
+  drawings,
   duplicates,
   fixes,
   folderOf,
@@ -51,6 +52,7 @@ function checked(
   const directory = dirname(fileURLToPath(uri));
   const read: Read[] = [];
   const problems: Problem[] = [];
+  const drawn = drawings(repositoryOf(fileURLToPath(uri)));
   for (const record of new Set(file.records.map(({ name }) => name))) {
     for (const name of storedFiles(directory, record) ?? []) {
       const path = join(directory, folderOf(record), name);
@@ -67,7 +69,7 @@ function checked(
         uri: pathToFileURL(path).href,
       };
       read.push(at);
-      for (const found of validate(file, record, source)) problems.push({ at, ...found });
+      for (const found of validate(file, record, source, drawn)) problems.push({ at, ...found });
     }
   }
   if (problems.every(({ severity }) => severity === "warning")) {

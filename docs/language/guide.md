@@ -1886,3 +1886,4 @@ JSON itself:
 | `unknown-actor`    | a stored record's actor is not one who records it                                                                                                                      |
 | `outdated`         | (a warning) a stored record leaves out a state or a dimension its element gained since it was recorded                                                                 |
 | `duplicate-record` | two stored records are the same in everything but their PenNodes' fingerprints                                                                                         |
+| `drawing-mismatch` | a stored record's pen.dev drawing shows a type of the model more or less often than its element has it in its look                                                     |

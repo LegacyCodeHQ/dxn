@@ -71,9 +71,15 @@ element, each saying who recorded it and which drawing shows it.
   position. A drawing whose fingerprint has changed is stale; one no longer
   there is gone. The node's name is part of the fingerprint, so renaming a
   node makes its evidence stale.
-- **What a drawing proves.** Evidence is an actor's assertion, not a check:
-  dxn checks that a record names a real look and that its drawing has not
-  changed since, not that the drawing shows that look.
+- **What a drawing proves.** Evidence is an actor's assertion, checked where
+  dxn can read it: a record must name a real look, its drawing must not have
+  changed since, and the drawing must show its element's children as the
+  model has them in that look. A pen.dev instance counts for the type of its
+  component's name: each child exactly once, a list one or more times, a
+  child that is not there in the look not at all, and no other type of the
+  model drawn. A mismatch is an error, `drawing-mismatch`: a drawing that
+  shows what the model does not is evidence of something else. Whether the
+  drawing shows the right states of each child is still the actor's word.
 
 ### Looks
 

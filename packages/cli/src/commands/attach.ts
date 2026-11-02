@@ -3,6 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import {
   among,
   canonical,
+  drawings,
   Fingerprints,
   folderOf,
   givenDimensions,
@@ -272,6 +273,7 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
       parsed,
       record.name,
       written,
+      drawings(repository, fingerprints),
     )) {
       report.problem({ file: shown, line, column, severity: "error", code, path: where, message });
       invalid = true;

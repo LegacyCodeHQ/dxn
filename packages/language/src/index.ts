@@ -31,7 +31,7 @@ export {
 } from "./evaluate.js";
 // What a node of a design file shows, and whether stored evidence still
 // points at what it recorded.
-export { canonical, Fingerprints, freshness, repositoryOf } from "./fingerprint.js";
+export { canonical, drawings, Fingerprints, freshness, repositoryOf } from "./fingerprint.js";
 // The one way a file is written, for dxn fmt and editors.
 export { format } from "./format.js";
 // What a name is, as its declaration is written, for editors.
@@ -75,4 +75,4 @@ export {
 export { folderOf, storedFiles } from "./store.js";
 // The outline of a file, for editors.
 export { type DocumentSymbol, symbols } from "./symbols.js";
-export { validate } from "./validate.js";
+export { type Drawn, validate } from "./validate.js";

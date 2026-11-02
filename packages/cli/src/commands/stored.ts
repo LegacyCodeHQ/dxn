@@ -1,9 +1,12 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import {
+  type Drawn,
+  drawings,
   folderOf,
   type ParseResult,
   duplicates as repeated,
+  repositoryOf,
   storedFiles,
   validate,
 } from "@legacycodehq/dxn-language";
@@ -61,16 +64,23 @@ export function loadStored(
   const uncontexted = storedWithoutContext(parsed, file, cwd);
   if (uncontexted.length > 0) return report.refuse(...uncontexted);
   const stored = storedData(parsed, file, cwd);
-  return checkStored(parsed, stored, report) ? stored : report.fail();
+  const drawn = drawings(repositoryOf(resolve(cwd, file), cwd));
+  return checkStored(parsed, stored, report, drawn) ? stored : report.fail();
 }
 
 // Checks stored data against the file, reporting every problem; whether all of
 // it is valid. A warning, such as a record made before its element gained a
-// state, leaves it valid.
-export function checkStored(parsed: ParseResult, stored: Stored[], report: Reporter): boolean {
+// state, leaves it valid. With a way to read drawings, each must show what the
+// model has.
+export function checkStored(
+  parsed: ParseResult,
+  stored: Stored[],
+  report: Reporter,
+  drawn?: Drawn,
+): boolean {
   let valid = true;
   for (const { record, shown, source } of stored) {
-    for (const found of validate(parsed, record, source)) {
+    for (const found of validate(parsed, record, source, drawn)) {
       const { line, column, code, path, message } = found;
       const severity = found.severity ?? "error";
       report.problem({ file: shown, line, column, severity, code, path, message });

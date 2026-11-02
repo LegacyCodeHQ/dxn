@@ -1,10 +1,18 @@
 import type { ParseResult, RecordDeclaration, Type } from "./ast.js";
+import { conditionText, holds } from "./condition.js";
 import { childPath, type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { states as evaluate, inPlace, type Placement, placement } from "./evaluate.js";
 import { type JsonNode, parseJson } from "./json.js";
 import { among, article, Names } from "./names.js";
 import { givenDimensions, profilesOf } from "./profiles.js";
 import { penNode, scalar } from "./scalars.js";
+
+// The look a stored record is about: its element's type, and the value of
+// each of its states and dimensions there.
+interface Look {
+  type: Type;
+  values: Record<string, string>;
+}
 
 // How a JSON value reads in a message.
 const found: Record<JsonNode["kind"], string> = {
@@ -16,10 +24,25 @@ const found: Record<JsonNode["kind"], string> = {
   null: "null",
 };
 
+// What a PenNode's drawing shows: the components it has an instance of, by
+// name, each with how many; undefined where that is not known.
+export type Drawn = (source: {
+  file: string;
+  frame: string;
+  node?: string;
+}) => Map<string, number> | undefined;
+
 // Checks JSON data, a list of records, against a record of a file without
 // problems: every field given, each of its type, and no others. Each problem
-// has its line, column and JSON path.
-export function validate(file: ParseResult, recordName: string, source: string): Diagnostic[] {
+// has its line, column and JSON path. With a way to read drawings, a stored
+// record's drawings must show its element's children as the model has them
+// in its look.
+export function validate(
+  file: ParseResult,
+  recordName: string,
+  source: string,
+  drawn?: Drawn,
+): Diagnostic[] {
   if (file.diagnostics.some(({ severity }) => severity === "error")) {
     throw new Error("cannot validate against a file with problems");
   }
@@ -40,7 +63,8 @@ export function validate(file: ParseResult, recordName: string, source: string):
   const placedAt = once((path) => placement(file, path));
   const inPlaceOf = once((path) => inPlace(file, path));
   const statesOf = once((type) => evaluate(file, type));
-  const profileNames = profilesOf(file).map(({ name }) => name);
+  const profileValues = profilesOf(file);
+  const profileNames = profileValues.map(({ name }) => name);
   const records = new Map<string, RecordDeclaration>();
   for (const record of file.records)
     if (!records.has(record.name)) records.set(record.name, record);
@@ -55,7 +79,7 @@ export function validate(file: ParseResult, recordName: string, source: string):
   // A stored record's context: one combination of a type, as its type, its
   // profile when the file has profiles, the dimensions the type needs that
   // the profile does not give, and a value for every state that exists there.
-  const checkContext = (node: JsonNode, path: string) => {
+  const checkContext = (node: JsonNode, path: string): Look | undefined => {
     if (node.kind !== "object") {
       wrong(node, path, "a context (an object)");
       return;
@@ -311,11 +335,13 @@ export function validate(file: ParseResult, recordName: string, source: string):
         .rows.filter(inWorld)
         .map(({ states }) => states);
     }
+    let sound = true;
     for (const { name, value, at, start } of pending) {
       const values = [...new Set(rows.flatMap((states) => states[name] ?? []))];
       const fitting = rows.filter((states) => states[name]?.includes(value) === true);
       if (fitting.length > 0) rows = fitting;
       else {
+        sound = false;
         diagnostics.report(
           "unknown-value",
           `${JSON.stringify(value)} is not a value of ${name} on ${where} (${values.join(", ")})`,
@@ -323,6 +349,88 @@ export function validate(file: ParseResult, recordName: string, source: string):
           start,
         );
       }
+    }
+    if (!sound) return;
+    const fromProfile = profileValues.find(({ name }) => name === profile)?.values ?? {};
+    const values: Record<string, string> = { ...fromProfile, ...chosen };
+    for (const { name, value } of pending) values[name] = value;
+    return { type: owner, values };
+  };
+
+  // A stored record's drawings, each against its element's children in its
+  // look: each child's type drawn as often as the model has it there, and no
+  // other type of the model drawn.
+  const checkDrawings = (
+    node: JsonNode & { kind: "object" },
+    look: Look,
+    record: RecordDeclaration,
+    path: string,
+  ) => {
+    if (drawn === undefined) return;
+    for (const field of record.fields.filter(({ type }) => type.name === penNode.name)) {
+      const member = node.members.find(({ key }) => key.value === field.name);
+      if (member?.value.kind !== "object") continue;
+      const text = (key: string) => {
+        const found = (member.value as JsonNode & { kind: "object" }).members.find(
+          (each) => each.key.value === key,
+        )?.value;
+        return found?.kind === "string" ? found.value : undefined;
+      };
+      const [drawing, frame, at] = [text("file"), text("frame"), text("node")];
+      if (drawing === undefined || frame === undefined) continue;
+      const shown = drawn(
+        at === undefined ? { file: drawing, frame } : { file: drawing, frame, node: at },
+      );
+      if (shown === undefined) continue;
+      const report = (message: string) =>
+        diagnostics.report(
+          "drawing-mismatch",
+          message,
+          childPath(path, field.name),
+          member.value.span.start,
+        );
+      checkShown(look, shown, report);
+    }
+  };
+
+  const checkShown = (
+    look: Look,
+    shown: Map<string, number>,
+    report: (message: string) => void,
+  ) => {
+    const { type, values } = look;
+    const short = (name: string) => {
+      const declared = file.types.find((each) => each.name === name);
+      return declared?.short ?? declared?.name ?? name;
+    };
+    const modeled = new Set(file.types.map((each) => each.short ?? each.name));
+    const kinds = [...new Set(type.children.map((child) => short(child.type.name)))];
+    for (const [name, count] of shown) {
+      if (modeled.has(name) && !kinds.includes(name)) {
+        report(`the drawing shows ${count} ${name}, which ${type.name} does not have`);
+      }
+    }
+    for (const kind of kinds) {
+      const children = type.children.filter((child) => short(child.type.name) === kind);
+      const there = children.filter(
+        (child) => child.when === undefined || holds(child.when, (name) => values[name]),
+      );
+      const away = children.filter((child) => !there.includes(child));
+      const exact = there.filter(({ list }) => !list).length;
+      const many = there.some(({ list }) => list);
+      const count = shown.get(kind) ?? 0;
+      if (many ? count >= exact + 1 : count === exact) continue;
+      const drew = count === 0 ? `no ${kind}` : `${count} ${kind}`;
+      const has =
+        there.length === 0
+          ? `none here: ${away
+              .map(
+                (child) =>
+                  `${child.name} is there only when ${conditionText(child.when as NonNullable<typeof child.when>)}`,
+              )
+              .join(", ")}`
+          : `${many ? (exact === 0 ? "one or more" : `${exact + 1} or more`) : exact} here: ${there.map(({ name }) => name).join(", ")}`;
+      report(`the drawing shows ${drew}, but ${type.name} has ${has}`);
     }
   };
 
@@ -338,7 +446,8 @@ export function validate(file: ParseResult, recordName: string, source: string):
       if (context === undefined) {
         diagnostics.report("missing-field", `${name} is missing context`, path, node.span.start);
       } else {
-        checkContext(context.value, childPath(path, "context"));
+        const look = checkContext(context.value, childPath(path, "context"));
+        if (look !== undefined) checkDrawings(node, look, record, path);
       }
       checkActor(node, name, path);
     }

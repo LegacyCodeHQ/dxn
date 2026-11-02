@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import type { Check } from "./status.js";
+import type { Drawn } from "./validate.js";
 
 // A fingerprint of what a frame of a file shows, so evidence knows when it
 // may look different. For a pen.dev file, the frame's subtree without its own
@@ -68,6 +69,43 @@ export class Fingerprints {
       Array.isArray(value.children) &&
       value.children.some((child) => isObject(child) && (child.id === node || inside(child)));
     return inside(top);
+  }
+
+  // The components a node of a pen.dev file shows an instance of, by name,
+  // each with how many: an instance is counted, not what its component
+  // holds; for an instance itself, what its component holds, without what it
+  // hides. Undefined for a file that is not one, or a node it does not have.
+  instances(path: string, node: string): Map<string, number> | undefined {
+    const document = this.document(path);
+    const top = document?.nodes.get(node);
+    if (document === undefined || top === undefined) return undefined;
+    const counts = new Map<string, number>();
+    const visit = (value: Json, overrides: Json): void => {
+      const override = [value.id, value.name]
+        .map((key) => (typeof key === "string" ? overrides[key] : undefined))
+        .find(isObject);
+      if (value.enabled === false || override?.enabled === false) return;
+      // A descendant an instance replaces is what it shows.
+      const shown = override?.type === undefined ? value : override;
+      if (shown.type === "ref") {
+        const name = document.nodes.get(String(shown.ref))?.name;
+        if (typeof name === "string") counts.set(name, (counts.get(name) ?? 0) + 1);
+        return;
+      }
+      if (Array.isArray(shown.children)) {
+        for (const child of shown.children) if (isObject(child)) visit(child, overrides);
+      }
+    };
+    if (top.type === "ref") {
+      const component = document.nodes.get(String(top.ref));
+      const hidden = isObject(top.descendants) ? top.descendants : {};
+      for (const child of Array.isArray(component?.children) ? component.children : []) {
+        if (isObject(child)) visit(child, hidden);
+      }
+    } else {
+      visit(top, {});
+    }
+    return counts;
   }
 
   private document(path: string): PenDocument | undefined {
@@ -148,5 +186,17 @@ export function freshness(repository: string, fingerprints = new Fingerprints())
     const now = fingerprints.of(full, node ?? frame);
     if (now === undefined) return "gone";
     return now === fingerprint ? "present" : "stale";
+  };
+}
+
+// What each PenNode's drawing shows, in a repository: the components its node,
+// or without one its frame, has instances of; nothing known for a file that is
+// not a pen.dev document.
+export function drawings(repository: string, fingerprints = new Fingerprints()): Drawn {
+  return ({ file, frame, node }) => {
+    const full = join(repository, file);
+    if (statSync(full, { throwIfNoEntry: false })?.isFile() !== true) return undefined;
+    if (!fingerprints.isPen(full)) return undefined;
+    return fingerprints.instances(full, node ?? frame);
   };
 }
