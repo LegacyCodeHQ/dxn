@@ -1172,14 +1172,14 @@ actor EvidenceRecorder records Evidence
     expect([result.code, result.stdout]).toEqual([
       0,
       [
-        "toolbar.dxn: Evidence for 4 of 7 combinations; Evidence has no PenNode, so staleness is not checked",
+        "toolbar.dxn: Evidence 4 of 7 states recorded; Evidence has no PenNode, so staleness is not checked",
         "",
-        "| path         | combinations | present | stale | gone | missing |",
-        "| ------------ | ------------ | ------- | ----- | ---- | ------- |",
-        "| Toolbar      | 1            | 0       | 0     | 0    | 1       |",
-        "| Toolbar.link | 3            | 2       | 0     | 0    | 1       |",
+        "| path         | states | recorded | stale | gone | missing |",
+        "| ------------ | ------ | -------- | ----- | ---- | ------- |",
+        "| Toolbar      | 1      | 0        | 0     | 0    | 1       |",
+        "| Toolbar.link | 3      | 2        | 0     | 0    | 1       |",
         // Link, a component on its own, covered by the link in place.
-        "| Link         | 3            | 2       | 0     | 0    | 1       |",
+        "| Link         | 3      | 2        | 0     | 0    | 1       |",
         "",
       ].join("\n"),
     ]);

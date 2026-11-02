@@ -7,11 +7,11 @@ dxn status spec/button.dxn
 After the first two attaches of step 5, before the disabled one:
 
 ```
-spec/button.dxn: Evidence for 3 of 6 combinations
+spec/button.dxn: Evidence 3 of 6 states drawn
 
-| path   | combinations | present | stale | gone | missing |
-| ------ | ------------ | ------- | ----- | ---- | ------- |
-| Button | 6            | 3       | 0     | 0    | 3       |
+| path   | states | drawn | stale | gone | missing |
+| ------ | ------ | ----- | ----- | ---- | ------- |
+| Button | 6      | 3     | 0     | 0    | 3       |
 ```
 
 With `--missing`, it says which:
@@ -27,7 +27,7 @@ They are the disabled case's three combinations, written the way a context
 would say them. After the third attach, everything has evidence:
 
 ```
-spec/button.dxn: Evidence for 6 of 6 combinations
+spec/button.dxn: Evidence 6 of 6 states drawn
 ```
 
 ## Stale evidence
@@ -37,11 +37,11 @@ node, and its evidence is **stale**: it shows a design that no longer
 exists. Redraw the hovered button, and ask again:
 
 ```
-spec/button.dxn: Evidence for 5 of 6 combinations; 1 stale
+spec/button.dxn: Evidence 5 of 6 states drawn, 1 stale
 
-| path   | combinations | present | stale | gone | missing |
-| ------ | ------------ | ------- | ----- | ---- | ------- |
-| Button | 6            | 5       | 1     | 0    | 0       |
+| path   | states | drawn | stale | gone | missing |
+| ------ | ------ | ----- | ----- | ---- | ------- |
+| Button | 6      | 5     | 1     | 0    | 0       |
 ```
 
 ```
@@ -62,7 +62,7 @@ Attached 1 record to spec/evidence/button.json, replacing 1
 ```
 
 ```
-spec/button.dxn: Evidence for 6 of 6 combinations
+spec/button.dxn: Evidence 6 of 6 states drawn
 ```
 
 An entry whose file, frame or node is deleted is **gone**. So `dxn status` answers, at any

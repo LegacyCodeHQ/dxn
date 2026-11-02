@@ -1,0 +1,95 @@
+import { describe, expect, it } from "vitest";
+import { parse } from "../src/parse.js";
+import { evidenceColumns, evidenceLabel, isDrawn, outdatedWhy } from "../src/vocabulary.js";
+
+// The words dxn and an editor both say a count of evidence in: one place, so
+// neither says it otherwise.
+
+const count = (over: Partial<Parameters<typeof evidenceLabel>[0]> = {}) => ({
+  record: "Evidence",
+  present: 2,
+  combinations: 10,
+  stale: 0,
+  gone: 0,
+  outdated: [],
+  ...over,
+});
+
+describe("the words for evidence", () => {
+  it("count the states recorded, or drawn, with what is stale, gone or outdated", () => {
+    const snapshot: string[] = [];
+    snapshot.push(evidenceLabel(count(), "recorded"));
+    snapshot.push(evidenceLabel(count({ present: 1, combinations: 1 }), "drawn"));
+    snapshot.push(evidenceLabel(count({ stale: 1, gone: 2 }), "drawn"));
+    snapshot.push(
+      evidenceLabel(
+        count({ outdated: [{ path: "Link", says: "hover = rest", added: ["focus"] }] }),
+        "recorded",
+      ),
+    );
+    // A component where a type places it: what the type can show of it.
+    const usage = { in: "Feed", of: "Row", own: 4, pins: ["reading = read"] };
+    snapshot.push(evidenceLabel(count({ present: 2, combinations: 2 }), "drawn", usage));
+    snapshot.push(
+      evidenceLabel(count({ present: 1, combinations: 4 }), "drawn", { ...usage, pins: [] }),
+    );
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        "Evidence 2 of 10 states recorded",
+        "Evidence 1 of 1 state drawn",
+        "Evidence 2 of 10 states drawn, 1 stale, 2 gone",
+        "Evidence 2 of 10 states recorded · 1 outdated: focus added",
+        "Evidence: Feed can show 2 states of Row, reading = read, all drawn",
+        "Evidence: Feed can show all 4 states of Row, 1 drawn",
+      ]
+    `);
+  });
+
+  it("say why records are outdated, and what to do", () => {
+    expect([
+      outdatedWhy([{ path: "Link", says: "hover = rest", added: ["focus"] }]),
+      outdatedWhy([
+        { path: "Link", says: "hover = rest", added: ["focus", "size"] },
+        { path: "Menu", says: "open = closed", added: ["size"] },
+      ]),
+    ]).toMatchInlineSnapshot(`
+      [
+        "1 record is outdated: focus was added to Link after it was recorded, so it does not say which focus it shows. Add its focus value to count it again.",
+        "2 records are outdated: focus and size were added to Link and Menu after they were recorded, so they do not say which focus or size they show. Add each one's focus and size values to count it again.",
+      ]
+    `);
+  });
+
+  it("name a table's columns, and drawn for a record with a PenNode", () => {
+    const file = parse(
+      "record Drawing {\n  source: PenNode\n}\nrecord Note {\n  text: NonEmptyString\n}\n",
+    );
+    expect([
+      evidenceColumns("drawn"),
+      evidenceColumns("recorded"),
+      isDrawn(file, "Drawing"),
+      isDrawn(file, "Note"),
+    ]).toMatchInlineSnapshot(`
+      [
+        [
+          "path",
+          "states",
+          "drawn",
+          "stale",
+          "gone",
+          "missing",
+        ],
+        [
+          "path",
+          "states",
+          "recorded",
+          "stale",
+          "gone",
+          "missing",
+        ],
+        true,
+        false,
+      ]
+    `);
+  });
+});

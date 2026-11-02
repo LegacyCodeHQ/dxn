@@ -82,7 +82,7 @@ describe("dxn review", () => {
 
       Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
 
-      Evidence for 1 of 2 combinations.
+      Evidence 1 of 2 states drawn.
 
       | style | status | as recorded |
       | --- | --- | --- |
@@ -124,7 +124,7 @@ describe("dxn review", () => {
 
       Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
 
-      Evidence for 0 of 2 combinations; 1 stale.
+      Evidence 0 of 2 states drawn, 1 stale.
 
       | style | status | as recorded |
       | --- | --- | --- |
@@ -167,7 +167,7 @@ actor Designer records Evidence
 
       Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
 
-      Evidence for 1 of 4 combinations.
+      Evidence 1 of 4 states drawn.
 
       ## Card
 
@@ -238,7 +238,7 @@ actor Designer records Evidence
 
       Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
 
-      Evidence for 0 of 2 combinations; 1 stale.
+      Evidence 0 of 2 states drawn, 1 stale.
 
       | style | status | as recorded |
       | --- | --- | --- |
@@ -293,7 +293,7 @@ actor Designer records Evidence
       0,
       "spec/evidence/button.json:7:17: warning: outdated: $[0].context.states: recorded before `Button` had `hover`\n",
       0,
-      "spec/button.dxn: Evidence for 0 of 4 combinations; 1 outdated",
+      "spec/button.dxn: Evidence 0 of 4 states drawn · 1 outdated: hover added",
     ]);
     expect(status.stdout).toContain(
       "\nOutdated:\n  Button: style = filled, recorded before hover\n",
@@ -306,7 +306,7 @@ actor Designer records Evidence
 
       Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
 
-      Evidence for 0 of 4 combinations; 1 outdated.
+      Evidence 0 of 4 states drawn · 1 outdated: hover added.
 
       | style | hover | status | as recorded |
       | --- | --- | --- | --- |
@@ -325,7 +325,7 @@ actor Designer records Evidence
 
       Written by \`dxn review\` from the stored Evidence of \`spec/button.dxn\`; run it again rather than edit this page.
 
-      Evidence for 0 of 4 combinations; 1 outdated.
+      Evidence 0 of 4 states drawn · 1 outdated: hover added.
 
       **Outdated**: recorded before Button had hover; give each its value to count it again.
 

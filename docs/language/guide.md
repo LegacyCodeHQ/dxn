@@ -1373,19 +1373,19 @@ dxn status toolbar.dxn
 ```
 
 ```
-toolbar.dxn: Evidence for 38 of 55 combinations
+toolbar.dxn: Evidence 38 of 55 states drawn
 
-| path                                | combinations | present | stale | gone | missing |
-| ----------------------------------- | ------------ | ------- | ----- | ---- | ------- |
-| ArticlePage                         | 1            | 0       | 0     | 0    | 1       |
-| ArticlePage.toolbar                 | 4            | 0       | 0     | 0    | 4       |
-| ArticlePage.toolbar.wordmark        | 15           | 15      | 0     | 0    | 0       |
-| ArticlePage.toolbar.links           | 2            | 0       | 0     | 0    | 2       |
-| ArticlePage.toolbar.links.blog      | 9            | 9       | 0     | 0    | 0       |
-| ArticlePage.toolbar.menu            | 4            | 2       | 0     | 0    | 2       |
-| ArticlePage.toolbar.menu.toggle     | 12           | 12      | 0     | 0    | 0       |
-| ArticlePage.toolbar.menu.panel      | 2            | 0       | 0     | 0    | 2       |
-| ArticlePage.toolbar.menu.panel.blog | 6            | 0       | 0     | 0    | 6       |
+| path                                | states | drawn | stale | gone | missing |
+| ----------------------------------- | ------ | ----- | ----- | ---- | ------- |
+| ArticlePage                         | 1      | 0     | 0     | 0    | 1       |
+| ArticlePage.toolbar                 | 4      | 0     | 0     | 0    | 4       |
+| ArticlePage.toolbar.wordmark        | 15     | 15    | 0     | 0    | 0       |
+| ArticlePage.toolbar.links           | 2      | 0     | 0     | 0    | 2       |
+| ArticlePage.toolbar.links.blog      | 9      | 9     | 0     | 0    | 0       |
+| ArticlePage.toolbar.menu            | 4      | 2     | 0     | 0    | 2       |
+| ArticlePage.toolbar.menu.toggle     | 12     | 12    | 0     | 0    | 0       |
+| ArticlePage.toolbar.menu.panel      | 2      | 0     | 0     | 0    | 2       |
+| ArticlePage.toolbar.menu.panel.blog | 6      | 0     | 0     | 0    | 6       |
 ```
 
 A tree starts at each type that no type contains, and every child below it

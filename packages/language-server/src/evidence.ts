@@ -3,10 +3,14 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   checkStored,
   drawings,
+  evidenceHeadings,
+  evidenceLabel,
   fixes,
   folderOf,
   freshness,
+  isDrawn,
   type Located,
+  outdatedWhy,
   type ParseResult,
   type Progress,
   placement,
@@ -245,9 +249,7 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
   };
   // The records whose evidence is a drawing.
   const drawn = new Set(
-    file.records
-      .filter(({ fields }) => fields.some(({ type }) => type.name === "PenNode"))
-      .map(({ name }) => name),
+    file.records.filter(({ name }) => isDrawn(file, name)).map(({ name }) => name),
   );
   // A usage, for a record: the type whose has line it is, the component it
   // places, how many states the component has on its own, and what the line
@@ -378,34 +380,13 @@ function countAndLists(
   each: Progress["records"][number],
   wording: Wording,
 ): { label: string; lists: string[] } {
-  const { record, combinations, present, stale, gone, listed } = each;
-  const states = combinations === 1 ? "state" : "states";
-  // A declaration says how many of its own states have evidence. A usage
-  // says how many of the component's states the type can show, what pins
-  // them, and whether they are drawn, wherever they are: "FeedScreen can
-  // show all 24 states of ArticleRow, all drawn".
-  const { usage, verb } = wording;
-  const counted = (() => {
-    if (usage === undefined) return `${record} ${present} of ${combinations} ${states} ${verb}`;
-    const pinned = usage.pins.length === 0 ? "" : `, ${usage.pins.join(", ")}`;
-    const done =
-      present === combinations ? (combinations === 1 ? verb : `all ${verb}`) : `${present} ${verb}`;
-    const shows =
-      combinations === 1
-        ? `shows 1 state`
-        : `can show ${combinations === usage.own ? "all " : ""}${combinations} states`;
-    return `${record}: ${usage.in} ${shows} of ${usage.of}${pinned}, ${done}`;
-  })();
-  const label = [
-    counted,
-    ...(stale > 0 ? [`${stale} stale`] : []),
-    ...(gone > 0 ? [`${gone} gone`] : []),
-  ].join(", ");
+  const { listed } = each;
+  const label = evidenceLabel({ ...each, outdated: [] }, wording.verb, wording.usage);
   const lists = (
     [
-      ["Missing", listed.missing],
-      ["Stale", listed.stale],
-      ["Gone", listed.gone],
+      [evidenceHeadings.missing, listed.missing],
+      [evidenceHeadings.stale, listed.stale],
+      [evidenceHeadings.gone, listed.gone],
     ] as const
   )
     .filter(([, those]) => those.length > 0)
@@ -421,21 +402,10 @@ function outdatedAt(
   wording: Wording,
 ): { label: string; details: string } {
   const here = each.outdated;
-  const { label: count, lists } = countAndLists(each, wording);
-  const names = [...new Set(here.flatMap(({ added }) => added))];
-  const and = names.join(" and ");
-  const or = names.join(" or ");
-  const elements = [...new Set(here.map(({ path }) => path))].join(" and ");
-  const label = `${count} · ${here.length} outdated: ${names.join(", ")} added`;
-  const one = here.length === 1;
-  const why = `${one ? "1 record is" : `${here.length} records are`} outdated: ${and} ${
-    names.length === 1 ? "was" : "were"
-  } added to ${elements} after ${one ? "it was" : "they were"} recorded, so ${
-    one ? "it does" : "they do"
-  } not say which ${or} ${one ? "it shows" : "they show"}. Add ${one ? "its" : "each one's"} ${and} ${
-    names.length === 1 ? "value" : "values"
-  } to count it again.`;
-  const list = `Outdated:\n${here.map(({ says }) => `- ${says}`).join("\n")}`;
+  const { lists } = countAndLists(each, wording);
+  const label = evidenceLabel(each, wording.verb, wording.usage);
+  const why = outdatedWhy(here);
+  const list = `${evidenceHeadings.outdated}:\n${here.map(({ says }) => `- ${says}`).join("\n")}`;
   return { label, details: [label, why, list, ...lists].join("\n\n") };
 }
 

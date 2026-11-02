@@ -2,6 +2,10 @@ import { resolve } from "node:path";
 import {
   coverage,
   describe,
+  evidenceColumns,
+  evidenceHeadings,
+  evidenceLabel,
+  evidenceVerb,
   freshness,
   message,
   placement,
@@ -11,7 +15,7 @@ import {
 } from "@legacycodehq/dxn-language";
 import { drawTable } from "../tables.js";
 import { type Command, command } from "./context.js";
-import { count, misused, options, Reporter, read } from "./report.js";
+import { misused, options, Reporter, read } from "./report.js";
 import { loadStored } from "./stored.js";
 import { usage } from "./usage.js";
 
@@ -56,9 +60,10 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       fingerprinted: fingerprinted(name),
     }));
   const blocks = records.map((coverage) => {
-    const { record, combinations, present, stale, gone, outdated, paths } = coverage;
+    const { record, combinations, present, stale, gone, paths } = coverage;
+    const verb = evidenceVerb(parsed, record);
     const table = drawTable(
-      ["path", "combinations", "present", "stale", "gone", "missing"],
+      evidenceColumns(verb),
       paths.map((path) => [
         path.path,
         String(path.combinations),
@@ -81,17 +86,28 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
         ({ says, added }) => `  ${path.path}: ${says}, recorded before ${added.join(", ")}\n`,
       ),
     );
-    const outdatedList = old.length === 0 ? "" : `\nOutdated:\n${old.join("")}`;
-    const notes = [
-      ...(stale > 0 ? [`${stale} stale`] : []),
-      ...(gone > 0 ? [`${gone} gone`] : []),
-      ...(outdated > 0 ? [`${outdated} outdated`] : []),
-      ...(coverage.fingerprinted ? [] : [`${record} has no PenNode, so staleness is not checked`]),
-    ];
-    const summary = `${file}: ${record} for ${present} of ${count(combinations, "combination")}${notes.map((note) => `; ${note}`).join("")}`;
+    const outdatedList = old.length === 0 ? "" : `\n${evidenceHeadings.outdated}:\n${old.join("")}`;
+    // The count, in the words an editor's hint has it in.
+    const counted = evidenceLabel(
+      {
+        record,
+        present,
+        combinations,
+        stale,
+        gone,
+        outdated: paths.flatMap((path) =>
+          path.outdated.map((each) => ({ ...each, path: path.path })),
+        ),
+      },
+      verb,
+    );
+    const notes = coverage.fingerprinted
+      ? []
+      : [`${record} has no PenNode, so staleness is not checked`];
+    const summary = `${file}: ${counted}${notes.map((note) => `; ${note}`).join("")}`;
     return `${summary}\n\n${table}${
       listMissing
-        ? `${listed("Missing", "missing")}${listed("Stale", "stale")}${listed("Gone", "gone")}${outdatedList}`
+        ? `${listed(evidenceHeadings.missing, "missing")}${listed(evidenceHeadings.stale, "stale")}${listed(evidenceHeadings.gone, "gone")}${outdatedList}`
         : ""
     }`;
   });

@@ -89,3 +89,16 @@ export {
 // The outline of a file, for editors.
 export { type DocumentSymbol, symbols } from "./symbols.js";
 export { type Drawn, validate } from "./validate.js";
+// The words dxn and an editor say a count of evidence in.
+export {
+  type EvidenceCount,
+  type EvidenceVerb,
+  evidenceColumns,
+  evidenceHeadings,
+  evidenceLabel,
+  evidenceVerb,
+  isDrawn,
+  type OutdatedAt,
+  outdatedWhy,
+  type Usage,
+} from "./vocabulary.js";

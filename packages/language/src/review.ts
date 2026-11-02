@@ -2,6 +2,7 @@ import type { ParseResult } from "./ast.js";
 import { profilesOf } from "./profiles.js";
 import { penNode } from "./scalars.js";
 import { type Check, describe, type Judged, judge, type Outdated } from "./status.js";
+import { evidenceLabel, evidenceVerb } from "./vocabulary.js";
 
 // A page to review a tree's evidence by: the tree's root, and the page as
 // Markdown.
@@ -54,13 +55,20 @@ export function reviewPages(
   return [...trees].map(([root, elements]) => {
     const all = elements.flatMap(({ combinations }) => combinations);
     const count = (state: Judged["state"]) => all.filter((each) => each.state === state).length;
-    const outdated = elements.reduce((sum, { outdated: each }) => sum + each.length, 0);
-    const summary = [
-      `${record} for ${count("present")} of ${all.length} combinations`,
-      ...(count("stale") > 0 ? [`${count("stale")} stale`] : []),
-      ...(count("gone") > 0 ? [`${count("gone")} gone`] : []),
-      ...(outdated > 0 ? [`${outdated} outdated`] : []),
-    ].join("; ");
+    // The count, in the words dxn status and an editor's hint have it in.
+    const summary = evidenceLabel(
+      {
+        record,
+        present: count("present"),
+        combinations: all.length,
+        stale: count("stale"),
+        gone: count("gone"),
+        outdated: elements.flatMap(({ path, outdated: each }) =>
+          each.map(({ says, added }) => ({ path, says, added })),
+        ),
+      },
+      evidenceVerb(file, record),
+    );
     // The elements with something to show: their combinations, only those
     // asked for, and their outdated records, which always need a decision.
     const sections = elements.flatMap(({ path, combinations, outdated: old }) => {
