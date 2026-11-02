@@ -128,9 +128,37 @@ describe("enum", () => {
     ]).toEqual([
       ["1:6: enum-name: enum names start with a capital letter: `hover`"],
       ["1:21: syntax-error: expected a value after `|`, found `-`"],
-      ["1:26: syntax-error: expected `|` or the end of the line after `hover`, found `_`"],
+      ["1:21: syntax-error: names and values are ASCII letters, digits and hyphens: `hover_ed`"],
       ["1:6: enum-name: enum names are letters and digits: `Hover-State`"],
     ]);
+  });
+
+  it("names the whole word when it has a character no name or value can have", () => {
+    const snapshot: string[][] = [];
+    snapshot.push(problems("enum Size = café | sm\n"));
+    snapshot.push(problems("enum Größe = xs\n"));
+    snapshot.push(problems("enum Size_2 = xs\n"));
+    snapshot.push(problems("enum Size = xs | sm_\n"));
+    snapshot.push(problems("enum Size = xs\ntype Menu {\n  state open_now: Size\n}\n"));
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "1:13: syntax-error: names and values are ASCII letters, digits and hyphens: \`café\`",
+        ],
+        [
+          "1:6: syntax-error: names and values are ASCII letters, digits and hyphens: \`Größe\`",
+        ],
+        [
+          "1:6: syntax-error: names and values are ASCII letters, digits and hyphens: \`Size_2\`",
+        ],
+        [
+          "1:18: syntax-error: names and values are ASCII letters, digits and hyphens: \`sm_\`",
+        ],
+        [
+          "3:9: syntax-error: names and values are ASCII letters, digits and hyphens: \`open_now\`",
+        ],
+      ]
+    `);
   });
 
   it("refuses values that are not lowercase letters and digits, joined by single hyphens", () => {

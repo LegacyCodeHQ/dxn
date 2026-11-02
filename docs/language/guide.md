@@ -1791,6 +1791,9 @@ case was drawn in, and later the rendering in the code.
 | field       | `source`                      | lowercase letter                                |
 | value       | `rest`, `no-keyboard`, `19px` | lowercase letters, digits, hyphens between them |
 
+Letters are ASCII, `a` to `z` and `A` to `Z`; no name or value has an
+underscore.
+
 An enum or a type can be declared inside a type, and is then named after it
 from outside: `Menu.State`, `Menu.Toggle`. A name is looked up first in the
 type it is used in, then in the types around it, then at the top of the file.

@@ -83,7 +83,29 @@ export function parse(source: string): ParseResult {
     if (token.kind !== kind) fail(token, expected);
     return token;
   };
-  const word = (expected: string): Located => located(expect("word", expected));
+  // A word, which must not run on into a letter or digit outside ASCII, or an
+  // underscore: "hover_ed" is reported whole, not as "hover" then "_".
+  const word = (expected: string): Located => {
+    const token = expect("word", expected);
+    const adjacent = (at: number, pattern: RegExp) => {
+      const before = tokens[at - 1] as Token;
+      const after = tokens[at];
+      return (
+        after !== undefined &&
+        after.line === before.line &&
+        after.column === before.column + [...before.text].length &&
+        (after.kind === "word" || (after.kind === "other" && pattern.test(after.text)))
+      );
+    };
+    let at = position;
+    if (!adjacent(at, /[\p{L}\p{N}_]/u) || tokens[at]?.kind === "word") return located(token);
+    let text = token.text;
+    while (adjacent(at, /[\p{L}\p{N}_-]/u)) text += (tokens[at++] as Token).text;
+    return failWith(
+      token,
+      message`names and values are ASCII letters, digits and hyphens: ${text}`,
+    );
+  };
   const keyword = (text: string, expected: string) => {
     const token = next();
     if (token.kind !== "word" || token.text !== text) fail(token, expected);
