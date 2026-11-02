@@ -128,7 +128,7 @@ describe("enum", () => {
       errors("enum Hover-State = rest\n"),
     ]).toEqual([
       ["1:6: enum-name: enum names start with a capital letter: `hover`"],
-      ["1:21: syntax-error: expected a value after `|`, found `-`"],
+      ["1:21: value-name: values start with a lowercase letter or a digit: `-hovered`"],
       ["1:21: syntax-error: names and values are ASCII letters, digits and hyphens: `hover_ed`"],
       ["1:6: enum-name: enum names are letters and digits: `Hover-State`"],
     ]);
@@ -169,6 +169,7 @@ describe("enum", () => {
     snapshot.push(errors("enum Keyboard = noKeyboard | keyboard\n"));
     snapshot.push(errors("enum Hover = rest | hovered-\n"));
     snapshot.push(errors("enum Hover = rest | hov--ered\n"));
+    snapshot.push(errors("enum Hover = -rest | --hovered\n"));
     snapshot.push(errors("dimension Pointer = Mouse | touch\n"));
     snapshot.push(errors("type Menu {\n  enum State = Closed | open\n}\n"));
     expect(snapshot).toMatchInlineSnapshot(`
@@ -185,6 +186,10 @@ describe("enum", () => {
         ],
         [
           "1:21: value-name: values are lowercase letters and digits, with single hyphens between them: \`hov--ered\`",
+        ],
+        [
+          "1:14: value-name: values start with a lowercase letter or a digit: \`-rest\`",
+          "1:22: value-name: values start with a lowercase letter or a digit: \`--hovered\`",
         ],
         [
           "1:21: value-name: values start with a lowercase letter or a digit: \`Mouse\`",

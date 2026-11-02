@@ -75,6 +75,12 @@ tree-sitter: ok
 ---
 type Menu { enum State = closed | open }
 
+=== A value that starts with a hyphen
+parse.ts: error
+tree-sitter: error
+---
+enum Hover = rest | -hovered
+
 === A value that ends with a hyphen
 parse.ts: error
 tree-sitter: error

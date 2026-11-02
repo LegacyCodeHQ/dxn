@@ -164,8 +164,30 @@ export function parse(source: string): ParseResult {
 
   // A value an enum or a dimension declares: lowercase letters and digits,
   // with single hyphens only between them, so no two differ only in case.
+  // Hyphens written right before its first letter or digit are part of it,
+  // so "-hovered" is reported whole, by the rule.
   const value = (expected: string): Located => {
-    const named = word(expected);
+    const start = peek();
+    let hyphens = "";
+    for (;;) {
+      const at = tokens[position + hyphens.length] as Token;
+      const after = tokens[position + hyphens.length + 1];
+      if (at.kind !== "other" || at.text !== "-" || after === undefined) break;
+      if (after.line !== at.line || after.column !== at.column + 1) break;
+      if (after.kind !== "word" && !(after.kind === "other" && after.text === "-")) break;
+      hyphens += "-";
+    }
+    position += hyphens.length;
+    const read = word(expected);
+    const named =
+      hyphens === ""
+        ? read
+        : {
+            ...read,
+            name: `${hyphens}${read.name}`,
+            column: start.column,
+            length: hyphens.length + read.length,
+          };
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(named.name)) {
       result.diagnostics.push({
         severity: "error",
