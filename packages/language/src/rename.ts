@@ -15,10 +15,6 @@ import { type JsonNode, parseJson } from "./json.js";
 import { Names } from "./names.js";
 import { treePaths } from "./status.js";
 
-// What a value is written as: a letter or digit, then letters, digits and
-// hyphens.
-export const isValue = (text: string) => /^[A-Za-z0-9][A-Za-z0-9-]*$/.test(text);
-
 // Replaces each span of the source, given by start and end offsets, with its
 // text.
 function replace(source: string, edits: { start: number; end: number; text: string }[]): string {

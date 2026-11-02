@@ -360,7 +360,7 @@ describe("the language server", () => {
       const name = shown(editor);
       expect(await editor.sendRequest(RenameRequest.type, { ...at, newName: "a b" })).toBeNull();
       expect(await name).toBe(
-        "`a b` is not a value name: a letter or digit, then letters, digits and hyphens",
+        "`a b` is not a value name: lowercase letters and digits, with single hyphens between them",
       );
     } finally {
       rmSync(folder, { recursive: true, force: true });

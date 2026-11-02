@@ -850,7 +850,7 @@ actor Reviewer records Evidence
       "dxn: nothing is declared as `Evidence.design-agent` (`Actor`, `Actor.design-agent`, `Actor.reviewer`, `Card`, `Card.owner`, `Evidence`, `DesignAgent`, `Reviewer`)\n",
       "dxn: nothing is declared as `Actor.designer` (`Actor.design-agent`, `Actor.reviewer`)\n",
       "evidence.dxn:1:25: error: duplicate-value: `reviewer` appears twice in `Actor`\ndxn: the rename would leave problems; nothing was written\n",
-      "dxn: `design agent` is not a value name: a letter or digit, then letters, digits and hyphens\n",
+      "dxn: `design agent` is not a value name: lowercase letters and digits, with single hyphens between them\n",
       schema,
     ]);
   });

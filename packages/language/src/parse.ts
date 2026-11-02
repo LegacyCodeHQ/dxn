@@ -30,6 +30,7 @@ import { conditionText } from "./condition.js";
 import { expectations } from "./expect.js";
 import { conditionsInMatrix } from "./matrix.js";
 import { message, words } from "./message.js";
+import { isValue } from "./naming.js";
 import { describe, located, scan, type Token, type TokenKind } from "./scan.js";
 import { scope } from "./scope.js";
 
@@ -188,7 +189,7 @@ export function parse(source: string): ParseResult {
             column: start.column,
             length: hyphens.length + read.length,
           };
-    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(named.name)) {
+    if (!isValue(named.name)) {
       result.diagnostics.push({
         severity: "error",
         code: "value-name",

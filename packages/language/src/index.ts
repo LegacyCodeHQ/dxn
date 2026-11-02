@@ -41,10 +41,11 @@ export { parseJson } from "./json.js";
 // How a problem or a refusal is written, with what it mentions quoted.
 export { type Mentioned, message, Words, words } from "./message.js";
 export { among, Names } from "./names.js";
+// Renaming an enum's value in a .dxn file and in its stored records.
+export { isValue } from "./naming.js";
 export { parse } from "./parse.js";
 export { givenDimensions, profilesOf } from "./profiles.js";
-// Renaming an enum's value in a .dxn file and in its stored records.
-export { isValue, renameInData, renameInSource } from "./rename.js";
+export { renameInData, renameInSource } from "./rename.js";
 // Renaming a declaration where it is used, and in stored records, for editors.
 export {
   declarationNamed,

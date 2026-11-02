@@ -3,9 +3,9 @@ import { covers, links, type Span } from "./definition.js";
 import { placement } from "./evaluate.js";
 import { message, words } from "./message.js";
 import { among, article } from "./names.js";
+import { isValue } from "./naming.js";
 import { parse } from "./parse.js";
 import {
-  isValue,
   renameActorInData,
   renameChildInData,
   renameDimensionInData,
@@ -184,7 +184,7 @@ const rules: Record<string, { pattern: RegExp; text: string }> = {
   modifier: { pattern: /^[A-Z][A-Za-z0-9]*$/, text: "a capital letter, then letters and digits" },
   value: {
     pattern: { test: isValue } as unknown as RegExp,
-    text: "a letter or digit, then letters, digits and hyphens",
+    text: "lowercase letters and digits, with single hyphens between them",
   },
 };
 

@@ -628,6 +628,8 @@ actor DesignReviewRecorder records DesignReview
     snapshot.push(renamed("enum ", "Hover", "hover"));
     snapshot.push(renamed("action ", "take-focus", "Take"));
     snapshot.push(renamed("enum Hover = rest | ", "hovered", "a b"));
+    snapshot.push(renamed("enum Hover = rest | ", "hovered", "Hovered"));
+    snapshot.push(renamed("enum Hover = rest | ", "hovered", "hovered-"));
     snapshot.push(renamed("enum Hover = ", "rest", "hovered"));
     snapshot.push(renamed("enum ", "Focus", "Hover"));
     snapshot.push(renamed("", "type", "kind"));
@@ -638,7 +640,9 @@ actor DesignReviewRecorder records DesignReview
       [
         "\`hover\` is not an enum name: a capital letter, then letters and digits",
         "\`Take\` is not an action name: a lowercase letter, then letters, digits and hyphens",
-        "\`a b\` is not a value name: a letter or digit, then letters, digits and hyphens",
+        "\`a b\` is not a value name: lowercase letters and digits, with single hyphens between them",
+        "\`Hovered\` is not a value name: lowercase letters and digits, with single hyphens between them",
+        "\`hovered-\` is not a value name: lowercase letters and digits, with single hyphens between them",
         "the rename would leave a problem: \`hovered\` appears twice in \`Hover\`",
         "the rename would leave a problem: \`Hover\` is already declared at line 2",
         "there is no name here to rename",
