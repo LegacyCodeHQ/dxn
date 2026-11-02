@@ -90,9 +90,11 @@ export function parse(source: string): ParseResult {
   };
   // A line carried on to the next, after a "|", a "," or an "and": the next
   // line, unless it starts a declaration, which an unfinished line does not
-  // swallow.
-  const carryOn = () => {
-    const after = tokens[position + 1];
+  // swallow. With blank lines, the next line that holds more than a comment.
+  const carryOn = (blankLines = false) => {
+    let at = position;
+    while (tokens[at]?.kind === "newline" && (blankLines || at === position)) at += 1;
+    const after = tokens[at];
     const declaration =
       after?.kind === "word" &&
       after.column === 1 &&
@@ -107,7 +109,7 @@ export function parse(source: string): ParseResult {
         "actor",
         "expect",
       ].includes(after.text);
-    if (peek().kind === "newline" && !declaration) next();
+    if (!declaration) position = at;
   };
   // The token after the last one read must be one of these.
   const end = (kinds: TokenKind[], expected: string) => {
@@ -233,8 +235,13 @@ export function parse(source: string): ParseResult {
     expect("=", `\`=\` after the ${keyword} name`);
     // A line break can come before or after any "|", and the values can start
     // on the next line, with a "|" before the first: "| xs" on each line.
-    const pipeNext = () => peek().kind === "newline" && tokens[position + 1]?.kind === "|";
-    if (pipeNext()) next();
+    // Blank lines and comments can come between, to comment out a value.
+    const pipeNext = () => {
+      let at = position;
+      while (tokens[at]?.kind === "newline") at += 1;
+      if (at > position && tokens[at]?.kind === "|") position = at;
+    };
+    pipeNext();
     let after = "`=`";
     if (peek().kind === "|") {
       next();
@@ -242,10 +249,10 @@ export function parse(source: string): ParseResult {
     }
     declaration.values.push(value(`a value after ${after}`));
     for (;;) {
-      if (pipeNext()) next();
+      pipeNext();
       if (peek().kind !== "|") break;
       next();
-      carryOn();
+      carryOn(true);
       declaration.values.push(value("a value after `|`"));
     }
     // Inside a type, the type's closing brace can end it too.

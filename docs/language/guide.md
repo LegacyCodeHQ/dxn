@@ -108,7 +108,8 @@ enum Focus = blurred | focused
 
 An enum lists every value it has, split by `|`. A long one can carry on to the
 next line, before or after a `|`, and can start its values on the line after
-the `=`, with a `|` before the first:
+the `=`, with a `|` before the first. Blank lines and comments can come
+between the lines, so a value can be commented out:
 
 ```
 enum Size = xs | sm | md |
@@ -116,7 +117,7 @@ enum Size = xs | sm | md |
 
 enum Size =
   | xs
-  | sm
+  # | sm
   | md
 ```
 
@@ -1801,8 +1802,8 @@ one namespace: each name is declared once in a file.
 
 ```
 file        = { blank-line | comment | enum | dimension | type | environment | profile | modifier | record | actor | expect }
-enum        = "enum" Name "=" [newline] [ "|" ] value { [newline] "|" [newline] value } newline
-dimension   = "dimension" Name "=" [newline] [ "|" ] value { [newline] "|" [newline] value } newline
+enum        = "enum" Name "=" ( value | [lines] "|" value ) { [lines] "|" [lines] value } newline
+dimension   = "dimension" Name "=" ( value | [lines] "|" value ) { [lines] "|" [lines] value } newline
 type        = "type" Name [ "needs" Name { "," [newline] Name } ] [ "receives" field { "," [newline] field } ]
               "{" { blank-line | state | rule | enum | type | has | provides | events | action | on | alike } "}"
 alike       = "alike" name [ "in" "(" value { "," value } ")" ] [ "when" condition ] newline
@@ -1841,6 +1842,7 @@ pairs       = key "=" value { "," key "=" value }       # key: profile, a dimens
                                                         # after an event, a child's state by its path
                                                         # a profile's value may be <profile> "+" <modifier>
 comment     = "#" to the end of the line
+lines       = newline { blank-line | comment newline }   # in an enum or a dimension, between its values
 ```
 
 ### Diagnostics

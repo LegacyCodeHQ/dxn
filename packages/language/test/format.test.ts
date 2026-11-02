@@ -27,6 +27,16 @@ describe("format", () => {
     );
   });
 
+  it("indents a comment between continued lines as the lines around it", () => {
+    expect(
+      format(
+        "enum Size = xs |\n# sm |\n\nmd\nenum Gap =\n| xs\n    # | sm\n\n| md\nenum Ring =\n# none first\n| none\n| focus\n",
+      ),
+    ).toBe(
+      "enum Size = xs |\n  # sm |\n\n  md\nenum Gap =\n  | xs\n  # | sm\n\n  | md\nenum Ring =\n  # none first\n  | none\n  | focus\n",
+    );
+  });
+
   it("spaces a line's words and signs one way", () => {
     expect(
       format(

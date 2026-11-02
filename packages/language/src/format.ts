@@ -16,15 +16,21 @@ export function format(source: string): string | undefined {
   // Whether the last line with code ended with |, and or or, so the next one
   // goes on with it.
   let carried = false;
-  for (const line of source.replace(/^﻿/, "").split(/\r\n|\r|\n/)) {
-    const { pieces, comment } = split(line);
+  const lines = source
+    .replace(/^﻿/, "")
+    .split(/\r\n|\r|\n/)
+    .map(split);
+  lines.forEach(({ pieces, comment }, index) => {
     const [first] = pieces;
     // A closing brace or bracket steps back; a line that goes on with |, and
-    // or or, or after a line that ends with one, in.
+    // or or, or after a line that ends with one, in. A comment on a line of
+    // its own goes in with the lines it sits between.
     const closes = first?.text === "}" || first?.text === "]";
-    const goesOn = (piece: Piece | undefined) =>
-      piece !== undefined && ["|", "and", "or"].includes(piece.text);
-    const continues = first !== undefined && (goesOn(first) || carried);
+    const following = () => lines.find((line, at) => at > index && line.pieces.length > 0);
+    const continues =
+      first !== undefined
+        ? goesOn(first) || carried
+        : comment !== undefined && (carried || goesOn(following()?.pieces[0]));
     if (first !== undefined) carried = goesOn(pieces.at(-1));
     const indent = "  ".repeat(Math.max(0, depth - (closes ? 1 : 0)) + (continues ? 1 : 0));
     const code = joined(pieces);
@@ -38,9 +44,14 @@ export function format(source: string): string | undefined {
       if (text === "{" || text === "[") depth += 1;
       if (text === "}" || text === "]") depth = Math.max(0, depth - 1);
     }
-  }
+  });
   return `${blanks(written).join("\n")}\n`;
 }
+
+// Whether a line that starts with this piece, or follows one that ends with
+// it, goes on with the line before.
+const goesOn = (piece: Piece | undefined) =>
+  piece !== undefined && ["|", "and", "or"].includes(piece.text);
 
 // A line's pieces, and its comment, without the spaces around them.
 function split(line: string): { pieces: Piece[]; comment?: string } {

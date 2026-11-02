@@ -74,6 +74,51 @@ describe("enum", () => {
     ]);
   });
 
+  it("allows comments and blank lines between the values of an enum over several lines", () => {
+    const read = (source: string) => {
+      const { enums, types } = parse(source);
+      const [declared] = [...enums, ...types.flatMap(({ enums }) => enums)];
+      return [declared?.values.map(({ name }) => name).join(" | "), ...problems(source)];
+    };
+    const snapshot: (string | undefined)[][] = [];
+    snapshot.push(read("enum Size = xs |\n  # sm |\n  md\n"));
+    snapshot.push(read("enum Size = xs |\n\n  md\n"));
+    snapshot.push(read("enum Size =\n  | xs\n  # | sm\n  | md\n"));
+    snapshot.push(read("enum Size =\n  | xs\n\n  | md\n"));
+    snapshot.push(read("enum Size =\n  # the smallest first\n  | xs\n  | md\n"));
+    snapshot.push(
+      read("type Menu {\n  enum State =\n    | closed\n    # | opening\n    | open\n}\n"),
+    );
+    // A declaration after the comments still starts a declaration of its own.
+    snapshot.push(read("enum Size = xs |\n  # sm\n\nenum Gap = sm\n"));
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "xs | md",
+        ],
+        [
+          "xs | md",
+        ],
+        [
+          "xs | md",
+        ],
+        [
+          "xs | md",
+        ],
+        [
+          "xs | md",
+        ],
+        [
+          "closed | open",
+        ],
+        [
+          "xs",
+          "1:17: syntax-error: expected a value after \`|\`, found the end of the line",
+        ],
+      ]
+    `);
+  });
+
   it("refuses names and values that do not follow the naming rules", () => {
     expect([
       problems("enum hover = rest | hovered\n"),
