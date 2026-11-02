@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
 import { renameInData, renameInSource } from "../src/rename.js";
-import { renameAt } from "../src/rename-at.js";
+import { renameAt, type StoredFile } from "../src/rename-at.js";
 import { validate } from "../src/validate.js";
 
 const source = `dimension Pointer = mouse | touch
@@ -619,6 +619,38 @@ actor DesignReviewRecorder records DesignReview
           "from": "design-review",
           "to": "critique",
         },
+      ]
+    `);
+  });
+
+  it("refuses in a file with an error, or with stored records that have one, until it is fixed", () => {
+    const refusal = (result: ReturnType<typeof renameAt>) =>
+      "refusal" in result ? result.refusal : "renamed";
+    const snapshot: string[] = [];
+    // The file has an error the rename has nothing to do with.
+    const broken = source.replace("then focus = focused", "then focus = focsed");
+    snapshot.push(
+      refusal(renameAt(broken, ...at("enum Focus = ", "blurred"), "unfocused", stored)),
+    );
+    // A stored record has a value its enum does not have.
+    const bogus = [
+      { ...(stored[0] as StoredFile), source: data.replace('"hover": "rest"', '"hover": "bogus"') },
+    ];
+    snapshot.push(refusal(renameAt(source, ...at("enum Focus = ", "blurred"), "unfocused", bogus)));
+    // Two stored records that are the same.
+    const twice = data.replace(/^\[\n([\s\S]*)\n\]\n$/, "[\n$1,\n$1\n]\n");
+    snapshot.push(
+      refusal(
+        renameAt(source, ...at("enum Focus = ", "blurred"), "unfocused", [
+          { ...(stored[0] as StoredFile), source: twice },
+        ]),
+      ),
+    );
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        "the file has a problem to fix first: 33:8: A press takes the focus tests nothing: \`focsed\` is not a value of \`focus\` (\`blurred\`, \`focused\`)",
+        "a stored record has a problem to fix first: evidence/evidence.json:8:28: \`bogus\` is not a value of \`hover\` (\`rest\`, \`hovered\`)",
+        "a stored record has a problem to fix first: evidence/evidence.json:12:3: the same \`Evidence\` as $[0] in evidence/evidence.json, apart from their fingerprints",
       ]
     `);
   });

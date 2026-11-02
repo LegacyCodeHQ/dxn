@@ -6,6 +6,7 @@ import {
   completions,
   type DocumentSymbol as Declared,
   definition,
+  drawings,
   type Edit,
   folderOf,
   format,
@@ -15,6 +16,7 @@ import {
   parse,
   renameAt,
   renameable,
+  repositoryOf,
   type StoredFile,
   sourceLines,
   storedFiles,
@@ -289,6 +291,11 @@ export function serve(connection: Connection): void {
       newName,
       storedBeside(textDocument.uri, parsed(document)),
       parsed(document),
+      // Stored records are checked against their drawings, as dxn rename
+      // checks them.
+      textDocument.uri.startsWith("file:")
+        ? drawings(repositoryOf(fileURLToPath(textDocument.uri)))
+        : undefined,
     );
     if ("refusal" in renamed) return refuse(renamed.refusal);
     const changes: Record<string, { range: Range; newText: string }[]> = {

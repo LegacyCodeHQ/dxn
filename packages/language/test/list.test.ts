@@ -279,6 +279,8 @@ describe("a list of several members in an editor", () => {
       source: JSON.stringify([
         {
           context: { path: "Feed.feed.ad", dimensions: {}, parents: { plan: "free" }, states: {} },
+          actor: "DesignAgent",
+          source: { file: "feed.pen", frame: "F1", fingerprint: "f1" },
         },
       ]),
     },

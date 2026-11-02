@@ -242,4 +242,5 @@ dxn rename toolbar.dxn Evidence Proof
 
 A state that is provided is renamed with every state that receives it. The
 rename is refused, and nothing is written, when the file or the stored
-records would not check afterwards.
+records do not check, before the rename or after it. An editor's rename,
+through the language server, refuses the same.

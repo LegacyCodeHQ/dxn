@@ -1441,7 +1441,9 @@ is already a value or is not written like one, and it changes nothing while
 the file or its stored records have problems, so a rename never mixes with
 them. A rename that would leave a problem of its own, such as a rule over
 elements whose states of one name come from different enums, is refused,
-with the problems it would leave. Add `--dry-run` to see what it would
+with the problems it would leave. A rename in an editor, through the
+language server, refuses the same, showing the first problem. Add
+`--dry-run` to see what it would
 rename, without writing: `Would rename Hover.hovered to over in …`;
 with `--json` as well, it prints every file it would write, in full.
 

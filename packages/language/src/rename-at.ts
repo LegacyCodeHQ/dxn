@@ -1,5 +1,7 @@
 import type { Child, Diagnostic, Enum, Located, ParseResult, State, Type, Union } from "./ast.js";
 import { covers, links, type Span } from "./definition.js";
+import type { Diagnostic as DataDiagnostic } from "./diagnostic.js";
+import { duplicates } from "./duplicates.js";
 import { placement } from "./evaluate.js";
 import { message, words } from "./message.js";
 import { among, article } from "./names.js";
@@ -17,6 +19,7 @@ import {
 import { sourceLines } from "./scan.js";
 import { treePaths } from "./status.js";
 import { folderOf } from "./store.js";
+import { type Drawn, validate } from "./validate.js";
 
 // A stored data file of a record, by its path, and its content.
 export interface StoredFile {
@@ -34,9 +37,15 @@ export interface Edit {
   text: string;
 }
 
+// A problem in a stored data file, by its path.
+export interface StoredProblem extends DataDiagnostic {
+  file: string;
+}
+
 export type Renamed =
-  // With the problems the rename would leave, when that is why.
-  | { refusal: string; problems?: Diagnostic[] }
+  // With the problems in the file, or in its stored records, when that is
+  // why: those it had, or those the rename would leave.
+  | { refusal: string; problems?: Diagnostic[]; stored?: StoredProblem[] }
   | {
       // What is renamed: its kind, and its name as dxn writes it.
       kind: string;
@@ -86,7 +95,17 @@ export function renameAt(
   to: string,
   stored: StoredFile[] = [],
   file: ParseResult = parse(source),
+  drawn?: Drawn,
 ): Renamed {
+  // A file with an error is fixed first: the rename is refused, with it.
+  const errors = file.diagnostics.filter(({ severity }) => severity === "error");
+  const [first] = errors;
+  if (first !== undefined) {
+    return {
+      refusal: `the file has a problem to fix first: ${first.line}:${first.column}: ${first.message}`,
+      problems: errors,
+    };
+  }
   const found = target(file, source, line, column);
   if ("refusal" in found) return found;
   const { kind, spans, name } = found;
@@ -97,6 +116,15 @@ export function renameAt(
     };
   }
   if (to === name) return { refusal: message`${name} is already its name` };
+  // Stored records with a problem are fixed first, as they are now.
+  const had = storedProblemsOf(file, stored, drawn);
+  const [wrong] = had;
+  if (wrong !== undefined) {
+    return {
+      refusal: `a stored record has a problem to fix first: ${shownOf(wrong.file)}:${wrong.line}:${wrong.column}: ${wrong.message}`,
+      stored: had,
+    };
+  }
   const edits = spans.map((span) => ({ ...span, text: to }));
   // The rename must leave the file as sound as it was.
   const renamedSource = apply(source, edits);
@@ -139,6 +167,25 @@ export function renameAt(
     if (renamed !== undefined && renamed.changed > 0) {
       data.push({ path: item.path, source: renamed.source, changed: renamed.changed });
     }
+  }
+  // The stored records must check, as the rename leaves them: those with a
+  // problem the rename would leave are refused too.
+  const changed = new Map(data.map((item) => [item.path, item.source]));
+  const left_ = storedProblemsOf(
+    after,
+    stored.map((item) => ({
+      ...item,
+      record: kind.kind === "record" && item.record === name ? to : item.record,
+      source: changed.get(item.path) ?? item.source,
+    })),
+    drawn,
+  );
+  const [stuck] = left_;
+  if (stuck !== undefined) {
+    return {
+      refusal: `the rename would leave a problem in a stored record: ${shownOf(stuck.file)}:${stuck.line}:${stuck.column}: ${stuck.message}`,
+      stored: left_,
+    };
   }
   const done = {
     kind: kind.kind,
@@ -278,6 +325,29 @@ export function kindsOf(file: ParseResult): Map<Located, Kind> {
   for (const declaration of file.actors) result.set(declaration, { kind: "actor" });
   return result;
 }
+
+// The errors in stored data files, checked against a file without errors:
+// each file's against its record, and then any record stored twice.
+function storedProblemsOf(file: ParseResult, stored: StoredFile[], drawn?: Drawn): StoredProblem[] {
+  const shown = stored.map((item) => ({ ...item, shown: shownOf(item.path) }));
+  const found: StoredProblem[] = shown.flatMap((item) =>
+    validate(file, item.record, item.source, drawn)
+      .filter(({ severity }) => severity === undefined)
+      .map((problem) => ({ ...problem, file: item.path })),
+  );
+  if (found.length > 0) return found;
+  return duplicates(shown).map((repeat) => ({
+    code: "duplicate-record",
+    message: repeat.message,
+    line: repeat.line,
+    column: repeat.column,
+    path: repeat.path,
+    file: shown.find((item) => item.shown === repeat.shown)?.path ?? repeat.shown,
+  }));
+}
+
+// A stored data file as a message names it: its folder and its name.
+const shownOf = (path: string) => path.split(/[\\/]/).slice(-2).join("/");
 
 // A source with edits made, each line keeping how it ends.
 function apply(source: string, edits: Edit[]): string {

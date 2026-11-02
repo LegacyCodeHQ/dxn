@@ -302,7 +302,7 @@ describe("the language server", () => {
         "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\nenum Actor = designer\nrecord Evidence {\n}\nactor Designer records Evidence\n";
       writeFileSync(join(folder, "spec.dxn"), text);
       mkdirSync(join(folder, "evidence"));
-      const stored = `[\n  {\n    "context": { "type": "Link", "profile": null, "dimensions": {}, "states": { "hover": "hovered" } },\n    "actor": "Designer"\n  }\n]\n`;
+      const stored = `[\n  {\n    "context": { "type": "Link", "dimensions": {}, "states": { "hover": "hovered" } },\n    "actor": "Designer"\n  }\n]\n`;
       writeFileSync(join(folder, "evidence", "link.json"), stored);
       const editor = connect();
       editors.push(editor);
@@ -361,6 +361,14 @@ describe("the language server", () => {
       expect(await editor.sendRequest(RenameRequest.type, { ...at, newName: "a b" })).toBeNull();
       expect(await name).toBe(
         "`a b` is not a value name: lowercase letters and digits, with single hyphens between them, and not `when` or `else`",
+      );
+
+      // A stored record with a problem is fixed first, as dxn rename has it.
+      writeFileSync(join(folder, "evidence", "link.json"), stored.replace('"hovered"', '"bogus"'));
+      const broken = shown(editor);
+      expect(await editor.sendRequest(RenameRequest.type, { ...at, newName: "over" })).toBeNull();
+      expect(await broken).toBe(
+        "a stored record has a problem to fix first: evidence/link.json:3:73: `bogus` is not a value of `hover` (`rest`, `hovered`)",
       );
     } finally {
       rmSync(folder, { recursive: true, force: true });

@@ -1,9 +1,16 @@
 import { readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { declarationNamed, message, parse, renameAt, words } from "@legacycodehq/dxn-language";
+import {
+  declarationNamed,
+  drawings,
+  message,
+  renameAt,
+  repositoryOf,
+  words,
+} from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
-import { checkStored, loadStored } from "./stored.js";
+import { loadStored } from "./stored.js";
 import { usage } from "./usage.js";
 
 // Renames a declaration, by its name as dxn writes it or by its place in the
@@ -38,11 +45,26 @@ export const renameCommand: Command = command(usage, (args, { io, cwd, dryRun })
   if ("refusal" in at) return report.refuse(at.refusal);
   const stored = loadStored(parsed, file, cwd, report);
   if (typeof stored === "number") return stored;
-  const renamed = renameAt(source, at.line, at.column, to, stored);
+  const drawn = drawings(repositoryOf(path, cwd));
+  const renamed = renameAt(source, at.line, at.column, to, stored, parsed, drawn);
   if ("refusal" in renamed) {
-    if (renamed.problems === undefined) return report.refuse(renamed.refusal);
-    for (const { line, column, severity, code, message } of renamed.problems) {
+    if (renamed.problems === undefined && renamed.stored === undefined) {
+      return report.refuse(renamed.refusal);
+    }
+    for (const { line, column, severity, code, message } of renamed.problems ?? []) {
       report.problem({ file, line, column, severity, code, message });
+    }
+    for (const problem of renamed.stored ?? []) {
+      const { line, column, code, path: where, message } = problem;
+      report.problem({
+        file: relative(cwd, problem.file),
+        line,
+        column,
+        severity: "error",
+        code,
+        path: where,
+        message,
+      });
     }
     return report.refuse("the rename would leave problems; nothing was written");
   }
@@ -68,18 +90,6 @@ export const renameCommand: Command = command(usage, (args, { io, cwd, dryRun })
     return report.refuse(
       message`${words(move.to)}/ is already next to ${words(file)}; ${renamed.name}'s stored records cannot move there`,
     );
-  }
-  // The renamed file and stored records must check, before anything is
-  // written.
-  const after = parse(renamed.source);
-  const now = new Map(renamed.data.map((data) => [data.path, data.source]));
-  const afterStored = stored.map((data) => ({
-    ...data,
-    record: data.record === renamed.name && renamed.kind === "record" ? to : data.record,
-    source: now.get(data.path) ?? data.source,
-  }));
-  if (!checkStored(after, afterStored, report)) {
-    return report.refuse("the rename would leave problems; nothing was written");
   }
   const records = renamed.data.reduce((sum, data) => sum + data.changed, 0);
   const files = written.map((item) => item.shown).join(", ");
