@@ -35,6 +35,14 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
 - Machine-readable output (`--json`) is JSON on stdout; diagnostics go to stderr.
 - Exit codes: `0` success, `1` a check failed, `2` usage error.
 - No source-file dependency cycles (`make cycles`).
+- The CLI and the language server only adapt input and output: files and
+  streams on one side, editor requests on the other. Every decision, such as
+  what is a problem, what is loaded, or when a rename is refused, lives in
+  `packages/language` as one function both call. Never add a check to one
+  side only.
+- An editor feature that mirrors a command has a scenario in
+  `packages/language-server/test/parity.test.ts`, which runs it through both
+  and fails when they disagree. Add one with each new feature or rule.
 
 ## Commands
 

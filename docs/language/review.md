@@ -76,6 +76,9 @@ Run real inputs through `parse.ts`; do not only read the code.
   nothing the second time.
 - [ ] The language server's ranges, with each line ending.
 - [ ] `--json` does not show what is internal.
+- [ ] dxn and an editor agree: each rule is in `packages/language`, not in
+  the CLI or the language server alone, and its scenarios are in
+  `packages/language-server/test/parity.test.ts`.
 
 ### 10. Decide
 
