@@ -2,7 +2,8 @@
 // at a time. Its grammar is in docs/language/guide.md, under Reference.
 //
 // A mistake is reported where it is, and reading skips to the next line that
-// starts a declaration. Then check.ts checks what was read.
+// starts a declaration; inside a type, to the next line of the type. Then
+// check.ts checks what was read.
 
 import type {
   Alike,
@@ -209,10 +210,65 @@ export function parse(source: string): ParseResult {
     if (kind === "}" && --depth < 0) balanced = false;
   }
   if (depth !== 0) balanced = false;
+  // And every bracket, which a mistake can be skipped past only then.
+  let brackets = 0;
+  let bracketed = true;
+  for (const { kind, text } of tokens) {
+    if (kind === "other" && text === "[") brackets++;
+    if (kind === "other" && text === "]" && --brackets < 0) bracketed = false;
+  }
+  if (brackets !== 0) bracketed = false;
+
+  // A line goes on to the next after a "|", a "," an "and" or an "or", or
+  // when the next starts with one of those.
+  const goesOn = (token: Token | undefined) =>
+    token !== undefined &&
+    (token.kind === "|" ||
+      token.kind === "," ||
+      (token.kind === "word" && (token.text === "and" || token.text === "or")));
+
+  // After a mistake in an entry read from a position: on to the end of the
+  // entry, the end of its line, past any block in braces or brackets it
+  // opened and any line it goes on to, or to the closing brace it reached.
+  const opens = (token: Token) =>
+    token.kind === "{" || (token.kind === "other" && token.text === "[");
+  const closes = (token: Token) =>
+    token.kind === "}" || (token.kind === "other" && token.text === "]");
+  const skipEntry = (from: number) => {
+    let depth = 0;
+    for (let at = from; at < position; at++) {
+      const token = tokens[at] as Token;
+      if (opens(token)) depth += 1;
+      if (closes(token)) depth -= 1;
+    }
+    // It read the closing brace of what it is in: that brace ends it.
+    if (depth < 0) {
+      while (previous().kind !== "}") position -= 1;
+      position -= 1;
+      return;
+    }
+    // It read the end of its line: that line is where it ends.
+    if (position > from && previous().kind === "newline") position -= 1;
+    for (;;) {
+      const token = peek();
+      if (token.kind === "end" || (token.kind === "}" && depth <= 0)) return;
+      if (token.kind === "newline" && depth <= 0) {
+        const last = previous();
+        next();
+        if (!goesOn(last) && !goesOn(peek())) return;
+        continue;
+      }
+      if (opens(token)) depth += 1;
+      if (closes(token)) depth -= 1;
+      next();
+    }
+  };
 
   // The entries inside braces, each read from its first token, to the
-  // closing brace; blank lines between them are skipped.
-  const braces = (owner: string, entry: (token: Token) => void) => {
+  // closing brace; blank lines between them are skipped. Where every brace and
+  // bracket is closed, a mistake in an entry of a declaration that recovers
+  // marks it broken, and reading goes on at the entry after it.
+  const braces = (owner: string, entry: (token: Token) => void, recovers?: Declaration) => {
     for (;;) {
       while (peek().kind === "newline") next();
       const token = peek();
@@ -225,7 +281,18 @@ export function parse(source: string): ParseResult {
       if (token.kind === "end" || (!balanced && starts(token))) {
         fail(token, `\`}\` to close ${owner}`);
       }
-      entry(token);
+      if (recovers === undefined || !balanced || !bracketed) {
+        entry(token);
+        continue;
+      }
+      const from = position;
+      try {
+        entry(token);
+      } catch (error) {
+        if (!(error instanceof ParseFailure)) throw error;
+        recovers.broken = true;
+        skipEntry(from);
+      }
     }
   };
 
@@ -623,182 +690,192 @@ export function parse(source: string): ParseResult {
     }
     expect("{", "`{` after the type name");
     const body = "`state`, `has`, `action`, `on`, `provides`, `enum`, `type`, a rule or `}`";
-    braces(type.name, (token) => {
-      if (token.kind !== "word") fail(token, body);
-      // A declaration of the file, not of a type; a rule on a state of that
-      // name has "=" next.
-      if (
-        ["dimension", "environment", "profile", "modifier", "record", "actor", "expect"].includes(
-          token.text,
-        ) &&
-        tokens[position + 1]?.kind !== "="
-      ) {
-        fail(token, body);
-      }
-      if (token.text === "action") {
-        next();
-        const named = name("action", "an action name after `action`", lowercase);
-        expect(":", message`\`:\` after ${named.name}`);
-        const state = word("a state after `:`");
-        const from = word(message`a value after ${state.name}`);
-        expect("->", message`\`->\` after ${from.name}`);
-        type.actions.push({ name: named, state, from, to: word("a value after `->`") });
-        end(["newline", "}"], "the end of the line");
-        return;
-      }
-      // "event <name>, <name>"; a rule on a state named event has "=" next.
-      if (token.text === "event" && tokens[position + 1]?.kind !== "=") {
-        next();
-        type.events.push(
-          ...list(",", "`event`", (after) => name("event", `an event after ${after}`, lowercase), [
-            "newline",
-            "}",
-          ]),
-        );
-        return;
-      }
-      if (token.text === "on") {
-        next();
-        const event = eventOf();
-        expect(":", "`:` after the event");
-        // Its changes, split by commas: each an action by its name, or a
-        // change in place, "<state> -> <value>".
-        const effect = (after: string): Effect => {
-          const named = qualified(`an action or a change after ${after}`);
-          // Focus moves by an action of the child that takes it, not by a
-          // word of the language's own.
-          if (named.name === "focus" && peek().kind === "word") {
-            // The child's whole path, "<child>.<child>…", as written.
-            let target = peek().text;
-            for (
-              let at = position + 1;
-              tokens[at]?.kind === "." && tokens[at + 1]?.kind === "word";
-              at += 2
-            ) {
-              target += `.${tokens[at + 1]?.text}`;
-            }
-            failWith(
-              named,
-              `\`focus ${target}\` is not a change: move focus with an action of the child, such as \`${target}.take-focus\``,
-            );
-          }
-          if (peek().kind !== "->") return { kind: "action", name: named };
-          // A change is on one of the type's own states; a child's are
-          // changed through its actions.
-          if (named.name.includes(".")) {
-            failWith(
-              named,
-              message`a change is on one of the type's own states, not ${named.name}; change a child through one of its actions`,
-            );
-          }
-          next();
-          return { kind: "change", state: named, to: word("a value after `->`") };
-        };
-        const trigger: Trigger = { ...located(token), event, does: [effect("`:`")] };
-        while (peek().kind === ",") {
-          next();
-          trigger.does.push(effect("`,`"));
+    braces(
+      type.name,
+      (token) => {
+        if (token.kind !== "word") fail(token, body);
+        // A declaration of the file, not of a type; a rule on a state of that
+        // name has "=" next.
+        if (
+          ["dimension", "environment", "profile", "modifier", "record", "actor", "expect"].includes(
+            token.text,
+          ) &&
+          tokens[position + 1]?.kind !== "="
+        ) {
+          fail(token, body);
         }
-        type.triggers.push(trigger);
-        if (peek().kind === "word" && peek().text === "only") {
+        if (token.text === "action") {
           next();
-          keyword("when", "`when` after `only`");
-          trigger.when = condition("a state or a dimension");
+          const named = name("action", "an action name after `action`", lowercase);
+          expect(":", message`\`:\` after ${named.name}`);
+          const state = word("a state after `:`");
+          const from = word(message`a value after ${state.name}`);
+          expect("->", message`\`->\` after ${from.name}`);
+          type.actions.push({ name: named, state, from, to: word("a value after `->`") });
+          end(["newline", "}"], "the end of the line");
           return;
         }
-        end(["newline", "}"], "`only when` or the end of the line");
-        return;
-      }
-      // "alike <subject> [in (...)] [when ...]"; a rule on a state named
-      // alike has "=" next.
-      if (token.text === "alike" && tokens[position + 1]?.kind !== "=") {
-        next();
-        const alike: Alike = { subject: word("a state or a dimension after `alike`") };
-        if (peek().kind === "word" && peek().text === "in") {
+        // "event <name>, <name>"; a rule on a state named event has "=" next.
+        if (token.text === "event" && tokens[position + 1]?.kind !== "=") {
           next();
-          alike.values = valueList();
+          type.events.push(
+            ...list(
+              ",",
+              "`event`",
+              (after) => name("event", `an event after ${after}`, lowercase),
+              ["newline", "}"],
+            ),
+          );
+          return;
         }
-        if (peek().kind === "word" && peek().text === "when") {
+        if (token.text === "on") {
           next();
-          alike.when = condition("a state or a dimension");
-        } else {
-          end(["newline", "}"], "`in`, `when` or the end of the line");
+          const event = eventOf();
+          expect(":", "`:` after the event");
+          // Its changes, split by commas: each an action by its name, or a
+          // change in place, "<state> -> <value>".
+          const effect = (after: string): Effect => {
+            const named = qualified(`an action or a change after ${after}`);
+            // Focus moves by an action of the child that takes it, not by a
+            // word of the language's own.
+            if (named.name === "focus" && peek().kind === "word") {
+              // The child's whole path, "<child>.<child>…", as written.
+              let target = peek().text;
+              for (
+                let at = position + 1;
+                tokens[at]?.kind === "." && tokens[at + 1]?.kind === "word";
+                at += 2
+              ) {
+                target += `.${tokens[at + 1]?.text}`;
+              }
+              failWith(
+                named,
+                `\`focus ${target}\` is not a change: move focus with an action of the child, such as \`${target}.take-focus\``,
+              );
+            }
+            if (peek().kind !== "->") return { kind: "action", name: named };
+            // A change is on one of the type's own states; a child's are
+            // changed through its actions.
+            if (named.name.includes(".")) {
+              failWith(
+                named,
+                message`a change is on one of the type's own states, not ${named.name}; change a child through one of its actions`,
+              );
+            }
+            next();
+            return { kind: "change", state: named, to: word("a value after `->`") };
+          };
+          const trigger: Trigger = { ...located(token), event, does: [effect("`:`")] };
+          while (peek().kind === ",") {
+            next();
+            trigger.does.push(effect("`,`"));
+          }
+          type.triggers.push(trigger);
+          if (peek().kind === "word" && peek().text === "only") {
+            next();
+            keyword("when", "`when` after `only`");
+            trigger.when = condition("a state or a dimension");
+            return;
+          }
+          end(["newline", "}"], "`only when` or the end of the line");
+          return;
         }
-        type.alikes.push(alike);
-        return;
-      }
-      if (token.text === "provides") {
-        next();
-        type.provides.push(word("a state after `provides`"));
-        end(["newline", "}"], "the end of the line");
-        return;
-      }
-      if (token.text === "has") {
-        next();
-        const read = child();
-        if ("placed" in read) type.children.push(read.placed);
-        else {
-          type.unions.push(read.union);
-          type.children.push(...read.union.members);
+        // "alike <subject> [in (...)] [when ...]"; a rule on a state named
+        // alike has "=" next.
+        if (token.text === "alike" && tokens[position + 1]?.kind !== "=") {
+          next();
+          const alike: Alike = { subject: word("a state or a dimension after `alike`") };
+          if (peek().kind === "word" && peek().text === "in") {
+            next();
+            alike.values = valueList();
+          }
+          if (peek().kind === "word" && peek().text === "when") {
+            next();
+            alike.when = condition("a state or a dimension");
+          } else {
+            end(["newline", "}"], "`in`, `when` or the end of the line");
+          }
+          type.alikes.push(alike);
+          return;
         }
-        return;
-      }
-      // An enum or a type inside it.
-      if (token.text === "enum" || token.text === "type") {
-        const outer = nested;
-        nested = true;
-        const list: Declaration[] = token.text === "enum" ? type.enums : type.types;
-        const before = list.length;
-        try {
-          if (token.text === "enum") valuesDeclaration("enum", type.enums);
-          else typeDeclaration(type.types);
-        } catch (error) {
-          // It broke too, not only the type around it.
-          const broken = list.length > before ? list.at(-1) : undefined;
-          if (broken !== undefined) broken.broken = true;
-          throw error;
-        } finally {
-          nested = outer;
-        }
-        return;
-      }
-      // "states hover: Hover" is the old keyword; a rule on a state named
-      // states has "=" next instead.
-      if (token.text === "states" && tokens[position + 2]?.kind === ":") fail(token, "`state`");
-      if (token.text !== "state") {
-        type.rules.push(rule());
-        return;
-      }
-      next();
-      const first = field();
-      if (peek().kind === "=") {
-        next();
-        const after = peek();
-        if (after.kind === "word" && after.text !== "when" && tokens[position + 1]?.kind !== "{") {
-          // A fixed state: "= <value>".
-          first.fixed = word("a value or `when` after `=`");
+        if (token.text === "provides") {
+          next();
+          type.provides.push(word("a state after `provides`"));
           end(["newline", "}"], "the end of the line");
-        } else {
-          const { on, branches } = whenBlock(first.name, "dimension");
-          first.derived = { dimension: on, branches };
+          return;
+        }
+        if (token.text === "has") {
+          next();
+          const read = child();
+          if ("placed" in read) type.children.push(read.placed);
+          else {
+            type.unions.push(read.union);
+            type.children.push(...read.union.members);
+          }
+          return;
+        }
+        // An enum or a type inside it.
+        if (token.text === "enum" || token.text === "type") {
+          const outer = nested;
+          nested = true;
+          const list: Declaration[] = token.text === "enum" ? type.enums : type.types;
+          const before = list.length;
+          try {
+            if (token.text === "enum") valuesDeclaration("enum", type.enums);
+            else typeDeclaration(type.types);
+          } catch (error) {
+            // It broke too, not only the type around it.
+            const broken = list.length > before ? list.at(-1) : undefined;
+            if (broken !== undefined) broken.broken = true;
+            throw error;
+          } finally {
+            nested = outer;
+          }
+          return;
+        }
+        // "states hover: Hover" is the old keyword; a rule on a state named
+        // states has "=" next instead.
+        if (token.text === "states" && tokens[position + 2]?.kind === ":") fail(token, "`state`");
+        if (token.text !== "state") {
+          type.rules.push(rule());
+          return;
+        }
+        next();
+        const first = field();
+        if (peek().kind === "=") {
+          next();
+          const after = peek();
+          if (
+            after.kind === "word" &&
+            after.text !== "when" &&
+            tokens[position + 1]?.kind !== "{"
+          ) {
+            // A fixed state: "= <value>".
+            first.fixed = word("a value or `when` after `=`");
+            end(["newline", "}"], "the end of the line");
+          } else {
+            const { on, branches } = whenBlock(first.name, "dimension");
+            first.derived = { dimension: on, branches };
+          }
+          type.states.push(first);
+          return;
         }
         type.states.push(first);
-        return;
-      }
-      type.states.push(first);
-      while (peek().kind === ",") {
-        next();
-        carryOn();
-        type.states.push(field());
-      }
-      if (peek().kind === "=") {
-        fail(
-          peek(),
-          message`\`,\` or the end of the line after ${previous().text} (a state with when has a line of its own)`,
-        );
-      }
-      end(["newline", "}"], "`,` or the end of the line");
-    });
+        while (peek().kind === ",") {
+          next();
+          carryOn();
+          type.states.push(field());
+        }
+        if (peek().kind === "=") {
+          fail(
+            peek(),
+            message`\`,\` or the end of the line after ${previous().text} (a state with when has a line of its own)`,
+          );
+        }
+        end(["newline", "}"], "`,` or the end of the line");
+      },
+      type,
+    );
   };
 
   // An environment: "environment <Name> = <Dimension> x <Dimension> ...". The

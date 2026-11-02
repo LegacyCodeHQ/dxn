@@ -134,6 +134,67 @@ describe("diagnostics", () => {
     ]);
   });
 
+  it("skip only to the next line after a mistake inside a type, past a block or a line it carries on to", () => {
+    // The states a type kept, and every problem in the file.
+    const read = (source: string) => [
+      parse(source)
+        .types.map(({ name, states }) => `${name}: ${states.map(({ name }) => name).join(", ")}`)
+        .join("; "),
+      ...problems(source),
+    ];
+    const snapshot: string[][] = [];
+    const link = (member: string) =>
+      `enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Link needs Pointer {\n${member}  state hover: Hover\n  state focus: Focus\n}\n`;
+    snapshot.push(read(link("  hover = hovered only when focus focused\n")));
+    // Two mistakes in one type: both are reported.
+    snapshot.push(
+      read(link("  hover = hovered only when focus focused\n  focus = focused only when\n")),
+    );
+    // In a block over several lines: the block is skipped to its end.
+    snapshot.push(
+      read(
+        link("  state shown: Hover = when Pointer {\n    mouse -> hovered\n    touch rest\n  }\n"),
+      ),
+    );
+    // On a line carried on to the next: the next is skipped with it.
+    snapshot.push(
+      read(link("  hover = hovered only when focus focused and\n    Pointer = mouse\n")),
+    );
+    // With the closing brace on the same line: the type ends there.
+    snapshot.push(read("enum Hover = rest\ntype Link { state hover: }\nenum Focus = blurred\n"));
+    // A state the mistake kept from being read is not reported as unknown.
+    snapshot.push(read(link("  state shown Hover\n  shown = rest only when Pointer = mouse\n")));
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "Link: hover, focus",
+          "5:35: syntax-error: expected \`=\` or \`in\` after \`focus\`, found \`focused\`",
+        ],
+        [
+          "Link: hover, focus",
+          "5:35: syntax-error: expected \`=\` or \`in\` after \`focus\`, found \`focused\`",
+          "6:28: syntax-error: expected a dimension after \`when\`, found the end of the line",
+        ],
+        [
+          "Link: hover, focus",
+          "7:11: syntax-error: expected \`,\` or \`->\` after \`touch\`, found \`rest\`",
+        ],
+        [
+          "Link: hover, focus",
+          "5:35: syntax-error: expected \`=\` or \`in\` after \`focus\`, found \`focused\`",
+        ],
+        [
+          "Link: ",
+          "2:26: syntax-error: expected an enum name after \`:\`, found \`}\`",
+        ],
+        [
+          "Link: hover, focus",
+          "5:15: syntax-error: expected \`:\` after \`shown\`, found \`Hover\`",
+        ],
+      ]
+    `);
+  });
+
   it("end a declaration left open at the next one, and report nothing that follows from it", () => {
     expect([
       problems(
