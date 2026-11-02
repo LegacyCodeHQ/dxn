@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
-import { problems } from "./support/language.js";
+import { errors, problems } from "./support/language.js";
 
 describe("dimension", () => {
   it("declares a name and its values, in one place", () => {
@@ -29,9 +29,9 @@ describe("dimension", () => {
 
   it("has a capitalized name, declared once in the file, and each value once", () => {
     expect([
-      problems("dimension breakpoint = base | sm\n"),
-      problems("enum Breakpoint = base | sm\ndimension Breakpoint = base | sm\n"),
-      problems("dimension Pointer = mouse | touch | mouse\n"),
+      errors("dimension breakpoint = base | sm\n"),
+      errors("enum Breakpoint = base | sm\ndimension Breakpoint = base | sm\n"),
+      errors("dimension Pointer = mouse | touch | mouse\n"),
     ]).toEqual([
       ["1:11: dimension-name: dimension names start with a capital letter: `breakpoint`"],
       ["2:11: duplicate-name: `Breakpoint` is already declared at line 1"],

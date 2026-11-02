@@ -82,7 +82,7 @@ describe("a condition with and and or", () => {
   it("carries on to the next line before or after an and or an or", () => {
     const rules = (...lines: string[]) => {
       const file = parse(link(...lines));
-      return [problems(link(...lines)), file.types[0]?.rules.map(({ when }) => text(when))];
+      return [errors(link(...lines)), file.types[0]?.rules.map(({ when }) => text(when))];
     };
     expect([
       rules("hover = hovered only when Pointer = mouse and\n    Breakpoint in (lg, xl)"),
@@ -98,12 +98,12 @@ describe("a condition with and and or", () => {
       [[], ["(Pointer = mouse and (Breakpoint = lg or Breakpoint = xl))"]],
     ]);
     expect([
-      problems(
+      errors(
         link(
           "hover = hovered only when Pointer = mouse and Breakpoint = lg\n    or Breakpoint = xl",
         ),
       ),
-      problems(menu("menu = open\n    and Breakpoint = base")),
+      errors(menu("menu = open\n    and Breakpoint = base")),
     ]).toEqual([
       [
         "10:5: syntax-error: `and` and `or` need brackets to mix: write `(Pointer = mouse and Breakpoint = lg) or Breakpoint = xl` or `Pointer = mouse and (Breakpoint = lg or Breakpoint = xl)`",
@@ -211,11 +211,11 @@ type Menu needs Breakpoint {
 
   it("checks each comparison, and the whole: never true is an error, always true a warning", () => {
     expect([
-      errors(link("hover = hovered only when Pointer = mouse and Theme = dark")),
-      errors(link("hover = hovered only when Pointer = mouse and Breakpoint = sm")),
+      problems(link("hover = hovered only when Pointer = mouse and Theme = dark")),
+      problems(link("hover = hovered only when Pointer = mouse and Breakpoint = sm")),
       problems(link("hover = hovered only when Pointer = mouse and Pointer = touch")),
       problems(link("hover = hovered only when Pointer = mouse or Pointer = touch")),
-      problems(menu("menu = open and menu = closed")),
+      errors(menu("menu = open and menu = closed")),
       problems(menu("menu = open or menu = closed")),
     ]).toEqual([
       ["9:49: unknown-dimension: `Theme` is not a dimension (`Breakpoint`, `Pointer`, `Keyboard`)"],
@@ -230,6 +230,8 @@ type Menu needs Breakpoint {
         "11:46: repeated-comparison: `menu` is already compared in this `and`; give its values once, with `in (…)`",
       ],
       [
+        "4:6: warning: unused-enum: `Hover` is not used: no state or record field takes its values",
+        "5:6: warning: unused-enum: `Focus` is not used: no state or record field takes its values",
         "11:7: warning: vacuous-condition: `menu = open or menu = closed` is always true, so `panel` is always there",
       ],
     ]);
@@ -239,7 +241,7 @@ type Menu needs Breakpoint {
           "hover = hovered only when Pointer in (mouse, touch) and Breakpoint in (base, lg, xl)",
         ),
       ),
-      problems(menu("menu = open and Breakpoint in (base, lg, xl) and menu in (closed, open)")),
+      errors(menu("menu = open and Breakpoint in (base, lg, xl) and menu in (closed, open)")),
     ]).toEqual([
       [
         "9:3: warning: vacuous-condition: `Pointer in (mouse, touch) and Breakpoint in (base, lg, xl)` is always true, so the rule restricts nothing",

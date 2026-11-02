@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
 import { validate } from "../src/validate.js";
-import { problems } from "./support/language.js";
+import { errors, problems } from "./support/language.js";
 
 // The problems in a list of records of this one-field record, as
 // "code: path: message".
@@ -23,8 +23,8 @@ describe("Timestamp", () => {
 
   it("is built in, so its name cannot be declared", () => {
     expect([
-      problems("enum Timestamp = now | later\n"),
-      problems("record Timestamp {\n  at: Timestamp\n}\n"),
+      errors("enum Timestamp = now | later\n"),
+      errors("record Timestamp {\n  at: Timestamp\n}\n"),
     ]).toEqual([
       ["1:6: reserved-name: `Timestamp` is a built-in scalar; choose another name"],
       ["1:8: reserved-name: `Timestamp` is a built-in scalar; choose another name"],

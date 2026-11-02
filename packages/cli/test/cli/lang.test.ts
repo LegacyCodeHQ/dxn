@@ -12,7 +12,7 @@ const file = (source: string) => inProject({ "wordmark.dxn": source });
 describe("dxn check", () => {
   it("says what a file declares, in one line, counting each kind it has", () => {
     const run = file(
-      "enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile Tablet: Device { Pointer = touch }\nmodifier Trackpad on Tablet { Pointer = mouse }\nrecord Note {\n  hover: Hover\n}\n",
+      "enum Hover = rest | hovered\nenum Focus = blurred | focused\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  state focus: Focus\n  hover = hovered only when Pointer = mouse\n}\nenvironment Device = Pointer\nprofile Tablet: Device { Pointer = touch }\nmodifier Trackpad on Tablet { Pointer = mouse }\nrecord Note {\n  hover: Hover\n}\n",
     );
     const result = run("check", "wordmark.dxn");
     expect([result.code, result.stdout, result.stderr]).toEqual([
@@ -44,6 +44,8 @@ describe("dxn check", () => {
       1,
       [
         "wordmark.dxn:1:6: error: enum-name: enum names start with a capital letter: `hover`",
+        "wordmark.dxn:1:6: warning: unused-enum: `hover` is not used: no state or record field takes its values",
+        "wordmark.dxn:2:6: warning: unused-enum: `Ring` is not used: no state or record field takes its values",
         "wordmark.dxn:2:20: error: duplicate-value: `none` appears twice in `Ring`",
         "",
       ].join("\n"),
@@ -116,7 +118,7 @@ expect "The menu is always closed" {
       );
       expect([result.code, result.stderr]).toEqual([
         1,
-        "wordmark.dxn:13:19: error: duplicate-value: `a` appears twice in `Broken`\n",
+        "wordmark.dxn:13:6: warning: unused-enum: `Broken` is not used: no state or record field takes its values\nwordmark.dxn:13:19: error: duplicate-value: `a` appears twice in `Broken`\n",
       ]);
     });
 
@@ -160,7 +162,7 @@ expect "The menu is always closed" {
   describe("with --json", () => {
     it("prints what the file declares, and no problems", () => {
       const run = file(
-        "enum Hover = rest | hovered\nenum Size = 19px | 20px | 22px\ndimension Breakpoint = base | lg\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
+        "enum Hover = rest | hovered\nenum Size = 19px | 20px | 22px\ndimension Breakpoint = base | lg\ndimension Pointer = mouse | touch\ntype Wordmark needs Pointer {\n  state hover: Hover\n  state size: Size\n  hover = hovered only when Pointer = mouse\n}\n",
       );
       const result = run("check", "wordmark.dxn", "--json");
       expect([result.code, result.stderr, JSON.parse(result.stdout)]).toEqual([
@@ -180,7 +182,10 @@ expect "The menu is always closed" {
             {
               name: "Wordmark",
               needs: ["Pointer"],
-              states: [{ name: "hover", enum: "Hover" }],
+              states: [
+                { name: "hover", enum: "Hover" },
+                { name: "size", enum: "Size" },
+              ],
               rules: [
                 {
                   state: "hover",
@@ -248,6 +253,14 @@ expect "The menu is always closed" {
               severity: "error",
               code: "enum-name",
               message: "enum names start with a capital letter: `hover`",
+            },
+            {
+              file: "wordmark.dxn",
+              line: 1,
+              column: 6,
+              severity: "warning",
+              code: "unused-enum",
+              message: "`hover` is not used: no state or record field takes its values",
             },
           ],
         },
@@ -460,7 +473,7 @@ type Button needs Pointer {
       file("enum hover = rest\n")("states", "wordmark.dxn", "Wordmark").stderr,
     ]).toEqual([
       "dxn: no type `Wordmrk` in wordmark.dxn (`Wordmark`)\n",
-      "wordmark.dxn:1:6: error: enum-name: enum names start with a capital letter: `hover`\n",
+      "wordmark.dxn:1:6: error: enum-name: enum names start with a capital letter: `hover`\nwordmark.dxn:1:6: warning: unused-enum: `hover` is not used: no state or record field takes its values\n",
     ]);
   });
 
@@ -509,7 +522,7 @@ type Button needs Pointer {
         { error: "no type `Wordmrk` in wordmark.dxn (`Wordmark`)" },
         1,
         "",
-        ["enum-name"],
+        ["enum-name", "unused-enum"],
       ]);
     });
   });

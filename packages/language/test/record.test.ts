@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
-import { problems } from "./support/language.js";
+import { errors, problems } from "./support/language.js";
 
 const enums = "enum Tool = pen-dev | code\nenum Verdict = passed | failed\n";
 
@@ -45,10 +45,10 @@ record Evidence { source: Source }
 
   it("has a capitalized name, declared once in the file, and lowercase fields, each once", () => {
     expect([
-      problems(`${enums}record source {\n  tool: Tool\n}\n`),
-      problems(`${enums}record Tool {\n  tool: Tool\n}\n`),
-      problems(`${enums}record Source {\n  Tool: Tool\n}\n`),
-      problems(`${enums}record Source {\n  tool: Tool\n  tool: Verdict\n}\n`),
+      errors(`${enums}record source {\n  tool: Tool\n}\n`),
+      errors(`${enums}record Tool {\n  tool: Tool\n}\n`),
+      errors(`${enums}record Source {\n  Tool: Tool\n}\n`),
+      errors(`${enums}record Source {\n  tool: Tool\n  tool: Verdict\n}\n`),
     ]).toEqual([
       ["3:8: record-name: record names start with a capital letter: `source`"],
       ["3:8: duplicate-name: `Tool` is already declared at line 1"],
@@ -59,11 +59,9 @@ record Evidence { source: Source }
 
   it("types each field with an enum or a record", () => {
     expect([
-      problems(
-        `${enums}dimension Pointer = mouse | touch\nrecord Source {\n  pointer: Pointer\n}\n`,
-      ),
-      problems(`${enums}record Source {\n  tool: Tol\n}\n`),
-      problems("record Source {\n  tool: Tool\n}\n"),
+      errors(`${enums}dimension Pointer = mouse | touch\nrecord Source {\n  pointer: Pointer\n}\n`),
+      errors(`${enums}record Source {\n  tool: Tol\n}\n`),
+      errors("record Source {\n  tool: Tool\n}\n"),
     ]).toEqual([
       ["5:12: unknown-type: `Pointer` is a dimension, not an enum, a record or a scalar"],
       ["4:9: unknown-type: `Tol` is not an enum, a record or a scalar; did you mean `Tool`?"],
@@ -88,9 +86,7 @@ record Evidence { source: Source }
 
   it("is not an enum: a state cannot take its values from a record", () => {
     expect(
-      problems(
-        `${enums}record Source {\n  tool: Tool\n}\ntype Link {\n  state source: Source\n}\n`,
-      ),
+      errors(`${enums}record Source {\n  tool: Tool\n}\ntype Link {\n  state source: Source\n}\n`),
     ).toEqual(["7:17: unknown-enum: `Source` is a record, not an enum"]);
   });
 

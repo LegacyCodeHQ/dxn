@@ -3,7 +3,7 @@ import { states } from "../src/evaluate.js";
 import { format } from "../src/format.js";
 import { parse } from "../src/parse.js";
 import { renameInSource } from "../src/rename.js";
-import { problems } from "./support/language.js";
+import { errors, problems } from "./support/language.js";
 
 const menu = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered
@@ -57,9 +57,9 @@ record Snapshot {
 
   it("cannot repeat a name from around them, so a bare name means one thing", () => {
     expect([
-      problems("enum Hover = rest | hovered\ntype Menu {\n  enum Hover = closed | open\n}\n"),
-      problems("type Menu {\n  enum State = closed | open\n  enum State = shut\n}\n"),
-      problems("type Menu {\n  enum state = closed | open\n}\n"),
+      errors("enum Hover = rest | hovered\ntype Menu {\n  enum Hover = closed | open\n}\n"),
+      errors("type Menu {\n  enum State = closed | open\n  enum State = shut\n}\n"),
+      errors("type Menu {\n  enum state = closed | open\n}\n"),
     ]).toEqual([
       ["3:8: duplicate-name: `Hover` is already declared at line 1"],
       ["3:8: duplicate-name: `State` is already declared at line 2"],
@@ -149,11 +149,11 @@ type Tab {
 
   it("say what they expected when the syntax is wrong", () => {
     expect([
-      problems("type Menu {\n  state menu: Menu.\n}\n"),
-      problems("type Menu {\n  record Note {}\n}\n"),
-      problems("type Menu {\n  | open\n}\n"),
-      problems("type Menu { enum State = closed | open }\n"),
-      problems(
+      errors("type Menu {\n  state menu: Menu.\n}\n"),
+      errors("type Menu {\n  record Note {}\n}\n"),
+      errors("type Menu {\n  | open\n}\n"),
+      errors("type Menu { enum State = closed | open }\n"),
+      errors(
         "dimension D = x | y\nenum E = a | b\ntype Menu needs D {\n  state profile: E\n  profile = b only when D = x\n}\n",
       ),
     ]).toEqual([

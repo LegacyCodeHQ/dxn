@@ -117,15 +117,22 @@ export function among(
   shown: (name: string) => string | Words = (name) => name,
 ): Words {
   if (names.length === 0) return words(`; ${none}`);
-  const close = names
-    .map((name) => ({ name, distance: distance(written, name) }))
-    .filter(({ distance: apart }) => apart <= Math.max(1, Math.floor(measured / 3)))
-    .sort((a, b) => a.distance - b.distance);
+  const close = near(written, names, measured);
   if (close.length === 0) return words(message` (${names.map(shown)})`);
-  const each = close.map(({ name }) => shown(name));
+  const each = close.map(shown);
   const said =
     each.length > 1 ? message`${each.slice(0, -1)} or ${each.at(-1)}` : message`${each[0]}`;
   return words(message`; did you mean ${words(said)}?`);
+}
+
+// The names close enough to one written to be what it meant, closest first:
+// at most one edit for every three characters, and always one.
+export function near(written: string, names: string[], measured = written.length): string[] {
+  return names
+    .map((name) => ({ name, distance: distance(written, name) }))
+    .filter(({ distance: apart }) => apart <= Math.max(1, Math.floor(measured / 3)))
+    .sort((a, b) => a.distance - b.distance)
+    .map(({ name }) => name);
 }
 
 // How many edits apart two names are: a character added, removed, changed, or

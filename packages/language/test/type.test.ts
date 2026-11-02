@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
-import { problems } from "./support/language.js";
+import { errors, problems } from "./support/language.js";
 
 const enums = "enum Hover = rest | hovered\nenum Focus = blurred | focused\n";
 
@@ -69,9 +69,9 @@ type wordmark {
   });
 
   it("refuses a type where an enum belongs", () => {
-    expect(
-      problems(`${enums}type Toolbar {}\ntype Wordmark {\n  state hover: Toolbar\n}\n`),
-    ).toEqual(["5:16: unknown-enum: `Toolbar` is a type, not an enum"]);
+    expect(errors(`${enums}type Toolbar {}\ntype Wordmark {\n  state hover: Toolbar\n}\n`)).toEqual(
+      ["5:16: unknown-enum: `Toolbar` is a type, not an enum"],
+    );
   });
 
   it("says what it expected when the syntax is wrong, and goes on after the type", () => {

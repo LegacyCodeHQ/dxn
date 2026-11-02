@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
-import { problems } from "./support/language.js";
+import { errors, problems } from "./support/language.js";
 
 const wordmark = `enum Hover      = rest | hovered
 enum Focus      = blurred | focused
@@ -14,8 +14,8 @@ enum Color      = primary | accent
 
 describe("enum", () => {
   it("declares a named, finite set of values", () => {
-    const { enums, diagnostics } = parse(wordmark);
-    expect(diagnostics).toEqual([]);
+    const { enums } = parse(wordmark);
+    expect(errors(wordmark)).toEqual([]);
     expect(enums.map(({ name, values }) => [name, values.map(({ name }) => name)])).toEqual([
       ["Hover", ["rest", "hovered"]],
       ["Focus", ["blurred", "focused"]],
@@ -38,8 +38,9 @@ describe("enum", () => {
   });
 
   it("continues onto the next line after a |, and allows blank lines", () => {
-    const { enums, diagnostics } = parse("\nenum Breakpoint = base | sm |\n  lg | xl\n\n");
-    expect([diagnostics, enums[0]?.values.map(({ name }) => name)]).toEqual([
+    const source = "\nenum Breakpoint = base | sm |\n  lg | xl\n\n";
+    const { enums } = parse(source);
+    expect([errors(source), enums[0]?.values.map(({ name }) => name)]).toEqual([
       [],
       ["base", "sm", "lg", "xl"],
     ]);
@@ -47,8 +48,8 @@ describe("enum", () => {
 
   it("can start a line with the |, and its first value with one", () => {
     const values = (source: string) => {
-      const { enums, dimensions, diagnostics } = parse(source);
-      return [diagnostics, [...enums, ...dimensions][0]?.values.map(({ name }) => name)];
+      const { enums, dimensions } = parse(source);
+      return [errors(source), [...enums, ...dimensions][0]?.values.map(({ name }) => name)];
     };
     expect([
       values("enum Size =\n  | xs\n  | sm\n  | md\n"),
@@ -62,9 +63,9 @@ describe("enum", () => {
       [[], ["mouse", "touch"]],
     ]);
     expect([
-      problems("enum Size =\n"),
-      problems("enum Size = xs |\n  | sm\n"),
-      problems("enum Size =\n  | xs\n  md\n"),
+      errors("enum Size =\n"),
+      errors("enum Size = xs |\n  | sm\n"),
+      errors("enum Size =\n  | xs\n  md\n"),
     ]).toEqual([
       ["1:12: syntax-error: expected a value after `=`, found the end of the line"],
       ["2:3: syntax-error: expected a value after `|`, found `|`"],
@@ -78,7 +79,7 @@ describe("enum", () => {
     const read = (source: string) => {
       const { enums, types } = parse(source);
       const [declared] = [...enums, ...types.flatMap(({ enums }) => enums)];
-      return [declared?.values.map(({ name }) => name).join(" | "), ...problems(source)];
+      return [declared?.values.map(({ name }) => name).join(" | "), ...errors(source)];
     };
     const snapshot: (string | undefined)[][] = [];
     snapshot.push(read("enum Size = xs |\n  # sm |\n  md\n"));
@@ -121,10 +122,10 @@ describe("enum", () => {
 
   it("refuses names and values that do not follow the naming rules", () => {
     expect([
-      problems("enum hover = rest | hovered\n"),
-      problems("enum Hover = rest | -hovered\n"),
-      problems("enum Hover = rest | hover_ed\n"),
-      problems("enum Hover-State = rest\n"),
+      errors("enum hover = rest | hovered\n"),
+      errors("enum Hover = rest | -hovered\n"),
+      errors("enum Hover = rest | hover_ed\n"),
+      errors("enum Hover-State = rest\n"),
     ]).toEqual([
       ["1:6: enum-name: enum names start with a capital letter: `hover`"],
       ["1:21: syntax-error: expected a value after `|`, found `-`"],
@@ -135,11 +136,11 @@ describe("enum", () => {
 
   it("names the whole word when it has a character no name or value can have", () => {
     const snapshot: string[][] = [];
-    snapshot.push(problems("enum Size = café | sm\n"));
-    snapshot.push(problems("enum Größe = xs\n"));
-    snapshot.push(problems("enum Size_2 = xs\n"));
-    snapshot.push(problems("enum Size = xs | sm_\n"));
-    snapshot.push(problems("enum Size = xs\ntype Menu {\n  state open_now: Size\n}\n"));
+    snapshot.push(errors("enum Size = café | sm\n"));
+    snapshot.push(errors("enum Größe = xs\n"));
+    snapshot.push(errors("enum Size_2 = xs\n"));
+    snapshot.push(errors("enum Size = xs | sm_\n"));
+    snapshot.push(errors("enum Size = xs\ntype Menu {\n  state open_now: Size\n}\n"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
@@ -163,13 +164,13 @@ describe("enum", () => {
 
   it("refuses values that are not lowercase letters and digits, joined by single hyphens", () => {
     const snapshot: string[][] = [];
-    snapshot.push(problems("enum Hover = rest | no-keyboard | 19px | 2xl\n"));
-    snapshot.push(problems("enum Hover = Rest | hovered\n"));
-    snapshot.push(problems("enum Keyboard = noKeyboard | keyboard\n"));
-    snapshot.push(problems("enum Hover = rest | hovered-\n"));
-    snapshot.push(problems("enum Hover = rest | hov--ered\n"));
-    snapshot.push(problems("dimension Pointer = Mouse | touch\n"));
-    snapshot.push(problems("type Menu {\n  enum State = Closed | open\n}\n"));
+    snapshot.push(errors("enum Hover = rest | no-keyboard | 19px | 2xl\n"));
+    snapshot.push(errors("enum Hover = Rest | hovered\n"));
+    snapshot.push(errors("enum Keyboard = noKeyboard | keyboard\n"));
+    snapshot.push(errors("enum Hover = rest | hovered-\n"));
+    snapshot.push(errors("enum Hover = rest | hov--ered\n"));
+    snapshot.push(errors("dimension Pointer = Mouse | touch\n"));
+    snapshot.push(errors("type Menu {\n  enum State = Closed | open\n}\n"));
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [],
@@ -197,12 +198,62 @@ describe("enum", () => {
 
   it("refuses an enum or a value declared twice", () => {
     expect([
-      problems("enum Breakpoint = base | sm | lg | lg\n"),
-      problems("enum Ring = none | focus\nenum Ring = none\n"),
+      errors("enum Breakpoint = base | sm | lg | lg\n"),
+      errors("enum Ring = none | focus\nenum Ring = none\n"),
     ]).toEqual([
       ["1:36: duplicate-value: `lg` appears twice in `Breakpoint`"],
       ["2:6: duplicate-name: `Ring` is already declared at line 1"],
     ]);
+  });
+
+  it("warns of an enum that no state or record field takes its values from", () => {
+    const snapshot: string[][] = [];
+    snapshot.push(problems("enum Hover = rest | hovered\n"));
+    snapshot.push(problems("enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\n"));
+    snapshot.push(problems("enum Hover = rest\ntype Link {\n  enum State = closed | open\n}\n"));
+    snapshot.push(
+      problems("enum Hover = rest\ntype Menu {\n  type Link receives hover: Hover {\n  }\n}\n"),
+    );
+    snapshot.push(problems("enum Source = figma | code\nrecord Evidence {\n  source: Source\n}\n"));
+    // A misspelled enum uses the enums it might mean; another error warns.
+    snapshot.push(problems("enum Hover = rest\ntype Link {\n  state hover: Hovr\n}\n"));
+    snapshot.push(problems("enum Source = figma\nrecord Evidence {\n  source: Sorce\n}\n"));
+    snapshot.push(
+      problems("enum Size = sm\nenum Hover = rest\ntype Link {\n  state hover: Hover = rset\n}\n"),
+    );
+    // A syntax error may hide what uses an enum: none is reported.
+    snapshot.push(
+      problems(
+        "enum Hover = rest\ntype Link {\n  hover = rest only when hover rest\n  state hover: Hover\n}\n",
+      ),
+    );
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          "1:6: warning: unused-enum: \`Hover\` is not used: no state or record field takes its values",
+        ],
+        [],
+        [
+          "1:6: warning: unused-enum: \`Hover\` is not used: no state or record field takes its values",
+          "3:8: warning: unused-enum: \`Link.State\` is not used: no state or record field takes its values",
+        ],
+        [],
+        [],
+        [
+          "3:16: unknown-enum: \`Hovr\` is not an enum; did you mean \`Hover\`?",
+        ],
+        [
+          "3:11: unknown-type: \`Sorce\` is not an enum, a record or a scalar; did you mean \`Source\`?",
+        ],
+        [
+          "1:6: warning: unused-enum: \`Size\` is not used: no state or record field takes its values",
+          "4:24: unknown-value: \`rset\` is not a value of \`hover\` (\`rest\`)",
+        ],
+        [
+          "3:32: syntax-error: expected \`=\` or \`in\` after \`hover\`, found \`rest\`",
+        ],
+      ]
+    `);
   });
 
   it("says what it expected when the syntax is wrong", () => {

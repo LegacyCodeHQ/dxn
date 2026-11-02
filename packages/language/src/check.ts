@@ -2,7 +2,7 @@ import type { Field, Located, ParseResult, RecordDeclaration, Type } from "./ast
 import { checkTypes } from "./check-types.js";
 import { checkChosen, checkWhen, type Report, reportTo } from "./check-values.js";
 import { message, words } from "./message.js";
-import { among, article, Names } from "./names.js";
+import { among, article, Names, near } from "./names.js";
 import { environmentOf } from "./profiles.js";
 import { penNode, scalar } from "./scalars.js";
 import { around } from "./scope.js";
@@ -16,6 +16,7 @@ export function check(file: ParseResult): void {
   const names = new Names(file);
   checkDeclared(file, report);
   checkValues(file, report);
+  checkUsedEnums(file, names, report);
   checkTypes(file, names, report);
   checkEnvironments(file, names, report);
   checkProfiles(file, names, report);
@@ -24,6 +25,29 @@ export function check(file: ParseResult): void {
   checkActors(file, names, report);
   checkContainment(file, names, report);
   checkExpectations(file, report);
+}
+
+// Enums: each the values of a state or of a record's field, or it is not used.
+// A name that is not an enum uses the enums it may be a misspelling of; and a
+// syntax error may hide what uses one, so then none is reported.
+function checkUsedEnums(file: ParseResult, names: Names, { warn }: Report): void {
+  if (file.diagnostics.some(({ code }) => code === "syntax-error")) return;
+  const enums = file.enums.map(({ name }) => name);
+  const used = new Set(
+    [
+      ...file.types.flatMap(({ states }) => states.map((state) => state.enum.name)),
+      ...file.records.flatMap(({ fields }) => fields.map((field) => field.type.name)),
+    ].flatMap((name) => (names.kindOf(name) === undefined ? near(name, enums) : [name])),
+  );
+  for (const declared of file.enums) {
+    if (!used.has(declared.name)) {
+      warn(
+        "unused-enum",
+        message`${declared.name} is not used: no state or record field takes its values`,
+        declared,
+      );
+    }
+  }
 }
 
 // Actors: each records a record, which recording it gives a context.

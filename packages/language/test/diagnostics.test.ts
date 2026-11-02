@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
-import { problems } from "./support/language.js";
+import { errors, problems } from "./support/language.js";
 
 describe("diagnostics", () => {
   it("say when nothing of a kind is declared, instead of an empty list", () => {
     expect([
-      problems("type Wordmark {\n  state hover: Hover\n}\n"),
-      problems(
+      errors("type Wordmark {\n  state hover: Hover\n}\n"),
+      errors(
         "enum Hover = rest | hovered\ntype Wordmark {\n  state hover: Hover\n  hover = hovered only when Pointer = mouse\n}\n",
       ),
-      problems("environment Device = Pointer\n"),
-      problems("profile Laptop: Device { Pointer = mouse }\n"),
-      problems(
+      errors("environment Device = Pointer\n"),
+      errors("profile Laptop: Device { Pointer = mouse }\n"),
+      errors(
         "enum Hover = rest | hovered\ndimension Pointer = mouse\ntype Wordmark needs Pointer {\n  hover = hovered only when Pointer = mouse\n}\n",
       ),
     ]).toEqual([
@@ -28,15 +28,15 @@ describe("diagnostics", () => {
       "enum Hover = rest | hovered\nenum Focus = blurred | focused\nenum Selection = unselected | selected\n";
     const snapshot: string[][] = [];
     // A typo, a swap of two letters, and a difference only of case.
-    snapshot.push(problems(`${enums}type Link {\n  state hover: Hovr\n}\n`));
-    snapshot.push(problems(`${enums}type Link {\n  state focus: Fcous\n}\n`));
-    snapshot.push(problems(`${enums}type Link {\n  state hover: hover\n}\n`));
+    snapshot.push(errors(`${enums}type Link {\n  state hover: Hovr\n}\n`));
+    snapshot.push(errors(`${enums}type Link {\n  state focus: Fcous\n}\n`));
+    snapshot.push(errors(`${enums}type Link {\n  state hover: hover\n}\n`));
     // Two close names, and none.
-    snapshot.push(problems(`${enums}enum Hovers = a | b\ntype Link {\n  state hover: Hovere\n}\n`));
-    snapshot.push(problems(`${enums}type Link {\n  state hover: Pointer\n}\n`));
+    snapshot.push(errors(`${enums}enum Hovers = a | b\ntype Link {\n  state hover: Hovere\n}\n`));
+    snapshot.push(errors(`${enums}type Link {\n  state hover: Pointer\n}\n`));
     // A state, an event, an action and a child, by the same rule.
     snapshot.push(
-      problems(
+      errors(
         `${enums}type Link {\n  state hover: Hover, focus: Focus\n  event press\n  action blur: focus focused -> blurred\n  on pres: blurr\n  hovr = hovered only when focus = blurred\n}\ntype Menu {\n  has link: Link\n  event escape\n  on escape: lnk.blur\n}\n`,
       ),
     );

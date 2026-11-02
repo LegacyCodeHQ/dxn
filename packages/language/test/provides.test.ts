@@ -28,7 +28,7 @@ describe("a provided state", () => {
     const file = parse(site);
     const links = file.types.find(({ name }) => name === "Links");
     expect([
-      problems(site),
+      errors(site),
       file.types.find(({ name }) => name === "ArticlePage")?.provides.map(({ name }) => name),
       links?.states.map(({ name, enum: of, received }) => [name, of.name, received === true]),
     ]).toEqual([[], ["current"], [["current", "Section", true]]]);
@@ -61,9 +61,9 @@ describe("a provided state", () => {
 
   it("is provided from one of the type's own states, once", () => {
     expect([
-      problems(site.replace("provides current", "provides curent")),
-      problems(site.replace("provides current", "provides current\n  provides current")),
-      problems(site.replace("  has blog: Link", "  provides current\n  has blog: Link")),
+      errors(site.replace("provides current", "provides curent")),
+      errors(site.replace("provides current", "provides current\n  provides current")),
+      errors(site.replace("  has blog: Link", "  provides current\n  has blog: Link")),
     ]).toEqual([
       ["16:12: unknown-state: `curent` is not a state of `ArticlePage`; did you mean `current`?"],
       ["17:12: duplicate-provides: `current` is already provided by `ArticlePage`"],

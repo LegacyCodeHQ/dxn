@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
-import { problems } from "./support/language.js";
+import { errors, problems } from "./support/language.js";
 
 describe("comments", () => {
   it("run from # to the end of the line, on a line of their own or after code", () => {
@@ -24,14 +24,15 @@ type Wordmark needs Pointer {
   });
 
   it("leave the lines and columns of everything else as they are", () => {
-    expect(problems("# a comment\nenum hover = rest # another\n")).toEqual([
+    expect(errors("# a comment\nenum hover = rest # another\n")).toEqual([
       "2:6: enum-name: enum names start with a capital letter: `hover`",
     ]);
   });
 
   it("end a word, since no word holds a #", () => {
-    const { enums, diagnostics } = parse("enum Hover = rest#hovered\n");
-    expect([diagnostics, enums[0]?.values.map(({ name }) => name)]).toEqual([[], ["rest"]]);
+    const source = "enum Hover = rest#hovered\n";
+    const { enums } = parse(source);
+    expect([errors(source), enums[0]?.values.map(({ name }) => name)]).toEqual([[], ["rest"]]);
   });
 
   it("can be all a file has", () => {

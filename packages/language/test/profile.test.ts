@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/parse.js";
-import { problems } from "./support/language.js";
+import { errors, problems } from "./support/language.js";
 
 const dimensions = `dimension Breakpoint = base | sm | lg | xl
 dimension Pointer = mouse | touch
@@ -30,10 +30,10 @@ describe("environment", () => {
 
   it("has a capitalized name, and declared dimensions, each once", () => {
     expect([
-      problems(`${dimensions}environment device = Pointer\n`),
-      problems(`${dimensions}environment Device = Pointr\n`),
-      problems(`${dimensions}enum Hover = rest | hovered\nenvironment Device = Hover\n`),
-      problems(`${dimensions}environment Device = Pointer x Pointer\n`),
+      errors(`${dimensions}environment device = Pointer\n`),
+      errors(`${dimensions}environment Device = Pointr\n`),
+      errors(`${dimensions}enum Hover = rest | hovered\nenvironment Device = Hover\n`),
+      errors(`${dimensions}environment Device = Pointer x Pointer\n`),
     ]).toEqual([
       ["4:13: environment-name: environment names start with a capital letter: `device`"],
       ["4:22: unknown-dimension: `Pointr` is not a dimension; did you mean `Pointer`?"],
@@ -68,7 +68,7 @@ describe("environment", () => {
 
   it("leaves x an ordinary value outside environments", () => {
     const source = "enum Axis = x | y\ndimension Corner = x | y\n";
-    expect([problems(source), parse(source).enums[0]?.values.map(({ name }) => name)]).toEqual([
+    expect([errors(source), parse(source).enums[0]?.values.map(({ name }) => name)]).toEqual([
       [],
       ["x", "y"],
     ]);
