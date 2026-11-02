@@ -82,6 +82,7 @@ describe("the outline", () => {
         "enum Selection",
         "enum Layout",
         "enum Focus",
+        "enum Timing",
         "type Link",
         "  receives current",
         "  event activate",

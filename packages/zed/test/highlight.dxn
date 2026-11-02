@@ -10,6 +10,9 @@ enum Openness = closed | open
 enum Selection = unselected | selected
 enum Layout = compact | inline
 enum Focus = blurred | focused
+enum Timing = when | only |
+  # in |
+  soon | late
 
 type Link needs Pointer receives current: Section {
   event activate

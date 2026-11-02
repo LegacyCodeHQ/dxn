@@ -50,8 +50,40 @@
     "declaration": {
       "patterns": [
         {
+          "comment": "An enum or a dimension, its values on the lines it carries on to after a | or an =, which may be keywords.",
+          "begin": "\\b(enum|dimension)\\s+([A-Z][A-Za-z0-9]*)\\s*(=)",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.control.dxn"
+            },
+            "2": {
+              "name": "entity.name.type.dxn"
+            },
+            "3": {
+              "name": "keyword.operator.dxn"
+            }
+          },
+          "end": "(?<=[^|=\\s])\\s*$",
+          "patterns": [
+            {
+              "include": "#comment"
+            },
+            {
+              "match": "\\|",
+              "name": "keyword.operator.dxn"
+            },
+            {
+              "match": "\\b[a-z0-9][A-Za-z0-9-]*",
+              "name": "constant.other.dxn"
+            },
+            {
+              "include": "#punctuation"
+            }
+          ]
+        },
+        {
           "comment": "A set of possibilities, by its capitalized name.",
-          "match": "\\b(enum|dimension|type|environment|record)\\s+([A-Z][A-Za-z0-9]*)",
+          "match": "\\b(type|environment|record)\\s+([A-Z][A-Za-z0-9]*)",
           "captures": {
             "1": {
               "name": "keyword.control.dxn"
@@ -304,7 +336,20 @@
           }
         },
         {
-          "match": "(=|\\||->)\\s*(?!when\\b)([a-z0-9][A-Za-z0-9-]*)",
+          "comment": "After =, but for the when that starts a derived state.",
+          "match": "(=)\\s*(?!when\\b)([a-z0-9][A-Za-z0-9-]*)",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.dxn"
+            },
+            "2": {
+              "name": "constant.other.dxn"
+            }
+          }
+        },
+        {
+          "comment": "After | or ->, where a value may be named after a keyword.",
+          "match": "(\\||->)\\s*([a-z0-9][A-Za-z0-9-]*)",
           "captures": {
             "1": {
               "name": "keyword.operator.dxn"

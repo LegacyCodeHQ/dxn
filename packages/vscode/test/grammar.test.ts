@@ -226,6 +226,32 @@ describe("the TextMate grammar", () => {
     `);
   });
 
+  it("colours an enum's values as values, on the lines it carries on to and when they are keywords", async () => {
+    expect(
+      await tokens("enum Timing = when | only |", "  # in |", "  soon | late"),
+    ).toMatchInlineSnapshot(`
+        [
+          [
+            "enum keyword.control.dxn",
+            "Timing entity.name.type.dxn",
+            "= keyword.operator.dxn",
+            "when constant.other.dxn",
+            "| keyword.operator.dxn",
+            "only constant.other.dxn",
+            "| keyword.operator.dxn",
+          ],
+          [
+            "# in | comment.line.number-sign.dxn",
+          ],
+          [
+            "soon constant.other.dxn",
+            "| keyword.operator.dxn",
+            "late constant.other.dxn",
+          ],
+        ]
+      `);
+  });
+
   it("colours the else of a when as a keyword", async () => {
     expect(await tokens("    else -> redraw")).toEqual([
       ["else keyword.control.dxn", "-> keyword.operator.dxn", "redraw constant.other.dxn"],
