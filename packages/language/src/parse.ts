@@ -134,6 +134,24 @@ export function parse(source: string): ParseResult {
     return named;
   };
 
+  // A value an enum or a dimension declares: lowercase letters and digits,
+  // with single hyphens only between them, so no two differ only in case.
+  const value = (expected: string): Located => {
+    const named = word(expected);
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(named.name)) {
+      result.diagnostics.push({
+        severity: "error",
+        code: "value-name",
+        message: /^[a-z0-9]/.test(named.name)
+          ? message`values are lowercase letters and digits, with single hyphens between them: ${named.name}`
+          : message`values start with a lowercase letter or a digit: ${named.name}`,
+        line: named.line,
+        column: named.column,
+      });
+    }
+    return named;
+  };
+
   // Items split by a separator, a token or a word, which may end a line; the
   // first follows what was read before it. The list ends at one of the ends:
   // by default, the end of the line.
@@ -222,13 +240,13 @@ export function parse(source: string): ParseResult {
       next();
       after = "`|`";
     }
-    declaration.values.push(word(`a value after ${after}`));
+    declaration.values.push(value(`a value after ${after}`));
     for (;;) {
       if (pipeNext()) next();
       if (peek().kind !== "|") break;
       next();
       carryOn();
-      declaration.values.push(word("a value after `|`"));
+      declaration.values.push(value("a value after `|`"));
     }
     // Inside a type, the type's closing brace can end it too.
     const ends: TokenKind[] = nested ? ["newline", "end", "}"] : ["newline", "end"];

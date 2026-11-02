@@ -127,13 +127,16 @@ values and `Focus` has two, there are exactly four combinations, and the tool
 can list every one and tell you which you have not covered. An open set, like
 "any string", could never be checked that way.
 
-Two rules keep enums unambiguous:
+Three rules keep enums unambiguous:
 
 - **An enum's name starts with a capital letter.** In this language, a name
   for a _set of possibilities_ is capitalized, as is every other name
   declared at the top of a file (a profile, a modifier, an actor), and a name
   for a _single thing_ inside one (a value, a state) starts with a lowercase
   letter. You can tell which one you are reading at a glance.
+- **A value is lowercase letters and digits,** with single hyphens only
+  between them: `rest`, `no-keyboard`, `19px`, but not `Rest`, `hovered-` or
+  `hov--ered`. So no two values differ only in case.
 - **Each value appears once,** and each name is declared once in the file.
 
 ## Types and states
@@ -1771,21 +1774,21 @@ case was drawn in, and later the rendering in the code.
 
 ### Names
 
-| Kind        | Example                       | Written                                             |
-| ----------- | ----------------------------- | --------------------------------------------------- |
-| enum        | `Hover`                       | capital letter, then letters and digits             |
-| dimension   | `Pointer`                     | capital letter, then letters and digits             |
-| type        | `Wordmark`                    | capital letter, then letters and digits             |
-| environment | `Device`                      | capital letter, then letters and digits             |
-| record      | `Evidence`                    | capital letter, then letters and digits             |
-| actor       | `DesignAgent`                 | capital letter, then letters and digits             |
-| state       | `hover`                       | lowercase letter                                    |
-| profile     | `Laptop`                      | capital letter, then letters and digits             |
-| child       | `toggle`                      | lowercase letter                                    |
-| action      | `close`                       | lowercase letter                                    |
-| modifier    | `MagicKeyboard`               | capital letter, then letters and digits             |
-| field       | `source`                      | lowercase letter                                    |
-| value       | `rest`, `no-keyboard`, `19px` | a letter or digit, then letters, digits and hyphens |
+| Kind        | Example                       | Written                                         |
+| ----------- | ----------------------------- | ----------------------------------------------- |
+| enum        | `Hover`                       | capital letter, then letters and digits         |
+| dimension   | `Pointer`                     | capital letter, then letters and digits         |
+| type        | `Wordmark`                    | capital letter, then letters and digits         |
+| environment | `Device`                      | capital letter, then letters and digits         |
+| record      | `Evidence`                    | capital letter, then letters and digits         |
+| actor       | `DesignAgent`                 | capital letter, then letters and digits         |
+| state       | `hover`                       | lowercase letter                                |
+| profile     | `Laptop`                      | capital letter, then letters and digits         |
+| child       | `toggle`                      | lowercase letter                                |
+| action      | `close`                       | lowercase letter                                |
+| modifier    | `MagicKeyboard`               | capital letter, then letters and digits         |
+| field       | `source`                      | lowercase letter                                |
+| value       | `rest`, `no-keyboard`, `19px` | lowercase letters, digits, hyphens between them |
 
 An enum or a type can be declared inside a type, and is then named after it
 from outside: `Menu.State`, `Menu.Toggle`. A name is looked up first in the
@@ -1848,6 +1851,7 @@ comment     = "#" to the end of the line
 | `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name`, `actor-name`, `profile-name`, `modifier-name` | error    | the name does not start with a capital letter, or has more than letters and digits               |
 | `state-name`, `field-name`, `child-name`                                                                                     | error    | the name does not start with a lowercase letter                                                  |
 | `action-name`                                                                                                                | error    | an action's name does not start with a lowercase letter                                          |
+| `value-name`                                                                                                                 | error    | a value is not lowercase letters and digits, with single hyphens between them                    |
 | `duplicate-name`                                                                                                             | error    | a name is declared twice in the file, or an expectation's title                                  |
 | `duplicate-value`                                                                                                            | error    | a value appears twice in an enum, dimension, condition or `when`                                 |
 | `duplicate-state`                                                                                                            | error    | a type has two states with one name                                                              |

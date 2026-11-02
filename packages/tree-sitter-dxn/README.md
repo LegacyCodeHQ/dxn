@@ -48,4 +48,5 @@ more permissive than `parse.ts` in a few places:
 - A state, child or value may not be named after a keyword where that keyword
   could also start the next statement, such as a rule on a state named `state`
   or `on`; `parse.ts` tells these apart by the `=` after them.
-- A word cannot end with a hyphen (`a-`), which `parse.ts` accepts.
+- A word cannot end with a hyphen (`a-`). `parse.ts` reads one as a word, and
+  reports it only where it declares a value.

@@ -88,6 +88,40 @@ describe("enum", () => {
     ]);
   });
 
+  it("refuses values that are not lowercase letters and digits, joined by single hyphens", () => {
+    const snapshot: string[][] = [];
+    snapshot.push(problems("enum Hover = rest | no-keyboard | 19px | 2xl\n"));
+    snapshot.push(problems("enum Hover = Rest | hovered\n"));
+    snapshot.push(problems("enum Keyboard = noKeyboard | keyboard\n"));
+    snapshot.push(problems("enum Hover = rest | hovered-\n"));
+    snapshot.push(problems("enum Hover = rest | hov--ered\n"));
+    snapshot.push(problems("dimension Pointer = Mouse | touch\n"));
+    snapshot.push(problems("type Menu {\n  enum State = Closed | open\n}\n"));
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [],
+        [
+          "1:14: value-name: values start with a lowercase letter or a digit: \`Rest\`",
+        ],
+        [
+          "1:17: value-name: values are lowercase letters and digits, with single hyphens between them: \`noKeyboard\`",
+        ],
+        [
+          "1:21: value-name: values are lowercase letters and digits, with single hyphens between them: \`hovered-\`",
+        ],
+        [
+          "1:21: value-name: values are lowercase letters and digits, with single hyphens between them: \`hov--ered\`",
+        ],
+        [
+          "1:21: value-name: values start with a lowercase letter or a digit: \`Mouse\`",
+        ],
+        [
+          "2:16: value-name: values start with a lowercase letter or a digit: \`Closed\`",
+        ],
+      ]
+    `);
+  });
+
   it("refuses an enum or a value declared twice", () => {
     expect([
       problems("enum Breakpoint = base | sm | lg | lg\n"),
