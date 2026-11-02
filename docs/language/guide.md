@@ -30,7 +30,7 @@ element have on a phone? which combinations exist at all? what did I forget?_
 
 The same file says what is recorded about those combinations: who drew or
 built one, when, and where. That data is stored next to the file, checked
-against the declarations, and kept in step with them when a name changes, so
+against the declarations, and kept in sync with them when a name changes, so
 the specification, the design and the code can be compared case by case.
 
 The language is written for people and for AI agents alike. Everything is
