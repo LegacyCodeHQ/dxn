@@ -1130,7 +1130,7 @@ describe("the language server", () => {
           [4, "◐ PenEvidence 1 of 2 states drawn"],
           [7, "○ PenEvidence 0 of 1 state drawn"],
         ],
-        "```dxn\ntype Tab\n  state style: Style\n```\n\n---\n\n◐ PenEvidence: 1 of 2 states drawn in Bar\n\nMissing:\n- Bar.tab: style = bold",
+        "```dxn\ntype Tab\n  state style: Style\n```\n\n---\n\n◐ PenEvidence: Bar can show all 2 states of Tab, 1 drawn\n\nMissing:\n- Bar.tab: style = bold",
         undefined,
       ]);
     } finally {
@@ -1210,7 +1210,7 @@ describe("the language server", () => {
       });
       // Bar on its own has two states, one drawn; the screen pins the one.
       expect((found?.contents as { value: string } | undefined)?.value.split("---\n\n")[1]).toBe(
-        "● PenEvidence: all states drawn in Screen, with kind = root",
+        "● PenEvidence: Screen shows 1 state of Bar, kind = root, drawn",
       );
     } finally {
       rmSync(folder, { recursive: true, force: true });

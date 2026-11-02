@@ -208,18 +208,23 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
       .filter(({ fields }) => fields.some(({ type }) => type.name === "PenNode"))
       .map(({ name }) => name),
   );
-  // Where a usage is: the type whose has line it is, and what that line
-  // pins of the child, "in FeedScreen, with kind = root".
-  const whereOf = ({ line, column }: Progress) => {
+  // A usage, for a record: the type whose has line it is, the component it
+  // places, how many states the component has on its own, and what the line
+  // pins of it.
+  const usageOf = ({ line, column }: Progress, record: string) => {
     for (const type of file.types) {
       const child = type.children.find((each) => each.line === line && each.column === column);
       if (child === undefined) continue;
+      const component = file.types.find(({ name }) => name === child.type.name);
+      const own = counted
+        .find((place) => place.line === component?.line && place.column === component?.column)
+        ?.records.find((each) => each.record === record)?.combinations;
       const pins = (child.bindings ?? [])
         .filter((binding) => fixes(type, binding))
         .map(({ state, from }) => `${state.name} = ${from.name}`);
-      return `in ${type.name}${pins.length === 0 ? "" : `, with ${pins.join(", ")}`}`;
+      return { in: type.name, of: child.type.name, own: own ?? -1, pins };
     }
-    return "";
+    return undefined;
   };
   const hints = counted.flatMap((place) => {
     const parts = place.records.flatMap((each): Part[] => {
@@ -230,9 +235,10 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
         ];
       }
       const outdated = each.outdated.length > 0;
+      const usage = place.usage ? usageOf(place, each.record) : undefined;
       const wording: Wording = {
         verb: drawn.has(each.record) ? "drawn" : "recorded",
-        ...(place.usage ? { where: whereOf(place) } : {}),
+        ...(usage === undefined ? {} : { usage }),
       };
       const count = outdated ? outdatedAt(each, wording) : countOf(each, wording);
       const set = apartAt(place.line, place.column, each.record);
@@ -283,10 +289,11 @@ function joined(parts: Part[]): { label: string; details: string } {
 
 // How a count is worded: what was done to a state with evidence, drawn for a
 // record with a PenNode and recorded for any other; and, for a usage of a
-// component, where it is, "in FeedScreen, with kind = root".
+// component, the type it is placed in, the component, how many states the
+// component has on its own, and what the type pins of it.
 interface Wording {
   verb: "drawn" | "recorded";
-  where?: string;
+  usage?: { in: string; of: string; own: number; pins: string[] };
 }
 
 // A record's evidence at a place: its count, "PenEvidence 4 of 6, 1 stale",
@@ -307,14 +314,22 @@ function countAndLists(
 ): { label: string; lists: string[] } {
   const { record, combinations, present, stale, gone, listed } = each;
   const states = combinations === 1 ? "state" : "states";
-  // A usage says whether all its states there are drawn, where it is and
-  // what pins it; a declaration, how many of its own.
-  const counted =
-    wording.where === undefined
-      ? `${record} ${present} of ${combinations} ${states} ${wording.verb}`
-      : present === combinations && stale === 0 && gone === 0
-        ? `${record}: all states ${wording.verb} ${wording.where}`
-        : `${record}: ${present} of ${combinations} ${states} ${wording.verb} ${wording.where}`;
+  // A declaration says how many of its own states have evidence. A usage
+  // says how many of the component's states the type can show, what pins
+  // them, and whether they are drawn, wherever they are: "FeedScreen can
+  // show all 24 states of ArticleRow, all drawn".
+  const { usage, verb } = wording;
+  const counted = (() => {
+    if (usage === undefined) return `${record} ${present} of ${combinations} ${states} ${verb}`;
+    const pinned = usage.pins.length === 0 ? "" : `, ${usage.pins.join(", ")}`;
+    const done =
+      present === combinations ? (combinations === 1 ? verb : `all ${verb}`) : `${present} ${verb}`;
+    const shows =
+      combinations === 1
+        ? `shows 1 state`
+        : `can show ${combinations === usage.own ? "all " : ""}${combinations} states`;
+    return `${record}: ${usage.in} ${shows} of ${usage.of}${pinned}, ${done}`;
+  })();
   const label = [
     counted,
     ...(stale > 0 ? [`${stale} stale`] : []),

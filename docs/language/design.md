@@ -142,9 +142,11 @@ stale or gone, a record outdated, or a record with problems. `◌` wins over
 the count. A usage of a component, a `has` line whose child is a
 component, has no hint: the component's own line counts its looks, and the
 usage's evidence is in the hover over the component's name on that line,
-under its declaration: whether all its states there are drawn, in which
-type, and what that type pins, `all states drawn in FeedScreen, with kind =
-root`. Over an element's
+under its declaration: how many of the component's states the type can
+show there, what it pins, and whether they are drawn, wherever that is:
+`FeedScreen can show all 24 states of ArticleRow, all drawn`, `FeedScreen
+shows 1 state of NavigationBar, kind = root, drawn`. The type's own drawing
+shows a sample of them; the component's drawings show them all. Over an element's
 name, the hover lists what is missing, stale, gone, outdated or wrong. A review page per tree, written by `dxn review` to
 a cache outside the repository, shows each look with the picture recorded,
 and `--stale` only what needs a decision.
