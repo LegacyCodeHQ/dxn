@@ -1511,7 +1511,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "unread / hovered",
-              "fill": "$hover-tint",
+              "fill": [
+                "$surface",
+                "$hover-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": true
@@ -1527,7 +1530,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "unread / pressed",
-              "fill": "$press-tint",
+              "fill": [
+                "$surface",
+                "$press-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": true
@@ -1609,7 +1615,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "unread saved / hovered",
-              "fill": "$hover-tint",
+              "fill": [
+                "$surface",
+                "$hover-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": true
@@ -1654,7 +1663,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "unread saved / pressed",
-              "fill": "$press-tint",
+              "fill": [
+                "$surface",
+                "$press-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": true
@@ -1736,7 +1748,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "read / hovered",
-              "fill": "$hover-tint",
+              "fill": [
+                "$surface",
+                "$hover-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": false
@@ -1752,7 +1767,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "read / pressed",
-              "fill": "$press-tint",
+              "fill": [
+                "$surface",
+                "$press-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": false
@@ -1834,7 +1852,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "read saved / hovered",
-              "fill": "$hover-tint",
+              "fill": [
+                "$surface",
+                "$hover-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": false
@@ -1879,7 +1900,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "read saved / pressed",
-              "fill": "$press-tint",
+              "fill": [
+                "$surface",
+                "$press-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": false
@@ -2036,7 +2060,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "unread thumbnail / hovered",
-              "fill": "$hover-tint",
+              "fill": [
+                "$surface",
+                "$hover-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": true
@@ -2121,7 +2148,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "unread thumbnail / pressed",
-              "fill": "$press-tint",
+              "fill": [
+                "$surface",
+                "$press-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": true
@@ -2331,7 +2361,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "unread saved thumbnail / hovered",
-              "fill": "$hover-tint",
+              "fill": [
+                "$surface",
+                "$hover-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": true
@@ -2435,7 +2468,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "unread saved thumbnail / pressed",
-              "fill": "$press-tint",
+              "fill": [
+                "$surface",
+                "$press-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": true
@@ -2644,7 +2680,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "read thumbnail / hovered",
-              "fill": "$hover-tint",
+              "fill": [
+                "$surface",
+                "$hover-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": false
@@ -2728,7 +2767,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "read thumbnail / pressed",
-              "fill": "$press-tint",
+              "fill": [
+                "$surface",
+                "$press-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": false
@@ -2936,7 +2978,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "read saved thumbnail / hovered",
-              "fill": "$hover-tint",
+              "fill": [
+                "$surface",
+                "$hover-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": false
@@ -3039,7 +3084,10 @@
               "type": "ref",
               "ref": "u3j6f8",
               "name": "read saved thumbnail / pressed",
-              "fill": "$press-tint",
+              "fill": [
+                "$surface",
+                "$press-tint"
+              ],
               "descendants": {
                 "JGIOg": {
                   "enabled": false
