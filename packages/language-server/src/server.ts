@@ -8,7 +8,6 @@ import {
   definition,
   drawings,
   type Edit,
-  folderOf,
   format,
   hover,
   message,
@@ -19,7 +18,7 @@ import {
   repositoryOf,
   type StoredFile,
   sourceLines,
-  storedFiles,
+  storedBeside,
   symbols,
   tokens,
   usages,
@@ -289,7 +288,7 @@ export function serve(connection: Connection): void {
       position.line + 1,
       position.character + 1,
       newName,
-      storedBeside(textDocument.uri, parsed(document)),
+      storedNextTo(textDocument.uri, parsed(document)),
       parsed(document),
       // Stored records are checked against their drawings, as dxn rename
       // checks them.
@@ -469,16 +468,9 @@ function rangeOf({
 
 // The stored records of a file's records, by convention: the JSON files in each
 // record's folder, next to the file. None for a file that is not on disk.
-function storedBeside(uri: string, file: ParseResult): StoredFile[] {
+function storedNextTo(uri: string, file: ParseResult): StoredFile[] {
   if (!uri.startsWith("file:")) return [];
-  const directory = dirname(fileURLToPath(uri));
-  const records = [...new Set(file.records.map(({ name }) => name))];
-  return records.flatMap((record) =>
-    (storedFiles(directory, record) ?? []).map((name) => {
-      const path = join(directory, folderOf(record), name);
-      return { record, path, source: readFileSync(path, "utf8") };
-    }),
-  );
+  return storedBeside(file, dirname(fileURLToPath(uri)));
 }
 
 // Whether a path is a folder.

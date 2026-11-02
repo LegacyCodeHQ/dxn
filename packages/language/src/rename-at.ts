@@ -18,15 +18,10 @@ import {
 } from "./rename.js";
 import { sourceLines } from "./scan.js";
 import { treePaths } from "./status.js";
-import { folderOf } from "./store.js";
+import { folderOf, type StoredFile, withoutContext } from "./store.js";
 import { type Drawn, validate } from "./validate.js";
 
-// A stored data file of a record, by its path, and its content.
-export interface StoredFile {
-  record: string;
-  path: string;
-  source: string;
-}
+export type { StoredFile };
 
 // An edit to a source: the text at a line and a column, both from one, for so
 // many characters, replaced.
@@ -106,6 +101,9 @@ export function renameAt(
       problems: errors,
     };
   }
+  // Records stored for a record no actor records are moved or declared first.
+  const [unrecorded] = withoutContext(file, stored);
+  if (unrecorded !== undefined) return { refusal: unrecorded };
   const found = target(file, source, line, column);
   if ("refusal" in found) return found;
   const { kind, spans, name } = found;

@@ -646,11 +646,17 @@ actor DesignReviewRecorder records DesignReview
         ]),
       ),
     );
+    // Records stored for a record no actor records: facts about nothing.
+    const unrecorded = source.replace("actor Designer records Evidence\n", "");
+    snapshot.push(
+      refusal(renameAt(unrecorded, ...at("enum Focus = ", "blurred"), "unfocused", stored)),
+    );
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "the file has a problem to fix first: 33:8: A press takes the focus tests nothing: \`focsed\` is not a value of \`focus\` (\`blurred\`, \`focused\`)",
         "a stored record has a problem to fix first: evidence/evidence.json:8:28: \`bogus\` is not a value of \`hover\` (\`rest\`, \`hovered\`)",
         "a stored record has a problem to fix first: evidence/evidence.json:12:3: the same \`Evidence\` as $[0] in evidence/evidence.json, apart from their fingerprints",
+        "\`Evidence\` is stored in evidence/, but no actor records it; declare \`actor <name> records Evidence\`",
       ]
     `);
   });

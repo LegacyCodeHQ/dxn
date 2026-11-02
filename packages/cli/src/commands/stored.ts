@@ -1,16 +1,14 @@
-import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import {
   type Drawn,
   drawings,
   folderOf,
-  message,
   type ParseResult,
   duplicates as repeated,
   repositoryOf,
-  storedFiles,
+  storedBeside,
   validate,
-  words,
+  withoutContext,
 } from "@legacycodehq/dxn-language";
 import type { Reporter } from "./report.js";
 
@@ -24,34 +22,13 @@ export interface Stored {
 }
 
 // Every stored data file of the file's records, by convention: the JSON files
-// in each record's folder, next to the file.
+// in each record's folder, next to the file, as an editor reads them too.
 function storedData(parsed: ParseResult, file: string, cwd: string): Stored[] {
   const directory = resolve(cwd, dirname(file));
-  const seen = new Set<string>();
-  const stored: Stored[] = [];
-  for (const { name } of parsed.records) {
-    if (seen.has(name)) continue;
-    seen.add(name);
-    const folder = folderOf(name);
-    for (const data of storedFiles(directory, name) ?? []) {
-      const path = join(directory, folder, data);
-      const shown = join(dirname(file), folder, data);
-      stored.push({ record: name, folder, shown, path, source: readFileSync(path, "utf8") });
-    }
-  }
-  return stored;
-}
-
-// Why each record stored without a context cannot be: it would be a fact
-// about nothing.
-function storedWithoutContext(parsed: ParseResult, file: string, cwd: string): string[] {
-  const directory = resolve(cwd, dirname(file));
-  return parsed.records
-    .filter(({ name, context }) => !context && storedFiles(directory, name) !== undefined)
-    .map(
-      ({ name }) =>
-        message`${name} is stored in ${words(folderOf(name))}/, but no actor records it; declare ${`actor <name> records ${name}`}`,
-    );
+  return storedBeside(parsed, directory).map(({ record, path, source }) => {
+    const folder = folderOf(record);
+    return { record, folder, shown: join(dirname(file), folder, basename(path)), path, source };
+  });
 }
 
 // The stored records of the file's records, once each is a record with
@@ -63,9 +40,9 @@ export function loadStored(
   cwd: string,
   report: Reporter,
 ): Stored[] | number {
-  const uncontexted = storedWithoutContext(parsed, file, cwd);
-  if (uncontexted.length > 0) return report.refuse(...uncontexted);
   const stored = storedData(parsed, file, cwd);
+  const uncontexted = withoutContext(parsed, stored);
+  if (uncontexted.length > 0) return report.refuse(...uncontexted);
   const drawn = drawings(repositoryOf(resolve(cwd, file), cwd));
   return checkStored(parsed, stored, report, drawn) ? stored : report.fail();
 }
