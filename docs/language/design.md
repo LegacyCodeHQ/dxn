@@ -49,6 +49,15 @@ which kind of name it is, so a reader, the parser and the editors can tell
 type inside another makes it part of that type; declaring it at the top makes
 it shareable.
 
+A value is lowercase letters and digits, with single hyphens only between
+them: `rest`, `no-keyboard`, `19px`, but not `Rest`, `a-` or `a--b`. With no
+capitals, two values never differ only in case. A value may be a keyword,
+such as `only` or `when`; where it stands says which it is.
+
+An enum written over several lines may have comments and blank lines between
+its values, so a value can be commented out. An enum that no type uses is a
+warning, not an error.
+
 ## Nesting
 
 Braces decide what is inside a type, wherever a line starts, when every
