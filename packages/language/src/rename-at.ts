@@ -1,13 +1,4 @@
-import {
-  type Child,
-  type Diagnostic,
-  type Enum,
-  type Located,
-  listOf,
-  type ParseResult,
-  type State,
-  type Type,
-} from "./ast.js";
+import type { Child, Diagnostic, Enum, Located, ParseResult, State, Type } from "./ast.js";
 import { covers, links, type Span, wordAt } from "./definition.js";
 import { placement } from "./evaluate.js";
 import { among, article } from "./names.js";
@@ -135,7 +126,7 @@ export function renameAt(
           : kind.kind === "value" && kind.of !== undefined
             ? renameInData(file, item.record, item.source, kind.of.name, name, to)
             : kind.kind === "child"
-              ? countedChildInData(file, item.source, found.declared as Child, found.group, to)
+              ? renameChildInData(file, item.source, found.declared as Child, to)
               : kind.kind === "type"
                 ? renameTypeInData(item.source, found.declared as Type, to)
                 : kind.kind === "profile" || kind.kind === "modifier"
@@ -158,22 +149,6 @@ export function renameAt(
     return { ...done, folder: { from: folderOf(name), to: folderOf(to) } };
   }
   return done;
-}
-
-// A child renamed in stored data: in paths, and, for a list that can be
-// empty, as its count in states.
-function countedChildInData(
-  file: ParseResult,
-  source: string,
-  child: Child,
-  group: Located[],
-  to: string,
-): { source: string; changed: number } {
-  const renamed = renameChildInData(file, source, child, to);
-  const count = group.find((each) => each !== child) as State | undefined;
-  if (count === undefined) return renamed;
-  const counted = renameStateInData(file, renamed.source, count, to);
-  return { source: counted.source, changed: renamed.changed + counted.changed };
 }
 
 // How each kind that can be renamed is named.
@@ -243,10 +218,7 @@ function target(
   });
   const all = links(source, file);
   const link = all.find(({ from }) => covers(from, line, column));
-  const named = link?.to ?? [...kinds.keys()].find((at) => covers(span(at), line, column));
-  // A list's count is renamed as its list.
-  const owner = file.types.find(({ states }) => states.includes(named as State));
-  const declared = (owner && listOf(owner, named as State)) ?? named;
+  const declared = link?.to ?? [...kinds.keys()].find((at) => covers(span(at), line, column));
   const kind = declared === undefined ? undefined : kinds.get(declared);
   if (declared === undefined || kind === undefined)
     return { refusal: "there is no name here to rename" };
@@ -261,18 +233,7 @@ function target(
   };
   // A state provided to the types below, or received from one above, is
   // matched to the others by its name: they are renamed together.
-  const count = file.types
-    .flatMap(({ states }) => states)
-    .find(
-      ({ count, name, line, column }) =>
-        count && name === declared.name && line === declared.line && column === declared.column,
-    );
-  const group =
-    kind.kind === "state"
-      ? connected(file, declared as State)
-      : count === undefined
-        ? [declared]
-        : [declared, count];
+  const group = kind.kind === "state" ? connected(file, declared as State) : [declared];
   const spans = group
     .flatMap((each) => [span(each), ...all.filter(({ to }) => to === each).map(({ from }) => from)])
     .map(last)
@@ -290,8 +251,6 @@ function target(
 export function kindsOf(file: ParseResult): Map<Located, Kind> {
   const result = new Map<Located, Kind>();
   for (const declaration of file.enums) {
-    // A list's count is the list's, named as it is.
-    if (declaration.count) continue;
     result.set(declaration, { kind: "enum" });
     for (const value of declaration.values) result.set(value, { kind: "value", of: declaration });
   }
@@ -303,9 +262,7 @@ export function kindsOf(file: ParseResult): Map<Located, Kind> {
   }
   for (const type of file.types) {
     result.set(type, { kind: "type" });
-    for (const state of type.states) {
-      result.set(state, { kind: listOf(type, state) === undefined ? "state" : "child", type });
-    }
+    for (const state of type.states) result.set(state, { kind: "state", type });
     for (const action of type.actions) result.set(action.name, { kind: "action", type });
     for (const event of type.events) result.set(event, { kind: "event", type });
     for (const child of type.children) result.set(child, { kind: "child", type });

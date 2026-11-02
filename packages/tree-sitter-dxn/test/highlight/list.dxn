@@ -1,15 +1,8 @@
 type Row {}
-type Empty {}
 type Feed {
-  has rows: [Row] or empty: Empty
+  has rows: [Row] only when content = articles
 #     ^ property
+#           ^ punctuation.bracket
 #            ^ type
-#                 ^ keyword.operator
-#                    ^ property
-#                           ^ type
-  has older: [Row] or nothing
-#                     ^ keyword
-  has pinned: [Row]+
-#             ^ punctuation.bracket
-#                  ^ operator
+#               ^ punctuation.bracket
 }

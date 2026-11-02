@@ -28,7 +28,6 @@
   "in"
 ] @keyword
 
-(nothing) @keyword
 
 (absent_clause) @keyword
 
@@ -80,8 +79,6 @@
 (child_declaration type: (qualified_name (identifier) @type))
 (list type: (identifier) @type)
 (list type: (qualified_name (identifier) @type))
-(empty_child type: (identifier) @type)
-(empty_child type: (qualified_name (identifier) @type))
 (record_field type: (identifier) @type)
 (record_field type: (qualified_name (identifier) @type))
 (profile_declaration environment: (identifier) @type)
@@ -92,7 +89,6 @@
 (state_field name: (identifier) @property)
 (record_field name: (identifier) @property)
 (child_declaration name: (identifier) @property)
-(empty_child name: (identifier) @property)
 (rule state: (identifier) @property)
 (provides_declaration state: (identifier) @property)
 (action_declaration state: (identifier) @property)

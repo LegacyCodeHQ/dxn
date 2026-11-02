@@ -1,7 +1,6 @@
 import {
   type Child,
   type Condition,
-  countAt,
   type Declaration,
   type Enum,
   fixes,
@@ -135,10 +134,7 @@ export function links(source: string, file: ParseResult = parse(source)): Link[]
     }
   }
   result.push(...expectationLinks(file, lines, declared));
-  // What a list that can be empty declares for itself is written nowhere.
-  return result
-    .filter(({ from }) => !countAt(file, from))
-    .sort((a, b) => a.from.line - b.from.line || a.from.column - b.from.column);
+  return result.sort((a, b) => a.from.line - b.from.line || a.from.column - b.from.column);
 }
 
 // Follows a path from a type through its children to its part at an index:

@@ -448,24 +448,11 @@ export function parse(source: string): ParseResult {
     return bindings;
   };
 
-  // "<name>: <Type> [{ <bindings> }]".
-  const placedChild = (): Child => {
-    const named = name("child", "a child name", lowercase);
-    expect(":", `":" after ${JSON.stringify(named.name)}`);
-    const placed: Child = { ...named, type: qualified('a type after ":"') };
-    if (peek().kind === "{") {
-      next();
-      placed.bindings = bindingsOf(named.name);
-    }
-    return placed;
-  };
-
   // A child: "has <name>: <Type>", then "{ <state> = <state>, ... }" for the
   // child's states the type sets, and "only when <condition>" when it is not
-  // always there. A list, "has <name>: [<Type>]", is never empty with a "+",
-  // or says what shows when it is, after its bindings: "or <name>: <Type>
-  // [{ <bindings> }]", or "or nothing"; its only when is the whole list's.
-  const child = (): { placed: Child; empty?: Child } => {
+  // always there. A list, "has <name>: [<Type>]", is one or more of its type,
+  // and its bindings set every one's states.
+  const child = (): Child => {
     const named = name("child", "a child name", lowercase);
     expect(":", `":" after ${JSON.stringify(named.name)}`);
     const opens = peek().text === "[";
@@ -474,36 +461,14 @@ export function parse(source: string): ParseResult {
       ...named,
       type: qualified(opens ? 'a type after "["' : 'a type after ":"'),
     };
-    let empty: Child | undefined;
-    let never = false;
     if (opens) {
       if (peek().text !== "]") fail(peek(), `"]" after ${JSON.stringify(placed.type.name)}`);
       next();
-      if (peek().text === "+") {
-        next();
-        never = true;
-      }
+      placed.list = true;
     }
     if (peek().kind === "{") {
       next();
       placed.bindings = bindingsOf(named.name);
-    }
-    if (opens && never) placed.list = { never: "empty" };
-    if (opens && !never) {
-      const or = peek();
-      if (or.kind !== "word" || or.text !== "or") {
-        fail(
-          or,
-          `"or" and what shows when ${named.name} is empty, such as "or empty: <Type>" or "or nothing", or "+" for a list that is never empty`,
-        );
-      }
-      next();
-      if (peek().kind === "word" && peek().text === "nothing") {
-        placed.list = { empty: located(next()) };
-      } else {
-        empty = { ...placedChild(), emptyOf: named.name };
-        placed.list = { empty: { name: empty.name, line: empty.line, column: empty.column } };
-      }
     }
     if (peek().kind === "word" && peek().text === "only") {
       next();
@@ -512,24 +477,7 @@ export function parse(source: string): ParseResult {
     } else {
       end(["newline", "}"], '"only when" or the end of the line');
     }
-    return empty === undefined ? { placed } : { placed, empty };
-  };
-
-  // A list that can be empty declares its count in its type: a state named
-  // after it, of empty or some, which decides whether its rows or its empty
-  // view show, where the list is there at all.
-  const counted = (type: Type, list: Child, empty: Child | undefined) => {
-    const at = { line: list.line, column: list.column };
-    const named = (name: string): Located => ({ name, ...at });
-    type.enums.push({ ...named(list.name), values: [named("empty"), named("some")], count: true });
-    type.states.push({ ...named(list.name), enum: named(list.name), count: true });
-    const whole = list.when;
-    const where = (value: string): Condition => {
-      const is: Condition = { kind: "compare", subject: named(list.name), values: [named(value)] };
-      return whole === undefined ? is : { kind: "and", terms: [is, whole] };
-    };
-    list.when = where("some");
-    if (empty !== undefined) empty.when = where("empty");
+    return placed;
   };
 
   // A type: "type <Name> needs <Dimension>, ... { state <field>, ... <rule> ... }",
@@ -681,10 +629,7 @@ export function parse(source: string): ParseResult {
       }
       if (token.text === "has") {
         next();
-        const { placed, empty } = child();
-        type.children.push(placed);
-        if (empty !== undefined) type.children.push(empty);
-        if (placed.list !== undefined && "empty" in placed.list) counted(type, placed, empty);
+        type.children.push(child());
         return;
       }
       // An enum or a type inside it.

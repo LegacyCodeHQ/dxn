@@ -106,13 +106,12 @@ type Links receives current: Section {
             from: (identifier)))))))
 
 ================================================================================
-Lists: never empty, with an empty view, or with nothing when empty
+Lists, with bindings and only when
 ================================================================================
 
 type Feed {
-  has pinned: [Row]+ only when mode = live
-  has rows: [Row] { reading = read } or follow: Button { style = primary }
-  has older: [Row] or nothing
+  has slides: [Slide]
+  has rows: [Row] { reading = read } only when content = articles
 }
 
 --------------------------------------------------------------------------------
@@ -124,10 +123,7 @@ type Feed {
       (child_declaration
         name: (identifier)
         list: (list
-          type: (identifier))
-        condition: (comparison
-          subject: (identifier)
-          (value)))
+          type: (identifier)))
       (child_declaration
         name: (identifier)
         list: (list
@@ -136,15 +132,6 @@ type Feed {
           (binding
             state: (identifier)
             from: (identifier)))
-        empty: (empty_child
-          name: (identifier)
-          type: (identifier)
-          bindings: (bindings
-            (binding
-              state: (identifier)
-              from: (identifier)))))
-      (child_declaration
-        name: (identifier)
-        list: (list
-          type: (identifier))
-        empty: (nothing)))))
+        condition: (comparison
+          subject: (identifier)
+          (value))))))

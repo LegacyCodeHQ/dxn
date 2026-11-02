@@ -21,9 +21,6 @@ export interface Declaration extends Located {
 
 export interface Enum extends Declaration {
   values: Located[];
-  // The values of a list's count, empty and some, which the list declares,
-  // not the file: named after the list, which no enum written can be.
-  count?: true;
 }
 
 // A state of a type: its name, and the enum its values come from.
@@ -37,8 +34,6 @@ export interface State extends Located {
   // A received state: its value is provided by a type above, wherever this
   // type is placed.
   received?: true;
-  // A list's count, empty or some, named after the list, which declares it.
-  count?: true;
 }
 
 // A branch of a when: "<value>, ... -> <value>", or "else -> <value>", the
@@ -137,12 +132,9 @@ export interface Trigger extends Located {
 // a lowercase name is a state, a capitalized one a dimension.
 export interface Child extends Located {
   type: Located;
-  // A list: rows of its type, any number of them, each in any of its looks.
-  // One that can be empty has a count, a state named after it, and says what
-  // shows when it is: a child of its own, or nothing; one that cannot, "+".
-  list?: { never: "empty" } | { empty: Located };
-  // The child a list shows when it is empty, by the list's name.
-  emptyOf?: string;
+  // A list: one or more of its type, each in any of its looks; none is the
+  // list not there.
+  list?: true;
   when?: Condition;
   // The child's states the type sets, each from one of its own states:
   // without a map, both with their values from the same enum; with a map,
@@ -165,36 +157,6 @@ export function fixes(type: Type, { from, map }: Binding): boolean {
     map === undefined &&
     /^[a-z]/.test(from.name) &&
     !type.states.some(({ name }) => name === from.name)
-  );
-}
-
-// The list a type's count state is of, and the type's child a list's count is
-// named for: a list that can be empty is a child and a state, of one name.
-export function listOf(type: Type, state: State): Child | undefined {
-  if (!state.count) return undefined;
-  return type.children.find(({ name, list }) => name === state.name && list !== undefined);
-}
-
-// How a list is written: "[<Type>]+", or "[<Type>] or <name>: <Type>", or
-// "[<Type>] or nothing", without its bindings.
-export function listText(type: Type, child: Child): string {
-  const list = child.list;
-  if (list === undefined) return child.type.name;
-  if ("never" in list) return `[${child.type.name}]+`;
-  const empty = type.children.find(
-    ({ emptyOf, name }) => emptyOf === child.name && name === list.empty.name,
-  );
-  return `[${child.type.name}] or ${empty === undefined ? "nothing" : `${empty.name}: ${empty.type.name}`}`;
-}
-
-// Whether a name, at where it is written, is one a list that can be empty
-// declares for itself: its count, the enum of it, and its values.
-export function countAt(file: ParseResult, at: { line: number; column: number }): boolean {
-  return file.types.some(({ children }) =>
-    children.some(
-      ({ list, line, column }) =>
-        list !== undefined && "empty" in list && line === at.line && column === at.column,
-    ),
   );
 }
 

@@ -119,35 +119,17 @@ module.exports = grammar({
       ),
 
     // "has <child>: <Type> [{ <bindings> }] [only when <condition>]", or a
-    // list: "has <child>: [<Type>]+ [{ <bindings> }] [only when ...]", or
-    // "has <child>: [<Type>] [{ <bindings> }] or <child>: <Type> [{ ... }]
-    // [only when ...]", or "... or nothing ...".
+    // list, one or more of its type: "has <child>: [<Type>] ...".
     child_declaration: ($) =>
       seq(
         "has",
         field("name", $.identifier),
         ":",
-        choice(
-          seq(field("type", $._type_name), optional(field("bindings", $.bindings))),
-          seq(field("list", $.list), "+", optional(field("bindings", $.bindings))),
-          seq(
-            field("list", $.list),
-            optional(field("bindings", $.bindings)),
-            "or",
-            field("empty", choice($.empty_child, $.nothing)),
-          ),
-        ),
+        choice(field("type", $._type_name), field("list", $.list)),
+        optional(field("bindings", $.bindings)),
         optional(seq("only", "when", field("condition", $._condition))),
       ),
     list: ($) => seq("[", field("type", $._type_name), "]"),
-    empty_child: ($) =>
-      seq(
-        field("name", $.identifier),
-        ":",
-        field("type", $._type_name),
-        optional(field("bindings", $.bindings)),
-      ),
-    nothing: (_) => "nothing",
     bindings: ($) => seq("{", repeat(seq($.binding, optional(","))), "}"),
     binding: ($) =>
       seq(
