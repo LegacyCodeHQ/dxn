@@ -18,6 +18,8 @@ combinations is stored as JSON files beside each `.dxn` file.
 - One capability per commit. Run `make check` before pushing; the hooks enforce
   the same gates.
 - Commit directly to `main`. Rebase, never merge.
+- Review a construct of the language by the checklist in
+  `docs/language/review.md`, and mark it there when it is done.
 
 ## Commits
 
