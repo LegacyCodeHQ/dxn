@@ -1,6 +1,6 @@
 id = "dxn"
 name = "dxn"
-version = "0.0.1"
+version = "0.1.0"
 schema_version = 1
 authors = ["Legacy Code Headquarters (OPC) Private Limited"]
 description = "Language support for dxn: syntax highlighting, bracket matching, and inline errors for .dxn files."

@@ -2,7 +2,7 @@
   "name": "dxn",
   "displayName": "dxn",
   "description": "Language support for dxn: highlighting, inline errors, navigation, completion, rename, and running types and expectations.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "legacycodehq",
   "license": "Apache-2.0",
   "private": true,

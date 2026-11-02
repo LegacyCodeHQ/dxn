@@ -1,6 +1,6 @@
 {
   "name": "@legacycodehq/dxn",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Check .dxn files, written in the dxn language of states and dimensions, and the evidence stored beside them.",
   "license": "Apache-2.0",
   "private": true,
@@ -19,6 +19,6 @@
     "build": "tsc --build tsconfig.build.json"
   },
   "dependencies": {
-    "@legacycodehq/dxn-language": "0.0.0"
+    "@legacycodehq/dxn-language": "0.1.0"
   }
 }

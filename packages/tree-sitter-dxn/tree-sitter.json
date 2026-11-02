@@ -12,7 +12,7 @@
     }
   ],
   "metadata": {
-    "version": "0.0.0",
+    "version": "0.1.0",
     "license": "Apache-2.0",
     "description": "Tree-sitter grammar for the dxn language",
     "authors": [{ "name": "Ragunath Jawahar", "email": "ragunath@legacycode.com" }],
