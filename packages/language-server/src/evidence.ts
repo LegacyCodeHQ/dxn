@@ -14,6 +14,7 @@ import {
   progress,
   repositoryOf,
   type StoredSource,
+  sourceLines,
   storedFiles,
   treePaths,
   treePlaces,
@@ -132,7 +133,7 @@ export function evidence(
 // The range of the JSON value at a line and a column, both from one: a string
 // in its quotes, or the word there.
 function valueAt(source: string, line: number, column: number): Range {
-  const text = source.split("\n")[line - 1] ?? "";
+  const text = sourceLines(source)[line - 1] ?? "";
   if (text[column - 1] === '"') {
     const end = text.indexOf('"', column);
     if (end !== -1) {

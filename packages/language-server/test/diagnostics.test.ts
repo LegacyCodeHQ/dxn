@@ -56,4 +56,9 @@ describe("diagnose", () => {
     const text = "enum Hover =\ntype A {\n  state hover: Hovr\n}\n";
     expect(diagnose(text.replaceAll("\n", "\r\n"))).toEqual(diagnose(text));
   });
+
+  it("marks a problem at the same place with lines that end with \\r alone", () => {
+    const text = "enum Hover =\ntype A {\n  state hover: Hovr\n}\n";
+    expect(diagnose(text.replaceAll("\n", "\r"))).toEqual(diagnose(text));
+  });
 });

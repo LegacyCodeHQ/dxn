@@ -16,6 +16,7 @@ import {
   renameAt,
   renameable,
   type StoredFile,
+  sourceLines,
   storedFiles,
   symbols,
   tokens,
@@ -150,7 +151,7 @@ export function serve(connection: Connection): void {
   connection.languages.inlayHint.on(({ textDocument, range }) => {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
-    const lines = document.getText().split("\n");
+    const lines = sourceLines(document.getText());
     return (
       (hintsBeside(document.uri, parsed(document)) ?? [])
         // A usage of a component has its count on the component, and over its
@@ -209,7 +210,7 @@ export function serve(connection: Connection): void {
     const document = documents.get(textDocument.uri);
     if (document === undefined) return null;
     const file = parsed(document);
-    const text = document.getText().split("\n")[position.line] ?? "";
+    const text = sourceLines(document.getText())[position.line] ?? "";
     // The length of the name written at a column, path parts and all.
     const named = (column: number) =>
       text.slice(column - 1).match(/^[A-Za-z0-9.-]+/)?.[0].length ?? 0;
@@ -298,7 +299,7 @@ export function serve(connection: Connection): void {
     };
     // A stored file is replaced whole, keeping its layout but for the values.
     for (const data of renamed.data) {
-      const before = readFileSync(data.path, "utf8").split("\n");
+      const before = sourceLines(readFileSync(data.path, "utf8"));
       changes[pathToFileURL(data.path).href] = [
         {
           range: {

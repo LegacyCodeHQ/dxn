@@ -57,6 +57,8 @@ export {
 // Pages to review each tree's evidence by, with the pictures of what was
 // recorded.
 export { type ReviewOptions, type ReviewPage, reviewPages } from "./review.js";
+// The lines of a source, however each ends, as the parser reads them.
+export { sourceLines } from "./scan.js";
 // What each name in a file is, for editors to colour it by.
 export { type Token, tokens } from "./semantic.js";
 // How many combinations of each element stored records are about.
