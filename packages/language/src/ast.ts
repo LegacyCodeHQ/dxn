@@ -5,6 +5,7 @@ export interface Located {
   name: string;
   line: number;
   column: number;
+  length: number;
 }
 
 // A declaration that did not parse to its end is kept with what was read, so

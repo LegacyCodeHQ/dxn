@@ -11,6 +11,7 @@ import {
 } from "./ast.js";
 import { type Placement, placement } from "./evaluate.js";
 import { parse } from "./parse.js";
+import { sourceLines } from "./scan.js";
 import { treePaths } from "./status.js";
 
 // A name as it is written in a file, and what it means: a declaration's own
@@ -66,11 +67,10 @@ export function usages(
   file: ParseResult = parse(source),
 ): { declaration: Span; usages: Span[] } | undefined {
   const all = links(source, file);
-  const lines = source.split("\n");
   const span = (at: Located): Span => ({
     line: at.line,
     column: at.column,
-    length: wordAt(lines, at.line, at.column).length,
+    length: at.length,
   });
   const target =
     all.find(({ from }) => covers(from, line, column))?.to ??
@@ -94,7 +94,7 @@ export const wordAt = (lines: string[], line: number, column: number) =>
 // written, each with the name it refers to; a path into children, a span for
 // each of its parts.
 export function links(source: string, file: ParseResult = parse(source)): Link[] {
-  const lines = source.split("\n");
+  const lines = sourceLines(source);
   const declared = declarations(file);
   const result: Link[] = [];
   for (const reference of references(file)) {
@@ -400,7 +400,7 @@ function expectationLinks(
       const keyParts = parts(key, ".");
       if (/^[A-Z]/.test(key.name)) {
         for (const { from } of keyParts) add(from, declared.get(key.name));
-        add(span(lines, value), valueIn(key.name, value.name));
+        add(span(value), valueIn(key.name, value.name));
         continue;
       }
       const names = keyParts.map(({ part }) => part);
@@ -419,13 +419,13 @@ function expectationLinks(
           if (last) state = to;
         }
         const enumName = (state as { enum?: Located } | undefined)?.enum?.name;
-        add(span(lines, value), valueIn(enumName, value.name));
+        add(span(value), valueIn(enumName, value.name));
       }
     }
     const on = expectation.on;
     if (on?.kind === "dimension") {
-      add(span(lines, on.dimension), declared.get(on.dimension.name));
-      for (const to of on.values) add(span(lines, to), valueIn(on.dimension.name, to.name));
+      add(span(on.dimension), declared.get(on.dimension.name));
+      for (const to of on.values) add(span(to), valueIn(on.dimension.name, to.name));
     } else if (on !== undefined) {
       const eventParts = parts(on.name, ".");
       const names = eventParts.map(({ part }) => part);
@@ -441,6 +441,6 @@ function expectationLinks(
 }
 
 // The span of a name, as it is written.
-function span(lines: string[], at: Located): Span {
-  return { line: at.line, column: at.column, length: wordAt(lines, at.line, at.column).length };
+function span(at: Located): Span {
+  return { line: at.line, column: at.column, length: at.length };
 }

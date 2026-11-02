@@ -1,5 +1,5 @@
 import type { Child, Diagnostic, Enum, Located, ParseResult, State, Type, Union } from "./ast.js";
-import { covers, links, type Span, wordAt } from "./definition.js";
+import { covers, links, type Span } from "./definition.js";
 import { placement } from "./evaluate.js";
 import { message, words } from "./message.js";
 import { among, article } from "./names.js";
@@ -14,6 +14,7 @@ import {
   renameStateInData,
   renameTypeInData,
 } from "./rename.js";
+import { sourceLines } from "./scan.js";
 import { treePaths } from "./status.js";
 import { folderOf } from "./store.js";
 
@@ -210,12 +211,12 @@ function target(
 ):
   | { kind: Kind; name: string; from: Span; spans: Span[]; declared: Located; group: Located[] }
   | { refusal: string } {
-  const lines = source.split("\n");
+  const lines = sourceLines(source);
   const kinds = kindsOf(file);
   const span = (at: Located): Span => ({
     line: at.line,
     column: at.column,
-    length: wordAt(lines, at.line, at.column).length,
+    length: at.length,
   });
   const all = links(source, file);
   const link = all.find(({ from }) => covers(from, line, column));
@@ -278,15 +279,16 @@ export function kindsOf(file: ParseResult): Map<Located, Kind> {
   return result;
 }
 
-// A source with edits made.
+// A source with edits made, each line keeping how it ends.
 function apply(source: string, edits: Edit[]): string {
-  const lines = source.split("\n");
+  const lines = sourceLines(source);
+  const ends = source.match(/\r\n|\r|\n/g) ?? [];
   const sorted = [...edits].sort((a, b) => b.line - a.line || b.column - a.column);
   for (const { line, column, length, text } of sorted) {
     const content = lines[line - 1] ?? "";
     lines[line - 1] = `${content.slice(0, column - 1)}${text}${content.slice(column - 1 + length)}`;
   }
-  return lines.join("\n");
+  return lines.map((content, index) => `${content}${ends[index] ?? ""}`).join("");
 }
 
 // A state, and every state it is provided to or received from, wherever its

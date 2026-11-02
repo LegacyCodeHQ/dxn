@@ -1,7 +1,8 @@
 import type { Enum, Located, ParseResult, Type } from "./ast.js";
 import { conditionText } from "./condition.js";
-import { covers, links, type Span, wordAt } from "./definition.js";
+import { covers, links, type Span } from "./definition.js";
 import { parse } from "./parse.js";
+import { sourceLines } from "./scan.js";
 
 // What hovering over a name shows: the name's declaration as it is written,
 // and the comment above it.
@@ -22,12 +23,12 @@ export function hover(
   column: number,
   file: ParseResult = parse(source),
 ): Hover | undefined {
-  const lines = source.split("\n");
+  const lines = sourceLines(source);
   const described = describe(file, lines);
   const span = (at: Located): Span => ({
     line: at.line,
     column: at.column,
-    length: wordAt(lines, at.line, at.column).length,
+    length: at.length,
   });
   const link = links(source, file).find(({ from }) => covers(from, line, column));
   if (link !== undefined) {

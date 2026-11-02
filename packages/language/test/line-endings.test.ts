@@ -6,20 +6,23 @@ import { definition, usages } from "../src/definition.js";
 import { hover } from "../src/hover.js";
 import { parse } from "../src/parse.js";
 import { renameAt, renameable } from "../src/rename-at.js";
+import { tokens } from "../src/semantic.js";
 import { symbols } from "../src/symbols.js";
 
-// A file written on Windows ends its lines with \r\n: lines and columns are
-// the same as with \n, so every answer is too.
+// A file written on Windows ends its lines with \r\n, and one from an old Mac
+// with \r alone: lines and columns are the same as with \n, so every answer
+// is too.
 
 const sample = readFileSync(join(__dirname, "../../zed/test/highlight.dxn"), "utf8");
 const windows = sample.replaceAll("\n", "\r\n");
+const mac = sample.replaceAll("\n", "\r");
 
 // Every answer about a text: its problems and outline, and at the start,
 // middle and end of every word, each feature's.
 function answers(text: string): unknown[] {
   const file = parse(text);
-  const result: unknown[] = [file.diagnostics, symbols(text, file)];
-  text.split("\n").forEach((content, row) => {
+  const result: unknown[] = [file.diagnostics, symbols(text, file), tokens(text, file)];
+  text.split(/\r\n|\r|\n/).forEach((content, row) => {
     for (const word of content.matchAll(/[A-Za-z0-9.+-]+/g)) {
       const start = word.index + 1;
       for (const column of [
@@ -40,7 +43,7 @@ function answers(text: string): unknown[] {
           // The renamed text, read back with its own line endings: the same.
           "refusal" in renamed
             ? renamed.refusal
-            : [renamed.edits, renamed.source.replaceAll("\r\n", "\n")],
+            : [renamed.edits, renamed.source.replace(/\r\n?/g, "\n")],
         ]);
       }
     }
@@ -56,6 +59,10 @@ describe("a file with Windows line endings", () => {
   it("has its problems at the same places, the ends of its lines too", () => {
     const broken = "enum Hover =\ntype A {\n  state hover:\n}\nenum Focus = blurred focused\n";
     expect(parse(broken.replaceAll("\n", "\r\n")).diagnostics).toEqual(parse(broken).diagnostics);
+  });
+
+  it("is answered as the same file with \\n line endings is, with \\r alone", () => {
+    expect(answers(mac)).toEqual(answers(sample));
   });
 
   it("keeps its line endings when renamed", () => {

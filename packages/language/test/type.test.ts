@@ -37,7 +37,13 @@ type Toolbar {}
     expect([wordmark?.line, wordmark?.column, wordmark?.states[0]]).toEqual([
       3,
       6,
-      { name: "hover", line: 4, column: 9, enum: { name: "Hover", line: 4, column: 16 } },
+      {
+        name: "hover",
+        line: 4,
+        column: 9,
+        length: 5,
+        enum: { name: "Hover", line: 4, column: 16, length: 5 },
+      },
     ]);
   });
 

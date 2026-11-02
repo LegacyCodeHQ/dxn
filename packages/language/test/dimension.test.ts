@@ -15,7 +15,7 @@ describe("dimension", () => {
     expect([dimensions[0]?.line, dimensions[0]?.column, dimensions[0]?.values[1]]).toEqual([
       1,
       11,
-      { name: "sm", line: 1, column: 31 },
+      { name: "sm", line: 1, column: 31, length: 2 },
     ]);
   });
 

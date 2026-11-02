@@ -3,12 +3,12 @@ import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
 import { usage } from "./usage.js";
 
-// What a file declares, without positions, which are for diagnostics: each
-// located name becomes just its name.
+// What a file declares, without positions and lengths, which are for
+// diagnostics and editors: each located name becomes just its name.
 function plain(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(plain);
   if (typeof value !== "object" || value === null) return value;
-  const { line, column, scope, short, ...rest } = value as Record<string, unknown>;
+  const { line, column, length, scope, short, ...rest } = value as Record<string, unknown>;
   const fields = Object.keys(rest);
   if (line !== undefined && fields.length === 1 && fields[0] === "name") return rest.name;
   return Object.fromEntries(Object.entries(rest).map(([key, item]) => [key, plain(item)]));

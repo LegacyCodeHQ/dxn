@@ -53,8 +53,8 @@ describe("a list", () => {
     expect(file.diagnostics).toEqual([]);
     expect(file.types.find(({ name }) => name === "Feed")?.children[0]?.bindings).toEqual([
       {
-        state: { name: "reading", line: 9, column: 21 },
-        from: { name: "unread", line: 9, column: 31 },
+        state: { name: "reading", line: 9, column: 21, length: 7 },
+        from: { name: "unread", line: 9, column: 31, length: 6 },
       },
     ]);
   });
@@ -172,8 +172,8 @@ describe("a list of several members", () => {
     expect(file.diagnostics).toEqual([]);
     expect(file.types.find(({ name }) => name === "Feed")?.children[0]?.bindings).toEqual([
       {
-        state: { name: "reading", line: 10, column: 26 },
-        from: { name: "unread", line: 10, column: 36 },
+        state: { name: "reading", line: 10, column: 26, length: 7 },
+        from: { name: "unread", line: 10, column: 36, length: 6 },
       },
     ]);
   });

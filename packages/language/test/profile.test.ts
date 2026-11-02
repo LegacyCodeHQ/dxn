@@ -115,8 +115,8 @@ profile Laptop: Device { Breakpoint = lg, Pointer = mouse, Keyboard = keyboard }
       5,
       9,
       {
-        dimension: { name: "Breakpoint", line: 6, column: 3 },
-        value: { name: "base", line: 6, column: 16 },
+        dimension: { name: "Breakpoint", line: 6, column: 3, length: 10 },
+        value: { name: "base", line: 6, column: 16, length: 4 },
       },
     ]);
   });

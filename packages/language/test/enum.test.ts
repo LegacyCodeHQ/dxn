@@ -33,7 +33,7 @@ describe("enum", () => {
     expect([hover?.line, hover?.column, hover?.values[1]]).toEqual([
       1,
       6,
-      { name: "hovered", line: 1, column: 26 },
+      { name: "hovered", line: 1, column: 26, length: 7 },
     ]);
   });
 

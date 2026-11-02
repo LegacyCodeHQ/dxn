@@ -1,5 +1,5 @@
 import type { Located, ParseResult } from "./ast.js";
-import { links, wordAt } from "./definition.js";
+import { links } from "./definition.js";
 import { parse } from "./parse.js";
 import { kindsOf } from "./rename-at.js";
 
@@ -17,14 +17,13 @@ export interface Token {
 // where it is used, each with its kind, in the order they are written: for
 // an editor to colour by what each name is, not by how it looks.
 export function tokens(source: string, file: ParseResult = parse(source)): Token[] {
-  const lines = source.split("\n");
   const kinds = kindsOf(file);
   const result: Token[] = [];
   const add = (at: Located, kind: string) =>
     result.push({
       line: at.line,
       column: at.column,
-      length: wordAt(lines, at.line, at.column).length,
+      length: at.length,
       kind,
       declaration: true,
     });

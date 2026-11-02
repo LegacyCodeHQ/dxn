@@ -39,7 +39,8 @@ record Evidence { source: Source }
       name: "tool",
       line: 6,
       column: 3,
-      type: { name: "Tool", line: 6, column: 9 },
+      length: 4,
+      type: { name: "Tool", line: 6, column: 9, length: 4 },
     });
   });
 

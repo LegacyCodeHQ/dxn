@@ -692,8 +692,8 @@ function together(
   if (state !== undefined) {
     terms.push({
       kind: "compare",
-      subject: { name: state.name, line: 0, column: 0 },
-      values: state.from.map((name) => ({ name, line: 0, column: 0 })),
+      subject: { name: state.name, line: 0, column: 0, length: 0 },
+      values: state.from.map((name) => ({ name, line: 0, column: 0, length: 0 })),
     });
   }
   if (terms.length === 0) return true;

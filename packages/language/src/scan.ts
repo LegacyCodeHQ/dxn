@@ -123,6 +123,10 @@ export function scan(source: string): Token[] {
   return tokens;
 }
 
+// The lines of a source, however each ends: a line feed, a carriage return
+// and a line feed, or a carriage return alone, as the scanner reads them.
+export const sourceLines = (source: string): string[] => source.split(/\r\n|\r|\n/);
+
 // How a token reads in a message: its text quoted, or what it stands for.
 export function describe(token: Token): string | Words {
   if (token.kind === "newline") return words("the end of the line");
@@ -133,9 +137,10 @@ export function describe(token: Token): string | Words {
   return token.text;
 }
 
-// A word's text, where it is.
+// A word's text, where it is, and how many characters it takes.
 export const located = (token: Token): Located => ({
   name: token.text,
   line: token.line,
   column: token.column,
+  length: [...token.text].length,
 });

@@ -23,8 +23,8 @@ describe("needs", () => {
     expect([problems(source), types[0]?.needs]).toEqual([
       [],
       [
-        { name: "Pointer", line: 5, column: 21 },
-        { name: "Keyboard", line: 6, column: 5 },
+        { name: "Pointer", line: 5, column: 21, length: 7 },
+        { name: "Keyboard", line: 6, column: 5, length: 8 },
       ],
     ]);
     expect(parse("type Toolbar {}\n").types[0]?.needs).toEqual([]);

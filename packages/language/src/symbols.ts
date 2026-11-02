@@ -1,6 +1,7 @@
 import type { Located, ParseResult, Type } from "./ast.js";
 import type { Span } from "./definition.js";
 import { parse } from "./parse.js";
+import { sourceLines } from "./scan.js";
 
 // A declaration in a file's outline: its name and kind, the text it spans,
 // from its first line to its closing brace or the end of its line, where its
@@ -20,7 +21,7 @@ export interface DocumentSymbol {
 // their titles; and who records what, by each actor's name. A file that does not parse to its end is outlined as far as it
 // is read.
 export function symbols(source: string, file: ParseResult = parse(source)): DocumentSymbol[] {
-  const lines = source.split("\n");
+  const lines = sourceLines(source);
   const symbol = (
     at: Located,
     kind: string,

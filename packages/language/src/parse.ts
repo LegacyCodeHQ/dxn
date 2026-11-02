@@ -63,6 +63,9 @@ export function parse(source: string): ParseResult {
     return token;
   };
   const previous = () => tokens[position - 1] as Token;
+  // How many characters from where a name starts to the end of the last token
+  // read: a name with its types, or a profile with its modifiers, as written.
+  const through = (from: Located) => previous().column + [...previous().text].length - from.column;
   const fail = (token: Token, expected: string): never =>
     failWith(token, message`expected ${words(expected)}, found ${describe(token)}`);
   // A syntax error that says more than what was expected.
@@ -244,7 +247,7 @@ export function parse(source: string): ParseResult {
       next();
       text += `.${word("a name after `.`").name}`;
     }
-    return { ...first, name: text };
+    return { ...first, name: text, length: through(first) };
   };
 
   // An enum or a dimension: "<keyword> <Name> = <value> | <value> ...". The
@@ -916,6 +919,7 @@ export function parse(source: string): ParseResult {
         while (key.name === "profile" && peek().text === "+") {
           next();
           value.name += `+${word("a modifier after `+`").name}`;
+          value.length = through(value);
         }
         read.push({ key, value });
         if (peek().kind !== ",") break;

@@ -37,12 +37,12 @@ describe("only when", () => {
       ["focus", "focused", "Keyboard", ["keyboard"]],
     ]);
     expect(types[0]?.rules[0]).toEqual({
-      state: { name: "hover", line: 7, column: 3 },
-      value: { name: "hovered", line: 7, column: 11 },
+      state: { name: "hover", line: 7, column: 3, length: 5 },
+      value: { name: "hovered", line: 7, column: 11, length: 7 },
       when: {
         kind: "compare",
-        subject: { name: "Pointer", line: 7, column: 29 },
-        values: [{ name: "mouse", line: 7, column: 39 }],
+        subject: { name: "Pointer", line: 7, column: 29, length: 7 },
+        values: [{ name: "mouse", line: 7, column: 39, length: 5 }],
       },
     });
   });

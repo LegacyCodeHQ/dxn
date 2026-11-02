@@ -2,6 +2,7 @@ import { childAt, type Declaration, type ParseResult, type Type } from "./ast.js
 import { type Placement, placement } from "./evaluate.js";
 import { parse } from "./parse.js";
 import { penNode, scalars } from "./scalars.js";
+import { sourceLines } from "./scan.js";
 import { treePaths } from "./status.js";
 
 export type CompletionKind =
@@ -58,7 +59,7 @@ export function completions(
   column: number,
   file: ParseResult = parse(source),
 ): Completion[] {
-  const lines = source.split("\n");
+  const lines = sourceLines(source);
   const before = (lines[line - 1] ?? "").slice(0, column - 1);
   // The statement so far, without the name being typed.
   const statement = before.replace(/[A-Za-z0-9-]*$/, "").trimStart();
