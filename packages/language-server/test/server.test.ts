@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { pathToFileURL } from "node:url";
+import { Fingerprints } from "@legacycodehq/dxn-language";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   CodeLensRequest,
@@ -1212,6 +1213,73 @@ describe("the language server", () => {
       expect((found?.contents as { value: string } | undefined)?.value.split("---\n\n")[1]).toBe(
         "● PenEvidence: Screen shows 1 state of Bar, kind = root, drawn",
       );
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
+  it("shows a drawing that the model disagrees with at the child it is about, and counts it apart", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-mismatch-"));
+    try {
+      const text =
+        "type Row {}\ntype Screen {\n  has row: Row\n}\nrecord PenEvidence {\n  source: PenNode\n}\nactor DesignAgent records PenEvidence\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      const design = {
+        children: [
+          { id: "row", type: "frame", name: "Row", reusable: true, children: [] },
+          {
+            id: "screen",
+            type: "frame",
+            children: [
+              { id: "a", type: "ref", ref: "row" },
+              { id: "b", type: "ref", ref: "row" },
+            ],
+          },
+        ],
+      };
+      writeFileSync(join(folder, "design.pen"), JSON.stringify(design));
+      const fingerprint = new Fingerprints().of(join(folder, "design.pen"), "screen");
+      mkdirSync(join(folder, "pen-evidence"));
+      writeFileSync(
+        join(folder, "pen-evidence", "screen.json"),
+        `[{ "context": { "type": "Screen", "dimensions": {}, "states": {} }, "actor": "DesignAgent", "source": { "file": "design.pen", "frame": "screen", "fingerprint": "${fingerprint}" } }]`,
+      );
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const editor = connect();
+      editors.push(editor);
+      await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+      });
+      const all = new Map<string, PublishDiagnosticsParams["diagnostics"]>();
+      editor.onNotification(PublishDiagnosticsNotification.type, ({ uri: at, diagnostics }) => {
+        all.set(at, diagnostics);
+      });
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const hints = await editor.sendRequest(InlayHintRequest.type, {
+        textDocument: { uri },
+        range: { start: { line: 0, character: 0 }, end: { line: 9, character: 0 } },
+      });
+      expect([
+        all.get(uri)?.map(({ range, message, severity }) => [range, severity, message]),
+        hints?.map(({ position, label }) => [position.line, label]),
+      ]).toEqual([
+        [
+          [
+            { start: { line: 2, character: 6 }, end: { line: 2, character: 9 } },
+            1,
+            "Screen: the drawing shows 2 Row, but row is one; make it a list, [Row], or draw one (pen-evidence/screen.json:1)",
+          ],
+        ],
+        [
+          [0, "○ PenEvidence 0 of 1 state drawn"],
+          [1, "◌ PenEvidence 1 of 1 state drawn, 1 doesn't match the model"],
+        ],
+      ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }

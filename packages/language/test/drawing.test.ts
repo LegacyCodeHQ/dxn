@@ -103,9 +103,10 @@ actor DesignAgent records Evidence
   const prints = new Fingerprints();
   const drawn = ({ file: drawing, node, frame }: { file: string; frame: string; node?: string }) =>
     prints.instances(join(folder, drawing), node ?? frame);
+  // Each problem, with where in the model it is about.
   const problems = (...entries: ReturnType<typeof entry>[]) =>
     validate(file, "Evidence", JSON.stringify(entries), drawn).map(
-      ({ code, message }) => `${code}: ${message}`,
+      ({ code, message, element }) => `${element?.line}:${element?.column}: ${code}: ${message}`,
     );
 
   it("agrees where each child is drawn as often as the model has it", () => {
@@ -118,29 +119,37 @@ actor DesignAgent records Evidence
     ).toEqual([]);
   });
 
-  it("is an error where a child is drawn more often than the model has it", () => {
+  it("is an error, at the child, where it is drawn more often than the model has it", () => {
     expect(problems(entry("FeedScreen", { content: "articles" }, "articles"))).toEqual([
-      "drawing-mismatch: the drawing shows 2 ArticleRow, but FeedScreen has 1 here: article",
+      "12:7: drawing-mismatch: content = articles: the drawing shows 2 ArticleRow, but article is one; make it a list, [ArticleRow], or draw one",
     ]);
   });
 
-  it("is an error where a child is drawn that is not there in the look", () => {
+  it("is an error, at the child, where it is drawn in a look it is not there in", () => {
     expect(problems(entry("NavigationBar", { kind: "root" }, "pushed"))).toEqual([
-      "drawing-mismatch: the drawing shows 1 BackButton, but NavigationBar has none here: back is there only when kind = pushed",
+      "6:7: drawing-mismatch: kind = root: the drawing shows 1 BackButton, but back is there only when kind = pushed",
     ]);
   });
 
-  it("is an error where a child is not drawn", () => {
+  it("is an error, at the child, where it is not drawn", () => {
     expect(problems(entry("NavigationBar", { kind: "pushed" }, "root"))).toEqual([
-      "drawing-mismatch: the drawing shows no BackButton, but NavigationBar has 1 here: back",
+      "6:7: drawing-mismatch: kind = pushed: the drawing shows no BackButton, but back is there",
     ]);
   });
 
-  it("is an error where a component of the model is drawn that the type does not have", () => {
+  it("is an error, at the list, where it is not drawn", () => {
+    expect(problems(entry("ListScreen", { content: "articles" }, "pushed"))).toEqual([
+      "14:6: drawing-mismatch: content = articles: the drawing shows 1 BackButton, which ListScreen does not have",
+      "16:7: drawing-mismatch: content = articles: the drawing shows no NavigationBar, but navigation is there",
+      "17:7: drawing-mismatch: content = articles: the drawing shows no ArticleRow, but articles is one or more",
+    ]);
+  });
+
+  it("is an error, at the type, where a component of the model is drawn that it does not have", () => {
     expect(problems(entry("NavigationBar", { kind: "pushed" }, "articles"))).toEqual([
-      "drawing-mismatch: the drawing shows 1 NavigationBar, which NavigationBar does not have",
-      "drawing-mismatch: the drawing shows 2 ArticleRow, which NavigationBar does not have",
-      "drawing-mismatch: the drawing shows no BackButton, but NavigationBar has 1 here: back",
+      "4:6: drawing-mismatch: kind = pushed: the drawing shows 1 NavigationBar, which NavigationBar does not have",
+      "4:6: drawing-mismatch: kind = pushed: the drawing shows 2 ArticleRow, which NavigationBar does not have",
+      "6:7: drawing-mismatch: kind = pushed: the drawing shows no BackButton, but back is there",
     ]);
   });
 

@@ -108,23 +108,27 @@ export function serve(connection: Connection): void {
   // no longer there, or the file's when it closes, are cleared.
   const checked = new Map<string, Set<string>>();
   const checkEvidence = (document: TextDocument) => {
-    const found = evidence(document.uri, parsed(document));
+    const { uri: own, version } = document;
+    const diagnostics = diagnose(document.getText(), parsed(document));
+    const found = evidence(own, parsed(document), document.getText());
+    // The file's own problems, with those its evidence finds in the model.
+    connection.sendDiagnostics({
+      uri: own,
+      version,
+      diagnostics: [...diagnostics, ...(found?.get(own) ?? [])],
+    });
     // A file with problems keeps what was found last, rather than flicker
     // while it is typed.
     if (found === undefined) return;
-    const before = checked.get(document.uri) ?? new Set<string>();
+    found.delete(own);
+    const before = checked.get(own) ?? new Set<string>();
     for (const uri of before) {
       if (!found.has(uri)) connection.sendDiagnostics({ uri, diagnostics: [] });
     }
     for (const [uri, diagnostics] of found) connection.sendDiagnostics({ uri, diagnostics });
-    checked.set(document.uri, new Set(found.keys()));
+    checked.set(own, new Set(found.keys()));
   };
-  documents.onDidChangeContent(({ document }) => {
-    const { uri, version } = document;
-    const diagnostics = diagnose(document.getText(), parsed(document));
-    connection.sendDiagnostics({ uri, version, diagnostics });
-    checkEvidence(document);
-  });
+  documents.onDidChangeContent(({ document }) => checkEvidence(document));
   documents.onDidClose(({ document }) => {
     parses.delete(document.uri);
     connection.sendDiagnostics({ uri: document.uri, diagnostics: [] });

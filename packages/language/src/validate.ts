@@ -1,4 +1,4 @@
-import type { ParseResult, RecordDeclaration, Type } from "./ast.js";
+import type { Located, ParseResult, RecordDeclaration, Type } from "./ast.js";
 import { conditionText, holds } from "./condition.js";
 import { childPath, type Diagnostic, Diagnostics } from "./diagnostic.js";
 import { states as evaluate, inPlace, type Placement, placement } from "./evaluate.js";
@@ -12,6 +12,7 @@ import { penNode, scalar } from "./scalars.js";
 interface Look {
   type: Type;
   values: Record<string, string>;
+  named: string;
 }
 
 // How a JSON value reads in a message.
@@ -354,7 +355,15 @@ export function validate(
     const fromProfile = profileValues.find(({ name }) => name === profile)?.values ?? {};
     const values: Record<string, string> = { ...fromProfile, ...chosen };
     for (const { name, value } of pending) values[name] = value;
-    return { type: owner, values };
+    // The look, as a problem names it: its profile, dimensions and states.
+    const named = [
+      ...(profile === undefined ? [] : [`on ${profile}`]),
+      ...[
+        ...expected.map((name) => [name, chosen[name]]),
+        ...pending.map(({ name, value }) => [name, value]),
+      ].map(([name, value]) => `${name} = ${value}`),
+    ].join(", ");
+    return { type: owner, values, named: named === "" ? owner.name : named };
   };
 
   // A stored record's drawings, each against its element's children in its
@@ -382,21 +391,25 @@ export function validate(
         at === undefined ? { file: drawing, frame } : { file: drawing, frame, node: at },
       );
       if (shown === undefined) continue;
-      const report = (message: string) =>
+      const report = (message: string, element: Located) =>
         diagnostics.report(
           "drawing-mismatch",
-          message,
+          `${look.named}: ${message}`,
           childPath(path, field.name),
           member.value.span.start,
+          false,
+          { line: element.line, column: element.column },
         );
       checkShown(look, shown, report);
     }
   };
 
+  // What a drawing shows against what the element has in its look, each
+  // problem at the child it is about, or the type for one it does not have.
   const checkShown = (
     look: Look,
     shown: Map<string, number>,
-    report: (message: string) => void,
+    report: (message: string, element: Located) => void,
   ) => {
     const { type, values } = look;
     const short = (name: string) => {
@@ -407,30 +420,39 @@ export function validate(
     const kinds = [...new Set(type.children.map((child) => short(child.type.name)))];
     for (const [name, count] of shown) {
       if (modeled.has(name) && !kinds.includes(name)) {
-        report(`the drawing shows ${count} ${name}, which ${type.name} does not have`);
+        report(`the drawing shows ${count} ${name}, which ${type.name} does not have`, type);
       }
     }
+    const and = (names: string[]) =>
+      names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
     for (const kind of kinds) {
       const children = type.children.filter((child) => short(child.type.name) === kind);
       const there = children.filter(
         (child) => child.when === undefined || holds(child.when, (name) => values[name]),
       );
-      const away = children.filter((child) => !there.includes(child));
       const exact = there.filter(({ list }) => !list).length;
-      const many = there.some(({ list }) => list);
+      const lists = there.filter(({ list }) => list);
       const count = shown.get(kind) ?? 0;
-      if (many ? count >= exact + 1 : count === exact) continue;
-      const drew = count === 0 ? `no ${kind}` : `${count} ${kind}`;
-      const has =
-        there.length === 0
-          ? `none here: ${away
-              .map(
-                (child) =>
-                  `${child.name} is there only when ${conditionText(child.when as NonNullable<typeof child.when>)}`,
-              )
-              .join(", ")}`
-          : `${many ? (exact === 0 ? "one or more" : `${exact + 1} or more`) : exact} here: ${there.map(({ name }) => name).join(", ")}`;
-      report(`the drawing shows ${drew}, but ${type.name} has ${has}`);
+      if (lists.length > 0 ? count >= exact + 1 : count === exact) continue;
+      const drew = `the drawing shows ${count === 0 ? "no" : count} ${kind}`;
+      const [first] = there;
+      if (first === undefined) {
+        // Drawn where it is not there.
+        const away = children[0] as (typeof children)[number];
+        const when = away.when === undefined ? "" : conditionText(away.when);
+        report(`${drew}, but ${away.name} is there only when ${when}`, away);
+      } else if (lists.length > 0) {
+        report(
+          `${drew}, but ${and(there.map(({ name }) => name))} is one or more`,
+          lists[0] as Located,
+        );
+      } else if (exact === 1 && count > 1) {
+        report(`${drew}, but ${first.name} is one; make it a list, [${kind}], or draw one`, first);
+      } else if (exact === 1) {
+        report(`${drew}, but ${first.name} is there`, first);
+      } else {
+        report(`${drew}, but ${and(there.map(({ name }) => name))} are ${exact}`, first);
+      }
     }
   };
 

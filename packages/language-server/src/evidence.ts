@@ -37,6 +37,7 @@ interface Problem {
   path: string;
   message: string;
   severity?: "warning";
+  element?: { line: number; column: number };
 }
 
 // The stored files beside a file, each record's, and the problems in them:
@@ -85,12 +86,37 @@ function checked(
 
 // The problems in the stored records beside a file, as an editor shows them:
 // for each JSON file in each record's folder, by its URI, each problem over
-// the value it is at. Nothing for a file with problems; none for a file that
-// is not on disk.
-export function evidence(uri: string, file: ParseResult): Map<string, Diagnostic[]> | undefined {
+// the value it is at; and, for the file itself, from its source, each problem
+// about one place in the model there, such as a drawing that shows a child
+// otherwise than the model has it, with the record it is in. Nothing for a
+// file with problems; none for a file that is not on disk.
+export function evidence(
+  uri: string,
+  file: ParseResult,
+  source?: string,
+): Map<string, Diagnostic[]> | undefined {
   const found = checked(uri, file);
   if (found === undefined) return undefined;
   const result = new Map<string, Diagnostic[]>(found.read.map(({ uri: each }) => [each, []]));
+  if (source !== undefined) {
+    result.set(
+      uri,
+      found.problems.flatMap(({ at, line, code, message, severity, element }) =>
+        element === undefined
+          ? []
+          : [
+              {
+                range: rangeAt(source, element.line, element.column),
+                severity:
+                  severity === "warning" ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error,
+                code,
+                source: "dxn",
+                message: `${message} (${at.shown}:${line})`,
+              },
+            ],
+      ),
+    );
+  }
   for (const { at, line, column, code, path, message, severity } of found.problems) {
     result.get(at.uri)?.push({
       range: valueAt(at.source, line, column),
@@ -152,7 +178,7 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
   const stopped = new Map<string, Problem[]>();
   const apart = new Map<string, { at: Read; index: number; problems: Problem[] }>();
   for (const problem of found.problems) {
-    if (problem.severity === "warning") continue;
+    if (problem.severity === "warning" || problem.code === "drawing-mismatch") continue;
     const index = problem.path.match(/^\$\[(\d+)\]/)?.[1];
     if (index === undefined) {
       stopped.set(problem.at.record, [...(stopped.get(problem.at.record) ?? []), problem]);
@@ -195,6 +221,17 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
       return { ...read, source: JSON.stringify(list.filter((_, index) => !skipped.has(index))) };
     });
   const counted = progress(file, sources, freshness(repositoryOf(fileURLToPath(uri))));
+  // The stored records whose drawings the model disagrees with, by where
+  // their element is written and their record: counted, and said apart.
+  const mismatched = new Map<string, Problem[]>();
+  for (const problem of found.problems) {
+    if (problem.code !== "drawing-mismatch") continue;
+    const index = Number(problem.path.match(/^\$\[(\d+)\]/)?.[1]);
+    const where = whereFor(elementOf(problem.at.source, index));
+    if (where === undefined) continue;
+    const key = `${where.line}:${where.column}#${problem.at.record}`;
+    mismatched.set(key, [...(mismatched.get(key) ?? []), problem]);
+  }
   const readsOf = (record: string) => found.read.filter((read) => read.record === record);
   // What is set apart at a place, for a record, by what the language says
   // of it.
@@ -242,11 +279,14 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
         verb: drawn.has(each.record) ? "drawn" : "recorded",
         ...(usage === undefined ? {} : { usage }),
       };
-      const count = outdated ? outdatedAt(each, wording) : countOf(each, wording);
+      const counting = outdated ? outdatedAt(each, wording) : countOf(each, wording);
+      const disagree = mismatched.get(`${place.line}:${place.column}#${each.record}`) ?? [];
+      const count = disagree.length === 0 ? counting : disagreeing(counting, disagree);
       const set = apartAt(place.line, place.column, each.record);
       // An element that never appears has nothing to show.
       if (each.combinations === 0 && !outdated && set === undefined) return [];
-      const mark = outdated || each.stale > 0 || each.gone > 0 ? "◌" : moon(each);
+      const mark =
+        outdated || each.stale > 0 || each.gone > 0 || disagree.length > 0 ? "◌" : moon(each);
       if (set === undefined) return [{ ...count, mark }];
       const label = `${count.label} · ${set.label.slice(`${each.record}: `.length)}`;
       const [, ...rest] = count.details.split("\n\n");
@@ -261,6 +301,28 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
     hints.push({ line: at.line, column: at.column, usage: false, ...joined([part]) });
   }
   return hints.sort((a, b) => a.line - b.line || a.column - b.column);
+}
+
+// A count with the stored records the model disagrees with said after it,
+// "1 doesn't match the model", and listed in its details.
+function disagreeing(
+  count: { label: string; details: string },
+  problems: Problem[],
+): { label: string; details: string } {
+  const records = new Set(
+    problems.map(({ at, path }) => `${at.uri}${path.match(/^\$\[\d+\]/)?.[0]}`),
+  );
+  const matches = records.size === 1 ? "doesn't match" : "don't match";
+  const label = `${count.label}, ${records.size} ${matches} the model`;
+  const [, ...rest] = count.details.split("\n\n");
+  const listed = [
+    "Drawn otherwise than the model has it:",
+    "",
+    ...problems.map(
+      ({ at, line, column, message }) => `- ${at.shown}:${line}:${column}: ${message}`,
+    ),
+  ].join("\n");
+  return { label, details: [label, ...rest, listed].join("\n\n") };
 }
 
 // What a hint shows of one record, and its mark: ● every look present, ◐

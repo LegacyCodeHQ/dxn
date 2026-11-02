@@ -6,6 +6,9 @@ export interface Diagnostic {
   column: number;
   // A warning: the data is usable, but needs attention. An error otherwise.
   severity?: "warning";
+  // Where in the model the problem is about, when that is one place: a line
+  // and a column of the dxn file, both from one.
+  element?: { line: number; column: number };
 }
 
 export class Diagnostics {
@@ -13,7 +16,14 @@ export class Diagnostics {
 
   constructor(private readonly source: string) {}
 
-  report(code: string, message: string, path: string, offset: number, warning = false): void {
+  report(
+    code: string,
+    message: string,
+    path: string,
+    offset: number,
+    warning = false,
+    element?: { line: number; column: number },
+  ): void {
     let line = 1;
     let lineStart = 0;
     for (let i = 0; i < offset && i < this.source.length; i++) {
@@ -29,6 +39,7 @@ export class Diagnostics {
       line,
       column: offset - lineStart + 1,
       ...(warning ? { severity: "warning" as const } : {}),
+      ...(element === undefined ? {} : { element }),
     });
   }
 }
