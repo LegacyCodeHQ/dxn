@@ -57,8 +57,6 @@ export { type Token, tokens } from "./editor/semantic.js";
 export { type DocumentSymbol, symbols } from "./editor/symbols.js";
 // What a type, or a child in place, has that can be told apart.
 export { type Cases, cases } from "./evaluation/cases.js";
-// A field's value in a stored record, derived or as stored.
-export { fieldValue } from "./evaluation/derive.js";
 // What a type's states are in each combination, and what a tree of types
 // is in place.
 export {
