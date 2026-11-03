@@ -1,6 +1,6 @@
+import { diagnose } from "@language-server/protocol/diagnostics.js";
 import { describe, expect, it } from "vitest";
 import { DiagnosticSeverity } from "vscode-languageserver/node";
-import { diagnose } from "../src/protocol/diagnostics.js";
 
 describe("diagnose", () => {
   it("finds no problem in a file that checks", () => {

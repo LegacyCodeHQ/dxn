@@ -1,6 +1,9 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { diagnose } from "@language-server/protocol/diagnostics.js";
+import { evidence, hintsBeside } from "@language-server/protocol/evidence.js";
+import { rangeAt } from "@language-server/protocol/range.js";
 import {
   type CompletionKind,
   completions,
@@ -38,9 +41,6 @@ import {
   TextDocuments,
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { diagnose } from "./protocol/diagnostics.js";
-import { evidence, hintsBeside } from "./protocol/evidence.js";
-import { rangeAt } from "./protocol/range.js";
 
 // Serves dxn to an editor over a connection: the problems in each open file,
 // published when it opens and whenever it changes, and cleared when it closes;

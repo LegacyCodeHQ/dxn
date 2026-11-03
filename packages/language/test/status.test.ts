@@ -1,6 +1,6 @@
+import { coverage } from "@language/evaluation/status.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { coverage } from "../src/evaluation/status.js";
-import { parse } from "../src/syntax/parse.js";
 
 const file = parse(`dimension Pointer = mouse | touch
 enum Hover = rest | hovered

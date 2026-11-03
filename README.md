@@ -113,3 +113,34 @@ Run the CLI from source after building:
 make build
 node dist/main.js --help
 ```
+
+### Source imports
+
+Use a package-qualified alias for TypeScript source imports, with the `.js`
+extension required by NodeNext:
+
+```ts
+import type { ParseResult } from "@language/core/ast.js";
+import { parse } from "@language/syntax/parse.js";
+```
+
+| Alias                | Source directory                 |
+| -------------------- | -------------------------------- |
+| `@language/*`        | `packages/language/src/*`        |
+| `@cli/*`             | `packages/cli/src/*`             |
+| `@language-server/*` | `packages/language-server/src/*` |
+| `@vscode/*`          | `packages/vscode/src/*`          |
+
+Production code uses its own package's alias. Cross-package imports use public
+package names, such as `@legacycodehq/dxn-language`; tests may use source aliases
+across packages. Test helpers and files outside `src` keep relative imports.
+
+Root `tsconfig.json` declares all source aliases for type checking, editors,
+Vitest, esbuild and Clarity. Each compiled package's `tsconfig.build.json` maps
+only its own alias. Vitest enables Vite's tsconfig path resolution, and the
+extension bundler reads the root tsconfig automatically.
+
+`make build` and each package's `npm run build` run `tsc-alias` after TypeScript.
+This rewrites both JavaScript and declaration imports to relative paths. Built
+commands run directly in Node, with no runtime alias loader. Running `tsc` alone
+does not perform that rewrite; use the build commands for runnable output.

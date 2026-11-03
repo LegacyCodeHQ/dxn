@@ -1,9 +1,9 @@
 import { dirname, resolve } from "node:path";
+import { type Command, command } from "@cli/commands/support/context.js";
+import { count, misused, options, Reporter, read } from "@cli/commands/support/report.js";
+import { loadStored } from "@cli/commands/support/stored.js";
+import { usage } from "@cli/commands/support/usage.js";
 import { folderOf, storedFiles, storedRecords } from "@legacycodehq/dxn-language";
-import { type Command, command } from "./support/context.js";
-import { count, misused, options, Reporter, read } from "./support/report.js";
-import { loadStored } from "./support/stored.js";
-import { usage } from "./support/usage.js";
 
 export const validateCommand: Command = command(usage, (args, { io, cwd }) => {
   const {

@@ -1,5 +1,5 @@
+import { usages } from "@language/editor/definition.js";
 import { describe, expect, it } from "vitest";
-import { usages } from "../src/editor/definition.js";
 
 const source = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered

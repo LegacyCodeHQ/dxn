@@ -1,9 +1,9 @@
-import type { Condition, Diagnostic, Located, ResolvedResult, Type } from "../core/ast.js";
-import { message, words } from "../core/message.js";
-import { conditionText, coverage, holds } from "../model/condition.js";
-import { enumOf, valuesOf } from "../model/names.js";
-import { reportTo } from "./check-values.js";
-import { alone } from "./status.js";
+import type { Condition, Diagnostic, Located, ResolvedResult, Type } from "@language/core/ast.js";
+import { message, words } from "@language/core/message.js";
+import { reportTo } from "@language/evaluation/check-values.js";
+import { alone } from "@language/evaluation/status.js";
+import { conditionText, coverage, holds } from "@language/model/condition.js";
+import { enumOf, valuesOf } from "@language/model/names.js";
 
 // Checks each condition of a type against the combinations it really has:
 // what its rules, fixed and derived states and profiles leave, not every

@@ -1,10 +1,10 @@
 // Compile-only contracts, included by make typecheck and never executed.
-import { analyze } from "../../src/analysis/analyze.js";
-import type { ParseResult } from "../../src/core/ast.js";
-import { states } from "../../src/evaluation/evaluate.js";
-import { scope } from "../../src/model/scope.js";
-import { parse } from "../../src/syntax/parse.js";
-import { read } from "../../src/syntax/read.js";
+import { analyze } from "@language/analysis/analyze.js";
+import type { ParseResult } from "@language/core/ast.js";
+import { states } from "@language/evaluation/evaluate.js";
+import { scope } from "@language/model/scope.js";
+import { parse } from "@language/syntax/parse.js";
+import { read } from "@language/syntax/read.js";
 
 export function sourceStages(source: string): void {
   const syntax = read(source);

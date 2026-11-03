@@ -1,7 +1,7 @@
-import type { Located, ParseResult } from "../core/ast.js";
-import { storedRecords } from "../core/vocabulary.js";
-import { treePlaces } from "../evaluation/status.js";
-import { type StoredFile, type StoredProblem, shownOf } from "./store.js";
+import type { Located, ParseResult } from "@language/core/ast.js";
+import { storedRecords } from "@language/core/vocabulary.js";
+import { treePlaces } from "@language/evaluation/status.js";
+import { type StoredFile, type StoredProblem, shownOf } from "@language/evidence/store.js";
 
 // Which stored records dxn and an editor count, when some have errors, and
 // what both say of those they do not: one way, for both.

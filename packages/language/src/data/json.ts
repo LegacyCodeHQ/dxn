@@ -1,5 +1,5 @@
-import { childPath, type Diagnostic, Diagnostics } from "../core/diagnostic.js";
-import { message } from "../core/message.js";
+import { childPath, type Diagnostic, Diagnostics } from "@language/core/diagnostic.js";
+import { message } from "@language/core/message.js";
 
 interface Span {
   start: number;

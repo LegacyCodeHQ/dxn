@@ -1,4 +1,5 @@
 import { basename, dirname, join, resolve } from "node:path";
+import type { Reporter } from "@cli/commands/support/report.js";
 import {
   checkStored,
   drawings,
@@ -8,7 +9,6 @@ import {
   type StoredProblem,
   storedBeside,
 } from "@legacycodehq/dxn-language";
-import type { Reporter } from "./report.js";
 
 // A stored data file of a record: its path as shown, and its content.
 export interface Stored {

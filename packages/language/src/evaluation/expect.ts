@@ -5,14 +5,14 @@ import {
   type ResolvedResult,
   type Trigger,
   type Type,
-} from "../core/ast.js";
-import { message, words } from "../core/message.js";
-import { holds } from "../model/condition.js";
-import { valuesOf as declaredValues } from "../model/names.js";
-import { givenDimensions, profilesOf } from "../model/profiles.js";
-import { eventText } from "./check-types.js";
-import { placement } from "./evaluate.js";
-import { type Combination, expand, treePaths } from "./status.js";
+} from "@language/core/ast.js";
+import { message, words } from "@language/core/message.js";
+import { eventText } from "@language/evaluation/check-types.js";
+import { placement } from "@language/evaluation/evaluate.js";
+import { type Combination, expand, treePaths } from "@language/evaluation/status.js";
+import { holds } from "@language/model/condition.js";
+import { valuesOf as declaredValues } from "@language/model/names.js";
+import { givenDimensions, profilesOf } from "@language/model/profiles.js";
 
 // Checks each expectation against the tree in place: its element, or it and
 // every element below it that has every key it names; the combinations its

@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import {
   apartShort,
   evidenceColumns,
@@ -10,7 +9,8 @@ import {
   ratio,
   sayRatio,
   storedRecords,
-} from "../src/core/vocabulary.js";
+} from "@language/core/vocabulary.js";
+import { describe, expect, it } from "vitest";
 
 // The words dxn and an editor both say a count of evidence in: one place, so
 // neither says it otherwise.

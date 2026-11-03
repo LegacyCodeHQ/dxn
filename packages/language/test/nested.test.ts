@@ -1,8 +1,8 @@
+import { states } from "@language/evaluation/evaluate.js";
+import { renameInSource } from "@language/evidence/rename.js";
+import { format } from "@language/syntax/format.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { states } from "../src/evaluation/evaluate.js";
-import { renameInSource } from "../src/evidence/rename.js";
-import { format } from "../src/syntax/format.js";
-import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const menu = `dimension Pointer = mouse | touch

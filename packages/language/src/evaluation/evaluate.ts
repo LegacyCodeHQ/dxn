@@ -6,11 +6,11 @@ import {
   type ResolvedResult,
   type State,
   type Type,
-} from "../core/ast.js";
-import { message, words } from "../core/message.js";
-import { conditionText, holds, subjects } from "../model/condition.js";
-import { among, valuesOf as declaredValues } from "../model/names.js";
-import { profilesOf } from "../model/profiles.js";
+} from "@language/core/ast.js";
+import { message, words } from "@language/core/message.js";
+import { conditionText, holds, subjects } from "@language/model/condition.js";
+import { among, valuesOf as declaredValues } from "@language/model/names.js";
+import { profilesOf } from "@language/model/profiles.js";
 
 // What a type's states are under each combination of the dimensions its
 // rules use: one row per combination, in the order the dimensions are first

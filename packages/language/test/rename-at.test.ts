@@ -1,8 +1,8 @@
+import { renameAt, type StoredFile } from "@language/editor/rename-at.js";
+import { renameInData, renameInSource } from "@language/evidence/rename.js";
+import { validate } from "@language/evidence/validate.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { renameAt, type StoredFile } from "../src/editor/rename-at.js";
-import { renameInData, renameInSource } from "../src/evidence/rename.js";
-import { validate } from "../src/evidence/validate.js";
-import { parse } from "../src/syntax/parse.js";
 
 const source = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered

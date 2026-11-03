@@ -1,6 +1,6 @@
-import { analyze } from "../analysis/analyze.js";
-import type { ParseResult } from "../core/ast.js";
-import { read } from "./read.js";
+import { analyze } from "@language/analysis/analyze.js";
+import type { ParseResult } from "@language/core/ast.js";
+import { read } from "@language/syntax/read.js";
 
 // The compatible full-analysis entry point: read, resolve, check and evaluate
 // source conditions and expectations, returning all diagnostics in source order.

@@ -1,4 +1,4 @@
-import { read } from "./read.js";
+import { read } from "@language/syntax/read.js";
 
 // A piece of a line: a word, a quoted string, a sign, or a comment, which runs
 // to the end of the line.

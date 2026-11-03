@@ -1,9 +1,9 @@
-import type { ResolvedResult } from "../core/ast.js";
-import { message } from "../core/message.js";
-import { holds } from "../model/condition.js";
-import { enumOf, valuesOf } from "../model/names.js";
-import { placement } from "./evaluate.js";
-import { alone, type Combination, expand } from "./status.js";
+import type { ResolvedResult } from "@language/core/ast.js";
+import { message } from "@language/core/message.js";
+import { placement } from "@language/evaluation/evaluate.js";
+import { alone, type Combination, expand } from "@language/evaluation/status.js";
+import { holds } from "@language/model/condition.js";
+import { enumOf, valuesOf } from "@language/model/names.js";
 
 // What a type, or a child in place, has that can be told apart: each case,
 // by the values that tell it apart, with the combinations it covers.

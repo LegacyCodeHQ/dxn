@@ -1,6 +1,6 @@
-import type { Declaration, ResolvedResult, Type } from "../core/ast.js";
-import { message, type Words, words } from "../core/message.js";
-import { penNode, scalars } from "./scalars.js";
+import type { Declaration, ResolvedResult, Type } from "@language/core/ast.js";
+import { message, type Words, words } from "@language/core/message.js";
+import { penNode, scalars } from "@language/model/scalars.js";
 
 export type Kind =
   | "enum"

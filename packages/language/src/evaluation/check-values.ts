@@ -1,6 +1,6 @@
-import type { Branch, Diagnostic, Located } from "../core/ast.js";
-import { message, words } from "../core/message.js";
-import type { Names } from "../model/names.js";
+import type { Branch, Diagnostic, Located } from "@language/core/ast.js";
+import { message, words } from "@language/core/message.js";
+import type { Names } from "@language/model/names.js";
 
 // Where a check reports a problem, an error or a warning: its code, its
 // message and where it is.

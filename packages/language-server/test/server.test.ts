@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { pathToFileURL } from "node:url";
+import { serve } from "@language-server/server.js";
 import { Fingerprints } from "@legacycodehq/dxn-language";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -37,7 +38,6 @@ import {
   StreamMessageWriter,
   SymbolKind,
 } from "vscode-languageserver/node";
-import { serve } from "../src/server.js";
 
 // A server and an editor talking over a pair of streams, as they would over
 // the server's standard input and output.

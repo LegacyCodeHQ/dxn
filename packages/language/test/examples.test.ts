@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { validate } from "@language/evidence/validate.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { validate } from "../src/evidence/validate.js";
-import { parse } from "../src/syntax/parse.js";
 
 // The settings example, which the editor extensions are tried in, stays a file
 // without problems, whose stored records check: a file with problems would

@@ -1,6 +1,6 @@
+import * as combinations from "@language/evaluation/status.js";
+import { parse } from "@language/syntax/parse.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import * as combinations from "../src/evaluation/status.js";
-import { parse } from "../src/syntax/parse.js";
 
 afterEach(() => vi.restoreAllMocks());
 

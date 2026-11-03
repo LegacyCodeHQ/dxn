@@ -1,7 +1,7 @@
-import type { Located, ResolvedResult, Type } from "../core/ast.js";
-import { givenDimensions, profilesOf } from "../model/profiles.js";
-import { penNode } from "../model/scalars.js";
-import { inPlace, placement, states } from "./evaluate.js";
+import type { Located, ResolvedResult, Type } from "@language/core/ast.js";
+import { inPlace, placement, states } from "@language/evaluation/evaluate.js";
+import { givenDimensions, profilesOf } from "@language/model/profiles.js";
+import { penNode } from "@language/model/scalars.js";
 
 // One combination of an element in place: the profiles that share it, the
 // dimensions no profile gives, the parents' states that place it, and one

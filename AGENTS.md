@@ -30,6 +30,13 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
 ## Code
 
 - ES modules only; relative imports use the `.js` extension (NodeNext).
+- Source imports use package-qualified aliases: `@language/*`, `@cli/*`,
+  `@language-server/*` and `@vscode/*`, still with `.js` extensions. Within
+  production code, use only that package's alias; cross-package imports use
+  the package's public name, such as `@legacycodehq/dxn-language`. Root
+  `tsconfig.json` maps all aliases for tools and tests; a package build maps
+  only its own alias. `make build` rewrites aliases in emitted JavaScript and
+  declarations to relative paths, so Node needs no alias loader.
 - Keep the CLI testable: `run(argv, io)` takes its output streams as arguments
   and returns the exit code. Do not call `process.exit` inside commands.
 - Machine-readable output (`--json`) is JSON on stdout; diagnostics go to stderr.

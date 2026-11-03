@@ -5,6 +5,11 @@ points from a file or folder to something it imports, including type imports.
 Each Clarity module in [modules.json](../../.clarity/modules.json) corresponds to
 a physical source directory; the language's public `src/index.ts` is its own node.
 
+Source imports use `@language/*`, `@cli/*`, `@language-server/*` and `@vscode/*`.
+The root [tsconfig.json](../../tsconfig.json) declares their source paths
+explicitly so Clarity resolves the same dependencies as TypeScript, Vitest and
+esbuild. The alias migration preserved all 252 source dependency edges.
+
 ![Source folder dependencies](dependencies.png)
 
 | Language folder | Responsibility                                                                |

@@ -1,4 +1,4 @@
-import { run } from "../../src/cli.js";
+import { run } from "@cli/cli.js";
 import { type Files, writeProject } from "./project.js";
 
 // Runs the CLI in-process from the given working directory, keeping what it

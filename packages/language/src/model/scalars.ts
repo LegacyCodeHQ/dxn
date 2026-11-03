@@ -1,4 +1,4 @@
-import { isName, isTimestamp } from "../core/text.js";
+import { isName, isTimestamp } from "@language/core/text.js";
 
 // A path from the repository root: parts split by /, none of them empty, . or
 // .., none with a backslash or surrounding spaces, and not starting with a

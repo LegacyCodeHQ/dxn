@@ -3,6 +3,10 @@ import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { PassThrough } from "node:stream";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { run } from "@cli/cli.js";
+import { diagnose } from "@language-server/protocol/diagnostics.js";
+import { evidence, hintsBeside } from "@language-server/protocol/evidence.js";
+import { serve } from "@language-server/server.js";
 import { parse } from "@legacycodehq/dxn-language";
 import { afterAll, describe, expect, it } from "vitest";
 import {
@@ -18,10 +22,6 @@ import {
   StreamMessageWriter,
   type TextEdit,
 } from "vscode-languageserver/node";
-import { run } from "../../cli/src/cli.js";
-import { diagnose } from "../src/protocol/diagnostics.js";
-import { evidence, hintsBeside } from "../src/protocol/evidence.js";
-import { serve } from "../src/server.js";
 
 // dxn and an editor must agree: each scenario, a file and the records stored
 // beside it, is run through the dxn command and through the language server,

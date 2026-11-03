@@ -1,6 +1,6 @@
+import { inPlace, states } from "@language/evaluation/evaluate.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { inPlace, states } from "../src/evaluation/evaluate.js";
-import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const site = `enum Section = home | blog

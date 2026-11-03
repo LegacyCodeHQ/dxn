@@ -3,6 +3,8 @@
 // can run; what it starts is chosen in server.ts, and what a lens runs in
 // run.ts.
 import { dirname, relative } from "node:path";
+import { dxn } from "@vscode/run.js";
+import { serverOptions } from "@vscode/server.js";
 import {
   commands,
   type ExtensionContext,
@@ -14,8 +16,6 @@ import {
   workspace,
 } from "vscode";
 import { LanguageClient, type ServerOptions, TransportKind } from "vscode-languageclient/node";
-import { dxn } from "./run.js";
-import { serverOptions } from "./server.js";
 
 let client: LanguageClient | undefined;
 

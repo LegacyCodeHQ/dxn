@@ -1,5 +1,5 @@
-import type { Located } from "../core/ast.js";
-import { type Words, words } from "../core/message.js";
+import type { Located } from "@language/core/ast.js";
+import { type Words, words } from "@language/core/message.js";
 
 export type TokenKind =
   | "word"

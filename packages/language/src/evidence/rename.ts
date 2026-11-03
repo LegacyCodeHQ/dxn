@@ -7,13 +7,13 @@ import {
   type State,
   type Type,
   type Union,
-} from "../core/ast.js";
-import { type JsonNode, parseJson } from "../data/json.js";
-import { type Placement, placement } from "../evaluation/evaluate.js";
-import { childTypeAt } from "../evaluation/expect.js";
-import { treePaths } from "../evaluation/status.js";
-import { comparisons } from "../model/condition.js";
-import { Names } from "../model/names.js";
+} from "@language/core/ast.js";
+import { type JsonNode, parseJson } from "@language/data/json.js";
+import { type Placement, placement } from "@language/evaluation/evaluate.js";
+import { childTypeAt } from "@language/evaluation/expect.js";
+import { treePaths } from "@language/evaluation/status.js";
+import { comparisons } from "@language/model/condition.js";
+import { Names } from "@language/model/names.js";
 
 // Replaces each span of the source, given by start and end offsets, with its
 // text.

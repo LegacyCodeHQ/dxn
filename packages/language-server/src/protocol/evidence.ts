@@ -1,5 +1,6 @@
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { rangeAt } from "@language-server/protocol/range.js";
 import {
   apartCount,
   apartLabel,
@@ -32,7 +33,6 @@ import {
   type Usage,
 } from "@legacycodehq/dxn-language";
 import { type Diagnostic, DiagnosticSeverity, type Range } from "vscode-languageserver/node";
-import { rangeAt } from "./range.js";
 
 // A stored file beside a .dxn file: its record, the path dxn validate shows it
 // by, its URI and what it holds.

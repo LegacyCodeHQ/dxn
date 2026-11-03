@@ -1,13 +1,19 @@
-import type { ParseResult } from "../core/ast.js";
+import type { ParseResult } from "@language/core/ast.js";
 import {
   evidenceHeadings,
   evidenceLabel,
   outdatedAction,
   outdatedFact,
-} from "../core/vocabulary.js";
-import { type Check, describe, type Judged, judge, type Outdated } from "../evaluation/status.js";
-import { profilesOf } from "../model/profiles.js";
-import { penNode } from "../model/scalars.js";
+} from "@language/core/vocabulary.js";
+import {
+  type Check,
+  describe,
+  type Judged,
+  judge,
+  type Outdated,
+} from "@language/evaluation/status.js";
+import { profilesOf } from "@language/model/profiles.js";
+import { penNode } from "@language/model/scalars.js";
 
 // A page to review a tree's evidence by: the tree's root, and the page as
 // Markdown.

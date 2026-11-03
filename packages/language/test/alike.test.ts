@@ -1,7 +1,7 @@
+import { cases as casesOf } from "@language/evaluation/cases.js";
+import { renameInSource } from "@language/evidence/rename.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { cases as casesOf } from "../src/evaluation/cases.js";
-import { renameInSource } from "../src/evidence/rename.js";
-import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const button = (...lines: string[]) => `dimension Pointer = mouse | touch

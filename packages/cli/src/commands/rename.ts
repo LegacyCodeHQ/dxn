@@ -1,5 +1,9 @@
 import { readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
+import { type Command, command } from "@cli/commands/support/context.js";
+import { count, misused, options, Reporter, read } from "@cli/commands/support/report.js";
+import { loadStored } from "@cli/commands/support/stored.js";
+import { usage } from "@cli/commands/support/usage.js";
 import {
   declarationNamed,
   drawings,
@@ -8,10 +12,6 @@ import {
   repositoryOf,
   words,
 } from "@legacycodehq/dxn-language";
-import { type Command, command } from "./support/context.js";
-import { count, misused, options, Reporter, read } from "./support/report.js";
-import { loadStored } from "./support/stored.js";
-import { usage } from "./support/usage.js";
 
 // Renames a declaration, by its name as dxn writes it or by its place in the
 // file, where the file uses it and where stored records name it: refused

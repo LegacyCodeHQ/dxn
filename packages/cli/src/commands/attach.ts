@@ -1,5 +1,9 @@
 import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { type Command, command } from "@cli/commands/support/context.js";
+import { misused, options, Reporter, read } from "@cli/commands/support/report.js";
+import { loadStored } from "@cli/commands/support/stored.js";
+import { usage } from "@cli/commands/support/usage.js";
 import {
   among,
   canonical,
@@ -19,10 +23,6 @@ import {
   validate,
   words,
 } from "@legacycodehq/dxn-language";
-import { type Command, command } from "./support/context.js";
-import { misused, options, Reporter, read } from "./support/report.js";
-import { loadStored } from "./support/stored.js";
-import { usage } from "./support/usage.js";
 
 export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun }) => {
   const { json, rest } = options(args);

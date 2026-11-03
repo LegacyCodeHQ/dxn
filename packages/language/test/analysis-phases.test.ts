@@ -1,9 +1,9 @@
+import * as assertions from "@language/evaluation/expect.js";
+import * as matrix from "@language/evaluation/matrix.js";
+import { format } from "@language/syntax/format.js";
+import { parse } from "@language/syntax/parse.js";
+import { read } from "@language/syntax/read.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import * as assertions from "../src/evaluation/expect.js";
-import * as matrix from "../src/evaluation/matrix.js";
-import { format } from "../src/syntax/format.js";
-import { parse } from "../src/syntax/parse.js";
-import { read } from "../src/syntax/read.js";
 
 afterEach(() => vi.restoreAllMocks());
 

@@ -1,4 +1,9 @@
 import { resolve } from "node:path";
+import { type Command, command } from "@cli/commands/support/context.js";
+import { misused, options, Reporter, read } from "@cli/commands/support/report.js";
+import { loadStoredToCount } from "@cli/commands/support/stored.js";
+import { drawTable } from "@cli/commands/support/tables.js";
+import { usage } from "@cli/commands/support/usage.js";
 import {
   apartLabel,
   countable,
@@ -16,11 +21,6 @@ import {
   treePaths,
   words,
 } from "@legacycodehq/dxn-language";
-import { type Command, command } from "./support/context.js";
-import { misused, options, Reporter, read } from "./support/report.js";
-import { loadStoredToCount } from "./support/stored.js";
-import { drawTable } from "./support/tables.js";
-import { usage } from "./support/usage.js";
 
 export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   const {

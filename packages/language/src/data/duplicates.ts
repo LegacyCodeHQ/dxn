@@ -1,6 +1,6 @@
-import { Diagnostics } from "../core/diagnostic.js";
-import { message, words } from "../core/message.js";
-import { parseJson } from "./json.js";
+import { Diagnostics } from "@language/core/diagnostic.js";
+import { message, words } from "@language/core/message.js";
+import { parseJson } from "@language/data/json.js";
 
 // A stored data file of a record, by the path it is shown by, and its
 // content.

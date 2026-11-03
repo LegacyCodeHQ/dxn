@@ -1,5 +1,5 @@
+import { dxn } from "@vscode/run.js";
 import { describe, expect, it } from "vitest";
-import { dxn } from "../src/run.js";
 
 describe("what a code lens runs", () => {
   it("is the dxn the extension bundles, the command, the file, and the rest", () => {

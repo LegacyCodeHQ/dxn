@@ -1,8 +1,15 @@
+import { type Command, command } from "@cli/commands/support/context.js";
+import {
+  assignments,
+  count,
+  misused,
+  options,
+  Reporter,
+  read,
+} from "@cli/commands/support/report.js";
+import { drawTable, NONE } from "@cli/commands/support/tables.js";
+import { usage } from "@cli/commands/support/usage.js";
 import { type Cases, cases } from "@legacycodehq/dxn-language";
-import { type Command, command } from "./support/context.js";
-import { assignments, count, misused, options, Reporter, read } from "./support/report.js";
-import { drawTable, NONE } from "./support/tables.js";
-import { usage } from "./support/usage.js";
 
 // The cases of a type, or of a child in place, as a table: each case by the
 // values that tell it apart, and, where a case covers several combinations,

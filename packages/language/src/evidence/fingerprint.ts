@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import type { Check } from "../evaluation/status.js";
-import type { Drawn } from "./validate.js";
+import type { Check } from "@language/evaluation/status.js";
+import type { Drawn } from "@language/evidence/validate.js";
 
 // A fingerprint of what a frame of a file shows, so evidence knows when it
 // may look different. For a pen.dev file, the frame's subtree without its own

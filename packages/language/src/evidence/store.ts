@@ -1,10 +1,10 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import type { ParseResult } from "../core/ast.js";
-import type { Diagnostic } from "../core/diagnostic.js";
-import { message, words } from "../core/message.js";
-import { duplicates } from "../data/duplicates.js";
-import { type Drawn, validate } from "./validate.js";
+import type { ParseResult } from "@language/core/ast.js";
+import type { Diagnostic } from "@language/core/diagnostic.js";
+import { message, words } from "@language/core/message.js";
+import { duplicates } from "@language/data/duplicates.js";
+import { type Drawn, validate } from "@language/evidence/validate.js";
 
 // A stored data file of a record, by its path, and its content; and how a
 // message names it, when not by its record's folder and its name.

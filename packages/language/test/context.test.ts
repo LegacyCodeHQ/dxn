@@ -1,5 +1,5 @@
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { parse } from "../src/syntax/parse.js";
 import { problems } from "./support/language.js";
 
 describe("record with context", () => {

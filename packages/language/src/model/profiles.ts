@@ -1,4 +1,4 @@
-import type { Environment, ResolvedResult } from "../core/ast.js";
+import type { Environment, ResolvedResult } from "@language/core/ast.js";
 
 // A profile with its values: one the file declares, or one a modifier makes,
 // named "<profile>+<modifier>".

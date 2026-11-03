@@ -2,10 +2,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { evidence } from "@language-server/protocol/evidence.js";
 import { parse } from "@legacycodehq/dxn-language";
 import { afterAll, describe, expect, it } from "vitest";
 import type { Diagnostic } from "vscode-languageserver/node";
-import { evidence } from "../src/protocol/evidence.js";
 
 // The problems an editor shows for the stored records beside a file, which are
 // those dxn finds.

@@ -1,7 +1,7 @@
-import type { Located, ParseResult, Type } from "../core/ast.js";
-import { parse } from "../syntax/parse.js";
-import { sourceLines } from "../syntax/scan.js";
-import type { Span } from "./definition.js";
+import type { Located, ParseResult, Type } from "@language/core/ast.js";
+import type { Span } from "@language/editor/definition.js";
+import { parse } from "@language/syntax/parse.js";
+import { sourceLines } from "@language/syntax/scan.js";
 
 // A declaration in a file's outline: its name and kind, the text it spans,
 // from its first line to its closing brace or the end of its line, where its

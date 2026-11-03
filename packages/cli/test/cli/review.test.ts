@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { reviewFolder } from "@cli/commands/review.js";
 import { afterAll, describe, expect, it } from "vitest";
-import { reviewFolder } from "../../src/commands/review.js";
 import { capture } from "../support/cli.js";
 import { cleanup, writeProject } from "../support/project.js";
 

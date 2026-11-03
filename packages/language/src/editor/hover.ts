@@ -1,8 +1,8 @@
-import type { Enum, Located, ParseResult, Type } from "../core/ast.js";
-import { conditionText } from "../model/condition.js";
-import { parse } from "../syntax/parse.js";
-import { sourceLines } from "../syntax/scan.js";
-import { covers, links, type Span } from "./definition.js";
+import type { Enum, Located, ParseResult, Type } from "@language/core/ast.js";
+import { covers, links, type Span } from "@language/editor/definition.js";
+import { conditionText } from "@language/model/condition.js";
+import { parse } from "@language/syntax/parse.js";
+import { sourceLines } from "@language/syntax/scan.js";
 
 // What hovering over a name shows: the name's declaration as it is written,
 // and the comment above it.

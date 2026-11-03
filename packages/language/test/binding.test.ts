@@ -1,8 +1,8 @@
+import { definition } from "@language/editor/definition.js";
+import { inPlace } from "@language/evaluation/evaluate.js";
+import { renameInSource } from "@language/evidence/rename.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { definition } from "../src/editor/definition.js";
-import { inPlace } from "../src/evaluation/evaluate.js";
-import { renameInSource } from "../src/evidence/rename.js";
-import { parse } from "../src/syntax/parse.js";
 import { problems } from "./support/language.js";
 
 const menu = (binding: string, extra = "") => `enum Hover = rest | hovered

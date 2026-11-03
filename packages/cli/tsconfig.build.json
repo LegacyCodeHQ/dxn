@@ -4,6 +4,7 @@
     "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
+    "paths": { "@cli/*": ["./src/*"] },
     // Inside dist, so removing dist also forces a full rebuild.
     "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo"
   },

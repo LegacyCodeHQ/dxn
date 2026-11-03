@@ -1,6 +1,6 @@
+import { validate } from "@language/evidence/validate.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { validate } from "../src/evidence/validate.js";
-import { parse } from "../src/syntax/parse.js";
 
 const schema = parse(`enum Tool = pen-dev | code
 enum Verdict = passed | failed

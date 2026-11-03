@@ -1,6 +1,6 @@
+import { renameInData, renameInSource } from "@language/evidence/rename.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { renameInData, renameInSource } from "../src/evidence/rename.js";
-import { parse } from "../src/syntax/parse.js";
 
 const source = `# What can be hovered.
 enum Hover = rest | hovered   # the pointer's

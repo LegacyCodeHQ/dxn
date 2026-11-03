@@ -1,5 +1,5 @@
+import { completions } from "@language/editor/complete.js";
 import { describe, expect, it } from "vitest";
-import { completions } from "../src/editor/complete.js";
 
 const declarations = `dimension Breakpoint = base | lg
 dimension Pointer = mouse | touch

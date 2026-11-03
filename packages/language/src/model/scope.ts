@@ -5,7 +5,7 @@ import type {
   ResolvedResult,
   SyntaxResult,
   Type,
-} from "../core/ast.js";
+} from "@language/core/ast.js";
 
 // Gives the enums and types declared inside a type their full names,
 // "<Type>.<Name>", and lists them with the file's own; then resolves each

@@ -1,13 +1,18 @@
-import type { Child, Located, ParseResult, RecordDeclaration, Type } from "../core/ast.js";
-import { childPath, type Diagnostic, Diagnostics } from "../core/diagnostic.js";
-import { message, words } from "../core/message.js";
-import { outdatedFact } from "../core/vocabulary.js";
-import { type JsonNode, parseJson } from "../data/json.js";
-import { states as evaluate, inPlace, type Placement, placement } from "../evaluation/evaluate.js";
-import { conditionText, holds } from "../model/condition.js";
-import { among, article, Names } from "../model/names.js";
-import { givenDimensions, profilesOf } from "../model/profiles.js";
-import { penNode, scalar } from "../model/scalars.js";
+import type { Child, Located, ParseResult, RecordDeclaration, Type } from "@language/core/ast.js";
+import { childPath, type Diagnostic, Diagnostics } from "@language/core/diagnostic.js";
+import { message, words } from "@language/core/message.js";
+import { outdatedFact } from "@language/core/vocabulary.js";
+import { type JsonNode, parseJson } from "@language/data/json.js";
+import {
+  states as evaluate,
+  inPlace,
+  type Placement,
+  placement,
+} from "@language/evaluation/evaluate.js";
+import { conditionText, holds } from "@language/model/condition.js";
+import { among, article, Names } from "@language/model/names.js";
+import { givenDimensions, profilesOf } from "@language/model/profiles.js";
+import { penNode, scalar } from "@language/model/scalars.js";
 
 // The look a stored record is about: its element's type, and the value of
 // each of its states and dimensions there.

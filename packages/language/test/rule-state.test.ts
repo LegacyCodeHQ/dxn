@@ -1,8 +1,8 @@
+import { inPlace, states } from "@language/evaluation/evaluate.js";
+import { renameInSource } from "@language/evidence/rename.js";
+import { validate } from "@language/evidence/validate.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { inPlace, states } from "../src/evaluation/evaluate.js";
-import { renameInSource } from "../src/evidence/rename.js";
-import { validate } from "../src/evidence/validate.js";
-import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const button = (...rules: string[]) => `dimension Pointer = mouse | touch

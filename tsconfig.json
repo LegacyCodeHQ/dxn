@@ -2,6 +2,13 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
+    // Package-qualified source aliases also read by Vitest, esbuild and clarity.
+    "paths": {
+      "@language/*": ["./packages/language/src/*"],
+      "@cli/*": ["./packages/cli/src/*"],
+      "@language-server/*": ["./packages/language-server/src/*"],
+      "@vscode/*": ["./packages/vscode/src/*"]
+    },
     // Type-checks both packages as one program: the dxn command imports the
     // language's sources, through the "source" export condition, not its build.
     "customConditions": ["source"]

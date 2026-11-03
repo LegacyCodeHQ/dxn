@@ -1,5 +1,5 @@
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const site = (...menu: string[]) => `dimension Breakpoint = base | lg

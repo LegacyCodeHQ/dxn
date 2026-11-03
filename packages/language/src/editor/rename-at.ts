@@ -7,11 +7,12 @@ import type {
   State,
   Type,
   Union,
-} from "../core/ast.js";
-import { message, words } from "../core/message.js";
-import { isValue } from "../core/naming.js";
-import { placement } from "../evaluation/evaluate.js";
-import { treePaths } from "../evaluation/status.js";
+} from "@language/core/ast.js";
+import { message, words } from "@language/core/message.js";
+import { isValue } from "@language/core/naming.js";
+import { covers, links, type Span } from "@language/editor/definition.js";
+import { placement } from "@language/evaluation/evaluate.js";
+import { treePaths } from "@language/evaluation/status.js";
 import {
   renameActorInData,
   renameChildInData,
@@ -20,7 +21,7 @@ import {
   renameProfileInData,
   renameStateInData,
   renameTypeInData,
-} from "../evidence/rename.js";
+} from "@language/evidence/rename.js";
 import {
   checkStored,
   folderOf,
@@ -28,12 +29,11 @@ import {
   type StoredProblem,
   shownOf,
   withoutContext,
-} from "../evidence/store.js";
-import type { Drawn } from "../evidence/validate.js";
-import { among, article } from "../model/names.js";
-import { parse } from "../syntax/parse.js";
-import { sourceLines } from "../syntax/scan.js";
-import { covers, links, type Span } from "./definition.js";
+} from "@language/evidence/store.js";
+import type { Drawn } from "@language/evidence/validate.js";
+import { among, article } from "@language/model/names.js";
+import { parse } from "@language/syntax/parse.js";
+import { sourceLines } from "@language/syntax/scan.js";
 
 export type { StoredFile, StoredProblem };
 

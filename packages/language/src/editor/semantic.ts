@@ -1,7 +1,7 @@
-import type { Located, ParseResult } from "../core/ast.js";
-import { parse } from "../syntax/parse.js";
-import { links } from "./definition.js";
-import { kindsOf } from "./rename-at.js";
+import type { Located, ParseResult } from "@language/core/ast.js";
+import { links } from "@language/editor/definition.js";
+import { kindsOf } from "@language/editor/rename-at.js";
+import { parse } from "@language/syntax/parse.js";
 
 // A name in a source, and what it is: its kind, as a declaration's, and
 // whether it is where that is declared.

@@ -1,4 +1,4 @@
-import type { Condition, Located } from "../core/ast.js";
+import type { Condition, Located } from "@language/core/ast.js";
 
 // Each comparison in a condition, in the order written.
 export function comparisons(condition: Condition): Extract<Condition, { kind: "compare" }>[] {

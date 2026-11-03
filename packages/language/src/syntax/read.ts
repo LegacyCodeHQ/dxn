@@ -24,11 +24,11 @@ import type {
   Trigger,
   Type,
   Union,
-} from "../core/ast.js";
-import { message, words } from "../core/message.js";
-import { isValue, reserved } from "../core/naming.js";
-import { conditionText } from "../model/condition.js";
-import { describe, located, scan, type Token, type TokenKind } from "./scan.js";
+} from "@language/core/ast.js";
+import { message, words } from "@language/core/message.js";
+import { isValue, reserved } from "@language/core/naming.js";
+import { conditionText } from "@language/model/condition.js";
+import { describe, located, scan, type Token, type TokenKind } from "@language/syntax/scan.js";
 
 class ParseFailure extends Error {}
 

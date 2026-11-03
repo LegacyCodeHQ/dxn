@@ -1,6 +1,6 @@
+import { rangeAt } from "@language-server/protocol/range.js";
 import { type ParseResult, parse } from "@legacycodehq/dxn-language";
 import { type Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node";
-import { rangeAt } from "./range.js";
 
 // A file's problems, as an editor shows them: lines and characters from zero,
 // each over the word it is at, or empty where no word is.

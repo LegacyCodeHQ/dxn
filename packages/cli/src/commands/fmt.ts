@@ -1,9 +1,9 @@
 import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { type Command, command } from "@cli/commands/support/context.js";
+import { misused, options, Reporter } from "@cli/commands/support/report.js";
+import { usage } from "@cli/commands/support/usage.js";
 import { format, parse } from "@legacycodehq/dxn-language";
-import { type Command, command } from "./support/context.js";
-import { misused, options, Reporter } from "./support/report.js";
-import { usage } from "./support/usage.js";
 
 // Writes each file the one way a .dxn file is written, and names the files it
 // changed; with --check, writes nothing, names the files it would change, and

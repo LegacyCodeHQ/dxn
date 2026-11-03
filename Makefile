@@ -106,6 +106,9 @@ zed:
 # Code extension, with the language server bundled into it.
 build:
 	npx tsc --build tsconfig.build.json
+	@for config in packages/*/tsconfig.build.json; do \
+	  npx tsc-alias -p "$$config" --no-resolve-package-subpaths || exit 1; \
+	done
 	mkdir -p dist
 	cp scripts/root-dist/main.js dist/main.js
 	npm run build --silent --workspace packages/vscode

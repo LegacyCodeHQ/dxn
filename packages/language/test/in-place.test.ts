@@ -1,6 +1,6 @@
+import { inPlace } from "@language/evaluation/evaluate.js";
+import { parse } from "@language/syntax/parse.js";
 import { describe, expect, it } from "vitest";
-import { inPlace } from "../src/evaluation/evaluate.js";
-import { parse } from "../src/syntax/parse.js";
 
 const toolbar = parse(`dimension Breakpoint = base | sm | lg | xl
 dimension Pointer = mouse | touch

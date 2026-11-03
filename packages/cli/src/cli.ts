@@ -1,9 +1,9 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { commandList, language } from "./commands/index.js";
-import { dispatch } from "./commands/support/context.js";
-import type { Io } from "./commands/support/io.js";
-import { version } from "./version.js";
+import { commandList, language } from "@cli/commands/index.js";
+import { dispatch } from "@cli/commands/support/context.js";
+import type { Io } from "@cli/commands/support/io.js";
+import { version } from "@cli/version.js";
 
 const usage = `Usage: dxn <command> [options]
 

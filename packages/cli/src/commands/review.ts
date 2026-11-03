@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
+import { type Command, command } from "@cli/commands/support/context.js";
+import { misused, options, Reporter, read } from "@cli/commands/support/report.js";
+import { loadStored } from "@cli/commands/support/stored.js";
+import { usage } from "@cli/commands/support/usage.js";
 import {
   folderOf,
   freshness,
@@ -13,10 +17,6 @@ import {
   treePlaces,
   words,
 } from "@legacycodehq/dxn-language";
-import { type Command, command } from "./support/context.js";
-import { misused, options, Reporter, read } from "./support/report.js";
-import { loadStored } from "./support/stored.js";
-import { usage } from "./support/usage.js";
 
 // Where a record's review pages for a file go, in the cache: under the
 // repository, by its name and where it is, then the file's folder in it and

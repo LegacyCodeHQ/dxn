@@ -1,8 +1,8 @@
-import type { ParseResult, SyntaxResult } from "../core/ast.js";
-import { check } from "../evaluation/check.js";
-import { expectations } from "../evaluation/expect.js";
-import { conditionsInMatrix } from "../evaluation/matrix.js";
-import { scope } from "../model/scope.js";
+import type { ParseResult, SyntaxResult } from "@language/core/ast.js";
+import { check } from "@language/evaluation/check.js";
+import { expectations } from "@language/evaluation/expect.js";
+import { conditionsInMatrix } from "@language/evaluation/matrix.js";
+import { scope } from "@language/model/scope.js";
 
 // Analyzes a fresh syntax read in place, once. Scope resolution changes names
 // and adds nested declarations to the file, so an analyzed result is not input

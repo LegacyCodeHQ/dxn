@@ -10,12 +10,12 @@ import type {
   State,
   Trigger,
   Type,
-} from "../core/ast.js";
-import { childAt, fixes } from "../core/ast.js";
-import { message, words } from "../core/message.js";
-import { comparisons, conditionText, coverage, subjects } from "../model/condition.js";
-import { among, enumOf, type Names } from "../model/names.js";
-import { checkChosen, checkWhen, type Report } from "./check-values.js";
+} from "@language/core/ast.js";
+import { childAt, fixes } from "@language/core/ast.js";
+import { message, words } from "@language/core/message.js";
+import { checkChosen, checkWhen, type Report } from "@language/evaluation/check-values.js";
+import { comparisons, conditionText, coverage, subjects } from "@language/model/condition.js";
+import { among, enumOf, type Names } from "@language/model/names.js";
 
 // What checking a file's types needs at hand: the file, its names, and where
 // to report a problem.

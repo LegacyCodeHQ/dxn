@@ -1,5 +1,5 @@
+import { type DocumentSymbol, symbols } from "@language/editor/symbols.js";
 import { describe, expect, it } from "vitest";
-import { type DocumentSymbol, symbols } from "../src/editor/symbols.js";
 
 const source = `dimension Pointer = mouse | touch
 # Whether the pointer is over it.

@@ -1,5 +1,5 @@
+import { serverOptions } from "@vscode/server.js";
 import { describe, expect, it } from "vitest";
-import { serverOptions } from "../src/server.js";
 
 describe("the server the extension starts", () => {
   it("is the one it bundles, run with VS Code's Node", () => {

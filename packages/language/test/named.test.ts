@@ -1,5 +1,5 @@
+import { declarationNamed } from "@language/editor/rename-at.js";
 import { describe, expect, it } from "vitest";
-import { declarationNamed } from "../src/editor/rename-at.js";
 
 const source = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered

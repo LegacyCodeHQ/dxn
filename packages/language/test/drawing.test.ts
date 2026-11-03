@@ -1,10 +1,10 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Fingerprints } from "@language/evidence/fingerprint.js";
+import { validate } from "@language/evidence/validate.js";
+import { parse } from "@language/syntax/parse.js";
 import { afterAll, describe, expect, it } from "vitest";
-import { Fingerprints } from "../src/evidence/fingerprint.js";
-import { validate } from "../src/evidence/validate.js";
-import { parse } from "../src/syntax/parse.js";
 
 // A design with a back button, a bar that holds one and hides it on a root
 // screen, a row, and a screen frame of each: one with rows, one with a

@@ -1,8 +1,8 @@
 import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import type { Context } from "@cli/commands/support/context.js";
+import { usage } from "@cli/commands/support/usage.js";
 import { type Diagnostic, type ParseResult, parse } from "@legacycodehq/dxn-language";
-import type { Context } from "./context.js";
-import { usage } from "./usage.js";
 
 // A problem in a file or in its stored data, as text or as JSON.
 export interface Problem {

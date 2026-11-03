@@ -1,5 +1,5 @@
-import type { ParseResult } from "./ast.js";
-import { message } from "./message.js";
+import type { ParseResult } from "@language/core/ast.js";
+import { message } from "@language/core/message.js";
 
 // The words dxn and an editor say the model's facts in, written once: an
 // editor and the dxn command place them, in a hint, a hover or a table, but

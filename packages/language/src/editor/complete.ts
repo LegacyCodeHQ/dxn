@@ -1,9 +1,9 @@
-import { childAt, type Declaration, type ParseResult, type Type } from "../core/ast.js";
-import { type Placement, placement } from "../evaluation/evaluate.js";
-import { treePaths } from "../evaluation/status.js";
-import { penNode, scalars } from "../model/scalars.js";
-import { parse } from "../syntax/parse.js";
-import { sourceLines } from "../syntax/scan.js";
+import { childAt, type Declaration, type ParseResult, type Type } from "@language/core/ast.js";
+import { type Placement, placement } from "@language/evaluation/evaluate.js";
+import { treePaths } from "@language/evaluation/status.js";
+import { penNode, scalars } from "@language/model/scalars.js";
+import { parse } from "@language/syntax/parse.js";
+import { sourceLines } from "@language/syntax/scan.js";
 
 export type CompletionKind =
   | "keyword"

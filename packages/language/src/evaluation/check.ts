@@ -1,11 +1,22 @@
-import type { Field, Located, RecordDeclaration, ResolvedResult, Type } from "../core/ast.js";
-import { message, words } from "../core/message.js";
-import { among, article, Names, near } from "../model/names.js";
-import { environmentOf } from "../model/profiles.js";
-import { penNode, scalar } from "../model/scalars.js";
-import { around } from "../model/scope.js";
-import { checkTypes } from "./check-types.js";
-import { checkChosen, checkWhen, type Report, reportTo } from "./check-values.js";
+import type {
+  Field,
+  Located,
+  RecordDeclaration,
+  ResolvedResult,
+  Type,
+} from "@language/core/ast.js";
+import { message, words } from "@language/core/message.js";
+import { checkTypes } from "@language/evaluation/check-types.js";
+import {
+  checkChosen,
+  checkWhen,
+  type Report,
+  reportTo,
+} from "@language/evaluation/check-values.js";
+import { among, article, Names, near } from "@language/model/names.js";
+import { environmentOf } from "@language/model/profiles.js";
+import { penNode, scalar } from "@language/model/scalars.js";
+import { around } from "@language/model/scope.js";
 
 // Checks across declarations, scope by scope, adding to the file's
 // diagnostics: the file holds each name once, an enum or a dimension each

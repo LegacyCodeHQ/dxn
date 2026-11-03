@@ -8,11 +8,11 @@ import {
   type Located,
   type ParseResult,
   type Type,
-} from "../core/ast.js";
-import { type Placement, placement } from "../evaluation/evaluate.js";
-import { treePaths } from "../evaluation/status.js";
-import { parse } from "../syntax/parse.js";
-import { sourceLines } from "../syntax/scan.js";
+} from "@language/core/ast.js";
+import { type Placement, placement } from "@language/evaluation/evaluate.js";
+import { treePaths } from "@language/evaluation/status.js";
+import { parse } from "@language/syntax/parse.js";
+import { sourceLines } from "@language/syntax/scan.js";
 
 // A name as it is written in a file, and what it means: a declaration's own
 // name, one of the type a path into its children leads to, or a value of an

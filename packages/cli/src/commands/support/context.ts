@@ -1,5 +1,5 @@
+import type { Io } from "@cli/commands/support/io.js";
 import { message, words } from "@legacycodehq/dxn-language";
-import type { Io } from "./io.js";
 
 // What every command receives besides its own arguments.
 export interface Context {
