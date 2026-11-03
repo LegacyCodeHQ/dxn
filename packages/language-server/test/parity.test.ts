@@ -8,19 +8,23 @@ import { diagnose } from "@language-server/protocol/diagnostics.js";
 import { evidence, hintsBeside } from "@language-server/protocol/evidence.js";
 import { serve } from "@language-server/server.js";
 import { parse } from "@legacycodehq/dxn-language";
+import { dxn as invocation } from "@vscode/run.js";
 import { afterAll, describe, expect, it } from "vitest";
 import {
+  CodeLensRequest,
   createConnection,
   createMessageConnection,
   DidOpenTextDocumentNotification,
   DocumentFormattingRequest,
   InitializeRequest,
   type MessageConnection,
+  RenameFile,
   RenameRequest,
   ShowMessageNotification,
   StreamMessageReader,
   StreamMessageWriter,
-  type TextEdit,
+  TextDocumentEdit,
+  TextEdit,
 } from "vscode-languageserver/node";
 
 // dxn and an editor must agree: each scenario, a file and the records stored
@@ -50,6 +54,13 @@ actor Designer records Evidence
 const entry = (hover: string, note = "Seen.") =>
   `{ "context": { "type": "Link", "dimensions": {}, "states": { "hover": "${hover}", "focus": "blurred" } }, "actor": "Designer", "note": "${note}" }`;
 const records = (...entries: string[]) => `[\n  ${entries.join(",\n  ")}\n]\n`;
+
+const mixedRecords: Scenario = {
+  title: "a record no actor records alongside invalid recorded evidence",
+  dxn: `${model}record Note {\n  text: NonEmptyString\n}\n`,
+  stored: { "note/a.json": "[]", "evidence/a.json": records(entry("bogus")) },
+  rename: { line: 1, column: 15, to: "still" },
+};
 
 const scenarios: Scenario[] = [
   {
@@ -112,6 +123,45 @@ const scenarios: Scenario[] = [
         `{ "context": { "type": "Button", "dimensions": {}, "states": {} }, "actor": "Designer", "note": "Older." }`,
       ),
     },
+  },
+  {
+    title: "a rename of a type used by stored records",
+    dxn: model,
+    stored: { "evidence/a.json": records(entry("rest")) },
+    rename: { line: 3, column: 6, to: "Button" },
+  },
+  {
+    title: "a rename of a state used by stored records",
+    dxn: model,
+    stored: { "evidence/a.json": records(entry("rest")) },
+    rename: { line: 4, column: 9, to: "pointing" },
+  },
+  {
+    title: "a rename of an actor used by stored records",
+    dxn: model,
+    stored: { "evidence/a.json": records(entry("rest")) },
+    rename: { line: 9, column: 7, to: "Reviewer" },
+  },
+  {
+    title: "a record rename that moves its stored folder",
+    dxn: model,
+    stored: { "evidence/a.json": records(entry("rest")) },
+    rename: { line: 6, column: 8, to: "Proof" },
+  },
+  {
+    title: "a record rename blocked by an existing folder",
+    dxn: model,
+    stored: { "evidence/a.json": records(entry("rest")), "proof/keep.txt": "keep" },
+    rename: { line: 6, column: 8, to: "Proof" },
+  },
+  {
+    title: "a rename that collides with another value",
+    dxn: model,
+    rename: { line: 1, column: 15, to: "hovered" },
+  },
+  {
+    title: "a failing expectation",
+    dxn: `${model}expect "Impossible" {\n  in Link\n  then hover = rest\n}\n`,
   },
   {
     title: "a file not written the one way",
@@ -213,7 +263,11 @@ async function editor(file: string): Promise<MessageConnection> {
   await connection.sendRequest(InitializeRequest.type, {
     processId: null,
     rootUri: null,
-    capabilities: {},
+    capabilities: {
+      workspace: {
+        workspaceEdit: { documentChanges: true, resourceOperations: ["rename"] },
+      },
+    },
   });
   await connection.sendNotification(DidOpenTextDocumentNotification.type, {
     textDocument: {
@@ -292,7 +346,7 @@ function statusCounts(root: string, file: string): Set<string> {
 const repository = join(fileURLToPath(import.meta.url), "../../../..");
 
 describe("dxn and an editor", () => {
-  it.each(scenarios.map((scenario) => [scenario.title, scenario] as const))(
+  it.each([...scenarios, mixedRecords].map((scenario) => [scenario.title, scenario] as const))(
     "find the same problems: %s",
     (_, scenario) => {
       const { root, file } = project(scenario);
@@ -300,8 +354,33 @@ describe("dxn and an editor", () => {
     },
   );
 
+  it.each([
+    ["validate", []],
+    ["status", []],
+    ["rename", ["Hover", "Pointing"]],
+  ] as const)("reports other errors before refusing %s without writing", (command, args) => {
+    const scenario = mixedRecords;
+    const { root, file } = project(scenario);
+    const result = dxn(root, command, "spec.dxn", ...args, "--json");
+    const output = JSON.parse(result.stdout);
+    expect({
+      code: result.code,
+      errors: output.problems?.map(({ code }: { code: string }) => code),
+      refusal: output.error,
+      source: readFileSync(file, "utf8"),
+      stored: readFileSync(join(root, "evidence/a.json"), "utf8"),
+    }).toEqual({
+      code: 1,
+      errors: ["unknown-value"],
+      refusal:
+        "`Note` is stored in note/, but no actor records it; declare `actor <name> records Note`",
+      source: scenario.dxn,
+      stored: scenario.stored?.["evidence/a.json"],
+    });
+  });
+
   it.each(
-    scenarios
+    [...scenarios, mixedRecords]
       .filter(({ rename }) => rename !== undefined)
       .map((scenario) => [scenario.title, scenario] as const),
   )("refuse and make the same renames: %s", async (_, scenario) => {
@@ -309,9 +388,12 @@ describe("dxn and an editor", () => {
     const { line, column, to } = scenario.rename as NonNullable<Scenario["rename"]>;
     // dxn, without writing: refused, or every file it would write.
     const cli = dxn(root, "rename", `spec.dxn:${line}:${column}`, to, "--dry-run", "--json");
-    const written =
+    const plan =
       cli.code === 0
-        ? (JSON.parse(cli.stdout) as { written: Record<string, string> }).written
+        ? (JSON.parse(cli.stdout) as {
+            written: Record<string, string>;
+            moved?: { from: string; to: string };
+          })
         : undefined;
     // An editor: refused, as a message, or the edits, made to each file.
     const connection = await editor(file);
@@ -324,17 +406,60 @@ describe("dxn and an editor", () => {
         position: { line: line - 1, character: column - 1 },
         newName: to,
       });
-      if (written === undefined) {
+      if (plan === undefined) {
         expect([edit, typeof (await refusal)]).toEqual([null, "string"]);
         return;
       }
+      const changes = edit?.documentChanges ?? [];
       const made = Object.fromEntries(
-        Object.entries(edit?.changes ?? {}).map(([uri, edits]) => {
+        [
+          ...Object.entries(edit?.changes ?? {}),
+          ...changes
+            .filter(TextDocumentEdit.is)
+            .map(({ textDocument, edits }) => [textDocument.uri, edits] as const),
+        ].map(([uri, edits]) => {
+          if (!edits.every(TextEdit.is)) throw new Error("rename returned a snippet edit");
           const path = fileURLToPath(uri);
           return [relative(root, path), edited(readFileSync(path, "utf8"), edits)];
         }),
       );
-      expect(made).toEqual(written);
+      const moved = changes.filter(RenameFile.is).map(({ oldUri, newUri }) => ({
+        from: relative(root, fileURLToPath(oldUri)),
+        to: relative(root, fileURLToPath(newUri)),
+      }));
+      expect({ written: made, moved }).toEqual({
+        written: plan.written,
+        moved: plan.moved === undefined ? [] : [plan.moved],
+      });
+    } finally {
+      connection.dispose();
+    }
+  });
+
+  it.each([
+    [1, ["states", "Menu"], 0],
+    [3, ["states", "Menu.Toggle"], 0],
+    [8, ["check", "--expect", "Can open"], 0],
+    [12, ["check", "--expect", "Always open"], 1],
+  ] as const)("runs the same command from the code lens on line %s", async (line, args, code) => {
+    const { root, file } = project({
+      title: "nested types and independently selected expectations",
+      dxn:
+        'enum State = closed | open\ntype Menu {\n  state menu: State\n  type Toggle {\n    state expanded: State\n  }\n  has toggle: Toggle\n}\nexpect "Can open" {\n  in Menu\n  some menu = open\n}\n' +
+        (args[0] === "check" ? 'expect "Always open" {\n  in Menu\n  then menu = open\n}\n' : ""),
+    });
+    const connection = await editor(file);
+    try {
+      const lenses = await connection.sendRequest(CodeLensRequest.type, {
+        textDocument: { uri: pathToFileURL(file).href },
+      });
+      const lens = lenses?.find(({ range }) => range.start.line === line)?.command;
+      const [uri, offered] = lens?.arguments ?? [];
+      expect([lens?.command, uri, offered]).toEqual(["dxn.run", pathToFileURL(file).href, args]);
+      const [, ...argv] = invocation(root, relative(root, fileURLToPath(uri)), offered);
+      const direct = dxn(root, args[0], "spec.dxn", ...args.slice(1), "--json");
+      expect(dxn(root, ...argv, "--json")).toEqual(direct);
+      expect(direct.code, direct.stdout).toBe(code);
     } finally {
       connection.dispose();
     }

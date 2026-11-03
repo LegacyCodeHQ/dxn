@@ -42,8 +42,6 @@ export function loadStoredToCount(
   const stored = storedData(parsed, file, cwd);
   const drawn = drawings(repositoryOf(resolve(cwd, file)));
   const { withoutContext, problems } = checkStored(parsed, stored, drawn);
-  if (withoutContext.length > 0)
-    return report.refuse(...withoutContext.map(({ message }) => message));
   const shown = new Map(stored.map((item) => [item.path, item.shown]));
   for (const { file: at, line, column, code, path, message, severity } of problems) {
     report.problem({
@@ -56,6 +54,8 @@ export function loadStoredToCount(
       message,
     });
   }
+  if (withoutContext.length > 0)
+    return report.refuse(...withoutContext.map(({ message }) => message));
   return { stored, problems };
 }
 
