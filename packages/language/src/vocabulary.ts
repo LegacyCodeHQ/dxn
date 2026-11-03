@@ -14,6 +14,11 @@ export const isDrawn = (file: ParseResult, record: string): boolean =>
     .find(({ name }) => name === record)
     ?.fields.some(({ type }) => type.name === "PenNode") === true;
 
+// A count of stored records, each one item of a record's stored files: a
+// record is what a file declares, never one of them.
+export const storedRecords = (count: number): string =>
+  `${count} ${count === 1 ? "stored record" : "stored records"}`;
+
 // A stored record made before its element gained a state or a dimension: the
 // element, what it says, and what was added since.
 export interface OutdatedAt {
@@ -108,14 +113,14 @@ export function outdatedWhy(outdated: OutdatedAt[]): string {
     outdated.map(({ path }) => path),
     outdated.length,
   );
-  return `${one ? "1 record is" : `${outdated.length} records are`} outdated: ${fact}, so ${
+  return `${storedRecords(outdated.length)} ${one ? "is" : "are"} outdated: ${fact}, so ${
     one ? "it does" : "they do"
   } not say which ${together(names, " or ")} ${one ? "it shows" : "they show"}. ${outdatedAction(outdated)}`;
 }
 
 // Outdated records, for an agent: how many, and what to do about them.
 export const outdatedSummary = (outdated: OutdatedAt[]): string =>
-  `${outdated.length === 1 ? "1 record" : `${outdated.length} records`}. ${outdatedAction(outdated)}`;
+  `${storedRecords(outdated.length)}. ${outdatedAction(outdated)}`;
 
 // One outdated record, for an agent: its element, what it says, and what was
 // added to the element after it was recorded.

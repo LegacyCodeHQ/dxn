@@ -296,7 +296,7 @@ actor Designer records Evidence
       "spec/button.dxn: Evidence 0 of 4 combinations recorded · 1 outdated: hover added",
     ]);
     expect(status.stdout).toContain(
-      "\nOutdated: 1 record. Add its `hover` value to count it again.\n  Button: style = filled; `hover` was added after it was recorded\n",
+      "\nOutdated: 1 stored record. Add its `hover` value to count it again.\n  Button: style = filled; `hover` was added after it was recorded\n",
     );
     expect(run("review", "spec/button.dxn").code).toBe(0);
     expect(run("review", "spec/button.dxn", "--stale").code).toBe(0);

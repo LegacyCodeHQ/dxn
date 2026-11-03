@@ -103,7 +103,7 @@ describe("dxn attach", () => {
     );
     expect([result.code, result.stdout, result.stderr]).toEqual([
       0,
-      "Attached 2 records to spec/evidence/toolbar.json\n",
+      "Attached 2 stored records to spec/evidence/toolbar.json\n",
       "",
     ]);
     const source = {
@@ -165,7 +165,7 @@ describe("dxn attach", () => {
     writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
     const result = run(...attach(...closed));
     expect([result.stdout, stored().map(({ source }) => source.fingerprint)]).toEqual([
-      "Attached 1 record to spec/evidence/toolbar.json, replacing 1\n",
+      "Attached 1 stored record to spec/evidence/toolbar.json, replacing 1\n",
       [hash("redrawn")],
     ]);
   });
@@ -199,7 +199,7 @@ describe("dxn attach", () => {
     writeFileSync(join(root, "design", "toolbar.png"), "redrawn");
     const result = run(...attach(...closed));
     expect([result.stdout, stored().map(({ source }) => source.fingerprint)]).toEqual([
-      "Attached 1 record to spec/evidence/toolbar.json, replacing 1\n",
+      "Attached 1 stored record to spec/evidence/toolbar.json, replacing 1\n",
       [hash("redrawn")],
     ]);
   });
@@ -219,7 +219,7 @@ describe("dxn attach", () => {
       moved.map(({ source }) => source.fingerprint),
       existsSync(join(evidence, "toolbar.json")),
     ]).toEqual([
-      "Attached 1 record to spec/evidence/menus.json, replacing 1\n",
+      "Attached 1 stored record to spec/evidence/menus.json, replacing 1\n",
       [hash("redrawn")],
       false,
     ]);
@@ -365,7 +365,7 @@ describe("dxn attach", () => {
     const result = capture(["--dry-run", "attach", ...attach(...closed)], root);
     expect([result.code, result.stdout, existsSync(join(root, "spec", "evidence"))]).toEqual([
       0,
-      "Would attach 1 record to spec/evidence/toolbar.json\n",
+      "Would attach 1 stored record to spec/evidence/toolbar.json\n",
       false,
     ]);
   });

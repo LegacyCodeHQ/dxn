@@ -31,7 +31,7 @@ dxn attach spec/button.dxn Button --actor Designer \
 ```
 
 ```
-Attached 2 records to spec/evidence/button.json
+Attached 2 stored records to spec/evidence/button.json
 ```
 
 ```bash
@@ -41,7 +41,7 @@ dxn attach spec/button.dxn Button --actor Designer \
 ```
 
 ```
-Attached 1 record to spec/evidence/button.json
+Attached 1 stored record to spec/evidence/button.json
 ```
 
 One node shows the whole disabled case, all three of its combinations:
@@ -53,11 +53,11 @@ dxn attach spec/button.dxn Button --actor Designer \
 ```
 
 ```
-Attached 3 records to spec/evidence/button.json
+Attached 3 stored records to spec/evidence/button.json
 ```
 
 A combination that cannot happen is refused, so evidence is only ever about
-the model's real combinations. Each stored entry looks like this:
+the model's real combinations. Each stored record looks like this:
 
 ```json
 {
@@ -85,7 +85,7 @@ dxn validate spec/button.dxn
 ```
 
 ```
-spec/button.dxn: Evidence, 6 records in 1 file in evidence/
+spec/button.dxn: Evidence, 6 stored records in 1 file in evidence/
 ```
 
 `dxn validate` checks every stored record against the model: its shape, its

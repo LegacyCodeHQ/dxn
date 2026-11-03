@@ -967,11 +967,11 @@ describe("the language server", () => {
         [
           [
             { line: 1, character: 13 },
-            "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
+            "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
           ],
         ],
         [
-          "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
+          "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
           "",
           "Missing:",
           "- Button: style = secondary",
@@ -1003,7 +1003,7 @@ describe("the language server", () => {
         range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
       });
       expect(again?.map(({ label }) => label)).toEqual([
-        "◌ PenEvidence 1 of 2 combinations recorded · 1 of 2 records still says style = plain, which Style no longer has (primary, secondary)",
+        "◌ PenEvidence 1 of 2 combinations recorded · 1 of 2 stored records still says style = plain, which Style no longer has (primary, secondary)",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1067,7 +1067,7 @@ describe("the language server", () => {
         [
           "◌ PenEvidence 1 of 4 combinations recorded · 2 outdated: hover added",
           "",
-          "2 records are outdated: `hover` was added to `Button` after they were recorded, so they do not say which `hover` they show. Add each one's `hover` value to count it again.",
+          "2 stored records are outdated: `hover` was added to `Button` after they were recorded, so they do not say which `hover` they show. Add each one's `hover` value to count it again.",
           "",
           "Outdated:",
           "- style = primary",
@@ -1079,7 +1079,7 @@ describe("the language server", () => {
           "- Button: style = secondary, hover = hovered",
         ].join("\n"),
         [
-          "◌ PenEvidence 1 of 4 combinations recorded · 1 of 2 records still says press, a state Button no longer has",
+          "◌ PenEvidence 1 of 4 combinations recorded · 1 of 2 stored records still says press, a state Button no longer has",
         ],
       ]);
     } finally {

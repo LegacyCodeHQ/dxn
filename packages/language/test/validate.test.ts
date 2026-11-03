@@ -50,9 +50,11 @@ describe("validating data against a record", () => {
       problems('[{ "source": "design.pen" }]'),
       problems('[{ "source": { "tool": 1, "verdict": "passed" } }]'),
     ]).toEqual([
-      ["1:1: wrong-kind: $: expected a list of `Evidence` records, found an object"],
-      ["1:2: wrong-kind: $[0]: expected an `Evidence` record (an object), found a string"],
-      ["1:14: wrong-kind: $[0].source: expected a `Source` record (an object), found a string"],
+      ["1:1: wrong-kind: $: expected a list of stored `Evidence` records, found an object"],
+      ["1:2: wrong-kind: $[0]: expected a stored `Evidence` record (an object), found a string"],
+      [
+        "1:14: wrong-kind: $[0].source: expected a stored `Source` record (an object), found a string",
+      ],
       ["1:24: wrong-kind: $[0].source.tool: expected a value of `Tool` (a string), found a number"],
     ]);
   });

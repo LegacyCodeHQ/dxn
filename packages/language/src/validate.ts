@@ -539,7 +539,7 @@ export function validate(
   const checkRecord = (node: JsonNode, name: string, path: string, stored = false) => {
     const record = records.get(name) as RecordDeclaration;
     if (node.kind !== "object") {
-      wrong(node, path, message`${words(article(name))} ${name} record (an object)`);
+      wrong(node, path, message`${words(`a stored`)} ${name} record (an object)`);
       return;
     }
     const withContext = stored && record.context;
@@ -704,7 +704,7 @@ export function validate(
 
   const root = parsed.root;
   if (root.kind !== "array") {
-    wrong(root, "$", message`a list of ${recordName} records`);
+    wrong(root, "$", message`a list of stored ${recordName} records`);
   } else {
     root.elements.forEach((element, index) => {
       checkRecord(element, recordName, `$[${index}]`, true);

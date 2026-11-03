@@ -74,9 +74,10 @@ describe("dxn cli", () => {
                                            (a|b lists several) that exists in place:
                                            --data gives its fields as JSON, and each
                                            PenNode's fingerprint is taken now, of its
-                                           node or else its frame; an entry for the same
-                                           combination, actor and data is replaced; with
-                                           --dry-run, say what it would write
+                                           node or else its frame; a stored record for
+                                           the same combination, actor and data is
+                                           replaced; with --dry-run, say what it would
+                                           write
         status <file> [--missing]          Count, for each record an actor records, the
                                            combinations of every element in the file's
                                            trees, in place, and those a stored record is

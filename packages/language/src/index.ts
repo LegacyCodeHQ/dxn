@@ -102,5 +102,6 @@ export {
   outdatedItem,
   outdatedSummary,
   outdatedWhy,
+  storedRecords,
   type Usage,
 } from "./vocabulary.js";

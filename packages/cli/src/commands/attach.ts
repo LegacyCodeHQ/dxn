@@ -15,11 +15,12 @@ import {
   profilesOf,
   type RecordDeclaration,
   repositoryOf,
+  storedRecords,
   validate,
   words,
 } from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
-import { count, misused, options, Reporter, read } from "./report.js";
+import { misused, options, Reporter, read } from "./report.js";
 import { loadStored } from "./stored.js";
 import { usage } from "./usage.js";
 
@@ -285,7 +286,7 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
   }
   if (invalid) return report.fail();
   const shown = writes.map((write) => write.shown).join(", ");
-  const summary = `${count(contexts.length, "record")} to ${shown}${replaced > 0 ? `, replacing ${replaced}` : ""}`;
+  const summary = `${storedRecords(contexts.length)} to ${shown}${replaced > 0 ? `, replacing ${replaced}` : ""}`;
   if (dryRun) {
     return report.succeed(
       {

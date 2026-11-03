@@ -562,8 +562,8 @@ actor EvidenceRecorder records Evidence
       0,
       "",
       [
-        "evidence.dxn: Source, 2 records in 2 files in source/",
-        "evidence.dxn: Evidence, 1 record in 1 file in evidence/",
+        "evidence.dxn: Source, 2 stored records in 2 files in source/",
+        "evidence.dxn: Evidence, 1 stored record in 1 file in evidence/",
         "",
       ].join("\n"),
     ]);
@@ -594,7 +594,7 @@ actor EvidenceRecorder records Evidence
       [
         "source/a.json:1:75: error: unknown-value: $[0].tool: `figma` is not a value of `Tool` (`pen-dev`, `code`)",
         'evidence/b.json:1:73: error: invalid-value: $[0].at: "yesterday" is not a `Timestamp`: an ISO 8601 date and time with a time zone, e.g. 2026-10-31T08:50:05Z',
-        "evidence/c.json:1:1: error: wrong-kind: $: expected a list of `Evidence` records, found an object",
+        "evidence/c.json:1:1: error: wrong-kind: $: expected a list of stored `Evidence` records, found an object",
         "",
       ],
       "",

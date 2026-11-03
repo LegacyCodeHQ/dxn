@@ -1304,13 +1304,13 @@ Every field must be given, each of its type, and no others, and the actor
 must be one who records the record. Two stored records that are the same in
 everything but their PenNodes' fingerprints, which only say what a drawing
 was when it was recorded, are duplicates, in one file or across the
-record's files; `dxn attach` replaces an entry rather than making one. Each
+record's files; `dxn attach` replaces a stored record rather than making one. Each
 problem has its file, line and column, and its JSON path, so a person or an
 agent can go straight to it. When everything is valid, the command says what
 it checked, a line for each stored record:
 
 ```
-evidence.dxn: Evidence, 2 records in 1 file in evidence/
+evidence.dxn: Evidence, 2 stored records in 1 file in evidence/
 ```
 
 ### Attaching: recording evidence
@@ -1318,7 +1318,7 @@ evidence.dxn: Evidence, 2 records in 1 file in evidence/
 An actor records evidence with `dxn attach`: the element by its path, the
 actor with `--actor`, the record's fields as one JSON object with `--data`,
 and the context as `key=value` pairs, the same keys a context has. Every key
-is given, and `a|b` lists several values: it records one entry for each
+is given, and `a|b` lists several values: it records one stored record for each
 combination listed that exists in place.
 
 ```bash
@@ -1329,7 +1329,7 @@ dxn attach toolbar.dxn Toolbar.menu.toggle --actor DesignAgent \
 ```
 
 ```
-Attached 2 records to evidence/toolbar.json
+Attached 2 stored records to evidence/toolbar.json
 ```
 
 Of the four combinations listed, two exist: the toggle is expanded exactly
@@ -1345,9 +1345,9 @@ it is the whole file's.
 dxn: node "OcEJ9" is not in frame l5Z3Z of design/website.pen
 ```
 
-Recording the same combination and fields again replaces the entry, with the
+Recording the same combination and fields again replaces the stored record, with the
 fingerprint the node has now, in whichever of the record's files it
-is stored. The file is relative to the repository, and a new entry goes in
+is stored. The file is relative to the repository, and a new stored record goes in
 the record's folder, in a file named after the type the path starts at.
 
 ### Status: what has evidence, and what is missing
@@ -1361,7 +1361,7 @@ state, and give the element the same states, are one combination of it.
 
 A type declared at the top of the file is also a **component**: it is counted
 on its own, as a tree of its own, though another type contains it, so a design
-system can draw each of its components once, in all its combinations. A record about
+system can draw each of its components once, in all its combinations. A stored record about
 an element, on its own or in any of its places, also covers it everywhere
 else it is, in the same combination: the same states, dimensions and profile. A
 type declared inside another is a part of it, counted only in place; and a
@@ -1395,15 +1395,15 @@ the page has no dimensions, so it is one combination on every profile, and
 the menu is the same on a tablet with or without its keyboard. Evidence on
 any of a combination's profiles covers it.
 
-Each entry is also checked against its drawings: each PenNode it has. A
+Each stored record is also checked against its drawings: each PenNode it has. A
 PenNode is **recorded** while its fingerprint, of its node or, without one,
 its frame, is the one recorded, **stale** once that has changed, and
 **gone** once the file, the frame or the node is, or the node is no longer
-in its frame. An entry is as its least fresh PenNode is, and a combination
-as its best entry is, or **missing** without one. A record made before its element gained a state or a dimension does not say which value of it the drawing shows, so it matches no combination: it is counted apart as **outdated**, and `dxn validate` warns of it rather than fails, until it is given the value. A record with no PenNode
+in its frame. A stored record is as its least fresh PenNode is, and a combination
+as its best stored record is, or **missing** without one. A stored record made before its element gained a state or a dimension does not say which value of it the drawing shows, so it matches no combination: it is counted apart as **outdated**, and `dxn validate` warns of it rather than fails, until it is given the value. A record with no PenNode
 is counted as recorded, and the first line says that staleness is not
 checked, so it never passes silently. Attaching again records the
-fingerprint now, and the entry is recorded again.
+fingerprint now, and the stored record is recorded again.
 
 With `--missing`, it lists each combination that is not recorded, under
 Missing, Stale and Gone, in the words a context would use:
@@ -1783,11 +1783,12 @@ The words dxn and an editor say the model's facts in, each for one thing.
 Each is said the same by both: the dxn command for agents, an editor for
 people.
 
-| Word        | Means                                                                                                                                                                                                                        |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| combination | one value of each state and each dimension of an element: what evidence is counted against. `Tab`, with two selections and three interactions, has six.                                                                      |
-| recorded    | a combination's status when a stored record matches it, and its drawings, where it has any, are as they were recorded; else it is stale, gone or missing. A count says how many: `2 of 6 combinations recorded`              |
-| outdated    | a stored record made before its element gained a state or a dimension, which says no value of it: `` `hover` was added to `Button` after it was recorded ``. It is a warning, counted apart; add its value to count it again |
+| Word          | Means                                                                                                                                                                                                                        |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| combination   | one value of each state and each dimension of an element: what evidence is counted against. `Tab`, with two selections and three interactions, has six.                                                                      |
+| recorded      | a combination's status when a stored record matches it, and its drawings, where it has any, are as they were recorded; else it is stale, gone or missing. A count says how many: `2 of 6 combinations recorded`              |
+| outdated      | a stored record made before its element gained a state or a dimension, which says no value of it: `` `hover` was added to `Button` after it was recorded ``. It is a warning, counted apart; add its value to count it again |
+| stored record | one item of a record's stored files: a fact about one combination, recorded by an actor. A record is what a file declares, `record Evidence`; it is never one of these                                                       |
 
 ### Names
 

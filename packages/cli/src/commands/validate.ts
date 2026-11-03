@@ -1,5 +1,5 @@
 import { dirname, resolve } from "node:path";
-import { folderOf, storedFiles } from "@legacycodehq/dxn-language";
+import { folderOf, storedFiles, storedRecords } from "@legacycodehq/dxn-language";
 import { type Command, command } from "./context.js";
 import { count, misused, options, Reporter, read } from "./report.js";
 import { loadStored } from "./stored.js";
@@ -39,7 +39,7 @@ export const validateCommand: Command = command(usage, (args, { io, cwd }) => {
       ? [`${file}: no stored records`]
       : stored.map(
           ({ record, folder, files, records }) =>
-            `${file}: ${record}, ${count(records, "record")} in ${count(files, "file")} in ${folder}/`,
+            `${file}: ${record}, ${storedRecords(records)} in ${count(files, "file")} in ${folder}/`,
         );
   return report.succeed({ file, stored }, lines.map((line) => `${line}\n`).join(""));
 });

@@ -18,6 +18,7 @@ import {
   type StoredSource,
   sourceLines,
   storedBeside,
+  storedRecords,
   treePaths,
   treePlaces,
   type Unrecorded,
@@ -436,8 +437,8 @@ function stoppedBy(
     : undefined;
   const records =
     total === undefined
-      ? `${entries.size} ${entries.size === 1 ? "record" : "records"}`
-      : `${entries.size} of ${total} ${total === 1 ? "record" : "records"}`;
+      ? storedRecords(entries.size)
+      : `${entries.size} of ${storedRecords(total)}`;
   const those = top?.entries.size ?? 0;
   const label =
     those === entries.size

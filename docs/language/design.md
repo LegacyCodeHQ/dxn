@@ -111,7 +111,7 @@ What needs evidence is an element's **combinations**: its own states and
 the dimensions it needs, one value each. A child's combinations in place are
 its own too. Its parents decide which of them occur, never add any: a tab
 with two selections and three interactions has six combinations, in a bar or
-on its own, and fewer only where the bar narrows them. A record matches a
+on its own, and fewer only where the bar narrows them. A stored record matches a
 combination by its own states and dimensions, and its profile, whatever
 placed it.
 
@@ -130,10 +130,10 @@ of the user interface, for a kit to give the core, not the core's own.
 
 A type declared at the top of a file is a **component**: counted on its own,
 as a tree of its own, though another type contains it, so a design system
-draws each component once, in all its combinations. A record about an element
+draws each component once, in all its combinations. A stored record about an element
 covers that element everywhere else it is, in the same combination: a component's
 drawings cover it in every screen that places it, and a drawing in one place
-covers the component. A record about the place itself comes first. A type
+covers the component. A stored record about the place itself comes first. A type
 declared inside another is a part of it, counted only in place; a type that
 receives a state from its parent cannot stand on its own, and is counted
 only in place too.
@@ -180,14 +180,14 @@ warning.
 
 ### Outdated evidence
 
-A record made before its element gained a state or a dimension does not say
+A stored record made before its element gained a state or a dimension does not say
 which value of it the drawing shows. It is **outdated**: a warning, not an
 error, counted apart, and named by what was added, `9 outdated: hover added`.
 dxn does not guess the missing value; whoever recorded the drawing gives it.
 dxn and an editor say it one way, what was added to which element after the
 record was: "`hover` was added to `Button` after it was recorded", and what
 to do, "Add its `hover` value to count it again."
-A record that names a value, a state or a path the model no longer has is
+A stored record that names a value, a state or a path the model no longer has is
 an error, set apart where its element is written, while every other record
 still counts.
 
@@ -205,7 +205,7 @@ no tree of its own, so its `has` lines count every place it is in.
 After each type, and each part placed in a type, a hint gives each record's
 count, marked `●` every combination
 recorded, `◐` some, `○` none, or `◌` something needing a decision: a drawing
-stale or gone, a record outdated, or a record with problems. `◌` wins over
+stale or gone, a stored record outdated, or a stored record with problems. `◌` wins over
 the count. A usage of a component, a `has` line whose child is a
 component, has no hint: the component's own line counts its combinations, and the
 usage's evidence is in the hover over the component's name on that line,
@@ -253,7 +253,7 @@ language server only place it.
   `when`; nothing reserves the word.
 - **Review pictures.** Pictures are exported by whoever attaches the
   evidence, to a local cache: they are not shared, and nothing checks that
-  each record has one.
+  each stored record has one.
 
 - **Events in a kit.** Events are names a type declares, and focus moves by
   an action of the child that takes it, so the core gives no word a meaning
