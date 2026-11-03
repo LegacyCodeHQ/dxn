@@ -1,6 +1,9 @@
 // The dxn language as a library: what the dxn command and other tools need to
 // read a .dxn file, check it, evaluate it and check stored data against it.
 
+// Which stored records dxn and an editor count, when some have errors, and
+// what both say of those they do not.
+export { apartLabel, countable, elementOf, type SetApart } from "./apart.js";
 // Reading a .dxn file into declarations.
 export type { Diagnostic, Located, ParseResult, RecordDeclaration, Type } from "./ast.js";
 // Whether a binding fixes its child's state to one of its values.

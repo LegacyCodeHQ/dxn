@@ -1,8 +1,11 @@
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
+  apartLabel,
   checkStored,
+  countable,
   drawings,
+  elementOf,
   evidenceHeadings,
   evidenceLabel,
   fixes,
@@ -15,10 +18,11 @@ import {
   placement,
   progress,
   repositoryOf,
+  type StoredFile,
+  type StoredProblem,
   type StoredSource,
   sourceLines,
   storedBeside,
-  storedRecords,
   treePaths,
   treePlaces,
   type Unrecorded,
@@ -53,8 +57,18 @@ interface Problem {
 function checked(
   uri: string,
   file: ParseResult,
-): { read: Read[]; problems: Problem[]; withoutContext: Unrecorded[] } | undefined {
-  if (!uri.startsWith("file:")) return { read: [], problems: [], withoutContext: [] };
+):
+  | {
+      read: Read[];
+      problems: Problem[];
+      withoutContext: Unrecorded[];
+      stored: StoredFile[];
+      found: StoredProblem[];
+    }
+  | undefined {
+  if (!uri.startsWith("file:")) {
+    return { read: [], problems: [], withoutContext: [], stored: [], found: [] };
+  }
   if (file.diagnostics.some(({ severity }) => severity === "error")) return undefined;
   const stored = storedBeside(file, dirname(fileURLToPath(uri))).map((item) => ({
     ...item,
@@ -77,6 +91,8 @@ function checked(
   return {
     read: [...byPath.values()],
     withoutContext,
+    stored: stored.filter(({ path }) => byPath.has(path)),
+    found: problems,
     problems: problems.flatMap(({ file: path, ...problem }) => {
       const at = byPath.get(path);
       return at === undefined ? [] : [{ at, ...problem }];
@@ -178,55 +194,20 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
   } catch {
     return undefined;
   }
-  // The stored records with errors, set apart, each about its element; and
-  // the records that cannot be counted at all, whose errors are not of one
-  // stored record or are about nothing written in the file. Outdated
-  // records, a warning, are counted apart by the language.
-  const stopped = new Map<string, Problem[]>();
-  const apart = new Map<string, { at: Read; index: number; problems: Problem[] }>();
-  for (const problem of found.problems) {
-    if (problem.severity === "warning" || problem.code === "drawing-mismatch") continue;
-    const index = problem.path.match(/^\$\[(\d+)\]/)?.[1];
-    if (index === undefined) {
-      stopped.set(problem.at.record, [...(stopped.get(problem.at.record) ?? []), problem]);
-      continue;
-    }
-    const key = `${problem.at.uri}#${index}`;
-    const entry = apart.get(key) ?? { at: problem.at, index: Number(index), problems: [] };
-    entry.problems.push(problem);
-    apart.set(key, entry);
-  }
-  // Where a set-apart record shows: where its element is written, an element
+  // The stored records to count, those set apart with errors, each about its
+  // element, and the records that cannot be counted at all: as dxn status
+  // counts them.
+  const { sources, apart, stopped } = countable(file, found.stored, found.found);
+  const shown = new Map(
+    apart.map((group) => [`${group.at.line}:${group.at.column}#${group.record}`, group]),
+  );
+  // Where a stored record is about: where its element is written, an element
   // of a tree, or a type that is no tree's root.
   const places = new Map(treePlaces(file).map(({ path, at }) => [path, at]));
   const whereFor = (element: string | undefined): Located | undefined =>
     element === undefined
       ? undefined
       : (places.get(element) ?? file.types.find(({ name }) => name === element));
-  const shown = new Map<string, { at: Located; record: string; problems: Problem[] }>();
-  for (const { at, index, problems } of apart.values()) {
-    const where = whereFor(elementOf(at.source, index));
-    if (where === undefined) {
-      stopped.set(at.record, [...(stopped.get(at.record) ?? []), ...problems]);
-      continue;
-    }
-    const key = `${where.line}:${where.column}#${at.record}`;
-    const group = shown.get(key) ?? { at: where, record: at.record, problems: [] };
-    group.problems.push(...problems);
-    shown.set(key, group);
-  }
-  // The stored records to count: those of records that can be, without
-  // those set apart.
-  const sources = found.read
-    .filter(({ record }) => !stopped.has(record))
-    .map((read) => {
-      const skipped = new Set(
-        [...apart.values()].filter(({ at }) => at === read).map(({ index }) => index),
-      );
-      if (skipped.size === 0) return read;
-      const list = JSON.parse(read.source) as unknown[];
-      return { ...read, source: JSON.stringify(list.filter((_, index) => !skipped.has(index))) };
-    });
   const counted = progress(file, sources, freshness(repositoryOf(fileURLToPath(uri))));
   // The stored records whose drawings the model disagrees with, by where
   // their element is written and their record: counted, and said apart.
@@ -239,14 +220,14 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
     const key = `${where.line}:${where.column}#${problem.at.record}`;
     mismatched.set(key, [...(mismatched.get(key) ?? []), problem]);
   }
-  const readsOf = (record: string) => found.read.filter((read) => read.record === record);
+  const storedOf = (record: string) => found.stored.filter((item) => item.record === record);
   // What is set apart at a place, for a record, by what the language says
   // of it.
   const apartAt = (line: number, column: number, record: string) => {
     const group = shown.get(`${line}:${column}#${record}`);
     if (group === undefined) return undefined;
     shown.delete(`${line}:${column}#${record}`);
-    return stoppedBy(file, record, group.problems, readsOf(record));
+    return apartLabel(file, record, group.problems, storedOf(record));
   };
   // A usage, for a record: the type whose has line it is, the component it
   // places, how many states the component has on its own, and what the line
@@ -271,7 +252,7 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
       const problems = stopped.get(each.record);
       if (problems !== undefined) {
         return [
-          { ...stoppedBy(file, each.record, problems, readsOf(each.record)), mark: "◌" as const },
+          { ...apartLabel(file, each.record, problems, storedOf(each.record)), mark: "◌" as const },
         ];
       }
       const outdated = each.outdated.length > 0;
@@ -295,7 +276,7 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
   });
   // Set-apart records about a type no tree has at its root, at the type.
   for (const { at, record, problems } of shown.values()) {
-    const part = { ...stoppedBy(file, record, problems, readsOf(record)), mark: "◌" as const };
+    const part = { ...apartLabel(file, record, problems, storedOf(record)), mark: "◌" as const };
     hints.push({ line: at.line, column: at.column, usage: false, ...joined([part]) });
   }
   return hints.sort((a, b) => a.line - b.line || a.column - b.column);
@@ -399,134 +380,4 @@ function outdatedAt(
   const why = outdatedWhy(here);
   const list = `${evidenceHeadings.outdated}:\n${here.map(({ says }) => `- ${says}`).join("\n")}`;
   return { label, details: [label, why, list, ...lists].join("\n\n") };
-}
-
-// A record that cannot be counted: how many of its stored records have
-// problems, of how many, and what most of them have; then each problem, as
-// dxn validate prints it.
-function stoppedBy(
-  file: ParseResult,
-  record: string,
-  problems: Problem[],
-  read: Read[],
-): { label: string; details: string } {
-  // Each stored record by its file and its place in it, grouped by why it is
-  // wrong, in the words of the reason most of its kind share.
-  const why = new Map<string, { reason: Reason; entries: Set<string> }>();
-  for (const problem of problems) {
-    const index = problem.path.match(/^\$\[(\d+)\]/)?.[1];
-    const reason = reasonOf(file, problem, index === undefined ? undefined : Number(index));
-    const group = why.get(reason.many) ?? { reason, entries: new Set<string>() };
-    group.entries.add(`${problem.at.shown}#${index ?? ""}`);
-    why.set(reason.many, group);
-  }
-  const entries = new Set([...why.values()].flatMap(({ entries: each }) => [...each]));
-  const [top] = [...why.values()].sort((a, b) => b.entries.size - a.entries.size);
-  const what = (count: number) => (count === 1 ? top?.reason.one : top?.reason.many) ?? "";
-  // Of how many stored records, when every file of them is a list.
-  const lengths = read.map(({ source }) => {
-    try {
-      const list: unknown = JSON.parse(source);
-      return Array.isArray(list) ? list.length : undefined;
-    } catch {
-      return undefined;
-    }
-  });
-  const total = lengths.every((length) => length !== undefined)
-    ? lengths.reduce((sum: number, length) => sum + (length ?? 0), 0)
-    : undefined;
-  const records =
-    total === undefined
-      ? storedRecords(entries.size)
-      : `${entries.size} of ${storedRecords(total)}`;
-  const those = top?.entries.size ?? 0;
-  const label =
-    those === entries.size
-      ? `${record}: ${records} ${what(entries.size)}`
-      : `${record}: ${records} have problems, ${those} ${what(those)}`;
-  return {
-    label,
-    details: [
-      "Not counted until their problems are fixed:",
-      "",
-      ...problems.map(
-        ({ at, line, column, path, message }) =>
-          `- ${at.shown}:${line}:${column}: ${path}: ${message}`,
-      ),
-    ].join("\n"),
-  };
-}
-
-// Why stored records are wrong, as a hint says it of one and of several.
-interface Reason {
-  one: string;
-  many: string;
-}
-
-// Why a stored record is wrong, in the words of what changed in the model
-// since it was recorded, where that is what happened:
-// - a value its state no longer has: "still say style = plain, which Style no
-//   longer has (primary, secondary)", or one it cannot have there: "… which
-//   hover cannot be on Phone (rest)";
-// - a state or a dimension added since: "say nothing of hover, a state Button
-//   now has", "… Pointer, which Button now needs";
-// - one taken away since: "still say press, a state Button no longer has".
-// Any other problem, as it is.
-function reasonOf(file: ParseResult, { at, code, path, message }: Problem, index?: number): Reason {
-  const as = (many: string, one = many) => ({ one, many });
-  const group = path.match(/\.context\.(states|dimensions)(?:\.([A-Za-z0-9-]+))?$/);
-  const element = index === undefined ? undefined : elementOf(at.source, index);
-  if (code === "missing-field" && group !== null && element !== undefined) {
-    const name = message.match(/ is missing `([^`]+)`$/)?.[1];
-    if (name !== undefined) {
-      const has =
-        group[1] === "states" ? `a state ${element} now has` : `which ${element} now needs`;
-      return as(`say nothing of ${name}, ${has}`, `says nothing of ${name}, ${has}`);
-    }
-  }
-  if (code === "unknown-field" && group?.[2] !== undefined && element !== undefined) {
-    const name = group[2];
-    const had =
-      group[1] === "states"
-        ? `a state ${element} no longer has`
-        : `which ${element} no longer needs`;
-    return as(`still say ${name}, ${had}`, `still says ${name}, ${had}`);
-  }
-  const state = group?.[2];
-  const said = message.match(/^`([^`]*)` is not a value of `[^`]+`( on .*)? (\([^)]*\))$/);
-  if (code !== "unknown-value" || state === undefined || said === null) {
-    return as(`with ${message}`);
-  }
-  // The reason is in words: the names the message quotes, as they are.
-  const [value, where, values] = said.slice(1).map((part) => part?.replaceAll("`", ""));
-  const which =
-    where !== undefined
-      ? `which ${state} cannot be${where} ${values}`
-      : `which ${ownerOf(file, state)} no longer has ${values}`;
-  return as(`still say ${state} = ${value}, ${which}`, `still says ${state} = ${value}, ${which}`);
-}
-
-// The enum a state takes its values from, when every state of that name
-// takes them from one; a dimension is its own.
-function ownerOf(file: ParseResult, state: string): string {
-  if (/^[A-Z]/.test(state)) return state;
-  const enums = new Set(
-    file.types.flatMap(({ states }) =>
-      states.filter(({ name }) => name === state).map(({ enum: of }) => of.name),
-    ),
-  );
-  return enums.size === 1 ? ([...enums][0] as string) : state;
-}
-
-// The element a stored record is about, by its place in its file: its
-// context's path, or type.
-function elementOf(source: string, index: number): string | undefined {
-  try {
-    const list = JSON.parse(source) as { context?: { path?: unknown; type?: unknown } }[];
-    const { path, type } = list[index]?.context ?? {};
-    const element = path ?? type;
-    return typeof element === "string" ? element : undefined;
-  } catch {
-    return undefined;
-  }
 }
