@@ -81,14 +81,14 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       return lines.length === 0 ? "" : `\n${heading}:\n${lines.join("")}`;
     };
     // Each record made before its element gained a state or a dimension: how
-    // many, what to do, and each with its element and what it lacks.
+    // many, what to do, and each with its element and what was added since.
     const old = paths.flatMap((path) =>
-      path.outdated.map((each) => `  ${outdatedItem({ ...each, path: path.path })}\n`),
+      path.outdated.map((each) => ({ ...each, path: path.path })),
     );
     const outdatedList =
       old.length === 0
         ? ""
-        : `\n${evidenceHeadings.outdated}: ${outdatedSummary(old.length)}.\n${old.join("")}`;
+        : `\n${evidenceHeadings.outdated}: ${outdatedSummary(old)}\n${old.map((each) => `  ${outdatedItem(each)}\n`).join("")}`;
     // The count, in the words an editor's hint has it in.
     const counted = evidenceLabel({
       record,

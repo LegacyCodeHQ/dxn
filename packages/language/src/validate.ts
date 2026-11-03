@@ -7,6 +7,7 @@ import { message, words } from "./message.js";
 import { among, article, Names } from "./names.js";
 import { givenDimensions, profilesOf } from "./profiles.js";
 import { penNode, scalar } from "./scalars.js";
+import { outdatedFact } from "./vocabulary.js";
 
 // The look a stored record is about: its element's type, and the value of
 // each of its states and dimensions there.
@@ -260,13 +261,7 @@ export function validate(
               value.span.start,
             );
           } else {
-            const had = key === "states" ? "had" : "needed";
-            diagnostics.warn(
-              "outdated",
-              message`recorded before ${label} ${words(had)} ${name}`,
-              at,
-              value.span.start,
-            );
+            diagnostics.warn("outdated", outdatedFact([name], [label]), at, value.span.start);
           }
           complete = false;
         }

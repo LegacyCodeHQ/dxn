@@ -1,4 +1,5 @@
 import type { ParseResult } from "./ast.js";
+import { message } from "./message.js";
 
 // The words dxn and an editor say the model's facts in, written once: an
 // editor and the dxn command place them, in a hint, a hover or a table, but
@@ -73,30 +74,53 @@ export function evidenceLabel(count: EvidenceCount, usage?: Usage): string {
   return `${label} · ${outdated.length} outdated: ${names.join(", ")} added`;
 }
 
-// Why stored records are outdated, and what to do about them.
-export function outdatedWhy(outdated: OutdatedAt[]): string {
+// Names said together, each quoted: "`hover`", "`hover` and `size`".
+const together = (names: string[], joiner: string) =>
+  names.map((name) => message`${name}`).join(joiner);
+
+// That records are outdated, in the one way dxn and an editor say it: what
+// was added to which elements after they were recorded, "`hover` was added
+// to `Button` after it was recorded"; without the elements, where the place
+// says which.
+export function outdatedFact(added: string[], elements: string[] = [], records = 1): string {
+  const names = [...new Set(added)];
+  const to = elements.length === 0 ? "" : ` to ${together([...new Set(elements)], " and ")}`;
+  return `${together(names, " and ")} ${names.length === 1 ? "was" : "were"} added${to} after ${
+    records === 1 ? "it was" : "they were"
+  } recorded`;
+}
+
+// What to do about outdated records: "Add its `hover` value to count it
+// again."
+export function outdatedAction(outdated: OutdatedAt[]): string {
   const names = [...new Set(outdated.flatMap(({ added }) => added))];
-  const and = names.join(" and ");
-  const or = names.join(" or ");
-  const elements = [...new Set(outdated.map(({ path }) => path))].join(" and ");
-  const one = outdated.length === 1;
-  return `${one ? "1 record is" : `${outdated.length} records are`} outdated: ${and} ${
-    names.length === 1 ? "was" : "were"
-  } added to ${elements} after ${one ? "it was" : "they were"} recorded, so ${
-    one ? "it does" : "they do"
-  } not say which ${or} ${one ? "it shows" : "they show"}. Add ${one ? "its" : "each one's"} ${and} ${
+  return `Add ${outdated.length === 1 ? "its" : "each one's"} ${together(names, " and ")} ${
     names.length === 1 ? "value" : "values"
   } to count it again.`;
 }
 
-// Outdated records, for an agent: how many, and what to do about them.
-export const outdatedSummary = (count: number): string =>
-  `${count === 1 ? "1 record" : `${count} records`}; give each the values it lacks to count it again`;
+// Why stored records are outdated, and what to do about them.
+export function outdatedWhy(outdated: OutdatedAt[]): string {
+  const names = [...new Set(outdated.flatMap(({ added }) => added))];
+  const one = outdated.length === 1;
+  const fact = outdatedFact(
+    names,
+    outdated.map(({ path }) => path),
+    outdated.length,
+  );
+  return `${one ? "1 record is" : `${outdated.length} records are`} outdated: ${fact}, so ${
+    one ? "it does" : "they do"
+  } not say which ${together(names, " or ")} ${one ? "it shows" : "they show"}. ${outdatedAction(outdated)}`;
+}
 
-// One outdated record, for an agent: its element, what it says, and what it
-// lacks, each state or dimension added since it was recorded.
+// Outdated records, for an agent: how many, and what to do about them.
+export const outdatedSummary = (outdated: OutdatedAt[]): string =>
+  `${outdated.length === 1 ? "1 record" : `${outdated.length} records`}. ${outdatedAction(outdated)}`;
+
+// One outdated record, for an agent: its element, what it says, and what was
+// added to the element after it was recorded.
 export const outdatedItem = ({ path, says, added }: OutdatedAt): string =>
-  `${path}: ${says}, without ${added.join(", ")}`;
+  `${path}: ${says}; ${outdatedFact(added)}`;
 
 // The headings of what a count leaves out, each listed under one.
 export const evidenceHeadings = {

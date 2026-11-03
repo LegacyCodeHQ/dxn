@@ -291,12 +291,12 @@ actor Designer records Evidence
     const status = run("status", "spec/button.dxn", "--missing");
     expect([validated.code, validated.stderr, status.code, status.stdout.split("\n")[0]]).toEqual([
       0,
-      "spec/evidence/button.json:7:17: warning: outdated: $[0].context.states: recorded before `Button` had `hover`\n",
+      "spec/evidence/button.json:7:17: warning: outdated: $[0].context.states: `hover` was added to `Button` after it was recorded\n",
       0,
       "spec/button.dxn: Evidence 0 of 4 combinations recorded · 1 outdated: hover added",
     ]);
     expect(status.stdout).toContain(
-      "\nOutdated: 1 record; give each the values it lacks to count it again.\n  Button: style = filled, without hover\n",
+      "\nOutdated: 1 record. Add its `hover` value to count it again.\n  Button: style = filled; `hover` was added after it was recorded\n",
     );
     expect(run("review", "spec/button.dxn").code).toBe(0);
     expect(run("review", "spec/button.dxn", "--stale").code).toBe(0);
@@ -315,7 +315,7 @@ actor Designer records Evidence
       | plain | rest | **missing** | — |
       | plain | hovered | **missing** | — |
 
-      **Outdated**: recorded before Button had hover; give each its value to count it again.
+      **Outdated**: \`hover\` was added to \`Button\` after it was recorded. Add its \`hover\` value to count it again.
 
       | style | needs | as recorded |
       | --- | --- | --- |
@@ -327,7 +327,7 @@ actor Designer records Evidence
 
       Evidence 0 of 4 combinations recorded · 1 outdated: hover added.
 
-      **Outdated**: recorded before Button had hover; give each its value to count it again.
+      **Outdated**: \`hover\` was added to \`Button\` after it was recorded. Add its \`hover\` value to count it again.
 
       | style | needs | as recorded |
       | --- | --- | --- |

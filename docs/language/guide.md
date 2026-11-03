@@ -1783,10 +1783,11 @@ The words dxn and an editor say the model's facts in, each for one thing.
 Each is said the same by both: the dxn command for agents, an editor for
 people.
 
-| Word        | Means                                                                                                                                                                                                           |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| combination | one value of each state and each dimension of an element: what evidence is counted against. `Tab`, with two selections and three interactions, has six.                                                         |
-| recorded    | a combination's status when a stored record matches it, and its drawings, where it has any, are as they were recorded; else it is stale, gone or missing. A count says how many: `2 of 6 combinations recorded` |
+| Word        | Means                                                                                                                                                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| combination | one value of each state and each dimension of an element: what evidence is counted against. `Tab`, with two selections and three interactions, has six.                                                                      |
+| recorded    | a combination's status when a stored record matches it, and its drawings, where it has any, are as they were recorded; else it is stale, gone or missing. A count says how many: `2 of 6 combinations recorded`              |
+| outdated    | a stored record made before its element gained a state or a dimension, which says no value of it: `` `hover` was added to `Button` after it was recorded ``. It is a warning, counted apart; add its value to count it again |
 
 ### Names
 

@@ -97,6 +97,8 @@ export {
   evidenceLabel,
   isDrawn,
   type OutdatedAt,
+  outdatedAction,
+  outdatedFact,
   outdatedItem,
   outdatedSummary,
   outdatedWhy,

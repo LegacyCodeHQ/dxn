@@ -2,7 +2,7 @@ import type { ParseResult } from "./ast.js";
 import { profilesOf } from "./profiles.js";
 import { penNode } from "./scalars.js";
 import { type Check, describe, type Judged, judge, type Outdated } from "./status.js";
-import { evidenceLabel } from "./vocabulary.js";
+import { evidenceHeadings, evidenceLabel, outdatedAction, outdatedFact } from "./vocabulary.js";
 
 // A page to review a tree's evidence by: the tree's root, and the page as
 // Markdown.
@@ -167,7 +167,7 @@ function outdatedOf(
     return { ...context.dimensions, ...context.states };
   });
   const names = [...new Set(contexts.flatMap((each) => Object.keys(each)))];
-  const added = [...new Set(old.flatMap(({ added: each }) => each))].join(" and ");
+  const added = [...new Set(old.flatMap(({ added: each }) => each))];
   const rows = old.map(({ added: needs, entry }, index) => {
     const found = picture(entry);
     const said = contexts[index] ?? {};
@@ -182,7 +182,7 @@ function outdatedOf(
   });
   const header = [...names, "needs", "as recorded"];
   return [
-    `**Outdated**: recorded before ${path} had ${added}; give each its value to count it again.`,
+    `**${evidenceHeadings.outdated}**: ${outdatedFact(added, [path], old.length)}. ${outdatedAction(old.map((each) => ({ ...each, path })))}`,
     "",
     ...[header, header.map(() => "---"), ...rows].map((row) => `| ${row.join(" | ")} |`),
   ].join("\n");

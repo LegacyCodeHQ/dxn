@@ -56,24 +56,28 @@ describe("the words for evidence", () => {
       ]),
     ]).toMatchInlineSnapshot(`
       [
-        "1 record is outdated: focus was added to Link after it was recorded, so it does not say which focus it shows. Add its focus value to count it again.",
-        "2 records are outdated: focus and size were added to Link and Menu after they were recorded, so they do not say which focus or size they show. Add each one's focus and size values to count it again.",
+        "1 record is outdated: \`focus\` was added to \`Link\` after it was recorded, so it does not say which \`focus\` it shows. Add its \`focus\` value to count it again.",
+        "2 records are outdated: \`focus\` and \`size\` were added to \`Link\` and \`Menu\` after they were recorded, so they do not say which \`focus\` or \`size\` they show. Add each one's \`focus\` and \`size\` values to count it again.",
       ]
     `);
   });
 
   it("list outdated records for an agent: how many, what to do, and each with what it lacks", () => {
     expect([
-      outdatedSummary(1),
-      outdatedSummary(3),
+      outdatedSummary([{ path: "Button", says: "style = filled", added: ["hover"] }]),
+      outdatedSummary([
+        { path: "Button", says: "style = filled", added: ["hover"] },
+        { path: "Button", says: "style = outline", added: ["hover"] },
+        { path: "Link", says: "hover = rest", added: ["focus"] },
+      ]),
       outdatedItem({ path: "Button", says: "style = filled", added: ["hover"] }),
       outdatedItem({ path: "Link", says: "hover = rest", added: ["focus", "Theme"] }),
     ]).toMatchInlineSnapshot(`
       [
-        "1 record; give each the values it lacks to count it again",
-        "3 records; give each the values it lacks to count it again",
-        "Button: style = filled, without hover",
-        "Link: hover = rest, without focus, Theme",
+        "1 record. Add its \`hover\` value to count it again.",
+        "3 records. Add each one's \`hover\` and \`focus\` values to count it again.",
+        "Button: style = filled; \`hover\` was added after it was recorded",
+        "Link: hover = rest; \`focus\` and \`Theme\` were added after it was recorded",
       ]
     `);
   });

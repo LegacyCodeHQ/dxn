@@ -81,7 +81,9 @@ describe("a stored record's context", () => {
       check({ ...on("Laptop", "dark", "rest"), dimensions: { Theme: "dark", Pointer: "mouse" } }),
       check({ ...on("Laptop", "dark", "rest"), dimensions: { Theme: "dim" } }),
     ]).toEqual([
-      ["warning: outdated: $[0].context.dimensions: recorded before `Wordmark` needed `Theme`"],
+      [
+        "warning: outdated: $[0].context.dimensions: `Theme` was added to `Wordmark` after it was recorded",
+      ],
       [
         "unknown-field: $[0].context.dimensions.Pointer: `Pointer` is given by the profile; `context.dimensions` has `Theme`",
       ],
@@ -98,7 +100,9 @@ describe("a stored record's context", () => {
       check(on("Laptop", "dark", "hoverd")),
       check(on("Phone", "dark", "hovered")),
     ]).toEqual([
-      ["warning: outdated: $[0].context.states: recorded before `Wordmark` had `hover`"],
+      [
+        "warning: outdated: $[0].context.states: `hover` was added to `Wordmark` after it was recorded",
+      ],
       ["unknown-field: $[0].context.states.focus: `Wordmark` has no state `focus` (`hover`)"],
       [
         "unknown-value: $[0].context.states.hover: `hoverd` is not a value of `hover` (`rest`, `hovered`)",
@@ -135,7 +139,7 @@ describe("a stored record's context", () => {
       ],
       [
         "unknown-field: $[0].context.profile: `context` has no field `profile` (`type`, `dimensions`, `states`)",
-        "warning: outdated: $[0].context.dimensions: recorded before `Wordmark` needed `Pointer`",
+        "warning: outdated: $[0].context.dimensions: `Pointer` was added to `Wordmark` after it was recorded",
       ],
     ]);
   });

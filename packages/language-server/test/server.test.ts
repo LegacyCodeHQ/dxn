@@ -1067,7 +1067,7 @@ describe("the language server", () => {
         [
           "◌ PenEvidence 1 of 4 combinations recorded · 2 outdated: hover added",
           "",
-          "2 records are outdated: hover was added to Button after they were recorded, so they do not say which hover they show. Add each one's hover value to count it again.",
+          "2 records are outdated: `hover` was added to `Button` after they were recorded, so they do not say which `hover` they show. Add each one's `hover` value to count it again.",
           "",
           "Outdated:",
           "- style = primary",
