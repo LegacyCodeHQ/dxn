@@ -7,18 +7,23 @@ a physical source directory; the language's public `src/index.ts` is its own nod
 
 ![Source folder dependencies](dependencies.png)
 
-| Language folder | Responsibility                                                               |
-| --------------- | ---------------------------------------------------------------------------- |
-| `core`          | AST, diagnostics, text, naming and shared wording                            |
-| `model`         | Scalars, names, conditions, profiles and scopes                              |
-| `evaluation`    | Type/value checking, state evaluation, expectations and combinations         |
-| `syntax`        | Scanning, parsing and formatting                                             |
-| `data`          | JSON reading and duplicate detection                                         |
-| `evidence`      | Stored-record validation, storage, fingerprints, review and renaming         |
-| `editor`        | Definitions, completion, hover, cursor renaming, semantic tokens and symbols |
+| Language folder | Responsibility                                                                |
+| --------------- | ----------------------------------------------------------------------------- |
+| `core`          | AST, diagnostics, text, naming and shared wording                             |
+| `model`         | Scalars, names, conditions, profiles and scopes                               |
+| `evaluation`    | Type/value checking, state evaluation, expectations and combinations          |
+| `syntax`        | Scanning, syntax reading, formatting and the compatible `parse()` entry point |
+| `analysis`      | Context derivation, name resolution and ordered semantic analysis             |
+| `data`          | JSON reading and duplicate detection                                          |
+| `evidence`      | Stored-record validation, storage, fingerprints, review and renaming          |
+| `editor`        | Definitions, completion, hover, cursor renaming, semantic tokens and symbols  |
 
-`evaluation` depends on `model` and `core`. `syntax` uses those layers because
-parsing also checks the declarations and expectations it reads. `evidence` uses
+`evaluation` depends on `model` and `core`. Syntax reading and formatting do not
+run semantic analysis. The existing `syntax/parse.ts` entry point composes a fresh
+syntax read with `analysis/analyze.ts`, which derives record context, resolves
+names, checks declarations, analyzes conditions and executes expectations.
+Condition analysis enumerates a type's combinations only when a condition needs
+judging, reusing them for the remaining conditions of that type. `evidence` uses
 `data`, `evaluation`, `model` and `core`; `editor` combines syntax, evaluation and
 evidence. These directory dependencies form a DAG. Shared dependencies stay in
 sibling folders rather than being nested inside one of their several consumers.
@@ -44,9 +49,10 @@ its README links to the current authoritative parser.
 - [Original source graph](source-before.dot) and [reorganized source graph](source-after.dot).
 - [Folder graph as Mermaid](dependencies.mmd) and [Graphviz](dependencies.dot).
 
-The reorganization moved 47 source files and preserved all 251 source dependency
-edges after mapping old paths to new paths. Neither files nor source folders
-have dependency cycles.
+The original reorganization moved 47 source files and preserved all 251 source
+dependency edges after mapping old paths to new paths. The current source and
+folder graphs also include the subsequent separation of syntax reading from
+analysis. Neither files nor source folders have dependency cycles.
 
 ## Regenerate
 

@@ -1,4 +1,4 @@
-import { parse } from "./parse.js";
+import { read } from "./read.js";
 
 // A piece of a line: a word, a quoted string, a sign, or a comment, which runs
 // to the end of the line.
@@ -10,7 +10,7 @@ type Piece = { kind: "word" | "string" | "sign"; text: string };
 // blank line in a row; line feeds, and one at the end. Nothing is reordered,
 // joined or split. A file that does not parse is left alone: nothing.
 export function format(source: string): string | undefined {
-  if (parse(source).diagnostics.some(({ code }) => code === "syntax-error")) return undefined;
+  if (read(source).diagnostics.some(({ code }) => code === "syntax-error")) return undefined;
   const written: Written[] = [];
   let depth = 0;
   // Whether the last line with code ended with |, and or or, so the next one

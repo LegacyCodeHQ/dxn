@@ -1,7 +1,7 @@
 digraph dependencies {
   rankdir=LR;
   node [shape=box];
-  label="dxn-dependency-layout • a8486fe-dirty • 14 modules";
+  label="dxn • 30f1c29-dirty • 15 modules";
   labelloc=t;
   labeljust=l;
   fontsize=10;
@@ -12,6 +12,7 @@ digraph dependencies {
   "cli/support" [label="support\n6 files", shape=component, style=filled, fillcolor=lightyellow];
   "language-server/entry" [label="language-server/entry\n3 files", shape=component, style=filled, fillcolor=lightyellow];
   "language-server/protocol" [label="protocol\n3 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/analysis" [label="analysis\n1 file", shape=component, style=filled, fillcolor=lightyellow];
   "language/api" [label="api\n1 file", shape=component, style=filled, fillcolor=lightyellow];
   "language/core" [label="core\n6 files", shape=component, style=filled, fillcolor=lightyellow];
   "language/data" [label="data\n2 files", shape=component, style=filled, fillcolor=lightyellow];
@@ -19,7 +20,7 @@ digraph dependencies {
   "language/evaluation" [label="evaluation\n9 files", shape=component, style=filled, fillcolor=lightyellow];
   "language/evidence" [label="evidence\n6 files", shape=component, style=filled, fillcolor=lightyellow];
   "language/model" [label="model\n5 files", shape=component, style=filled, fillcolor=lightyellow];
-  "language/syntax" [label="syntax\n3 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/syntax" [label="syntax\n4 files", shape=component, style=filled, fillcolor=lightyellow];
   "vscode" [label="vscode\n3 files", shape=component, style=filled, fillcolor=lightyellow];
 
   "cli/commands" -> "cli/support";
@@ -30,6 +31,9 @@ digraph dependencies {
   "language-server/entry" -> "language-server/protocol";
   "language-server/entry" -> "language/api";
   "language-server/protocol" -> "language/api";
+  "language/analysis" -> "language/core";
+  "language/analysis" -> "language/evaluation";
+  "language/analysis" -> "language/model";
   "language/api" -> "language/core";
   "language/api" -> "language/data";
   "language/api" -> "language/editor";
@@ -50,7 +54,7 @@ digraph dependencies {
   "language/evidence" -> "language/evaluation";
   "language/evidence" -> "language/model";
   "language/model" -> "language/core";
+  "language/syntax" -> "language/analysis";
   "language/syntax" -> "language/core";
-  "language/syntax" -> "language/evaluation";
   "language/syntax" -> "language/model";
 }

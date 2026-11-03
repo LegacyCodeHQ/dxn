@@ -1,7 +1,7 @@
 digraph dependencies {
   rankdir=LR;
   node [shape=box];
-  label="dxn-dependency-layout • a8486fe-dirty • 66 files";
+  label="dxn • 30f1c29-dirty • 68 files";
   labelloc=t;
   labeljust=l;
   fontsize=10;
@@ -32,6 +32,7 @@ digraph dependencies {
   "packages/language-server/src/protocol/range.ts" [label="range.ts", style=filled, fillcolor=white];
   "packages/language-server/src/server.ts" [label="language-server/src/server.ts", style=filled, fillcolor=white];
   "packages/language-server/src/version.ts" [label="language-server/src/version.ts", style=filled, fillcolor=white];
+  "packages/language/src/analysis/analyze.ts" [label="analyze.ts", style=filled, fillcolor=white];
   "packages/language/src/core/ast.ts" [label="ast.ts", style=filled, fillcolor=white];
   "packages/language/src/core/diagnostic.ts" [label="diagnostic.ts", style=filled, fillcolor=white];
   "packages/language/src/core/message.ts" [label="message.ts", style=filled, fillcolor=white];
@@ -69,6 +70,7 @@ digraph dependencies {
   "packages/language/src/model/scope.ts" [label="scope.ts", style=filled, fillcolor=white];
   "packages/language/src/syntax/format.ts" [label="format.ts", style=filled, fillcolor=white];
   "packages/language/src/syntax/parse.ts" [label="parse.ts", style=filled, fillcolor=white];
+  "packages/language/src/syntax/read.ts" [label="read.ts", style=filled, fillcolor=white];
   "packages/language/src/syntax/scan.ts" [label="scan.ts", style=filled, fillcolor=white];
   "packages/vscode/src/extension.ts" [label="extension.ts", style=filled, fillcolor=white];
   "packages/vscode/src/run.ts" [label="run.ts", style=filled, fillcolor=white];
@@ -152,6 +154,11 @@ digraph dependencies {
   "packages/language-server/src/server.ts" -> "packages/language-server/src/protocol/evidence.ts";
   "packages/language-server/src/server.ts" -> "packages/language-server/src/protocol/range.ts";
   "packages/language-server/src/server.ts" -> "packages/language/src/index.ts";
+  "packages/language/src/analysis/analyze.ts" -> "packages/language/src/core/ast.ts";
+  "packages/language/src/analysis/analyze.ts" -> "packages/language/src/evaluation/check.ts";
+  "packages/language/src/analysis/analyze.ts" -> "packages/language/src/evaluation/expect.ts";
+  "packages/language/src/analysis/analyze.ts" -> "packages/language/src/evaluation/matrix.ts";
+  "packages/language/src/analysis/analyze.ts" -> "packages/language/src/model/scope.ts";
   "packages/language/src/core/vocabulary.ts" -> "packages/language/src/core/ast.ts";
   "packages/language/src/core/vocabulary.ts" -> "packages/language/src/core/message.ts";
   "packages/language/src/data/duplicates.ts" -> "packages/language/src/core/diagnostic.ts";
@@ -311,16 +318,15 @@ digraph dependencies {
   "packages/language/src/model/profiles.ts" -> "packages/language/src/core/ast.ts";
   "packages/language/src/model/scalars.ts" -> "packages/language/src/core/text.ts";
   "packages/language/src/model/scope.ts" -> "packages/language/src/core/ast.ts";
-  "packages/language/src/syntax/format.ts" -> "packages/language/src/syntax/parse.ts";
+  "packages/language/src/syntax/format.ts" -> "packages/language/src/syntax/read.ts";
+  "packages/language/src/syntax/parse.ts" -> "packages/language/src/analysis/analyze.ts";
   "packages/language/src/syntax/parse.ts" -> "packages/language/src/core/ast.ts";
-  "packages/language/src/syntax/parse.ts" -> "packages/language/src/core/message.ts";
-  "packages/language/src/syntax/parse.ts" -> "packages/language/src/core/naming.ts";
-  "packages/language/src/syntax/parse.ts" -> "packages/language/src/evaluation/check.ts";
-  "packages/language/src/syntax/parse.ts" -> "packages/language/src/evaluation/expect.ts";
-  "packages/language/src/syntax/parse.ts" -> "packages/language/src/evaluation/matrix.ts";
-  "packages/language/src/syntax/parse.ts" -> "packages/language/src/model/condition.ts";
-  "packages/language/src/syntax/parse.ts" -> "packages/language/src/model/scope.ts";
-  "packages/language/src/syntax/parse.ts" -> "packages/language/src/syntax/scan.ts";
+  "packages/language/src/syntax/parse.ts" -> "packages/language/src/syntax/read.ts";
+  "packages/language/src/syntax/read.ts" -> "packages/language/src/core/ast.ts";
+  "packages/language/src/syntax/read.ts" -> "packages/language/src/core/message.ts";
+  "packages/language/src/syntax/read.ts" -> "packages/language/src/core/naming.ts";
+  "packages/language/src/syntax/read.ts" -> "packages/language/src/model/condition.ts";
+  "packages/language/src/syntax/read.ts" -> "packages/language/src/syntax/scan.ts";
   "packages/language/src/syntax/scan.ts" -> "packages/language/src/core/ast.ts";
   "packages/language/src/syntax/scan.ts" -> "packages/language/src/core/message.ts";
   "packages/vscode/src/extension.ts" -> "packages/vscode/src/run.ts";

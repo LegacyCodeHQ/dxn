@@ -1,5 +1,5 @@
 ---
-title: dxn-dependency-layout • a8486fe-dirty • 14 modules
+title: dxn • 30f1c29-dirty • 15 modules
 ---
 flowchart LR
     n0[["commands<br/>10 files"]]
@@ -7,47 +7,51 @@ flowchart LR
     n2[["support<br/>6 files"]]
     n3[["language-server/entry<br/>3 files"]]
     n4[["protocol<br/>3 files"]]
-    n5[["api<br/>1 file"]]
-    n6[["core<br/>6 files"]]
-    n7[["data<br/>2 files"]]
-    n8[["editor<br/>6 files"]]
-    n9[["evaluation<br/>9 files"]]
-    n10[["evidence<br/>6 files"]]
-    n11[["model<br/>5 files"]]
-    n12[["syntax<br/>3 files"]]
-    n13[["vscode<br/>3 files"]]
+    n5[["analysis<br/>1 file"]]
+    n6[["api<br/>1 file"]]
+    n7[["core<br/>6 files"]]
+    n8[["data<br/>2 files"]]
+    n9[["editor<br/>6 files"]]
+    n10[["evaluation<br/>9 files"]]
+    n11[["evidence<br/>6 files"]]
+    n12[["model<br/>5 files"]]
+    n13[["syntax<br/>4 files"]]
+    n14[["vscode<br/>3 files"]]
 
     n0 --> n2
-    n0 --> n5
+    n0 --> n6
     n1 --> n0
     n1 --> n2
-    n2 --> n5
+    n2 --> n6
     n3 --> n4
-    n3 --> n5
-    n4 --> n5
-    n5 --> n6
+    n3 --> n6
+    n4 --> n6
     n5 --> n7
-    n5 --> n8
-    n5 --> n9
     n5 --> n10
-    n5 --> n11
     n5 --> n12
-    n7 --> n6
-    n8 --> n6
-    n8 --> n9
-    n8 --> n10
-    n8 --> n11
-    n8 --> n12
-    n9 --> n6
+    n6 --> n7
+    n6 --> n8
+    n6 --> n9
+    n6 --> n10
+    n6 --> n11
+    n6 --> n12
+    n6 --> n13
+    n8 --> n7
+    n9 --> n7
+    n9 --> n10
     n9 --> n11
-    n10 --> n6
+    n9 --> n12
+    n9 --> n13
     n10 --> n7
-    n10 --> n9
-    n10 --> n11
-    n11 --> n6
-    n12 --> n6
-    n12 --> n9
-    n12 --> n11
+    n10 --> n12
+    n11 --> n7
+    n11 --> n8
+    n11 --> n10
+    n11 --> n12
+    n12 --> n7
+    n13 --> n5
+    n13 --> n7
+    n13 --> n12
 
     classDef moduleNode fill:#FFFFE0,stroke:#999999,color:#000000
-    class n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13 moduleNode
+    class n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14 moduleNode

@@ -1,6 +1,10 @@
 {
   "modules": [
     {
+      "name": "language/analysis",
+      "files": ["packages/language/src/analysis/*.ts"]
+    },
+    {
       "name": "language/core",
       "files": ["packages/language/src/core/*.ts"]
     },
