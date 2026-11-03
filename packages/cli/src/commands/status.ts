@@ -1,5 +1,7 @@
 import { resolve } from "node:path";
 import {
+  apartLabel,
+  countable,
   coverage,
   describe,
   evidenceColumns,
@@ -17,7 +19,7 @@ import {
 import { drawTable } from "../tables.js";
 import { type Command, command } from "./context.js";
 import { misused, options, Reporter, read } from "./report.js";
-import { loadStored } from "./stored.js";
+import { loadStoredToCount } from "./stored.js";
 import { usage } from "./usage.js";
 
 export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
@@ -32,8 +34,11 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   const report = new Reporter(io, json, file);
   const parsed = read(file, cwd, report);
   if (typeof parsed === "number") return parsed;
-  const data = loadStored(parsed, file, cwd, report);
-  if (typeof data === "number") return data;
+  // The stored records that check are counted; those with errors are set
+  // apart, said in the count, and fail it, as an editor counts them.
+  const loaded = loadStoredToCount(parsed, file, cwd, report);
+  if (typeof loaded === "number") return loaded;
+  const { sources: data, apart, stopped } = countable(parsed, loaded.stored, loaded.problems);
   // Whether what an entry's PenNode points at is as recorded.
   const check = freshness(repositoryOf(resolve(cwd, file), cwd));
   // A record is checked for staleness when it has a PenNode.
@@ -103,7 +108,19 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     const notes = coverage.fingerprinted
       ? []
       : [`${record} has no PenNode, so staleness is not checked`];
-    const summary = `${file}: ${counted}${notes.map((note) => `; ${note}`).join("")}`;
+    // The stored records not counted for their errors, in the words an
+    // editor's hint has them in: after the count, or instead of it, where
+    // none of the record's can be counted.
+    const those = [
+      ...apart.filter((group) => group.record === record).flatMap(({ problems }) => problems),
+      ...(stopped.get(record) ?? []),
+    ];
+    const aside =
+      those.length === 0 ? undefined : apartLabel(parsed, record, those, loaded.stored).label;
+    if (stopped.has(record)) return `${file}: ${aside}\n`;
+    const said =
+      aside === undefined ? counted : `${counted} · ${aside.slice(`${record}: `.length)}`;
+    const summary = `${file}: ${said}${notes.map((note) => `; ${note}`).join("")}`;
     return `${summary}\n\n${table}${
       listMissing
         ? `${listed(evidenceHeadings.missing, "missing")}${listed(evidenceHeadings.stale, "stale")}${listed(evidenceHeadings.gone, "gone")}${outdatedList}`
@@ -133,5 +150,5 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       },
     })),
   }));
-  return report.succeed({ file, records: counted }, text);
+  return report.finish({ file, records: counted }, text);
 });

@@ -1145,6 +1145,63 @@ describe("dxn fmt", () => {
 });
 
 describe("dxn status", () => {
+  it("counts the stored records that check, says those set apart for their errors, and fails", () => {
+    const run = inProject({
+      "spec.dxn":
+        "enum Hover = rest | hovered\nenum Focus = blurred | focused\ntype Link {\n  state hover: Hover, focus: Focus\n}\nrecord Evidence {\n  note: NonEmptyString\n}\nactor Designer records Evidence\n",
+      "evidence/a.json":
+        '[\n  { "context": { "type": "Link", "dimensions": {}, "states": { "hover": "rest", "focus": "blurred" } }, "actor": "Designer", "note": "Seen." },\n  { "context": { "type": "Link", "dimensions": {}, "states": { "hover": "bogus", "focus": "focused" } }, "actor": "Designer", "note": "Typo." }\n]\n',
+    });
+    const text = run("status", "spec.dxn");
+    const json = run("status", "spec.dxn", "--json");
+    const parsed = JSON.parse(json.stdout);
+    const snapshot: unknown[] = [];
+    snapshot.push([text.code, text.stderr, text.stdout]);
+    snapshot.push([
+      json.code,
+      parsed.problems.map(({ code }: { code: string }) => code),
+      parsed.records.map(
+        ({
+          record,
+          combinations,
+          recorded,
+        }: {
+          record: string;
+          combinations: number;
+          recorded: number;
+        }) => [record, combinations, recorded],
+      ),
+    ]);
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          1,
+          "evidence/a.json:3:73: error: unknown-value: $[1].context.states.hover: \`bogus\` is not a value of \`hover\` (\`rest\`, \`hovered\`)
+      ",
+          "spec.dxn: Evidence 1 of 4 combinations recorded · 1 of 2 stored records still says hover = bogus, which Hover no longer has (rest, hovered); Evidence has no PenNode, so staleness is not checked
+
+      | path | combinations | recorded | stale | gone | missing |
+      | ---- | ------------ | -------- | ----- | ---- | ------- |
+      | Link | 4            | 1        | 0     | 0    | 3       |
+      ",
+        ],
+        [
+          1,
+          [
+            "unknown-value",
+          ],
+          [
+            [
+              "Evidence",
+              4,
+              1,
+            ],
+          ],
+        ],
+      ]
+    `);
+  });
+
   const schema = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered
 type Toolbar {
@@ -1203,9 +1260,14 @@ actor EvidenceRecorder records Evidence
     ]).toEqual(["Evidence", 7, 4]);
   });
 
-  it("reports the stored records' problems first, and counts nothing", () => {
+  it("reports the stored records' problems first, and counts the rest, with those set apart", () => {
     const result = project(`[${link("Phone", "hovered")}]`)("toolbar.dxn");
-    expect([result.code, result.stdout]).toEqual([1, ""]);
+    expect([result.code, result.stdout.split("\n")[0]]).toEqual([
+      1,
+      expect.stringMatching(
+        /^toolbar\.dxn: Evidence 0 of 7 combinations recorded · 1 of 1 stored record still says hover = hovered/,
+      ),
+    ]);
   });
 });
 

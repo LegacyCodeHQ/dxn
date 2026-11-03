@@ -200,6 +200,8 @@ dxn attach gazette.dxn Button --actor DesignAgent \
 
 Counts, for each record an actor records, the combinations of every element in the file's trees and those a stored record is about; `--missing` lists the others.
 
+Stored records with errors are reported first, then set apart and said after the count, which counts every other stored record, as an editor's hints do; it then fails. A record none of whose stored records can be counted is said instead of a count. `--json` gives the problems and the counts together.
+
 ```bash
 dxn status toolbar.dxn
 ```

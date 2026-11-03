@@ -5,6 +5,7 @@ import {
   folderOf,
   type ParseResult,
   repositoryOf,
+  type StoredProblem,
   storedBeside,
 } from "@legacycodehq/dxn-language";
 import type { Reporter } from "./report.js";
@@ -28,16 +29,16 @@ function storedData(parsed: ParseResult, file: string, cwd: string): Stored[] {
   });
 }
 
-// The stored records of the file's records, once each is a record with
-// context and all of them check, as an editor checks them too; otherwise the
-// exit code, with what is wrong refused or reported. A warning, such as a
-// record made before its element gained a state, leaves them usable.
-export function loadStored(
+// The stored records of the file's records, and the problems in them, each
+// reported, as an editor checks them too; or the exit code, refused, for
+// records stored that no actor records. A command that counts them goes on
+// with those that check.
+export function loadStoredToCount(
   parsed: ParseResult,
   file: string,
   cwd: string,
   report: Reporter,
-): Stored[] | number {
+): { stored: Stored[]; problems: StoredProblem[] } | number {
   const stored = storedData(parsed, file, cwd);
   const drawn = drawings(repositoryOf(resolve(cwd, file), cwd));
   const { withoutContext, problems } = checkStored(parsed, stored, drawn);
@@ -55,5 +56,22 @@ export function loadStored(
       message,
     });
   }
-  return problems.some(({ severity }) => severity === undefined) ? report.fail() : stored;
+  return { stored, problems };
+}
+
+// The stored records of the file's records, once each is a record with
+// context and all of them check; otherwise the exit code, with what is wrong
+// refused or reported. A warning, such as a record made before its element
+// gained a state, leaves them usable.
+export function loadStored(
+  parsed: ParseResult,
+  file: string,
+  cwd: string,
+  report: Reporter,
+): Stored[] | number {
+  const loaded = loadStoredToCount(parsed, file, cwd, report);
+  if (typeof loaded === "number") return loaded;
+  return loaded.problems.some(({ severity }) => severity === undefined)
+    ? report.fail()
+    : loaded.stored;
 }

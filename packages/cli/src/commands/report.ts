@@ -56,6 +56,12 @@ export class Reporter {
     return 1;
   }
 
+  // What a command found, said as succeed says it, with the problems found
+  // too: a failure, the exit code 1, when one of them is an error.
+  finish(result: object, text: string): number {
+    this.succeed(result, text);
+    return this.failed ? 1 : 0;
+  }
   succeed(result: object, text: string): number {
     if (this.json) {
       this.io.stdout(`${JSON.stringify({ ...result, problems: this.problems }, null, 2)}\n`);
