@@ -997,7 +997,7 @@ describe("the language server", () => {
         [
           [
             { line: 1, character: 13 },
-            "◐ PenEvidence 1 of 2 combinations recorded",
+            "◐ PenEvidence 1/2 recorded",
             true,
             "◐ PenEvidence 1 of 2 combinations recorded",
           ],
@@ -1016,7 +1016,7 @@ describe("the language server", () => {
         [
           [
             { line: 1, character: 13 },
-            "◌ PenEvidence 0 of 2 combinations recorded · 1 stale",
+            "◌ PenEvidence 0/2 recorded · 1 stale",
             true,
             "◌ PenEvidence 0 of 2 combinations recorded, 1 stale",
           ],
@@ -1068,7 +1068,7 @@ describe("the language server", () => {
         hints?.map(({ position, label }) => [position, label]),
         (found?.contents as { value: string } | undefined)?.value,
       ]).toEqual([
-        [[{ line: 1, character: 13 }, "◌ PenEvidence 1 of 2 combinations recorded · 3 set apart"]],
+        [[{ line: 1, character: 13 }, "◌ PenEvidence 1/2 recorded · 3 set apart"]],
         [
           "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 say style = filled, which Style does not have (primary, secondary)",
           "",
@@ -1109,7 +1109,7 @@ describe("the language server", () => {
         ]),
       ).toEqual([
         [
-          "◌ PenEvidence 1 of 2 combinations recorded · 1 set apart",
+          "◌ PenEvidence 1/2 recorded · 1 set apart",
           "◌ PenEvidence 1 of 2 combinations recorded · 1 of 2 stored records says style = plain, which Style does not have (primary, secondary)",
         ],
       ]);
@@ -1171,7 +1171,7 @@ describe("the language server", () => {
       });
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect([before, details, await label()]).toEqual([
-        ["◌ PenEvidence 1 of 4 combinations recorded · 2 outdated"],
+        ["◌ PenEvidence 1/4 recorded · 2 outdated"],
         [
           "◌ PenEvidence 1 of 4 combinations recorded · 2 outdated: hover added",
           "",
@@ -1186,7 +1186,7 @@ describe("the language server", () => {
           "- Button: style = primary, hover = hovered",
           "- Button: style = secondary, hover = hovered",
         ].join("\n"),
-        ["◌ PenEvidence 1 of 4 combinations recorded · 1 set apart"],
+        ["◌ PenEvidence 1/4 recorded · 1 set apart"],
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1241,9 +1241,9 @@ describe("the language server", () => {
         await hovered(7),
       ]).toEqual([
         [
-          [1, "◐ PenEvidence 1 of 2 combinations recorded"],
-          [4, "◐ PenEvidence 1 of 2 combinations recorded"],
-          [7, "○ PenEvidence 0 of 1 combination recorded"],
+          [1, "◐ PenEvidence 1/2 recorded"],
+          [4, "◐ PenEvidence 1/2 recorded"],
+          [7, "○ PenEvidence 0/1 recorded"],
         ],
         "```dxn\ntype Tab\n  state style: Style\n```\n\n---\n\n◐ PenEvidence: Bar can show all 2 combinations of Tab, 1 recorded\n\nMissing:\n- Bar.tab: style = bold",
         undefined,
@@ -1286,8 +1286,8 @@ describe("the language server", () => {
         range: { start: { line: 0, character: 0 }, end: { line: 14, character: 0 } },
       });
       expect(hints?.map(({ position, label }) => [position.line, label])).toEqual([
-        [1, "● PenEvidence 2 of 2 combinations recorded"],
-        [4, "○ PenEvidence 0 of 1 combination recorded"],
+        [1, "● PenEvidence 2/2 recorded"],
+        [4, "○ PenEvidence 0/1 recorded"],
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1390,8 +1390,8 @@ describe("the language server", () => {
           ],
         ],
         [
-          [0, "○ PenEvidence 0 of 1 combination recorded"],
-          [1, "◌ PenEvidence 1 of 1 combination recorded · 1 doesn't match the model"],
+          [0, "○ PenEvidence 0/1 recorded"],
+          [1, "◌ PenEvidence 1/1 recorded · 1 doesn't match the model"],
         ],
       ]);
     } finally {

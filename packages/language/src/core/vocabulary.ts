@@ -79,9 +79,10 @@ export function evidenceLabel(count: EvidenceCount, usage?: Usage): string {
   return `${label} · ${outdated.length} outdated: ${names.join(", ")} added`;
 }
 
-// A count of evidence, short, for a hint beside the code: the count, then
-// how many need a look, by what, "Evidence 0 of 2 combinations recorded · 1
-// stale, 1 set apart". What each is, is the hint's tooltip.
+// A count of evidence, short, for a hint beside the code, as an editor's
+// hints are short: the count as a ratio, then how many need a look, by what,
+// "Evidence 0/2 recorded · 1 stale, 1 set apart". All of it, "0 of 2
+// combinations recorded", is the hint's tooltip.
 export function evidenceShort(count: {
   record: string;
   recorded: number;
@@ -93,7 +94,6 @@ export function evidenceShort(count: {
   mismatched: number;
 }): string {
   const { record, recorded, combinations, stale, gone, outdated, apart, mismatched } = count;
-  const many = combinations === 1 ? "combination" : "combinations";
   const notes = [
     ...(stale > 0 ? [`${stale} stale`] : []),
     ...(gone > 0 ? [`${gone} gone`] : []),
@@ -103,7 +103,7 @@ export function evidenceShort(count: {
       ? [`${mismatched} ${mismatched === 1 ? "doesn't" : "don't"} match the model`]
       : []),
   ];
-  const counted = `${record} ${recorded} of ${combinations} ${many} recorded`;
+  const counted = `${record} ${recorded}/${combinations} recorded`;
   return notes.length === 0 ? counted : `${counted} · ${notes.join(", ")}`;
 }
 

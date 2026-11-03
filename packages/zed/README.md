@@ -63,8 +63,7 @@ changing the setting, run `editor: restart language server`.
 
 After each type, and each part placed in a type, an inlay hint shows how many of its
 combinations have evidence, a record at a time, as `dxn status` counts them, and how
-many of its stored records need a look, by what: `◌ PenEvidence 4 of 6 combinations
-recorded · 1 stale` after `type Button {`. The hint is short; hovering over it, or over the
+many of its stored records need a look, by what: `◌ PenEvidence 4/6 recorded · 1 stale` after `type Button {`. The hint is short; hovering over it, or over the
 element's name, says all of it: the combinations still missing, stale or gone; for
 records made before the element gained a state or a dimension, `· 9 outdated`, what
 was added, why that matters and what to do; and for stored records set apart for

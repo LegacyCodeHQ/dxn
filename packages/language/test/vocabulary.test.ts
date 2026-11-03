@@ -104,9 +104,9 @@ describe("the words for evidence", () => {
       apartShort("Evidence", 3),
     ]).toMatchInlineSnapshot(`
       [
-        "Evidence 2 of 10 combinations recorded",
-        "Evidence 0 of 1 combination recorded",
-        "Evidence 2 of 10 combinations recorded · 1 stale, 2 gone, 3 outdated, 1 set apart, 2 don't match the model",
+        "Evidence 2/10 recorded",
+        "Evidence 0/1 recorded",
+        "Evidence 2/10 recorded · 1 stale, 2 gone, 3 outdated, 1 set apart, 2 don't match the model",
         "Evidence: 3 stored records set apart",
       ]
     `);
