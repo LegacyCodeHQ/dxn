@@ -1,4 +1,4 @@
-import type { Declaration, ParseResult, Type } from "../core/ast.js";
+import type { Declaration, ResolvedResult, Type } from "../core/ast.js";
 import { message, type Words, words } from "../core/message.js";
 import { penNode, scalars } from "./scalars.js";
 
@@ -21,7 +21,7 @@ export const article = (word: string) => (/^[AEIOUaeiou]/.test(word) ? "an" : "a
 export class Names {
   private readonly kinds = new Map<string, Kind>();
 
-  constructor(private readonly file: ParseResult) {
+  constructor(private readonly file: ResolvedResult) {
     for (const { name } of scalars) this.kinds.set(name, "scalar");
     this.kinds.set(penNode.name, "scalar");
     for (const [kind, list] of this.lists()) {
@@ -87,7 +87,7 @@ export class Names {
 
 // The values an enum or a dimension declares, by its name, whether it is
 // broken or not; none, for a name that is neither.
-export function valuesOf(file: ParseResult, name: string): string[] {
+export function valuesOf(file: ResolvedResult, name: string): string[] {
   return (
     [...file.enums, ...file.dimensions]
       .find((declaration) => declaration.name === name)

@@ -28,6 +28,19 @@ judging, reusing them for the remaining conditions of that type. `evidence` uses
 evidence. These directory dependencies form a DAG. Shared dependencies stay in
 sibling folders rather than being nested inside one of their several consumers.
 
+`SyntaxResult`, `ResolvedResult` and `ParseResult` distinguish the stages at
+compile time. Their optional, private symbol markers are erased: runtime keys,
+JSON and diagnostics are unchanged, and structurally constructed files remain
+compatible. A resolved result is also the input shape for checks and evaluation;
+it may have errors, so evaluation retains its runtime guards. A completed parse
+cannot be passed back to the syntax-to-analysis or resolution entry points.
+The passes still mutate their input, so callers must not reuse a syntax alias
+after giving it to analysis. TypeScript does not enforce ownership of that alias.
+
+The unused `fieldValue` export and its helper were removed after the `PenNode`
+evidence model replaced their callers. Derived-field syntax, checks, storage
+validation, navigation and renaming remain supported.
+
 The CLI's `commands/index.ts` dispatches to commands; their shared context,
 reporting, stored-record helpers, wording, tables and I/O types live in
 `commands/support`. The language server's `protocol` folder adapts diagnostics,

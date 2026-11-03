@@ -1,4 +1,4 @@
-import type { ParseResult } from "../core/ast.js";
+import type { ResolvedResult } from "../core/ast.js";
 import { message } from "../core/message.js";
 import { holds } from "../model/condition.js";
 import { enumOf, valuesOf } from "../model/names.js";
@@ -22,7 +22,7 @@ export interface Cases {
 // what only the types around it depend on is alike. The file must have no
 // problems.
 export function cases(
-  file: ParseResult,
+  file: ResolvedResult,
   target: string,
   { alike = true }: { alike?: boolean } = {},
 ): Cases {

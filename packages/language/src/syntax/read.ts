@@ -18,9 +18,9 @@ import type {
   Expectation,
   Field,
   Located,
-  ParseResult,
   Rule,
   State,
+  SyntaxResult,
   Trigger,
   Type,
   Union,
@@ -40,9 +40,9 @@ const lowercase = { pattern: /^[a-z]/, rule: "a lowercase letter" };
 
 // Reads declarations and syntax diagnostics, retaining partial declarations.
 // Names are still as written; no model is evaluated here.
-export function read(source: string): ParseResult {
+export function read(source: string): SyntaxResult {
   const tokens = scan(source);
-  const result: ParseResult = {
+  const result: SyntaxResult = {
     enums: [],
     dimensions: [],
     types: [],

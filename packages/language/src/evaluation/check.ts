@@ -1,4 +1,4 @@
-import type { Field, Located, ParseResult, RecordDeclaration, Type } from "../core/ast.js";
+import type { Field, Located, RecordDeclaration, ResolvedResult, Type } from "../core/ast.js";
 import { message, words } from "../core/message.js";
 import { among, article, Names, near } from "../model/names.js";
 import { environmentOf } from "../model/profiles.js";
@@ -11,7 +11,7 @@ import { checkChosen, checkWhen, type Report, reportTo } from "./check-values.js
 // diagnostics: the file holds each name once, an enum or a dimension each
 // value once, and every name that refers to a declaration names one of the
 // right kind.
-export function check(file: ParseResult): void {
+export function check(file: ResolvedResult): void {
   const report = reportTo(file.diagnostics);
   const names = new Names(file);
   checkDeclared(file, report);
@@ -31,7 +31,7 @@ export function check(file: ParseResult): void {
 // A name that is not an enum uses the enums it may be a misspelling of; a
 // syntax error may hide what uses one, so then none is reported; and one
 // declared twice is reported as that.
-function checkUsedEnums(file: ParseResult, names: Names, { warn }: Report): void {
+function checkUsedEnums(file: ResolvedResult, names: Names, { warn }: Report): void {
   if (file.diagnostics.some(({ code }) => code === "syntax-error")) return;
   const enums = file.enums.map(({ name }) => name);
   const used = new Set(
@@ -58,7 +58,7 @@ function checkUsedEnums(file: ParseResult, names: Names, { warn }: Report): void
 }
 
 // Actors: each records a record, which recording it gives a context.
-function checkActors(file: ParseResult, names: Names, { error }: Report): void {
+function checkActors(file: ResolvedResult, names: Names, { error }: Report): void {
   for (const actor of file.actors) {
     const recorded = actor.records;
     if (names.kindOf(recorded.name) !== "record") {
@@ -68,7 +68,7 @@ function checkActors(file: ParseResult, names: Names, { error }: Report): void {
 }
 
 // Expectations: each title once.
-function checkExpectations(file: ParseResult, { error }: Report): void {
+function checkExpectations(file: ResolvedResult, { error }: Report): void {
   const titles = new Map<string, number>();
   for (const expectation of file.expectations) {
     const earlier = titles.get(expectation.title);
@@ -86,7 +86,7 @@ function checkExpectations(file: ParseResult, { error }: Report): void {
 
 // No type contains itself through its children: it would be a tree without
 // end.
-function checkContainment(file: ParseResult, names: Names, { error }: Report): void {
+function checkContainment(file: ResolvedResult, names: Names, { error }: Report): void {
   const byName = new Map<string, Type>();
   for (const type of file.types) if (!byName.has(type.name)) byName.set(type.name, type);
   // A type's children, each with its type.
@@ -140,7 +140,7 @@ function through(steps: { from: { name: string }; edge: Located; to: { name: str
 }
 
 // The file: each name declared once, and none a built-in scalar's.
-function checkDeclared(file: ParseResult, { error }: Report): void {
+function checkDeclared(file: ResolvedResult, { error }: Report): void {
   const declarations = [
     ...file.enums,
     ...file.dimensions,
@@ -180,7 +180,7 @@ function checkDeclared(file: ParseResult, { error }: Report): void {
 }
 
 // An enum or a dimension: each value once.
-function checkValues(file: ParseResult, { error }: Report): void {
+function checkValues(file: ResolvedResult, { error }: Report): void {
   for (const declaration of [...file.enums, ...file.dimensions]) {
     const seen = new Set<string>();
     for (const item of declaration.values) {
@@ -193,7 +193,7 @@ function checkValues(file: ParseResult, { error }: Report): void {
 }
 
 // An environment: declared dimensions, each once.
-function checkEnvironments(file: ParseResult, names: Names, { error }: Report): void {
+function checkEnvironments(file: ResolvedResult, names: Names, { error }: Report): void {
   for (const environment of file.environments) {
     const seen = new Set<string>();
     for (const dimension of environment.dimensions) {
@@ -213,7 +213,7 @@ function checkEnvironments(file: ParseResult, names: Names, { error }: Report): 
 
 // Profiles: instances of a declared environment, all of the same one, each
 // giving every dimension of it once, with one of its values.
-function checkProfiles(file: ParseResult, names: Names, report: Report): void {
+function checkProfiles(file: ResolvedResult, names: Names, report: Report): void {
   const { error } = report;
   // The first whose environment is one: another's is reported already.
   const first = file.profiles.find(({ environment }) =>
@@ -325,7 +325,7 @@ function checkDerivedField(
 // Modifiers: on profiles that exist, each once; setting dimensions of the
 // profiles' environment, each once, with one of their values; and changing
 // something on each profile, or the profile it makes already exists.
-function checkModifiers(file: ParseResult, names: Names, report: Report): void {
+function checkModifiers(file: ResolvedResult, names: Names, report: Report): void {
   const { error, warn } = report;
   const environment = environmentOf(file);
   for (const modifier of file.modifiers) {
@@ -385,7 +385,7 @@ function checkModifiers(file: ParseResult, names: Names, report: Report): void {
 // none a record with its own context, nor named context in a record with
 // one; and no record that contains itself, which could never be written
 // down, since every field is given.
-function checkRecords(file: ParseResult, names: Names, report: Report): void {
+function checkRecords(file: ResolvedResult, names: Names, report: Report): void {
   const { error } = report;
   for (const record of file.records) {
     const seen = new Set<string>();

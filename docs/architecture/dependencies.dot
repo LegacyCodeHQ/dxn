@@ -1,7 +1,7 @@
 digraph dependencies {
   rankdir=LR;
   node [shape=box];
-  label="dxn • 30f1c29-dirty • 15 modules";
+  label="dxn • 0be12e8-dirty • 15 modules";
   labelloc=t;
   labeljust=l;
   fontsize=10;
@@ -17,7 +17,7 @@ digraph dependencies {
   "language/core" [label="core\n6 files", shape=component, style=filled, fillcolor=lightyellow];
   "language/data" [label="data\n2 files", shape=component, style=filled, fillcolor=lightyellow];
   "language/editor" [label="editor\n6 files", shape=component, style=filled, fillcolor=lightyellow];
-  "language/evaluation" [label="evaluation\n9 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/evaluation" [label="evaluation\n8 files", shape=component, style=filled, fillcolor=lightyellow];
   "language/evidence" [label="evidence\n6 files", shape=component, style=filled, fillcolor=lightyellow];
   "language/model" [label="model\n5 files", shape=component, style=filled, fillcolor=lightyellow];
   "language/syntax" [label="syntax\n4 files", shape=component, style=filled, fillcolor=lightyellow];

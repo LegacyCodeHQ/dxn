@@ -263,7 +263,9 @@ export interface Actor extends Declaration {
   records: Located;
 }
 
-export interface ParseResult {
+// The common data shape at every stage. Phase markers below exist only in
+// types: no tags or symbols are written onto a source file at runtime.
+export interface SourceFile {
   enums: Enum[];
   dimensions: Dimension[];
   types: Type[];
@@ -274,4 +276,23 @@ export interface ParseResult {
   actors: Actor[];
   expectations: Expectation[];
   diagnostics: Diagnostic[];
+}
+
+declare const sourceStage: unique symbol;
+
+// Optional markers keep structurally constructed files compatible while
+// distinguishing the results returned by the language's own entry points.
+export interface SyntaxResult extends SourceFile {
+  readonly [sourceStage]?: "syntax";
+}
+
+// Readers of resolved names also accept the completed analysis result. A
+// resolved file may still have errors; evaluation keeps its runtime guards.
+export interface ResolvedResult extends SourceFile {
+  readonly [sourceStage]?: "resolved" | "analyzed";
+}
+
+// Analysis is complete, including diagnostics; this does not mean error-free.
+export interface ParseResult extends ResolvedResult {
+  readonly [sourceStage]?: "analyzed";
 }

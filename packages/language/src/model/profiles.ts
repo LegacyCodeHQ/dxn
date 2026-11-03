@@ -1,4 +1,4 @@
-import type { Environment, ParseResult } from "../core/ast.js";
+import type { Environment, ResolvedResult } from "../core/ast.js";
 
 // A profile with its values: one the file declares, or one a modifier makes,
 // named "<profile>+<modifier>".
@@ -10,7 +10,7 @@ export interface Resolved {
 
 // Every profile of a file without problems: those it declares, then those
 // each modifier makes, on its profiles in order.
-export function profilesOf(file: ParseResult): Resolved[] {
+export function profilesOf(file: ResolvedResult): Resolved[] {
   const declared = file.profiles.map((profile) => ({
     name: profile.name,
     environment: profile.environment.name,
@@ -37,7 +37,7 @@ export function profilesOf(file: ParseResult): Resolved[] {
 
 // The environment the profiles are instances of: that of the first profile
 // whose environment is one, as profiles are checked against.
-export function environmentOf(file: ParseResult): Environment | undefined {
+export function environmentOf(file: ResolvedResult): Environment | undefined {
   for (const { environment } of file.profiles) {
     const found = file.environments.find(({ name }) => name === environment.name);
     if (found !== undefined) return found;
@@ -47,6 +47,6 @@ export function environmentOf(file: ParseResult): Environment | undefined {
 
 // The dimensions the profiles give a value: their environment's, or none
 // without profiles.
-export function givenDimensions(file: ParseResult): string[] {
+export function givenDimensions(file: ResolvedResult): string[] {
   return environmentOf(file)?.dimensions.map(({ name }) => name) ?? [];
 }

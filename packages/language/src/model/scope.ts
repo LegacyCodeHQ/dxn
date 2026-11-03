@@ -1,10 +1,17 @@
-import type { Declaration, Enum, Located, ParseResult, Type } from "../core/ast.js";
+import type {
+  Declaration,
+  Enum,
+  Located,
+  ResolvedResult,
+  SyntaxResult,
+  Type,
+} from "../core/ast.js";
 
 // Gives the enums and types declared inside a type their full names,
 // "<Type>.<Name>", and lists them with the file's own; then resolves each
 // name a type or a record uses to the declaration it means, looking first in
 // its own type, then in the types around it, and last in the file.
-export function scope(file: ParseResult): void {
+export function scope(file: SyntaxResult): ResolvedResult {
   const enter = (type: Type) => {
     const inside = <T extends Declaration>(declaration: T, list: T[]) => {
       declaration.short = declaration.name;
@@ -51,13 +58,15 @@ export function scope(file: ParseResult): void {
     for (const state of type.states) resolve(state.enum, type.name);
     for (const child of type.children) resolve(child.type, type.name);
   }
+  // Resolution changes the existing object, not its runtime representation.
+  return file as unknown as ResolvedResult;
 }
 
 // The names visible around a declaration inside a type, which it cannot
 // repeat: those of the file, and of the types around its own, with where
 // each is. Those in its own type are its siblings: a repeat among them is a
 // repeat of the full name.
-export function around(file: ParseResult, declaration: Declaration): Map<string, Located> {
+export function around(file: ResolvedResult, declaration: Declaration): Map<string, Located> {
   const visible = new Map<string, Located>();
   const all = [
     ...file.enums,

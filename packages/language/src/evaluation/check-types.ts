@@ -5,7 +5,7 @@ import type {
   Effect,
   Event,
   Located,
-  ParseResult,
+  ResolvedResult,
   Rule,
   State,
   Trigger,
@@ -20,7 +20,7 @@ import { checkChosen, checkWhen, type Report } from "./check-values.js";
 // What checking a file's types needs at hand: the file, its names, and where
 // to report a problem.
 interface Context extends Report {
-  file: ParseResult;
+  file: ResolvedResult;
   names: Names;
 }
 
@@ -48,7 +48,7 @@ type Triggered = { trigger: Trigger; change: Change; path: string };
 // values, under needed dimensions, and none that makes a state depend on
 // itself; what is alike in it; its children; its events, actions and
 // triggers; and the states it provides. Problems are reported in that order.
-export function checkTypes(file: ParseResult, names: Names, report: Report): void {
+export function checkTypes(file: ResolvedResult, names: Names, report: Report): void {
   const context: Context = { file, names, ...report };
   for (const type of file.types) {
     const needed = checkNeeds(context, type);

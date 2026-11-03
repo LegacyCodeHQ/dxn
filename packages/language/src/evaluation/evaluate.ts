@@ -3,7 +3,7 @@ import {
   type Child,
   childAt,
   fixes,
-  type ParseResult,
+  type ResolvedResult,
   type State,
   type Type,
 } from "../core/ast.js";
@@ -37,7 +37,7 @@ export type Presence = boolean | Record<string, string[]> | string;
 // Evaluates a type of a parsed file, which must have no problems. A value of
 // a state exists in a row unless a rule limits it to dimension values the row
 // does not have; a derived state has the one value its when gives.
-export function states(file: ParseResult, typeName: string): TypeStates {
+export function states(file: ResolvedResult, typeName: string): TypeStates {
   if (file.diagnostics.some(({ severity }) => severity === "error")) {
     throw new Error("cannot evaluate a file with problems");
   }
@@ -211,7 +211,7 @@ export interface InPlace {
 // each parent's states that decide whether the next child is there or that
 // it binds into it, keeping where the child is, and setting its bound
 // states. Its own states are those it has in that world.
-export function inPlace(file: ParseResult, path: string): InPlace {
+export function inPlace(file: ResolvedResult, path: string): InPlace {
   if (file.diagnostics.some(({ severity }) => severity === "error")) {
     throw new Error("cannot evaluate a file with problems");
   }
@@ -376,7 +376,7 @@ export interface Placement {
 
 // Follows a path, "<Type>.<child>...": a refusal names the first part that
 // is not a type or a child.
-export function placement(file: ParseResult, path: string): Placement {
+export function placement(file: ResolvedResult, path: string): Placement {
   const segments = path.split(".");
   const first = segments.findIndex((segment) => /^[a-z]/.test(segment));
   const rootName = segments.slice(0, first === -1 ? segments.length : first).join(".");
@@ -494,7 +494,7 @@ export function placement(file: ParseResult, path: string): Placement {
 // The file's profiles, those with the same values as one group, in the order
 // the first of each comes.
 function profileGroups(
-  file: ParseResult,
+  file: ResolvedResult,
 ): { profiles: string[]; values: Record<string, string> }[] {
   const groups = new Map<string, { profiles: string[]; values: Record<string, string> }>();
   for (const profile of profilesOf(file)) {

@@ -1,4 +1,4 @@
-import type { Located, ParseResult, Type } from "../core/ast.js";
+import type { Located, ResolvedResult, Type } from "../core/ast.js";
 import { givenDimensions, profilesOf } from "../model/profiles.js";
 import { penNode } from "../model/scalars.js";
 import { inPlace, placement, states } from "./evaluate.js";
@@ -54,7 +54,7 @@ export type Check = (node: {
 
 // Every element of the file's trees, by its path: each type that no type
 // contains, then each of its children, theirs, and so on.
-export function treePaths(file: ParseResult): string[] {
+export function treePaths(file: ResolvedResult): string[] {
   return treePlaces(file).map(({ path }) => path);
 }
 
@@ -74,7 +74,7 @@ export interface TreePlace {
   own: boolean;
 }
 
-export function treePlaces(file: ParseResult): TreePlace[] {
+export function treePlaces(file: ResolvedResult): TreePlace[] {
   const contained = new Set(
     file.types.flatMap(({ children }) => children.map(({ type }) => type.name)),
   );
@@ -109,7 +109,7 @@ export function treePlaces(file: ParseResult): TreePlace[] {
 // A combination, as its path and where it is: "<path> on <profiles>,
 // <Dimension> <value> with <parent> = <value>: <state> = <value>". A
 // combination on every profile is the same on all of them.
-export function describe(file: ParseResult, path: string, combination: Combination): string {
+export function describe(file: ResolvedResult, path: string, combination: Combination): string {
   const every = profilesOf(file).map(({ name }) => name);
   const covered = combination.profiles ?? [];
   const assignments = (pairs: Record<string, string>) =>
@@ -151,7 +151,7 @@ export interface Progress {
 }
 
 export function progress(
-  file: ParseResult,
+  file: ResolvedResult,
   stored: { record: string; source: string }[],
   check?: Check,
 ): Progress[] {
@@ -228,7 +228,7 @@ export function split(states: Record<string, string[]>): Record<string, string>[
 
 // A type's combinations on its own, each with one value for each state: its
 // rows of dxn states, split, with no parents.
-export function alone(file: ParseResult, typeName: string): Combination[] {
+export function alone(file: ResolvedResult, typeName: string): Combination[] {
   return states(file, typeName).rows.flatMap((row) =>
     split(row.states).map((own) => ({
       ...(row.profiles === undefined ? {} : { profiles: row.profiles }),
@@ -241,7 +241,7 @@ export function alone(file: ParseResult, typeName: string): Combination[] {
 
 // An element's combinations in place, each with one value for each state:
 // its rows of dxn states, split.
-export function expand(file: ParseResult, path: string, given: string[]): Combination[] {
+export function expand(file: ResolvedResult, path: string, given: string[]): Combination[] {
   const combinations: Combination[] = [];
   for (const row of inPlace(file, path).rows) {
     const dimensions = Object.fromEntries(
@@ -265,7 +265,7 @@ export function expand(file: ParseResult, path: string, given: string[]): Combin
 // fewer of an element's looks, never more: the profiles differ in dimensions
 // the element does not have, and the parents' states only decide its own.
 // Two that differ in a dimension it has, even one a profile gives, stay apart.
-function merged(file: ParseResult, path: string, given: string[]): Combination[] {
+function merged(file: ResolvedResult, path: string, given: string[]): Combination[] {
   const result: Combination[] = [];
   const byKey = new Map<string, Combination>();
   for (const full of expand(file, path, [])) {
@@ -301,7 +301,7 @@ export interface Judged {
 // With a check, each entry is recorded, stale or gone by its PenNodes. The file
 // and the data must have no problems.
 export function judge(
-  file: ParseResult,
+  file: ResolvedResult,
   record: string,
   sources: string[],
   check?: Check,
@@ -407,7 +407,7 @@ export function judge(
 // gone by its frame, and a combination is as its best entry is. The file and
 // the data must have no problems.
 export function coverage(
-  file: ParseResult,
+  file: ResolvedResult,
   record: string,
   sources: string[],
   check?: Check,

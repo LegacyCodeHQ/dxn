@@ -1,4 +1,4 @@
-import type { Condition, Diagnostic, Located, ParseResult, Type } from "../core/ast.js";
+import type { Condition, Diagnostic, Located, ResolvedResult, Type } from "../core/ast.js";
 import { message, words } from "../core/message.js";
 import { conditionText, coverage, holds } from "../model/condition.js";
 import { enumOf, valuesOf } from "../model/names.js";
@@ -10,7 +10,7 @@ import { alone } from "./status.js";
 // value of what it compares. One that is never true there is an error, one
 // that is always true there a warning, where judging by values alone said
 // neither. The file must have no other problems.
-export function conditionsInMatrix(file: ParseResult): void {
+export function conditionsInMatrix(file: ResolvedResult): void {
   const valuesIn = (type: Type) => (subject: string) => valuesOf(file, enumOf(type, subject) ?? "");
   // Every type is judged before any finding is recorded: a recorded error is
   // a problem, and a file with problems cannot be evaluated.

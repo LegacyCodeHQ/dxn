@@ -1,7 +1,7 @@
 digraph dependencies {
   rankdir=LR;
   node [shape=box];
-  label="dxn • 30f1c29-dirty • 68 files";
+  label="dxn • 0be12e8-dirty • 67 files";
   labelloc=t;
   labeljust=l;
   fontsize=10;
@@ -51,7 +51,6 @@ digraph dependencies {
   "packages/language/src/evaluation/check-types.ts" [label="check-types.ts", style=filled, fillcolor=white];
   "packages/language/src/evaluation/check-values.ts" [label="check-values.ts", style=filled, fillcolor=white];
   "packages/language/src/evaluation/check.ts" [label="evaluation/check.ts", style=filled, fillcolor=white];
-  "packages/language/src/evaluation/derive.ts" [label="derive.ts", style=filled, fillcolor=white];
   "packages/language/src/evaluation/evaluate.ts" [label="evaluate.ts", style=filled, fillcolor=white];
   "packages/language/src/evaluation/expect.ts" [label="expect.ts", style=filled, fillcolor=white];
   "packages/language/src/evaluation/matrix.ts" [label="matrix.ts", style=filled, fillcolor=white];
@@ -224,8 +223,6 @@ digraph dependencies {
   "packages/language/src/evaluation/check.ts" -> "packages/language/src/model/profiles.ts";
   "packages/language/src/evaluation/check.ts" -> "packages/language/src/model/scalars.ts";
   "packages/language/src/evaluation/check.ts" -> "packages/language/src/model/scope.ts";
-  "packages/language/src/evaluation/derive.ts" -> "packages/language/src/core/ast.ts";
-  "packages/language/src/evaluation/derive.ts" -> "packages/language/src/evaluation/evaluate.ts";
   "packages/language/src/evaluation/evaluate.ts" -> "packages/language/src/core/ast.ts";
   "packages/language/src/evaluation/evaluate.ts" -> "packages/language/src/core/message.ts";
   "packages/language/src/evaluation/evaluate.ts" -> "packages/language/src/model/condition.ts";
@@ -296,7 +293,6 @@ digraph dependencies {
   "packages/language/src/index.ts" -> "packages/language/src/editor/semantic.ts";
   "packages/language/src/index.ts" -> "packages/language/src/editor/symbols.ts";
   "packages/language/src/index.ts" -> "packages/language/src/evaluation/cases.ts";
-  "packages/language/src/index.ts" -> "packages/language/src/evaluation/derive.ts";
   "packages/language/src/index.ts" -> "packages/language/src/evaluation/evaluate.ts";
   "packages/language/src/index.ts" -> "packages/language/src/evaluation/status.ts";
   "packages/language/src/index.ts" -> "packages/language/src/evidence/apart.ts";

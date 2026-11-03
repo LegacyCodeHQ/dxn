@@ -2,7 +2,7 @@ import {
   type Child,
   childAt,
   type Expectation,
-  type ParseResult,
+  type ResolvedResult,
   type Trigger,
   type Type,
 } from "../core/ast.js";
@@ -18,7 +18,7 @@ import { type Combination, expand, treePaths } from "./status.js";
 // every element below it that has every key it names; the combinations its
 // when picks; and its assertion on them. A rule that picks nothing would
 // always pass, so it is reported too. The file must have no other problems.
-export function expectations(file: ParseResult): void {
+export function expectations(file: ResolvedResult): void {
   const profiles = profilesOf(file);
   const given = givenDimensions(file);
   // All are evaluated before any failure is recorded: a recorded one is a
@@ -42,7 +42,7 @@ export function expectations(file: ParseResult): void {
 type Failure = { code: "expectation-failed" | "expectation-empty"; message: string };
 
 function checkOne(
-  file: ParseResult,
+  file: ResolvedResult,
   expectation: Expectation,
   given: string[],
   profiles: ReturnType<typeof profilesOf>,
@@ -316,7 +316,7 @@ function checkOne(
 }
 
 // The type of a child, by its path from a type.
-export function childTypeAt(file: ParseResult, type: Type, path: string[]): Type | undefined {
+export function childTypeAt(file: ResolvedResult, type: Type, path: string[]): Type | undefined {
   let at: Type | undefined = type;
   for (let index = 0; index < path.length; ) {
     const found: { child: Child; next: number } | undefined =
