@@ -17,13 +17,15 @@ export function conditionsInMatrix(file: ParseResult): void {
   const found: Diagnostic[] = [];
   const report = reportTo(found);
   for (const type of file.types) {
-    // Every combination of the type: a value for each of its states, and for
-    // each dimension it needs, with every rule applied.
-    const combinations = alone(file, type.name).map(({ dimensions, states: own }) => ({
-      ...dimensions,
-      ...own,
-    }));
+    // Enumerate only when a condition needs judging, once for this type.
+    // A type without conditions can have many states without needing their
+    // Cartesian product just to read or check it.
+    let combinations: Record<string, string>[] | undefined;
     const judge = (condition: Condition, at: Located, then: { never: string; always: string }) => {
+      combinations ??= alone(file, type.name).map(({ dimensions, states: own }) => ({
+        ...dimensions,
+        ...own,
+      }));
       const holding = combinations.filter((combination) =>
         holds(condition, (name) => combination[name]),
       ).length;
