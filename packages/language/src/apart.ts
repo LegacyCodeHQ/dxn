@@ -77,8 +77,8 @@ export function countable(
 }
 
 // Stored records not counted for their errors: how many, of how many, and
-// what most of them have, "Evidence: 1 of 2 stored records still says hover
-// = bogus, which Hover no longer has (rest, hovered)"; then each problem, as
+// what most of them have, "Evidence: 1 of 2 stored records says hover =
+// bogus, which Hover does not have (rest, hovered)"; then each problem, as
 // dxn validate prints it.
 export function apartLabel(
   file: ParseResult,
@@ -148,14 +148,15 @@ interface Reason {
   many: string;
 }
 
-// Why a stored record is wrong, in the words of what changed in the model
-// since it was recorded, where that is what happened:
-// - a value its state no longer has: "still say style = plain, which Style no
-//   longer has (primary, secondary)", or one it cannot have there: "… which
+// Why a stored record is wrong, in the words of what it says against what
+// the model has, never of why: dxn sees the model as it is, not what changed,
+// so a value renamed since and one mistyped are said alike:
+// - a value its state does not have: "say style = plain, which Style does
+//   not have (primary, secondary)", or one it cannot have there: "… which
 //   hover cannot be on Phone (rest)";
-// - a state or a dimension added since: "say nothing of hover, a state Button
-//   now has", "… Pointer, which Button now needs";
-// - one taken away since: "still say press, a state Button no longer has".
+// - a state or a dimension it does not say: "say nothing of hover, a state
+//   Button has", "… Pointer, which Button needs";
+// - one the element does not have: "say press, a state Button does not have".
 // Any other problem, as it is.
 function reasonOf(
   file: ParseResult,
@@ -169,18 +170,15 @@ function reasonOf(
   if (code === "missing-field" && group !== null && element !== undefined) {
     const name = message.match(/ is missing `([^`]+)`$/)?.[1];
     if (name !== undefined) {
-      const has =
-        group[1] === "states" ? `a state ${element} now has` : `which ${element} now needs`;
+      const has = group[1] === "states" ? `a state ${element} has` : `which ${element} needs`;
       return as(`say nothing of ${name}, ${has}`, `says nothing of ${name}, ${has}`);
     }
   }
   if (code === "unknown-field" && group?.[2] !== undefined && element !== undefined) {
     const name = group[2];
     const had =
-      group[1] === "states"
-        ? `a state ${element} no longer has`
-        : `which ${element} no longer needs`;
-    return as(`still say ${name}, ${had}`, `still says ${name}, ${had}`);
+      group[1] === "states" ? `a state ${element} does not have` : `which ${element} does not need`;
+    return as(`say ${name}, ${had}`, `says ${name}, ${had}`);
   }
   const state = group?.[2];
   const said = message.match(/^`([^`]*)` is not a value of `[^`]+`( on .*)? (\([^)]*\))$/);
@@ -192,8 +190,8 @@ function reasonOf(
   const which =
     where !== undefined
       ? `which ${state} cannot be${where} ${values}`
-      : `which ${ownerOf(file, state)} no longer has ${values}`;
-  return as(`still say ${state} = ${value}, ${which}`, `still says ${state} = ${value}, ${which}`);
+      : `which ${ownerOf(file, state)} does not have ${values}`;
+  return as(`say ${state} = ${value}, ${which}`, `says ${state} = ${value}, ${which}`);
 }
 
 // The enum a state takes its values from, when every state of that name

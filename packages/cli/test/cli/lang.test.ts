@@ -1178,7 +1178,7 @@ describe("dxn status", () => {
           1,
           "evidence/a.json:3:73: error: unknown-value: $[1].context.states.hover: \`bogus\` is not a value of \`hover\` (\`rest\`, \`hovered\`)
       ",
-          "spec.dxn: Evidence 1 of 4 combinations recorded · 1 of 2 stored records still says hover = bogus, which Hover no longer has (rest, hovered); Evidence has no PenNode, so staleness is not checked
+          "spec.dxn: Evidence 1 of 4 combinations recorded · 1 of 2 stored records says hover = bogus, which Hover does not have (rest, hovered); Evidence has no PenNode, so staleness is not checked
 
       | path | combinations | recorded | stale | gone | missing |
       | ---- | ------------ | -------- | ----- | ---- | ------- |
@@ -1265,7 +1265,7 @@ actor EvidenceRecorder records Evidence
     expect([result.code, result.stdout.split("\n")[0]]).toEqual([
       1,
       expect.stringMatching(
-        /^toolbar\.dxn: Evidence 0 of 7 combinations recorded · 1 of 1 stored record still says hover = hovered/,
+        /^toolbar\.dxn: Evidence 0 of 7 combinations recorded · 1 of 1 stored record says hover = hovered/,
       ),
     ]);
   });

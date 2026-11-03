@@ -187,7 +187,7 @@ dxn does not guess the missing value; whoever recorded the drawing gives it.
 dxn and an editor say it one way, what was added to which element after the
 record was: "`hover` was added to `Button` after it was recorded", and what
 to do, "Add its `hover` value to count it again."
-A stored record that names a value, a state or a path the model no longer has is
+A stored record that names a value, a state or a path the model does not have is
 an error, set apart where its element is written, while every other record
 still counts.
 

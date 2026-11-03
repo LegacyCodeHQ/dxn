@@ -1052,11 +1052,11 @@ describe("the language server", () => {
         [
           [
             { line: 1, character: 13 },
-            "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
+            "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 say style = filled, which Style does not have (primary, secondary)",
           ],
         ],
         [
-          "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
+          "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 say style = filled, which Style does not have (primary, secondary)",
           "",
           "Missing:",
           "- Button: style = secondary",
@@ -1088,13 +1088,13 @@ describe("the language server", () => {
         range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
       });
       expect(again?.map(({ label }) => label)).toEqual([
-        "◌ PenEvidence 1 of 2 combinations recorded · 1 of 2 stored records still says style = plain, which Style no longer has (primary, secondary)",
+        "◌ PenEvidence 1 of 2 combinations recorded · 1 of 2 stored records says style = plain, which Style does not have (primary, secondary)",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }
   });
-  it("counts stored records made before a state was added as outdated, with the state that was, and still says what one taken away leaves", async () => {
+  it("counts stored records made before a state was added as outdated, with the state that was, and says what one taken away leaves", async () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-reworded-"));
     try {
       const text =
@@ -1164,7 +1164,7 @@ describe("the language server", () => {
           "- Button: style = secondary, hover = hovered",
         ].join("\n"),
         [
-          "◌ PenEvidence 1 of 4 combinations recorded · 1 of 2 stored records still says press, a state Button no longer has",
+          "◌ PenEvidence 1 of 4 combinations recorded · 1 of 2 stored records says press, a state Button does not have",
         ],
       ]);
     } finally {

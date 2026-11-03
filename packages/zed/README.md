@@ -70,8 +70,8 @@ outdated, with what was added: `PenEvidence 0 of 15 combinations recorded · 9 o
 added`; the hover says why, what to do, and lists each. A record
 whose stored records have other problems, such as a value renamed by hand, is not
 counted: its hint says how many of its records have problems, of how many,
-and what most of them have, such as `PenEvidence: 3 of 6 stored records still say
-style = plain, which Style no longer has (primary, secondary)`, and the hover lists each problem,
+and what most of them have, such as `PenEvidence: 3 of 6 stored records say
+style = plain, which Style does not have (primary, secondary)`, and the hover lists each problem,
 as `dxn validate` prints it. It shows
 as an inlay hint, which Zed only shows when its settings turn them on:
 
