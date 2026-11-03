@@ -1787,6 +1787,9 @@ people.
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | combination   | one value of each state and each dimension of an element: what evidence is counted against. `Tab`, with two selections and three interactions, has six.                                                                      |
 | recorded      | a combination's status when a stored record matches it, and its drawings, where it has any, are as they were recorded; else it is stale, gone or missing. A count says how many: `2 of 6 combinations recorded`              |
+| stale         | a combination's status when its stored record's drawing has changed since it was recorded: its fingerprint no longer matches                                                                                                 |
+| gone          | a combination's status when its stored record's drawing no longer exists: its file, frame or node was deleted                                                                                                                |
+| missing       | a combination's status when no stored record matches it                                                                                                                                                                      |
 | outdated      | a stored record made before its element gained a state or a dimension, which says no value of it: `` `hover` was added to `Button` after it was recorded ``. It is a warning, counted apart; add its value to count it again |
 | stored record | one item of a record's stored files: a fact about one combination, recorded by an actor. A record is what a file declares, `record Evidence`; it is never one of these                                                       |
 
