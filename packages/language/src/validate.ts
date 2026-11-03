@@ -345,8 +345,9 @@ export function validate(
     let rows: Record<string, string[]>[];
     let where = message`${world}`;
     if (place !== undefined) {
+      // The parents' states that place it, where any do.
       const settled = Object.entries(parents).map(([name, value]) => `${name} = ${value}`);
-      where = message`${world} with ${settled}`;
+      if (settled.length > 0) where = message`${world} with ${settled}`;
       const there = inPlaceOf(label).rows.filter(
         (candidate) =>
           inWorld(candidate) &&

@@ -136,6 +136,29 @@ describe("a context for a child", () => {
     ]);
   });
 
+  it("says only the world a child is in, where no parent's state decides it", () => {
+    const model = `dimension Pointer = mouse | touch
+enum Hover = rest | hovered
+type Toolbar {
+  has link: Link
+}
+type Link needs Pointer {
+  state hover: Hover
+  hover = hovered only when Pointer = mouse
+}
+environment Device = Pointer
+profile Phone: Device { Pointer = touch }
+profile Laptop: Device { Pointer = mouse }
+record Evidence {
+}
+actor Designer records Evidence
+`;
+    const record = `[{ "context": { "path": "Toolbar.link", "profile": "Phone", "dimensions": {}, "parents": {}, "states": { "hover": "hovered" } }, "actor": "Designer" }]`;
+    expect(validate(parse(model), "Evidence", record).map(({ message }) => message)).toEqual([
+      "`hovered` is not a value of `hover` on `Phone` (`rest`)",
+    ]);
+  });
+
   it("names a type or a path, not both, and one of them", () => {
     expect([
       check({ ...toggle(), type: "Menu.Toggle" }),
