@@ -44,22 +44,23 @@ export interface Usage {
   pins: string[];
 }
 
-// A count of evidence: "Evidence 2 of 10 states recorded", then what is
+// A count of evidence, by combination, one value of each state and dimension
+// an element has: "Evidence 2 of 10 combinations recorded", then what is
 // stale, gone and outdated. Where a type places a component, what the type
-// can show of it: "FeedScreen can show all 24 states of ArticleRow, all
-// drawn".
+// can show of it: "FeedScreen can show all 24 combinations of ArticleRow,
+// all drawn".
 export function evidenceLabel(count: EvidenceCount, verb: EvidenceVerb, usage?: Usage): string {
   const { record, combinations, present, stale, gone, outdated } = count;
-  const states = combinations === 1 ? "state" : "states";
+  const many = combinations === 1 ? "combination" : "combinations";
   const counted = (() => {
-    if (usage === undefined) return `${record} ${present} of ${combinations} ${states} ${verb}`;
+    if (usage === undefined) return `${record} ${present} of ${combinations} ${many} ${verb}`;
     const pinned = usage.pins.length === 0 ? "" : `, ${usage.pins.join(", ")}`;
     const done =
       present === combinations ? (combinations === 1 ? verb : `all ${verb}`) : `${present} ${verb}`;
     const shows =
       combinations === 1
-        ? `shows 1 state`
-        : `can show ${combinations === usage.own ? "all " : ""}${combinations} states`;
+        ? `shows 1 combination`
+        : `can show ${combinations === usage.own ? "all " : ""}${combinations} combinations`;
     return `${record}: ${usage.in} ${shows} of ${usage.of}${pinned}, ${done}`;
   })();
   const label = [
@@ -110,7 +111,7 @@ export const evidenceHeadings = {
 // The columns of a table of evidence, an element to a row.
 export const evidenceColumns = (verb: EvidenceVerb): string[] => [
   "path",
-  "states",
+  "combinations",
   verb,
   "stale",
   "gone",

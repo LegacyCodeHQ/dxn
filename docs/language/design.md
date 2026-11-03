@@ -83,12 +83,12 @@ forgotten `}` still does not swallow the rest of the file.
 
 ## Evidence
 
-Evidence is what an actor records: one stored record for each look of an
+Evidence is what an actor records: one stored record for each combination of an
 element, each saying who recorded it and which drawing shows it.
 
 - **Actors.** `actor DesignAgent records PenEvidence` names who records what,
   one record each. A record an actor records is stored, and each stored
-  record has a context, the look it is about, and the actor who recorded it.
+  record has a context, the combination it is about, and the actor who recorded it.
 - **PenNode.** A built-in record: a pen.dev file, a frame and, optionally, a
   node in it, with a fingerprint `dxn attach` computes, of the node or else
   the frame, with the components and variables it uses and without its
@@ -96,30 +96,36 @@ element, each saying who recorded it and which drawing shows it.
   there is gone. The node's name is part of the fingerprint, so renaming a
   node makes its evidence stale.
 - **What a drawing proves.** Evidence is an actor's assertion, checked where
-  dxn can read it: a record must name a real look, its drawing must not have
+  dxn can read it: a record must name a real combination, its drawing must not have
   changed since, and the drawing must show its element's children as the
-  model has them in that look. A pen.dev instance counts for the type of its
+  model has them in that combination. A pen.dev instance counts for the type of its
   component's name: each child exactly once, a list one or more times, a
-  child that is not there in the look not at all, and no other type of the
+  child that is not there in the combination not at all, and no other type of the
   model drawn. A mismatch is an error, `drawing-mismatch`: a drawing that
   shows what the model does not is evidence of something else. Whether the
   drawing shows the right states of each child is still the actor's word.
 
-### Looks
+### Combinations
 
-What needs evidence is an element's **looks**: its own states and the
-dimensions it needs, one value each. A child's looks in place are its own
-too. Its parents decide which of them occur, never add any: a tab with two
-selections and three interactions has six looks, in a bar or on its own, and
-fewer only where the bar narrows them. A record matches a look by its own
-states and dimensions, and its profile, whatever placed it.
+What needs evidence is an element's **combinations**: its own states and
+the dimensions it needs, one value each. A child's combinations in place are
+its own too. Its parents decide which of them occur, never add any: a tab
+with two selections and three interactions has six combinations, in a bar or
+on its own, and fewer only where the bar narrows them. A record matches a
+combination by its own states and dimensions, and its profile, whatever
+placed it.
+
+Combination is the core's word for what evidence is counted against, and
+the one word dxn and an editor say it in: "6 combinations", never "6
+states", since a state is one of a type's fields, nor "6 looks", which is a
+word of the user interface, not of the core.
 
 ### Components
 
 A type declared at the top of a file is a **component**: counted on its own,
 as a tree of its own, though another type contains it, so a design system
-draws each component once, in all its looks. A record about an element
-covers that element everywhere else it is, in the same look: a component's
+draws each component once, in all its combinations. A record about an element
+covers that element everywhere else it is, in the same combination: a component's
 drawings cover it in every screen that places it, and a drawing in one place
 covers the component. A record about the place itself comes first. A type
 declared inside another is a part of it, counted only in place; a type that
@@ -139,7 +145,7 @@ way silently.
 ### Lists
 
 A list, `has articles: [ArticleRow]`, is one or more of a type. Its rows add
-no looks: each is in any of its type's looks, counted once, however many rows
+no combinations: each is in any of its type's combinations, counted once, however many rows
 a drawing shows. A list that is there is never empty; none is the list not
 there, which its `only when` decides. Emptiness is therefore said one way, as
 a state of the type that holds the list, which also names why it is empty.
@@ -151,9 +157,9 @@ row is one of its members, a tag and a type with its own bindings and
 `only when`, in any mix. The choices are closed, so each can be checked to be
 drawn; the tag names the choice, so a record's path, `FeedScreen.feed.ad`,
 says which type it is about even when two members share one. Its members'
-looks add, never multiply, and the list has none of its own. Which members
+combinations add, never multiply, and the list has none of its own. Which members
 exist can depend on the type's states, a union indexed by state, and is
-still known for every look. A member that adds no rows to another is a
+still known for every combination. A member that adds no rows to another is a
 warning: the model says less than it seems to. Rows chosen by the data, a
 list of records whose field picks the member, are left for when a model
 needs it.
@@ -188,19 +194,19 @@ no tree of its own, so its `has` lines count every place it is in.
 ### What an editor shows
 
 After each type, and each part placed in a type, a hint gives each record's
-count, marked `●` every look
+count, marked `●` every combination
 present, `◐` some, `○` none, or `◌` something needing a decision: a drawing
 stale or gone, a record outdated, or a record with problems. `◌` wins over
 the count. A usage of a component, a `has` line whose child is a
-component, has no hint: the component's own line counts its looks, and the
+component, has no hint: the component's own line counts its combinations, and the
 usage's evidence is in the hover over the component's name on that line,
 under its declaration: how many of the component's states the type can
 show there, what it pins, and whether they are drawn, wherever that is:
-`FeedScreen can show all 24 states of ArticleRow, all drawn`, `FeedScreen
-shows 1 state of NavigationBar, kind = root, drawn`. The type's own drawing
+`FeedScreen can show all 24 combinations of ArticleRow, all drawn`, `FeedScreen
+shows 1 combination of NavigationBar, kind = root, drawn`. The type's own drawing
 shows a sample of them; the component's drawings show them all. Over an element's
 name, the hover lists what is missing, stale, gone, outdated or wrong. A review page per tree, written by `dxn review` to
-a cache outside the repository, shows each look with the picture recorded,
+a cache outside the repository, shows each combination with the picture recorded,
 and `--stale` only what needs a decision.
 
 ## Two readers
@@ -220,7 +226,7 @@ language server only place it.
 ## Open
 
 - **Drawings are not checked against the model.** A drawing recorded for a
-  look is trusted to show it: a screen that leaves out a child the model
+  combination is trusted to show it: a screen that leaves out a child the model
   has, or shows one it does not, is not found. This is the largest gap.
 - **Any drawing covers a component.** A drawing of an element in one place
   counts for its component on its own, and for every other place. A place

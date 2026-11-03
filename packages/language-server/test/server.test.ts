@@ -904,8 +904,8 @@ describe("the language server", () => {
         return contents?.value;
       };
       expect([await hints(), await hovered()]).toEqual([
-        [[{ line: 1, character: 13 }, "◐ PenEvidence 1 of 2 states drawn", true]],
-        "◐ PenEvidence 1 of 2 states drawn\n\nMissing:\n- Button: style = plain",
+        [[{ line: 1, character: 13 }, "◐ PenEvidence 1 of 2 combinations drawn", true]],
+        "◐ PenEvidence 1 of 2 combinations drawn\n\nMissing:\n- Button: style = plain",
       ]);
 
       // The drawing changed: once the editor hears, its evidence is stale.
@@ -916,8 +916,8 @@ describe("the language server", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect([refreshed.length > 0, await hints(), await hovered()]).toEqual([
         true,
-        [[{ line: 1, character: 13 }, "◌ PenEvidence 0 of 2 states drawn, 1 stale", true]],
-        "◌ PenEvidence 0 of 2 states drawn, 1 stale\n\nMissing:\n- Button: style = plain\n\nStale:\n- Button: style = filled",
+        [[{ line: 1, character: 13 }, "◌ PenEvidence 0 of 2 combinations drawn, 1 stale", true]],
+        "◌ PenEvidence 0 of 2 combinations drawn, 1 stale\n\nMissing:\n- Button: style = plain\n\nStale:\n- Button: style = filled",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -967,11 +967,11 @@ describe("the language server", () => {
         [
           [
             { line: 1, character: 13 },
-            "◌ PenEvidence 1 of 2 states drawn · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
+            "◌ PenEvidence 1 of 2 combinations drawn · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
           ],
         ],
         [
-          "◌ PenEvidence 1 of 2 states drawn · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
+          "◌ PenEvidence 1 of 2 combinations drawn · 3 of 4 records have problems, 2 still say style = filled, which Style no longer has (primary, secondary)",
           "",
           "Missing:",
           "- Button: style = secondary",
@@ -1003,7 +1003,7 @@ describe("the language server", () => {
         range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
       });
       expect(again?.map(({ label }) => label)).toEqual([
-        "◌ PenEvidence 1 of 2 states drawn · 1 of 2 records still says style = plain, which Style no longer has (primary, secondary)",
+        "◌ PenEvidence 1 of 2 combinations drawn · 1 of 2 records still says style = plain, which Style no longer has (primary, secondary)",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1063,9 +1063,9 @@ describe("the language server", () => {
       });
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect([before, details, await label()]).toEqual([
-        ["◌ PenEvidence 1 of 4 states drawn · 2 outdated: hover added"],
+        ["◌ PenEvidence 1 of 4 combinations drawn · 2 outdated: hover added"],
         [
-          "◌ PenEvidence 1 of 4 states drawn · 2 outdated: hover added",
+          "◌ PenEvidence 1 of 4 combinations drawn · 2 outdated: hover added",
           "",
           "2 records are outdated: hover was added to Button after they were recorded, so they do not say which hover they show. Add each one's hover value to count it again.",
           "",
@@ -1079,7 +1079,7 @@ describe("the language server", () => {
           "- Button: style = secondary, hover = hovered",
         ].join("\n"),
         [
-          "◌ PenEvidence 1 of 4 states drawn · 1 of 2 records still says press, a state Button no longer has",
+          "◌ PenEvidence 1 of 4 combinations drawn · 1 of 2 records still says press, a state Button no longer has",
         ],
       ]);
     } finally {
@@ -1135,11 +1135,11 @@ describe("the language server", () => {
         await hovered(7),
       ]).toEqual([
         [
-          [1, "◐ PenEvidence 1 of 2 states drawn"],
-          [4, "◐ PenEvidence 1 of 2 states drawn"],
-          [7, "○ PenEvidence 0 of 1 state drawn"],
+          [1, "◐ PenEvidence 1 of 2 combinations drawn"],
+          [4, "◐ PenEvidence 1 of 2 combinations drawn"],
+          [7, "○ PenEvidence 0 of 1 combination drawn"],
         ],
-        "```dxn\ntype Tab\n  state style: Style\n```\n\n---\n\n◐ PenEvidence: Bar can show all 2 states of Tab, 1 drawn\n\nMissing:\n- Bar.tab: style = bold",
+        "```dxn\ntype Tab\n  state style: Style\n```\n\n---\n\n◐ PenEvidence: Bar can show all 2 combinations of Tab, 1 drawn\n\nMissing:\n- Bar.tab: style = bold",
         undefined,
       ]);
     } finally {
@@ -1180,8 +1180,8 @@ describe("the language server", () => {
         range: { start: { line: 0, character: 0 }, end: { line: 14, character: 0 } },
       });
       expect(hints?.map(({ position, label }) => [position.line, label])).toEqual([
-        [1, "● PenEvidence 2 of 2 states drawn"],
-        [4, "○ PenEvidence 0 of 1 state drawn"],
+        [1, "● PenEvidence 2 of 2 combinations drawn"],
+        [4, "○ PenEvidence 0 of 1 combination drawn"],
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1219,7 +1219,7 @@ describe("the language server", () => {
       });
       // Bar on its own has two states, one drawn; the screen pins the one.
       expect((found?.contents as { value: string } | undefined)?.value.split("---\n\n")[1]).toBe(
-        "● PenEvidence: Screen shows 1 state of Bar, kind = root, drawn",
+        "● PenEvidence: Screen shows 1 combination of Bar, kind = root, drawn",
       );
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1284,8 +1284,8 @@ describe("the language server", () => {
           ],
         ],
         [
-          [0, "○ PenEvidence 0 of 1 state drawn"],
-          [1, "◌ PenEvidence 1 of 1 state drawn, 1 doesn't match the model"],
+          [0, "○ PenEvidence 0 of 1 combination drawn"],
+          [1, "◌ PenEvidence 1 of 1 combination drawn, 1 doesn't match the model"],
         ],
       ]);
     } finally {

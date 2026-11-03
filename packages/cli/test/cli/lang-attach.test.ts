@@ -416,7 +416,9 @@ describe("dxn status, with fingerprints", () => {
 
   it("counts an entry as present while what it points at is as it was recorded", () => {
     const { status } = recorded();
-    expect(status().stdout.split("\n")[0]).toBe("spec/toolbar.dxn: Evidence 2 of 9 states drawn");
+    expect(status().stdout.split("\n")[0]).toBe(
+      "spec/toolbar.dxn: Evidence 2 of 9 combinations drawn",
+    );
   });
 
   it("counts an entry as stale once its file has changed, and lists it with --missing", () => {
@@ -428,8 +430,8 @@ describe("dxn status, with fingerprints", () => {
       lines.find((line) => line.startsWith("| Toolbar.menu.toggle")),
       lines.slice(lines.indexOf("Stale:"), lines.indexOf("Stale:") + 3),
     ]).toEqual([
-      "spec/toolbar.dxn: Evidence 0 of 9 states drawn, 2 stale",
-      "| Toolbar.menu.toggle | 6      | 0     | 2     | 0    | 4       |",
+      "spec/toolbar.dxn: Evidence 0 of 9 combinations drawn, 2 stale",
+      "| Toolbar.menu.toggle | 6            | 0     | 2     | 0    | 4       |",
       [
         "Stale:",
         "  Toolbar.menu.toggle on Phone: hover = rest, expanded = closed",
@@ -442,7 +444,7 @@ describe("dxn status, with fingerprints", () => {
     const { root, status } = recorded();
     rmSync(join(root, "design", "toolbar.png"));
     expect(status().stdout.split("\n")[0]).toBe(
-      "spec/toolbar.dxn: Evidence 0 of 9 states drawn, 2 gone",
+      "spec/toolbar.dxn: Evidence 0 of 9 combinations drawn, 2 gone",
     );
   });
 
@@ -474,9 +476,9 @@ describe("dxn status, with fingerprints", () => {
     edit((states) => states.splice(0, 1));
     snapshot.push(status());
     expect(snapshot).toEqual([
-      "spec/toolbar.dxn: Evidence 2 of 9 states drawn",
-      "spec/toolbar.dxn: Evidence 1 of 9 states drawn, 1 stale",
-      "spec/toolbar.dxn: Evidence 0 of 9 states drawn, 1 stale, 1 gone",
+      "spec/toolbar.dxn: Evidence 2 of 9 combinations drawn",
+      "spec/toolbar.dxn: Evidence 1 of 9 combinations drawn, 1 stale",
+      "spec/toolbar.dxn: Evidence 0 of 9 combinations drawn, 1 stale, 1 gone",
     ]);
   });
 
@@ -492,7 +494,7 @@ describe("dxn status, with fingerprints", () => {
       '[{ "context": { "type": "Card", "dimensions": {}, "states": {} }, "actor": "NoteRecorder" }]',
     );
     expect(capture(["status", "plain.dxn"], root).stdout.split("\n")[0]).toBe(
-      "plain.dxn: Note 1 of 1 state recorded; Note has no PenNode, so staleness is not checked",
+      "plain.dxn: Note 1 of 1 combination recorded; Note has no PenNode, so staleness is not checked",
     );
   });
 });

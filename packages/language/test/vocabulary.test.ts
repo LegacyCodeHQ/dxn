@@ -23,7 +23,7 @@ const count = (over: Partial<Parameters<typeof evidenceLabel>[0]> = {}) => ({
 });
 
 describe("the words for evidence", () => {
-  it("count the states recorded, or drawn, with what is stale, gone or outdated", () => {
+  it("count the combinations recorded, or drawn, with what is stale, gone or outdated", () => {
     const snapshot: string[] = [];
     snapshot.push(evidenceLabel(count(), "recorded"));
     snapshot.push(evidenceLabel(count({ present: 1, combinations: 1 }), "drawn"));
@@ -42,12 +42,12 @@ describe("the words for evidence", () => {
     );
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "Evidence 2 of 10 states recorded",
-        "Evidence 1 of 1 state drawn",
-        "Evidence 2 of 10 states drawn, 1 stale, 2 gone",
-        "Evidence 2 of 10 states recorded · 1 outdated: focus added",
-        "Evidence: Feed can show 2 states of Row, reading = read, all drawn",
-        "Evidence: Feed can show all 4 states of Row, 1 drawn",
+        "Evidence 2 of 10 combinations recorded",
+        "Evidence 1 of 1 combination drawn",
+        "Evidence 2 of 10 combinations drawn, 1 stale, 2 gone",
+        "Evidence 2 of 10 combinations recorded · 1 outdated: focus added",
+        "Evidence: Feed can show 2 combinations of Row, reading = read, all drawn",
+        "Evidence: Feed can show all 4 combinations of Row, 1 drawn",
       ]
     `);
   });
@@ -96,7 +96,7 @@ describe("the words for evidence", () => {
       [
         [
           "path",
-          "states",
+          "combinations",
           "drawn",
           "stale",
           "gone",
@@ -104,7 +104,7 @@ describe("the words for evidence", () => {
         ],
         [
           "path",
-          "states",
+          "combinations",
           "recorded",
           "stale",
           "gone",

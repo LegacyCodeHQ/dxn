@@ -659,7 +659,7 @@ type FeedScreen {
 }
 ```
 
-Each row can be in any of `ArticleRow`'s looks, so the list adds no states:
+Each row can be in any of `ArticleRow`'s combinations, so the list adds no states:
 five rows are not five times the states. A list that is there has at least
 one row. No rows is the list not being there, which its `only when` decides,
 so a screen that can be empty says so with a state of its own, as `content`
@@ -692,7 +692,7 @@ tag, which tells them apart even when two are of one type,
 `unread: ArticleRow { reading = unread }` and `read: ArticleRow { reading =
 read }`. Each member is a child of the type in place, by its path,
 `FeedScreen.feed.ad`, counted and recorded as any child is; the list itself
-has no looks. An `only when` after the `]` is the whole list's, every
+has no combinations. An `only when` after the `]` is the whole list's, every
 member's too. Bindings go on each member's line, never after the `]`, since
 the members may be of different types. A member that adds no rows, whose
 every row another member of its type allows too, is a warning,
@@ -1353,17 +1353,17 @@ the record's folder, in a file named after the type the path starts at.
 ### Status: what has evidence, and what is missing
 
 With evidence recorded for children, `dxn status` says how much of the
-model it covers: every look of every element in the file's trees, in place,
-and which of them a stored record is about. An element's looks in place are
+model it covers: every combination of every element in the file's trees, in place,
+and which of them a stored record is about. An element's combinations in place are
 its own: its states and the dimensions it needs. Its parents decide which of
 them occur, but never add any, so two places that differ only in a parent's
-state, and give the element the same states, are one look of it.
+state, and give the element the same states, are one combination of it.
 
 A type declared at the top of the file is also a **component**: it is counted
 on its own, as a tree of its own, though another type contains it, so a design
-system can draw each of its components once, in all its looks. A record about
+system can draw each of its components once, in all its combinations. A record about
 an element, on its own or in any of its places, also covers it everywhere
-else it is, in the same look: the same states, dimensions and profile. A
+else it is, in the same combination: the same states, dimensions and profile. A
 type declared inside another is a part of it, counted only in place; and a
 type that receives a state from its parent cannot be on its own, so it is
 counted only in place too.
@@ -1373,19 +1373,19 @@ dxn status toolbar.dxn
 ```
 
 ```
-toolbar.dxn: Evidence 38 of 55 states drawn
+toolbar.dxn: Evidence 38 of 55 combinations drawn
 
-| path                                | states | drawn | stale | gone | missing |
-| ----------------------------------- | ------ | ----- | ----- | ---- | ------- |
-| ArticlePage                         | 1      | 0     | 0     | 0    | 1       |
-| ArticlePage.toolbar                 | 4      | 0     | 0     | 0    | 4       |
-| ArticlePage.toolbar.wordmark        | 15     | 15    | 0     | 0    | 0       |
-| ArticlePage.toolbar.links           | 2      | 0     | 0     | 0    | 2       |
-| ArticlePage.toolbar.links.blog      | 9      | 9     | 0     | 0    | 0       |
-| ArticlePage.toolbar.menu            | 4      | 2     | 0     | 0    | 2       |
-| ArticlePage.toolbar.menu.toggle     | 12     | 12    | 0     | 0    | 0       |
-| ArticlePage.toolbar.menu.panel      | 2      | 0     | 0     | 0    | 2       |
-| ArticlePage.toolbar.menu.panel.blog | 6      | 0     | 0     | 0    | 6       |
+| path                                | combinations | drawn | stale | gone | missing |
+| ----------------------------------- | ------------ | ----- | ----- | ---- | ------- |
+| ArticlePage                         | 1            | 0     | 0     | 0    | 1       |
+| ArticlePage.toolbar                 | 4            | 0     | 0     | 0    | 4       |
+| ArticlePage.toolbar.wordmark        | 15           | 15    | 0     | 0    | 0       |
+| ArticlePage.toolbar.links           | 2            | 0     | 0     | 0    | 2       |
+| ArticlePage.toolbar.links.blog      | 9            | 9     | 0     | 0    | 0       |
+| ArticlePage.toolbar.menu            | 4            | 2     | 0     | 0    | 2       |
+| ArticlePage.toolbar.menu.toggle     | 12           | 12    | 0     | 0    | 0       |
+| ArticlePage.toolbar.menu.panel      | 2            | 0     | 0     | 0    | 2       |
+| ArticlePage.toolbar.menu.panel.blog | 6            | 0     | 0     | 0    | 6       |
 ```
 
 A tree starts at each type that no type contains, and every child below it
@@ -1777,6 +1777,16 @@ case was drawn in, and later the rendering in the code.
 
 ## Reference
 
+### Words
+
+The words dxn and an editor say the model's facts in, each for one thing.
+Each is said the same by both: the dxn command for agents, an editor for
+people.
+
+| Word        | Means                                                                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| combination | one value of each state and each dimension of an element: what evidence is counted against. `Tab`, with two selections and three interactions, has six. |
+
 ### Names
 
 | Kind        | Example                       | Written                                         |
@@ -1932,5 +1942,5 @@ JSON itself:
 | `unknown-actor`    | a stored record's actor is not one who records it                                                                                                                      |
 | `outdated`         | (a warning) a stored record leaves out a state or a dimension its element gained since it was recorded                                                                 |
 | `duplicate-record` | two stored records are the same in everything but their PenNodes' fingerprints                                                                                         |
-| `drawing-mismatch` | a stored record's pen.dev drawing shows a type of the model more or less often than its element has it in its look                                                     |
+| `drawing-mismatch` | a stored record's pen.dev drawing shows a type of the model more or less often than its element has it in its combination                                              |
 | `redundant-member` | (a warning) a list's member allows no row another member of its type does not                                                                                          |

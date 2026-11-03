@@ -161,7 +161,7 @@ describe("the command surface", () => {
     const result = capture(["status", "toolbar.dxn"], root);
     expect([result.code, result.stdout.split(";")[0]]).toEqual([
       0,
-      "toolbar.dxn: Evidence 0 of 1 state recorded",
+      "toolbar.dxn: Evidence 0 of 1 combination recorded",
     ]);
   });
 });
