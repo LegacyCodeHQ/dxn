@@ -9,6 +9,11 @@ it alone.
 
 ## The language server
 
+The server is attached to JSON files as well as to `.dxn` files, so it reads a
+stored record's file as the editor has it, unsaved changes and all: its
+problems, the counts and a rename all see what is typed before it is saved.
+It says nothing of a JSON file itself.
+
 The extension bundles the language server in
 [`packages/language-server`](../language-server), with the language, into
 `dist/server.mjs`, and runs it with VS Code's own Node: nothing else need be

@@ -39,15 +39,20 @@ export function storedFiles(directory: string, record: string): string[] | undef
 }
 
 // Every stored data file of a file's records, in the folders next to it, in
-// the directory it is in: what dxn and an editor both read. A file gone by
+// the directory it is in: what dxn and an editor both read, each by its
+// path, from the disk or, for an editor, from its open buffer. A file gone by
 // the time it is read is left out.
-export function storedBeside(file: ParseResult, directory: string): StoredFile[] {
+export function storedBeside(
+  file: ParseResult,
+  directory: string,
+  read: (path: string) => string = (path) => readFileSync(path, "utf8"),
+): StoredFile[] {
   const records = [...new Set(file.records.map(({ name }) => name))];
   return records.flatMap((record) =>
     (storedFiles(directory, record) ?? []).flatMap((name) => {
       const path = join(directory, folderOf(record), name);
       try {
-        return [{ record, path, source: readFileSync(path, "utf8") }];
+        return [{ record, path, source: read(path) }];
       } catch {
         return [];
       }

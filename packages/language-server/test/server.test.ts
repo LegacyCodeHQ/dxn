@@ -295,6 +295,90 @@ describe("the language server", () => {
     ).toBeNull();
   });
 
+  it("reads a stored file from its open buffer, unsaved changes and all, and renames only its values there", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-buffer-"));
+    try {
+      const text =
+        "enum Hover = rest | hovered\ntype Link {\n  state hover: Hover\n}\nrecord Evidence {\n  note: NonEmptyString\n}\nactor Designer records Evidence\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      mkdirSync(join(folder, "evidence"));
+      const saved = `[\n  { "context": { "type": "Link", "dimensions": {}, "states": { "hover": "rest" } }, "actor": "Designer", "note": "Saved." }\n]\n`;
+      writeFileSync(join(folder, "evidence", "link.json"), saved);
+      // The buffer, not saved: a second stored record, and the first's note changed.
+      const unsaved = `[\n  { "context": { "type": "Link", "dimensions": {}, "states": { "hover": "rest" } }, "actor": "Designer", "note": "Typed, not saved." },\n  { "context": { "type": "Link", "dimensions": {}, "states": { "hover": "bogus" } }, "actor": "Designer", "note": "Also typed." }\n]\n`;
+      const editor = connect();
+      editors.push(editor);
+      await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+      });
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const data = pathToFileURL(join(folder, "evidence", "link.json")).href;
+      const snapshot: unknown[] = [];
+      // Its problems: those of the buffer, not of the file as saved.
+      const problems = new Promise<string[]>((resolve) => {
+        const listening = editor.onNotification(PublishDiagnosticsNotification.type, (params) => {
+          if (params.uri !== data || params.diagnostics.length === 0) return;
+          listening.dispose();
+          resolve(params.diagnostics.map(({ message }) => String(message)));
+        });
+      });
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri: data, languageId: "json", version: 1, text: unsaved },
+      });
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      snapshot.push(await problems);
+      // Fixed in the buffer, the rename goes ahead there: each value it
+      // changes, and nothing else, so what was typed stays.
+      const fixed = unsaved.replace('"bogus"', '"hovered"');
+      await editor.sendNotification(DidChangeTextDocumentNotification.type, {
+        textDocument: { uri: data, version: 2 },
+        contentChanges: [{ text: fixed }],
+      });
+      const edit = await editor.sendRequest(RenameRequest.type, {
+        textDocument: { uri },
+        position: { line: 0, character: 14 },
+        newName: "still",
+      });
+      snapshot.push(edit?.changes?.[data]);
+      // A JSON document is not a dxn file: nothing is said of it as one.
+      snapshot.push(
+        await editor.sendRequest(HoverRequest.type, {
+          textDocument: { uri: data },
+          position: { line: 1, character: 5 },
+        }),
+      );
+      expect(snapshot).toMatchInlineSnapshot(`
+        [
+          [
+            "$[1].context.states.hover: \`bogus\` is not a value of \`hover\` (\`rest\`, \`hovered\`)",
+          ],
+          [
+            {
+              "newText": "still",
+              "range": {
+                "end": {
+                  "character": 77,
+                  "line": 1,
+                },
+                "start": {
+                  "character": 73,
+                  "line": 1,
+                },
+              },
+            },
+          ],
+          null,
+        ]
+      `);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
   it("renames a value in the file and in the stored records beside it, in one edit", async () => {
     const folder = mkdtempSync(join(tmpdir(), "dxn-rename-"));
     try {
@@ -333,10 +417,11 @@ describe("the language server", () => {
           newText: "over",
         },
       ]);
+      // In a stored file, only the value: its quotes and all else stay.
       expect(edit?.changes?.[data]).toEqual([
         {
-          range: { start: { line: 0, character: 0 }, end: { line: 6, character: 0 } },
-          newText: stored.replace('"hover": "hovered"', '"hover": "over"'),
+          range: { start: { line: 2, character: 73 }, end: { line: 2, character: 80 } },
+          newText: "over",
         },
       ]);
 

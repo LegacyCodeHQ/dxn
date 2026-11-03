@@ -50,6 +50,15 @@ import { rangeAt } from "./range.js";
 // much of each element of its trees has evidence.
 export function serve(connection: Connection): void {
   const documents = new TextDocuments(TextDocument);
+  // A dxn file the editor has open; a stored record's JSON file is open too,
+  // for what it holds, but is not one.
+  const isDxn = (uri: string) => uri.endsWith(".dxn");
+  const dxnDocument = (uri: string) => (isDxn(uri) ? documents.get(uri) : undefined);
+  const dxnDocuments = () => documents.all().filter(({ uri }) => isDxn(uri));
+  // What a stored file holds, as the editor has it: its open buffer, unsaved
+  // changes and all, or else the file on disk.
+  const readStored = (path: string) =>
+    documents.get(pathToFileURL(path).href)?.getText() ?? readFileSync(path, "utf8");
   // Whether the editor takes a link, which names the text it goes from, so
   // that it underlines a whole name, hyphens and all, rather than its words.
   let links = false;
@@ -114,7 +123,7 @@ export function serve(connection: Connection): void {
   const checkEvidence = (document: TextDocument) => {
     const { uri: own, version } = document;
     const diagnostics = diagnose(document.getText(), parsed(document));
-    const found = evidence(own, parsed(document), document.getText());
+    const found = evidence(own, parsed(document), document.getText(), readStored);
     // The file's own problems, with those its evidence finds in the model.
     connection.sendDiagnostics({
       uri: own,
@@ -132,8 +141,22 @@ export function serve(connection: Connection): void {
     for (const [uri, diagnostics] of found) connection.sendDiagnostics({ uri, diagnostics });
     checked.set(own, new Set(found.keys()));
   };
-  documents.onDidChangeContent(({ document }) => checkEvidence(document));
+  // A dxn file is checked as it changes; a stored file's buffer, as it
+  // changes or closes, checks again the open dxn files whose records it may
+  // hold.
+  const recheck = () => {
+    for (const document of dxnDocuments()) checkEvidence(document);
+    if (refreshes) void connection.languages.inlayHint.refresh();
+  };
+  documents.onDidChangeContent(({ document }) => {
+    if (isDxn(document.uri)) checkEvidence(document);
+    else recheck();
+  });
   documents.onDidClose(({ document }) => {
+    if (!isDxn(document.uri)) {
+      recheck();
+      return;
+    }
     parses.delete(document.uri);
     connection.sendDiagnostics({ uri: document.uri, diagnostics: [] });
     for (const uri of checked.get(document.uri) ?? []) {
@@ -143,18 +166,15 @@ export function serve(connection: Connection): void {
   });
   // A stored record or a design changed on disk: the open files' records are
   // checked again, and their evidence counted again.
-  connection.onDidChangeWatchedFiles(() => {
-    for (const document of documents.all()) checkEvidence(document);
-    if (refreshes) void connection.languages.inlayHint.refresh();
-  });
+  connection.onDidChangeWatchedFiles(recheck);
   // After each element of the trees, at the end of the line its name is on,
   // how much of it has evidence.
   connection.languages.inlayHint.on(({ textDocument, range }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     const lines = sourceLines(document.getText());
     return (
-      (hintsBeside(document.uri, parsed(document)) ?? [])
+      (hintsBeside(document.uri, parsed(document), readStored) ?? [])
         // A usage of a component has its count on the component, and over its
         // name.
         .filter(
@@ -168,7 +188,7 @@ export function serve(connection: Connection): void {
     );
   });
   connection.onDefinition(({ textDocument, position }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     const text = document.getText();
     const found = definition(text, position.line + 1, position.character + 1, parsed(document));
@@ -189,7 +209,7 @@ export function serve(connection: Connection): void {
     ];
   });
   connection.onReferences(({ textDocument, position, context }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     const found = usages(
       document.getText(),
@@ -208,7 +228,7 @@ export function serve(connection: Connection): void {
     }));
   });
   connection.onHover(({ textDocument, position }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     const file = parsed(document);
     const text = sourceLines(document.getText())[position.line] ?? "";
@@ -219,7 +239,7 @@ export function serve(connection: Connection): void {
       line - 1 === position.line &&
       position.character >= column - 1 &&
       position.character <= column - 1 + named(column);
-    const hints = hintsBeside(document.uri, file) ?? [];
+    const hints = hintsBeside(document.uri, file, readStored) ?? [];
     // On a type's name where it is declared: what is left of its evidence.
     const declared = hints.find(
       (hint) =>
@@ -268,7 +288,7 @@ export function serve(connection: Connection): void {
     return null;
   };
   connection.onPrepareRename(({ textDocument, position }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     const found = renameable(
       document.getText(),
@@ -280,7 +300,7 @@ export function serve(connection: Connection): void {
     return { range: rangeOf(found.from), placeholder: found.name };
   });
   connection.onRenameRequest(({ textDocument, position, newName }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     const text = document.getText();
     const renamed = renameAt(
@@ -288,7 +308,7 @@ export function serve(connection: Connection): void {
       position.line + 1,
       position.character + 1,
       newName,
-      storedNextTo(textDocument.uri, parsed(document)),
+      storedNextTo(textDocument.uri, parsed(document), readStored),
       parsed(document),
       // Stored records are checked against their drawings, as dxn rename
       // checks them.
@@ -303,18 +323,10 @@ export function serve(connection: Connection): void {
         newText,
       })),
     };
-    // A stored file is replaced whole, keeping its layout but for the values.
+    // A stored file gets an edit for each value renamed, against what the
+    // editor has of it, so nothing else in it, typed or not, is touched.
     for (const data of renamed.data) {
-      const before = sourceLines(readFileSync(data.path, "utf8"));
-      changes[pathToFileURL(data.path).href] = [
-        {
-          range: {
-            start: { line: 0, character: 0 },
-            end: { line: before.length - 1, character: (before.at(-1) ?? "").length },
-          },
-          newText: data.source,
-        },
-      ];
+      changes[pathToFileURL(data.path).href] = changedOf(readStored(data.path), data.source);
     }
     // A record's stored records move to the folder named after its new name.
     const { folder } = renamed;
@@ -354,7 +366,7 @@ export function serve(connection: Connection): void {
     };
   });
   connection.onDocumentSymbol(({ textDocument }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     const editor = (symbol: Declared): DocumentSymbol => ({
       name: symbol.name,
@@ -373,7 +385,7 @@ export function serve(connection: Connection): void {
   // when it is written that way, or does not parse. The editor's tab size is
   // not asked: every file is written alike.
   connection.onDocumentFormatting(({ textDocument }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     const text = document.getText();
     const formatted = format(text);
@@ -389,7 +401,7 @@ export function serve(connection: Connection): void {
   // name, and an expectation, by its title. An editor that has the dxn.run
   // command runs dxn with these arguments, and the file.
   connection.onCodeLens(({ textDocument }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     const lens = (symbol: Declared, title: string, args: string[]) => ({
       range: rangeOf(symbol.at),
@@ -410,7 +422,7 @@ export function serve(connection: Connection): void {
   });
   // What each name is, so an editor colours it by that, not by how it looks.
   connection.languages.semanticTokens.on(({ textDocument }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     const builder = new SemanticTokensBuilder();
     if (document === undefined) return builder.build();
     for (const token of tokens(document.getText(), parsed(document))) {
@@ -420,7 +432,7 @@ export function serve(connection: Connection): void {
     return builder.build();
   });
   connection.onCompletion(({ textDocument, position }) => {
-    const document = documents.get(textDocument.uri);
+    const document = dxnDocument(textDocument.uri);
     if (document === undefined) return null;
     return completions(
       document.getText(),
@@ -468,9 +480,13 @@ function rangeOf({
 
 // The stored records of a file's records, by convention: the JSON files in each
 // record's folder, next to the file. None for a file that is not on disk.
-function storedNextTo(uri: string, file: ParseResult): StoredFile[] {
+function storedNextTo(
+  uri: string,
+  file: ParseResult,
+  read: (path: string) => string,
+): StoredFile[] {
   if (!uri.startsWith("file:")) return [];
-  return storedBeside(file, dirname(fileURLToPath(uri)));
+  return storedBeside(file, dirname(fileURLToPath(uri)), read);
 }
 
 // Whether a path is a folder.
@@ -524,3 +540,45 @@ const tokenTypeOf: Record<string, string> = {
   modifier: "class",
   actor: "class",
 };
+
+// The edits that make a text another, a line at a time: for each line that
+// differs, its part between what is the same at its start and at its end.
+// The texts have the same lines but for what a rename changes in them.
+function changedOf(before: string, after: string): { range: Range; newText: string }[] {
+  const was = sourceLines(before);
+  const is = sourceLines(after);
+  if (was.length !== is.length) {
+    return [
+      {
+        range: {
+          start: { line: 0, character: 0 },
+          end: { line: was.length - 1, character: (was.at(-1) ?? "").length },
+        },
+        newText: after,
+      },
+    ];
+  }
+  return was.flatMap((line, row) => {
+    const other = is[row] as string;
+    if (line === other) return [];
+    let start = 0;
+    while (start < line.length && line[start] === other[start]) start++;
+    let end = 0;
+    while (
+      end < line.length - start &&
+      end < other.length - start &&
+      line[line.length - 1 - end] === other[other.length - 1 - end]
+    ) {
+      end++;
+    }
+    return [
+      {
+        range: {
+          start: { line: row, character: start },
+          end: { line: row, character: line.length - end },
+        },
+        newText: other.slice(start, other.length - end),
+      },
+    ];
+  });
+}

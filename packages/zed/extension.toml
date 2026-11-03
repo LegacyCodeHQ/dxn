@@ -17,4 +17,6 @@ path = "packages/tree-sitter-dxn"
 # extension starts the dxn-language-server it finds; see the README.
 [language_servers.dxn-language-server]
 name = "dxn language server"
-languages = ["dxn"]
+# JSON too, so the server reads a stored record's file as Zed has it, unsaved
+# changes and all; it says nothing of a JSON file itself.
+languages = ["dxn", "JSON"]

@@ -15,6 +15,11 @@ the repository it names, so that commit must be pushed to
 
 ## The language server
 
+The server is attached to JSON files as well as to `.dxn` files, so it reads a
+stored record's file as the editor has it, unsaved changes and all: its
+problems, the counts and a rename all see what is typed before it is saved.
+It says nothing of a JSON file itself.
+
 The extension starts `dxn-language-server`: the one Zed's settings name, or
 else the one on the project's `PATH`. To use the one in this repository, build
 it with `make build`, then point Zed's settings at it:

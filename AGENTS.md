@@ -46,6 +46,10 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
   by people and may say less, never something else (see "Two readers" in
   `docs/language/design.md`). `make vocabulary` fails on a word of the model
   written in the CLI or the language server.
+- The CLI reads and writes files on disk. The language server reads what the
+  editor has: an open buffer, unsaved changes and all, else the file on disk;
+  it never writes, but sends the editor edits, of only what changes. Both
+  give the same functions in `packages/language` their input.
 - An editor feature that mirrors a command has a scenario in
   `packages/language-server/test/parity.test.ts`, which runs it through both
   and fails when they disagree. Add one with each new feature or rule.

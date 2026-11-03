@@ -48,8 +48,11 @@ export async function activate(context: ExtensionContext): Promise<void> {
     "module" in chosen
       ? { module: chosen.module, transport: TransportKind.stdio }
       : { command: chosen.command, args: chosen.args, transport: TransportKind.stdio };
+  // dxn files, and JSON files too, so the server reads a stored record's
+  // file as the editor has it, unsaved changes and all; it says nothing of a
+  // JSON file itself.
   client = new LanguageClient("dxn", "dxn language server", server, {
-    documentSelector: [{ language: "dxn" }],
+    documentSelector: [{ language: "dxn" }, { language: "json" }],
   });
   await client.start();
 }

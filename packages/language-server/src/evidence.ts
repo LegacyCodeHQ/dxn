@@ -57,6 +57,7 @@ interface Problem {
 function checked(
   uri: string,
   file: ParseResult,
+  read?: (path: string) => string,
 ):
   | {
       read: Read[];
@@ -70,7 +71,7 @@ function checked(
     return { read: [], problems: [], withoutContext: [], stored: [], found: [] };
   }
   if (file.diagnostics.some(({ severity }) => severity === "error")) return undefined;
-  const stored = storedBeside(file, dirname(fileURLToPath(uri))).map((item) => ({
+  const stored = storedBeside(file, dirname(fileURLToPath(uri)), read).map((item) => ({
     ...item,
     shown: join(folderOf(item.record), basename(item.path)),
   }));
@@ -110,8 +111,9 @@ export function evidence(
   uri: string,
   file: ParseResult,
   source?: string,
+  read?: (path: string) => string,
 ): Map<string, Diagnostic[]> | undefined {
-  const found = checked(uri, file);
+  const found = checked(uri, file, read);
   if (found === undefined) return undefined;
   const result = new Map<string, Diagnostic[]>(found.read.map(({ uri: each }) => [each, []]));
   if (source !== undefined) {
@@ -185,9 +187,13 @@ export interface Hint {
   usage: boolean;
 }
 
-export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined {
+export function hintsBeside(
+  uri: string,
+  file: ParseResult,
+  read?: (path: string) => string,
+): Hint[] | undefined {
   if (!uri.startsWith("file:")) return [];
-  const found = checked(uri, file);
+  const found = checked(uri, file, read);
   if (found === undefined) return undefined;
   try {
     for (const path of treePaths(file)) placement(file, path);

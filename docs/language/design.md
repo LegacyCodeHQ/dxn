@@ -232,6 +232,13 @@ says too, and more where an agent needs it. Every decision both make, and
 every word they say it in, is in the language package; the command and the
 language server only place it.
 
+Each reads what its reader has. The command reads the files on disk and
+writes them. An editor's reader sees its open buffers, typed and not saved,
+so the language server reads a file from its buffer where the editor has it
+open, a stored record's JSON file as much as a dxn file, and from the disk
+otherwise; it writes nothing, but sends the editor edits, each of only what
+changes, so nothing typed is lost.
+
 ## Open
 
 - **Drawings are not checked against the model.** A drawing recorded for a
