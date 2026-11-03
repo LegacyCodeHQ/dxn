@@ -24,14 +24,14 @@ export interface Outdated {
 export interface Coverage {
   record: string;
   combinations: number;
-  present: number;
+  recorded: number;
   stale: number;
   gone: number;
   outdated: number;
   paths: {
     path: string;
     combinations: number;
-    present: number;
+    recorded: number;
     // The combinations whose entries all have a frame that changed since, or
     // that is no more; and those with no entry at all.
     stale: Combination[];
@@ -43,7 +43,7 @@ export interface Coverage {
 
 // Whether what an entry points at is as it was recorded, changed since, or no
 // more.
-export type Freshness = "present" | "stale" | "gone";
+export type Freshness = "recorded" | "stale" | "gone";
 // A PenNode as stored, which a check judges.
 export type Check = (node: {
   file: string;
@@ -126,8 +126,8 @@ export function describe(file: ParseResult, path: string, combination: Combinati
 }
 
 // Where each element of the trees is written, how much of it each record an
-// actor records covers: its combinations, how many are present, stale and
-// gone, and those not present, described. A line counts within the own tree
+// actor records covers: its combinations, how many are recorded, stale and
+// gone, and those not recorded, described. A line counts within the own tree
 // of the type that declares it, where that type has one; a line in a type
 // that is only ever placed counts every place it is in. The file and the
 // data must have no problems.
@@ -140,7 +140,7 @@ export interface Progress {
   records: {
     record: string;
     combinations: number;
-    present: number;
+    recorded: number;
     stale: number;
     gone: number;
     listed: { missing: string[]; stale: string[]; gone: string[] };
@@ -155,14 +155,14 @@ export function progress(
   stored: { record: string; source: string }[],
   check?: Check,
 ): Progress[] {
-  const recorded = file.records.filter(({ context }) => context);
-  const covered = recorded.map(({ name }) =>
+  const contexted = file.records.filter(({ context }) => context);
+  const covered = contexted.map(({ name }) =>
     coverage(
       file,
       name,
       stored.filter(({ record }) => record === name).map(({ source }) => source),
       // A record without a PenNode has nothing to check.
-      recorded
+      contexted
         .find((each) => each.name === name)
         ?.fields.some(({ type }) => type.name === penNode.name)
         ? check
@@ -193,7 +193,7 @@ export function progress(
         counted = {
           record: report.record,
           combinations: 0,
-          present: 0,
+          recorded: 0,
           stale: 0,
           gone: 0,
           listed: { missing: [], stale: [], gone: [] },
@@ -202,7 +202,7 @@ export function progress(
         entry.records.push(counted);
       }
       counted.combinations += found.combinations;
-      counted.present += found.present;
+      counted.recorded += found.recorded;
       counted.stale += found.stale.length;
       counted.gone += found.gone.length;
       counted.outdated.push(...found.outdated.map((each) => ({ ...each, path })));
@@ -288,7 +288,7 @@ function merged(file: ParseResult, path: string, given: string[]): Combination[]
 }
 
 // A combination of an element in place, as the stored records judge it: as
-// its best entry is, present, else stale, else gone; or missing without one;
+// its best entry is, recorded, else stale, else gone; or missing without one;
 // with that entry.
 export interface Judged {
   combination: Combination;
@@ -298,7 +298,7 @@ export interface Judged {
 
 // Every combination of every element of the trees, in place, by its path, as
 // a record's stored records judge it. Profiles that share a row count as one.
-// With a check, each entry is present, stale or gone by its PenNodes. The file
+// With a check, each entry is recorded, stale or gone by its PenNodes. The file
 // and the data must have no problems.
 export function judge(
   file: ParseResult,
@@ -309,18 +309,18 @@ export function judge(
   const given = givenDimensions(file);
   const declared = file.records.find(({ name }) => name === record);
   // An entry is as fresh as the least fresh of its PenNodes: gone, then
-  // stale, then present.
+  // stale, then recorded.
   const pens = (declared?.fields ?? [])
     .filter(({ type }) => type.name === penNode.name)
     .map(({ name }) => name);
-  const order: Freshness[] = ["gone", "stale", "present"];
+  const order: Freshness[] = ["gone", "stale", "recorded"];
   const freshness = (entry: Record<string, unknown>): Freshness => {
-    if (check === undefined) return "present";
+    if (check === undefined) return "recorded";
     const judged = pens.flatMap((field) => {
       const at = entry[field] as Parameters<Check>[0] | undefined;
       return at === undefined ? [] : [check(at)];
     });
-    return order.find((each) => judged.includes(each)) ?? "present";
+    return order.find((each) => judged.includes(each)) ?? "recorded";
   };
   const contexts = sources.flatMap((source) =>
     (JSON.parse(source) as ({ context: Record<string, unknown> } & Record<string, unknown>)[]).map(
@@ -372,7 +372,7 @@ export function judge(
         about.filter((context) => looks(context, combination)),
         alike.filter((context) => looks(context, combination)),
       ]) {
-        for (const best of ["present", "stale", "gone"] as const) {
+        for (const best of ["recorded", "stale", "gone"] as const) {
           const entry = found.find(({ freshness: each }) => each === best);
           if (entry !== undefined) return { combination, state: best, entry: entry.entry };
         }
@@ -403,7 +403,7 @@ export function judge(
 
 // How much of the trees a record an actor records covers: every combination of
 // every element, in place, and which a stored record is about. Profiles that
-// share a row count as one. With a check, each entry is present, stale or
+// share a row count as one. With a check, each entry is recorded, stale or
 // gone by its frame, and a combination is as its best entry is. The file and
 // the data must have no problems.
 export function coverage(
@@ -418,7 +418,7 @@ export function coverage(
     return {
       path,
       combinations: combinations.length,
-      present: those("present").length,
+      recorded: those("recorded").length,
       stale: those("stale"),
       gone: those("gone"),
       missing: those("missing"),
@@ -430,7 +430,7 @@ export function coverage(
   return {
     record,
     combinations: total(({ combinations }) => combinations),
-    present: total(({ present }) => present),
+    recorded: total(({ recorded }) => recorded),
     stale: total(({ stale }) => stale.length),
     gone: total(({ gone }) => gone.length),
     outdated: total(({ outdated }) => outdated.length),

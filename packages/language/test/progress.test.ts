@@ -56,14 +56,14 @@ const stored = [
 
 describe("progress", () => {
   it("says, where each element of the trees is, how much of it each record covers", () => {
-    const found = progress(file, stored, ({ node }) => (node === "changed" ? "stale" : "present"));
+    const found = progress(file, stored, ({ node }) => (node === "changed" ? "stale" : "recorded"));
     expect(
       found.map(({ line, column, records }) => [
         line,
         column,
         records.map(
-          ({ record, combinations, present, stale, gone }) =>
-            `${record} ${present} of ${combinations}, ${stale} stale, ${gone} gone`,
+          ({ record, combinations, recorded, stale, gone }) =>
+            `${record} ${recorded} of ${combinations}, ${stale} stale, ${gone} gone`,
         ),
       ]),
     ).toEqual([
@@ -76,9 +76,9 @@ describe("progress", () => {
     ]);
   });
 
-  it("lists, for each, the combinations not present, as dxn status --missing words them", () => {
+  it("lists, for each, the combinations not recorded, as dxn status --missing words them", () => {
     const toggles = progress(file, stored, ({ node }) =>
-      node === "changed" ? "stale" : "present",
+      node === "changed" ? "stale" : "recorded",
     ).find(({ line }) => line === 12);
     expect(toggles?.records[0]?.listed).toMatchInlineSnapshot(`
       {
@@ -96,9 +96,9 @@ describe("progress", () => {
     `);
   });
 
-  it("counts every entry as present without a check", () => {
+  it("counts every entry as recorded without a check", () => {
     // In Menu's own tree.
-    expect(progress(file, stored).find(({ line }) => line === 12)?.records[0]?.present).toBe(2);
+    expect(progress(file, stored).find(({ line }) => line === 12)?.records[0]?.recorded).toBe(2);
   });
 });
 
@@ -128,10 +128,10 @@ actor DesignAgent records Evidence
     const covered = coverage(button, "Evidence", [stored]);
     const [place] = progress(button, [{ record: "Evidence", source: stored }]);
     expect([
-      [covered.present, covered.combinations, covered.outdated],
+      [covered.recorded, covered.combinations, covered.outdated],
       covered.paths.map(({ outdated }) => outdated.map(({ says, added }) => [says, added])),
-      place?.records.map(({ present, outdated }) => [
-        present,
+      place?.records.map(({ recorded, outdated }) => [
+        recorded,
         outdated.map(({ says, added }) => [says, added]),
       ]),
     ]).toEqual([
@@ -216,7 +216,7 @@ actor DesignAgent records Evidence
   it("counts on its own, and covers itself where it is placed, in the same look", () => {
     const covered = coverage(bar, "Evidence", [stored]);
     expect(
-      covered.paths.map(({ path, combinations, present }) => [path, combinations, present]),
+      covered.paths.map(({ path, combinations, recorded }) => [path, combinations, recorded]),
     ).toEqual([
       ["Tab", 2, 2],
       ["Bar", 2, 0],

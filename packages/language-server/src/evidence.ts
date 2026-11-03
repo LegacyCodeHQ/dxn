@@ -8,7 +8,6 @@ import {
   fixes,
   folderOf,
   freshness,
-  isDrawn,
   type Located,
   outdatedWhy,
   type ParseResult,
@@ -22,6 +21,7 @@ import {
   treePaths,
   treePlaces,
   type Unrecorded,
+  type Usage,
 } from "@legacycodehq/dxn-language";
 import { type Diagnostic, DiagnosticSeverity, type Range } from "vscode-languageserver/node";
 import { rangeAt } from "./range.js";
@@ -247,10 +247,6 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
     shown.delete(`${line}:${column}#${record}`);
     return stoppedBy(file, record, group.problems, readsOf(record));
   };
-  // The records whose evidence is a drawing.
-  const drawn = new Set(
-    file.records.filter(({ name }) => isDrawn(file, name)).map(({ name }) => name),
-  );
   // A usage, for a record: the type whose has line it is, the component it
   // places, how many states the component has on its own, and what the line
   // pins of it.
@@ -279,10 +275,7 @@ export function hintsBeside(uri: string, file: ParseResult): Hint[] | undefined 
       }
       const outdated = each.outdated.length > 0;
       const usage = place.usage ? usageOf(place, each.record) : undefined;
-      const wording: Wording = {
-        verb: drawn.has(each.record) ? "drawn" : "recorded",
-        ...(usage === undefined ? {} : { usage }),
-      };
+      const wording: Wording = usage === undefined ? {} : { usage };
       const counting = outdated ? outdatedAt(each, wording) : countOf(each, wording);
       const disagree = mismatched.get(`${place.line}:${place.column}#${each.record}`) ?? [];
       const count = disagree.length === 0 ? counting : disagreeing(counting, disagree);
@@ -329,7 +322,7 @@ function disagreeing(
   return { label, details: [label, ...rest, listed].join("\n\n") };
 }
 
-// What a hint shows of one record, and its mark: ● every look present, ◐
+// What a hint shows of one record, and its mark: ● every combination recorded, ◐
 // some, ○ none, ◌ something needing a decision, stale, gone, outdated or
 // with problems.
 interface Part {
@@ -339,8 +332,8 @@ interface Part {
 }
 
 // How much of an element has evidence, as a moon.
-const moon = ({ present, combinations }: Progress["records"][number]): Part["mark"] =>
-  present === combinations ? "●" : present === 0 ? "○" : "◐";
+const moon = ({ recorded, combinations }: Progress["records"][number]): Part["mark"] =>
+  recorded === combinations ? "●" : recorded === 0 ? "○" : "◐";
 
 // A hint's label and details from its records', each marked, the details
 // starting with the line the label gives of it.
@@ -355,13 +348,11 @@ function joined(parts: Part[]): { label: string; details: string } {
   };
 }
 
-// How a count is worded: what was done to a state with evidence, drawn for a
-// record with a PenNode and recorded for any other; and, for a usage of a
-// component, the type it is placed in, the component, how many states the
-// component has on its own, and what the type pins of it.
+// How a count is worded: for a usage of a component, the type it is placed
+// in, the component, how many combinations the component has on its own,
+// and what the type pins of it.
 interface Wording {
-  verb: "drawn" | "recorded";
-  usage?: { in: string; of: string; own: number; pins: string[] };
+  usage?: Usage;
 }
 
 // A record's evidence at a place: its count, "PenEvidence 4 of 6, 1 stale",
@@ -381,7 +372,7 @@ function countAndLists(
   wording: Wording,
 ): { label: string; lists: string[] } {
   const { listed } = each;
-  const label = evidenceLabel({ ...each, outdated: [] }, wording.verb, wording.usage);
+  const label = evidenceLabel({ ...each, outdated: [] }, wording.usage);
   const lists = (
     [
       [evidenceHeadings.missing, listed.missing],
@@ -403,7 +394,7 @@ function outdatedAt(
 ): { label: string; details: string } {
   const here = each.outdated;
   const { lists } = countAndLists(each, wording);
-  const label = evidenceLabel(each, wording.verb, wording.usage);
+  const label = evidenceLabel(each, wording.usage);
   const why = outdatedWhy(here);
   const list = `${evidenceHeadings.outdated}:\n${here.map(({ says }) => `- ${says}`).join("\n")}`;
   return { label, details: [label, why, list, ...lists].join("\n\n") };

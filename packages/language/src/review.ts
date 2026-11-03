@@ -2,7 +2,7 @@ import type { ParseResult } from "./ast.js";
 import { profilesOf } from "./profiles.js";
 import { penNode } from "./scalars.js";
 import { type Check, describe, type Judged, judge, type Outdated } from "./status.js";
-import { evidenceLabel, evidenceVerb } from "./vocabulary.js";
+import { evidenceLabel } from "./vocabulary.js";
 
 // A page to review a tree's evidence by: the tree's root, and the page as
 // Markdown.
@@ -56,19 +56,16 @@ export function reviewPages(
     const all = elements.flatMap(({ combinations }) => combinations);
     const count = (state: Judged["state"]) => all.filter((each) => each.state === state).length;
     // The count, in the words dxn status and an editor's hint have it in.
-    const summary = evidenceLabel(
-      {
-        record,
-        present: count("present"),
-        combinations: all.length,
-        stale: count("stale"),
-        gone: count("gone"),
-        outdated: elements.flatMap(({ path, outdated: each }) =>
-          each.map(({ says, added }) => ({ path, says, added })),
-        ),
-      },
-      evidenceVerb(file, record),
-    );
+    const summary = evidenceLabel({
+      record,
+      recorded: count("recorded"),
+      combinations: all.length,
+      stale: count("stale"),
+      gone: count("gone"),
+      outdated: elements.flatMap(({ path, outdated: each }) =>
+        each.map(({ says, added }) => ({ path, says, added })),
+      ),
+    });
     // The elements with something to show: their combinations, only those
     // asked for, and their outdated records, which always need a decision.
     const sections = elements.flatMap(({ path, combinations, outdated: old }) => {
@@ -106,7 +103,7 @@ export function reviewPages(
 // An element's combinations as a table: a column for the profiles when the
 // file has some, for each dimension, each parent's state that places it and
 // each of its own states, then its status and its picture. The status says
-// only what needs attention, blank where a combination is present, and is
+// only what needs attention, blank where a combination is recorded, and is
 // left out where every one is.
 function tableOf(
   file: ParseResult,
@@ -121,7 +118,7 @@ function tableOf(
   const dimensions = keys(({ combination }) => combination.dimensions);
   const parents = keys(({ combination }) => combination.parents);
   const states = keys(({ combination }) => combination.states);
-  const attention = combinations.some(({ state }) => state !== "present");
+  const attention = combinations.some(({ state }) => state !== "recorded");
   const header = [
     ...(every.length > 0 ? ["profile"] : []),
     ...dimensions,
@@ -146,7 +143,7 @@ function tableOf(
       ...dimensions.map((name) => combination.dimensions[name] ?? ""),
       ...parents.map((name) => combination.parents[name] ?? ""),
       ...states.map((name) => combination.states[name] ?? ""),
-      ...(attention ? [state === "present" ? "" : `**${state}**`] : []),
+      ...(attention ? [state === "recorded" ? "" : `**${state}**`] : []),
       shown,
     ];
   });

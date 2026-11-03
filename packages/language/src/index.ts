@@ -92,11 +92,9 @@ export { type Drawn, validate } from "./validate.js";
 // The words dxn and an editor say a count of evidence in.
 export {
   type EvidenceCount,
-  type EvidenceVerb,
   evidenceColumns,
   evidenceHeadings,
   evidenceLabel,
-  evidenceVerb,
   isDrawn,
   type OutdatedAt,
   outdatedItem,

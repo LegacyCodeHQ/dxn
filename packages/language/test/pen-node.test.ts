@@ -80,9 +80,9 @@ describe("PenNode", () => {
     ]);
     const counted = coverage(file, "PenEvidence", [stored], (node) => {
       checked.push(node);
-      return node.node === undefined ? "stale" : "present";
+      return node.node === undefined ? "stale" : "recorded";
     });
-    expect([checked, counted.present, counted.stale]).toEqual([
+    expect([checked, counted.recorded, counted.stale]).toEqual([
       [
         { file: "gazette.pen", frame: "IeCCz", node: "OcEJ9", fingerprint: "a1" },
         { file: "gazette.pen", frame: "IeCCz", fingerprint: "b2" },

@@ -1373,19 +1373,19 @@ dxn status toolbar.dxn
 ```
 
 ```
-toolbar.dxn: Evidence 38 of 55 combinations drawn
+toolbar.dxn: Evidence 38 of 55 combinations recorded
 
-| path                                | combinations | drawn | stale | gone | missing |
-| ----------------------------------- | ------------ | ----- | ----- | ---- | ------- |
-| ArticlePage                         | 1            | 0     | 0     | 0    | 1       |
-| ArticlePage.toolbar                 | 4            | 0     | 0     | 0    | 4       |
-| ArticlePage.toolbar.wordmark        | 15           | 15    | 0     | 0    | 0       |
-| ArticlePage.toolbar.links           | 2            | 0     | 0     | 0    | 2       |
-| ArticlePage.toolbar.links.blog      | 9            | 9     | 0     | 0    | 0       |
-| ArticlePage.toolbar.menu            | 4            | 2     | 0     | 0    | 2       |
-| ArticlePage.toolbar.menu.toggle     | 12           | 12    | 0     | 0    | 0       |
-| ArticlePage.toolbar.menu.panel      | 2            | 0     | 0     | 0    | 2       |
-| ArticlePage.toolbar.menu.panel.blog | 6            | 0     | 0     | 0    | 6       |
+| path                                | combinations | recorded | stale | gone | missing |
+| ----------------------------------- | ------------ | -------- | ----- | ---- | ------- |
+| ArticlePage                         | 1            | 0        | 0     | 0    | 1       |
+| ArticlePage.toolbar                 | 4            | 0        | 0     | 0    | 4       |
+| ArticlePage.toolbar.wordmark        | 15           | 15       | 0     | 0    | 0       |
+| ArticlePage.toolbar.links           | 2            | 0        | 0     | 0    | 2       |
+| ArticlePage.toolbar.links.blog      | 9            | 9        | 0     | 0    | 0       |
+| ArticlePage.toolbar.menu            | 4            | 2        | 0     | 0    | 2       |
+| ArticlePage.toolbar.menu.toggle     | 12           | 12       | 0     | 0    | 0       |
+| ArticlePage.toolbar.menu.panel      | 2            | 0        | 0     | 0    | 2       |
+| ArticlePage.toolbar.menu.panel.blog | 6            | 0        | 0     | 0    | 6       |
 ```
 
 A tree starts at each type that no type contains, and every child below it
@@ -1396,16 +1396,16 @@ the menu is the same on a tablet with or without its keyboard. Evidence on
 any of a combination's profiles covers it.
 
 Each entry is also checked against its drawings: each PenNode it has. A
-PenNode is **present** while its fingerprint, of its node or, without one,
+PenNode is **recorded** while its fingerprint, of its node or, without one,
 its frame, is the one recorded, **stale** once that has changed, and
 **gone** once the file, the frame or the node is, or the node is no longer
 in its frame. An entry is as its least fresh PenNode is, and a combination
 as its best entry is, or **missing** without one. A record made before its element gained a state or a dimension does not say which value of it the drawing shows, so it matches no combination: it is counted apart as **outdated**, and `dxn validate` warns of it rather than fails, until it is given the value. A record with no PenNode
 is counted as recorded, and the first line says that staleness is not
 checked, so it never passes silently. Attaching again records the
-fingerprint now, and the entry is present again.
+fingerprint now, and the entry is recorded again.
 
-With `--missing`, it lists each combination that is not present, under
+With `--missing`, it lists each combination that is not recorded, under
 Missing, Stale and Gone, in the words a context would use:
 
 ```
@@ -1415,7 +1415,7 @@ Missing:
 ```
 
 With `--json`, every count is a number, and each path lists the combinations
-that are not present under `listed`, as `stale`, `gone` and `missing`.
+that are not recorded under `listed`, as `stale`, `gone` and `missing`.
 
 ### Renaming a value
 
@@ -1783,9 +1783,10 @@ The words dxn and an editor say the model's facts in, each for one thing.
 Each is said the same by both: the dxn command for agents, an editor for
 people.
 
-| Word        | Means                                                                                                                                                   |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| combination | one value of each state and each dimension of an element: what evidence is counted against. `Tab`, with two selections and three interactions, has six. |
+| Word        | Means                                                                                                                                                                                                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| combination | one value of each state and each dimension of an element: what evidence is counted against. `Tab`, with two selections and three interactions, has six.                                                         |
+| recorded    | a combination's status when a stored record matches it, and its drawings, where it has any, are as they were recorded; else it is stale, gone or missing. A count says how many: `2 of 6 combinations recorded` |
 
 ### Names
 

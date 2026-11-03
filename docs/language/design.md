@@ -120,6 +120,12 @@ the one word dxn and an editor say it in: "6 combinations", never "6
 states", since a state is one of a type's fields, nor "6 looks", which is a
 word of the user interface, not of the core.
 
+A combination with evidence is **recorded**, whatever the evidence is: its
+status is recorded, stale, gone or missing, and a count says how many are
+recorded, "2 of 6 combinations recorded", in dxn, in `--json` and in an
+editor alike. "Drawn", for evidence that is a drawing, and "look" are words
+of the user interface, for a kit to give the core, not the core's own.
+
 ### Components
 
 A type declared at the top of a file is a **component**: counted on its own,
@@ -195,15 +201,15 @@ no tree of its own, so its `has` lines count every place it is in.
 
 After each type, and each part placed in a type, a hint gives each record's
 count, marked `●` every combination
-present, `◐` some, `○` none, or `◌` something needing a decision: a drawing
+recorded, `◐` some, `○` none, or `◌` something needing a decision: a drawing
 stale or gone, a record outdated, or a record with problems. `◌` wins over
 the count. A usage of a component, a `has` line whose child is a
 component, has no hint: the component's own line counts its combinations, and the
 usage's evidence is in the hover over the component's name on that line,
 under its declaration: how many of the component's states the type can
 show there, what it pins, and whether they are drawn, wherever that is:
-`FeedScreen can show all 24 combinations of ArticleRow, all drawn`, `FeedScreen
-shows 1 combination of NavigationBar, kind = root, drawn`. The type's own drawing
+`FeedScreen can show all 24 combinations of ArticleRow, all recorded`, `FeedScreen
+shows 1 combination of NavigationBar, kind = root, recorded`. The type's own drawing
 shows a sample of them; the component's drawings show them all. Over an element's
 name, the hover lists what is missing, stale, gone, outdated or wrong. A review page per tree, written by `dxn review` to
 a cache outside the repository, shows each combination with the picture recorded,

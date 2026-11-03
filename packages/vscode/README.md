@@ -34,10 +34,10 @@ a time, without the tree Zed's grammar has.
 
 After each type, and each part placed in a type, an inlay hint shows how many of its
 combinations have evidence, a record at a time, as `dxn status` counts them:
-`◌ PenEvidence 4 of 6 combinations drawn, 1 stale` after `type Button {`. Hovering over the
+`◌ PenEvidence 4 of 6 combinations recorded, 1 stale` after `type Button {`. Hovering over the
 element's name lists the combinations still missing, stale or gone. Records
 made before the element gained a state or a dimension are counted apart, as
-outdated, with what was added: `PenEvidence 0 of 15 combinations drawn · 9 outdated: hover
+outdated, with what was added: `PenEvidence 0 of 15 combinations recorded · 9 outdated: hover
 added`; the hover says why, what to do, and lists each. A record
 whose stored records have other problems, such as a value renamed by hand, is not
 counted: its hint says how many of its records have problems, of how many,

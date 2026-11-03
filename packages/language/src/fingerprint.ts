@@ -185,7 +185,7 @@ export function freshness(repository: string, fingerprints = new Fingerprints())
     }
     const now = fingerprints.of(full, node ?? frame);
     if (now === undefined) return "gone";
-    return now === fingerprint ? "present" : "stale";
+    return now === fingerprint ? "recorded" : "stale";
   };
 }
 

@@ -4,18 +4,14 @@ import type { ParseResult } from "./ast.js";
 // editor and the dxn command place them, in a hint, a hover or a table, but
 // never word them themselves.
 
-// What was done to a state with evidence: drawn, for a record whose evidence
-// is a drawing, a PenNode; recorded, for any other.
-export type EvidenceVerb = "drawn" | "recorded";
+// A combination with evidence is recorded, whatever the evidence is: drawn is
+// a word of the user interface, not of the core.
 
 // Whether a record's evidence is a drawing: it has a PenNode.
 export const isDrawn = (file: ParseResult, record: string): boolean =>
   file.records
     .find(({ name }) => name === record)
     ?.fields.some(({ type }) => type.name === "PenNode") === true;
-
-export const evidenceVerb = (file: ParseResult, record: string): EvidenceVerb =>
-  isDrawn(file, record) ? "drawn" : "recorded";
 
 // A stored record made before its element gained a state or a dimension: the
 // element, what it says, and what was added since.
@@ -28,7 +24,7 @@ export interface OutdatedAt {
 // How much of an element, or of every element, a record has evidence for.
 export interface EvidenceCount {
   record: string;
-  present: number;
+  recorded: number;
   combinations: number;
   stale: number;
   gone: number;
@@ -48,15 +44,19 @@ export interface Usage {
 // an element has: "Evidence 2 of 10 combinations recorded", then what is
 // stale, gone and outdated. Where a type places a component, what the type
 // can show of it: "FeedScreen can show all 24 combinations of ArticleRow,
-// all drawn".
-export function evidenceLabel(count: EvidenceCount, verb: EvidenceVerb, usage?: Usage): string {
-  const { record, combinations, present, stale, gone, outdated } = count;
+// all recorded".
+export function evidenceLabel(count: EvidenceCount, usage?: Usage): string {
+  const { record, combinations, recorded, stale, gone, outdated } = count;
   const many = combinations === 1 ? "combination" : "combinations";
   const counted = (() => {
-    if (usage === undefined) return `${record} ${present} of ${combinations} ${many} ${verb}`;
+    if (usage === undefined) return `${record} ${recorded} of ${combinations} ${many} recorded`;
     const pinned = usage.pins.length === 0 ? "" : `, ${usage.pins.join(", ")}`;
     const done =
-      present === combinations ? (combinations === 1 ? verb : `all ${verb}`) : `${present} ${verb}`;
+      recorded === combinations
+        ? combinations === 1
+          ? "recorded"
+          : "all recorded"
+        : `${recorded} recorded`;
     const shows =
       combinations === 1
         ? `shows 1 combination`
@@ -109,10 +109,10 @@ export const evidenceHeadings = {
 } as const;
 
 // The columns of a table of evidence, an element to a row.
-export const evidenceColumns = (verb: EvidenceVerb): string[] => [
+export const evidenceColumns = (): string[] => [
   "path",
   "combinations",
-  verb,
+  "recorded",
   "stale",
   "gone",
   "missing",

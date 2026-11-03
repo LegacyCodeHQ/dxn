@@ -1196,9 +1196,11 @@ actor EvidenceRecorder records Evidence
       "",
     ]);
     const json = JSON.parse(run("toolbar.dxn", "--json").stdout);
-    expect([json.records[0].record, json.records[0].combinations, json.records[0].present]).toEqual(
-      ["Evidence", 7, 4],
-    );
+    expect([
+      json.records[0].record,
+      json.records[0].combinations,
+      json.records[0].recorded,
+    ]).toEqual(["Evidence", 7, 4]);
   });
 
   it("reports the stored records' problems first, and counts nothing", () => {

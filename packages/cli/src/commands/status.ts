@@ -5,7 +5,6 @@ import {
   evidenceColumns,
   evidenceHeadings,
   evidenceLabel,
-  evidenceVerb,
   freshness,
   message,
   outdatedItem,
@@ -62,20 +61,19 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
       fingerprinted: fingerprinted(name),
     }));
   const blocks = records.map((coverage) => {
-    const { record, combinations, present, stale, gone, paths } = coverage;
-    const verb = evidenceVerb(parsed, record);
+    const { record, combinations, recorded, stale, gone, paths } = coverage;
     const table = drawTable(
-      evidenceColumns(verb),
+      evidenceColumns(),
       paths.map((path) => [
         path.path,
         String(path.combinations),
-        String(path.present),
+        String(path.recorded),
         String(path.stale.length),
         String(path.gone.length),
         String(path.missing.length),
       ]),
     );
-    // Each combination that is not present, under what it is.
+    // Each combination that is not recorded, under what it is.
     const listed = (heading: string, of: "missing" | "stale" | "gone") => {
       const lines = paths.flatMap((path) =>
         path[of].map((combination) => `  ${describe(parsed, path.path, combination)}\n`),
@@ -92,19 +90,16 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
         ? ""
         : `\n${evidenceHeadings.outdated}: ${outdatedSummary(old.length)}.\n${old.join("")}`;
     // The count, in the words an editor's hint has it in.
-    const counted = evidenceLabel(
-      {
-        record,
-        present,
-        combinations,
-        stale,
-        gone,
-        outdated: paths.flatMap((path) =>
-          path.outdated.map((each) => ({ ...each, path: path.path })),
-        ),
-      },
-      verb,
-    );
+    const counted = evidenceLabel({
+      record,
+      recorded,
+      combinations,
+      stale,
+      gone,
+      outdated: paths.flatMap((path) =>
+        path.outdated.map((each) => ({ ...each, path: path.path })),
+      ),
+    });
     const notes = coverage.fingerprinted
       ? []
       : [`${record} has no PenNode, so staleness is not checked`];
@@ -116,7 +111,7 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     }`;
   });
   const text = blocks.length === 0 ? `${file}: no records an actor records\n` : blocks.join("\n");
-  // In JSON, each count a number, and each combination not present listed.
+  // In JSON, each count a number, and each combination not recorded listed.
   const counted = records.map(({ paths, stale, gone, ...rest }) => ({
     ...rest,
     stale,
@@ -125,7 +120,7 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
     paths: paths.map((path) => ({
       path: path.path,
       combinations: path.combinations,
-      present: path.present,
+      recorded: path.recorded,
       stale: path.stale.length,
       gone: path.gone.length,
       missing: path.missing.length,

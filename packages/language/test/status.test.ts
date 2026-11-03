@@ -46,7 +46,7 @@ describe("coverage", () => {
       JSON.stringify([toggle("Phone", "closed", "rest"), toggle("Studio", "open", "hovered")]),
     ]);
     expect(
-      report.paths.map(({ path, combinations, present }) => [path, combinations, present]),
+      report.paths.map(({ path, combinations, recorded }) => [path, combinations, recorded]),
     ).toEqual([
       // Menu, a component on its own, its toggle covered by the same entries.
       ["Menu", 2, 0],
@@ -55,7 +55,7 @@ describe("coverage", () => {
       ["Toolbar.menu", 2, 0],
       ["Toolbar.menu.toggle", 6, 2],
     ]);
-    expect([report.combinations, report.present]).toEqual([17, 4]);
+    expect([report.combinations, report.recorded]).toEqual([17, 4]);
   });
 
   it("counts as one what differs only in profiles, with evidence on any of them", () => {
@@ -74,7 +74,7 @@ describe("coverage", () => {
     const path = report.paths.find(({ path: at }) => at === "Toolbar.menu");
     expect([
       path?.combinations,
-      path?.present,
+      path?.recorded,
       path?.missing.map(({ profiles }) => profiles),
     ]).toEqual([2, 2, []]);
   });
@@ -127,16 +127,16 @@ describe("coverage", () => {
           entry("Laptop", "open", "rest", "changed"),
         ]),
       ],
-      ({ frame }) => (frame === "fresh" ? "present" : frame === "changed" ? "stale" : "gone"),
+      ({ frame }) => (frame === "fresh" ? "recorded" : frame === "changed" ? "stale" : "gone"),
     );
     const toggles = report.paths.find(({ path }) => path === "Toolbar.menu.toggle");
     expect([
-      toggles?.present,
+      toggles?.recorded,
       toggles?.stale.length,
       toggles?.gone.length,
       toggles?.missing.length,
     ]).toEqual([1, 2, 0, 3]);
     // There, and in Menu on its own.
-    expect([report.present, report.stale, report.gone]).toEqual([2, 4, 0]);
+    expect([report.recorded, report.stale, report.gone]).toEqual([2, 4, 0]);
   });
 });
