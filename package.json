@@ -18,6 +18,9 @@
   "scripts": {
     "build": "make build",
     "check": "make check",
+    "coverage": "make coverage",
+    "coverage:javascript": "vitest run --coverage",
+    "coverage:zed": "make coverage-zed",
     "test": "make test"
   },
   "devDependencies": {

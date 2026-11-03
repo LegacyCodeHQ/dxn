@@ -1,17 +1,19 @@
-.PHONY: help install fmt lint-check typecheck references cycles vocabulary security test coverage grammar zed build smoke check check-fast setup-hooks clean
+.PHONY: help install fmt lint-check typecheck references cycles vocabulary security test coverage coverage-javascript coverage-zed grammar zed build smoke check check-fast setup-hooks clean
 
 help:
 	@echo "Targets:"
 	@echo "  install     - Install pinned dependencies from package-lock.json"
 	@echo "  fmt         - Format sources with Biome"
 	@echo "  lint-check  - Run formatting, lint and type checks"
-	@echo "  typecheck   - Type-check both packages' sources and tests"
+	@echo "  typecheck   - Type-check all TypeScript packages' sources and tests"
 	@echo "  references  - Fail when a TypeScript package is missing from tsconfig.build.json"
 	@echo "  cycles      - Fail on source-file dependency cycles (needs clarity; required in CI)"
 	@echo "  vocabulary  - Fail on a word of the model written in the CLI or the language server"
 	@echo "  security    - Audit production dependencies for known vulnerabilities"
-	@echo "  test        - Run both packages' test suites"
-	@echo "  coverage    - Run the test suite with coverage thresholds"
+	@echo "  test        - Run every npm workspace's test suite"
+	@echo "  coverage    - Report coverage for every npm workspace and the Zed crate"
+	@echo "  coverage-javascript - Run Vitest coverage with package thresholds"
+	@echo "  coverage-zed - Report native Rust coverage (needs cargo-llvm-cov and LLVM tools)"
 	@echo "  grammar     - Check the tree-sitter grammar's generated parser and run its corpus tests"
 	@echo "  zed         - Check the Zed extension's grammar commit and queries"
 	@echo "  build       - Compile packages/*/src/ to packages/*/dist/, and add dist/main.js"
@@ -51,8 +53,24 @@ security:
 test:
 	npx vitest run
 
-coverage:
+coverage: coverage-javascript coverage-zed
+	node scripts/test-coverage/summary.mjs
+
+coverage-javascript:
 	npx vitest run --coverage
+
+# Override RUST_COVERAGE_COMMAND when using a separately installed tool. Keep the native
+# report outside Vitest's output directory, which it cleans on every run.
+RUST_COVERAGE_COMMAND ?= cargo llvm-cov
+
+coverage-zed:
+	@$(RUST_COVERAGE_COMMAND) --version >/dev/null 2>&1 || \
+	  { echo "coverage: install cargo-llvm-cov 0.9.1 and llvm-tools-preview; see README.md" >&2; exit 1; }
+	mkdir -p coverage/zed
+	cd packages/zed && $(RUST_COVERAGE_COMMAND) --lib --no-report
+	cd packages/zed && $(RUST_COVERAGE_COMMAND) report --lcov --output-path ../../coverage/zed/lcov.info
+	cd packages/zed && $(RUST_COVERAGE_COMMAND) report --html --output-dir ../../coverage/zed
+	cd packages/zed && $(RUST_COVERAGE_COMMAND) report --json --summary-only --output-path ../../coverage/zed/coverage.json
 
 # The tree-sitter grammar: the committed parser in src/ is the one grammar.js
 # generates, and the corpus tests in test/corpus pass.

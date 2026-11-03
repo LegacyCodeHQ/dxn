@@ -66,6 +66,47 @@ make setup-hooks
 make check
 ```
 
+`make check` includes coverage for all five npm workspaces and the Zed Rust
+crate. Install the Rust coverage tools once, in addition to the Rust toolchain
+and WebAssembly target already needed by `make zed`:
+
+```bash
+rustup component add llvm-tools-preview
+cargo install cargo-llvm-cov --version 0.9.1 --locked
+```
+
+Run coverage with `npm run coverage` or `make coverage`. CI runs the same command
+and uploads the `coverage` artifact, including HTML and LCOV reports:
+
+| Report                         | Location                          |
+| ------------------------------ | --------------------------------- |
+| JavaScript and TypeScript HTML | `coverage/javascript/index.html`  |
+| JavaScript and TypeScript LCOV | `coverage/javascript/lcov.info`   |
+| Zed Rust HTML                  | `coverage/zed/html/index.html`    |
+| Zed Rust LCOV                  | `coverage/zed/lcov.info`          |
+| Summary for every package      | `coverage/workspace-summary.json` |
+
+Use `make coverage-javascript` or `make coverage-zed` to run one tool separately.
+For a single npm package, use `npm run coverage:javascript -- --project=language`
+(or `cli`, `language-server`, `vscode`, `tree-sitter-dxn`). A filtered run replaces
+the JavaScript report with that run's results; rerun the full command for the
+workspace summary.
+
+The JavaScript report includes untested source files, the VS Code bundler and
+the tree-sitter grammar DSL. The existing thresholds (70% lines, 85% functions)
+apply globally and independently to the language, CLI, language-server and
+VS Code packages. The CLI/server entry-point wrappers and VS Code-only extension
+entry point remain excluded; their portable logic is tested separately.
+Generated parsers, declarations, tests and dependencies are outside the reporting
+scope.
+
+The tree-sitter tests exercise the generated native parser, not `grammar.js`
+inside Vitest, so the DSL appears as uncovered. Its correctness is checked by
+the corpus, agreement and editor-query tests. Rust coverage includes untested
+Zed host callbacks. These reports expose the gaps; no separate threshold is
+imposed on the grammar DSL or Rust package yet. Native Rust branch coverage is
+not enabled, so the package summary shows `n/a` where a metric is unavailable.
+
 Run the CLI from source after building:
 
 ```bash

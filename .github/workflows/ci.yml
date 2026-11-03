@@ -61,8 +61,24 @@ jobs:
       - name: Audit dependencies
         run: make security
 
+      - name: Set up Rust coverage
+        run: rustup component add llvm-tools-preview
+
+      - name: Install Rust coverage tool
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov@0.9.1
+
       - name: Check coverage
         run: make coverage
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
 
       - name: Check the tree-sitter grammar
         run: make grammar
