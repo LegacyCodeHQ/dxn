@@ -13,10 +13,12 @@ export { type Mentioned, message, Words, words } from "./core/message.js";
 export { isValue } from "./core/naming.js";
 // The words dxn and an editor say a count of evidence in.
 export {
+  apartShort,
   type EvidenceCount,
   evidenceColumns,
   evidenceHeadings,
   evidenceLabel,
+  evidenceShort,
   isDrawn,
   type OutdatedAt,
   outdatedAction,
@@ -80,7 +82,7 @@ export {
 } from "./evaluation/status.js";
 // Which stored records dxn and an editor count, when some have errors, and
 // what both say of those they do not.
-export { apartLabel, countable, elementOf, type SetApart } from "./evidence/apart.js";
+export { apartCount, apartLabel, countable, elementOf, type SetApart } from "./evidence/apart.js";
 // What a node of a design file shows, and whether stored evidence still
 // points at what it recorded.
 export {

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  apartShort,
   evidenceColumns,
   evidenceLabel,
+  evidenceShort,
   outdatedItem,
   outdatedSummary,
   outdatedWhy,
@@ -88,6 +90,24 @@ describe("the words for evidence", () => {
       [
         "1 stored record",
         "3 stored records",
+      ]
+    `);
+  });
+
+  it("count, short, for a hint beside the code: the count, then how many need a look", () => {
+    const short = (over: Partial<Parameters<typeof evidenceShort>[0]> = {}) =>
+      evidenceShort({ ...count(), outdated: 0, apart: 0, mismatched: 0, ...over });
+    expect([
+      short(),
+      short({ recorded: 0, combinations: 1 }),
+      short({ stale: 1, gone: 2, outdated: 3, apart: 1, mismatched: 2 }),
+      apartShort("Evidence", 3),
+    ]).toMatchInlineSnapshot(`
+      [
+        "Evidence 2 of 10 combinations recorded",
+        "Evidence 0 of 1 combination recorded",
+        "Evidence 2 of 10 combinations recorded · 1 stale, 2 gone, 3 outdated, 1 set apart, 2 don't match the model",
+        "Evidence: 3 stored records set apart",
       ]
     `);
   });

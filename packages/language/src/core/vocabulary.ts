@@ -79,6 +79,39 @@ export function evidenceLabel(count: EvidenceCount, usage?: Usage): string {
   return `${label} · ${outdated.length} outdated: ${names.join(", ")} added`;
 }
 
+// A count of evidence, short, for a hint beside the code: the count, then
+// how many need a look, by what, "Evidence 0 of 2 combinations recorded · 1
+// stale, 1 set apart". What each is, is the hint's tooltip.
+export function evidenceShort(count: {
+  record: string;
+  recorded: number;
+  combinations: number;
+  stale: number;
+  gone: number;
+  outdated: number;
+  apart: number;
+  mismatched: number;
+}): string {
+  const { record, recorded, combinations, stale, gone, outdated, apart, mismatched } = count;
+  const many = combinations === 1 ? "combination" : "combinations";
+  const notes = [
+    ...(stale > 0 ? [`${stale} stale`] : []),
+    ...(gone > 0 ? [`${gone} gone`] : []),
+    ...(outdated > 0 ? [`${outdated} outdated`] : []),
+    ...(apart > 0 ? [`${apart} set apart`] : []),
+    ...(mismatched > 0
+      ? [`${mismatched} ${mismatched === 1 ? "doesn't" : "don't"} match the model`]
+      : []),
+  ];
+  const counted = `${record} ${recorded} of ${combinations} ${many} recorded`;
+  return notes.length === 0 ? counted : `${counted} · ${notes.join(", ")}`;
+}
+
+// A record none of whose stored records can be counted, short: "Evidence: 3
+// stored records set apart".
+export const apartShort = (record: string, count: number): string =>
+  `${record}: ${storedRecords(count)} set apart`;
+
 // Names said together, each quoted: "`hover`", "`hover` and `size`".
 const together = (names: string[], joiner: string) =>
   names.map((name) => message`${name}`).join(joiner);

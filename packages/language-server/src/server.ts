@@ -180,9 +180,12 @@ export function serve(connection: Connection): void {
         .filter(
           ({ line, usage }) => !usage && line - 1 >= range.start.line && line - 1 <= range.end.line,
         )
-        .map(({ line, label }) => ({
+        // Short beside the code, as an editor shows a hint; all of it over
+        // the hint, as its tooltip.
+        .map(({ line, short, details }) => ({
           position: { line: line - 1, character: (lines[line - 1] ?? "").trimEnd().length },
-          label,
+          label: short,
+          tooltip: { kind: "markdown" as const, value: details },
           paddingLeft: true,
         }))
     );

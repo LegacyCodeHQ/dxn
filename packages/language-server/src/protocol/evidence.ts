@@ -1,13 +1,16 @@
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
+  apartCount,
   apartLabel,
+  apartShort,
   checkStored,
   countable,
   drawings,
   elementOf,
   evidenceHeadings,
   evidenceLabel,
+  evidenceShort,
   fixes,
   folderOf,
   freshness,
@@ -181,6 +184,9 @@ export interface Hint {
   line: number;
   column: number;
   label: string;
+  // The label, short, for an editor that shows hints short: the count, and how
+  // many need a look; what each is, is in the details.
+  short: string;
   details: string;
   // A usage of a component, whose own declaration has the hint: shown over
   // its name, not as a hint of its own.
@@ -233,7 +239,10 @@ export function hintsBeside(
     const group = shown.get(`${line}:${column}#${record}`);
     if (group === undefined) return undefined;
     shown.delete(`${line}:${column}#${record}`);
-    return apartLabel(file, record, group.problems, storedOf(record));
+    return {
+      ...apartLabel(file, record, group.problems, storedOf(record)),
+      count: apartCount(group.problems),
+    };
   };
   // A usage, for a record: the type whose has line it is, the component it
   // places, how many states the component has on its own, and what the line
@@ -258,7 +267,11 @@ export function hintsBeside(
       const problems = stopped.get(each.record);
       if (problems !== undefined) {
         return [
-          { ...apartLabel(file, each.record, problems, storedOf(each.record)), mark: "◌" as const },
+          {
+            ...apartLabel(file, each.record, problems, storedOf(each.record)),
+            short: apartShort(each.record, apartCount(problems)),
+            mark: "◌" as const,
+          },
         ];
       }
       const outdated = each.outdated.length > 0;
@@ -272,17 +285,33 @@ export function hintsBeside(
       if (each.combinations === 0 && !outdated && set === undefined) return [];
       const mark =
         outdated || each.stale > 0 || each.gone > 0 || disagree.length > 0 ? "◌" : moon(each);
-      if (set === undefined) return [{ ...count, mark }];
+      // Short, the count and how many need a look; a usage's, as it is.
+      const short =
+        usage !== undefined
+          ? count.label
+          : evidenceShort({
+              ...each,
+              outdated: each.outdated.length,
+              apart: set === undefined ? 0 : set.count,
+              mismatched: new Set(
+                disagree.map(({ at, path }) => `${at.uri}${path.match(/^\$\[\d+\]/)?.[0]}`),
+              ).size,
+            });
+      if (set === undefined) return [{ ...count, short, mark }];
       const label = `${count.label} · ${set.label.slice(`${each.record}: `.length)}`;
       const [, ...rest] = count.details.split("\n\n");
-      return [{ label, details: [label, ...rest, set.details].join("\n\n"), mark: "◌" }];
+      return [{ label, short, details: [label, ...rest, set.details].join("\n\n"), mark: "◌" }];
     });
     if (parts.length === 0) return [];
     return [{ line: place.line, column: place.column, usage: place.usage, ...joined(parts) }];
   });
   // Set-apart records about a type no tree has at its root, at the type.
   for (const { at, record, problems } of shown.values()) {
-    const part = { ...apartLabel(file, record, problems, storedOf(record)), mark: "◌" as const };
+    const part = {
+      ...apartLabel(file, record, problems, storedOf(record)),
+      short: apartShort(record, apartCount(problems)),
+      mark: "◌" as const,
+    };
     hints.push({ line: at.line, column: at.column, usage: false, ...joined([part]) });
   }
   return hints.sort((a, b) => a.line - b.line || a.column - b.column);
@@ -315,6 +344,7 @@ function disagreeing(
 // with problems.
 interface Part {
   label: string;
+  short: string;
   details: string;
   mark: "●" | "◐" | "○" | "◌";
 }
@@ -325,13 +355,15 @@ const moon = ({ recorded, combinations }: Progress["records"][number]): Part["ma
 
 // A hint's label and details from its records', each marked, the details
 // starting with the line the label gives of it.
-function joined(parts: Part[]): { label: string; details: string } {
-  const marked = parts.map(({ label, details, mark }) => ({
+function joined(parts: Part[]): { label: string; short: string; details: string } {
+  const marked = parts.map(({ label, short, details, mark }) => ({
     label: `${mark} ${label}`,
+    short: `${mark} ${short}`,
     details: details.startsWith(label) ? `${mark} ${details}` : details,
   }));
   return {
     label: marked.map(({ label }) => label).join(" · "),
+    short: marked.map(({ short }) => short).join(" · "),
     details: marked.map(({ details }) => details).join("\n\n"),
   };
 }

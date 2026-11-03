@@ -38,19 +38,16 @@ a time, without the tree Zed's grammar has.
 ## How much of each element has evidence
 
 After each type, and each part placed in a type, an inlay hint shows how many of its
-combinations have evidence, a record at a time, as `dxn status` counts them:
-`◌ PenEvidence 4 of 6 combinations recorded, 1 stale` after `type Button {`. Hovering over the
-element's name lists the combinations still missing, stale or gone. Records
-made before the element gained a state or a dimension are counted apart, as
-outdated, with what was added: `PenEvidence 0 of 15 combinations recorded · 9 outdated: hover
-added`; the hover says why, what to do, and lists each. A record
-whose stored records have other problems, such as a value renamed by hand, is not
-counted: its hint says how many of its records have problems, of how many,
-and what most of them have, such as `PenEvidence: 3 of 6 stored records say
-style = plain, which Style does not have (primary, secondary)`, and the hover lists each problem,
-as `dxn validate` prints it. The count
-follows the stored records and the designs they point at as they change on
-disk.
+combinations have evidence, a record at a time, as `dxn status` counts them, and how
+many of its stored records need a look, by what: `◌ PenEvidence 4 of 6 combinations
+recorded · 1 stale` after `type Button {`. The hint is short; hovering over it, or over the
+element's name, says all of it: the combinations still missing, stale or gone; for
+records made before the element gained a state or a dimension, `· 9 outdated`, what
+was added, why that matters and what to do; and for stored records set apart for
+their problems, `· 3 set apart`, how many of how many and what most of them have, such
+as `3 of 6 stored records say style = plain, which Style does not have (primary,
+secondary)`, with each problem as `dxn validate` prints it. The count follows the
+stored records and the designs they point at as they change, unsaved or on disk.
 
 
 Each count starts with a mark: `●` every combination has evidence, `◐` some do, `○`

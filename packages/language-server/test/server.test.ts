@@ -979,7 +979,12 @@ describe("the language server", () => {
             textDocument: { uri },
             range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
           })
-        )?.map(({ position, label, paddingLeft }) => [position, label, paddingLeft]);
+        )?.map(({ position, label, paddingLeft, tooltip }) => [
+          position,
+          label,
+          paddingLeft,
+          (tooltip as { value: string } | undefined)?.value.split("\n")[0],
+        ]);
       const hovered = async () => {
         const found = await editor.sendRequest(HoverRequest.type, {
           textDocument: { uri },
@@ -989,7 +994,14 @@ describe("the language server", () => {
         return contents?.value;
       };
       expect([await hints(), await hovered()]).toEqual([
-        [[{ line: 1, character: 13 }, "◐ PenEvidence 1 of 2 combinations recorded", true]],
+        [
+          [
+            { line: 1, character: 13 },
+            "◐ PenEvidence 1 of 2 combinations recorded",
+            true,
+            "◐ PenEvidence 1 of 2 combinations recorded",
+          ],
+        ],
         "◐ PenEvidence 1 of 2 combinations recorded\n\nMissing:\n- Button: style = plain",
       ]);
 
@@ -1001,7 +1013,14 @@ describe("the language server", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect([refreshed.length > 0, await hints(), await hovered()]).toEqual([
         true,
-        [[{ line: 1, character: 13 }, "◌ PenEvidence 0 of 2 combinations recorded, 1 stale", true]],
+        [
+          [
+            { line: 1, character: 13 },
+            "◌ PenEvidence 0 of 2 combinations recorded · 1 stale",
+            true,
+            "◌ PenEvidence 0 of 2 combinations recorded, 1 stale",
+          ],
+        ],
         "◌ PenEvidence 0 of 2 combinations recorded, 1 stale\n\nMissing:\n- Button: style = plain\n\nStale:\n- Button: style = filled",
       ]);
     } finally {
@@ -1049,12 +1068,7 @@ describe("the language server", () => {
         hints?.map(({ position, label }) => [position, label]),
         (found?.contents as { value: string } | undefined)?.value,
       ]).toEqual([
-        [
-          [
-            { line: 1, character: 13 },
-            "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 say style = filled, which Style does not have (primary, secondary)",
-          ],
-        ],
+        [[{ line: 1, character: 13 }, "◌ PenEvidence 1 of 2 combinations recorded · 3 set apart"]],
         [
           "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 say style = filled, which Style does not have (primary, secondary)",
           "",
@@ -1087,8 +1101,17 @@ describe("the language server", () => {
         textDocument: { uri },
         range: { start: { line: 0, character: 0 }, end: { line: 8, character: 0 } },
       });
-      expect(again?.map(({ label }) => label)).toEqual([
-        "◌ PenEvidence 1 of 2 combinations recorded · 1 of 2 stored records says style = plain, which Style does not have (primary, secondary)",
+      // Short beside the code; all of it in the tooltip.
+      expect(
+        again?.map(({ label, tooltip }) => [
+          label,
+          (tooltip as { value: string }).value.split("\n")[0],
+        ]),
+      ).toEqual([
+        [
+          "◌ PenEvidence 1 of 2 combinations recorded · 1 set apart",
+          "◌ PenEvidence 1 of 2 combinations recorded · 1 of 2 stored records says style = plain, which Style does not have (primary, secondary)",
+        ],
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1148,7 +1171,7 @@ describe("the language server", () => {
       });
       await new Promise((resolve) => setTimeout(resolve, 50));
       expect([before, details, await label()]).toEqual([
-        ["◌ PenEvidence 1 of 4 combinations recorded · 2 outdated: hover added"],
+        ["◌ PenEvidence 1 of 4 combinations recorded · 2 outdated"],
         [
           "◌ PenEvidence 1 of 4 combinations recorded · 2 outdated: hover added",
           "",
@@ -1163,9 +1186,7 @@ describe("the language server", () => {
           "- Button: style = primary, hover = hovered",
           "- Button: style = secondary, hover = hovered",
         ].join("\n"),
-        [
-          "◌ PenEvidence 1 of 4 combinations recorded · 1 of 2 stored records says press, a state Button does not have",
-        ],
+        ["◌ PenEvidence 1 of 4 combinations recorded · 1 set apart"],
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1370,7 +1391,7 @@ describe("the language server", () => {
         ],
         [
           [0, "○ PenEvidence 0 of 1 combination recorded"],
-          [1, "◌ PenEvidence 1 of 1 combination recorded, 1 doesn't match the model"],
+          [1, "◌ PenEvidence 1 of 1 combination recorded · 1 doesn't match the model"],
         ],
       ]);
     } finally {

@@ -76,6 +76,11 @@ export function countable(
   return { sources, apart: [...apart.values()], stopped };
 }
 
+// How many stored records some problems are about: each one item of a file.
+export const apartCount = (problems: StoredProblem[]): number =>
+  new Set(problems.map(({ file, path }) => `${file}#${path.match(/^\$\[(\d+)\]/)?.[1] ?? ""}`))
+    .size;
+
 // Stored records not counted for their errors: how many, of how many, and
 // what most of them have, "Evidence: 1 of 2 stored records says hover =
 // bogus, which Hover does not have (rest, hovered)"; then each problem, as
