@@ -1373,7 +1373,7 @@ dxn status toolbar.dxn
 ```
 
 ```
-toolbar.dxn: Evidence 38 of 55 combinations recorded
+toolbar.dxn: Evidence 38/55 combinations recorded
 
 | path                                | combinations | recorded | stale | gone | missing |
 | ----------------------------------- | ------------ | -------- | ----- | ---- | ------- |
@@ -1786,7 +1786,7 @@ people.
 | Word          | Means                                                                                                                                                                                                                                                                                                             |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | combination   | one value of each state and each dimension of an element: what evidence is counted against. `Tab`, with two selections and three interactions, has six.                                                                                                                                                           |
-| recorded      | a combination's status when a stored record matches it, and its drawings, where it has any, are as they were recorded; else it is stale, gone or missing. A count says how many: `2 of 6 combinations recorded`                                                                                                   |
+| recorded      | a combination's status when a stored record matches it, and its drawings, where it has any, are as they were recorded; else it is stale, gone or missing. A count says how many: `2/6 combinations recorded`                                                                                                      |
 | stale         | a combination's status when its stored record's drawing has changed since it was recorded: its fingerprint no longer matches. The evidence moved away from the model; look at the drawing, and record it again if it is right. Not outdated, where the model moved                                                |
 | gone          | a combination's status when its stored record's drawing no longer exists: its file, frame or node was deleted                                                                                                                                                                                                     |
 | missing       | a combination's status when no stored record matches it                                                                                                                                                                                                                                                           |

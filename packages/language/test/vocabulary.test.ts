@@ -7,6 +7,8 @@ import {
   outdatedItem,
   outdatedSummary,
   outdatedWhy,
+  ratio,
+  sayRatio,
   storedRecords,
 } from "../src/core/vocabulary.js";
 
@@ -40,10 +42,10 @@ describe("the words for evidence", () => {
     snapshot.push(evidenceLabel(count({ recorded: 1, combinations: 4 }), { ...usage, pins: [] }));
     expect(snapshot).toMatchInlineSnapshot(`
       [
-        "Evidence 2 of 10 combinations recorded",
-        "Evidence 1 of 1 combination recorded",
-        "Evidence 2 of 10 combinations recorded, 1 stale, 2 gone",
-        "Evidence 2 of 10 combinations recorded · 1 outdated: focus added",
+        "Evidence 2/10 combinations recorded",
+        "Evidence 1/1 combination recorded",
+        "Evidence 2/10 combinations recorded, 1 stale, 2 gone",
+        "Evidence 2/10 combinations recorded · 1 outdated: focus added",
         "Evidence: Feed can show 2 combinations of Row, reading = read, all recorded",
         "Evidence: Feed can show all 4 combinations of Row, 1 recorded",
       ]
@@ -108,6 +110,15 @@ describe("the words for evidence", () => {
         "Evidence 0/1 recorded",
         "Evidence 2/10 recorded · 1 stale, 2 gone, 3 outdated, 1 set apart, 2 don't match the model",
         "Evidence: 3 stored records set apart",
+      ]
+    `);
+  });
+
+  it("say a ratio one way, a part of a whole", () => {
+    expect([sayRatio(ratio(2, 6)), sayRatio(ratio(0, 1))]).toMatchInlineSnapshot(`
+      [
+        "2/6",
+        "0/1",
       ]
     `);
   });

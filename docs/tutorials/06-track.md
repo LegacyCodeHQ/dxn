@@ -7,7 +7,7 @@ dxn status spec/button.dxn
 After the first two attaches of step 5, before the disabled one:
 
 ```
-spec/button.dxn: Evidence 3 of 6 combinations recorded
+spec/button.dxn: Evidence 3/6 combinations recorded
 
 | path   | combinations | recorded | stale | gone | missing |
 | ------ | ------------ | -------- | ----- | ---- | ------- |
@@ -27,7 +27,7 @@ They are the disabled case's three combinations, written the way a context
 would say them. After the third attach, everything has evidence:
 
 ```
-spec/button.dxn: Evidence 6 of 6 combinations recorded
+spec/button.dxn: Evidence 6/6 combinations recorded
 ```
 
 ## Stale evidence
@@ -37,7 +37,7 @@ node, and its evidence is **stale**: it shows a design that no longer
 exists. Redraw the hovered button, and ask again:
 
 ```
-spec/button.dxn: Evidence 5 of 6 combinations recorded, 1 stale
+spec/button.dxn: Evidence 5/6 combinations recorded, 1 stale
 
 | path   | combinations | recorded | stale | gone | missing |
 | ------ | ------------ | -------- | ----- | ---- | ------- |
@@ -62,7 +62,7 @@ Attached 1 stored record to spec/evidence/button.json, replacing 1
 ```
 
 ```
-spec/button.dxn: Evidence 6 of 6 combinations recorded
+spec/button.dxn: Evidence 6/6 combinations recorded
 ```
 
 A stored record whose file, frame or node is deleted is **gone**. So `dxn status` answers, at any

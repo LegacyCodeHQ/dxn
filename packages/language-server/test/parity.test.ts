@@ -253,7 +253,7 @@ function edited(text: string, edits: TextEdit[]): string {
 function hintCounts(file: string): string[] {
   const text = readFileSync(file, "utf8");
   const part =
-    /(?:^|· |[●◐○◌] )([A-Z][A-Za-z0-9]*) (\d+) of (\d+) combinations? recorded(?:, (\d+) stale)?(?:, (\d+) gone)?(?: · (\d+) outdated)?/g;
+    /(?:^|· |[●◐○◌] )([A-Z][A-Za-z0-9]*) (\d+)\/(\d+) combinations? recorded(?:, (\d+) stale)?(?:, (\d+) gone)?(?: · (\d+) outdated)?/g;
   return (hintsBeside(pathToFileURL(file).href, parse(text)) ?? []).flatMap(({ label }) =>
     [...label.matchAll(part)].map(
       ([, record, recorded, combinations, stale = "0", gone = "0", outdated = "0"]) =>

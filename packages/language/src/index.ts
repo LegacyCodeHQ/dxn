@@ -26,6 +26,9 @@ export {
   outdatedItem,
   outdatedSummary,
   outdatedWhy,
+  type Ratio,
+  ratio,
+  sayRatio,
   storedRecords,
   type Usage,
 } from "./core/vocabulary.js";

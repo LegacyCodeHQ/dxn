@@ -122,7 +122,7 @@ word of the user interface, not of the core.
 
 A combination with evidence is **recorded**, whatever the evidence is: its
 status is recorded, stale, gone or missing, and a count says how many are
-recorded, "2 of 6 combinations recorded", in dxn, in `--json` and in an
+recorded, "2/6 combinations recorded", in dxn, in `--json` and in an
 editor alike. "Drawn", for evidence that is a drawing, and "look" are words
 of the user interface, for a kit to give the core, not the core's own.
 

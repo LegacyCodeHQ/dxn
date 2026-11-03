@@ -14,6 +14,18 @@ export const isDrawn = (file: ParseResult, record: string): boolean =>
     .find(({ name }) => name === record)
     ?.fields.some(({ type }) => type.name === "PenNode") === true;
 
+// A part of a whole, such as the combinations recorded of all an element
+// has: made by ratio, and said by sayRatio alone, "2/6", so no one words it
+// otherwise.
+export interface Ratio {
+  readonly part: number;
+  readonly whole: number;
+}
+
+export const ratio = (part: number, whole: number): Ratio => ({ part, whole });
+
+export const sayRatio = ({ part, whole }: Ratio): string => `${part}/${whole}`;
+
 // A count of stored records, each one item of a record's stored files: a
 // record is what a file declares, never one of them.
 export const storedRecords = (count: number): string =>
@@ -47,7 +59,7 @@ export interface Usage {
 }
 
 // A count of evidence, by combination, one value of each state and dimension
-// an element has: "Evidence 2 of 10 combinations recorded", then what is
+// an element has: "Evidence 2/10 combinations recorded", then what is
 // stale, gone and outdated. Where a type places a component, what the type
 // can show of it: "FeedScreen can show all 24 combinations of ArticleRow,
 // all recorded".
@@ -55,7 +67,9 @@ export function evidenceLabel(count: EvidenceCount, usage?: Usage): string {
   const { record, combinations, recorded, stale, gone, outdated } = count;
   const many = combinations === 1 ? "combination" : "combinations";
   const counted = (() => {
-    if (usage === undefined) return `${record} ${recorded} of ${combinations} ${many} recorded`;
+    if (usage === undefined) {
+      return `${record} ${sayRatio(ratio(recorded, combinations))} ${many} recorded`;
+    }
     const pinned = usage.pins.length === 0 ? "" : `, ${usage.pins.join(", ")}`;
     const done =
       recorded === combinations
@@ -81,8 +95,8 @@ export function evidenceLabel(count: EvidenceCount, usage?: Usage): string {
 
 // A count of evidence, short, for a hint beside the code, as an editor's
 // hints are short: the count as a ratio, then how many need a look, by what,
-// "Evidence 0/2 recorded · 1 stale, 1 set apart". All of it, "0 of 2
-// combinations recorded", is the hint's tooltip.
+// "Evidence 0/2 recorded · 1 stale, 1 set apart". All of it, "0/2
+// combinations recorded" and why, is the hint's tooltip.
 export function evidenceShort(count: {
   record: string;
   recorded: number;
@@ -103,7 +117,7 @@ export function evidenceShort(count: {
       ? [`${mismatched} ${mismatched === 1 ? "doesn't" : "don't"} match the model`]
       : []),
   ];
-  const counted = `${record} ${recorded}/${combinations} recorded`;
+  const counted = `${record} ${sayRatio(ratio(recorded, combinations))} recorded`;
   return notes.length === 0 ? counted : `${counted} · ${notes.join(", ")}`;
 }
 

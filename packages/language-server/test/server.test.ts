@@ -999,10 +999,10 @@ describe("the language server", () => {
             { line: 1, character: 13 },
             "◐ PenEvidence 1/2 recorded",
             true,
-            "◐ PenEvidence 1 of 2 combinations recorded",
+            "◐ PenEvidence 1/2 combinations recorded",
           ],
         ],
-        "◐ PenEvidence 1 of 2 combinations recorded\n\nMissing:\n- Button: style = plain",
+        "◐ PenEvidence 1/2 combinations recorded\n\nMissing:\n- Button: style = plain",
       ]);
 
       // The drawing changed: once the editor hears, its evidence is stale.
@@ -1018,10 +1018,10 @@ describe("the language server", () => {
             { line: 1, character: 13 },
             "◌ PenEvidence 0/2 recorded · 1 stale",
             true,
-            "◌ PenEvidence 0 of 2 combinations recorded, 1 stale",
+            "◌ PenEvidence 0/2 combinations recorded, 1 stale",
           ],
         ],
-        "◌ PenEvidence 0 of 2 combinations recorded, 1 stale\n\nMissing:\n- Button: style = plain\n\nStale:\n- Button: style = filled",
+        "◌ PenEvidence 0/2 combinations recorded, 1 stale\n\nMissing:\n- Button: style = plain\n\nStale:\n- Button: style = filled",
       ]);
     } finally {
       rmSync(folder, { recursive: true, force: true });
@@ -1070,7 +1070,7 @@ describe("the language server", () => {
       ]).toEqual([
         [[{ line: 1, character: 13 }, "◌ PenEvidence 1/2 recorded · 3 set apart"]],
         [
-          "◌ PenEvidence 1 of 2 combinations recorded · 3 of 4 stored records have problems, 2 say style = filled, which Style does not have (primary, secondary)",
+          "◌ PenEvidence 1/2 combinations recorded · 3 of 4 stored records have problems, 2 say style = filled, which Style does not have (primary, secondary)",
           "",
           "Missing:",
           "- Button: style = secondary",
@@ -1110,7 +1110,7 @@ describe("the language server", () => {
       ).toEqual([
         [
           "◌ PenEvidence 1/2 recorded · 1 set apart",
-          "◌ PenEvidence 1 of 2 combinations recorded · 1 of 2 stored records says style = plain, which Style does not have (primary, secondary)",
+          "◌ PenEvidence 1/2 combinations recorded · 1 of 2 stored records says style = plain, which Style does not have (primary, secondary)",
         ],
       ]);
     } finally {
@@ -1173,7 +1173,7 @@ describe("the language server", () => {
       expect([before, details, await label()]).toEqual([
         ["◌ PenEvidence 1/4 recorded · 2 outdated"],
         [
-          "◌ PenEvidence 1 of 4 combinations recorded · 2 outdated: hover added",
+          "◌ PenEvidence 1/4 combinations recorded · 2 outdated: hover added",
           "",
           "2 stored records are outdated: `hover` was added to `Button` after they were recorded, so they do not say which `hover` they show. Add each one's `hover` value to count it again.",
           "",
