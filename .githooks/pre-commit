@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Fast gate: secrets, formatting, lint, types and file cycles. No tests.
+# Fast gate: secrets, formatting, lint, types, boundaries and file cycles.
+# The boundary check tests its own rules; application tests run before pushing.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -12,5 +13,6 @@ if ! command -v gitleaks >/dev/null 2>&1; then
 fi
 gitleaks git --pre-commit --staged --redact --verbose
 make lint-check
+make boundaries
 make cycles
 make vocabulary

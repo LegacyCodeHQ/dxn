@@ -61,6 +61,51 @@ Generated tree-sitter sources and the Rust extension retain their tool-required
 layouts. The grammar stays byte-for-byte identical to the revision Zed pins;
 its README links to the current authoritative parser.
 
+## Enforced boundaries
+
+Run `make boundaries` to test the checker and validate every TypeScript and
+JavaScript file under `packages/*/src`. It also runs in `make check`,
+`make check-fast`, pre-commit and CI. Tests and build scripts are outside this
+production-source policy; production imports of test or build code are rejected.
+Native Rust and generated C dependencies are outside this check's scope.
+
+The allowlists live in [rules.mjs](../../scripts/boundaries/rules.mjs).
+Each language layer may depend on the following layers, including itself only
+when listed:
+
+| Source                      | Allowed destinations                                                  |
+| --------------------------- | --------------------------------------------------------------------- |
+| `core`                      | `core`                                                                |
+| `model`                     | `core`, `model`                                                       |
+| `data`                      | `core`, `data`                                                        |
+| `evaluation`                | `core`, `model`, `evaluation`                                         |
+| `syntax`, except `parse.ts` | `core`, `model`, `syntax`, except `parse.ts`                          |
+| `syntax/parse.ts`           | `core`, syntax reading, `analysis`                                    |
+| `analysis`                  | `core`, `model`, `evaluation`                                         |
+| `evidence`                  | `core`, `model`, `data`, `evaluation`, `evidence`                     |
+| `editor`                    | `core`, `model`, `evaluation`, `evidence`, `syntax`, `editor`         |
+| Public `index.ts`           | `core`, `model`, `data`, `evaluation`, `evidence`, `syntax`, `editor` |
+
+Only the exact `syntax/parse.ts` file has the orchestration exception. Other
+syntax files cannot reach analysis indirectly through that facade or the public
+barrel. New top-level source folders must be classified explicitly.
+
+CLI entry files may depend on commands and support; commands may depend on other
+commands and support; support stays within support. Language-server entry files
+may depend on protocol adapters; protocol adapters stay within protocol. VS Code
+source stays within its own package. The CLI and language server may additionally
+import the language through exactly `@legacycodehq/dxn-language`. Cross-package
+relative paths, source aliases, file URLs and package subpaths do not substitute
+for that public package name. Language implementation code cannot import its
+own public barrel to bypass the layer rules.
+
+The checker parses imports instead of searching text. It includes type-only
+imports, type queries, re-exports and literal dynamic imports, resolves tsconfig
+aliases and normalizes their destinations before applying the rules. Comments
+and example strings are ignored. Computed module specifiers, unresolved local
+imports and syntax errors fail the check. Dependency cycles remain the separate
+responsibility of `make cycles`.
+
 ## Snapshots
 
 - [Original whole-project graph](dependencies-before.mmd), including tests and docs.

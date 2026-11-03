@@ -144,3 +144,7 @@ extension bundler reads the root tsconfig automatically.
 This rewrites both JavaScript and declaration imports to relative paths. Built
 commands run directly in Node, with no runtime alias loader. Running `tsc` alone
 does not perform that rewrite; use the build commands for runnable output.
+
+`make boundaries` enforces the [source dependency rules](docs/architecture/README.md#enforced-boundaries),
+including layer direction and use of public package names across packages. It
+runs in both quality gates, pre-commit and CI, and uses the installed npm tools.

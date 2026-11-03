@@ -42,6 +42,13 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
 - Machine-readable output (`--json`) is JSON on stdout; diagnostics go to stderr.
 - Exit codes: `0` success, `1` a check failed, `2` usage error.
 - No source-file dependency cycles (`make cycles`).
+- Source-layer and package boundaries are enforced by `make boundaries`, in
+  both quality gates, pre-commit and CI. Rules are explicit allowlists in
+  `scripts/boundaries/rules.mjs`; new source layers need a reviewed rule.
+  Syntax reading and formatting cannot depend on evaluation, evidence, editor
+  code or the public barrel. Only `syntax/parse.ts` orchestrates analysis.
+  CLI and language-server source may import the language only by its public
+  package name. Tests may cross boundaries; production code cannot import tests.
 - The CLI and the language server only adapt input and output: files and
   streams on one side, editor requests on the other. Every decision, such as
   what is a problem, what is loaded, or when a rename is refused, lives in
@@ -63,11 +70,12 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
 
 ## Commands
 
-| Command            | What it does                                   |
-| ------------------ | ---------------------------------------------- |
-| `make setup-hooks` | Point git at `.githooks/` (run once per clone) |
-| `make test`        | Run the Vitest suite                           |
-| `make coverage`    | Run tests with coverage thresholds             |
-| `make lint-check`  | Biome format + lint, then `tsc --noEmit`       |
-| `make check`       | Full gate used by pre-push and CI              |
-| `make fmt`         | Format with Biome                              |
+| Command            | What it does                                             |
+| ------------------ | -------------------------------------------------------- |
+| `make setup-hooks` | Point git at `.githooks/` (run once per clone)           |
+| `make test`        | Run the Vitest suite                                     |
+| `make coverage`    | Run tests with coverage thresholds                       |
+| `make lint-check`  | Biome format + lint, then `tsc --noEmit`                 |
+| `make boundaries`  | Enforce source-layer and public package dependency rules |
+| `make check`       | Full gate used by pre-push and CI                        |
+| `make fmt`         | Format with Biome                                        |

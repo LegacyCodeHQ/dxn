@@ -46,6 +46,9 @@ jobs:
       - name: Check build references
         run: make references
 
+      - name: Check dependency boundaries
+        run: make boundaries
+
       # clarity, pinned to the version used locally; CI is set, so the
       # cycles check fails rather than skips without it. The package skips
       # downloading its binary when CI is set, so it is installed without it.
