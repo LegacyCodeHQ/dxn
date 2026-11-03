@@ -79,6 +79,9 @@ Run real inputs through `parse.ts`; do not only read the code.
 - [ ] dxn and an editor agree: each rule is in `packages/language`, not in
   the CLI or the language server alone, and its scenarios are in
   `packages/language-server/test/parity.test.ts`.
+- [ ] Every word dxn or an editor says about it is in the guide's Words, one
+  word for one thing, said by `packages/language/src/vocabulary.ts`; a new
+  word is added there first.
 
 ### 10. Decide
 
