@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parse } from "../src/parse.js";
-import { coverage } from "../src/status.js";
-import { validate } from "../src/validate.js";
+import { coverage } from "../src/evaluation/status.js";
+import { validate } from "../src/evidence/validate.js";
+import { parse } from "../src/syntax/parse.js";
 import { problems } from "./support/language.js";
 
 const source = `enum Style = filled | plain

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parse } from "../src/parse.js";
-import { coverage, progress } from "../src/status.js";
-import { validate } from "../src/validate.js";
+import { coverage, progress } from "../src/evaluation/status.js";
+import { validate } from "../src/evidence/validate.js";
+import { parse } from "../src/syntax/parse.js";
 
 const file = parse(`dimension Pointer = mouse | touch
 enum Hover = rest | hovered

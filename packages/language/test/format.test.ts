@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { format } from "../src/format.js";
-import { parse } from "../src/parse.js";
+import { format } from "../src/syntax/format.js";
+import { parse } from "../src/syntax/parse.js";
 
 const root = join(__dirname, "../../..");
 

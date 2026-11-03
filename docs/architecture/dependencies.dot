@@ -1,0 +1,56 @@
+digraph dependencies {
+  rankdir=LR;
+  node [shape=box];
+  label="dxn-dependency-layout • a8486fe-dirty • 14 modules";
+  labelloc=t;
+  labeljust=l;
+  fontsize=10;
+  fontname=Courier;
+
+  "cli/commands" [label="commands\n10 files", shape=component, style=filled, fillcolor=lightyellow];
+  "cli/entry" [label="cli/entry\n3 files", shape=component, style=filled, fillcolor=lightyellow];
+  "cli/support" [label="support\n6 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language-server/entry" [label="language-server/entry\n3 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language-server/protocol" [label="protocol\n3 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/api" [label="api\n1 file", shape=component, style=filled, fillcolor=lightyellow];
+  "language/core" [label="core\n6 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/data" [label="data\n2 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/editor" [label="editor\n6 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/evaluation" [label="evaluation\n9 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/evidence" [label="evidence\n6 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/model" [label="model\n5 files", shape=component, style=filled, fillcolor=lightyellow];
+  "language/syntax" [label="syntax\n3 files", shape=component, style=filled, fillcolor=lightyellow];
+  "vscode" [label="vscode\n3 files", shape=component, style=filled, fillcolor=lightyellow];
+
+  "cli/commands" -> "cli/support";
+  "cli/commands" -> "language/api";
+  "cli/entry" -> "cli/commands";
+  "cli/entry" -> "cli/support";
+  "cli/support" -> "language/api";
+  "language-server/entry" -> "language-server/protocol";
+  "language-server/entry" -> "language/api";
+  "language-server/protocol" -> "language/api";
+  "language/api" -> "language/core";
+  "language/api" -> "language/data";
+  "language/api" -> "language/editor";
+  "language/api" -> "language/evaluation";
+  "language/api" -> "language/evidence";
+  "language/api" -> "language/model";
+  "language/api" -> "language/syntax";
+  "language/data" -> "language/core";
+  "language/editor" -> "language/core";
+  "language/editor" -> "language/evaluation";
+  "language/editor" -> "language/evidence";
+  "language/editor" -> "language/model";
+  "language/editor" -> "language/syntax";
+  "language/evaluation" -> "language/core";
+  "language/evaluation" -> "language/model";
+  "language/evidence" -> "language/core";
+  "language/evidence" -> "language/data";
+  "language/evidence" -> "language/evaluation";
+  "language/evidence" -> "language/model";
+  "language/model" -> "language/core";
+  "language/syntax" -> "language/core";
+  "language/syntax" -> "language/evaluation";
+  "language/syntax" -> "language/model";
+}

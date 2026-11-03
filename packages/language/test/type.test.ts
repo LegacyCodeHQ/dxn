@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parse } from "../src/parse.js";
+import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const enums = "enum Hover = rest | hovered\nenum Focus = blurred | focused\n";

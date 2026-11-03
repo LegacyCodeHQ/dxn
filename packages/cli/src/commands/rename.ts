@@ -8,10 +8,10 @@ import {
   repositoryOf,
   words,
 } from "@legacycodehq/dxn-language";
-import { type Command, command } from "./context.js";
-import { count, misused, options, Reporter, read } from "./report.js";
-import { loadStored } from "./stored.js";
-import { usage } from "./usage.js";
+import { type Command, command } from "./support/context.js";
+import { count, misused, options, Reporter, read } from "./support/report.js";
+import { loadStored } from "./support/stored.js";
+import { usage } from "./support/usage.js";
 
 // Renames a declaration, by its name as dxn writes it or by its place in the
 // file, where the file uses it and where stored records name it: refused

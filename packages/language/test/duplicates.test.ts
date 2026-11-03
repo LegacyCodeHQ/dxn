@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { duplicates } from "../src/duplicates.js";
+import { duplicates } from "../src/data/duplicates.js";
 
 // A stored record, recorded by an actor at a time, of a node whose
 // fingerprint was this; with its keys first or last.

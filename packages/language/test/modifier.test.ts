@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { states } from "../src/evaluate.js";
-import { parse } from "../src/parse.js";
-import { validate } from "../src/validate.js";
+import { states } from "../src/evaluation/evaluate.js";
+import { validate } from "../src/evidence/validate.js";
+import { parse } from "../src/syntax/parse.js";
 import { problems } from "./support/language.js";
 
 const device = `dimension Breakpoint = base | sm | lg

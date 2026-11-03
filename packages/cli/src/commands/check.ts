@@ -1,7 +1,7 @@
 import { among, type Type, words } from "@legacycodehq/dxn-language";
-import { type Command, command } from "./context.js";
-import { count, misused, options, Reporter, read } from "./report.js";
-import { usage } from "./usage.js";
+import { type Command, command } from "./support/context.js";
+import { count, misused, options, Reporter, read } from "./support/report.js";
+import { usage } from "./support/usage.js";
 
 // What a file declares, without positions and lengths, which are for
 // diagnostics and editors: each located name becomes just its name.

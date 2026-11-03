@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { completions } from "../src/complete.js";
-import { definition, usages } from "../src/definition.js";
-import { hover } from "../src/hover.js";
-import { parse } from "../src/parse.js";
-import { renameAt, renameable } from "../src/rename-at.js";
-import { symbols } from "../src/symbols.js";
+import { completions } from "../src/editor/complete.js";
+import { definition, usages } from "../src/editor/definition.js";
+import { hover } from "../src/editor/hover.js";
+import { renameAt, renameable } from "../src/editor/rename-at.js";
+import { symbols } from "../src/editor/symbols.js";
+import { parse } from "../src/syntax/parse.js";
 
 // An editor asks about a file while it is being typed, so it is unfinished
 // at every step: each feature answers at every point of it, and none throws.

@@ -16,11 +16,11 @@ import {
   treePaths,
   words,
 } from "@legacycodehq/dxn-language";
-import { drawTable } from "../tables.js";
-import { type Command, command } from "./context.js";
-import { misused, options, Reporter, read } from "./report.js";
-import { loadStoredToCount } from "./stored.js";
-import { usage } from "./usage.js";
+import { type Command, command } from "./support/context.js";
+import { misused, options, Reporter, read } from "./support/report.js";
+import { loadStoredToCount } from "./support/stored.js";
+import { drawTable } from "./support/tables.js";
+import { usage } from "./support/usage.js";
 
 export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   const {

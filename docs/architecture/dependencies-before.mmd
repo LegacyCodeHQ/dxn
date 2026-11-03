@@ -1,0 +1,716 @@
+---
+title: dxn-dependency-layout • a8486fe-dirty • 220 files
+---
+flowchart LR
+%% C1: design.md -> guide.md -> design.md
+%% C2: README.md -> README.md -> README.md
+    n0["AGENTS.md"]
+    n1["dxn-dependency-layout/README.md"]
+    n2["RELEASE_CHECKLIST.md"]
+    n3["biome.json"]
+    n4["commands.md"]
+    n5["design.md"]
+    n6["guide.md"]
+    n7["review.md"]
+    n8["01-model.md"]
+    n9["02-check.md"]
+    n10["03-enumerate.md"]
+    n11["04-build.md"]
+    n12["05-record-evidence.md"]
+    n13["06-track.md"]
+    n14["07-test.md"]
+    n15["tutorials/README.md"]
+    n16["PLAN.md"]
+    n17["article-row.json"]
+    n18["back-button.json"]
+    n19["button.json"]
+    n20["feed-screen.json"]
+    n21["navigation-bar.json"]
+    n22["source-row.json"]
+    n23["tab-bar.json"]
+    n24["tab.json"]
+    n25["toggle.json"]
+    n26["settings/README.md"]
+    n27["settings.json"]
+    n28["package-lock.json"]
+    n29["dxn-dependency-layout/package.json"]
+    n30["cli/package.json"]
+    n31["src/cli.ts"]
+    n32["attach.ts"]
+    n33["commands/cases.ts"]
+    n34["commands/check.ts"]
+    n35["context.ts"]
+    n36["fmt.ts"]
+    n37["lang.ts"]
+    n38["commands/rename.ts"]
+    n39["report.ts"]
+    n40["commands/review.ts"]
+    n41["states.ts"]
+    n42["commands/status.ts"]
+    n43["stored.ts"]
+    n44["usage.ts"]
+    n45["commands/validate.ts"]
+    n46["io.ts"]
+    n47["cli/src/main.ts"]
+    n48["tables.ts"]
+    n49["cli/src/version.ts"]
+    n50["cli.test.ts"]
+    n51["help.test.ts"]
+    n52["lang-attach.test.ts"]
+    n53["lang.test.ts"]
+    n54["review.test.ts"]
+    n55["docs.test.ts"]
+    n56["support/cli.ts"]
+    n57["project.ts"]
+    n58["serializer.ts"]
+    n59["cli/tsconfig.build.json"]
+    n60["cli/vitest.config.ts"]
+    n61["language-server/package.json"]
+    n62["diagnostics.ts"]
+    n63["evidence.ts"]
+    n64["language-server/src/main.ts"]
+    n65["range.ts"]
+    n66["language-server/src/server.ts"]
+    n67["language-server/src/version.ts"]
+    n68["language-server/test/diagnostics.test.ts"]
+    n69["evidence.test.ts"]
+    n70["parity.test.ts"]
+    n71["language-server/test/server.test.ts"]
+    n72["language-server/tsconfig.build.json"]
+    n73["language-server/vitest.config.ts"]
+    n74["language/package.json"]
+    n75["apart.ts"]
+    n76["ast.ts"]
+    n77["src/cases.ts"]
+    n78["check-types.ts"]
+    n79["check-values.ts"]
+    n80["src/check.ts"]
+    n81["complete.ts"]
+    n82["condition.ts"]
+    n83["definition.ts"]
+    n84["derive.ts"]
+    n85["diagnostic.ts"]
+    n86["duplicates.ts"]
+    n87["evaluate.ts"]
+    n88["expect.ts"]
+    n89["fingerprint.ts"]
+    n90["format.ts"]
+    n91["hover.ts"]
+    n92["index.ts"]
+    n93["json.ts"]
+    n94["matrix.ts"]
+    n95["message.ts"]
+    n96["names.ts"]
+    n97["naming.ts"]
+    n98["parse.ts"]
+    n99["profiles.ts"]
+    n100["rename-at.ts"]
+    n101["src/rename.ts"]
+    n102["src/review.ts"]
+    n103["scalars.ts"]
+    n104["scan.ts"]
+    n105["scope.ts"]
+    n106["semantic.ts"]
+    n107["src/status.ts"]
+    n108["store.ts"]
+    n109["symbols.ts"]
+    n110["text.ts"]
+    n111["src/validate.ts"]
+    n112["vocabulary.ts"]
+    n113["action.test.ts"]
+    n114["actor.test.ts"]
+    n115["language/test/agreement.test.ts"]
+    n116["read.ts"]
+    n117["alike.test.ts"]
+    n118["binding-when.test.ts"]
+    n119["binding.test.ts"]
+    n120["comments.test.ts"]
+    n121["complete.test.ts"]
+    n122["condition.test.ts"]
+    n123["context-data.test.ts"]
+    n124["context-path.test.ts"]
+    n125["context.test.ts"]
+    n126["definition.test.ts"]
+    n127["derived-field.test.ts"]
+    n128["language/test/diagnostics.test.ts"]
+    n129["dimension.test.ts"]
+    n130["drawing.test.ts"]
+    n131["duplicates.test.ts"]
+    n132["enum.test.ts"]
+    n133["evaluate.test.ts"]
+    n134["event.test.ts"]
+    n135["examples.test.ts"]
+    n136["expect-names.test.ts"]
+    n137["expect.test.ts"]
+    n138["fixed-state.test.ts"]
+    n139["format.test.ts"]
+    n140["has.test.ts"]
+    n141["hover.test.ts"]
+    n142["in-place.test.ts"]
+    n143["json.test.ts"]
+    n144["line-endings.test.ts"]
+    n145["list.test.ts"]
+    n146["matrix.test.ts"]
+    n147["modifier.test.ts"]
+    n148["named.test.ts"]
+    n149["needs.test.ts"]
+    n150["nested.test.ts"]
+    n151["only-when.test.ts"]
+    n152["pen-node.test.ts"]
+    n153["profile.test.ts"]
+    n154["progress.test.ts"]
+    n155["provides.test.ts"]
+    n156["record.test.ts"]
+    n157["rename-at.test.ts"]
+    n158["rename.test.ts"]
+    n159["rule-state.test.ts"]
+    n160["scalar.test.ts"]
+    n161["scan.test.ts"]
+    n162["semantic.test.ts"]
+    n163["status.test.ts"]
+    n164["store.test.ts"]
+    n165["stored-actor.test.ts"]
+    n166["language.ts"]
+    n167["symbols.test.ts"]
+    n168["type.test.ts"]
+    n169["typing.test.ts"]
+    n170["usages.test.ts"]
+    n171["validate.test.ts"]
+    n172["vocabulary.test.ts"]
+    n173["when.test.ts"]
+    n174["language/tsconfig.build.json"]
+    n175["language/vitest.config.ts"]
+    n176["tree-sitter-dxn/README.md"]
+    n177["grammar.js"]
+    n178["tree-sitter-dxn/package.json"]
+    n179["grammar.json"]
+    n180["node-types.json"]
+    n181["parser.c"]
+    n182["alloc.h"]
+    n183["array.h"]
+    n184["parser.h"]
+    n185["tree-sitter-dxn/test/agreement.test.ts"]
+    n186["guide.test.ts"]
+    n187["indents.test.ts"]
+    n188["outline.test.ts"]
+    n189["runnables.test.ts"]
+    n190["tasks.test.ts"]
+    n191["tree-sitter.json"]
+    n192["tree-sitter-dxn/vitest.config.mts"]
+    n193["vscode/README.md"]
+    n194["build.d.mts"]
+    n195["build.mjs"]
+    n196["language-configuration.json"]
+    n197["vscode/package.json"]
+    n198["extension.ts"]
+    n199["run.ts"]
+    n200["vscode/src/server.ts"]
+    n201["dxn.tmLanguage.json"]
+    n202["bundle.test.ts"]
+    n203["grammar.test.ts"]
+    n204["run.test.ts"]
+    n205["vscode/test/server.test.ts"]
+    n206["settings.test.ts"]
+    n207["vscode/vitest.config.mts"]
+    n208["zed/README.md"]
+    n209["tasks.json"]
+    n210["lib.rs"]
+    n211["check.sh"]
+    n212["references/check.mjs"]
+    n213["main.js"]
+    n214["run.mjs"]
+    n215["vocabulary/check.mjs"]
+    n216["tsconfig.base.json"]
+    n217["dxn-dependency-layout/tsconfig.build.json"]
+    n218["tsconfig.json"]
+    n219["dxn-dependency-layout/vitest.config.ts"]
+    n210p["lib.rs"]
+
+    n1 --> n4
+    n1 --> n6
+    n1 --> n15
+    n1 --> n176
+    n4 --> n6
+    n5 --> n6
+    n6 --> n5
+    n6 --> n15
+    n8 --> n9
+    n9 --> n10
+    n10 --> n11
+    n11 --> n12
+    n12 --> n13
+    n13 --> n14
+    n14 --> n6
+    n14 --> n15
+    n15 --> n6
+    n26 --> n193
+    n26 --> n208
+    n31 --> n35
+    n31 --> n37
+    n31 --> n46
+    n31 --> n49
+    n32 --> n35
+    n32 --> n39
+    n32 --> n43
+    n32 --> n44
+    n32 --> n92
+    n33 --> n35
+    n33 --> n39
+    n33 --> n44
+    n33 --> n48
+    n33 --> n92
+    n34 --> n35
+    n34 --> n39
+    n34 --> n44
+    n34 --> n92
+    n35 --> n46
+    n35 --> n92
+    n36 --> n35
+    n36 --> n39
+    n36 --> n44
+    n36 --> n92
+    n37 --> n32
+    n37 --> n33
+    n37 --> n34
+    n37 --> n35
+    n37 --> n36
+    n37 --> n38
+    n37 --> n40
+    n37 --> n41
+    n37 --> n42
+    n37 --> n44
+    n37 --> n45
+    n38 --> n35
+    n38 --> n39
+    n38 --> n43
+    n38 --> n44
+    n38 --> n92
+    n39 --> n35
+    n39 --> n44
+    n39 --> n92
+    n40 --> n35
+    n40 --> n39
+    n40 --> n43
+    n40 --> n44
+    n40 --> n92
+    n41 --> n35
+    n41 --> n39
+    n41 --> n44
+    n41 --> n48
+    n41 --> n92
+    n42 --> n35
+    n42 --> n39
+    n42 --> n43
+    n42 --> n44
+    n42 --> n48
+    n42 --> n92
+    n43 --> n39
+    n43 --> n92
+    n45 --> n35
+    n45 --> n39
+    n45 --> n43
+    n45 --> n44
+    n45 --> n92
+    n47 --> n31
+    n50 --> n56
+    n50 --> n57
+    n51 --> n56
+    n51 --> n57
+    n52 --> n56
+    n52 --> n57
+    n52 --> n92
+    n53 --> n56
+    n53 --> n57
+    n54 --> n40
+    n54 --> n56
+    n54 --> n57
+    n55 --> n56
+    n56 --> n31
+    n56 --> n57
+    n62 --> n65
+    n62 --> n92
+    n63 --> n65
+    n63 --> n92
+    n64 --> n66
+    n64 --> n67
+    n65 --> n92
+    n66 --> n62
+    n66 --> n63
+    n66 --> n65
+    n66 --> n92
+    n68 --> n62
+    n69 --> n63
+    n69 --> n92
+    n70 --> n31
+    n70 --> n62
+    n70 --> n63
+    n70 --> n66
+    n70 --> n92
+    n71 --> n66
+    n71 --> n92
+    n75 --> n76
+    n75 --> n107
+    n75 --> n108
+    n75 --> n112
+    n77 --> n76
+    n77 --> n82
+    n77 --> n87
+    n77 --> n95
+    n77 --> n96
+    n77 --> n107
+    n78 --> n76
+    n78 --> n79
+    n78 --> n82
+    n78 --> n95
+    n78 --> n96
+    n79 --> n76
+    n79 --> n95
+    n79 --> n96
+    n80 --> n76
+    n80 --> n78
+    n80 --> n79
+    n80 --> n95
+    n80 --> n96
+    n80 --> n99
+    n80 --> n103
+    n80 --> n105
+    n81 --> n76
+    n81 --> n87
+    n81 --> n98
+    n81 --> n103
+    n81 --> n104
+    n81 --> n107
+    n82 --> n76
+    n83 --> n76
+    n83 --> n87
+    n83 --> n98
+    n83 --> n104
+    n83 --> n107
+    n84 --> n76
+    n84 --> n87
+    n86 --> n85
+    n86 --> n93
+    n86 --> n95
+    n87 --> n76
+    n87 --> n82
+    n87 --> n95
+    n87 --> n96
+    n87 --> n99
+    n88 --> n76
+    n88 --> n78
+    n88 --> n82
+    n88 --> n87
+    n88 --> n95
+    n88 --> n96
+    n88 --> n99
+    n88 --> n107
+    n89 --> n107
+    n89 --> n111
+    n90 --> n98
+    n91 --> n76
+    n91 --> n82
+    n91 --> n83
+    n91 --> n98
+    n91 --> n104
+    n92 --> n75
+    n92 --> n76
+    n92 --> n77
+    n92 --> n81
+    n92 --> n82
+    n92 --> n83
+    n92 --> n84
+    n92 --> n85
+    n92 --> n86
+    n92 --> n87
+    n92 --> n89
+    n92 --> n90
+    n92 --> n91
+    n92 --> n93
+    n92 --> n95
+    n92 --> n96
+    n92 --> n97
+    n92 --> n98
+    n92 --> n99
+    n92 --> n100
+    n92 --> n101
+    n92 --> n102
+    n92 --> n104
+    n92 --> n106
+    n92 --> n107
+    n92 --> n108
+    n92 --> n109
+    n92 --> n111
+    n92 --> n112
+    n93 --> n85
+    n93 --> n95
+    n94 --> n76
+    n94 --> n79
+    n94 --> n82
+    n94 --> n95
+    n94 --> n96
+    n94 --> n107
+    n96 --> n76
+    n96 --> n95
+    n96 --> n103
+    n98 --> n76
+    n98 --> n80
+    n98 --> n82
+    n98 --> n88
+    n98 --> n94
+    n98 --> n95
+    n98 --> n97
+    n98 --> n104
+    n98 --> n105
+    n99 --> n76
+    n100 --> n76
+    n100 --> n83
+    n100 --> n87
+    n100 --> n95
+    n100 --> n96
+    n100 --> n97
+    n100 --> n98
+    n100 --> n101
+    n100 --> n104
+    n100 --> n107
+    n100 --> n108
+    n100 --> n111
+    n101 --> n76
+    n101 --> n82
+    n101 --> n87
+    n101 --> n88
+    n101 --> n93
+    n101 --> n96
+    n101 --> n107
+    n102 --> n76
+    n102 --> n99
+    n102 --> n103
+    n102 --> n107
+    n102 --> n112
+    n103 --> n110
+    n104 --> n76
+    n104 --> n95
+    n105 --> n76
+    n106 --> n76
+    n106 --> n83
+    n106 --> n98
+    n106 --> n100
+    n107 --> n76
+    n107 --> n87
+    n107 --> n99
+    n107 --> n103
+    n108 --> n76
+    n108 --> n85
+    n108 --> n86
+    n108 --> n95
+    n108 --> n111
+    n109 --> n76
+    n109 --> n83
+    n109 --> n98
+    n109 --> n104
+    n111 --> n76
+    n111 --> n82
+    n111 --> n85
+    n111 --> n87
+    n111 --> n93
+    n111 --> n95
+    n111 --> n96
+    n111 --> n99
+    n111 --> n103
+    n111 --> n112
+    n112 --> n76
+    n112 --> n95
+    n113 --> n76
+    n113 --> n98
+    n113 --> n101
+    n113 --> n166
+    n114 --> n98
+    n114 --> n166
+    n115 --> n116
+    n115 --> n166
+    n117 --> n77
+    n117 --> n98
+    n117 --> n101
+    n117 --> n166
+    n118 --> n87
+    n118 --> n98
+    n118 --> n101
+    n118 --> n166
+    n119 --> n83
+    n119 --> n87
+    n119 --> n98
+    n119 --> n101
+    n119 --> n166
+    n120 --> n98
+    n120 --> n166
+    n121 --> n81
+    n122 --> n76
+    n122 --> n87
+    n122 --> n98
+    n122 --> n101
+    n122 --> n166
+    n123 --> n98
+    n123 --> n111
+    n124 --> n98
+    n124 --> n101
+    n124 --> n111
+    n125 --> n98
+    n125 --> n166
+    n126 --> n83
+    n127 --> n98
+    n127 --> n111
+    n127 --> n166
+    n128 --> n98
+    n128 --> n166
+    n129 --> n98
+    n129 --> n166
+    n130 --> n89
+    n130 --> n98
+    n130 --> n111
+    n131 --> n86
+    n132 --> n98
+    n132 --> n166
+    n133 --> n87
+    n133 --> n98
+    n134 --> n98
+    n134 --> n166
+    n135 --> n98
+    n135 --> n111
+    n136 --> n83
+    n137 --> n98
+    n137 --> n166
+    n138 --> n87
+    n138 --> n98
+    n138 --> n166
+    n139 --> n90
+    n139 --> n98
+    n140 --> n87
+    n140 --> n98
+    n140 --> n166
+    n141 --> n91
+    n142 --> n87
+    n142 --> n98
+    n143 --> n93
+    n144 --> n81
+    n144 --> n83
+    n144 --> n91
+    n144 --> n98
+    n144 --> n100
+    n144 --> n106
+    n144 --> n109
+    n145 --> n81
+    n145 --> n87
+    n145 --> n90
+    n145 --> n91
+    n145 --> n98
+    n145 --> n100
+    n145 --> n107
+    n145 --> n109
+    n145 --> n166
+    n146 --> n166
+    n147 --> n87
+    n147 --> n98
+    n147 --> n111
+    n147 --> n166
+    n148 --> n100
+    n149 --> n87
+    n149 --> n98
+    n149 --> n166
+    n150 --> n87
+    n150 --> n90
+    n150 --> n98
+    n150 --> n101
+    n150 --> n166
+    n151 --> n76
+    n151 --> n82
+    n151 --> n98
+    n151 --> n166
+    n152 --> n98
+    n152 --> n107
+    n152 --> n111
+    n152 --> n166
+    n153 --> n98
+    n153 --> n166
+    n154 --> n98
+    n154 --> n107
+    n154 --> n111
+    n155 --> n87
+    n155 --> n98
+    n155 --> n166
+    n156 --> n98
+    n156 --> n166
+    n157 --> n98
+    n157 --> n100
+    n157 --> n101
+    n157 --> n111
+    n158 --> n98
+    n158 --> n101
+    n159 --> n87
+    n159 --> n98
+    n159 --> n101
+    n159 --> n111
+    n159 --> n166
+    n160 --> n98
+    n160 --> n111
+    n160 --> n166
+    n161 --> n166
+    n162 --> n106
+    n163 --> n98
+    n163 --> n107
+    n164 --> n98
+    n164 --> n108
+    n165 --> n98
+    n165 --> n111
+    n165 --> n166
+    n166 --> n98
+    n167 --> n109
+    n168 --> n98
+    n168 --> n166
+    n169 --> n81
+    n169 --> n83
+    n169 --> n91
+    n169 --> n98
+    n169 --> n100
+    n169 --> n109
+    n170 --> n83
+    n171 --> n98
+    n171 --> n111
+    n172 --> n112
+    n173 --> n87
+    n173 --> n98
+    n173 --> n101
+    n173 --> n111
+    n173 --> n166
+    n176 --> n6
+    n176 --> n98
+    n181 --> n184
+    n183 --> n182
+    n185 --> n116
+    n193 --> n6
+    n193 --> n26
+    n198 --> n199
+    n198 --> n200
+    n202 --> n195
+    n204 --> n199
+    n205 --> n200
+    n208 --> n6
+    n208 --> n176
+    n210p -.-> n210
+
+    classDef testFile fill:#90EE90,stroke:#228B22,color:#000000
+    classDef majorityExtension fill:#FFFFFF,stroke:#999999,color:#000000
+    class n50,n51,n52,n53,n54,n55,n68,n69,n70,n71,n113,n114,n115,n117,n118,n119,n120,n121,n122,n123,n124,n125,n126,n127,n128,n129,n130,n131,n132,n133,n134,n135,n136,n137,n138,n139,n140,n141,n142,n143,n144,n145,n146,n147,n148,n149,n150,n151,n152,n153,n154,n155,n156,n157,n158,n159,n160,n161,n162,n163,n164,n165,n167,n168,n169,n170,n171,n172,n173,n185,n186,n187,n188,n189,n190,n202,n203,n204,n205,n206 testFile
+    class n31,n32,n33,n34,n35,n36,n37,n38,n39,n40,n41,n42,n43,n44,n45,n46,n47,n48,n49,n56,n57,n58,n60,n62,n63,n64,n65,n66,n67,n73,n75,n76,n77,n78,n79,n80,n81,n82,n83,n84,n85,n86,n87,n88,n89,n90,n91,n92,n93,n94,n95,n96,n97,n98,n99,n100,n101,n102,n103,n104,n105,n106,n107,n108,n109,n110,n111,n112,n116,n166,n175,n198,n199,n200,n219 majorityExtension
+    style n5 stroke:#d62728,stroke-width:3px
+    style n6 stroke:#d62728,stroke-width:3px
+    style n15 stroke:#d62728,stroke-width:3px
+    style n26 stroke:#d62728,stroke-width:3px
+    style n193 stroke:#d62728,stroke-width:3px
+    linkStyle 5 stroke:#d62728,stroke-width:3px
+    linkStyle 6 stroke:#d62728,stroke-width:3px
+    linkStyle 7 stroke:#d62728,stroke-width:3px
+    linkStyle 16 stroke:#d62728,stroke-width:3px
+    linkStyle 17 stroke:#d62728,stroke-width:3px
+    linkStyle 460 stroke:#d62728,stroke-width:3px
+    classDef phantomTest fill:#90EE90,stroke:#228B22,stroke-dasharray: 1 4,color:#000000
+    class n210p phantomTest
+    linkStyle 468 stroke:#228B22,stroke-dasharray: 5 5

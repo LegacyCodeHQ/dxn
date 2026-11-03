@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { states } from "../src/evaluate.js";
-import { parse } from "../src/parse.js";
+import { states } from "../src/evaluation/evaluate.js";
+import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const toolbar = `dimension Breakpoint = base | sm | lg | xl

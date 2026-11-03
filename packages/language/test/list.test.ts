@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { completions } from "../src/complete.js";
-import { inPlace, states } from "../src/evaluate.js";
-import { format } from "../src/format.js";
-import { hover } from "../src/hover.js";
-import { parse } from "../src/parse.js";
-import { renameAt } from "../src/rename-at.js";
-import { coverage } from "../src/status.js";
-import { symbols } from "../src/symbols.js";
+import { completions } from "../src/editor/complete.js";
+import { hover } from "../src/editor/hover.js";
+import { renameAt } from "../src/editor/rename-at.js";
+import { symbols } from "../src/editor/symbols.js";
+import { inPlace, states } from "../src/evaluation/evaluate.js";
+import { coverage } from "../src/evaluation/status.js";
+import { format } from "../src/syntax/format.js";
+import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 // A feed of rows, there while it has articles.

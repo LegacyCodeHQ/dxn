@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { completions } from "../src/complete.js";
-import { definition, usages } from "../src/definition.js";
-import { hover } from "../src/hover.js";
-import { parse } from "../src/parse.js";
-import { renameAt, renameable } from "../src/rename-at.js";
-import { tokens } from "../src/semantic.js";
-import { symbols } from "../src/symbols.js";
+import { completions } from "../src/editor/complete.js";
+import { definition, usages } from "../src/editor/definition.js";
+import { hover } from "../src/editor/hover.js";
+import { renameAt, renameable } from "../src/editor/rename-at.js";
+import { tokens } from "../src/editor/semantic.js";
+import { symbols } from "../src/editor/symbols.js";
+import { parse } from "../src/syntax/parse.js";
 
 // A file written on Windows ends its lines with \r\n, and one from an old Mac
 // with \r alone: lines and columns are the same as with \n, so every answer

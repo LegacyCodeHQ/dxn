@@ -2,7 +2,7 @@
 # vocabulary but are not the model's wording, each as "<path>: <string>".
 #
 # A whole file, by its path, is its own interface: the command's usage.
-packages/cli/src/commands/usage.ts
+packages/cli/src/commands/support/usage.ts
 #
 # Commands no editor feature mirrors, which word what only they say.
 packages/cli/src/commands/attach.ts: no combination given exists for …; … lists them

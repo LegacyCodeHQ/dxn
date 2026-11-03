@@ -1,7 +1,7 @@
 import { expect as assert, describe, it } from "vitest";
-import type { Effect } from "../src/ast.js";
-import { parse } from "../src/parse.js";
-import { renameInSource } from "../src/rename.js";
+import type { Effect } from "../src/core/ast.js";
+import { renameInSource } from "../src/evidence/rename.js";
+import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const model = `dimension Breakpoint = base | lg

@@ -1,0 +1,60 @@
+{
+  "modules": [
+    {
+      "name": "language/core",
+      "files": ["packages/language/src/core/*.ts"]
+    },
+    {
+      "name": "language/model",
+      "files": ["packages/language/src/model/*.ts"]
+    },
+    {
+      "name": "language/evaluation",
+      "files": ["packages/language/src/evaluation/*.ts"]
+    },
+    {
+      "name": "language/syntax",
+      "files": ["packages/language/src/syntax/*.ts"]
+    },
+    {
+      "name": "language/data",
+      "files": ["packages/language/src/data/*.ts"]
+    },
+    {
+      "name": "language/evidence",
+      "files": ["packages/language/src/evidence/*.ts"]
+    },
+    {
+      "name": "language/editor",
+      "files": ["packages/language/src/editor/*.ts"]
+    },
+    {
+      "name": "language/api",
+      "files": ["packages/language/src/index.ts"]
+    },
+    {
+      "name": "cli/entry",
+      "files": ["packages/cli/src/*.ts"]
+    },
+    {
+      "name": "cli/commands",
+      "files": ["packages/cli/src/commands/*.ts"]
+    },
+    {
+      "name": "cli/support",
+      "files": ["packages/cli/src/commands/support/*.ts"]
+    },
+    {
+      "name": "language-server/entry",
+      "files": ["packages/language-server/src/*.ts"]
+    },
+    {
+      "name": "language-server/protocol",
+      "files": ["packages/language-server/src/protocol/*.ts"]
+    },
+    {
+      "name": "vscode",
+      "files": ["packages/vscode/src/*.ts"]
+    }
+  ]
+}

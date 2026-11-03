@@ -1,4 +1,4 @@
-import { parse } from "../../src/parse.js";
+import { parse } from "../../src/syntax/parse.js";
 
 // Each diagnostic of a source as "line:column: code: message", with
 // "warning: " before the code of a warning, in source order.

@@ -3,7 +3,7 @@
 A [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar for the
 dxn language, with queries for syntax highlighting. The language is described
 in [the guide](../../docs/language/guide.md); its authoritative parser is
-[`packages/language/src/parse.ts`](../language/src/parse.ts), and this grammar
+[`packages/language/src/syntax/parse.ts`](../language/src/syntax/parse.ts), and this grammar
 follows it.
 
 ## Files

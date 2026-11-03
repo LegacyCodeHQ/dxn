@@ -10,10 +10,10 @@ import {
   type Type,
   words,
 } from "@legacycodehq/dxn-language";
-import { drawTable, NONE } from "../tables.js";
-import { type Command, command } from "./context.js";
-import { misused, options, Reporter, read } from "./report.js";
-import { usage } from "./usage.js";
+import { type Command, command } from "./support/context.js";
+import { misused, options, Reporter, read } from "./support/report.js";
+import { drawTable, NONE } from "./support/tables.js";
+import { usage } from "./support/usage.js";
 
 export const statesCommand: Command = command(usage, (args, { io, cwd }) => {
   const {

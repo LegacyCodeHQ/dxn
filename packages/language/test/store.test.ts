@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parse } from "../src/parse.js";
-import { checkStored, folderOf } from "../src/store.js";
+import { checkStored, folderOf } from "../src/evidence/store.js";
+import { parse } from "../src/syntax/parse.js";
 
 describe("where a record is stored", () => {
   it("is a folder named after the record, in kebab-case, with no plural", () => {

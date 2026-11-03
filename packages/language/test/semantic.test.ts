@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tokens } from "../src/semantic.js";
+import { tokens } from "../src/editor/semantic.js";
 
 const source = `dimension Pointer = mouse | touch
 enum Hover = rest | hovered

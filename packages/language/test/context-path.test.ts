@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parse } from "../src/parse.js";
-import { renameInData } from "../src/rename.js";
-import { validate } from "../src/validate.js";
+import { renameInData } from "../src/evidence/rename.js";
+import { validate } from "../src/evidence/validate.js";
+import { parse } from "../src/syntax/parse.js";
 
 const source = `dimension Breakpoint = base | sm | lg | xl
 dimension Pointer = mouse | touch

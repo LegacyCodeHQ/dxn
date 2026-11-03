@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hover } from "../src/hover.js";
+import { hover } from "../src/editor/hover.js";
 
 const source = `dimension Pointer = mouse | touch
 

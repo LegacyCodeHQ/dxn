@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { inPlace, states } from "../src/evaluate.js";
-import { parse } from "../src/parse.js";
-import { renameInSource } from "../src/rename.js";
-import { validate } from "../src/validate.js";
+import { inPlace, states } from "../src/evaluation/evaluate.js";
+import { renameInSource } from "../src/evidence/rename.js";
+import { validate } from "../src/evidence/validate.js";
+import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const base = `dimension Breakpoint = base | sm | lg | xl

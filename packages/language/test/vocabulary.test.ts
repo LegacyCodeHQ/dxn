@@ -6,7 +6,7 @@ import {
   outdatedSummary,
   outdatedWhy,
   storedRecords,
-} from "../src/vocabulary.js";
+} from "../src/core/vocabulary.js";
 
 // The words dxn and an editor both say a count of evidence in: one place, so
 // neither says it otherwise.

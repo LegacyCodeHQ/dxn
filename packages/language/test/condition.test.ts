@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Condition } from "../src/ast.js";
-import { inPlace, states } from "../src/evaluate.js";
-import { parse } from "../src/parse.js";
-import { renameInSource } from "../src/rename.js";
+import type { Condition } from "../src/core/ast.js";
+import { inPlace, states } from "../src/evaluation/evaluate.js";
+import { renameInSource } from "../src/evidence/rename.js";
+import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const declarations = `dimension Breakpoint = base | lg | xl

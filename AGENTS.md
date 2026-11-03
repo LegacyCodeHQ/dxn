@@ -40,7 +40,7 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
   what is a problem, what is loaded, or when a rename is refused, lives in
   `packages/language` as one function both call. Never add a check to one
   side only.
-- Both say one vocabulary, from `packages/language/src/vocabulary.ts`: the
+- Both say one vocabulary, from `packages/language/src/core/vocabulary.ts`: the
   same word for the same thing. The CLI is read by agents, so it says every
   fact and the next step, in text and in full in `--json`; an editor is read
   by people and may say less, never something else (see "Two readers" in

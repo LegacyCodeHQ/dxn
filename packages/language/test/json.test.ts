@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseJson } from "../src/json.js";
+import { parseJson } from "../src/data/json.js";
 
 function errors(source: string) {
   return parseJson(source).diagnostics.map(({ code, line, column }) => ({ code, line, column }));

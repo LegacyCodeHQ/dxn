@@ -19,8 +19,8 @@ import {
   type TextEdit,
 } from "vscode-languageserver/node";
 import { run } from "../../cli/src/cli.js";
-import { diagnose } from "../src/diagnostics.js";
-import { evidence, hintsBeside } from "../src/evidence.js";
+import { diagnose } from "../src/protocol/diagnostics.js";
+import { evidence, hintsBeside } from "../src/protocol/evidence.js";
 import { serve } from "../src/server.js";
 
 // dxn and an editor must agree: each scenario, a file and the records stored

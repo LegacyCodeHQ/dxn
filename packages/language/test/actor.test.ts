@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parse } from "../src/parse.js";
+import { parse } from "../src/syntax/parse.js";
 import { problems } from "./support/language.js";
 
 const records = `enum Verdict = approved | changes

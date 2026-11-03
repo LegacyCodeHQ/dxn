@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parse } from "../src/parse.js";
-import { validate } from "../src/validate.js";
+import { validate } from "../src/evidence/validate.js";
+import { parse } from "../src/syntax/parse.js";
 
 const model = `dimension Pointer = mouse | touch
 dimension Theme = light | dark

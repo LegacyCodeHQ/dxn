@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { definition } from "../src/definition.js";
+import { definition } from "../src/editor/definition.js";
 
 const source = `dimension Breakpoint = base | lg
 dimension Pointer = mouse | touch

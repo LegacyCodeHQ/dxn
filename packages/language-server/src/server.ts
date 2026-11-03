@@ -38,9 +38,9 @@ import {
   TextDocuments,
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { diagnose } from "./diagnostics.js";
-import { evidence, hintsBeside } from "./evidence.js";
-import { rangeAt } from "./range.js";
+import { diagnose } from "./protocol/diagnostics.js";
+import { evidence, hintsBeside } from "./protocol/evidence.js";
+import { rangeAt } from "./protocol/range.js";
 
 // Serves dxn to an editor over a connection: the problems in each open file,
 // published when it opens and whenever it changes, and cleared when it closes;

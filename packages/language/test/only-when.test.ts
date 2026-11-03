@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { Condition } from "../src/ast.js";
-import { comparisons } from "../src/condition.js";
-import { parse } from "../src/parse.js";
+import type { Condition } from "../src/core/ast.js";
+import { comparisons } from "../src/model/condition.js";
+import { parse } from "../src/syntax/parse.js";
 import { errors, problems } from "./support/language.js";
 
 const declarations = `dimension Pointer = mouse | touch

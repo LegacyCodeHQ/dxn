@@ -1,0 +1,53 @@
+---
+title: dxn-dependency-layout • a8486fe-dirty • 14 modules
+---
+flowchart LR
+    n0[["commands<br/>10 files"]]
+    n1[["cli/entry<br/>3 files"]]
+    n2[["support<br/>6 files"]]
+    n3[["language-server/entry<br/>3 files"]]
+    n4[["protocol<br/>3 files"]]
+    n5[["api<br/>1 file"]]
+    n6[["core<br/>6 files"]]
+    n7[["data<br/>2 files"]]
+    n8[["editor<br/>6 files"]]
+    n9[["evaluation<br/>9 files"]]
+    n10[["evidence<br/>6 files"]]
+    n11[["model<br/>5 files"]]
+    n12[["syntax<br/>3 files"]]
+    n13[["vscode<br/>3 files"]]
+
+    n0 --> n2
+    n0 --> n5
+    n1 --> n0
+    n1 --> n2
+    n2 --> n5
+    n3 --> n4
+    n3 --> n5
+    n4 --> n5
+    n5 --> n6
+    n5 --> n7
+    n5 --> n8
+    n5 --> n9
+    n5 --> n10
+    n5 --> n11
+    n5 --> n12
+    n7 --> n6
+    n8 --> n6
+    n8 --> n9
+    n8 --> n10
+    n8 --> n11
+    n8 --> n12
+    n9 --> n6
+    n9 --> n11
+    n10 --> n6
+    n10 --> n7
+    n10 --> n9
+    n10 --> n11
+    n11 --> n6
+    n12 --> n6
+    n12 --> n9
+    n12 --> n11
+
+    classDef moduleNode fill:#FFFFE0,stroke:#999999,color:#000000
+    class n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13 moduleNode

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { inPlace } from "../src/evaluate.js";
-import { parse } from "../src/parse.js";
-import { renameInSource } from "../src/rename.js";
+import { inPlace } from "../src/evaluation/evaluate.js";
+import { renameInSource } from "../src/evidence/rename.js";
+import { parse } from "../src/syntax/parse.js";
 import { problems } from "./support/language.js";
 
 const site = (binding: string) => `enum Section = home | blog
