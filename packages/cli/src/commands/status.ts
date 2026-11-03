@@ -40,7 +40,7 @@ export const statusCommand: Command = command(usage, (args, { io, cwd }) => {
   if (typeof loaded === "number") return loaded;
   const { sources: data, apart, stopped } = countable(parsed, loaded.stored, loaded.problems);
   // Whether what an entry's PenNode points at is as recorded.
-  const check = freshness(repositoryOf(resolve(cwd, file), cwd));
+  const check = freshness(repositoryOf(resolve(cwd, file)));
   // A record is checked for staleness when it has a PenNode.
   const fingerprinted = (name: string) =>
     parsed.records

@@ -194,7 +194,7 @@ export const attachCommand: Command = command(usage, (args, { io, cwd, dryRun })
   }
   // The record's fields, as given; each PenNode's fingerprint is taken now,
   // of its node or, without one, its frame.
-  const repository = repositoryOf(resolve(cwd, file), cwd);
+  const repository = repositoryOf(resolve(cwd, file));
   const fingerprints = new Fingerprints();
   const values: Record<string, unknown> = { ...supplied };
   for (const field of record.fields.filter(({ type }) => type.name === "PenNode")) {

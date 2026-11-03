@@ -45,7 +45,7 @@ export const renameCommand: Command = command(usage, (args, { io, cwd, dryRun })
   if ("refusal" in at) return report.refuse(at.refusal);
   const stored = loadStored(parsed, file, cwd, report);
   if (typeof stored === "number") return stored;
-  const drawn = drawings(repositoryOf(path, cwd));
+  const drawn = drawings(repositoryOf(path));
   const renamed = renameAt(source, at.line, at.column, to, stored, parsed, drawn);
   if ("refusal" in renamed) {
     if (renamed.problems === undefined && renamed.stored === undefined) {

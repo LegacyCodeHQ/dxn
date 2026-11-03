@@ -1132,6 +1132,12 @@ when it was recorded:
 | `node`        | the node inside the frame, a `NonEmptyString`; left out when the drawing is the frame |
 | `fingerprint` | the node's fingerprint, or the frame's without a node, when it was recorded           |
 
+The design file's path is relative to the nearest Git root above the `.dxn`
+file, including a worktree's `.git` file. Outside Git it is relative to the
+`.dxn` file's directory. The CLI and editor use the same rule; running a command
+from another directory does not change which drawing it reads. Outside Git,
+paths previously written relative to the CLI working directory may need updating.
+
 The frame is there even with a node: when the node is deleted, the frame
 still says where it was. With them, `Evidence` can hold everything a designer
 records: when, and where the drawing is.

@@ -40,7 +40,7 @@ export function loadStoredToCount(
   report: Reporter,
 ): { stored: Stored[]; problems: StoredProblem[] } | number {
   const stored = storedData(parsed, file, cwd);
-  const drawn = drawings(repositoryOf(resolve(cwd, file), cwd));
+  const drawn = drawings(repositoryOf(resolve(cwd, file)));
   const { withoutContext, problems } = checkStored(parsed, stored, drawn);
   if (withoutContext.length > 0)
     return report.refuse(...withoutContext.map(({ message }) => message));

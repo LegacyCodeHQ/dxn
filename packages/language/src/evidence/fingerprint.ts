@@ -164,11 +164,13 @@ function blobHash(path: string): string {
 }
 
 // The repository a path is in: the nearest folder above it with a .git;
-// otherwise, by default the folder it is in.
-export function repositoryOf(path: string, otherwise = dirname(resolve(path))): string {
-  for (let at = dirname(resolve(path)); ; at = dirname(at)) {
+// otherwise the folder it is in. The caller's working directory never changes
+// how a model's drawing paths resolve.
+export function repositoryOf(path: string): string {
+  const directory = dirname(resolve(path));
+  for (let at = directory; ; at = dirname(at)) {
     if (statSync(join(at, ".git"), { throwIfNoEntry: false }) !== undefined) return at;
-    if (dirname(at) === at) return otherwise;
+    if (dirname(at) === at) return directory;
   }
 }
 

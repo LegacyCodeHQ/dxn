@@ -63,7 +63,7 @@ export const reviewCommand: Command = command(usage, (args, { io, cwd, cache, dr
       : [...new Set(places.map(({ path }) => path.split(".")[0] as string))];
   }
   const full = resolve(cwd, file);
-  const check = freshness(repositoryOf(full, cwd));
+  const check = freshness(repositoryOf(full));
   const written: string[] = [];
   // With --stale, the trees with nothing stale or gone, which have no page.
   const clean: string[] = [];
