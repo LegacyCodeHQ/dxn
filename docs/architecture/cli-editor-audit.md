@@ -102,11 +102,26 @@ it could not compare the `documentChanges` representation used for folder moves.
 The added folder scenario failed with the old harness before it was extended.
 The parity suite now includes the mixed-record regression, and `drawing-root.test.ts` covers root selection across command callers.
 
-The existing evidence-count comparison remains one-way: every parsed editor count
-must appear among CLI path counts. It omits path identity, ignores unrecognized
-label text, and permits missing editor counts. Component usage labels and counts
-aggregated at a declaration need an explicit comparison model before tightening
-this safely. A passing case here does not prove complete evidence parity.
+`evidence-count-parity.test.ts` replaces the one-way count comparison with
+complete hint-set equality. Each fixture explicitly maps CLI paths to a written
+declaration, independently of `progress` and `treePlaces`. CLI JSON counts are
+summed only for those paths, grouped by record, and rendered with the shared
+vocabulary. The comparison includes line, column, component-usage identity and
+the complete label, so missing, extra or unrecognized hints cannot disappear
+through a label parser.
+
+The settings and gazette examples cover component usages and nested declarations.
+Focused fixtures cover multiple records with different counts at different
+elements, no stored evidence, recorded/stale/gone/outdated evidence, and counts
+aggregated from several paths at a declaration with no standalone tree.
+Temporary mutation experiments confirmed that missing, moved, duplicated,
+record-swapped and unrecognized hints fail the actual parity assertions.
+
+These count fixtures have countable evidence. Set-apart and uncountable records
+remain covered by the existing server tests and mixed-record diagnostic tests;
+the complete-label comparison does not yet compare their error explanations
+against CLI output. The count tests call the protocol hint adapter, so they do
+not exercise LSP inlay-hint publication or hover transport.
 
 Diagnostics parity calls the protocol diagnostic adapters directly. Rename,
 formatting and code-lens parity use an in-process LSP connection. The audit does

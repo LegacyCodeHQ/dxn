@@ -5,7 +5,7 @@ import { PassThrough } from "node:stream";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { run } from "@cli/cli.js";
 import { diagnose } from "@language-server/protocol/diagnostics.js";
-import { evidence, hintsBeside } from "@language-server/protocol/evidence.js";
+import { evidence } from "@language-server/protocol/evidence.js";
 import { serve } from "@language-server/server.js";
 import { parse } from "@legacycodehq/dxn-language";
 import { dxn as invocation } from "@vscode/run.js";
@@ -300,51 +300,6 @@ function edited(text: string, edits: TextEdit[]): string {
   return result;
 }
 
-// Each count of evidence an editor's hints show, by record: how many of how
-// many combinations are recorded, stale, gone and outdated. A count for a
-// component where a type places it, and a record that cannot be counted, say
-// what dxn status does not count by element, and are left out.
-function hintCounts(file: string): string[] {
-  const text = readFileSync(file, "utf8");
-  const part =
-    /(?:^|· |[●◐○◌] )([A-Z][A-Za-z0-9]*) (\d+)\/(\d+) combinations? recorded(?:, (\d+) stale)?(?:, (\d+) gone)?(?: · (\d+) outdated)?/g;
-  return (hintsBeside(pathToFileURL(file).href, parse(text)) ?? []).flatMap(({ label }) =>
-    [...label.matchAll(part)].map(
-      ([, record, recorded, combinations, stale = "0", gone = "0", outdated = "0"]) =>
-        `${record}: ${recorded} of ${combinations}, ${stale} stale, ${gone} gone, ${outdated} outdated`,
-    ),
-  );
-}
-
-// The same, for each element dxn status counts: none where it refuses, for
-// a file or stored records with an error.
-function statusCounts(root: string, file: string): Set<string> {
-  const { records = [] } = JSON.parse(
-    dxn(root, "status", relative(root, file), "--json").stdout,
-  ) as {
-    records?: {
-      record: string;
-      paths: {
-        recorded: number;
-        combinations: number;
-        stale: number;
-        gone: number;
-        outdated: number;
-      }[];
-    }[];
-  };
-  return new Set(
-    records.flatMap(({ record, paths }) =>
-      paths.map(
-        ({ recorded, combinations, stale, gone, outdated }) =>
-          `${record}: ${recorded} of ${combinations}, ${stale} stale, ${gone} gone, ${outdated} outdated`,
-      ),
-    ),
-  );
-}
-
-const repository = join(fileURLToPath(import.meta.url), "../../../..");
-
 describe("dxn and an editor", () => {
   it.each([...scenarios, mixedRecords].map((scenario) => [scenario.title, scenario] as const))(
     "find the same problems: %s",
@@ -462,31 +417,6 @@ describe("dxn and an editor", () => {
       expect(direct.code, direct.stdout).toBe(code);
     } finally {
       connection.dispose();
-    }
-  });
-
-  // dxn says every fact an editor does: each count a hint shows is one dxn
-  // status gives for an element.
-  it.each([
-    [
-      "the settings example",
-      () => ({ root: repository, file: join(repository, "examples/settings/settings.dxn") }),
-    ],
-    [
-      "the gazette example",
-      () => ({ root: repository, file: join(repository, "examples/gazette/gazette.dxn") }),
-    ],
-    ...scenarios
-      .filter(({ stored }) => stored !== undefined)
-      .map(({ title }, index, all) => [title, () => project(all[index] as Scenario)] as const),
-  ] as const)("count the same evidence: %s", (_, made) => {
-    const { root, file } = made();
-    const shown = hintCounts(file);
-    const counted = statusCounts(root, file);
-    expect(shown.filter((count) => !counted.has(count))).toEqual([]);
-    // A scenario whose records an editor counts says so in some hint.
-    if (!/a syntax error|an error in checking|a stored value|twice|no actor records/.test(_)) {
-      expect(shown.length).toBeGreaterThan(0);
     }
   });
 
