@@ -5,7 +5,7 @@ draws it as an isometric blueprint: layers of flat slabs, dimension lines and
 one highlighted element. The output is SVG, in dxn's ink and paper tones, for
 use as a background.
 
-Only boxes are drawn: a tag, a position and a size. The page's text, images and
+Only boxes are drawn: a tag, a kind, a position, a size and a corner radius. The page's text, images and
 attributes are never read, kept or written. An image or an inline SVG is one
 slab: what is inside it, such as the shapes of a logo, is not measured.
 
@@ -60,6 +60,20 @@ Asking for a width that was not captured lists the widths that were. `--help` is
 Drop the SVG into the design file or a page as a pattern-mode surface. It is a
 pattern, so do not combine it with a marking.
 
+## Kinds, and rounded corners
+
+Each box is tagged with what a customer sees there, never what it says:
+
+| Kind        | What it is                                                           |
+| ----------- | -------------------------------------------------------------------- |
+| `media`     | an image, video, canvas or graphic, or a box with a background image |
+| `control`   | a button, link, input, select or text area                           |
+| `text`      | a heading, a paragraph, or any box that holds only text              |
+| `structure` | everything else: wrappers, rows and columns                          |
+
+Corner radius is measured too, so pills, cards and round buttons draw with
+rounded outlines and smooth sides.
+
 ## Keeping it readable
 
 A real page has far more boxes than a blueprint can hold. Two controls thin it
@@ -69,8 +83,9 @@ out without losing the shape of the page:
   dropped from the picture: they fold into the box that holds them, which stays.
 - **Merging** (on by default, `--no-merge` to turn off). Boxes that are siblings,
   sit next to each other (within `--merge-gap`, 16 px) and fill the space they
-  span together become one group slab, and what was inside them folds in. A
-  list's rows become one block; a bar's buttons become one bar.
+  span together become one group slab. A list's rows become one block; a bar's
+  buttons become one bar; lines of text become one block. Wrappers that merge
+  fold away, but the images and text inside them stay. Images never merge.
 - **`--budget N`** picks the layer limit for you: it keeps the deepest layers
   whose boxes, after merging, still fit in about N slabs per capture. A good way
   to get the same density at every breakpoint.

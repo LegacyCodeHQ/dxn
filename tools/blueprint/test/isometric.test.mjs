@@ -247,6 +247,111 @@ test("asking for a breakpoint that was not captured says what was", () => {
   );
 });
 
+const kbox = (tag, kind, layer, x, y, w, h, radius = 0) => ({
+  tag,
+  kind,
+  layer,
+  x,
+  y,
+  w,
+  h,
+  radius,
+});
+
+const topPoints = (svg) =>
+  [...svg.matchAll(/data-face="top" points="([^"]+)"/g)].map((m) => m[1].split(" ").length);
+
+test("a rounded box has a rounded outline, a square one has four corners", () => {
+  const square = renderSvg([
+    { label: "a", layout: layout(500, [kbox("div", "structure", 0, 0, 0, 200, 100)]) },
+  ]);
+  const round = renderSvg([
+    { label: "a", layout: layout(500, [kbox("div", "structure", 0, 0, 0, 200, 100, 24)]) },
+  ]);
+  assert.equal(topPoints(square)[0], 4);
+  assert.ok(topPoints(round)[0] > 16);
+});
+
+test("a radius larger than half the box is clamped to a pill or a circle", () => {
+  const svg = renderSvg([
+    { label: "a", layout: layout(500, [kbox("button", "control", 0, 0, 0, 120, 40, 999)]) },
+  ]);
+  assert.ok(topPoints(svg)[0] > 16);
+  assert.equal(svg.includes("NaN"), false);
+});
+
+test("what a customer sees survives a layer limit, wrappers fold away", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("section", "structure", 1, 50, 50, 600, 600),
+    kbox("div", "structure", 2, 100, 100, 300, 300),
+    kbox("img", "media", 3, 120, 120, 100, 60),
+    kbox("button", "control", 3, 250, 120, 100, 40),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], {
+    maxLayer: 1,
+    merge: false,
+  });
+  assert.equal(tops(svg), 4);
+});
+
+test("a wrapper and a button with the same rectangle keep the button", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("div", "structure", 1, 100, 100, 120, 40),
+    kbox("button", "control", 2, 100, 100, 120, 40),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], {
+    highlight: { tag: "button" },
+  });
+  assert.equal(tops(svg), 2);
+  assert.equal((svg.match(/data-highlight="true"/g) ?? []).length, 1);
+});
+
+test("merging wrappers keeps the images and text inside them", () => {
+  const cards = [0, 1, 2].map((i) => kbox("div", "structure", 1, 10 + i * 210, 100, 200, 300));
+  const images = cards.map((c) => kbox("img", "media", 2, c.x + 10, c.y + 10, 180, 180));
+  const boxes = [kbox("main", "structure", 0, 0, 0, 1000, 800), ...cards, ...images];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }]);
+  assert.equal(tops(svg), 5);
+});
+
+test("images never merge, even when they touch", () => {
+  const images = [0, 1, 2].map((i) => kbox("img", "media", 1, 10 + i * 100, 100, 100, 100));
+  const boxes = [kbox("main", "structure", 0, 0, 0, 1000, 800), ...images];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }])), 4);
+});
+
+test("lines of text that sit together merge into one block", () => {
+  const lines = [0, 1, 2].map((i) => kbox("p", "text", 1, 10, 100 + i * 24, 200, 20));
+  const boxes = [kbox("main", "structure", 0, 0, 0, 1000, 800), ...lines];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }])), 2);
+});
+
+test("clickable cards that hold an image stay separate, buttons in a bar still merge", () => {
+  const cards = [0, 1, 2].map((i) => kbox("a", "control", 1, 10 + i * 210, 100, 200, 300));
+  const images = cards.map((c) => kbox("img", "media", 2, c.x + 10, c.y + 10, 180, 180));
+  const buttons = [0, 1, 2].map((i) => kbox("button", "control", 1, 10 + i * 40, 600, 36, 28));
+  const boxes = [kbox("main", "structure", 0, 0, 0, 1000, 800), ...cards, ...images, ...buttons];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }])), 8);
+});
+
+test("the kinds that are always kept can be chosen", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("section", "structure", 1, 50, 50, 600, 600),
+    kbox("img", "media", 2, 100, 100, 100, 60),
+    kbox("button", "control", 2, 300, 100, 100, 40),
+  ];
+  const draw = (keep) =>
+    tops(
+      renderSvg([{ label: "a", layout: layout(1000, boxes) }], { maxLayer: 0, merge: false, keep }),
+    );
+  assert.equal(draw(["media", "control"]), 3);
+  assert.equal(draw(["media"]), 2);
+  assert.equal(draw([]), 1);
+});
+
 test("the paper palette uses the paper background and no transparency", () => {
   const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }], {
     palette: "paper",

@@ -18,6 +18,8 @@ Options:
   --max-layer <n>        Fold boxes nested deeper than this into the box that holds them
   --merge-gap <px>       Neighbours closer than this may merge into one slab (default: 16)
   --no-merge             Keep every box: do not merge neighbours
+  --keep <kinds>         Kinds never folded away by depth: media,control,text
+                         (default: all three; "none" folds by depth only)
   --only <widths>        Draw only these breakpoints, e.g. 375,1440 (default: all)
   --budget <n>           Show about this many slabs per capture: keep the deepest
                          layers that fit
@@ -49,6 +51,7 @@ function parse(argv) {
     else if (arg === "--max-layer") options.maxLayer = Number(value);
     else if (arg === "--merge-gap") options.mergeGap = Number(value);
     else if (arg === "--budget") options.budget = Number(value);
+    else if (arg === "--keep") options.keep = value === "none" ? [] : value.split(",");
     else if (arg === "--only") options.show = value.split(",").map(Number);
     else if (arg === "--layer-height") options.layerHeight = Number(value);
     else if (arg === "--stack-gap") options.stackGap = Number(value);

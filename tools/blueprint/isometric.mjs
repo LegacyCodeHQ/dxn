@@ -1,8 +1,9 @@
 // Turns measured layout boxes into an isometric blueprint, as SVG text.
 //
 // A layout is the JSON that collect.js returns: the boxes of a page or of one
-// element, each with a layer (how many visible boxes enclose it). Only boxes
-// and measurements are drawn. A page's own text is never read or written.
+// element, each with a kind (what a customer sees there), a corner radius and a
+// layer (how many visible boxes enclose it). Only boxes and measurements are
+// drawn. A page's own text is never read or written.
 
 const COS = Math.cos(Math.PI / 6);
 const SIN = 0.5;
@@ -24,6 +25,10 @@ const PALETTES = {
     highlight: "#4F5BFF",
   },
 };
+
+// What a customer sees outranks what only holds it together.
+const RANK = { structure: 0, text: 1, control: 2, media: 3 };
+const DEFAULT_KEEP = ["media", "control", "text"];
 
 export const project = (x, y, z) => ({ x: (x - y) * COS, y: (x + y) * SIN - z });
 
@@ -66,14 +71,21 @@ function parentOf(box, boxes) {
   return parent;
 }
 
-// Siblings that sit next to each other and fill the space they span read as one
-// thing: a list's rows, a bar's buttons. Each such run becomes one group slab,
-// and whatever was inside its members is folded into it.
+// Siblings of one kind that sit next to each other and fill the space they span
+// read as one thing: a list's rows, a bar's buttons, a block of text lines. Each
+// such run becomes one group slab. Wrappers that merge fold away what only held
+// things together; the images, controls and text inside them stay. Images never
+// merge: each one is something a customer sees on its own.
 function mergeSiblings(boxes, mergeGap) {
   const parents = boxes.map((box) => parentOf(box, boxes));
   const families = new Map();
+  // A clickable card that holds an image is a card, not one of a bar's buttons.
+  const holdsImage = (box) =>
+    box.kind === "control" &&
+    boxes.some((other) => other.kind === "media" && other !== box && encloses(box, other));
   boxes.forEach((box, index) => {
-    const key = `${parents[index]}:${box.layer}`;
+    if (box.kind === "media" || holdsImage(box)) return;
+    const key = `${parents[index]}:${box.layer}:${box.kind}`;
     if (!families.has(key)) families.set(key, []);
     families.get(key).push(index);
   });
@@ -105,7 +117,16 @@ function mergeSiblings(boxes, mergeGap) {
       if (filled / ((x1 - x0) * (y1 - y0)) < FILL) continue;
       merged.push({
         run,
-        box: { tag: "group", x: x0, y: y0, w: x1 - x0, h: y1 - y0, merged: run.length },
+        box: {
+          tag: "group",
+          kind: boxes[run[0]].kind,
+          x: x0,
+          y: y0,
+          w: x1 - x0,
+          h: y1 - y0,
+          radius: Math.max(...run.map((i) => boxes[i].radius)),
+          merged: run.length,
+        },
       });
     }
   }
@@ -115,6 +136,7 @@ function mergeSiblings(boxes, mergeGap) {
   for (const { run } of merged) {
     for (const i of run) gone.add(i);
     boxes.forEach((box, index) => {
+      if (box.kind !== "structure") return;
       if (run.some((m) => m !== index && encloses(boxes[m], box) && area(boxes[m]) > area(box)))
         gone.add(index);
     });
@@ -124,19 +146,42 @@ function mergeSiblings(boxes, mergeGap) {
 }
 
 // Collapses boxes that share a rectangle (a wrapper and its only child are one
-// slab) and counts, for each box, how many others enclose it. Then thins the
-// result: tiny boxes go, boxes deeper than maxLayer fold into the box that holds
-// them, and neighbours that read as one thing merge. Nothing else of a box is
-// kept: a page's tags and sizes, never its text.
+// slab, and the more customer-facing of the two wins) and counts, for each box,
+// how many others enclose it. Then thins the result: tiny boxes go, wrappers
+// deeper than maxLayer fold into the box that holds them, and neighbours that
+// read as one thing merge. The kinds in `keep` (images, controls and text by
+// default) are never folded away by depth. Nothing else of a box is kept: a
+// page's tags, kinds, sizes and radii, never its text.
 export function normalise(layout, options = {}) {
-  const { minSize = 0, maxLayer = Number.POSITIVE_INFINITY, merge = true, mergeGap = 16 } = options;
+  const {
+    minSize = 0,
+    maxLayer = Number.POSITIVE_INFINITY,
+    merge = true,
+    mergeGap = 16,
+    keep = DEFAULT_KEEP,
+  } = options;
+  const keepKinds = new Set(keep);
+  const folds = (box) => !keepKinds.has(box.kind) && box.layer > maxLayer;
+
   const kept = [];
   for (const box of layout.boxes) {
-    if (kept.some((other) => sameRect(other, box))) continue;
-    kept.push({ tag: box.tag, x: box.x, y: box.y, w: box.w, h: box.h });
+    const next = {
+      tag: box.tag,
+      kind: box.kind ?? "structure",
+      x: box.x,
+      y: box.y,
+      w: box.w,
+      h: box.h,
+      radius: box.radius ?? 0,
+    };
+    const index = kept.findIndex((other) => sameRect(other, next));
+    if (index === -1) kept.push(next);
+    else if (RANK[next.kind] > RANK[kept[index].kind])
+      kept[index] = { ...next, radius: Math.max(kept[index].radius, next.radius) };
+    else kept[index].radius = Math.max(kept[index].radius, next.radius);
   }
   let boxes = layered(kept.filter((box) => box.w >= minSize && box.h >= minSize));
-  boxes = layered(boxes.filter((box) => box.layer <= maxLayer));
+  boxes = layered(boxes.filter((box) => !folds(box)));
   if (merge) {
     for (let pass = 0; pass < 4; pass++) {
       const result = mergeSiblings(boxes, mergeGap);
@@ -144,12 +189,77 @@ export function normalise(layout, options = {}) {
       if (!result.changed) break;
     }
   }
-  return { ...layout, boxes: boxes.filter((box) => box.layer <= maxLayer) };
+  return { ...layout, boxes: boxes.filter((box) => !folds(box)) };
 }
+
 const escapeText = (text) =>
   String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 const points = (list) => list.map((p) => `${round(p.x)},${round(p.y)}`).join(" ");
+
+const SEGMENTS = 6;
+
+// The outline of a box on the ground plane, clockwise, with rounded corners.
+function outline(box) {
+  const r = Math.min(box.radius || 0, box.w / 2, box.h / 2);
+  if (!(r >= 1)) {
+    return [
+      [box.x, box.y],
+      [box.x + box.w, box.y],
+      [box.x + box.w, box.y + box.h],
+      [box.x, box.y + box.h],
+    ];
+  }
+  const corners = [
+    [box.x + r, box.y + r, 180],
+    [box.x + box.w - r, box.y + r, 270],
+    [box.x + box.w - r, box.y + box.h - r, 0],
+    [box.x + r, box.y + box.h - r, 90],
+  ];
+  const list = [];
+  for (const [cx, cy, start] of corners) {
+    for (let k = 0; k <= SEGMENTS; k++) {
+      const angle = ((start + (k * 90) / SEGMENTS) * Math.PI) / 180;
+      list.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+    }
+  }
+  return list;
+}
+
+const TURN = 0.7;
+
+// The runs of the outline that face the viewer (south and east), as ranges of
+// segment indices. A run breaks where the outline turns sharply, so a square
+// corner keeps its vertical edge and a rounded one stays one smooth face.
+function visibleRuns(list) {
+  const n = list.length;
+  const runs = [];
+  let current = null;
+  let previous = null;
+  for (let i = 0; i < n; i++) {
+    const a = list[i];
+    const b = list[(i + 1) % n];
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const length = Math.hypot(dx, dy);
+    if (length < 1e-6) continue;
+    const nx = dy / length;
+    const ny = -dx / length;
+    if (nx + ny <= 1e-6) {
+      current = null;
+      previous = null;
+      continue;
+    }
+    const angle = Math.atan2(ny, nx);
+    if (current && previous !== null && Math.abs(angle - previous) <= TURN) current.to = i;
+    else {
+      current = { from: i, to: i };
+      runs.push(current);
+    }
+    previous = angle;
+  }
+  return runs;
+}
 
 function matches(box, index, highlight) {
   if (!highlight) return false;
@@ -167,6 +277,7 @@ export function renderSvg(layouts, options = {}) {
     maxLayer = Number.POSITIVE_INFINITY,
     merge = true,
     mergeGap = 16,
+    keep = DEFAULT_KEEP,
     budget,
     show,
     highlight,
@@ -174,7 +285,7 @@ export function renderSvg(layouts, options = {}) {
   } = options;
   const colors = PALETTES[palette];
 
-  const base = { minSize, merge, mergeGap };
+  const base = { minSize, merge, mergeGap, keep };
 
   // With a budget, keep the deepest layers whose boxes still fit in it.
   const limitFor = (layout) => {
@@ -192,7 +303,7 @@ export function renderSvg(layouts, options = {}) {
     const result = normalise(layout, { ...base, maxLayer: limitFor(layout) });
     if (highlight?.tag === undefined || result.boxes.some((box) => box.tag === highlight.tag))
       return result;
-    const found = normalise(layout, { minSize, merge: false }).boxes.find(
+    const found = normalise(layout, { minSize, merge: false, keep }).boxes.find(
       (box) => box.tag === highlight.tag,
     );
     return found ? { ...result, boxes: [...result.boxes, found] } : result;
@@ -260,33 +371,24 @@ export function renderSvg(layouts, options = {}) {
 
     layout.boxes.forEach((box, index) => {
       const z = baseZ + box.layer * layerHeight;
-      const top = [
-        project(box.x, box.y, z),
-        project(box.x + box.w, box.y, z),
-        project(box.x + box.w, box.y + box.h, z),
-        project(box.x, box.y + box.h, z),
-      ];
-      const left = [
-        project(box.x, box.y + box.h, z),
-        project(box.x + box.w, box.y + box.h, z),
-        project(box.x + box.w, box.y + box.h, z - slab),
-        project(box.x, box.y + box.h, z - slab),
-      ];
-      const right = [
-        project(box.x + box.w, box.y, z),
-        project(box.x + box.w, box.y + box.h, z),
-        project(box.x + box.w, box.y + box.h, z - slab),
-        project(box.x + box.w, box.y, z - slab),
-      ];
-      [...top, ...left, ...right].forEach(grow);
+      const ring = outline(box);
+      const top = ring.map(([x, y]) => project(x, y, z));
+      const sides = visibleRuns(ring).map(({ from, to }) => {
+        const upper = [];
+        for (let i = from; i <= to + 1; i++) upper.push(ring[i % ring.length]);
+        return [
+          ...upper.map(([x, y]) => project(x, y, z)),
+          ...upper.reverse().map(([x, y]) => project(x, y, z - slab)),
+        ];
+      });
+      [...top, ...sides.flat()].forEach(grow);
       const chosen = !highlighted && matches(box, index, highlight);
       if (chosen) highlighted = true;
       shapes.push({
         order: [layoutIndex, z, box.x + box.y],
         kind: "box",
         top,
-        left,
-        right,
+        sides,
         highlight: chosen,
         merged: box.merged,
       });
@@ -337,15 +439,14 @@ export function renderSvg(layouts, options = {}) {
         (shape.highlight ? ' data-highlight="true"' : "") +
         (shape.merged ? ` data-merged="${shape.merged}"` : "");
       out.push(`<g${attrs}>`);
-      for (const [face, list] of [
-        ["left", shape.left],
-        ["right", shape.right],
-        ["top", shape.top],
-      ]) {
+      for (const side of shape.sides) {
         out.push(
-          `<polygon data-face="${face}" points="${points(list)}" fill="${colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="miter"/>`,
+          `<polygon data-face="side" points="${points(side)}" fill="${colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
         );
       }
+      out.push(
+        `<polygon data-face="top" points="${points(shape.top)}" fill="${colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
+      );
       out.push("</g>");
     }
   }
