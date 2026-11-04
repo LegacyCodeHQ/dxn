@@ -8,10 +8,18 @@
 //   text       a heading, a paragraph or any box that holds only text
 //   structure  everything else: wrappers, rows, columns
 //
+// A box is painted when it has a background, a border, a shadow or an image.
+//
 // In DevTools:  copy(JSON.stringify((<paste this file>)({ selector: "main" })))
 // With capture.mjs, Playwright runs it for you.
 (options) => {
-  const { selector = "body", minSize = 16, maxLayers = 8, maxBoxes = 300 } = options || {};
+  const {
+    selector = "body",
+    minSize = 16,
+    textHeight = 8,
+    maxLayers = 8,
+    maxBoxes = 300,
+  } = options || {};
   // Media is one slab: its insides (a logo's shapes, say) are never measured.
   const leaves = new Set(["svg", "img", "picture", "canvas", "video", "iframe"]);
   const controls = new Set(["button", "input", "select", "textarea", "summary"]);
@@ -68,18 +76,43 @@
     return Math.min(side / 2, round(corners.reduce((a, b) => a + b, 0) / 4));
   };
 
+  // Painted means a customer sees the box itself: a background, a border, a
+  // shadow or an image. An unpainted box only holds things or catches clicks.
+  const paintedOf = (element, style) => {
+    if (leaves.has(element.tagName.toLowerCase())) return true;
+    const background = String(style.backgroundColor).match(/rgba?\(([^)]+)\)/);
+    const alpha = background ? Number(background[1].split(/[,/]/)[3] ?? 1) : 0;
+    const border = [
+      style.borderTopWidth,
+      style.borderRightWidth,
+      style.borderBottomWidth,
+      style.borderLeftWidth,
+    ].some((width) => Number.parseFloat(width) > 0 && style.borderStyle !== "none");
+    return (
+      alpha > 0.02 ||
+      border ||
+      (style.boxShadow || "none") !== "none" ||
+      (style.backgroundImage || "none") !== "none"
+    );
+  };
+
+  // Images that never loaded measure as empty boxes. The result says how many.
+  const unloaded = [...root.querySelectorAll("img")].filter(
+    (image) =>
+      image.getBoundingClientRect().width > 0 && !(image.complete && image.naturalWidth > 0),
+  ).length;
+
   const visit = (element, layer) => {
     if (boxes.length >= maxBoxes || layer > maxLayers) return;
     const rect = element.getBoundingClientRect();
     const style = getComputedStyle(element);
-    const visible =
-      rect.width >= minSize &&
-      rect.height >= minSize &&
-      style.display !== "none" &&
-      style.visibility !== "hidden" &&
-      Number(style.opacity) > 0;
+    const shown =
+      style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity) > 0;
+    const kind = shown ? kindOf(element, style) : "structure";
+    // A line of text is thin: it only has to be wide enough to read.
+    const tall = kind === "text" ? Math.min(minSize, textHeight) : minSize;
+    const visible = shown && rect.width >= minSize && rect.height >= tall;
     if (visible) {
-      const kind = kindOf(element, style);
       const box = {
         tag: element.tagName.toLowerCase(),
         kind,
@@ -89,6 +122,7 @@
         w: round(rect.width),
         h: round(rect.height),
         radius: radiusOf(style, rect),
+        painted: paintedOf(element, style),
       };
       const key = [box.x, box.y, box.w, box.h].map(Math.round).join(",");
       const seen = byRect.get(key);
@@ -96,9 +130,15 @@
         byRect.set(key, box);
         boxes.push(box);
       } else if (rank[kind] > rank[seen.kind]) {
-        Object.assign(seen, { tag: box.tag, kind, radius: Math.max(seen.radius, box.radius) });
+        Object.assign(seen, {
+          tag: box.tag,
+          kind,
+          radius: Math.max(seen.radius, box.radius),
+          painted: seen.painted || box.painted,
+        });
       } else {
         seen.radius = Math.max(seen.radius, box.radius);
+        seen.painted = seen.painted || box.painted;
       }
     }
     // A leaf that drew a box is one slab. One that did not (a picture is inline)
@@ -112,6 +152,7 @@
     viewport: { w: window.innerWidth, h: window.innerHeight },
     selector,
     root: { w: round(origin.width), h: round(origin.height) },
+    unloadedImages: unloaded,
     boxes,
   };
 };

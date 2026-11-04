@@ -197,6 +197,7 @@ export function normalise(layout, options = {}) {
     merge = true,
     mergeGap = 16,
     keep = DEFAULT_KEEP,
+    paint = true,
   } = options;
   const keepKinds = new Set(keep);
   const folds = (box) => !keepKinds.has(box.kind) && box.layer > maxLayer;
@@ -212,14 +213,43 @@ export function normalise(layout, options = {}) {
       h: box.h,
       radius: box.radius ?? 0,
       cut: box.cut,
+      painted: box.painted ?? true,
     };
     const index = kept.findIndex((other) => sameRect(other, next));
     if (index === -1) kept.push(next);
-    else if (RANK[next.kind] > RANK[kept[index].kind])
-      kept[index] = { ...next, radius: Math.max(kept[index].radius, next.radius) };
-    else kept[index].radius = Math.max(kept[index].radius, next.radius);
+    else {
+      const painted = kept[index].painted || next.painted;
+      if (RANK[next.kind] > RANK[kept[index].kind])
+        kept[index] = { ...next, radius: Math.max(kept[index].radius, next.radius), painted };
+      else
+        Object.assign(kept[index], { radius: Math.max(kept[index].radius, next.radius), painted });
+    }
   }
-  let boxes = layered(kept.filter((box) => box.w >= minSize && box.h >= minSize));
+  // Text is thin by nature: a line is wide enough to read at any height.
+  const big = (box) =>
+    box.w >= minSize && (box.kind === "text" ? box.h >= Math.min(minSize, 8) : box.h >= minSize);
+  let sized = kept.filter(big);
+  if (paint) {
+    // Only what is painted is seen. An unpainted wrapper draws nothing, and an
+    // unpainted control (a hit area) shows through what it holds.
+    const inside = (a, b) =>
+      b.x >= a.x - 1 && b.y >= a.y - 1 && b.x + b.w <= a.x + a.w + 1 && b.y + b.h <= a.y + a.h + 1;
+    const shown = sized.filter(
+      (box) => box.painted || box.kind === "text" || box.kind === "media" || box.kind === "control",
+    );
+    sized = shown.filter(
+      (box) =>
+        box.painted ||
+        box.kind !== "control" ||
+        !shown.some(
+          (other) =>
+            other !== box &&
+            (other.kind === "text" || other.kind === "media") &&
+            inside(box, other),
+        ),
+    );
+  }
+  let boxes = layered(sized);
   boxes = layered(boxes.filter((box) => !folds(box)));
   if (merge) {
     for (let pass = 0; pass < 4; pass++) {
@@ -359,6 +389,7 @@ export function renderSvg(layouts, options = {}) {
     merge = true,
     mergeGap = 16,
     keep = DEFAULT_KEEP,
+    paint = true,
     budget,
     show,
     overflow = "bleed",
@@ -375,7 +406,7 @@ export function renderSvg(layouts, options = {}) {
   const rise = flat ? 0 : layerHeight;
   const thickness = flat ? 0 : slab;
 
-  const base = { minSize, merge, mergeGap, keep };
+  const base = { minSize, merge, mergeGap, keep, paint };
 
   // With a budget, keep the deepest layers whose boxes still fit in it.
   const limitFor = (layout) => {
@@ -394,7 +425,7 @@ export function renderSvg(layouts, options = {}) {
     const result = normalise(layout, { ...base, maxLayer: limitFor(layout) });
     if (highlight?.tag === undefined || result.boxes.some((box) => box.tag === highlight.tag))
       return result;
-    const found = normalise(layout, { minSize, merge: false, keep }).boxes.find(
+    const found = normalise(layout, { minSize, merge: false, keep, paint }).boxes.find(
       (box) => box.tag === highlight.tag,
     );
     return found ? { ...result, boxes: [...result.boxes, found] } : result;

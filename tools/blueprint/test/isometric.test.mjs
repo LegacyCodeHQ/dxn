@@ -503,6 +503,82 @@ test("the slab spans the viewport, so clipped boxes end at its edge", () => {
   assert.equal(topPoints(svg.replace(/data-face="viewport-top"/g, "data-x"))[0], 4);
 });
 
+const pbox = (tag, kind, painted, layer, x, y, w, h, radius = 0) => ({
+  ...kbox(tag, kind, layer, x, y, w, h, radius),
+  painted,
+});
+
+test("a wrapper with nothing painted on it is not drawn", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("div", "structure", false, 1, 50, 50, 400, 200),
+    pbox("p", "text", false, 2, 60, 60, 200, 20),
+  ];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }])), 2);
+});
+
+test("a wrapper with something painted on it is drawn", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("div", "structure", true, 1, 50, 50, 400, 200),
+  ];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }])), 2);
+});
+
+test("an invisible control that holds text or an image is shown by its content", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("a", "control", false, 1, 50, 50, 300, 60),
+    pbox("span", "text", false, 2, 60, 60, 100, 18),
+    pbox("a", "control", false, 1, 50, 200, 300, 160),
+    pbox("img", "media", false, 2, 50, 200, 300, 120),
+  ];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }])), 3);
+});
+
+test("an invisible control that holds nothing else is kept, it is all there is", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("button", "control", false, 1, 50, 50, 120, 40),
+  ];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }])), 2);
+});
+
+test("a painted box wins over an unpainted one with the same rectangle", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("div", "structure", false, 1, 100, 100, 800, 66, 33),
+    pbox("div", "structure", true, 2, 100, 100, 800, 66, 33),
+  ];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }])), 2);
+});
+
+test("boxes without paint information are treated as painted", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("div", "structure", 1, 50, 50, 400, 200),
+  ];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }])), 2);
+});
+
+test("unpainted boxes can be shown", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("div", "structure", false, 1, 50, 50, 400, 200),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], { paint: false });
+  assert.equal(tops(svg), 2);
+});
+
+test("small text is kept under a size limit that drops small boxes", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("div", "structure", true, 1, 50, 50, 20, 20),
+    pbox("div", "text", true, 1, 50, 100, 200, 18),
+  ];
+  assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }], { minSize: 36 })), 2);
+});
+
 test("the paper palette uses the paper background and no transparency", () => {
   const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }], {
     palette: "paper",

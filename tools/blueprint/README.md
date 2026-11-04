@@ -143,3 +143,16 @@ Try `--budget 30 --min-size 24`.
 - Pages that are not yours: this draws structure only, but a recognizable page's
   layout can still be a recognizable thing. Prefer your own pages, documentation
   and sites whose owners agree, and leave out logos and text, as the tool does.
+
+## Painted and unpainted boxes
+
+`collect.js` marks each box `painted` when a customer sees the box itself: a
+background, a border, a shadow or an image. The renderer draws only what is
+painted. An unpainted wrapper is skipped. An unpainted control (a hit area) is
+shown by the text or image it holds, and kept as a box only when it holds
+nothing else. Text boxes only need to be as tall as `textHeight` (8px), so
+small labels appear. `--no-paint` draws every box, as before. Layouts without
+`painted` count as fully painted.
+
+A capture also reports `unloadedImages`; `render.mjs` warns when it is above
+zero, since those images measure as empty boxes.

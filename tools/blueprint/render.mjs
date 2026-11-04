@@ -19,6 +19,7 @@ Options:
   --merge-gap <px>       Neighbours closer than this may merge into one slab (default: 16)
   --overflow bleed|clip  Boxes that run past the viewport: draw them whole (bleed,
                          the default) or only the part inside it (clip)
+  --no-paint             Draw unpainted wrappers and hit areas too (default: only what is painted)
   --no-slab              Draw the viewport as a plain plane, not a slab
   --slab-thickness <px>  Thickness of the viewport slab (default: 18)
   --flat                 A wireframe on the ground: no layers, no thickness, captures
@@ -46,6 +47,10 @@ function parse(argv) {
     }
     if (arg === "--no-merge") {
       options.merge = false;
+      continue;
+    }
+    if (arg === "--no-paint") {
+      options.paint = false;
       continue;
     }
     if (arg === "--no-slab") {
@@ -99,6 +104,10 @@ async function main() {
   const layouts = [];
   for (const file of files) {
     const layout = JSON.parse(await readFile(file, "utf8"));
+    if (layout.unloadedImages > 0)
+      console.error(
+        `${file}: ${layout.unloadedImages} image(s) had not loaded when measured, so they are empty boxes. Capture again after the page has finished loading.`,
+      );
     layouts.push({ label: String(Math.round(layout.viewport.w)), layout });
   }
   const svg = renderSvg(layouts, options);
