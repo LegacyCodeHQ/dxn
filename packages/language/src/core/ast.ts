@@ -8,10 +8,23 @@ export interface Located {
   length: number;
 }
 
+// Documentation retains every tag, including duplicates and unknown names.
+// Resolving targets and deciding which tags are valid belongs to the checker.
+export interface DocumentationTag extends Located {
+  target?: Located;
+  description: string;
+}
+
+export interface Documentation {
+  description: string;
+  tags: DocumentationTag[];
+}
+
 // A declaration that did not parse to its end is kept with what was read, so
 // its name is known, and marked broken: what it holds may be incomplete, so
 // nothing is checked against it.
 export interface Declaration extends Located {
+  documentation?: Documentation;
   broken?: true;
   // For a declaration inside a type: the type it is in, by its full name. Its
   // own name is then its full name, "<Type>.<Name>", and short its name as
@@ -26,6 +39,7 @@ export interface Enum extends Declaration {
 
 // A state of a type: its name, and the enum its values come from.
 export interface State extends Located {
+  documentation?: Documentation;
   enum: Located;
   // A derived state: its value decided by a dimension's value, one branch
   // for each group of the dimension's values.

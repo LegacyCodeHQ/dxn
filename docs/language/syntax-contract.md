@@ -2,8 +2,9 @@
 
 These decisions were agreed on 2026-11-04. This is the target contract for the
 parser migration. The Tree-sitter grammar implements the syntax portion first;
-the handwritten parser, formatter, AST and checker are not yet migrated. In
-particular, the existing CLI and language server do not yet interpret `##` tags
+the runtime parser, formatter and checker are not yet migrated. An internal
+Tree-sitter-to-AST adapter covers the focused declarations but is not yet wired
+into the shared reader. In particular, the existing CLI and language server do not yet interpret `##` tags
 or implement the new shadowing diagnostics. Existing runtime behavior is unchanged.
 
 ## Declaration boundaries
@@ -80,7 +81,7 @@ type Button {
 The tree has a `documentation` field on each documented declaration. Within that
 node, `documentation_tag` exposes `name`, `target`, and optional `description`
 fields. `documentation_text` retains whitespace, including indentation, so the
-future AST adapter can distinguish a tag continuation from general description.
+AST adapter can distinguish a tag continuation from general description.
 Unknown tags and targets, duplicate tags and tags on the wrong declaration are
 syntactically recognizable; the checker must diagnose them.
 
@@ -128,6 +129,24 @@ numeric values, or perform checker diagnostics. Its zero-width markers are
 followed by grammar symbols that consume input, and it declines all tokens during
 Tree-sitter's all-symbols error-recovery probe.
 
-Detailed error-recovery policies, the AST adapter, checker changes and formatter
-normalization remain later migration stages. The existing Zed grammar pin must
-advance to the grammar commit when these changes are committed for distribution.
+`packages/language/src/syntax/tree.ts` now lowers valid enum/type/state syntax
+into the existing unqualified AST, including nested declarations, needs, received,
+fixed and derived states. Optional documentation retains declaration prose and all
+tags with source locations; duplicate and unknown tags are preserved for checking.
+A comma-separated state declaration shares its documentation across its entries.
+The adapter consumes the synchronous JavaScript node interface with UTF-16
+indices, and converts locations to the language's character columns, including
+BOM and all supported line endings. It contains no lexer or syntax recognition.
+
+`packages/tree-sitter-dxn/test/adapter.test.ts` runs the native generated parser
+and compares adapter ASTs and downstream analysis against the existing reader for
+compatible inputs. The test-only bridge converts CLI byte ranges to JavaScript
+offsets. It also checks the new textual values and documentation behavior. A
+fresh wrapper for field access prevents reliance on node object identity.
+
+This is an internal migration entry point, not the public `read`/`parse` path.
+It rejects recovered trees and unsupported constructs explicitly. An in-process
+runtime binding, the remaining language constructs, detailed error recovery,
+checker changes and formatter normalization remain later migration stages.
+Zed pins grammar commit `354642ff` (see `packages/zed/extension.toml` for the
+full hash), so the distributed grammar includes the syntax contract.

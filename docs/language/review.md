@@ -151,3 +151,13 @@ fixtures. The handwritten AST/parser, checker diagnostics, documentation hovers,
 formatter and full construct checklist remain pending; this is not a completed
 end-to-end construct review. Zed's distribution pin advances after the grammar
 is committed.
+
+## 2026-11-04 AST adapter stage
+
+An internal Tree-sitter adapter covers enums, nested types, state lists, type
+needs/receives, fixed/derived states and structured documentation. Native parser
+tests compare compatible ASTs and analysis with the current reader, including BOM
+locations; additional cases cover new values, documentation and line endings.
+Unsupported constructs and recovered syntax trees fail explicitly. The public
+reader has not switched: embedding, remaining constructs, error recovery, checker
+rules and formatting still need migration before an end-to-end review is complete.

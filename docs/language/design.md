@@ -283,5 +283,8 @@ changes, so nothing typed is lost.
 The 2026-11-04 [enum, type, state and documentation contract](syntax-contract.md)
 records the agreed syntax and semantic decisions. Tree-sitter implements the
 syntax first, with explicit line boundaries and structured `##` documentation.
-The handwritten parser, AST adapter, formatter and checker migrate separately.
+The internal AST adapter now lowers valid enum/type/state trees and documentation
+without duplicating syntax recognition. It is tested against the generated parser
+and existing analysis. The runtime binding, remaining constructs, recovery,
+formatter and checker migrate separately before the shared reader switches.
 The contract distinguishes implemented syntax from pending semantic diagnostics.
