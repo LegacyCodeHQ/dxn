@@ -139,7 +139,7 @@ Try `--budget 30 --min-size 24`.
   cross-origin frame are not seen.
 - `capture.mjs` has not been run here, because Playwright is not installed. The
   same measuring code (`collect.js`) was run in a browser, and `render.mjs` and
-  `isometric.mjs` are tested (`node --test brand/blueprint/test/`).
+  `isometric.mjs` are tested (`make brand`).
 - Pages that are not yours: this draws structure only, but a recognizable page's
   layout can still be a recognizable thing. Prefer your own pages, documentation
   and sites whose owners agree, and leave out logos and text, as the tool does.

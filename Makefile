@@ -56,7 +56,7 @@ vocabulary:
 # The brand tools under brand/: the blueprint renderer, and brand.json, whose
 # colors the renderer takes from outside.
 brand:
-	node --test brand/blueprint/test/
+	node --test brand/blueprint/test/*.test.mjs
 
 security:
 	npm audit --omit=dev --audit-level=moderate

@@ -14,7 +14,7 @@ Everything that makes the dxn brand, in one place.
    `accent-light`, `slate`, `slate-on-ink`).
 2. Export them to `brand.json`: ask Claude to "export the brand colors from
    branding.pen to brand/brand.json". The names stay as they are in the file.
-3. Run `node --test brand/blueprint/test/`. It fails if `brand.json` holds a color
+3. Run `make brand`. It fails if `brand.json` holds a color
    the tool does not use or one that is not valid hex.
 
 Every blueprint rendered afterwards uses the new colors; nothing is hardcoded in
