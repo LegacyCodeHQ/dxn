@@ -974,3 +974,23 @@ test("the footprint and its legs are drawn under every lifted body, never over i
   const svg = lifted();
   assert.ok(svg.lastIndexOf('data-face="top"', svg.indexOf('data-lift="footprint"')) !== -1);
 });
+
+test("a narrow bar above a much wider band is not merged into it", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("div", "structure", true, 1, 100, 100, 600, 66, 33),
+    pbox("div", "structure", true, 1, 0, 176, 1000, 85),
+  ];
+  const draw = (merge) => renderSvg([{ label: "a", layout: layout(1000, boxes) }], { merge });
+  assert.equal(tops(draw(true)), tops(draw(false)));
+});
+
+test("a pill beside a much taller box is not merged into it", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("div", "structure", true, 1, 100, 100, 300, 40, 20),
+    pbox("div", "structure", true, 1, 410, 60, 300, 120),
+  ];
+  const draw = (merge) => renderSvg([{ label: "a", layout: layout(1000, boxes) }], { merge });
+  assert.equal(tops(draw(true)), tops(draw(false)));
+});

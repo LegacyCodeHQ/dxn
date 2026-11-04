@@ -8563,6 +8563,116 @@
                   "fontWeight": "600"
                 }
               ]
+            },
+            {
+              "type": "frame",
+              "id": "DUCTz",
+              "name": "Blueprint Mode",
+              "width": "fill_container",
+              "stroke": "$rule",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 24,
+              "padding": [
+                14,
+                0
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "yELGK",
+                  "name": "Frame",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": 420,
+                  "content": "Blueprint Mode",
+                  "fontFamily": "$font-text",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "CHIPe",
+                  "name": "Contents",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Isometric blueprint background mode: examples and rules, made with brand/blueprint from a made-up site (Tidepool)",
+                  "lineHeight": 1.4,
+                  "fontFamily": "$font-text",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "wp5W2",
+                  "name": "Status",
+                  "fill": "$accent-deep",
+                  "textGrowth": "fixed-width",
+                  "width": 200,
+                  "content": "Ready",
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "JfBq4",
+              "name": "Launch Images",
+              "width": "fill_container",
+              "stroke": "$rule",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 24,
+              "padding": [
+                14,
+                0
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "U83sUF",
+                  "name": "Frame",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": 420,
+                  "content": "Launch Images",
+                  "fontFamily": "$font-text",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "SEHrt",
+                  "name": "Contents",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Coming soon images for X and LinkedIn",
+                  "lineHeight": 1.4,
+                  "fontFamily": "$font-text",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "OVX4K",
+                  "name": "Status",
+                  "fill": "$accent-deep",
+                  "textGrowth": "fixed-width",
+                  "width": 200,
+                  "content": "Ready",
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                }
+              ]
             }
           ]
         },
@@ -8662,6 +8772,19 @@
               "fontFamily": "$font-text",
               "fontSize": 14,
               "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "kIYEN",
+              "name": "Decision",
+              "fill": "$ink",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Blueprint: a third mode for backgrounds, a measured layout of our own drawn as an isometric blueprint on Paper or Ink; one lifted element in Accent per image; colors come from brand.json.",
+              "lineHeight": 1.5,
+              "fontFamily": "$font-text",
+              "fontSize": 14,
+              "fontWeight": "normal"
             }
           ]
         },
@@ -8730,7 +8853,20 @@
               "fill": "$ink",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "Compose applications: social card, README header and the VS Code listing.",
+              "content": "Compose applications: README header and the VS Code listing. The social cards are in Launch Images.",
+              "lineHeight": 1.5,
+              "fontFamily": "$font-text",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "RN4Hg",
+              "name": "Open Item",
+              "fill": "$ink",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Check the launch images in a real feed: at 400px wide the lockup and the lifted search bar read, but the caption is the smallest element.",
               "lineHeight": 1.5,
               "fontFamily": "$font-text",
               "fontSize": 14,
@@ -9018,7 +9154,7 @@
               "fill": {
                 "type": "image",
                 "enabled": true,
-                "url": "launch/backgrounds/blueprint-light-accent-lift-1600x900.png",
+                "url": "launch/backgrounds/tidepool-blueprint-1600x900.png",
                 "mode": "cover"
               },
               "width": 1600,
@@ -9152,7 +9288,7 @@
               "fill": {
                 "type": "image",
                 "enabled": true,
-                "url": "launch/backgrounds/blueprint-light-accent-lift-1200x627.png",
+                "url": "launch/backgrounds/tidepool-blueprint-1200x627.png",
                 "mode": "cover"
               },
               "width": 1200,
@@ -9305,7 +9441,7 @@
               "fill": {
                 "type": "image",
                 "enabled": true,
-                "url": "launch/coming-soon-x-1600x900.png",
+                "url": "launch/coming-soon-x-1600x900-2x.png",
                 "mode": "cover"
               },
               "width": 800,
@@ -9318,7 +9454,7 @@
               "fill": {
                 "type": "image",
                 "enabled": true,
-                "url": "launch/coming-soon-linkedin-1200x627.png",
+                "url": "launch/coming-soon-linkedin-1200x627-2x.png",
                 "mode": "cover"
               },
               "width": 600,
@@ -9417,7 +9553,7 @@
                   "fill": "$ink",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "Draw a layout of our own: the dxn editor, site or documentation, ideally at several breakpoints. Never another company's page.",
+                  "content": "Draw a layout of our own or of a made-up site such as Tidepool: the dxn editor, site or documentation, or an invented product, ideally at several breakpoints. Never another company's page.",
                   "lineHeight": 1.5,
                   "fontFamily": "$font-text",
                   "fontSize": 13,

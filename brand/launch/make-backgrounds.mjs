@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Draws the launch backgrounds from the measured layout of a dxn docs page:
 //   node brand/launch/make-backgrounds.mjs
-// The code block is lifted and the page's own measurements are left out, as the
+// The search bar is lifted and the page's own measurements are left out, as the
 // blueprint mode rules say. Needs rsvg-convert to make the PNGs. The SVGs are
 // drawn into a temporary folder and not kept.
 import { execFileSync } from "node:child_process";
@@ -12,8 +12,12 @@ import { fileURLToPath } from "node:url";
 import { clipLayout, normalise, renderSvg } from "../blueprint/isometric.mjs";
 
 const here = (path) => fileURLToPath(new URL(path, import.meta.url));
-const layout = JSON.parse(readFileSync(here("sources/dxn-docs-1440.json"), "utf8"));
-const lifted = normalise(clipLayout(layout)).boxes.findIndex((box) => box.tag === "pre");
+const layout = JSON.parse(readFileSync(here("sources/tidepool-1440.json"), "utf8"));
+// The search bar is the one lifted element.
+const lifted = normalise(clipLayout(layout)).boxes.findIndex(
+  (box) => box.tag === "div" && box.radius >= 30 && box.w > 800 && box.y < 200,
+);
+if (lifted === -1) throw new Error("the search bar is not in the layout");
 mkdirSync(here("backgrounds"), { recursive: true });
 const scratch = mkdtempSync(join(tmpdir(), "launch-"));
 
@@ -31,7 +35,7 @@ for (const [width, height] of [
     /<svg xmlns="http:\/\/www.w3.org\/2000\/svg" width="\d+" height="\d+"/,
     `<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" width="${width}" height="${height}"`,
   );
-  const name = `dxn-docs-blueprint-${width}x${height}`;
+  const name = `tidepool-blueprint-${width}x${height}`;
   const source = join(scratch, `${name}.svg`);
   writeFileSync(source, svg);
   execFileSync("rsvg-convert", [

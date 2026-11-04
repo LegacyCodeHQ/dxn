@@ -99,6 +99,7 @@ const encloses = (outer, inner) =>
   inner.y + inner.h <= outer.y + outer.h + SAME;
 
 const FILL = 0.6;
+const SIMILAR = 0.7;
 
 const gapBetween = (a, b) => ({
   x: Math.max(0, Math.max(a.x, b.x) - Math.min(a.x + a.w, b.x + b.w)),
@@ -150,7 +151,15 @@ function mergeSiblings(boxes, mergeGap) {
       for (const b of members) {
         if (a >= b) continue;
         const gap = gapBetween(boxes[a], boxes[b]);
-        if (gap.x <= mergeGap && gap.y <= mergeGap) root.set(find(a), find(b));
+        if (gap.x > mergeGap || gap.y > mergeGap) continue;
+        // Rows stacked in a column are about as wide as one another, and buttons
+        // side by side about as tall: a narrow bar is not a row of a wide band.
+        const alike = (p, q) => Math.min(p, q) / Math.max(p, q) >= SIMILAR;
+        const stacked = gap.x === 0 && gap.y > 0;
+        const beside = gap.y === 0 && gap.x > 0;
+        if (stacked && !alike(boxes[a].w, boxes[b].w)) continue;
+        if (beside && !alike(boxes[a].h, boxes[b].h)) continue;
+        root.set(find(a), find(b));
       }
     }
     const runs = new Map();
