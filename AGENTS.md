@@ -77,5 +77,6 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
 | `make coverage`    | Run tests with coverage thresholds                       |
 | `make lint-check`  | Biome format + lint, then `tsc --noEmit`                 |
 | `make boundaries`  | Enforce source-layer and public package dependency rules |
+| `make brand`       | Test the brand tools under `brand/`                      |
 | `make check`       | Full gate used by pre-push and CI                        |
 | `make fmt`         | Format with Biome                                        |

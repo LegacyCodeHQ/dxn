@@ -1,4 +1,4 @@
-.PHONY: help install fmt lint-check typecheck references boundaries cycles vocabulary security test coverage coverage-javascript coverage-zed grammar zed build smoke check check-fast setup-hooks clean
+.PHONY: help install fmt lint-check typecheck references boundaries cycles vocabulary brand security test coverage coverage-javascript coverage-zed grammar zed build smoke check check-fast setup-hooks clean
 
 help:
 	@echo "Targets:"
@@ -10,6 +10,7 @@ help:
 	@echo "  boundaries  - Enforce source-layer and public package dependency rules"
 	@echo "  cycles      - Fail on source-file dependency cycles (needs clarity; required in CI)"
 	@echo "  vocabulary  - Fail on a word of the model written in the CLI or the language server"
+	@echo "  brand       - Test the brand tools: the blueprint renderer and brand/brand.json"
 	@echo "  security    - Audit production dependencies for known vulnerabilities"
 	@echo "  test        - Run every npm workspace's test suite"
 	@echo "  coverage    - Report coverage for every npm workspace and the Zed crate"
@@ -51,6 +52,11 @@ cycles:
 # editor alike: never written in either.
 vocabulary:
 	node scripts/vocabulary/check.mjs
+
+# The brand tools under brand/: the blueprint renderer, and brand.json, whose
+# colors the renderer takes from outside.
+brand:
+	node --test brand/blueprint/test/
 
 security:
 	npm audit --omit=dev --audit-level=moderate
@@ -123,9 +129,9 @@ smoke: build
 	node scripts/smoke/run.mjs
 	node dist/main.js --version
 
-check: lint-check references boundaries cycles vocabulary security coverage grammar zed smoke
+check: lint-check references boundaries cycles vocabulary brand security coverage grammar zed smoke
 
-check-fast: lint-check references boundaries cycles vocabulary test grammar zed smoke
+check-fast: lint-check references boundaries cycles vocabulary brand test grammar zed smoke
 
 setup-hooks:
 	git config core.hooksPath .githooks
