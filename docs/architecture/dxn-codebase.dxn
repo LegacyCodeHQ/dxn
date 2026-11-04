@@ -62,7 +62,19 @@ type ModifyCli { }
 
 ## Adapting the language-server interface to changes in shared language behavior.
 ## Each placement identifies the upstream responsibility causing the impact.
-type ModifyLanguageServer { }
+type ModifyLanguageServer {
+  has modify-vscode-language-client: ModifyVSCodeLanguageClient
+  has modify-zed-language-client: ModifyZedLanguageClient
+}
+
+## Adapting the VS Code integration to language-server changes in diagnostics,
+## checked language behavior and formatting. TextMate highlighting is separate.
+type ModifyVSCodeLanguageClient { }
+
+## Adapting the Zed integration to language-server changes in diagnostics,
+## checked language behavior and formatting. The Tree-sitter grammar pin and
+## highlighting queries are separate from this language-server path.
+type ModifyZedLanguageClient { }
 
 ## Modifying the Zed extension. It pins a commit of the Tree-sitter package, and
 ## `make zed` fails when `grammar.js` or anything in `src/` differs from that
