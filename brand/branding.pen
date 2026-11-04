@@ -9226,7 +9226,7 @@
     {
       "type": "frame",
       "id": "svFgI",
-      "x": 11360,
+      "x": 11320,
       "y": 0,
       "name": "Launch Images",
       "fill": "$canvas",
@@ -9518,7 +9518,7 @@
     {
       "type": "frame",
       "id": "u6AqA9",
-      "x": 13313,
+      "x": 13280,
       "y": 0,
       "name": "Blueprint Mode",
       "width": 1600,
@@ -9884,7 +9884,7 @@
     {
       "type": "frame",
       "id": "mm2Qu",
-      "x": 15092,
+      "x": 15080,
       "y": 0,
       "name": "Launch Teaser Slides",
       "fill": "$canvas",
@@ -11230,7 +11230,7 @@
     {
       "type": "frame",
       "id": "s7szq",
-      "x": 19897,
+      "x": 20000,
       "y": 0,
       "name": "Social Type Scale",
       "width": 1400,
