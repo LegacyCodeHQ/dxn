@@ -18,14 +18,14 @@ enum Focus = blurred | focused
     (value)))
 
 ================================================================================
-An enum carried on after a pipe, and one with a pipe before each value
+Enums carried on before and after a pipe
 ================================================================================
 
 enum Size = xs | sm | md |
   lg | xl
 
 enum Size =
-  | xs
+  xs
   | sm
   | md
 

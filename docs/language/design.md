@@ -277,3 +277,11 @@ changes, so nothing typed is lost.
 - **A runtime** that drives the running system into each combination and
   records what it shows.
 - **Kits**: how a kit declares its words, its events and its built-in enums.
+
+## Syntax contract migration
+
+The 2026-11-04 [enum, type, state and documentation contract](syntax-contract.md)
+records the agreed syntax and semantic decisions. Tree-sitter implements the
+syntax first, with explicit line boundaries and structured `##` documentation.
+The handwritten parser, AST adapter, formatter and checker migrate separately.
+The contract distinguishes implemented syntax from pending semantic diagnostics.

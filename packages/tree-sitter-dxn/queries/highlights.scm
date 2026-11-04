@@ -161,3 +161,7 @@
 
 (string) @string
 (comment) @comment
+
+; Structured documentation, including its tag names.
+(documentation) @comment
+(documentation_tag name: (identifier) @keyword)

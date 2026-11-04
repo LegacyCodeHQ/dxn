@@ -140,3 +140,14 @@ What is left of those reviewed in part:
 - **Line endings**: every editor feature, the formatter and the language
   server answer alike with `\n`, `\r\n` and `\r`. The byte order mark was not
   checked beyond the parser.
+
+## 2026-11-04 syntax contract stage
+
+Enums, types, states and documentation now have an agreed
+[contract](syntax-contract.md). This stage covers Tree-sitter syntax, generated
+sources, documentation fields, corpus/contract cases and editor highlighting.
+Known differences from the handwritten parser remain explicit in the agreement
+fixtures. The handwritten AST/parser, checker diagnostics, documentation hovers,
+formatter and full construct checklist remain pending; this is not a completed
+end-to-end construct review. Zed's distribution pin advances after the grammar
+is committed.

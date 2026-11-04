@@ -1,16 +1,22 @@
 # tree-sitter-dxn
 
 A [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar for the
-dxn language, with queries for syntax highlighting. The language is described
-in [the guide](../../docs/language/guide.md); its authoritative parser is
-[`packages/language/src/syntax/parse.ts`](../language/src/syntax/parse.ts), and this grammar
-follows it.
+dxn language, with queries for syntax highlighting. Enums, types, states and
+structured documentation now follow the agreed [syntax contract](../../docs/language/syntax-contract.md).
+The handwritten parser in `packages/language` is migrating separately; the CLI
+and language server still use it. The remaining language is described in
+[the guide](../../docs/language/guide.md).
 
 ## Files
 
 - `grammar.js`: the grammar.
-- `src/`: the parser `tree-sitter generate` makes from it. It is committed, as
-  Tree-sitter grammars are; `make grammar` fails when it is stale.
+- `src/parser.c`, `src/grammar.json`, `src/node-types.json`, `src/tree_sitter/`:
+  committed generated output; `make grammar` fails when it is stale.
+- `src/scanner.c`: handwritten stateless lookahead for declaration documentation
+  and list separators across newlines/comments. It is compiled by Tree-sitter
+  with the generated parser, and is excluded from the generated-output diff.
+- `test/syntax-contract.test.ts`: syntax and documentation tests, including
+  line endings, source text/indentation, and incremental edits.
 - `queries/highlights.scm`: highlighting for keywords, declaration names,
   states, children, fields, values, strings, comments and operators.
 - `test/corpus/`: the corpus tests, run by `tree-sitter test`.
@@ -36,19 +42,23 @@ generates and runs the corpus tests; `make check` and CI run it.
 
 ## Where it differs from parse.ts
 
-The grammar is for reading a file's structure, not for checking it, so it is
-more permissive than `parse.ts` in a few places. The snippets in
-`packages/language/test/agreement/` say what each of the two reads without an
-error, and why where they differ; both test suites read them.
+Both suites read `packages/language/test/agreement/` and assert each parser's
+expected result. The agreement test uses Tree-sitter's structured parse summary,
+including missing tokens; it does not infer success from diagnostic text.
 
-- Line breaks are whitespace. Statements that `parse.ts` requires on lines of
-  their own can share a line (`state a: A state b: B`), and a line can break
-  where `parse.ts` does not allow it, such as before a `,`.
-- An expectation's clauses can come in any order and repeat; `in` and an
-  assertion are not required.
-- Names are not checked for their case: a lowercase enum name parses.
-- A state, child or value may not be named after a keyword where that keyword
-  could also start the next statement, such as a rule on a state named `state`
-  or `on`; `parse.ts` tells these apart by the `=` after them.
-- A word cannot end with a hyphen (`a-`). `parse.ts` reads one as a word, and
-  reports it only where it declares a value.
+- Enums reject leading pipes, lowercase names, uppercase values and repeated
+  hyphens. Newlines are permitted around `=` and pipes. All keywords are valid
+  values. Known differences from the handwritten parser are recorded explicitly.
+- Type members and top-level declarations require newlines between them. State
+  commas and field colons/types can span lines; headers cannot contain comments.
+- Attached `##` documentation becomes structured syntax, with tag fields and
+  preserved prose indentation. Blank-line-separated or EOF-only documentation
+  remains ordinary comments. Tag validity and scope/usage diagnostics are checker
+  work and are not implemented by the grammar.
+- An expectation's clauses can still come in any order and repeat; `in` and an
+  assertion are not yet required by this grammar.
+- Type/state identifiers and constructs outside this contract retain their
+  existing lexical rules. No new namespace syntax is introduced.
+
+When distributing a grammar change to Zed, commit it first and advance
+`packages/zed/extension.toml` to that commit, as described in Zed's README.

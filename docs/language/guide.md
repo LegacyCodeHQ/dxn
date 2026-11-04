@@ -108,15 +108,15 @@ enum Focus = blurred | focused
 
 An enum lists every value it has, split by `|`. A long one can carry on to the
 next line, before or after a `|`, and can start its values on the line after
-the `=`, with a `|` before the first. Blank lines and comments can come
+the `=`. A pipe is required between values, with none before the first or
+following the last. Blank lines and comments can come
 between the lines, so a value can be commented out:
 
 ```
 enum Size = xs | sm | md |
   lg | xl
 
-enum Size =
-  | xs
+enum Size = xs
   # | sm
   | md
 ```

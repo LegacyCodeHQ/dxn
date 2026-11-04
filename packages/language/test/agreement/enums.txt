@@ -13,7 +13,7 @@ enum Size = xs | sm |
 
 === A pipe before each value, on lines of their own
 parse.ts: ok
-tree-sitter: ok
+tree-sitter: error (the agreed enum syntax rejects leading pipes; the handwritten parser migration is pending)
 ---
 enum Size =
   | xs
@@ -21,7 +21,7 @@ enum Size =
 
 === A pipe before the first value, on the first line
 parse.ts: ok
-tree-sitter: ok
+tree-sitter: error (the agreed enum syntax rejects leading pipes; the handwritten parser migration is pending)
 ---
 enum Size = | xs | sm
 
@@ -35,7 +35,7 @@ enum Size = xs |
 
 === A value commented out before a pipe
 parse.ts: ok
-tree-sitter: ok
+tree-sitter: error (the agreed enum syntax rejects leading pipes; the handwritten parser migration is pending)
 ---
 enum Size =
   | xs
@@ -44,7 +44,7 @@ enum Size =
 
 === A blank line between values
 parse.ts: ok
-tree-sitter: ok
+tree-sitter: error (the agreed enum syntax rejects leading pipes; the handwritten parser migration is pending)
 ---
 enum Size =
   | xs
@@ -71,13 +71,13 @@ enum Timing = on | only | in | enum
 
 === A value named when
 parse.ts: error
-tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+tree-sitter: ok (the agreed syntax allows keyword values; the handwritten parser migration is pending)
 ---
 enum Timing = when | soon
 
 === A value named else
 parse.ts: error
-tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+tree-sitter: ok (the agreed syntax allows keyword values; the handwritten parser migration is pending)
 ---
 enum Branch = else | then
 
@@ -101,19 +101,19 @@ enum Size = xs | sm-
 
 === A value with two hyphens in a row
 parse.ts: error
-tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+tree-sitter: error
 ---
 enum Size = xs | s--m
 
 === A capitalized value
 parse.ts: error
-tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+tree-sitter: error
 ---
 enum Hover = Rest | hovered
 
 === A lowercase enum name
 parse.ts: error
-tree-sitter: ok (names are checked by parse.ts, not by the grammar)
+tree-sitter: error
 ---
 enum hover = rest | hovered
 
@@ -167,7 +167,7 @@ enum Size = xs || sm
 
 === Values on the line after the equals sign, with no pipe before them
 parse.ts: error
-tree-sitter: ok (line breaks are whitespace to the grammar)
+tree-sitter: ok (the agreed syntax allows values after a newline without a leading pipe; the handwritten parser migration is pending)
 ---
 enum Size =
   xs | sm

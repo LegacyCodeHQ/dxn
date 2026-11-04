@@ -29,15 +29,18 @@ const files = shared.map(({ source }, index) => {
   writeFileSync(file, source);
   return file;
 });
-const run = spawnSync(treeSitter, ["parse", "--quiet", ...files], {
+const run = spawnSync(treeSitter, ["parse", "--quiet", "--json-summary", ...files], {
   cwd: grammar,
   encoding: "utf8",
 });
+if (run.error) throw run.error;
+const start = run.stdout.indexOf("{");
+if (start < 0) throw new Error(run.stderr || run.stdout);
+const { parse_summaries } = JSON.parse(run.stdout.slice(start)) as {
+  parse_summaries: { file: string; successful: boolean }[];
+};
 const failed = new Set(
-  run.stdout
-    .split("\n")
-    .filter((line) => /\((ERROR|MISSING)\b/.test(line))
-    .map((line) => line.split("\t")[0]),
+  parse_summaries.filter(({ successful }) => !successful).map(({ file }) => file),
 );
 
 describe("the snippets the grammar shares with parse.ts", () => {

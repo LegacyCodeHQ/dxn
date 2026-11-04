@@ -1,10 +1,9 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// Snippets of dxn that parse.ts and the Tree-sitter grammar both read, each
-// with whether each should read it without an error: parse.ts is the
-// language, and the grammar follows it, more permissive only where it says
-// why.
+// Shared snippets record both implementations' current outcomes. Enums,
+// types, states and documentation are migrating to the agreed syntax contract
+// in Tree-sitter first; each difference must say why it is intentional.
 
 export type Outcome = "ok" | "error";
 

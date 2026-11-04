@@ -84,7 +84,7 @@ grammar:
 	  generated="$$(mktemp -d)" && \
 	  trap 'rm -rf "$$generated"' EXIT && \
 	  npx tree-sitter generate --output "$$generated" && \
-	  { diff -r "$$generated" src || { echo "grammar: src/ is stale; run 'npx tree-sitter generate' in packages/tree-sitter-dxn" >&2; exit 1; }; } && \
+	  { diff -r -x scanner.c "$$generated" src || { echo "grammar: src/ is stale; run 'npx tree-sitter generate' in packages/tree-sitter-dxn" >&2; exit 1; }; } && \
 	  npx tree-sitter test
 
 # The Zed extension: extension.toml pins a commit whose grammar is the one in

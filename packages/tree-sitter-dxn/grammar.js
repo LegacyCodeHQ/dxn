@@ -3,34 +3,91 @@
  * @author Ragunath Jawahar <ragunath@legacycode.com>
  * @license Apache-2.0
  *
- * The authoritative parser is packages/language/src/parse.ts; this grammar
- * follows it for highlighting and tooling. Line breaks are whitespace here,
- * so it accepts some line breaks, and some missing ones, that parse.ts
- * reports (see README.md).
+ * Syntax contract for enums, types, states and documentation comments.
+ * The handwritten parser is migrating separately; see README.md for the
+ * explicit agreement fixtures and the remaining differences.
  */
 
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
 /** One or more of a rule, split by a separator. */
-const sep1 = (rule, separator) => seq(rule, repeat(seq(separator, rule)));
+// Explicit trivia keeps declaration boundaries visible to the parser.
+const layout = ($, ...rules) =>
+  seq(...rules.flatMap((rule, index) => (index ? [optional($._gap), rule] : [rule])));
+const sep1 = ($, rule, separator) =>
+  seq(
+    rule,
+    repeat(
+      seq(
+        optional(
+          seq(
+            separator === "|" ? $._pipe_gap : separator === "," ? $._comma_gap : $._cross_gap,
+            $._gap,
+          ),
+        ),
+        separator,
+        optional($._gap),
+        rule,
+      ),
+    ),
+  );
 
 /** Values in brackets, after "in": "(<value>, ...)". */
-const valuesInBrackets = ($) => seq("(", sep1($._value, ","), ")");
+const valuesInBrackets = ($) => layout($, "(", sep1($, $._value, ","), ")");
 
 module.exports = grammar({
   name: "dxn",
 
-  extras: ($) => [/\s/, $.comment],
+  extras: (_) => [/[ \t\f\v\uFEFF]/],
+
+  // Stateless lookahead distinguishes attached ## blocks from comments.
+  externals: ($) => [
+    $._documentation_start,
+    $._error_sentinel,
+    $._comma_gap,
+    $._pipe_gap,
+    $._cross_gap,
+  ],
 
   word: ($) => $.identifier,
 
   // In an expectation, "on escape" then "in <path>" on the next line reads
   // like the start of "on Breakpoint in (lg, xl)" until the "(".
-  conflicts: ($) => [[$.comparison, $._path]],
+  conflicts: ($) => [
+    [$.receives],
+    [$.needs],
+    [$.when_branch],
+    [$.member],
+    [$.member, $._type_name, $.qualified_name],
+    [$.pair, $.profile_combination],
+    [$.qualified_name, $._value],
+    [$._condition, $.and_condition, $.or_condition],
+    [$.trigger],
+    [$.state_change, $._path, $.qualified_name],
+    [$.child_declaration],
+    [$.record_field],
+    [$._type_name, $.qualified_name],
+    [$.in_clause],
+    [$._path, $.qualified_name],
+    [$.alike_declaration],
+    [$.comparison, $._path, $.qualified_name],
+    [$.state_declaration],
+    [$._values],
+    [$._gap, $._separator],
+    [$.comparison, $._path],
+  ],
 
   rules: {
-    source_file: ($) => repeat($._declaration),
+    source_file: ($) =>
+      seq(
+        optional($._gap),
+        optional(seq($._declaration, repeat(seq($._separator, $._declaration)), optional($._gap))),
+      ),
+    _newline: (_) => choice("\r\n", "\n", "\r"),
+    _breaks: ($) => prec.right(repeat1($._newline)),
+    _gap: ($) => prec.right(repeat1(choice($._newline, $.comment))),
+    _separator: ($) => seq(optional($.comment), $._newline, optional($._gap)),
 
     _declaration: ($) =>
       choice(
@@ -45,23 +102,58 @@ module.exports = grammar({
         $.expect_declaration,
       ),
 
-    // "enum <Name> = [|] <value> | <value> ..."
-    enum_declaration: ($) => seq("enum", field("name", $.identifier), "=", $._values),
-    dimension_declaration: ($) => seq("dimension", field("name", $.identifier), "=", $._values),
-    _values: ($) => seq(optional("|"), sep1($._value, "|")),
+    // First names share the keyword's line. Newlines may continue headers;
+    // comments belong at list-entry and declaration boundaries.
+    enum_declaration: ($) =>
+      seq(
+        optional(field("documentation", $.documentation)),
+        "enum",
+        field("name", alias($._enum_name, $.identifier)),
+        optional($._breaks),
+        "=",
+        optional($._gap),
+        $._enum_values,
+      ),
+    _enum_name: (_) => /[A-Z][A-Za-z0-9]*/,
+    _enum_value: (_) => /[a-z0-9]+(-[a-z0-9]+)*/,
+    _enum_values: ($) => sep1($, alias($._enum_value, $.value), "|"),
+    // Dimension syntax is outside this migration.
+    dimension_declaration: ($) =>
+      layout($, "dimension", field("name", $.identifier), "=", $._values),
+    _values: ($) => layout($, optional("|"), sep1($, $._value, "|")),
 
-    // "type <Name> [needs ...] [receives ...] { ... }"
     type_declaration: ($) =>
       seq(
+        optional(field("documentation", $.documentation)),
         "type",
         field("name", $.identifier),
-        optional($.needs),
-        optional($.receives),
+        optional($._breaks),
+        optional(seq($.needs, optional($._breaks))),
+        optional(seq($.receives, optional($._breaks))),
         field("body", $.type_body),
       ),
-    needs: ($) => seq("needs", sep1($.identifier, ",")),
-    receives: ($) => seq("receives", sep1($.state_field, ",")),
-    type_body: ($) => seq("{", repeat($._type_member), "}"),
+    needs: ($) =>
+      seq(
+        "needs",
+        optional($._breaks),
+        $.identifier,
+        repeat(seq(optional($._breaks), ",", optional($._breaks), $.identifier)),
+      ),
+    receives: ($) =>
+      seq(
+        "receives",
+        optional($._breaks),
+        $.state_field,
+        repeat(seq(optional($._breaks), ",", optional($._breaks), $.state_field)),
+      ),
+    type_body: ($) =>
+      seq(
+        "{",
+        optional($._gap),
+        optional(seq($._type_member, repeat(seq($._separator, $._type_member)))),
+        optional($._gap),
+        "}",
+      ),
     _type_member: ($) =>
       choice(
         $.state_declaration,
@@ -77,27 +169,48 @@ module.exports = grammar({
       ),
 
     // "<state>: <Enum>"
-    state_field: ($) => seq(field("name", $.identifier), ":", field("type", $._type_name)),
+    state_field: ($) =>
+      seq(
+        field("name", $.identifier),
+        optional($._breaks),
+        ":",
+        optional($._breaks),
+        field("type", $._type_name),
+      ),
 
     // "state <field>, ...", "state <field> = when <Dimension> { ... }" or
     // "state <field> = <value>"
     state_declaration: ($) =>
       seq(
+        optional(field("documentation", $.documentation)),
         "state",
+        $.state_field,
         choice(
-          sep1($.state_field, ","),
-          seq($.state_field, "=", field("value", choice($._value, $.when_expression))),
+          repeat(seq(optional(seq($._comma_gap, $._gap)), ",", optional($._gap), $.state_field)),
+          seq(
+            optional($._breaks),
+            "=",
+            optional($._gap),
+            field("value", choice($._value, $.when_expression)),
+          ),
         ),
       ),
 
     // "when <subject> { <value>, ... -> <value> ... }"
     when_expression: ($) =>
-      seq("when", field("subject", $.identifier), "{", repeat($.when_branch), "}"),
-    when_branch: ($) => seq(sep1($._value, ","), "->", field("result", $._value), optional(",")),
+      seq(
+        layout($, "when", field("subject", $.identifier), "{"),
+        optional($._gap),
+        repeat(seq($.when_branch, optional($._gap))),
+        "}",
+      ),
+    when_branch: ($) =>
+      layout($, sep1($, $._value, ","), "->", field("result", $._value), optional(",")),
 
     // "<state> = <value> only when <condition>"
     rule: ($) =>
-      seq(
+      layout(
+        $,
         field("state", $.identifier),
         "=",
         field("value", $._value),
@@ -108,14 +221,15 @@ module.exports = grammar({
 
     // Comparisons joined by "and" or by "or", mixed only in brackets.
     _condition: ($) => choice($._term, $.and_condition, $.or_condition),
-    and_condition: ($) => seq($._term, repeat1(seq("and", $._term))),
-    or_condition: ($) => seq($._term, repeat1(seq("or", $._term))),
-    _term: ($) => choice($.comparison, seq("(", $._condition, ")")),
+    and_condition: ($) => layout($, $._term, repeat1(layout($, "and", $._term))),
+    or_condition: ($) => layout($, $._term, repeat1(layout($, "or", $._term))),
+    _term: ($) => choice($.comparison, layout($, "(", $._condition, ")")),
     // "<name> = <value>" or "<name> in (<value>, ...)"
     comparison: ($) =>
-      seq(
+      layout(
+        $,
         field("subject", $.identifier),
-        choice(seq("=", $._value), seq("in", valuesInBrackets($))),
+        choice(layout($, "=", $._value), layout($, "in", valuesInBrackets($))),
       ),
 
     // "has <child>: <Type> [{ <bindings> }] [only when <condition>]", or a
@@ -123,44 +237,50 @@ module.exports = grammar({
     // several members, a tagged union, one on each line, each with its own
     // bindings and only when: "has <child>: [ <tag>: <Type> ... ] ...".
     child_declaration: ($) =>
-      seq(
+      layout(
+        $,
         "has",
         field("name", $.identifier),
         ":",
         choice(
-          seq(
+          layout(
+            $,
             choice(field("type", $._type_name), field("list", $.list)),
             optional(field("bindings", $.bindings)),
           ),
           field("union", $.union),
         ),
-        optional(seq("only", "when", field("condition", $._condition))),
+        optional(layout($, "only", "when", field("condition", $._condition))),
       ),
-    list: ($) => seq("[", field("type", $._type_name), "]"),
-    union: ($) => seq("[", repeat1($.member), "]"),
+    list: ($) => layout($, "[", field("type", $._type_name), "]"),
+    union: ($) => seq("[", optional($._gap), repeat1(seq($.member, optional($._gap))), "]"),
     member: ($) =>
-      seq(
+      layout(
+        $,
         field("tag", $.identifier),
         ":",
         field("type", $._type_name),
         optional(field("bindings", $.bindings)),
-        optional(seq("only", "when", field("condition", $._condition))),
+        optional(layout($, "only", "when", field("condition", $._condition))),
       ),
-    bindings: ($) => seq("{", repeat(seq($.binding, optional(","))), "}"),
+    bindings: ($) =>
+      seq("{", optional($._gap), repeat(seq($.binding, optional(","), optional($._gap))), "}"),
     binding: ($) =>
-      seq(
+      layout(
+        $,
         field("state", $.identifier),
         "=",
         field("from", choice($.identifier, $.when_expression)),
       ),
 
-    provides_declaration: ($) => seq("provides", field("state", $.identifier)),
+    provides_declaration: ($) => layout($, "provides", field("state", $.identifier)),
 
-    event_declaration: ($) => seq("event", sep1(field("name", $.identifier), ",")),
+    event_declaration: ($) => layout($, "event", sep1($, field("name", $.identifier), ",")),
 
     // "action <name>: <state> <value> -> <value>"
     action_declaration: ($) =>
-      seq(
+      layout(
+        $,
         "action",
         field("name", $.identifier),
         ":",
@@ -172,34 +292,37 @@ module.exports = grammar({
 
     // "on <event>: <change>, ... [only when <condition>]"
     trigger: ($) =>
-      seq(
+      layout(
+        $,
         "on",
         field("event", $._event),
         ":",
-        sep1(choice($.action_call, $.state_change), ","),
-        optional(seq("only", "when", field("condition", $._condition))),
+        sep1($, choice($.action_call, $.state_change), ","),
+        optional(layout($, "only", "when", field("condition", $._condition))),
       ),
     // An event the type or a child declares, or a change of a dimension.
     _event: ($) => choice($._path, $.comparison),
     action_call: ($) => $._path,
-    state_change: ($) => seq(field("state", $.identifier), "->", field("to", $._value)),
+    state_change: ($) => layout($, field("state", $.identifier), "->", field("to", $._value)),
 
     // "alike <subject> [in (<value>, ...)] [when <condition>]"
     alike_declaration: ($) =>
-      seq(
+      layout(
+        $,
         "alike",
         field("subject", $.identifier),
-        optional(seq("in", valuesInBrackets($))),
-        optional(seq("when", field("condition", $._condition))),
+        optional(layout($, "in", valuesInBrackets($))),
+        optional(layout($, "when", field("condition", $._condition))),
       ),
 
     // "environment <Name> = <Dimension> x <Dimension> ..."
     environment_declaration: ($) =>
-      seq("environment", field("name", $.identifier), "=", sep1($.identifier, "x")),
+      layout($, "environment", field("name", $.identifier), "=", sep1($, $.identifier, "x")),
 
     // "profile <name>: <Environment> { <Dimension> = <value>, ... }"
     profile_declaration: ($) =>
-      seq(
+      layout(
+        $,
         "profile",
         field("name", $.identifier),
         ":",
@@ -209,36 +332,49 @@ module.exports = grammar({
 
     // "modifier <name> on <profile>, ... { <Dimension> = <value>, ... }"
     modifier_declaration: ($) =>
-      seq(
+      layout(
+        $,
         "modifier",
         field("name", $.identifier),
         "on",
-        sep1(field("profile", $.identifier), ","),
+        sep1($, field("profile", $.identifier), ","),
         $._assignments,
       ),
 
-    _assignments: ($) => seq("{", repeat(seq($.assignment, optional(","))), "}"),
-    assignment: ($) => seq(field("dimension", $.identifier), "=", field("value", $._value)),
+    _assignments: ($) =>
+      seq("{", optional($._gap), repeat(seq($.assignment, optional(","), optional($._gap))), "}"),
+    assignment: ($) => layout($, field("dimension", $.identifier), "=", field("value", $._value)),
 
     // "record <Name> { <field>: <Type> [= when ...] ... }"
     record_declaration: ($) =>
-      seq("record", field("name", $.identifier), "{", repeat($.record_field), "}"),
+      seq(
+        layout($, "record", field("name", $.identifier), "{"),
+        optional($._gap),
+        repeat(seq($.record_field, optional($._gap))),
+        "}",
+      ),
 
     // "actor <name> records <Record>": who records a record, which gives it a
     // context.
     actor_declaration: ($) =>
-      seq("actor", field("name", $.identifier), "records", field("record", $.identifier)),
+      layout($, "actor", field("name", $.identifier), "records", field("record", $.identifier)),
     record_field: ($) =>
-      seq(
+      layout(
+        $,
         field("name", $.identifier),
         ":",
         field("type", $._type_name),
-        optional(seq("=", field("value", $.when_expression))),
+        optional(layout($, "=", field("value", $.when_expression))),
       ),
 
     // 'expect "<title>" { in <path> [and below]  when ...  on ...  then|some ... | absent }'
     expect_declaration: ($) =>
-      seq("expect", field("title", $.string), "{", repeat($._expect_clause), "}"),
+      seq(
+        layout($, "expect", field("title", $.string), "{"),
+        optional($._gap),
+        repeat(seq($._expect_clause, optional($._gap))),
+        "}",
+      ),
     _expect_clause: ($) =>
       choice(
         $.in_clause,
@@ -248,27 +384,28 @@ module.exports = grammar({
         $.some_clause,
         $.absent_clause,
       ),
-    in_clause: ($) => seq("in", field("path", $._path), optional($.below)),
-    below: (_) => seq("and", "below"),
-    when_clause: ($) => seq("when", $._pairs),
-    on_clause: ($) => seq("on", field("event", $._event)),
-    then_clause: ($) => seq("then", $._pairs),
-    some_clause: ($) => seq("some", $._pairs),
+    in_clause: ($) => layout($, "in", field("path", $._path), optional($.below)),
+    below: ($) => layout($, "and", "below"),
+    when_clause: ($) => layout($, "when", $._pairs),
+    on_clause: ($) => layout($, "on", field("event", $._event)),
+    then_clause: ($) => layout($, "then", $._pairs),
+    some_clause: ($) => layout($, "some", $._pairs),
     absent_clause: (_) => "absent",
-    _pairs: ($) => sep1($.pair, ","),
+    _pairs: ($) => sep1($, $.pair, ","),
     pair: ($) =>
-      seq(
+      layout(
+        $,
         field("key", $._path),
         "=",
         field("value", choice($._value, $.qualified_name, $.profile_combination)),
       ),
     // A profile a modifier makes: "<profile>+<modifier>".
-    profile_combination: ($) => seq($._value, repeat1(seq("+", $._value))),
+    profile_combination: ($) => layout($, $._value, repeat1(layout($, "+", $._value))),
 
     _type_name: ($) => choice($.identifier, $.qualified_name),
     _path: ($) => choice($.identifier, $.qualified_name),
     // "<Name>.<Name>...", or a path "<child>.<child>...".
-    qualified_name: ($) => seq($.identifier, repeat1(seq(".", $.identifier))),
+    qualified_name: ($) => layout($, $.identifier, repeat1(layout($, ".", $.identifier))),
 
     _value: ($) => alias($.identifier, $.value),
     // A name or a value: a letter or a digit, then letters, digits and
@@ -278,6 +415,25 @@ module.exports = grammar({
     // To its closing quote, on the same line.
     string: (_) => token(seq('"', /[^"\r\n]*/, '"')),
 
+    // Tag validity, target resolution and duplicate-tag policy are checker work.
+    documentation: ($) =>
+      seq(
+        $._documentation_start,
+        repeat1(seq("##", optional(choice($.documentation_tag, $.documentation_text)), $._newline)),
+      ),
+    documentation_tag: ($) =>
+      seq(
+        token.immediate(prec(2, /[ \t]*@/)),
+        field("name", alias(token.immediate(/[A-Za-z][A-Za-z0-9-]*/), $.identifier)),
+        optional(
+          seq(
+            token.immediate(/[ \t]+/),
+            field("target", alias(token.immediate(/[^ \t\r\n]+/), $.identifier)),
+            optional(field("description", $.documentation_text)),
+          ),
+        ),
+      ),
+    documentation_text: (_) => token.immediate(/[^\r\n]+/),
     comment: (_) => token(seq("#", /[^\r\n]*/)),
   },
 });
