@@ -352,6 +352,56 @@ test("the kinds that are always kept can be chosen", () => {
   assert.equal(draw([]), 1);
 });
 
+const sides = (svg) => (svg.match(/data-face="side"/g) ?? []).length;
+const firstPoint = (svg, nth) =>
+  [...svg.matchAll(/data-face="top" points="([^ ]+)/g)].map((m) => m[1])[nth];
+
+test("a flat view has no sides and no height: the page lies on the ground", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("div", "structure", 3, 0, 0, 100, 100),
+  ];
+  const flat = renderSvg([{ label: "a", layout: layout(1000, boxes) }], {
+    flat: true,
+    merge: false,
+  });
+  const stacked = renderSvg([{ label: "a", layout: layout(1000, boxes) }], { merge: false });
+  assert.equal(sides(flat), 0);
+  assert.ok(sides(stacked) > 0);
+  assert.equal(firstPoint(flat, 0), firstPoint(flat, 1));
+  assert.notEqual(firstPoint(stacked, 0), firstPoint(stacked, 1));
+});
+
+test("a flat view draws wireframe marks: a cross for an image, lines for text", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("img", "media", 1, 50, 50, 300, 200),
+    kbox("p", "text", 1, 50, 300, 300, 80),
+    kbox("button", "control", 1, 50, 420, 120, 40),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], { flat: true });
+  assert.equal((svg.match(/data-wire="cross"/g) ?? []).length, 1);
+  assert.equal((svg.match(/data-wire="lines"/g) ?? []).length, 1);
+});
+
+test("the wireframe marks can be turned off", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("img", "media", 1, 50, 50, 300, 200),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], { flat: true, wire: false });
+  assert.equal(svg.includes("data-wire"), false);
+});
+
+test("flat captures sit side by side on the ground, not stacked", () => {
+  const one = renderSvg([three()[2]], { flat: true });
+  const two = renderSvg([three()[1], three()[2]], { flat: true });
+  const width = (svg) => Number(svg.match(/viewBox="[-\d.]+ [-\d.]+ ([\d.]+)/)[1]);
+  assert.ok(width(two) > width(one));
+  assert.ok(two.includes(">768<"));
+  assert.ok(two.includes(">1440<"));
+});
+
 test("the paper palette uses the paper background and no transparency", () => {
   const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }], {
     palette: "paper",

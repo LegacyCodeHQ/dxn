@@ -60,6 +60,19 @@ Asking for a width that was not captured lists the widths that were. `--help` is
 Drop the SVG into the design file or a page as a pattern-mode surface. It is a
 pattern, so do not combine it with a marking.
 
+## Flat: a wireframe in isometric
+
+`--flat` lays the page on the ground instead of stacking it in layers: every box
+sits at the same height with no thickness, so the result reads as the page's 2D
+wireframe seen in isometric. Several captures sit side by side instead of one on
+top of the other. Images get a cross, text gets a few lines, controls get a
+heavier outline (`--no-wire` turns the marks off). Folding and merging still
+apply, so `--max-layer` and `--budget` set how much detail the wireframe shows.
+
+```bash
+node tools/blueprint/render.mjs out/layout-*.json --flat --out wireframe.svg
+```
+
 ## Kinds, and rounded corners
 
 Each box is tagged with what a customer sees there, never what it says:

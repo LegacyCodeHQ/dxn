@@ -17,6 +17,9 @@ Options:
   --min-size <px>        Skip boxes narrower or shorter than this (default: 0)
   --max-layer <n>        Fold boxes nested deeper than this into the box that holds them
   --merge-gap <px>       Neighbours closer than this may merge into one slab (default: 16)
+  --flat                 A wireframe on the ground: no layers, no thickness, captures
+                         side by side, a cross in images and lines in text
+  --no-wire              With --flat, leave out the crosses and lines
   --no-merge             Keep every box: do not merge neighbours
   --keep <kinds>         Kinds never folded away by depth: media,control,text
                          (default: all three; "none" folds by depth only)
@@ -39,6 +42,14 @@ function parse(argv) {
     }
     if (arg === "--no-merge") {
       options.merge = false;
+      continue;
+    }
+    if (arg === "--flat") {
+      options.flat = true;
+      continue;
+    }
+    if (arg === "--no-wire") {
+      options.wire = false;
       continue;
     }
     const value = argv[++i];

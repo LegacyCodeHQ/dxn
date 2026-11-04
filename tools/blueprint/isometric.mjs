@@ -261,6 +261,36 @@ function visibleRuns(list) {
   return runs;
 }
 
+// What a wireframe draws inside a box: a cross for an image, and a few short
+// lines for text. `place` projects a point on the box's plane.
+function wireMarks(box, place) {
+  if (box.kind === "media") {
+    // The cross ends where the diagonal meets a rounded corner, not past it.
+    const r = Math.min(box.radius || 0, box.w / 2, box.h / 2);
+    const d = r >= 1 ? r * (1 - Math.SQRT1_2) : 0;
+    return {
+      type: "cross",
+      lines: [
+        [place(box.x + d, box.y + d), place(box.x + box.w - d, box.y + box.h - d)],
+        [place(box.x + box.w - d, box.y + d), place(box.x + d, box.y + box.h - d)],
+      ],
+    };
+  }
+  if (box.kind === "text") {
+    const count = box.h < 30 ? 1 : box.h < 60 ? 2 : 3;
+    const inset = Math.min(box.w * 0.08, 12);
+    const lines = [];
+    for (let i = 1; i <= count; i++) {
+      const y = box.y + (box.h * i) / (count + 1);
+      const last = i === count && count > 1;
+      const right = last ? box.x + inset + (box.w - inset * 2) * 0.6 : box.x + box.w - inset;
+      lines.push([place(box.x + inset, y), place(right, y)]);
+    }
+    return { type: "lines", lines };
+  }
+  return null;
+}
+
 function matches(box, index, highlight) {
   if (!highlight) return false;
   if (highlight.index !== undefined) return highlight.index === index;
@@ -280,10 +310,16 @@ export function renderSvg(layouts, options = {}) {
     keep = DEFAULT_KEEP,
     budget,
     show,
+    flat = false,
+    wire = true,
+    flatGap = 220,
     highlight,
     width = 1600,
   } = options;
   const colors = PALETTES[palette];
+  // A flat view lies on the ground: no height between layers, no thickness.
+  const rise = flat ? 0 : layerHeight;
+  const thickness = flat ? 0 : slab;
 
   const base = { minSize, merge, mergeGap, keep };
 
@@ -328,6 +364,7 @@ export function renderSvg(layouts, options = {}) {
     ...prepared.flatMap(({ layout }) => layout.boxes.map((box) => box.layer)),
   );
   const gap = stackGap ?? layerHeight * (deepest + 1) + 220;
+  let offsetX = 0;
 
   const shapes = [];
   const labels = [];
@@ -341,14 +378,15 @@ export function renderSvg(layouts, options = {}) {
 
   let highlighted = false;
   prepared.forEach(({ label, layout }, layoutIndex) => {
-    const baseZ = layoutIndex * gap;
+    const baseZ = flat ? 0 : layoutIndex * gap;
     const { w, h } = layout.root;
+    const ox = flat ? offsetX : 0;
+    if (flat) offsetX += w + flatGap;
+    const at = (x, y, z) => project(x + ox, y, z);
 
     const ground = [];
-    for (let gx = 0; gx <= w; gx += 100)
-      ground.push([project(gx, 0, baseZ), project(gx, h, baseZ)]);
-    for (let gy = 0; gy <= h; gy += 100)
-      ground.push([project(0, gy, baseZ), project(w, gy, baseZ)]);
+    for (let gx = 0; gx <= w; gx += 100) ground.push([at(gx, 0, baseZ), at(gx, h, baseZ)]);
+    for (let gy = 0; gy <= h; gy += 100) ground.push([at(0, gy, baseZ), at(w, gy, baseZ)]);
     ground.forEach(([a, b]) => {
       grow(a);
       grow(b);
@@ -356,8 +394,8 @@ export function renderSvg(layouts, options = {}) {
     shapes.push({ order: [layoutIndex, -1, 0], kind: "ground", lines: ground });
 
     const dimensions = [
-      { a: project(0, h + 50, baseZ), b: project(w, h + 50, baseZ), text: `${Math.round(w)} px` },
-      { a: project(w + 50, 0, baseZ), b: project(w + 50, h, baseZ), text: `${Math.round(h)} px` },
+      { a: at(0, h + 50, baseZ), b: at(w, h + 50, baseZ), text: `${Math.round(w)} px` },
+      { a: at(w + 50, 0, baseZ), b: at(w + 50, h, baseZ), text: `${Math.round(h)} px` },
     ];
     dimensions.forEach((d) => {
       grow(d.a);
@@ -365,30 +403,36 @@ export function renderSvg(layouts, options = {}) {
     });
     shapes.push({ order: [layoutIndex, -1, 1], kind: "dimensions", dimensions });
 
-    const tag = project(w + 90, 0, baseZ);
+    const tag = flat ? at(0, -70, baseZ) : at(w + 90, 0, baseZ);
     grow(tag);
     labels.push({ at: tag, text: label, size: 16, strong: true });
 
     layout.boxes.forEach((box, index) => {
-      const z = baseZ + box.layer * layerHeight;
+      const z = baseZ + box.layer * rise;
       const ring = outline(box);
-      const top = ring.map(([x, y]) => project(x, y, z));
-      const sides = visibleRuns(ring).map(({ from, to }) => {
-        const upper = [];
-        for (let i = from; i <= to + 1; i++) upper.push(ring[i % ring.length]);
-        return [
-          ...upper.map(([x, y]) => project(x, y, z)),
-          ...upper.reverse().map(([x, y]) => project(x, y, z - slab)),
-        ];
-      });
-      [...top, ...sides.flat()].forEach(grow);
+      const top = ring.map(([x, y]) => at(x, y, z));
+      const sides =
+        thickness > 0
+          ? visibleRuns(ring).map(({ from, to }) => {
+              const upper = [];
+              for (let i = from; i <= to + 1; i++) upper.push(ring[i % ring.length]);
+              return [
+                ...upper.map(([x, y]) => at(x, y, z)),
+                ...upper.reverse().map(([x, y]) => at(x, y, z - thickness)),
+              ];
+            })
+          : [];
+      const marks = flat && wire ? wireMarks(box, (x, y) => at(x, y, z)) : null;
+      [...top, ...sides.flat(), ...(marks ? marks.lines.flat() : [])].forEach(grow);
       const chosen = !highlighted && matches(box, index, highlight);
       if (chosen) highlighted = true;
       shapes.push({
-        order: [layoutIndex, z, box.x + box.y],
+        order: [layoutIndex, flat ? -area(box) : z, box.x + box.y],
         kind: "box",
         top,
         sides,
+        marks,
+        control: flat && wire && box.kind === "control",
         highlight: chosen,
         merged: box.merged,
       });
@@ -434,7 +478,7 @@ export function renderSvg(layouts, options = {}) {
       }
     } else {
       const stroke_ = shape.highlight ? colors.highlight : colors.line;
-      const width_ = shape.highlight ? accent : stroke;
+      const width_ = shape.highlight ? accent : shape.control ? round(stroke * 1.6) : stroke;
       const attrs =
         (shape.highlight ? ' data-highlight="true"' : "") +
         (shape.merged ? ` data-merged="${shape.merged}"` : "");
@@ -447,6 +491,14 @@ export function renderSvg(layouts, options = {}) {
       out.push(
         `<polygon data-face="top" points="${points(shape.top)}" fill="${colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
       );
+      if (shape.marks) {
+        const d = shape.marks.lines
+          .map(([a, b]) => `M${round(a.x)} ${round(a.y)}L${round(b.x)} ${round(b.y)}`)
+          .join("");
+        out.push(
+          `<path data-wire="${shape.marks.type}" d="${d}" fill="none" stroke="${colors.line}" stroke-width="${stroke}"/>`,
+        );
+      }
       out.push("</g>");
     }
   }
