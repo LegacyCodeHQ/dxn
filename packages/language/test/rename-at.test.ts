@@ -661,6 +661,48 @@ actor DesignReviewRecorder records DesignReview
     `);
   });
 
+  it.each([
+    {
+      title: "an existing type after the renamed dimension",
+      source: [
+        "dimension Input = grammar | scanner",
+        ...Array(12).fill(""),
+        "type TreeSitterPackage needs Input {}",
+      ].join("\n"),
+      line: 1,
+      column: 11,
+      to: "TreeSitterPackage",
+      existingLine: 14,
+    },
+    {
+      title: "an existing type before the renamed dimension",
+      source: "type TreeSitterPackage {}\ndimension Input = grammar | scanner\n",
+      line: 2,
+      column: 11,
+      to: "TreeSitterPackage",
+      existingLine: 1,
+    },
+    {
+      title: "an existing nested type after the renamed enum",
+      source: "type Parent {\n enum Original = off\n type Existing {}\n state mode: Original\n}\n",
+      line: 2,
+      column: 7,
+      to: "Existing",
+      existingLine: 3,
+    },
+  ])(
+    "reports the original conflict location: $title",
+    ({ source, line, column, to, existingLine }) => {
+      const message = `\`${to}\` is already declared as a type at line ${existingLine}`;
+      expect(renameAt(source, line, column, to)).toMatchObject({
+        refusal: `the rename would leave a problem: ${message}`,
+        problems: expect.arrayContaining([
+          { code: "duplicate-name", severity: "error", message, line, column },
+        ]),
+      });
+    },
+  );
+
   it("refuses a name that is not one, one already declared, and what stored records name", () => {
     const snapshot: unknown[] = [];
     snapshot.push(renamed("enum ", "Hover", "hover"));
@@ -684,7 +726,7 @@ actor DesignReviewRecorder records DesignReview
         "\`hovered-\` is not a value name: lowercase letters and digits, with single hyphens between them, and not \`when\` or \`else\`",
         "\`when\` is not a value name: lowercase letters and digits, with single hyphens between them, and not \`when\` or \`else\`",
         "the rename would leave a problem: \`hovered\` appears twice in \`Hover\`",
-        "the rename would leave a problem: \`Hover\` is already declared at line 2",
+        "the rename would leave a problem: \`Hover\` is already declared as an enum at line 2",
         "there is no name here to rename",
         "\`designer\` is not an actor name: a capital letter, then letters and digits",
         "\`phone\` is not a profile name: a capital letter, then letters and digits",

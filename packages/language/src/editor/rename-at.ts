@@ -139,6 +139,37 @@ export function renameAt(
   const before = new Set(problems(file).map(({ message }) => message));
   const left = problems(after).filter(({ message }) => !before.has(message));
   if (left.length > 0) {
+    // Duplicate checking reports the later declaration against the earlier
+    // one in the proposed source. For a rename, the conflict is instead the
+    // declaration that already had the requested name in the original source.
+    if (kind.of === undefined && kind.type === undefined) {
+      const full = found.declared.name.slice(0, -name.length) + to;
+      const conflict = [...kindsOf(file)].find(
+        ([at, other]) =>
+          at !== found.declared &&
+          at.name === full &&
+          other.of === undefined &&
+          other.type === undefined,
+      );
+      if (conflict !== undefined) {
+        const [at, other] = conflict;
+        const explanation = message`${to} is already declared as ${words(article(other.kind))} ${words(other.kind)} at line ${at.line}`;
+        for (const problem of left) {
+          if (
+            problem.code === "duplicate-name" &&
+            (problem.line === at.line || problem.line === found.declared.line)
+          ) {
+            problem.message = explanation;
+            problem.line = found.declared.line;
+            problem.column = found.declared.column;
+            return {
+              refusal: `the rename would leave a problem: ${explanation}`,
+              problems: left,
+            };
+          }
+        }
+      }
+    }
     return { refusal: `the rename would leave a problem: ${left[0]?.message}`, problems: left };
   }
   const data: { path: string; source: string; changed: number }[] = [];

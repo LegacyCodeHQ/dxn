@@ -38,7 +38,7 @@ interface Scenario {
   dxn: string;
   stored?: Record<string, string>;
   // A rename, at a line and a column of the file, both from one.
-  rename?: { line: number; column: number; to: string };
+  rename?: { line: number; column: number; to: string; collision?: string };
 }
 
 const model = `enum Hover = rest | hovered
@@ -153,6 +153,16 @@ const scenarios: Scenario[] = [
     dxn: model,
     stored: { "evidence/a.json": records(entry("rest")), "proof/keep.txt": "keep" },
     rename: { line: 6, column: 8, to: "Proof" },
+  },
+  {
+    title: "a dimension rename that collides with a later type declaration",
+    dxn: "dimension Input = grammar | scanner\n\ntype TreeSitterPackage needs Input {}\n",
+    rename: {
+      line: 1,
+      column: 11,
+      to: "TreeSitterPackage",
+      collision: "`TreeSitterPackage` is already declared as a type at line 3",
+    },
   },
   {
     title: "a rename that collides with another value",
@@ -362,7 +372,26 @@ describe("dxn and an editor", () => {
         newName: to,
       });
       if (plan === undefined) {
-        expect([edit, typeof (await refusal)]).toEqual([null, "string"]);
+        const reason = await refusal;
+        const collision = scenario.rename?.collision;
+        if (collision !== undefined) {
+          const output = JSON.parse(cli.stdout) as {
+            problems: { code: string; message: string; line: number; column: number }[];
+          };
+          expect({
+            edit,
+            reason,
+            problem: output.problems.find(({ code }) => code === "duplicate-name"),
+            unchanged: readFileSync(file, "utf8") === scenario.dxn,
+          }).toEqual({
+            edit: null,
+            reason: `the rename would leave a problem: ${collision}`,
+            problem: expect.objectContaining({ message: collision, line, column }),
+            unchanged: true,
+          });
+        } else {
+          expect([edit, typeof reason]).toEqual([null, "string"]);
+        }
         return;
       }
       const changes = edit?.documentChanges ?? [];
