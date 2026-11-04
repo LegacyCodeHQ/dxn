@@ -620,12 +620,25 @@ test("a rounded painted box inside a link is a photo: it stays a tile with a cro
   assert.equal((svg.match(/data-wire="cross"/g) ?? []).length, 3);
 });
 
-test("a rounded painted box that holds text is not a photo", () => {
+test("a large rounded photo area stays a photo with a badge and a heart over it", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    ...card(10),
+    pbox("div", "structure", true, 3, 22, 112, 100, 26, 13),
+    pbox("div", "text", false, 4, 32, 118, 80, 14),
+    pbox("button", "control", false, 3, 150, 108, 32, 32, 16),
+    pbox("svg", "media", true, 4, 154, 112, 24, 24),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], { flat: true });
+  assert.equal((svg.match(/data-wire="cross"/g) ?? []).length, 2);
+});
+
+test("a small rounded painted box that holds text is a label, not a photo", () => {
   const boxes = [
     pbox("main", "structure", true, 0, 0, 0, 1000, 800),
     pbox("a", "control", false, 1, 10, 100, 180, 214),
-    pbox("div", "structure", true, 2, 10, 100, 180, 172, 20),
-    pbox("div", "text", false, 3, 20, 120, 100, 16),
+    pbox("div", "structure", true, 2, 20, 110, 100, 26, 13),
+    pbox("div", "text", false, 3, 30, 116, 80, 14),
   ];
   const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], { flat: true });
   assert.equal((svg.match(/data-wire="cross"/g) ?? []).length, 0);
