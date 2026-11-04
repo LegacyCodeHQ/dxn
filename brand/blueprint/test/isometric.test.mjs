@@ -959,3 +959,18 @@ test("the page's own measurements can be turned off, the lifted element's stay",
   assert.ok(withLift.includes(">230 px<"));
   assert.equal(withLift.includes(">1000 px<"), false);
 });
+
+test("the footprint and its legs are drawn under every lifted body, never over it", () => {
+  for (const flat of [true, false]) {
+    const svg = lifted({ flat });
+    const footprint = svg.indexOf('data-lift="footprint"');
+    const firstLifted = svg.indexOf('data-lifted="true"');
+    const lastLifted = svg.lastIndexOf('data-lifted="true"');
+    assert.ok(footprint !== -1 && firstLifted !== -1);
+    assert.ok(footprint < firstLifted, `flat ${flat}: footprint after the first lifted body`);
+    assert.ok(footprint < lastLifted);
+  }
+  // A page box with a large area still sits under the footprint, which sits under the lift.
+  const svg = lifted();
+  assert.ok(svg.lastIndexOf('data-face="top"', svg.indexOf('data-lift="footprint"')) !== -1);
+});

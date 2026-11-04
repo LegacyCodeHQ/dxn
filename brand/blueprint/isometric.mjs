@@ -724,7 +724,8 @@ export function renderSvg(layouts, options = {}) {
         d.caps.flat().forEach(grow);
       });
       shapes.push({
-        order: [layoutIndex, LIFTED - 1, index],
+        // After the whole page, before every lifted body (their order is LIFTED minus an area).
+        order: [layoutIndex, LIFTED - 1e8, index],
         kind: "footprint",
         ring: ground,
         drops,

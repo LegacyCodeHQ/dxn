@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!packages/tree-sitter-dxn/src"]
+    "includes": ["**", "!packages/tree-sitter-dxn/src", "!brand/launch/sources/*.html"]
   },
   "formatter": {
     "enabled": true,
