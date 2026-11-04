@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
-import { normalise, project, renderSvg, resolvePalette, rotateLayout } from "../isometric.mjs";
+import {
+  DEFAULT_BRAND,
+  normalise,
+  project,
+  renderSvg,
+  resolvePalette,
+  rotateLayout,
+} from "../isometric.mjs";
 
 const layout = (width, boxes) => ({
   viewport: { w: width, h: 800 },
@@ -888,4 +899,25 @@ test("a color must be a hex color and a brand key must be one the tool uses", ()
 
 test("three-digit hex colors are accepted", () => {
   assert.equal(resolvePalette("ink", { brand: { ink: "#123" } }).background, "#112233");
+});
+
+const brandFile = new URL("../../brand.json", import.meta.url);
+
+test("brand.json holds exactly the brand colors the tool uses, all valid", () => {
+  const brand = JSON.parse(readFileSync(brandFile, "utf8"));
+  assert.deepEqual(Object.keys(brand).sort(), Object.keys(DEFAULT_BRAND).sort());
+  for (const mode of ["ink", "paper"]) resolvePalette(mode, { brand });
+});
+
+test("the renderer reads brand/brand.json unless told otherwise", () => {
+  const dir = mkdtempSync(join(tmpdir(), "blueprint-"));
+  const capture = join(dir, "layout.json");
+  writeFileSync(capture, JSON.stringify(layout(1000, [box("main", 0, 0, 0, 1000, 800)])));
+  const render = new URL("../render.mjs", import.meta.url).pathname;
+  const run = (...args) => execFileSync("node", [render, capture, ...args], { encoding: "utf8" });
+  assert.equal(run(), run("--brand", brandFile.pathname));
+  const other = join(dir, "other.json");
+  writeFileSync(other, JSON.stringify({ ink: "#123456" }));
+  assert.ok(run("--brand", other).includes("#123456"));
+  assert.equal(run().includes("#123456"), false);
 });

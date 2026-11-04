@@ -21,7 +21,7 @@ With Playwright (not a dependency of this repository):
 
 ```bash
 npm i -D playwright && npx playwright install chromium
-node tools/blueprint/capture.mjs https://example.com --selector main --widths 375,768,1440 --out out
+node brand/blueprint/capture.mjs https://example.com --selector main --widths 375,768,1440 --out out
 ```
 
 That writes `out/layout-375.json`, `out/layout-768.json` and `out/layout-1440.json`.
@@ -41,8 +41,8 @@ Capture options: `selector`, `minSize` (default 16 px), `maxLayers` (8) and
 ### 2. Render
 
 ```bash
-node tools/blueprint/render.mjs out/layout-*.json --highlight main --min-size 28 --out blueprint.svg
-node tools/blueprint/render.mjs out/layout-*.json --palette paper --out blueprint-paper.svg
+node brand/blueprint/render.mjs out/layout-*.json --highlight main --min-size 28 --out blueprint.svg
+node brand/blueprint/render.mjs out/layout-*.json --palette paper --out blueprint-paper.svg
 ```
 
 Several captures stack as layers, the widest at the bottom, each labelled with
@@ -50,7 +50,7 @@ its width. Capture as many breakpoints as you like and choose which to draw with
 `--only`:
 
 ```bash
-node tools/blueprint/render.mjs out/layout-*.json --only 375,1440 --out blueprint.svg
+node brand/blueprint/render.mjs out/layout-*.json --only 375,1440 --out blueprint.svg
 ```
 
 Asking for a width that was not captured lists the widths that were. `--help` is any call without files.
@@ -70,7 +70,7 @@ heavier outline (`--no-wire` turns the marks off). Folding and merging still
 apply, so `--max-layer` and `--budget` set how much detail the wireframe shows.
 
 ```bash
-node tools/blueprint/render.mjs out/layout-*.json --flat --out wireframe.svg
+node brand/blueprint/render.mjs out/layout-*.json --flat --out wireframe.svg
 ```
 
 ## The viewport slab
@@ -139,7 +139,7 @@ Try `--budget 30 --min-size 24`.
   cross-origin frame are not seen.
 - `capture.mjs` has not been run here, because Playwright is not installed. The
   same measuring code (`collect.js`) was run in a browser, and `render.mjs` and
-  `isometric.mjs` are tested (`node --test tools/blueprint/test/`).
+  `isometric.mjs` are tested (`node --test brand/blueprint/test/`).
 - Pages that are not yours: this draws structure only, but a recognizable page's
   layout can still be a recognizable thing. Prefer your own pages, documentation
   and sites whose owners agree, and leave out logos and text, as the tool does.
@@ -191,7 +191,7 @@ under the names of its variables (`ink`, `paper`, `accent`, `accent-light`,
 them: the line, slab and grid are the surface with a share of the other color
 mixed in, so they stay solid. Change a brand color and the whole picture follows.
 
-- `--brand brand.json` reads colors from a file shaped like
+- `--brand file.json` reads colors from a file (default: `brand/brand.json`, beside the brand file) shaped like
   `{ "ink": "#0E1116", "accent": "#4F5BFF" }`. Any color left out keeps its default.
 - `--color accent=#FF5A1F` sets one brand color, over the file.
 - `--tone line=#445566` sets one tone of the drawing outright.

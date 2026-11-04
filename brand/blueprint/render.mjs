@@ -1,18 +1,21 @@
 #!/usr/bin/env node
-// Usage: node tools/blueprint/render.mjs <layout.json>... [options]
+// Usage: node brand/blueprint/render.mjs <layout.json>... [options]
 //
 // Each layout file is one capture. Several files stack as layers, labelled with
 // their viewport widths: the same page at several breakpoints, the widest at the
 // bottom.
 import { readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { renderSvg } from "./isometric.mjs";
 
-const USAGE = `Usage: node tools/blueprint/render.mjs <layout.json>... [options]
+const DEFAULT_BRAND_FILE = fileURLToPath(new URL("../brand.json", import.meta.url));
+
+const USAGE = `Usage: node brand/blueprint/render.mjs <layout.json>... [options]
 
 Options:
   --out <file>           Write the svg here (default: stdout)
   --palette ink|paper    Background and tones (default: ink)
-  --brand <file.json>    Brand colors to use, named as in the brand file: ink, paper,
+  --brand <file.json>    Brand colors to use (default: brand/brand.json), named as in the brand file: ink, paper,
                          accent, accent-light, slate, slate-on-ink, white
   --color <name=#hex>    One brand color, over the file's (repeatable)
   --tone <name=#hex>     One tone outright: background, line, slab, grid, label,
@@ -114,8 +117,9 @@ function parse(argv) {
 
 async function main() {
   const { files, options, out, brandFile } = parse(process.argv.slice(2));
-  if (brandFile)
-    options.brand = { ...JSON.parse(await readFile(brandFile, "utf8")), ...options.brand };
+  // The brand colors live in brand/brand.json, beside the brand file they come from.
+  const brand = JSON.parse(await readFile(brandFile ?? DEFAULT_BRAND_FILE, "utf8"));
+  options.brand = { ...brand, ...options.brand };
   if (files.length === 0) {
     console.error(USAGE);
     return 2;

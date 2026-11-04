@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Usage: node tools/blueprint/capture.mjs <url> [--selector <css>] [--widths 375,768,1440] [--out <dir>]
+// Usage: node brand/blueprint/capture.mjs <url> [--selector <css>] [--widths 375,768,1440] [--out <dir>]
 //
 // Loads the page in Playwright at each width and saves layout-<width>.json.
 // Playwright is not a dependency of this repository: install it where you run
@@ -36,7 +36,7 @@ async function main() {
   const { url, options } = parse(process.argv.slice(2));
   if (!url) {
     console.error(
-      "Usage: node tools/blueprint/capture.mjs <url> [--selector css] [--widths 375,768,1440] [--out dir]",
+      "Usage: node brand/blueprint/capture.mjs <url> [--selector css] [--widths 375,768,1440] [--out dir]",
     );
     return 2;
   }
