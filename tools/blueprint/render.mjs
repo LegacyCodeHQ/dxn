@@ -19,6 +19,8 @@ Options:
   --merge-gap <px>       Neighbours closer than this may merge into one slab (default: 16)
   --overflow bleed|clip  Boxes that run past the viewport: draw them whole (bleed,
                          the default) or only the part inside it (clip)
+  --no-slab              Draw the viewport as a plain plane, not a slab
+  --slab-thickness <px>  Thickness of the viewport slab (default: 18)
   --flat                 A wireframe on the ground: no layers, no thickness, captures
                          side by side, a cross in images and lines in text
   --no-wire              With --flat, leave out the crosses and lines
@@ -46,6 +48,10 @@ function parse(argv) {
       options.merge = false;
       continue;
     }
+    if (arg === "--no-slab") {
+      options.viewportSlab = false;
+      continue;
+    }
     if (arg === "--flat") {
       options.flat = true;
       continue;
@@ -65,6 +71,7 @@ function parse(argv) {
     else if (arg === "--merge-gap") options.mergeGap = Number(value);
     else if (arg === "--budget") options.budget = Number(value);
     else if (arg === "--keep") options.keep = value === "none" ? [] : value.split(",");
+    else if (arg === "--slab-thickness") options.viewportThickness = Number(value);
     else if (arg === "--overflow") options.overflow = value;
     else if (arg === "--only") options.show = value.split(",").map(Number);
     else if (arg === "--layer-height") options.layerHeight = Number(value);

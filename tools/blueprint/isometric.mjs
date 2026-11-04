@@ -13,6 +13,7 @@ const PALETTES = {
   ink: {
     background: "#0E1116",
     line: "#4A4C4E",
+    slab: "#171A1F",
     grid: "#1C1F23",
     label: "#8A8F9A",
     highlight: "#8C95FF",
@@ -20,6 +21,7 @@ const PALETTES = {
   paper: {
     background: "#F5F3EE",
     line: "#B0AFAD",
+    slab: "#E8E6E0",
     grid: "#E7E5E1",
     label: "#5B616C",
     highlight: "#4F5BFF",
@@ -236,6 +238,9 @@ const points = (list) => list.map((p) => `${round(p.x)},${round(p.y)}`).join(" "
 
 const SEGMENTS = 6;
 
+// Sorts before every box: the slab, its grid and its dimensions are drawn first.
+const UNDER = -1e12;
+
 // The outline of a box on the ground plane, clockwise, with rounded corners.
 // A corner on a side the viewport cut off is square.
 function outline(box) {
@@ -357,6 +362,8 @@ export function renderSvg(layouts, options = {}) {
     budget,
     show,
     overflow = "bleed",
+    viewportSlab = true,
+    viewportThickness = 18,
     flat = false,
     wire = true,
     flatGap = 220,
@@ -432,6 +439,32 @@ export function renderSvg(layouts, options = {}) {
     if (flat) offsetX += w + flatGap;
     const at = (x, y, z) => project(x + ox, y, z);
 
+    // The viewport is a slab the page sits on: a top face and two sides.
+    if (viewportSlab && viewportThickness > 0) {
+      const ring = [
+        [0, 0],
+        [w, 0],
+        [w, h],
+        [0, h],
+      ];
+      const slabTop = ring.map(([x, y]) => at(x, y, baseZ));
+      const slabSides = visibleRuns(ring).map(({ from, to }) => {
+        const upper = [];
+        for (let i = from; i <= to + 1; i++) upper.push(ring[i % ring.length]);
+        return [
+          ...upper.map(([x, y]) => at(x, y, baseZ)),
+          ...upper.reverse().map(([x, y]) => at(x, y, baseZ - viewportThickness)),
+        ];
+      });
+      [...slabTop, ...slabSides.flat()].forEach(grow);
+      shapes.push({
+        order: [layoutIndex, UNDER, 0],
+        kind: "viewport",
+        top: slabTop,
+        sides: slabSides,
+      });
+    }
+
     const ground = [];
     for (let gx = 0; gx <= w; gx += 100) ground.push([at(gx, 0, baseZ), at(gx, h, baseZ)]);
     for (let gy = 0; gy <= h; gy += 100) ground.push([at(0, gy, baseZ), at(w, gy, baseZ)]);
@@ -439,7 +472,7 @@ export function renderSvg(layouts, options = {}) {
       grow(a);
       grow(b);
     });
-    shapes.push({ order: [layoutIndex, -1, 0], kind: "ground", lines: ground });
+    shapes.push({ order: [layoutIndex, UNDER, 1], kind: "ground", lines: ground });
 
     const dimensions = [
       { a: at(0, h + 50, baseZ), b: at(w, h + 50, baseZ), text: `${Math.round(w)} px` },
@@ -449,7 +482,7 @@ export function renderSvg(layouts, options = {}) {
       grow(d.a);
       grow(d.b);
     });
-    shapes.push({ order: [layoutIndex, -1, 1], kind: "dimensions", dimensions });
+    shapes.push({ order: [layoutIndex, UNDER, 2], kind: "dimensions", dimensions });
 
     const tag = flat ? at(0, -70, baseZ) : at(w + 90, 0, baseZ);
     grow(tag);
@@ -509,7 +542,18 @@ export function renderSvg(layouts, options = {}) {
   );
 
   for (const shape of shapes) {
-    if (shape.kind === "ground") {
+    if (shape.kind === "viewport") {
+      out.push('<g data-viewport="slab">');
+      for (const side of shape.sides) {
+        out.push(
+          `<polygon data-face="viewport-side" points="${points(side)}" fill="${colors.slab}" stroke="${colors.line}" stroke-width="${stroke}" stroke-linejoin="round"/>`,
+        );
+      }
+      out.push(
+        `<polygon data-face="viewport-top" points="${points(shape.top)}" fill="${colors.background}" stroke="${colors.line}" stroke-width="${stroke}" stroke-linejoin="round"/>`,
+      );
+      out.push("</g>");
+    } else if (shape.kind === "ground") {
       const d = shape.lines
         .map(([a, b]) => `M${round(a.x)} ${round(a.y)}L${round(b.x)} ${round(b.y)}`)
         .join("");

@@ -73,6 +73,13 @@ apply, so `--max-layer` and `--budget` set how much detail the wireframe shows.
 node tools/blueprint/render.mjs out/layout-*.json --flat --out wireframe.svg
 ```
 
+## The viewport slab
+
+Each capture's viewport is drawn as a slab: a top face with the page's grid on
+it, and a visible thickness under it. In the stacked view the layers rise from
+it; in the flat view the wireframe lies on it. `--slab-thickness` sets the
+thickness and `--no-slab` draws a plain plane instead.
+
 ## Bleed or clip
 
 Boxes that run past the viewport, like a carousel's cards, can be drawn two ways:

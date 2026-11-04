@@ -454,6 +454,55 @@ test("a box wholly inside the viewport is unchanged by clipping", () => {
   assert.equal(draw("clip"), draw("bleed"));
 });
 
+const count = (svg, pattern) => (svg.match(pattern) ?? []).length;
+
+test("the viewport is a slab: a top and two sides under the page", () => {
+  const svg = renderSvg([
+    { label: "a", layout: layout(1000, [kbox("main", "structure", 0, 0, 0, 800, 600)]) },
+  ]);
+  assert.equal(count(svg, /data-face="viewport-top"/g), 1);
+  assert.equal(count(svg, /data-face="viewport-side"/g), 2);
+});
+
+test("the slab is drawn before anything that sits on it", () => {
+  const svg = renderSvg([
+    { label: "a", layout: layout(1000, [kbox("main", "structure", 0, 0, 0, 800, 600)]) },
+  ]);
+  assert.ok(svg.indexOf('data-face="viewport-top"') < svg.indexOf('data-face="top"'));
+});
+
+test("the slab stays in a flat view, where the boxes on it have no thickness", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("div", "structure", 1, 50, 50, 200, 100),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], { flat: true });
+  assert.equal(count(svg, /data-face="viewport-side"/g), 2);
+  assert.equal(count(svg, /data-face="side"/g), 0);
+});
+
+test("every capture gets its own slab", () => {
+  const svg = renderSvg(three(), { flat: true });
+  assert.equal(count(svg, /data-face="viewport-top"/g), 3);
+});
+
+test("the slab can be turned off, or made thicker", () => {
+  const plain = renderSvg([three()[0]], { viewportSlab: false });
+  assert.equal(count(plain, /data-face="viewport-/g), 0);
+  const thin = renderSvg([three()[0]], { viewportThickness: 10 });
+  const thick = renderSvg([three()[0]], { viewportThickness: 60 });
+  const height = (svg) => Number(svg.match(/height="(\d+)"/)[1]);
+  assert.ok(height(thick) > height(thin));
+});
+
+test("the slab spans the viewport, so clipped boxes end at its edge", () => {
+  const svg = renderSvg([{ label: "a", layout: layout(1000, overflowing()) }], {
+    merge: false,
+    overflow: "clip",
+  });
+  assert.equal(topPoints(svg.replace(/data-face="viewport-top"/g, "data-x"))[0], 4);
+});
+
 test("the paper palette uses the paper background and no transparency", () => {
   const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }], {
     palette: "paper",
