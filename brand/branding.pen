@@ -9154,7 +9154,7 @@
               "fill": {
                 "type": "image",
                 "enabled": true,
-                "url": "launch/backgrounds/tidepool-blueprint-1600x900.png",
+                "url": "launch/backgrounds/tidepool-blueprint-1600x900-09048890.png",
                 "mode": "cover"
               },
               "width": 1600,
@@ -9288,7 +9288,7 @@
               "fill": {
                 "type": "image",
                 "enabled": true,
-                "url": "launch/backgrounds/tidepool-blueprint-1200x627.png",
+                "url": "launch/backgrounds/tidepool-blueprint-1200x627-d3ffb0a6.png",
                 "mode": "cover"
               },
               "width": 1200,

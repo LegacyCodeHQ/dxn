@@ -5,7 +5,16 @@
 // blueprint mode rules say. Needs rsvg-convert to make the PNGs. The SVGs are
 // drawn into a temporary folder and not kept.
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +28,9 @@ const lifted = normalise(clipLayout(layout)).boxes.findIndex(
 );
 if (lifted === -1) throw new Error("the search bar is not in the layout");
 mkdirSync(here("backgrounds"), { recursive: true });
+// A background is named by its content, so a design tool that caches images by
+// path loads the new one when the drawing changes.
+for (const old of readdirSync(here("backgrounds"))) rmSync(here(`backgrounds/${old}`));
 const scratch = mkdtempSync(join(tmpdir(), "launch-"));
 
 for (const [width, height] of [
@@ -45,7 +57,12 @@ for (const [width, height] of [
     String(height),
     source,
     "-o",
-    here(`backgrounds/${name}.png`),
+    join(scratch, `${name}.png`),
   ]);
-  console.log(name);
+  const hash = createHash("sha256")
+    .update(readFileSync(join(scratch, `${name}.png`)))
+    .digest("hex");
+  const file = `${name}-${hash.slice(0, 8)}.png`;
+  renameSync(join(scratch, `${name}.png`), here(`backgrounds/${file}`));
+  console.log(file);
 }

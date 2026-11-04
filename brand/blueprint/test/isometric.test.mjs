@@ -994,3 +994,44 @@ test("a pill beside a much taller box is not merged into it", () => {
   const draw = (merge) => renderSvg([{ label: "a", layout: layout(1000, boxes) }], { merge });
   assert.equal(tops(draw(true)), tops(draw(false)));
 });
+
+const liftedGroups = (svg) => svg.match(/<g[^>]*data-lifted="true"[^>]*>[\s\S]*?<\/g>/g) ?? [];
+
+test("the marks on a lifted body are paper, never the page's grey", () => {
+  const svg = lifted({ palette: "paper" });
+  const marks = liftedGroups(svg).flatMap((g) => g.match(/<path data-wire="[^"]*"[^>]*>/g) ?? []);
+  assert.ok(marks.length > 0);
+  for (const mark of marks) {
+    assert.ok(mark.includes('stroke="#F5F3EE"'), mark);
+  }
+});
+
+test("text a lifted body holds is lines only, with no outline of its own", () => {
+  const groups = liftedGroups(lifted());
+  const tops = groups.flatMap((g) => g.match(/data-face="top"/g) ?? []);
+  assert.equal(tops.length, 1);
+  assert.ok(groups.some((g) => g.includes('data-wire="lines"')));
+});
+
+test("a lifted body keeps the outline of an image or a control it holds", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("section", "structure", 1, 100, 100, 230, 110),
+    kbox("button", "control", 2, 250, 120, 50, 50, 25),
+    kbox("img", "media", 2, 120, 120, 80, 60),
+  ];
+  const tops = liftedGroups(lifted({}, boxes)).flatMap((g) => g.match(/data-face="top"/g) ?? []);
+  assert.equal(tops.length, 3);
+});
+
+test("of text inside text on a lifted body, only the innermost is drawn", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("section", "structure", 1, 100, 100, 400, 120),
+    kbox("div", "text", 2, 120, 120, 300, 80),
+    kbox("p", "text", 3, 130, 130, 100, 20),
+    kbox("p", "text", 3, 260, 130, 100, 20),
+  ];
+  const lines = liftedGroups(lifted({}, boxes)).filter((g) => g.includes('data-wire="lines"'));
+  assert.equal(lines.length, 2);
+});

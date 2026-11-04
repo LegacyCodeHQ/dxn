@@ -761,6 +761,21 @@ export function renderSvg(layouts, options = {}) {
             })
           : [];
       const marks = flat && wire ? wireMarks(box, (x, y) => at(x, y, z)) : null;
+      // What a lifted body holds lies on it as marks: text is lines with no
+      // outline, and of text inside text only the innermost is drawn.
+      const bare = isLifted && !leading.includes(index) && box.kind === "text" && marks !== null;
+      if (
+        bare &&
+        layout.boxes.some(
+          (other, at_) =>
+            at_ !== index &&
+            liftedBoxes.has(at_) &&
+            other.kind === "text" &&
+            encloses(box, other) &&
+            area(other) < area(box),
+        )
+      )
+        return;
       [...top, ...sides.flat(), ...(marks ? marks.lines.flat() : [])].forEach(grow);
       const chosen = !highlighted && matches(box, index, highlight);
       if (chosen) highlighted = true;
@@ -774,6 +789,7 @@ export function renderSvg(layouts, options = {}) {
         highlight: chosen,
         merged: box.merged,
         lifted: isLifted,
+        bare,
       });
     });
   });
@@ -856,20 +872,21 @@ export function renderSvg(layouts, options = {}) {
         (shape.merged ? ` data-merged="${shape.merged}"` : "") +
         (shape.lifted ? ' data-lifted="true"' : "");
       out.push(`<g${attrs}>`);
-      for (const side of shape.sides) {
+      for (const side of shape.bare ? [] : shape.sides) {
         out.push(
           `<polygon data-face="side" points="${points(side)}" fill="${shape.lifted ? colors.liftedSide : colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
         );
       }
-      out.push(
-        `<polygon data-face="top" points="${points(shape.top)}" fill="${shape.lifted ? colors.lifted : colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
-      );
+      if (!shape.bare)
+        out.push(
+          `<polygon data-face="top" points="${points(shape.top)}" fill="${shape.lifted ? colors.lifted : colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
+        );
       if (shape.marks) {
         const d = shape.marks.lines
           .map(([a, b]) => `M${round(a.x)} ${round(a.y)}L${round(b.x)} ${round(b.y)}`)
           .join("");
         out.push(
-          `<path data-wire="${shape.marks.type}" d="${d}" fill="none" stroke="${colors.line}" stroke-width="${stroke}"/>`,
+          `<path data-wire="${shape.marks.type}" d="${d}" fill="none" stroke="${shape.lifted ? colors.liftedLine : colors.line}" stroke-width="${stroke}"/>`,
         );
       }
       out.push("</g>");
