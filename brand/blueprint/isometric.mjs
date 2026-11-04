@@ -17,10 +17,19 @@ export const DEFAULT_BRAND = {
   "accent-light": "#8C95FF",
   slate: "#5B616C",
   "slate-on-ink": "#8A8F9A",
-  white: "#FFFFFF",
 };
 
-const TONES = ["background", "line", "slab", "grid", "label", "highlight", "lifted"];
+const TONES = [
+  "background",
+  "line",
+  "slab",
+  "grid",
+  "label",
+  "highlight",
+  "lifted",
+  "liftedSide",
+  "liftedLine",
+];
 
 const parseColor = (value, name) => {
   const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(value));
@@ -57,7 +66,10 @@ export function resolvePalette(mode = "ink", { brand = {}, colors = {} } = {}) {
     grid: mix(surface, other, 0.06),
     label: toHex(ink ? rgb["slate-on-ink"] : rgb.slate),
     highlight: toHex(ink ? rgb["accent-light"] : rgb.accent),
-    lifted: ink ? mix(surface, other, 0.09) : toHex(rgb.white),
+    // What is lifted is the accent: a solid body with paper lines on it.
+    lifted: toHex(rgb.accent),
+    liftedSide: mix(rgb.accent, rgb.ink, 0.3),
+    liftedLine: toHex(rgb.paper),
   };
   for (const [key, value] of Object.entries(colors)) {
     parseColor(value, key);
@@ -821,7 +833,11 @@ export function renderSvg(layouts, options = {}) {
         );
       }
     } else {
-      const stroke_ = shape.highlight ? colors.highlight : colors.line;
+      const stroke_ = shape.highlight
+        ? colors.highlight
+        : shape.lifted
+          ? colors.liftedLine
+          : colors.line;
       const width_ = shape.highlight ? accent : shape.control ? round(stroke * 1.6) : stroke;
       const attrs =
         (shape.highlight ? ' data-highlight="true"' : "") +
@@ -830,7 +846,7 @@ export function renderSvg(layouts, options = {}) {
       out.push(`<g${attrs}>`);
       for (const side of shape.sides) {
         out.push(
-          `<polygon data-face="side" points="${points(side)}" fill="${shape.lifted ? colors.slab : colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
+          `<polygon data-face="side" points="${points(side)}" fill="${shape.lifted ? colors.liftedSide : colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
         );
       }
       out.push(

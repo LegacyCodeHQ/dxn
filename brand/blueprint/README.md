@@ -180,14 +180,16 @@ sharp when they are not. Each chosen box is measured across and up at the height
 it floats, with the same capped lines as the page, and its footprint stays on
 the page as a dashed outline. Choosing nothing is an error.
 
-A lifted slab is solid. Its top has its own tone and its sides use the slab
-tone, so it reads as a body floating over the page, not an outline.
+A lifted slab is solid and drawn in the accent color: the top is the accent, its
+sides a darker mix of the accent and the ink, and its lines (and the lines of what
+it holds) are paper. It reads as a body floating over the page, not an outline.
+It follows the brand's `accent` and `paper`.
 
 ## Brand colors
 
 No color is fixed in the renderer. `DEFAULT_BRAND` holds the brand file's colors
 under the names of its variables (`ink`, `paper`, `accent`, `accent-light`,
-`slate`, `slate-on-ink`, `white`), and every tone of the drawing is made from
+`slate`, `slate-on-ink`), and every tone of the drawing is made from
 them: the line, slab and grid are the surface with a share of the other color
 mixed in, so they stay solid. Change a brand color and the whole picture follows.
 

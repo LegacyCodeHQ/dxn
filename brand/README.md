@@ -11,7 +11,7 @@ Everything that makes the dxn brand, in one place.
 ## Changing the palette
 
 1. Change the colors in `branding.pen` (the variables `ink`, `paper`, `accent`,
-   `accent-light`, `slate`, `slate-on-ink`, `white`).
+   `accent-light`, `slate`, `slate-on-ink`).
 2. Export them to `brand.json`: ask Claude to "export the brand colors from
    branding.pen to brand/brand.json". The names stay as they are in the file.
 3. Run `node --test brand/blueprint/test/`. It fails if `brand.json` holds a color

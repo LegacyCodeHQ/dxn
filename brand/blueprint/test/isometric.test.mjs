@@ -857,7 +857,6 @@ test("the default brand gives the brand file's colors on both backgrounds", () =
   assert.equal(paper.background, "#F5F3EE");
   assert.equal(paper.highlight, "#4F5BFF");
   assert.equal(paper.label, "#5B616C");
-  assert.equal(paper.lifted, "#FFFFFF");
 });
 
 test("the brand colors are passed in from outside, and the other tones follow them", () => {
@@ -871,7 +870,7 @@ test("the brand colors are passed in from outside, and the other tones follow th
   assert.equal(svg.includes("#0E1116"), false);
   // Derived tones lie between the two backgrounds, nearer the surface.
   const channel = (hex, i) => Number.parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
-  for (const tone of ["slab", "grid", "line", "lifted"])
+  for (const tone of ["slab", "grid", "line"])
     assert.ok(channel(ink[tone], 0) >= 0x10 && channel(ink[tone], 0) <= 0xee, tone);
 });
 
@@ -920,4 +919,26 @@ test("the renderer reads brand/brand.json unless told otherwise", () => {
   writeFileSync(other, JSON.stringify({ ink: "#123456" }));
   assert.ok(run("--brand", other).includes("#123456"));
   assert.equal(run().includes("#123456"), false);
+});
+
+test("a lifted element is drawn in the accent color, with paper lines on it", () => {
+  for (const mode of ["ink", "paper"]) {
+    const palette = resolvePalette(mode);
+    assert.equal(palette.lifted, "#4F5BFF");
+    assert.equal(palette.liftedLine, "#F5F3EE");
+    assert.notEqual(palette.liftedSide, palette.lifted);
+  }
+  const svg = lifted({ palette: "paper" });
+  const group = svg.match(/<g[^>]*data-lifted="true"[^>]*>[\s\S]*?<\/g>/)[0];
+  assert.ok(group.includes('fill="#4F5BFF"'));
+  assert.ok(group.includes('stroke="#F5F3EE"'));
+  assert.equal(group.includes("#B0AFAD"), false);
+});
+
+test("the lifted color follows the brand's accent", () => {
+  const brand = { accent: "#E4572E", paper: "#FFF8F0" };
+  const palette = resolvePalette("paper", { brand });
+  assert.equal(palette.lifted, "#E4572E");
+  assert.equal(palette.liftedLine, "#FFF8F0");
+  assert.ok(lifted({ palette: "paper", brand }).includes('fill="#E4572E"'));
 });
