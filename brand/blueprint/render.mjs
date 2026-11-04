@@ -20,6 +20,8 @@ Options:
   --color <name=#hex>    One brand color, over the file's (repeatable)
   --tone <name=#hex>     One tone outright: background, line, slab, grid, label,
                          highlight, lifted (repeatable)
+  --view isometric|2d    The angle to draw from: isometric (default) or the page as on screen, seen
+                         from above (2d)
   --rotate <deg>         Turn the view by 0, 90, 180 or 270 degrees (default: 0)
   --lift <tag>           Raise every box with this tag, and what it holds, off the page and measure it
   --lift-index <n,...>   Raise the boxes at these positions instead
@@ -99,6 +101,7 @@ function parse(argv) {
       const target = arg === "--color" ? "brand" : "colors";
       options[target] = { ...options[target], [name]: color };
     } else if (arg === "--rotate") options.rotate = Number(value);
+    else if (arg === "--view") options.view = value;
     else if (arg === "--lift") options.lift = { tag: value };
     else if (arg === "--lift-index") options.lift = { index: value.split(",").map(Number) };
     else if (arg === "--lift-height") options.liftHeight = Number(value);
@@ -131,6 +134,10 @@ async function main() {
   }
   if (options.overflow && !["bleed", "clip"].includes(options.overflow)) {
     console.error("--overflow is bleed or clip");
+    return 2;
+  }
+  if (options.view && !["isometric", "2d"].includes(options.view)) {
+    console.error("--view is isometric or 2d");
     return 2;
   }
   if (options.palette && !["ink", "paper"].includes(options.palette)) {

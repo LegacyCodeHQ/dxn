@@ -204,3 +204,13 @@ Colors are `#RGB` or `#RRGGBB`. An unknown name or a color that is not hex is an
 `--no-measure` leaves out the page's own width and height lines. A lifted
 element keeps its measurements, so an image can say one thing: the size of the
 part that was lifted.
+
+## The 2d view
+
+`--view 2d` (or `view: "2d"`) draws the page as it is on screen, seen from above,
+instead of at the isometric angle. Boxes, rounded corners, marks and colors are the
+same; the viewport is a plain rectangle, the grid and measurement lines lie along the
+page's axes, and the text of a measurement is horizontal or vertical. There is no
+height, so no slab sides and no footprint. A lifted element keeps its accent color and
+its measurements, and sits on the page without a body. `--rotate` still turns the page
+in quarter steps.

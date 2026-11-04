@@ -1059,3 +1059,62 @@ test("a small rounded box that holds an icon is not turned into a photo, so the 
   });
   assert.equal((svg.match(/data-wire="cross"/g) ?? []).length, 1);
 });
+
+const plan = (options = {}, boxes = liftable()) =>
+  renderSvg([{ label: "a", layout: layout(1000, boxes) }], {
+    view: "2d",
+    merge: false,
+    ...options,
+  });
+const nums = (text) => text.split(/[ ,]+/).map(Number);
+
+test("the 2d view draws a box as it is on the page: a rectangle with straight sides", () => {
+  const svg = plan({}, [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("div", "structure", 1, 100, 100, 200, 100),
+  ]);
+  const tops = [...svg.matchAll(/data-face="top" points="([^"]+)"/g)].map((m) =>
+    m[1].split(" ").map(nums),
+  );
+  const box = tops[1];
+  assert.equal(box.length, 4);
+  assert.equal(new Set(box.map(([x]) => x)).size, 2);
+  assert.equal(new Set(box.map(([, y]) => y)).size, 2);
+  const [xs, ys] = [box.map(([x]) => x), box.map(([, y]) => y)];
+  const wide = Math.max(...xs) - Math.min(...xs);
+  const tall = Math.max(...ys) - Math.min(...ys);
+  assert.ok(Math.abs(wide / tall - 2) < 0.01);
+});
+
+test("the 2d view has no sides and no slab thickness", () => {
+  const svg = plan({ lift: { tag: "section" } });
+  assert.equal((svg.match(/data-face="(side|viewport-side)"/g) ?? []).length, 0);
+  assert.equal((svg.match(/data-face="viewport-top"/g) ?? []).length, 1);
+});
+
+test("the 2d view keeps rounded corners, marks and measurements, laid along the page's axes", () => {
+  const svg = plan({}, liftable(24));
+  assert.ok(Math.max(...topPoints(svg)) > 16);
+  const angles = [
+    ...svg.matchAll(/<text[^>]*transform="rotate\((-?[\d.]+) [^"]*"[^>]*>\d+ px</g),
+  ].map((m) => Number(m[1]));
+  assert.deepEqual(angles, [0, 90]);
+  assert.ok(svg.includes('data-wire="lines"'));
+});
+
+test("a lifted element in the 2d view is accent colored and measured, with no footprint", () => {
+  const svg = plan({ lift: { tag: "section" }, palette: "paper" });
+  const group = liftedGroups(svg)[0];
+  assert.ok(group.includes('fill="#4F5BFF"'));
+  assert.equal((svg.match(/data-lift="footprint"/g) ?? []).length, 0);
+  assert.ok(svg.includes(">230 px<"));
+  assert.equal((svg.match(/data-cap=/g) ?? []).length, 8);
+});
+
+test("the view is isometric or 2d, and isometric is the default", () => {
+  assert.throws(() => plan({ view: "top" }), /view/);
+  const draw = (options) =>
+    renderSvg([{ label: "a", layout: layout(1000, liftable()) }], { merge: false, ...options });
+  assert.equal(draw({}), draw({ view: "isometric" }));
+  assert.notEqual(draw({}), draw({ view: "2d" }));
+});

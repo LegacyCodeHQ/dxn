@@ -511,7 +511,8 @@ export function renderSvg(layouts, options = {}) {
     overflow,
     viewportSlab = true,
     viewportThickness = 18,
-    flat = false,
+    flat: flatOption = false,
+    view = "isometric",
     rotate = 0,
     lift,
     liftHeight = 90,
@@ -524,6 +525,12 @@ export function renderSvg(layouts, options = {}) {
     width = 1600,
   } = options;
   if (!Number.isInteger(rotate / 90)) throw new Error("rotate is a multiple of 90 degrees");
+  if (view !== "isometric" && view !== "2d")
+    throw new Error(`view is isometric or 2d, got ${view}`);
+  // The 2d view is the page as it is on screen, seen from above: it lies flat and
+  // has no height at all, so no sides and no footprint.
+  const plane = view === "2d";
+  const flat = flatOption || plane;
   const quarters = rotate / 90;
   const colors = resolvePalette(palette, { brand, colors: tones });
   // The slab is the visible part of the page: whatever runs past it is cut,
@@ -597,10 +604,10 @@ export function renderSvg(layouts, options = {}) {
     const { w, h } = layout.root;
     const ox = flat ? offsetX : 0;
     if (flat) offsetX += w + flatGap;
-    const at = (x, y, z) => project(x + ox, y, z);
+    const at = (x, y, z) => (plane ? { x: x + ox, y } : project(x + ox, y, z));
 
     // The viewport is a slab the page sits on: a top face and two sides.
-    if (viewportSlab && viewportThickness > 0) {
+    if (viewportSlab && (plane || viewportThickness > 0)) {
       const ring = [
         [0, 0],
         [w, 0],
@@ -608,7 +615,7 @@ export function renderSvg(layouts, options = {}) {
         [0, h],
       ];
       const slabTop = ring.map(([x, y]) => at(x, y, baseZ));
-      const slabSides = visibleRuns(ring).map(({ from, to }) => {
+      const slabSides = (plane ? [] : visibleRuns(ring)).map(({ from, to }) => {
         const upper = [];
         for (let i = from; i <= to + 1; i++) upper.push(ring[i % ring.length]);
         return [
@@ -735,13 +742,14 @@ export function renderSvg(layouts, options = {}) {
         grow(d.b);
         d.caps.flat().forEach(grow);
       });
-      shapes.push({
-        // After the whole page, before every lifted body (their order is LIFTED minus an area).
-        order: [layoutIndex, LIFTED - 1e8, index],
-        kind: "footprint",
-        ring: ground,
-        drops,
-      });
+      if (!plane)
+        shapes.push({
+          // After the whole page, before every lifted body (their order is LIFTED minus an area).
+          order: [layoutIndex, LIFTED - 1e8, index],
+          kind: "footprint",
+          ring: ground,
+          drops,
+        });
       shapes.push({ order: [layoutIndex, LIFTED + 1e9, index], kind: "dimensions", dimensions });
     }
 
@@ -751,7 +759,7 @@ export function renderSvg(layouts, options = {}) {
       const ring = outline(box);
       const top = ring.map(([x, y]) => at(x, y, z));
       // Only a chosen box is a body. What it holds lies on its top face.
-      const sideDepth = leading.includes(index) ? liftThickness : thickness;
+      const sideDepth = plane ? 0 : leading.includes(index) ? liftThickness : thickness;
       const sides =
         sideDepth > 0
           ? visibleRuns(ring).map(({ from, to }) => {
