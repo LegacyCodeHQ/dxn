@@ -179,3 +179,6 @@ with sides, even in a flat view. Its sides are rounded when its corners are and
 sharp when they are not. Each chosen box is measured across and up at the height
 it floats, with the same capped lines as the page, and its footprint stays on
 the page as a dashed outline. Choosing nothing is an error.
+
+A lifted slab is solid. Its top has its own tone and its sides use the slab
+tone, so it reads as a body floating over the page, not an outline.

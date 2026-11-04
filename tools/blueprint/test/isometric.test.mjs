@@ -812,3 +812,15 @@ test("without lift the picture is unchanged", () => {
     renderSvg([{ label: "a", layout: layout(1000, liftable()) }], { flat: true, ...options });
   assert.equal(draw({}), draw({ lift: undefined }));
 });
+
+test("a lifted slab is a solid body, in its own tone, never see-through", () => {
+  for (const palette of ["ink", "paper"]) {
+    const svg = lifted({ palette });
+    const group = svg.match(/<g[^>]*data-lifted="true"[^>]*>[\s\S]*?<\/g>/)[0];
+    const fills = [...group.matchAll(/data-face="(top|side)"[^>]*fill="(#[0-9A-Fa-f]{6})"/g)];
+    assert.ok(fills.length >= 2);
+    const background = svg.match(/<rect[^>]*fill="(#[0-9A-Fa-f]{6})"/)[1];
+    for (const [, , fill] of fills) assert.notEqual(fill, background);
+    assert.equal(svg.includes("opacity"), false);
+  }
+});

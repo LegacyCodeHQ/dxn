@@ -14,6 +14,7 @@ const PALETTES = {
     background: "#0E1116",
     line: "#4A4C4E",
     slab: "#171A1F",
+    lifted: "#232830",
     grid: "#1C1F23",
     label: "#8A8F9A",
     highlight: "#8C95FF",
@@ -22,6 +23,7 @@ const PALETTES = {
     background: "#F5F3EE",
     line: "#B0AFAD",
     slab: "#E8E6E0",
+    lifted: "#FFFFFF",
     grid: "#E7E5E1",
     label: "#5B616C",
     highlight: "#4F5BFF",
@@ -789,11 +791,11 @@ export function renderSvg(layouts, options = {}) {
       out.push(`<g${attrs}>`);
       for (const side of shape.sides) {
         out.push(
-          `<polygon data-face="side" points="${points(side)}" fill="${colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
+          `<polygon data-face="side" points="${points(side)}" fill="${shape.lifted ? colors.slab : colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
         );
       }
       out.push(
-        `<polygon data-face="top" points="${points(shape.top)}" fill="${colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
+        `<polygon data-face="top" points="${points(shape.top)}" fill="${shape.lifted ? colors.lifted : colors.background}" stroke="${stroke_}" stroke-width="${width_}" stroke-linejoin="round"/>`,
       );
       if (shape.marks) {
         const d = shape.marks.lines
