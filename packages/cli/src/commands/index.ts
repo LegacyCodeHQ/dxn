@@ -7,6 +7,7 @@ import { reviewCommand } from "@cli/commands/review.js";
 import { statesCommand } from "@cli/commands/states.js";
 import { statusCommand } from "@cli/commands/status.js";
 import type { Command } from "@cli/commands/support/context.js";
+import { treeCommand } from "@cli/commands/tree.js";
 import { validateCommand } from "@cli/commands/validate.js";
 
 export { commandList } from "@cli/commands/support/usage.js";
@@ -16,6 +17,7 @@ export const language: Record<string, Command> = {
   check: checkCommand,
   fmt: fmtCommand,
   states: statesCommand,
+  tree: treeCommand,
   cases: casesCommand,
   validate: validateCommand,
   rename: renameCommand,

@@ -15,6 +15,10 @@ export const commandList = `  check <file> [--expect <title>]    Parse and check
                                      given its path from a type, such as
                                      Toolbar.menu.toggle: where it is inside its
                                      parents, with the states they give it
+  tree <file> [<type>]               Print the declared has tree of a type, or all
+                                     containment roots when no type is named.
+                                     Keep conditions and lists without evaluating
+                                     state combinations; use --json for structure
   cases <file> <type>                List the cases a type, or a child in place,
         [--combinations]             has: those that can be told apart, each
                                      with what it covers where it covers more

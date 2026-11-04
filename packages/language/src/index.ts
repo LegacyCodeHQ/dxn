@@ -124,6 +124,8 @@ export { type Drawn, validate } from "@language/evidence/validate.js";
 export { subjects } from "@language/model/condition.js";
 export { among, Names } from "@language/model/names.js";
 export { givenDimensions, profilesOf } from "@language/model/profiles.js";
+// The declared has structure, independent of evaluated combinations.
+export { printTypeTrees, type TypeTree, typeTrees } from "@language/model/tree.js";
 // The one way a file is written, for dxn fmt and editors.
 export { format } from "@language/syntax/format.js";
 export { parse } from "@language/syntax/parse.js";

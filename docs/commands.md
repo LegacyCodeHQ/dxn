@@ -17,7 +17,7 @@ in sync.
 
 ## Contents
 
-[check](#check), [fmt](#fmt), [states](#states), [cases](#cases), [validate](#validate), [attach](#attach), [status](#status), [review](#review), [rename](#rename)
+[check](#check), [fmt](#fmt), [states](#states), [tree](#tree), [cases](#cases), [validate](#validate), [attach](#attach), [status](#status), [review](#review), [rename](#rename)
 
 ## Usage
 
@@ -62,6 +62,10 @@ Commands:
                                      given its path from a type, such as
                                      Toolbar.menu.toggle: where it is inside its
                                      parents, with the states they give it
+  tree <file> [<type>]               Print the declared has tree of a type, or all
+                                     containment roots when no type is named.
+                                     Keep conditions and lists without evaluating
+                                     state combinations; use --json for structure
   cases <file> <type>                List the cases a type, or a child in place,
         [--combinations]             has: those that can be told apart, each
                                      with what it covers where it covers more
@@ -169,6 +173,30 @@ Prints a type's states in each profile or combination as a Markdown table; given
 ```bash
 dxn states wordmark.dxn Wordmark
 ```
+
+### tree
+
+Prints the declared `has` tree of a type. With no type argument, prints all
+containment roots: types not placed by any other type. A shared type expands at
+each placement, using the child name and type. Nested types can be selected by
+their qualified names, such as `Container.Inner`; a nested declaration alone is
+not a `has` placement.
+
+Conditions remain visible as `only when` expressions, and lists as `[Type]`.
+Tagged list members retain their `list.tag` names. This shows declared structure
+without filtering children by state combinations. The source must still pass
+normal language checks, including containment-cycle and expectation checks.
+
+```bash
+dxn tree docs/architecture/dxn-codebase.dxn ModifyDxnGrammar
+dxn tree docs/architecture/dxn-codebase.dxn
+dxn tree docs/architecture/dxn-codebase.dxn ModifyDxnGrammar --json
+```
+
+With `--json`, returns `file`, `trees`, and `problems`. Each tree node has `name`,
+`type`, `path`, and `children`, with `list` and `when` when applicable. Text output
+separates roots with a blank line; a file with no types prints `No types declared.`
+and has an empty `trees` array in JSON.
 
 ### cases
 
