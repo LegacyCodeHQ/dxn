@@ -8673,6 +8673,61 @@
                   "fontWeight": "600"
                 }
               ]
+            },
+            {
+              "type": "frame",
+              "id": "G03RI",
+              "name": "Launch Teaser Slides",
+              "width": "fill_container",
+              "stroke": "$rule",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 24,
+              "padding": [
+                14,
+                0
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Ag1FM",
+                  "name": "Frame",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": 420,
+                  "content": "Launch Teaser Slides",
+                  "fontFamily": "$font-text",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "ZCJGA",
+                  "name": "Contents",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Four 1080 x 1350 slides for product designers: design and verification in one place",
+                  "lineHeight": 1.4,
+                  "fontFamily": "$font-text",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "x07zSw",
+                  "name": "Status",
+                  "fill": "$accent-deep",
+                  "textGrowth": "fixed-width",
+                  "width": 200,
+                  "content": "Ready",
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                }
+              ]
             }
           ]
         },
@@ -9764,6 +9819,1140 @@
                   "fontFamily": "$font-text",
                   "fontSize": 13,
                   "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "mm2Qu",
+      "x": 15108,
+      "y": 0,
+      "name": "Launch Teaser Slides",
+      "fill": "$canvas",
+      "gap": 80,
+      "padding": 80,
+      "children": [
+        {
+          "type": "frame",
+          "id": "t5c4m",
+          "name": "Slide 1 Cover",
+          "clip": true,
+          "width": 1080,
+          "height": 1350,
+          "fill": "$paper",
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "b9z4TH",
+              "x": 0,
+              "y": 50,
+              "name": "Blueprint Background",
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "launch/teaser/backgrounds/teaser-blueprint-paper-977273cf.png",
+                "mode": "cover"
+              },
+              "width": 1080,
+              "height": 1350
+            },
+            {
+              "type": "text",
+              "id": "dcJ7F",
+              "x": 72,
+              "y": 72,
+              "name": "Eyebrow",
+              "fill": "$slate",
+              "content": "DXN / FOR PRODUCT DESIGNERS",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "text",
+              "id": "saQ6c",
+              "x": 936,
+              "y": 72,
+              "name": "Counter",
+              "fill": "$slate",
+              "content": "1 / 4",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "text",
+              "id": "V12D4",
+              "x": 72,
+              "y": 352,
+              "name": "Sub",
+              "fill": "$slate",
+              "textGrowth": "fixed-width",
+              "width": 760,
+              "content": "Design it, build it, prove it, one place.",
+              "lineHeight": 1.4,
+              "fontFamily": "$font-text",
+              "fontSize": 30,
+              "fontWeight": "600",
+              "letterSpacing": -0.3
+            },
+            {
+              "type": "frame",
+              "id": "dIe4G",
+              "x": 72,
+              "y": 1022,
+              "name": "Lockup Block",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "j9Mey",
+                  "name": "Lockup",
+                  "gap": 15.9,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "fgU9d",
+                      "name": "Mark Wrap",
+                      "padding": [
+                        35.865,
+                        0,
+                        0,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "id": "wJgHj",
+                          "type": "ref",
+                          "ref": "a9lLg",
+                          "name": "Logomark",
+                          "width": 124.29,
+                          "height": 124.29
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "U3OiLj",
+                      "name": "Wordmark",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kj2D1",
+                          "name": "Letter d",
+                          "fill": "$ink",
+                          "content": "d",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 150,
+                          "fontWeight": "800",
+                          "letterSpacing": -9
+                        },
+                        {
+                          "type": "text",
+                          "id": "iU8Fi",
+                          "name": "Letter x",
+                          "fill": "$accent",
+                          "content": "x",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 150,
+                          "fontWeight": "800",
+                          "letterSpacing": -9
+                        },
+                        {
+                          "type": "text",
+                          "id": "PWnEL",
+                          "name": "Letter n",
+                          "fill": "$ink",
+                          "content": "n",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 150,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "kOMQF",
+                  "name": "Coming Soon Wrap",
+                  "padding": [
+                    0,
+                    0,
+                    0,
+                    5.7
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "sgSzd",
+                      "name": "Coming Soon",
+                      "fill": "$slate",
+                      "content": "COMING SOON",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 33.80948275862069,
+                      "fontWeight": "700",
+                      "letterSpacing": 15.8
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "h5QgHw",
+              "x": 72,
+              "y": 128,
+              "name": "Headline",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Pws33",
+                  "fill": "$ink",
+                  "content": "What you design",
+                  "lineHeight": 1.05,
+                  "fontFamily": "$font-mark",
+                  "fontSize": 92,
+                  "fontWeight": "800",
+                  "letterSpacing": -3.7
+                },
+                {
+                  "type": "text",
+                  "id": "qvjoM",
+                  "fill": "$accent",
+                  "content": "is what ships.",
+                  "lineHeight": 1.05,
+                  "fontFamily": "$font-mark",
+                  "fontSize": 92,
+                  "fontWeight": "800",
+                  "letterSpacing": -3.7
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "p7tlx",
+          "name": "Slide 2 Idea",
+          "clip": true,
+          "width": 1080,
+          "height": 1350,
+          "fill": "$ink",
+          "layout": "none",
+          "children": [
+            {
+              "id": "yJgUZ",
+              "type": "ref",
+              "ref": "hCfnc",
+              "name": "Marking Quarter Circle",
+              "x": 690,
+              "y": 1350,
+              "width": 390,
+              "height": 390,
+              "stroke": "$marking-ink-soft",
+              "strokeWidth": 1.5,
+              "rotation": 90
+            },
+            {
+              "type": "text",
+              "id": "x6TH9v",
+              "x": 72,
+              "y": 72,
+              "name": "Eyebrow",
+              "fill": "$slate-on-ink",
+              "content": "DXN / THE PROBLEM",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "text",
+              "id": "L1yBDX",
+              "x": 936,
+              "y": 72,
+              "name": "Counter",
+              "fill": "$slate-on-ink",
+              "content": "2 / 4",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "text",
+              "id": "VBbv3",
+              "x": 72,
+              "y": 128,
+              "name": "Headline",
+              "fill": "$paper",
+              "textGrowth": "fixed-width",
+              "width": 936,
+              "content": "Your design has more states than your mockups.",
+              "lineHeight": 1.08,
+              "fontFamily": "$font-mark",
+              "fontSize": 68,
+              "fontWeight": "800",
+              "letterSpacing": -2.7
+            },
+            {
+              "type": "text",
+              "id": "jteHN",
+              "x": 72,
+              "y": 392,
+              "name": "Body",
+              "fill": "$slate-on-ink",
+              "textGrowth": "fixed-width",
+              "width": 820,
+              "content": "Hover, focus, disabled, error, dark mode, mobile. Each one multiplies the rest. dxn lists every combination and keeps the proof beside the design.",
+              "lineHeight": 1.4,
+              "fontFamily": "$font-text",
+              "fontSize": 26,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "k1clm",
+              "x": 72,
+              "y": 1218,
+              "name": "Wordmark",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "VhMHi",
+                  "fill": "$paper",
+                  "content": "d",
+                  "fontFamily": "$font-mark",
+                  "fontSize": 72,
+                  "fontWeight": "800",
+                  "letterSpacing": -4.3
+                },
+                {
+                  "type": "text",
+                  "id": "XIQim",
+                  "fill": "$accent-light",
+                  "content": "x",
+                  "fontFamily": "$font-mark",
+                  "fontSize": 72,
+                  "fontWeight": "800",
+                  "letterSpacing": -4.3
+                },
+                {
+                  "type": "text",
+                  "id": "H0EODK",
+                  "fill": "$paper",
+                  "content": "n",
+                  "fontFamily": "$font-mark",
+                  "fontSize": 72,
+                  "fontWeight": "800"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "F9W8sM",
+              "x": 72,
+              "y": 600,
+              "name": "States Grid",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "a3HmF",
+                  "name": "Row 1",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "HPDWJ",
+                      "name": "Designed",
+                      "fill": "$paper",
+                      "width": 82,
+                      "height": 82
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "Ri3wO",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "XSf3q",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "pYlUo",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "HdoAO",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "RXktb",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "P3DJin",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "D2xnI",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "A89FcR",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "wfiCT",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yJRf8",
+                  "name": "Row 2",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "a2iCL",
+                      "name": "Designed",
+                      "fill": "$paper",
+                      "width": 82,
+                      "height": 82
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "Wo59h",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "AaBcT",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "ySSHd",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "V8u0L",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "GQJfd",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "hbD9K",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "qCOE1",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "PBVzM",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "KTNXj",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XcpFP",
+                  "name": "Row 3",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "M4RV2",
+                      "name": "Designed",
+                      "fill": "$paper",
+                      "width": 82,
+                      "height": 82
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "C2BY8D",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "WeYqu",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "ILaCg",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "E4MCnv",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "dwLHp",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "C95Gyn",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "TM7b9",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "zyqzd",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "N2LTsq",
+                      "name": "Not designed",
+                      "fill": "$ink",
+                      "width": 82,
+                      "height": 82,
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "spqb1",
+              "x": 72,
+              "y": 930,
+              "name": "Caption",
+              "fill": "$slate-on-ink",
+              "textGrowth": "fixed-width",
+              "width": 936,
+              "content": "5 states × 3 breakpoints × 2 themes = 30 screens. Your mockups cover 3.",
+              "lineHeight": 1.4,
+              "fontFamily": "$font-text",
+              "fontSize": 24,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "W5ZFq",
+          "name": "Slide 3 Brand",
+          "clip": true,
+          "width": 1080,
+          "height": 1350,
+          "fill": "$paper",
+          "layout": "none",
+          "children": [
+            {
+              "type": "text",
+              "id": "I3wPOO",
+              "x": 72,
+              "y": 72,
+              "name": "Eyebrow",
+              "fill": "$slate",
+              "content": "DXN / THE BRAND",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "text",
+              "id": "p58qeM",
+              "x": 936,
+              "y": 72,
+              "name": "Counter",
+              "fill": "$slate",
+              "content": "3 / 4",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "frame",
+              "id": "zyACt",
+              "x": 72,
+              "y": 128,
+              "name": "Headline",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "KV4D2",
+                  "fill": "$ink",
+                  "content": "One value,",
+                  "lineHeight": 1.05,
+                  "fontFamily": "$font-mark",
+                  "fontSize": 84,
+                  "fontWeight": "800",
+                  "letterSpacing": -3.4
+                },
+                {
+                  "type": "text",
+                  "id": "y2vRm6",
+                  "fill": "$accent",
+                  "content": "selected.",
+                  "lineHeight": 1.05,
+                  "fontFamily": "$font-mark",
+                  "fontSize": 84,
+                  "fontWeight": "800",
+                  "letterSpacing": -3.4
+                }
+              ]
+            },
+            {
+              "id": "BRMAd",
+              "type": "ref",
+              "ref": "a9lLg",
+              "name": "Logomark",
+              "x": 47,
+              "y": 400,
+              "width": 400,
+              "height": 400
+            },
+            {
+              "type": "text",
+              "id": "K1HOx",
+              "x": 536,
+              "y": 440,
+              "name": "Mark Text",
+              "fill": "$slate",
+              "textGrowth": "fixed-width",
+              "width": 472,
+              "content": "Design is choosing: one state out of many. The mark is that choice. Four cells, one selected.",
+              "lineHeight": 1.4,
+              "fontFamily": "$font-text",
+              "fontSize": 26,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "Lh7Rs",
+              "x": 72,
+              "y": 860,
+              "name": "Palette",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "nSPMY",
+                  "name": "Ink",
+                  "width": 296,
+                  "height": 190,
+                  "fill": "$ink",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 24,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "iAykC",
+                      "fill": "$paper",
+                      "content": "Ink",
+                      "fontFamily": "$font-text",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "QRtAM",
+                      "fill": "$slate-on-ink",
+                      "content": "#0E1116",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "w4H0pN",
+                  "name": "Paper",
+                  "width": 296,
+                  "height": 190,
+                  "fill": "$paper",
+                  "stroke": "$rule",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 24,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dgmrl",
+                      "fill": "$ink",
+                      "content": "Paper",
+                      "fontFamily": "$font-text",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "y2ewKB",
+                      "fill": "$slate",
+                      "content": "#F5F3EE",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ZGW0X",
+                  "name": "Accent",
+                  "width": 296,
+                  "height": 190,
+                  "fill": "$accent",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 24,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "q1C0k",
+                      "fill": "$paper",
+                      "content": "Accent",
+                      "fontFamily": "$font-text",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "sTYVO",
+                      "fill": "$paper",
+                      "content": "#4F5BFF",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "qSohj",
+              "x": 72,
+              "y": 1100,
+              "name": "Type",
+              "gap": 32,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "fUVdP",
+                  "fill": "$ink",
+                  "content": "Aa",
+                  "fontFamily": "$font-mark",
+                  "fontSize": 120,
+                  "fontWeight": "800",
+                  "letterSpacing": -6
+                },
+                {
+                  "type": "frame",
+                  "id": "vW5Xy",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wj6F7",
+                      "fill": "$ink",
+                      "content": "JetBrains Mono ExtraBold",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 22,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "b8UaXD",
+                      "fill": "$slate",
+                      "content": "Inter for everything you read",
+                      "fontFamily": "$font-text",
+                      "fontSize": 22,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "wCymG",
+          "name": "Slide 4 Close",
+          "clip": true,
+          "width": 1080,
+          "height": 1350,
+          "fill": "$ink",
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "kNMon",
+              "x": 0,
+              "y": 80,
+              "name": "Blueprint Background",
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "launch/teaser/backgrounds/teaser-blueprint-ink-8b4a2d7e.png",
+                "mode": "cover"
+              },
+              "width": 1080,
+              "height": 1350
+            },
+            {
+              "type": "text",
+              "id": "I68KOO",
+              "x": 72,
+              "y": 72,
+              "name": "Eyebrow",
+              "fill": "$slate-on-ink",
+              "content": "DXN / THE PROMISE",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "text",
+              "id": "rC4mQ",
+              "x": 936,
+              "y": 72,
+              "name": "Counter",
+              "fill": "$slate-on-ink",
+              "content": "4 / 4",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "text",
+              "id": "BTlyp",
+              "x": 72,
+              "y": 352,
+              "name": "Sub",
+              "fill": "$slate-on-ink",
+              "textGrowth": "fixed-width",
+              "width": 760,
+              "content": "Design it, build it and verify it where the design lives. Every state, checked.",
+              "lineHeight": 1.4,
+              "fontFamily": "$font-text",
+              "fontSize": 26,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "YP4Vj",
+              "x": 72,
+              "y": 1022,
+              "name": "Lockup Block",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "PoLEd",
+                  "name": "Lockup",
+                  "gap": 15.9,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "nPBqS",
+                      "name": "Mark Wrap",
+                      "padding": [
+                        35.865,
+                        0,
+                        0,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "id": "Vu9RD",
+                          "type": "ref",
+                          "ref": "WWCNg",
+                          "name": "Logomark",
+                          "width": 124.29,
+                          "height": 124.29
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lVqVr",
+                      "name": "Wordmark",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Ekan2",
+                          "name": "Letter d",
+                          "fill": "$paper",
+                          "content": "d",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 150,
+                          "fontWeight": "800",
+                          "letterSpacing": -9
+                        },
+                        {
+                          "type": "text",
+                          "id": "ROZbg",
+                          "name": "Letter x",
+                          "fill": "$accent-light",
+                          "content": "x",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 150,
+                          "fontWeight": "800",
+                          "letterSpacing": -9
+                        },
+                        {
+                          "type": "text",
+                          "id": "kQvcP",
+                          "name": "Letter n",
+                          "fill": "$paper",
+                          "content": "n",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 150,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XQOSb",
+                  "name": "Coming Soon Wrap",
+                  "padding": [
+                    0,
+                    0,
+                    0,
+                    5.7
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "w3QuMQ",
+                      "name": "Coming Soon",
+                      "fill": "$slate-on-ink",
+                      "content": "COMING SOON",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 33.80948275862069,
+                      "fontWeight": "700",
+                      "letterSpacing": 15.8
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "nEMVi",
+              "x": 72,
+              "y": 128,
+              "name": "Headline",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "VFfhb",
+                  "fill": "$paper",
+                  "content": "No hand-off.",
+                  "lineHeight": 1.05,
+                  "fontFamily": "$font-mark",
+                  "fontSize": 92,
+                  "fontWeight": "800",
+                  "letterSpacing": -3.7
+                },
+                {
+                  "type": "text",
+                  "id": "R7hh46",
+                  "fill": "$accent-light",
+                  "content": "One place.",
+                  "lineHeight": 1.05,
+                  "fontFamily": "$font-mark",
+                  "fontSize": 92,
+                  "fontWeight": "800",
+                  "letterSpacing": -3.7
                 }
               ]
             }
