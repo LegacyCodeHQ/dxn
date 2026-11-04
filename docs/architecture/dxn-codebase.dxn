@@ -26,9 +26,43 @@ type ModifyTreeSitterPackage needs TreeSitterChange {
 }
 
 ## Modifying the core parser so that it reads the changed syntax.
+## Its syntax tree reaches checking and formatting through separate paths.
+## Its diagnostics also reach the CLI and language server.
 type ModifyCoreParser {
   has check-parser-agreement: CheckParserAgreement
+  has modify-checker: ModifyChecker
+  has modify-formatter: ModifyFormatter
+  has modify-parser-diagnostics: ModifyParserDiagnostics
 }
+
+## Adapting checking to the changed parser output. The shared analysis entry
+## point supplies checked results and diagnostics to the CLI and language server.
+type ModifyChecker {
+  has modify-cli: ModifyCli
+  has modify-language-server: ModifyLanguageServer
+}
+
+## Adapting formatting to the changed syntax. The formatter reads syntax
+## directly, independently of the checker, and serves both interfaces.
+type ModifyFormatter {
+  has modify-cli: ModifyCli
+  has modify-language-server: ModifyLanguageServer
+}
+
+## Adapting parser diagnostics exposed through the CLI and language server,
+## including syntax errors that prevent formatting.
+type ModifyParserDiagnostics {
+  has modify-cli: ModifyCli
+  has modify-language-server: ModifyLanguageServer
+}
+
+## Adapting the command-line interface to changes in its shared language behavior.
+## Each placement identifies the upstream responsibility causing the impact.
+type ModifyCli { }
+
+## Adapting the language-server interface to changes in shared language behavior.
+## Each placement identifies the upstream responsibility causing the impact.
+type ModifyLanguageServer { }
 
 ## Modifying the Zed extension. It pins a commit of the Tree-sitter package, and
 ## `make zed` fails when `grammar.js` or anything in `src/` differs from that
