@@ -202,6 +202,11 @@ export function normalise(layout, options = {}) {
   const keepKinds = new Set(keep);
   const folds = (box) => !keepKinds.has(box.kind) && box.layer > maxLayer;
 
+  // The page's outermost box has no rounded corners: they would fight the
+  // viewport slab it lies on.
+  const { w: rootW, h: rootH } = layout.root;
+  const covers = (box) =>
+    box.x <= SAME && box.y <= SAME && box.w >= rootW - SAME && box.h >= rootH - SAME;
   const kept = [];
   for (const box of layout.boxes) {
     const next = {
@@ -211,7 +216,7 @@ export function normalise(layout, options = {}) {
       y: box.y,
       w: box.w,
       h: box.h,
-      radius: box.radius ?? 0,
+      radius: covers(box) ? 0 : (box.radius ?? 0),
       cut: box.cut,
       painted: box.painted ?? true,
     };
@@ -392,7 +397,7 @@ export function renderSvg(layouts, options = {}) {
     paint = true,
     budget,
     show,
-    overflow = "bleed",
+    overflow,
     viewportSlab = true,
     viewportThickness = 18,
     flat = false,
@@ -402,6 +407,9 @@ export function renderSvg(layouts, options = {}) {
     width = 1600,
   } = options;
   const colors = PALETTES[palette];
+  // The slab is the visible part of the page: whatever runs past it is cut,
+  // unless asked to bleed. Without a slab there is no edge to cut at.
+  const overflowMode = overflow ?? (viewportSlab ? "clip" : "bleed");
   // A flat view lies on the ground: no height between layers, no thickness.
   const rise = flat ? 0 : layerHeight;
   const thickness = flat ? 0 : slab;
@@ -421,7 +429,7 @@ export function renderSvg(layouts, options = {}) {
 
   // The box being highlighted stays even when its layer is folded away.
   const simplify = (source) => {
-    const layout = overflow === "clip" ? clipLayout(source) : source;
+    const layout = overflowMode === "clip" ? clipLayout(source) : source;
     const result = normalise(layout, { ...base, maxLayer: limitFor(layout) });
     if (highlight?.tag === undefined || result.boxes.some((box) => box.tag === highlight.tag))
       return result;

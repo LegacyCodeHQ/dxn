@@ -410,9 +410,33 @@ const overflowing = () => [
   kbox("div", "structure", 1, 1100, 400, 200, 100),
 ];
 
-test("by default boxes bleed past the edge of the viewport", () => {
-  const svg = renderSvg([{ label: "a", layout: layout(1000, overflowing()) }], { merge: false });
+test("boxes can bleed past the edge of the viewport when asked", () => {
+  const svg = renderSvg([{ label: "a", layout: layout(1000, overflowing()) }], {
+    merge: false,
+    overflow: "bleed",
+  });
   assert.equal(tops(svg), 3);
+});
+
+test("with the viewport slab, the slab is the visible part: boxes are clipped by default", () => {
+  const svg = renderSvg([{ label: "a", layout: layout(1000, overflowing()) }], { merge: false });
+  assert.equal(tops(svg), 2);
+});
+
+test("without the slab, boxes bleed by default", () => {
+  const svg = renderSvg([{ label: "a", layout: layout(1000, overflowing()) }], {
+    merge: false,
+    viewportSlab: false,
+  });
+  assert.equal(tops(svg), 3);
+});
+
+test("the page's outermost box is square, whatever radius it has", () => {
+  const boxes = [kbox("body", "structure", 0, 0, 0, 1000, 800, 40)];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], {
+    viewportSlab: false,
+  });
+  assert.equal(topPoints(svg)[0], 4);
 });
 
 test("clipping keeps only what is inside the viewport", () => {

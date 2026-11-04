@@ -84,8 +84,8 @@ thickness and `--no-slab` draws a plain plane instead.
 
 Boxes that run past the viewport, like a carousel's cards, can be drawn two ways:
 
-- **`--overflow bleed`** (default) draws them whole, running off the page.
-- **`--overflow clip`** draws only the part inside the viewport. Boxes wholly
+- **`--overflow bleed`** draws them whole, running off the page. It is the default only with `--no-slab`.
+- **`--overflow clip`** (default with the viewport slab, which is always the visible part) draws only the part inside the viewport. Boxes wholly
   outside go, and a box that was cut has square corners on the cut side.
 
 ## Kinds, and rounded corners
