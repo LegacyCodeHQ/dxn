@@ -9829,7 +9829,7 @@
     {
       "type": "frame",
       "id": "mm2Qu",
-      "x": 15108,
+      "x": 15092,
       "y": 0,
       "name": "Launch Teaser Slides",
       "fill": "$canvas",
@@ -10051,26 +10051,13 @@
           "layout": "none",
           "children": [
             {
-              "id": "yJgUZ",
-              "type": "ref",
-              "ref": "hCfnc",
-              "name": "Marking Quarter Circle",
-              "x": 690,
-              "y": 1350,
-              "width": 390,
-              "height": 390,
-              "stroke": "$marking-ink-soft",
-              "strokeWidth": 1.5,
-              "rotation": 90
-            },
-            {
               "type": "text",
               "id": "x6TH9v",
               "x": 72,
               "y": 72,
               "name": "Eyebrow",
               "fill": "$slate-on-ink",
-              "content": "DXN / THE PROBLEM",
+              "content": "DXN / THE MARK",
               "fontFamily": "$font-text",
               "fontSize": 13,
               "fontWeight": "600",
@@ -10090,39 +10077,211 @@
               "letterSpacing": 1.5
             },
             {
-              "type": "text",
-              "id": "VBbv3",
+              "type": "frame",
+              "id": "U9TWf4",
               "x": 72,
               "y": 128,
               "name": "Headline",
-              "fill": "$paper",
-              "textGrowth": "fixed-width",
-              "width": 936,
-              "content": "Your design has more states than your mockups.",
-              "lineHeight": 1.08,
-              "fontFamily": "$font-mark",
-              "fontSize": 68,
-              "fontWeight": "800",
-              "letterSpacing": -2.7
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "mJiax",
+                  "fill": "$paper",
+                  "content": "Four cells.",
+                  "lineHeight": 1.05,
+                  "fontFamily": "$font-mark",
+                  "fontSize": 92,
+                  "fontWeight": "800",
+                  "letterSpacing": -3.7
+                },
+                {
+                  "type": "text",
+                  "id": "q0vc7",
+                  "fill": "$accent-light",
+                  "content": "One selected.",
+                  "lineHeight": 1.05,
+                  "fontFamily": "$font-mark",
+                  "fontSize": 92,
+                  "fontWeight": "800",
+                  "letterSpacing": -3.7
+                }
+              ]
+            },
+            {
+              "id": "AbtDH",
+              "type": "ref",
+              "ref": "WWCNg",
+              "name": "Logomark",
+              "x": 47,
+              "y": 400,
+              "width": 400,
+              "height": 400
             },
             {
               "type": "text",
-              "id": "jteHN",
-              "x": 72,
-              "y": 392,
-              "name": "Body",
+              "id": "U1623",
+              "x": 536,
+              "y": 440,
+              "name": "Mark Text",
               "fill": "$slate-on-ink",
               "textGrowth": "fixed-width",
-              "width": 820,
-              "content": "Hover, focus, disabled, error, dark mode, mobile. Each one multiplies the rest. dxn lists every combination and keeps the proof beside the design.",
+              "width": 472,
+              "content": "Sharp, touching, never rounded. The bottom-right cell is the only accent.",
               "lineHeight": 1.4,
               "fontFamily": "$font-text",
               "fontSize": 26,
               "fontWeight": "normal"
             },
             {
+              "type": "text",
+              "id": "x9BOYm",
+              "x": 72,
+              "y": 870,
+              "name": "Tiles Label",
+              "fill": "$slate-on-ink",
+              "content": "ON EVERY BACKGROUND",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
               "type": "frame",
-              "id": "k1clm",
+              "id": "AVVl5",
+              "x": 72,
+              "y": 910,
+              "name": "Three Backgrounds",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "mH1Mt",
+                  "name": "On ink",
+                  "width": 296,
+                  "height": 220,
+                  "fill": "$ink",
+                  "stroke": "$db-ink-line",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "N5Pnp0",
+                      "type": "ref",
+                      "ref": "WWCNg",
+                      "name": "Logomark",
+                      "x": 88,
+                      "y": 50,
+                      "width": 120,
+                      "height": 120
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ABOkB",
+                  "name": "On paper",
+                  "width": 296,
+                  "height": 220,
+                  "fill": "$paper",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "b0tDbu",
+                      "type": "ref",
+                      "ref": "a9lLg",
+                      "name": "Logomark",
+                      "x": 88,
+                      "y": 50,
+                      "width": 120,
+                      "height": 120
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "sQvIb",
+                  "name": "On accent",
+                  "width": 296,
+                  "height": 220,
+                  "fill": "$accent",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "htJJy",
+                      "type": "ref",
+                      "ref": "j0UVa",
+                      "name": "Logomark",
+                      "x": 88,
+                      "y": 50,
+                      "width": 120,
+                      "height": 120
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "L3ASA",
+              "x": 72,
+              "y": 1148,
+              "name": "Tile Labels",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "dajuM",
+                  "width": 296,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nhmO0",
+                      "fill": "$slate-on-ink",
+                      "content": "On ink",
+                      "fontFamily": "$font-text",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XRP0n",
+                  "width": 296,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Ne3ry",
+                      "fill": "$slate-on-ink",
+                      "content": "On paper",
+                      "fontFamily": "$font-text",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "RxyBo",
+                  "width": 296,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Di9PW",
+                      "fill": "$slate-on-ink",
+                      "content": "On accent",
+                      "fontFamily": "$font-text",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "U6uSHU",
               "x": 72,
               "y": 1218,
               "name": "Wordmark",
@@ -10130,7 +10289,7 @@
               "children": [
                 {
                   "type": "text",
-                  "id": "VhMHi",
+                  "id": "GewVg",
                   "fill": "$paper",
                   "content": "d",
                   "fontFamily": "$font-mark",
@@ -10140,7 +10299,7 @@
                 },
                 {
                   "type": "text",
-                  "id": "XIQim",
+                  "id": "tbPd7",
                   "fill": "$accent-light",
                   "content": "x",
                   "fontFamily": "$font-mark",
@@ -10150,7 +10309,7 @@
                 },
                 {
                   "type": "text",
-                  "id": "H0EODK",
+                  "id": "FT073",
                   "fill": "$paper",
                   "content": "n",
                   "fontFamily": "$font-mark",
@@ -10158,350 +10317,6 @@
                   "fontWeight": "800"
                 }
               ]
-            },
-            {
-              "type": "frame",
-              "id": "F9W8sM",
-              "x": 72,
-              "y": 600,
-              "name": "States Grid",
-              "layout": "vertical",
-              "gap": 12,
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "a3HmF",
-                  "name": "Row 1",
-                  "gap": 12,
-                  "children": [
-                    {
-                      "type": "rectangle",
-                      "id": "HPDWJ",
-                      "name": "Designed",
-                      "fill": "$paper",
-                      "width": 82,
-                      "height": 82
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "Ri3wO",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "XSf3q",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "pYlUo",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "HdoAO",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "RXktb",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "P3DJin",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "D2xnI",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "A89FcR",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "wfiCT",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "yJRf8",
-                  "name": "Row 2",
-                  "gap": 12,
-                  "children": [
-                    {
-                      "type": "rectangle",
-                      "id": "a2iCL",
-                      "name": "Designed",
-                      "fill": "$paper",
-                      "width": 82,
-                      "height": 82
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "Wo59h",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "AaBcT",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "ySSHd",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "V8u0L",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "GQJfd",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "hbD9K",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "qCOE1",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "PBVzM",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "KTNXj",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "XcpFP",
-                  "name": "Row 3",
-                  "gap": 12,
-                  "children": [
-                    {
-                      "type": "rectangle",
-                      "id": "M4RV2",
-                      "name": "Designed",
-                      "fill": "$paper",
-                      "width": 82,
-                      "height": 82
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "C2BY8D",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "WeYqu",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "ILaCg",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "E4MCnv",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "dwLHp",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "C95Gyn",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "TM7b9",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "zyqzd",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    },
-                    {
-                      "type": "rectangle",
-                      "id": "N2LTsq",
-                      "name": "Not designed",
-                      "fill": "$ink",
-                      "width": 82,
-                      "height": 82,
-                      "stroke": "$db-ink-line",
-                      "strokeWidth": 1
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "id": "spqb1",
-              "x": 72,
-              "y": 930,
-              "name": "Caption",
-              "fill": "$slate-on-ink",
-              "textGrowth": "fixed-width",
-              "width": 936,
-              "content": "5 states × 3 breakpoints × 2 themes = 30 screens. Your mockups cover 3.",
-              "lineHeight": 1.4,
-              "fontFamily": "$font-text",
-              "fontSize": 24,
-              "fontWeight": "normal"
             }
           ]
         },
@@ -10522,7 +10337,7 @@
               "y": 72,
               "name": "Eyebrow",
               "fill": "$slate",
-              "content": "DXN / THE BRAND",
+              "content": "DXN / COLOR AND TYPE",
               "fontFamily": "$font-text",
               "fontSize": 13,
               "fontWeight": "600",
@@ -10543,7 +10358,7 @@
             },
             {
               "type": "frame",
-              "id": "zyACt",
+              "id": "LrWqc",
               "x": 72,
               "y": 128,
               "name": "Headline",
@@ -10551,122 +10366,75 @@
               "children": [
                 {
                   "type": "text",
-                  "id": "KV4D2",
+                  "id": "sl96p",
                   "fill": "$ink",
-                  "content": "One value,",
+                  "content": "Ink. Paper.",
                   "lineHeight": 1.05,
                   "fontFamily": "$font-mark",
-                  "fontSize": 84,
+                  "fontSize": 92,
                   "fontWeight": "800",
-                  "letterSpacing": -3.4
+                  "letterSpacing": -3.7
                 },
                 {
                   "type": "text",
-                  "id": "y2vRm6",
+                  "id": "CvtNg",
                   "fill": "$accent",
-                  "content": "selected.",
+                  "content": "One accent.",
                   "lineHeight": 1.05,
                   "fontFamily": "$font-mark",
-                  "fontSize": 84,
+                  "fontSize": 92,
                   "fontWeight": "800",
-                  "letterSpacing": -3.4
+                  "letterSpacing": -3.7
                 }
               ]
             },
             {
-              "id": "BRMAd",
-              "type": "ref",
-              "ref": "a9lLg",
-              "name": "Logomark",
-              "x": 47,
-              "y": 400,
-              "width": 400,
-              "height": 400
-            },
-            {
-              "type": "text",
-              "id": "K1HOx",
-              "x": 536,
-              "y": 440,
-              "name": "Mark Text",
-              "fill": "$slate",
-              "textGrowth": "fixed-width",
-              "width": 472,
-              "content": "Design is choosing: one state out of many. The mark is that choice. Four cells, one selected.",
-              "lineHeight": 1.4,
-              "fontFamily": "$font-text",
-              "fontSize": 26,
-              "fontWeight": "normal"
-            },
-            {
               "type": "frame",
-              "id": "Lh7Rs",
+              "id": "swjyN",
               "x": 72,
-              "y": 860,
-              "name": "Palette",
+              "y": 400,
+              "name": "Primary Palette",
               "gap": 24,
               "children": [
                 {
                   "type": "frame",
-                  "id": "nSPMY",
+                  "id": "h1Z04",
                   "name": "Ink",
                   "width": 296,
-                  "height": 190,
+                  "height": 300,
                   "fill": "$ink",
                   "layout": "vertical",
                   "gap": 4,
-                  "padding": 24,
+                  "padding": 22,
                   "justifyContent": "end",
                   "children": [
                     {
                       "type": "text",
-                      "id": "iAykC",
+                      "id": "Y7ENjH",
                       "fill": "$paper",
                       "content": "Ink",
                       "fontFamily": "$font-text",
-                      "fontSize": 20,
+                      "fontSize": 22,
                       "fontWeight": "600"
                     },
                     {
                       "type": "text",
-                      "id": "QRtAM",
+                      "id": "Poald",
                       "fill": "$slate-on-ink",
                       "content": "#0E1116",
                       "fontFamily": "$font-mark",
                       "fontSize": 15,
                       "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "w4H0pN",
-                  "name": "Paper",
-                  "width": 296,
-                  "height": 190,
-                  "fill": "$paper",
-                  "stroke": "$rule",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "gap": 4,
-                  "padding": 24,
-                  "justifyContent": "end",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "dgmrl",
-                      "fill": "$ink",
-                      "content": "Paper",
-                      "fontFamily": "$font-text",
-                      "fontSize": 20,
-                      "fontWeight": "600"
                     },
                     {
                       "type": "text",
-                      "id": "y2ewKB",
-                      "fill": "$slate",
-                      "content": "#F5F3EE",
-                      "fontFamily": "$font-mark",
+                      "id": "swpSM",
+                      "fill": "$slate-on-ink",
+                      "textGrowth": "fixed-width",
+                      "width": 252,
+                      "content": "Text and dark surfaces",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$font-text",
                       "fontSize": 15,
                       "fontWeight": "normal"
                     }
@@ -10674,31 +10442,89 @@
                 },
                 {
                   "type": "frame",
-                  "id": "ZGW0X",
-                  "name": "Accent",
+                  "id": "TWciT",
+                  "name": "Paper",
                   "width": 296,
-                  "height": 190,
-                  "fill": "$accent",
+                  "height": 300,
+                  "fill": "$paper",
+                  "stroke": "$rule",
+                  "strokeWidth": 1,
                   "layout": "vertical",
                   "gap": 4,
-                  "padding": 24,
+                  "padding": 22,
                   "justifyContent": "end",
                   "children": [
                     {
                       "type": "text",
-                      "id": "q1C0k",
-                      "fill": "$paper",
-                      "content": "Accent",
+                      "id": "uWSXg",
+                      "fill": "$ink",
+                      "content": "Paper",
                       "fontFamily": "$font-text",
-                      "fontSize": 20,
+                      "fontSize": 22,
                       "fontWeight": "600"
                     },
                     {
                       "type": "text",
-                      "id": "sTYVO",
+                      "id": "gIpbw",
+                      "fill": "$slate",
+                      "content": "#F5F3EE",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Y7HEG",
+                      "fill": "$slate",
+                      "textGrowth": "fixed-width",
+                      "width": 252,
+                      "content": "The default background",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$font-text",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "IU2lZ",
+                  "name": "Accent",
+                  "width": 296,
+                  "height": 300,
+                  "fill": "$accent",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 22,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "V39125",
+                      "fill": "$paper",
+                      "content": "Accent",
+                      "fontFamily": "$font-text",
+                      "fontSize": 22,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fLOdJ",
                       "fill": "$paper",
                       "content": "#4F5BFF",
                       "fontFamily": "$font-mark",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "IL9Ya",
+                      "fill": "$paper",
+                      "textGrowth": "fixed-width",
+                      "width": 252,
+                      "content": "The one that means selected",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$font-text",
                       "fontSize": 15,
                       "fontWeight": "normal"
                     }
@@ -10707,47 +10533,245 @@
               ]
             },
             {
-              "type": "frame",
-              "id": "qSohj",
+              "type": "text",
+              "id": "RiJSB",
               "x": 72,
-              "y": 1100,
+              "y": 732,
+              "name": "Support Label",
+              "fill": "$slate",
+              "content": "SUPPORT TONES",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "frame",
+              "id": "FTEvw",
+              "x": 72,
+              "y": 768,
+              "name": "Support Palette",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "xalf7",
+                  "name": "Accent Deep",
+                  "width": 216,
+                  "height": 120,
+                  "fill": "$accent-deep",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 22,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "kqcKZ",
+                      "fill": "$paper",
+                      "content": "Accent Deep",
+                      "fontFamily": "$font-text",
+                      "fontSize": 17,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fAw1Y",
+                      "fill": "$paper",
+                      "content": "#3A44D6",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zz1Gj",
+                  "name": "Accent Light",
+                  "width": 216,
+                  "height": 120,
+                  "fill": "$accent-light",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 22,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nm2YC",
+                      "fill": "$ink",
+                      "content": "Accent Light",
+                      "fontFamily": "$font-text",
+                      "fontSize": 17,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "k4Gz9",
+                      "fill": "$ink",
+                      "content": "#8C95FF",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vhyRz",
+                  "name": "Slate",
+                  "width": 216,
+                  "height": 120,
+                  "fill": "$slate",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 22,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Eu34F",
+                      "fill": "$paper",
+                      "content": "Slate",
+                      "fontFamily": "$font-text",
+                      "fontSize": 17,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xXEem",
+                      "fill": "$paper",
+                      "content": "#5B616C",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "xI7Wr",
+                  "name": "Rule",
+                  "width": 216,
+                  "height": 120,
+                  "fill": "$rule",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 22,
+                  "justifyContent": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ZdlwU",
+                      "fill": "$ink",
+                      "content": "Rule",
+                      "fontFamily": "$font-text",
+                      "fontSize": 17,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "qtvif",
+                      "fill": "$ink",
+                      "content": "#D9D6CE",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "ZQkOa",
+              "x": 72,
+              "y": 940,
+              "name": "Type Label",
+              "fill": "$slate",
+              "content": "TYPE",
+              "fontFamily": "$font-text",
+              "fontSize": 13,
+              "fontWeight": "600",
+              "letterSpacing": 1.5
+            },
+            {
+              "type": "frame",
+              "id": "m9b47",
+              "x": 72,
+              "y": 976,
               "name": "Type",
-              "gap": 32,
+              "gap": 40,
               "alignItems": "center",
               "children": [
                 {
                   "type": "text",
-                  "id": "fUVdP",
+                  "id": "DW7he",
                   "fill": "$ink",
                   "content": "Aa",
                   "fontFamily": "$font-mark",
-                  "fontSize": 120,
+                  "fontSize": 150,
                   "fontWeight": "800",
-                  "letterSpacing": -6
+                  "letterSpacing": -7
                 },
                 {
                   "type": "frame",
-                  "id": "vW5Xy",
+                  "id": "xm34P",
                   "layout": "vertical",
-                  "gap": 6,
+                  "gap": 22,
                   "children": [
                     {
-                      "type": "text",
-                      "id": "wj6F7",
-                      "fill": "$ink",
-                      "content": "JetBrains Mono ExtraBold",
-                      "fontFamily": "$font-mark",
-                      "fontSize": 22,
-                      "fontWeight": "800"
+                      "type": "frame",
+                      "id": "qLsNc",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "beZmC",
+                          "fill": "$ink",
+                          "content": "JetBrains Mono ExtraBold",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 24,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "N8pe3",
+                          "fill": "$slate",
+                          "content": "The wordmark, display and headings",
+                          "fontFamily": "$font-text",
+                          "fontSize": 18,
+                          "fontWeight": "normal"
+                        }
+                      ]
                     },
                     {
-                      "type": "text",
-                      "id": "b8UaXD",
-                      "fill": "$slate",
-                      "content": "Inter for everything you read",
-                      "fontFamily": "$font-text",
-                      "fontSize": 22,
-                      "fontWeight": "normal"
+                      "type": "frame",
+                      "id": "B9qN0X",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gyr7y",
+                          "fill": "$ink",
+                          "content": "Inter",
+                          "fontFamily": "$font-text",
+                          "fontSize": 24,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "J1aqs",
+                          "fill": "$slate",
+                          "content": "Everything you read",
+                          "fontFamily": "$font-text",
+                          "fontSize": 18,
+                          "fontWeight": "normal"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -10766,28 +10790,13 @@
           "layout": "none",
           "children": [
             {
-              "type": "rectangle",
-              "id": "kNMon",
-              "x": 0,
-              "y": 80,
-              "name": "Blueprint Background",
-              "fill": {
-                "type": "image",
-                "enabled": true,
-                "url": "launch/teaser/backgrounds/teaser-blueprint-ink-8b4a2d7e.png",
-                "mode": "cover"
-              },
-              "width": 1080,
-              "height": 1350
-            },
-            {
               "type": "text",
               "id": "I68KOO",
               "x": 72,
               "y": 72,
               "name": "Eyebrow",
               "fill": "$slate-on-ink",
-              "content": "DXN / THE PROMISE",
+              "content": "DXN / THE SURFACE",
               "fontFamily": "$font-text",
               "fontSize": 13,
               "fontWeight": "600",
@@ -10815,7 +10824,7 @@
               "fill": "$slate-on-ink",
               "textGrowth": "fixed-width",
               "width": 760,
-              "content": "Design it, build it and verify it where the design lives. Every state, checked.",
+              "content": "A cutting mat, a marking library and isometric blueprints. One surface at a time.",
               "lineHeight": 1.4,
               "fontFamily": "$font-text",
               "fontSize": 26,
@@ -10926,7 +10935,7 @@
             },
             {
               "type": "frame",
-              "id": "nEMVi",
+              "id": "jl0wk",
               "x": 72,
               "y": 128,
               "name": "Headline",
@@ -10934,9 +10943,9 @@
               "children": [
                 {
                   "type": "text",
-                  "id": "VFfhb",
+                  "id": "p9sOs",
                   "fill": "$paper",
-                  "content": "No hand-off.",
+                  "content": "Drawn to",
                   "lineHeight": 1.05,
                   "fontFamily": "$font-mark",
                   "fontSize": 92,
@@ -10945,14 +10954,182 @@
                 },
                 {
                   "type": "text",
-                  "id": "R7hh46",
+                  "id": "CNupP",
                   "fill": "$accent-light",
-                  "content": "One place.",
+                  "content": "scale.",
                   "lineHeight": 1.05,
                   "fontFamily": "$font-mark",
                   "fontSize": 92,
                   "fontWeight": "800",
                   "letterSpacing": -3.7
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "BvusN",
+              "x": 72,
+              "y": 452,
+              "name": "Surfaces",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ZcJS7",
+                  "name": "Blueprint",
+                  "clip": true,
+                  "width": 600,
+                  "height": 540,
+                  "fill": "$ink",
+                  "stroke": "$db-ink-line",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "I1t2x",
+                      "x": -35,
+                      "y": -140,
+                      "name": "Blueprint Background",
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "launch/teaser/backgrounds/teaser-blueprint-ink-8b4a2d7e.png",
+                        "mode": "cover"
+                      },
+                      "width": 670,
+                      "height": 837
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NOjev",
+                      "x": 14,
+                      "y": 14,
+                      "name": "Tag",
+                      "fill": "$ink",
+                      "padding": [
+                        5,
+                        8
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "A69x1",
+                          "fill": "$slate-on-ink",
+                          "content": "BLUEPRINT",
+                          "fontFamily": "$font-text",
+                          "fontSize": 12,
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CVrht",
+                  "name": "Mat and Markings",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "H2iC7a",
+                      "name": "Cutting Mat",
+                      "clip": true,
+                      "width": 312,
+                      "height": 258,
+                      "fill": "$ink",
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "id": "mlhXV",
+                          "type": "ref",
+                          "ref": "funlv",
+                          "name": "Mat Pattern Ink",
+                          "x": -420,
+                          "y": -250
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PPDhY",
+                          "x": 14,
+                          "y": 14,
+                          "name": "Tag",
+                          "fill": "$ink",
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "U3ZLiF",
+                              "fill": "$slate-on-ink",
+                              "content": "CUTTING MAT",
+                              "fontFamily": "$font-text",
+                              "fontSize": 12,
+                              "fontWeight": "600",
+                              "letterSpacing": 1.5
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "DRSWQ",
+                      "name": "Markings",
+                      "clip": true,
+                      "width": 312,
+                      "height": 258,
+                      "fill": "$ink",
+                      "stroke": "$db-ink-line",
+                      "strokeWidth": 1,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "id": "A1S3n",
+                          "type": "ref",
+                          "ref": "hCfnc",
+                          "name": "Marking Quarter Circle",
+                          "x": 0,
+                          "y": -102,
+                          "width": 360,
+                          "height": 360,
+                          "stroke": "$accent-light",
+                          "strokeWidth": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ttrRa",
+                          "x": 14,
+                          "y": 14,
+                          "name": "Tag",
+                          "fill": "$ink",
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "F3hqYt",
+                              "fill": "$slate-on-ink",
+                              "content": "MARKINGS",
+                              "fontFamily": "$font-text",
+                              "fontSize": 12,
+                              "fontWeight": "600",
+                              "letterSpacing": 1.5
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }
