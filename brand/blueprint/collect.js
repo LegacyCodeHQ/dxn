@@ -54,6 +54,8 @@
     if (textTags.has(tag)) return "text";
     // A box holding only text, or text in inline wrappers, is a block of text.
     const holdsText = (element.textContent || "").trim().length > 0;
+    // A column of links is a group of controls, not a block of text.
+    if (element.querySelector("a[href], button, input, select, textarea")) return "structure";
     const onlyInline = [...element.querySelectorAll("*")].every((child) =>
       inline.has(child.tagName.toLowerCase()),
     );
@@ -104,6 +106,8 @@
 
   const visit = (element, layer) => {
     if (boxes.length >= maxBoxes || layer > maxLayers) return;
+    // A code block is one block: the code inside it is not measured again.
+    if (element.tagName.toLowerCase() === "code" && element.closest("pre")) return;
     const rect = element.getBoundingClientRect();
     const style = getComputedStyle(element);
     const shown =
