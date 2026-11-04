@@ -603,6 +603,34 @@ test("small text is kept under a size limit that drops small boxes", () => {
   assert.equal(tops(renderSvg([{ label: "a", layout: layout(1000, boxes) }], { minSize: 36 })), 2);
 });
 
+const card = (x) => [
+  pbox("a", "control", false, 1, x, 100, 180, 214),
+  pbox("div", "structure", true, 2, x, 100, 180, 172, 20),
+  pbox("div", "text", false, 2, x + 4, 280, 170, 16),
+];
+
+test("a rounded painted box inside a link is a photo: it stays a tile with a cross", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    ...card(10),
+    ...card(200),
+    ...card(390),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], { flat: true });
+  assert.equal((svg.match(/data-wire="cross"/g) ?? []).length, 3);
+});
+
+test("a rounded painted box that holds text is not a photo", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("a", "control", false, 1, 10, 100, 180, 214),
+    pbox("div", "structure", true, 2, 10, 100, 180, 172, 20),
+    pbox("div", "text", false, 3, 20, 120, 100, 16),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], { flat: true });
+  assert.equal((svg.match(/data-wire="cross"/g) ?? []).length, 0);
+});
+
 test("the paper palette uses the paper background and no transparency", () => {
   const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }], {
     palette: "paper",

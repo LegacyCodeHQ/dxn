@@ -230,6 +230,22 @@ export function normalise(layout, options = {}) {
         Object.assign(kept[index], { radius: Math.max(kept[index].radius, next.radius), painted });
     }
   }
+  // A rounded painted box inside a link, holding no text or control, is a photo
+  // even when the page drew it as a background or a wrapper.
+  const holds = (outer, inner) =>
+    inner !== outer &&
+    inner.x >= outer.x - SAME &&
+    inner.y >= outer.y - SAME &&
+    inner.x + inner.w <= outer.x + outer.w + SAME &&
+    inner.y + inner.h <= outer.y + outer.h + SAME;
+  for (const box of kept) {
+    if (box.kind !== "structure" || !box.painted || box.radius < 8) continue;
+    const inLink = kept.some((other) => other.kind === "control" && holds(other, box));
+    const holdsContent = kept.some(
+      (other) => (other.kind === "text" || other.kind === "control") && holds(box, other),
+    );
+    if (inLink && !holdsContent) box.kind = "media";
+  }
   // Text is thin by nature: a line is wide enough to read at any height.
   const big = (box) =>
     box.w >= minSize && (box.kind === "text" ? box.h >= Math.min(minSize, 8) : box.h >= minSize);
