@@ -8,27 +8,63 @@
 const COS = Math.cos(Math.PI / 6);
 const SIN = 0.5;
 
-// Solid, pre-blended tones: overlapping strokes never make a third color.
-const PALETTES = {
-  ink: {
-    background: "#0E1116",
-    line: "#4A4C4E",
-    slab: "#171A1F",
-    lifted: "#232830",
-    grid: "#1C1F23",
-    label: "#8A8F9A",
-    highlight: "#8C95FF",
-  },
-  paper: {
-    background: "#F5F3EE",
-    line: "#B0AFAD",
-    slab: "#E8E6E0",
-    lifted: "#FFFFFF",
-    grid: "#E7E5E1",
-    label: "#5B616C",
-    highlight: "#4F5BFF",
-  },
+// The brand's colors, named as they are in the brand file's variables. Pass
+// your own in `brand` and every tone of the drawing follows them.
+export const DEFAULT_BRAND = {
+  ink: "#0E1116",
+  paper: "#F5F3EE",
+  accent: "#4F5BFF",
+  "accent-light": "#8C95FF",
+  slate: "#5B616C",
+  "slate-on-ink": "#8A8F9A",
+  white: "#FFFFFF",
 };
+
+const TONES = ["background", "line", "slab", "grid", "label", "highlight", "lifted"];
+
+const parseColor = (value, name) => {
+  const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(value));
+  if (!match) throw new Error(`color ${name} must be a hex color like #0E1116, got ${value}`);
+  const hex = match[1].length === 3 ? [...match[1]].map((c) => c + c).join("") : match[1];
+  return [0, 2, 4].map((i) => Number.parseInt(hex.slice(i, i + 2), 16));
+};
+const toHex = (rgb) =>
+  `#${rgb.map((c) => Math.round(c).toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+// Solid, pre-blended tones: overlapping strokes never make a third color, so a
+// tone is the surface with a share of the other color mixed in, never a
+// transparent layer.
+const mix = (from, to, share) => toHex(from.map((c, i) => c + (to[i] - c) * share));
+
+// The tones of the drawing on one background: ink or paper. Colors come from the
+// brand; `colors` sets individual tones outright.
+export function resolvePalette(mode = "ink", { brand = {}, colors = {} } = {}) {
+  if (mode !== "ink" && mode !== "paper") throw new Error(`palette is ink or paper, got ${mode}`);
+  for (const key of Object.keys(brand))
+    if (!(key in DEFAULT_BRAND)) throw new Error(`${key} is not a brand color the tool uses`);
+  for (const key of Object.keys(colors))
+    if (!TONES.includes(key)) throw new Error(`${key} is not a tone of the drawing`);
+  const all = { ...DEFAULT_BRAND, ...brand };
+  const rgb = Object.fromEntries(
+    Object.entries(all).map(([key, value]) => [key, parseColor(value, key)]),
+  );
+  const ink = mode === "ink";
+  const surface = ink ? rgb.ink : rgb.paper;
+  const other = ink ? rgb.paper : rgb.ink;
+  const palette = {
+    background: toHex(surface),
+    line: mix(surface, other, ink ? 0.26 : 0.3),
+    slab: mix(surface, other, ink ? 0.04 : 0.056),
+    grid: mix(surface, other, 0.06),
+    label: toHex(ink ? rgb["slate-on-ink"] : rgb.slate),
+    highlight: toHex(ink ? rgb["accent-light"] : rgb.accent),
+    lifted: ink ? mix(surface, other, 0.09) : toHex(rgb.white),
+  };
+  for (const [key, value] of Object.entries(colors)) {
+    parseColor(value, key);
+    palette[key] = toHex(parseColor(value, key));
+  }
+  return palette;
+}
 
 // What a customer sees outranks what only holds it together.
 const RANK = { structure: 0, text: 1, control: 2, media: 3 };
@@ -435,6 +471,8 @@ function matches(box, index, highlight) {
 export function renderSvg(layouts, options = {}) {
   const {
     palette = "ink",
+    brand,
+    colors: tones,
     layerHeight = 28,
     slab = 6,
     stackGap,
@@ -462,7 +500,7 @@ export function renderSvg(layouts, options = {}) {
   } = options;
   if (!Number.isInteger(rotate / 90)) throw new Error("rotate is a multiple of 90 degrees");
   const quarters = rotate / 90;
-  const colors = PALETTES[palette];
+  const colors = resolvePalette(palette, { brand, colors: tones });
   // The slab is the visible part of the page: whatever runs past it is cut,
   // unless asked to bleed. Without a slab there is no edge to cut at.
   const overflowMode = overflow ?? (viewportSlab ? "clip" : "bleed");

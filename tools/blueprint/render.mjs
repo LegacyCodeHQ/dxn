@@ -12,6 +12,11 @@ const USAGE = `Usage: node tools/blueprint/render.mjs <layout.json>... [options]
 Options:
   --out <file>           Write the svg here (default: stdout)
   --palette ink|paper    Background and tones (default: ink)
+  --brand <file.json>    Brand colors to use, named as in the brand file: ink, paper,
+                         accent, accent-light, slate, slate-on-ink, white
+  --color <name=#hex>    One brand color, over the file's (repeatable)
+  --tone <name=#hex>     One tone outright: background, line, slab, grid, label,
+                         highlight, lifted (repeatable)
   --rotate <deg>         Turn the view by 0, 90, 180 or 270 degrees (default: 0)
   --lift <tag>           Raise every box with this tag, and what it holds, off the page and measure it
   --lift-index <n,...>   Raise the boxes at these positions instead
@@ -44,6 +49,7 @@ function parse(argv) {
   const files = [];
   const options = {};
   let out;
+  let brandFile;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (!arg.startsWith("--")) {
@@ -78,7 +84,13 @@ function parse(argv) {
     if (value === undefined) throw new Error(`${arg} needs a value`);
     if (arg === "--out") out = value;
     else if (arg === "--palette") options.palette = value;
-    else if (arg === "--rotate") options.rotate = Number(value);
+    else if (arg === "--brand") brandFile = value;
+    else if (arg === "--color" || arg === "--tone") {
+      const [name, color] = value.split("=");
+      if (!name || !color) throw new Error(`${arg} is name=#hex, got ${value}`);
+      const target = arg === "--color" ? "brand" : "colors";
+      options[target] = { ...options[target], [name]: color };
+    } else if (arg === "--rotate") options.rotate = Number(value);
     else if (arg === "--lift") options.lift = { tag: value };
     else if (arg === "--lift-index") options.lift = { index: value.split(",").map(Number) };
     else if (arg === "--lift-height") options.liftHeight = Number(value);
@@ -97,11 +109,13 @@ function parse(argv) {
     else if (arg === "--width") options.width = Number(value);
     else throw new Error(`Unknown option ${arg}`);
   }
-  return { files, options, out };
+  return { files, options, out, brandFile };
 }
 
 async function main() {
-  const { files, options, out } = parse(process.argv.slice(2));
+  const { files, options, out, brandFile } = parse(process.argv.slice(2));
+  if (brandFile)
+    options.brand = { ...JSON.parse(await readFile(brandFile, "utf8")), ...options.brand };
   if (files.length === 0) {
     console.error(USAGE);
     return 2;

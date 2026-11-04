@@ -182,3 +182,19 @@ the page as a dashed outline. Choosing nothing is an error.
 
 A lifted slab is solid. Its top has its own tone and its sides use the slab
 tone, so it reads as a body floating over the page, not an outline.
+
+## Brand colors
+
+No color is fixed in the renderer. `DEFAULT_BRAND` holds the brand file's colors
+under the names of its variables (`ink`, `paper`, `accent`, `accent-light`,
+`slate`, `slate-on-ink`, `white`), and every tone of the drawing is made from
+them: the line, slab and grid are the surface with a share of the other color
+mixed in, so they stay solid. Change a brand color and the whole picture follows.
+
+- `--brand brand.json` reads colors from a file shaped like
+  `{ "ink": "#0E1116", "accent": "#4F5BFF" }`. Any color left out keeps its default.
+- `--color accent=#FF5A1F` sets one brand color, over the file.
+- `--tone line=#445566` sets one tone of the drawing outright.
+- From code: `renderSvg(layouts, { brand, colors })` and `resolvePalette(mode, { brand, colors })`.
+
+Colors are `#RGB` or `#RRGGBB`. An unknown name or a color that is not hex is an error.

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { normalise, project, renderSvg, rotateLayout } from "../isometric.mjs";
+import { normalise, project, renderSvg, resolvePalette, rotateLayout } from "../isometric.mjs";
 
 const layout = (width, boxes) => ({
   viewport: { w: width, h: 800 },
@@ -833,4 +833,59 @@ test("what a lifted element holds lies on its top face: only the chosen one gets
   );
   assert.equal(sideCount(withChild), sideCount(withoutChild));
   assert.equal((withChild.match(/data-lifted="true"/g) ?? []).length, 2);
+});
+
+const one = [{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }];
+
+test("the default brand gives the brand file's colors on both backgrounds", () => {
+  const ink = resolvePalette("ink");
+  assert.equal(ink.background, "#0E1116");
+  assert.equal(ink.highlight, "#8C95FF");
+  assert.equal(ink.label, "#8A8F9A");
+  const paper = resolvePalette("paper");
+  assert.equal(paper.background, "#F5F3EE");
+  assert.equal(paper.highlight, "#4F5BFF");
+  assert.equal(paper.label, "#5B616C");
+  assert.equal(paper.lifted, "#FFFFFF");
+});
+
+test("the brand colors are passed in from outside, and the other tones follow them", () => {
+  const brand = { ink: "#102030", paper: "#EEF2F6" };
+  const ink = resolvePalette("ink", { brand });
+  assert.equal(ink.background, "#102030");
+  const paper = resolvePalette("paper", { brand });
+  assert.equal(paper.background, "#EEF2F6");
+  const svg = renderSvg(one, { brand });
+  assert.ok(svg.includes("#102030"));
+  assert.equal(svg.includes("#0E1116"), false);
+  // Derived tones lie between the two backgrounds, nearer the surface.
+  const channel = (hex, i) => Number.parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  for (const tone of ["slab", "grid", "line", "lifted"])
+    assert.ok(channel(ink[tone], 0) >= 0x10 && channel(ink[tone], 0) <= 0xee, tone);
+});
+
+test("the accent colors come from the brand", () => {
+  const brand = { accent: "#FF0000", "accent-light": "#00FF00" };
+  assert.equal(resolvePalette("paper", { brand }).highlight, "#FF0000");
+  assert.equal(resolvePalette("ink", { brand }).highlight, "#00FF00");
+  assert.equal(resolvePalette("ink", { brand })["accent-light"], undefined);
+});
+
+test("a single tone can still be set outright", () => {
+  const palette = resolvePalette("paper", { colors: { line: "#123456" } });
+  assert.equal(palette.line, "#123456");
+  assert.equal(palette.background, "#F5F3EE");
+  assert.ok(renderSvg(one, { palette: "paper", colors: { line: "#123456" } }).includes("#123456"));
+});
+
+test("a color must be a hex color and a brand key must be one the tool uses", () => {
+  assert.throws(() => resolvePalette("ink", { brand: { ink: "blue" } }), /color/);
+  assert.throws(() => resolvePalette("ink", { colors: { line: "rgb(0,0,0)" } }), /color/);
+  assert.throws(() => resolvePalette("ink", { brand: { teal: "#00AAAA" } }), /teal/);
+  assert.throws(() => resolvePalette("ink", { colors: { teal: "#00AAAA" } }), /teal/);
+  assert.throws(() => resolvePalette("sepia"), /palette/);
+});
+
+test("three-digit hex colors are accepted", () => {
+  assert.equal(resolvePalette("ink", { brand: { ink: "#123" } }).background, "#112233");
 });
