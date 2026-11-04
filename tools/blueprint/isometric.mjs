@@ -531,13 +531,27 @@ export function renderSvg(layouts, options = {}) {
     });
     shapes.push({ order: [layoutIndex, UNDER, 1], kind: "ground", lines: ground });
 
+    // A cap crosses the line at each end, the way a drawing marks where a
+    // measurement starts and stops.
+    const CAP = 14;
     const dimensions = [
-      { a: at(0, h + 50, baseZ), b: at(w, h + 50, baseZ), text: `${Math.round(w)} px` },
-      { a: at(w + 50, 0, baseZ), b: at(w + 50, h, baseZ), text: `${Math.round(h)} px` },
+      {
+        a: at(0, h + 50, baseZ),
+        b: at(w, h + 50, baseZ),
+        caps: [0, w].map((x) => [at(x, h + 50 - CAP, baseZ), at(x, h + 50 + CAP, baseZ)]),
+        text: `${Math.round(w)} px`,
+      },
+      {
+        a: at(w + 50, 0, baseZ),
+        b: at(w + 50, h, baseZ),
+        caps: [0, h].map((y) => [at(w + 50 - CAP, y, baseZ), at(w + 50 + CAP, y, baseZ)]),
+        text: `${Math.round(h)} px`,
+      },
     ];
     dimensions.forEach((d) => {
       grow(d.a);
       grow(d.b);
+      d.caps.flat().forEach(grow);
     });
     shapes.push({ order: [layoutIndex, UNDER, 2], kind: "dimensions", dimensions });
 
@@ -621,6 +635,11 @@ export function renderSvg(layouts, options = {}) {
         out.push(
           `<path d="M${round(d.a.x)} ${round(d.a.y)}L${round(d.b.x)} ${round(d.b.y)}" fill="none" stroke="${colors.label}" stroke-width="${stroke}"/>`,
         );
+        for (const [p, q] of d.caps) {
+          out.push(
+            `<path data-cap="end" d="M${round(p.x)} ${round(p.y)}L${round(q.x)} ${round(q.y)}" fill="none" stroke="${colors.label}" stroke-width="${stroke}"/>`,
+          );
+        }
         out.push(
           `<text x="${round(mid.x)}" y="${round(mid.y + 22 * k)}" font-size="${fontSize}" fill="${colors.label}" text-anchor="middle">${escapeText(d.text)}</text>`,
         );

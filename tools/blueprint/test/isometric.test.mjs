@@ -644,6 +644,14 @@ test("a small rounded painted box that holds text is a label, not a photo", () =
   assert.equal((svg.match(/data-wire="cross"/g) ?? []).length, 0);
 });
 
+test("each measurement line has a cap at both ends, across the line", () => {
+  const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }]);
+  const caps = [...svg.matchAll(/data-cap="[^"]*" d="M([-\d.]+) ([-\d.]+)L([-\d.]+) ([-\d.]+)"/g)];
+  assert.equal(caps.length, 4);
+  const lengths = caps.map((m) => Math.hypot(m[3] - m[1], m[4] - m[2]));
+  assert.ok(lengths.every((l) => l > 4));
+});
+
 test("the paper palette uses the paper background and no transparency", () => {
   const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }], {
     palette: "paper",
