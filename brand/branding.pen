@@ -6,7 +6,7 @@
       "id": "PiZ37",
       "x": 0,
       "y": 0,
-      "name": "DXN Wordmark Typography",
+      "name": "DXN Wordmark, Color and Type",
       "clip": true,
       "width": 1600,
       "fill": "$paper",
@@ -1266,7 +1266,8 @@
                       "content": "ABCDEFGHIJKLM\nabcdefghijklm\n0123456789 {}[]()<>=",
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -1302,6 +1303,7 @@
                       "content": "Aa",
                       "fontFamily": "JetBrains Mono",
                       "fontSize": 88,
+                      "fontWeight": "normal",
                       "letterSpacing": -4
                     },
                     {
@@ -1334,7 +1336,8 @@
                       "content": "ABCDEFGHIJKLM\nabcdefghijklm\n0123456789 {}[]()<>=",
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -1370,6 +1373,7 @@
                       "content": "Aa",
                       "fontFamily": "Inter",
                       "fontSize": 88,
+                      "fontWeight": "normal",
                       "letterSpacing": -4
                     },
                     {
@@ -1402,7 +1406,8 @@
                       "content": "ABCDEFGHIJKLM\nabcdefghijklm\n0123456789 {}[]()<>=",
                       "lineHeight": 1.5,
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -1692,7 +1697,8 @@
                       "content": "A language for the states a thing has and the dimensions it varies over.",
                       "lineHeight": 1.5,
                       "fontFamily": "Inter",
-                      "fontSize": 16
+                      "fontSize": 16,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1755,7 +1761,8 @@
                       "content": "Problems print as file:line:col with a code and a message.",
                       "lineHeight": 1.5,
                       "fontFamily": "Inter",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1818,7 +1825,8 @@
                       "content": "type Wordmark needs Pointer { state hover: Hover }",
                       "lineHeight": 1.6,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -2566,7 +2574,7 @@
       "id": "v6WE5k",
       "x": 5080,
       "y": 4623,
-      "name": "Mat Pattern Options",
+      "name": "Mat Pattern",
       "fill": "$canvas",
       "layout": "vertical",
       "gap": 56,
@@ -3938,7 +3946,7 @@
         {
           "type": "frame",
           "id": "fyoHj",
-          "name": "Single color, light",
+          "name": "Single color (light bg)",
           "layout": "vertical",
           "gap": 12,
           "children": [
@@ -4025,7 +4033,7 @@
         {
           "type": "frame",
           "id": "cDgLA",
-          "name": "Single color, dark",
+          "name": "Single color (dark bg)",
           "layout": "vertical",
           "gap": 12,
           "children": [
@@ -5311,7 +5319,7 @@
                 {
                   "type": "frame",
                   "id": "wtKrr",
-                  "name": "Single color, light",
+                  "name": "Single color (light bg)",
                   "width": 248,
                   "layout": "vertical",
                   "gap": 8,
@@ -5344,7 +5352,7 @@
                       "id": "s6sRg",
                       "name": "Name",
                       "fill": "$ink",
-                      "content": "Single color, light",
+                      "content": "Single color (light bg)",
                       "fontFamily": "$font-text",
                       "fontSize": 14,
                       "fontWeight": "700"
@@ -5367,7 +5375,7 @@
                 {
                   "type": "frame",
                   "id": "DEwsp",
-                  "name": "Single color, dark",
+                  "name": "Single color (dark bg)",
                   "width": 248,
                   "layout": "vertical",
                   "gap": 8,
@@ -5400,7 +5408,7 @@
                       "id": "R7K6s",
                       "name": "Name",
                       "fill": "$ink",
-                      "content": "Single color, dark",
+                      "content": "Single color (dark bg)",
                       "fontFamily": "$font-text",
                       "fontSize": 14,
                       "fontWeight": "700"
@@ -5575,7 +5583,7 @@
               "fill": "$ink",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "A: theme-matched opaque variants (dark and light). D: accent family, one icon for any theme.",
+              "content": "Theme-matched: opaque dark and light variants. Single icon: one icon for any theme.",
               "lineHeight": 1.5,
               "fontFamily": "$font-text",
               "fontSize": 13,
@@ -5660,7 +5668,7 @@
                         {
                           "type": "frame",
                           "id": "FH8m8",
-                          "name": "Row a-matched.dxn",
+                          "name": "Row theme-matched.dxn",
                           "width": "fill_container",
                           "gap": 8,
                           "padding": [
@@ -5718,7 +5726,7 @@
                               "id": "xiTKh",
                               "name": "Filename",
                               "fill": "#CCCCCC",
-                              "content": "a-matched.dxn",
+                              "content": "theme-matched.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -5728,7 +5736,7 @@
                         {
                           "type": "frame",
                           "id": "FFXFY",
-                          "name": "Row d-accent.dxn",
+                          "name": "Row single-icon.dxn",
                           "width": "fill_container",
                           "fill": "#04395E",
                           "gap": 8,
@@ -5787,7 +5795,7 @@
                               "id": "YNluo",
                               "name": "Filename",
                               "fill": "#CCCCCC",
-                              "content": "d-accent.dxn",
+                              "content": "single-icon.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -5972,7 +5980,7 @@
                         {
                           "type": "frame",
                           "id": "aitlY",
-                          "name": "Row a-matched.dxn",
+                          "name": "Row theme-matched.dxn",
                           "width": "fill_container",
                           "gap": 8,
                           "padding": [
@@ -6030,7 +6038,7 @@
                               "id": "bGEts",
                               "name": "Filename",
                               "fill": "#616161",
-                              "content": "a-matched.dxn",
+                              "content": "theme-matched.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -6040,7 +6048,7 @@
                         {
                           "type": "frame",
                           "id": "TcGYy",
-                          "name": "Row d-accent.dxn",
+                          "name": "Row single-icon.dxn",
                           "width": "fill_container",
                           "fill": "#E4E6F1",
                           "gap": 8,
@@ -6099,7 +6107,7 @@
                               "id": "x639Vw",
                               "name": "Filename",
                               "fill": "#616161",
-                              "content": "d-accent.dxn",
+                              "content": "single-icon.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -6284,7 +6292,7 @@
                         {
                           "type": "frame",
                           "id": "b60zB",
-                          "name": "Row a-matched.dxn",
+                          "name": "Row theme-matched.dxn",
                           "width": "fill_container",
                           "gap": 8,
                           "padding": [
@@ -6342,7 +6350,7 @@
                               "id": "WRotk",
                               "name": "Filename",
                               "fill": "#839496",
-                              "content": "a-matched.dxn",
+                              "content": "theme-matched.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -6352,7 +6360,7 @@
                         {
                           "type": "frame",
                           "id": "H052E",
-                          "name": "Row d-accent.dxn",
+                          "name": "Row single-icon.dxn",
                           "width": "fill_container",
                           "fill": "#073642",
                           "gap": 8,
@@ -6411,7 +6419,7 @@
                               "id": "go5b8",
                               "name": "Filename",
                               "fill": "#839496",
-                              "content": "d-accent.dxn",
+                              "content": "single-icon.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -6596,7 +6604,7 @@
                         {
                           "type": "frame",
                           "id": "zP1pF",
-                          "name": "Row a-matched.dxn",
+                          "name": "Row theme-matched.dxn",
                           "width": "fill_container",
                           "gap": 8,
                           "padding": [
@@ -6654,7 +6662,7 @@
                               "id": "MZTOg",
                               "name": "Filename",
                               "fill": "#657B83",
-                              "content": "a-matched.dxn",
+                              "content": "theme-matched.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -6664,7 +6672,7 @@
                         {
                           "type": "frame",
                           "id": "fhp6V",
-                          "name": "Row d-accent.dxn",
+                          "name": "Row single-icon.dxn",
                           "width": "fill_container",
                           "fill": "#EEE8D5",
                           "gap": 8,
@@ -6723,7 +6731,7 @@
                               "id": "yZadF",
                               "name": "Filename",
                               "fill": "#657B83",
-                              "content": "d-accent.dxn",
+                              "content": "single-icon.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -6928,7 +6936,7 @@
                         {
                           "type": "frame",
                           "id": "J4Jk77",
-                          "name": "Row a-matched.dxn",
+                          "name": "Row theme-matched.dxn",
                           "width": "fill_container",
                           "gap": 8,
                           "padding": [
@@ -6986,7 +6994,7 @@
                               "id": "bdbQ4",
                               "name": "Filename",
                               "fill": "#FFFFFF",
-                              "content": "a-matched.dxn",
+                              "content": "theme-matched.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -6996,7 +7004,7 @@
                         {
                           "type": "frame",
                           "id": "uV0fB",
-                          "name": "Row d-accent.dxn",
+                          "name": "Row single-icon.dxn",
                           "width": "fill_container",
                           "stroke": "#F38518",
                           "strokeWidth": 1,
@@ -7056,7 +7064,7 @@
                               "id": "HGaQe",
                               "name": "Filename",
                               "fill": "#FFFFFF",
-                              "content": "d-accent.dxn",
+                              "content": "single-icon.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -7241,7 +7249,7 @@
                         {
                           "type": "frame",
                           "id": "JnThf",
-                          "name": "Row a-matched.dxn",
+                          "name": "Row theme-matched.dxn",
                           "width": "fill_container",
                           "gap": 8,
                           "padding": [
@@ -7299,7 +7307,7 @@
                               "id": "NGxd2",
                               "name": "Filename",
                               "fill": "#292929",
-                              "content": "a-matched.dxn",
+                              "content": "theme-matched.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -7309,7 +7317,7 @@
                         {
                           "type": "frame",
                           "id": "aDkH3",
-                          "name": "Row d-accent.dxn",
+                          "name": "Row single-icon.dxn",
                           "width": "fill_container",
                           "stroke": "#0F4A85",
                           "strokeWidth": 1,
@@ -7369,7 +7377,7 @@
                               "id": "xbhMC",
                               "name": "Filename",
                               "fill": "#292929",
-                              "content": "d-accent.dxn",
+                              "content": "single-icon.dxn",
                               "fontFamily": "$font-text",
                               "fontSize": 13,
                               "fontWeight": "normal"
@@ -7608,7 +7616,7 @@
                       "fill": "$ink",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Single-color variants are for file icons and places that allow one color: the fourth cell is a lighter or darker tone of the same color.",
+                      "content": "Single-color variants are for print and places that allow only one color. The fourth cell is a lighter or darker tone of the same color.",
                       "lineHeight": 1.5,
                       "fontFamily": "$font-text",
                       "fontSize": 13,
@@ -7655,7 +7663,7 @@
                       "fill": "$ink",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Mark: minimum 16px on screen, 6mm in print; at 16px in editors use the single-color variant. Lockups: minimum 24px tall on screen, 8mm in print.",
+                      "content": "Mark: minimum 16px on screen, 6mm in print; at 16px in editors use the IDE icons. Lockups: minimum 24px tall on screen, 8mm in print.",
                       "lineHeight": 1.5,
                       "fontFamily": "$font-text",
                       "fontSize": 13,
@@ -8119,7 +8127,7 @@
             {
               "type": "frame",
               "id": "oeGjc",
-              "name": "DXN Wordmark Typography",
+              "name": "DXN Wordmark, Color and Type",
               "width": "fill_container",
               "stroke": "$rule",
               "strokeWidth": {
@@ -8139,7 +8147,7 @@
                   "fill": "$ink",
                   "textGrowth": "fixed-width",
                   "width": 420,
-                  "content": "DXN Wordmark Typography",
+                  "content": "DXN Wordmark, Color and Type",
                   "fontFamily": "$font-text",
                   "fontSize": 14,
                   "fontWeight": "700"
@@ -8394,7 +8402,7 @@
             {
               "type": "frame",
               "id": "K5Rk6",
-              "name": "Mat Pattern Options",
+              "name": "Mat Pattern",
               "width": "fill_container",
               "stroke": "$rule",
               "strokeWidth": {
@@ -8414,7 +8422,7 @@
                   "fill": "$ink",
                   "textGrowth": "fixed-width",
                   "width": 420,
-                  "content": "Mat Pattern Options",
+                  "content": "Mat Pattern",
                   "fontFamily": "$font-text",
                   "fontSize": 14,
                   "fontWeight": "700"
@@ -8426,7 +8434,7 @@
                   "fill": "$ink",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "The selected pattern: dots and crosses",
+                  "content": "The dots-and-crosses pattern",
                   "lineHeight": 1.4,
                   "fontFamily": "$font-text",
                   "fontSize": 14,
@@ -8968,6 +8976,664 @@
           "layout": "none"
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "svFgI",
+      "x": 11360,
+      "y": 0,
+      "name": "Launch Images",
+      "fill": "$canvas",
+      "layout": "vertical",
+      "gap": 80,
+      "padding": 80,
+      "children": [
+        {
+          "type": "text",
+          "id": "bk6Zu",
+          "name": "Title",
+          "fill": "$slate",
+          "content": "LAUNCH / COMING SOON: X 1600 x 900, LINKEDIN 1200 x 627",
+          "fontFamily": "$font-text",
+          "fontSize": 12,
+          "fontWeight": "600",
+          "letterSpacing": 1.5
+        },
+        {
+          "type": "frame",
+          "id": "lGrhQ",
+          "name": "Launch X 1600x900 blueprint light",
+          "clip": true,
+          "width": 1600,
+          "height": 900,
+          "fill": "$paper",
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "meLIZ",
+              "x": 0,
+              "y": 0,
+              "name": "Blueprint Background",
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "launch/backgrounds/blueprint-light-accent-lift-1600x900.png",
+                "mode": "cover"
+              },
+              "width": 1600,
+              "height": 900
+            },
+            {
+              "type": "frame",
+              "id": "ECuPM",
+              "x": 0,
+              "y": 0,
+              "name": "Lockup Block",
+              "width": 1600,
+              "height": 900,
+              "layout": "vertical",
+              "padding": 80,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "X9mFd",
+                  "name": "Lockup",
+                  "gap": 15.9,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "GjOy1",
+                      "name": "Mark Wrap",
+                      "padding": [
+                        35.865,
+                        0,
+                        0,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "id": "QCfuG",
+                          "type": "ref",
+                          "ref": "a9lLg",
+                          "name": "Logomark",
+                          "width": 124.29,
+                          "height": 124.29
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "dpul4",
+                      "name": "Wordmark",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "w9f6s",
+                          "name": "Letter d",
+                          "fill": "$ink",
+                          "content": "d",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 150,
+                          "fontWeight": "800",
+                          "letterSpacing": -9
+                        },
+                        {
+                          "type": "text",
+                          "id": "r5PgX",
+                          "name": "Letter x",
+                          "fill": "$accent",
+                          "content": "x",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 150,
+                          "fontWeight": "800",
+                          "letterSpacing": -9
+                        },
+                        {
+                          "type": "text",
+                          "id": "QR1hz",
+                          "name": "Letter n",
+                          "fill": "$ink",
+                          "content": "n",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 150,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "KTMv0",
+                  "name": "Coming Soon Wrap",
+                  "padding": [
+                    0,
+                    0,
+                    0,
+                    5.7
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "t0OUya",
+                      "name": "Coming Soon",
+                      "fill": "$slate",
+                      "content": "COMING SOON",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 33.80948275862069,
+                      "fontWeight": "700",
+                      "letterSpacing": 15.8
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Kkq5z",
+          "name": "Launch LinkedIn 1200x627 blueprint light",
+          "clip": true,
+          "width": 1200,
+          "height": 627,
+          "fill": "$paper",
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "gNk4p",
+              "x": 0,
+              "y": 0,
+              "name": "Blueprint Background",
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "launch/backgrounds/blueprint-light-accent-lift-1200x627.png",
+                "mode": "cover"
+              },
+              "width": 1200,
+              "height": 627
+            },
+            {
+              "type": "frame",
+              "id": "N7Du1",
+              "x": 0,
+              "y": 0,
+              "name": "Lockup Block",
+              "width": 1200,
+              "height": 627,
+              "layout": "vertical",
+              "padding": 48,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "aA5dl",
+                  "name": "Lockup",
+                  "gap": 10.176,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Jyk6r",
+                      "name": "Mark Wrap",
+                      "padding": [
+                        22.9536,
+                        0,
+                        0,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "id": "vIATW",
+                          "type": "ref",
+                          "ref": "a9lLg",
+                          "name": "Logomark",
+                          "width": 79.54560000000001,
+                          "height": 79.54560000000001
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uUpSH",
+                      "name": "Wordmark",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "BA9q4",
+                          "name": "Letter d",
+                          "fill": "$ink",
+                          "content": "d",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 96,
+                          "fontWeight": "800",
+                          "letterSpacing": -5.76
+                        },
+                        {
+                          "type": "text",
+                          "id": "ir7Tb",
+                          "name": "Letter x",
+                          "fill": "$accent",
+                          "content": "x",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 96,
+                          "fontWeight": "800",
+                          "letterSpacing": -5.76
+                        },
+                        {
+                          "type": "text",
+                          "id": "F2j2Kt",
+                          "name": "Letter n",
+                          "fill": "$ink",
+                          "content": "n",
+                          "fontFamily": "$font-mark",
+                          "fontSize": 96,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gAxAZ",
+                  "name": "Coming Soon Wrap",
+                  "padding": [
+                    0,
+                    0,
+                    0,
+                    3.5
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wDR4z",
+                      "name": "Coming Soon",
+                      "fill": "$slate",
+                      "content": "COMING SOON",
+                      "fontFamily": "$font-mark",
+                      "fontSize": 21.63806896551724,
+                      "fontWeight": "700",
+                      "letterSpacing": 10.05
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "u6AqA9",
+      "x": 13189,
+      "y": 0,
+      "name": "Blueprint Mode",
+      "width": 1600,
+      "fill": "$canvas",
+      "layout": "vertical",
+      "gap": 48,
+      "padding": 80,
+      "children": [
+        {
+          "type": "text",
+          "id": "bV8jk",
+          "name": "Title",
+          "fill": "$slate",
+          "content": "BLUEPRINT MODE / A BACKGROUND FOR SOCIAL, HERO AND DOCUMENTATION ART",
+          "fontFamily": "$font-text",
+          "fontSize": 12,
+          "fontWeight": "600",
+          "letterSpacing": 1.5
+        },
+        {
+          "type": "frame",
+          "id": "Eiuc2",
+          "name": "Examples",
+          "gap": 40,
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "r8a15e",
+              "name": "Example X 1600x900",
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "launch/coming-soon-x-1600x900.png",
+                "mode": "cover"
+              },
+              "width": 800,
+              "height": 450
+            },
+            {
+              "type": "rectangle",
+              "id": "F1poj",
+              "name": "Example LinkedIn 1200x627",
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "launch/coming-soon-linkedin-1200x627.png",
+                "mode": "cover"
+              },
+              "width": 600,
+              "height": 313.5
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "YoJJE",
+          "name": "Rules Label",
+          "fill": "$slate",
+          "content": "BLUEPRINT MODE / RULES",
+          "fontFamily": "$font-text",
+          "fontSize": 12,
+          "fontWeight": "600",
+          "letterSpacing": 1.5
+        },
+        {
+          "type": "frame",
+          "id": "l4txo",
+          "name": "Rules",
+          "width": "fill_container",
+          "gap": 40,
+          "children": [
+            {
+              "type": "frame",
+              "id": "F0JSj5",
+              "name": "Modes",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "u1FdC",
+                  "name": "Heading",
+                  "fill": "$slate",
+                  "content": "MODES",
+                  "fontFamily": "$font-text",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "text",
+                  "id": "cRKBZ",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "A third mode, for backgrounds: a measured layout drawn as an isometric blueprint. One mode per surface: never with the mat pattern or a marking.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "GlPWe",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "For social images, hero art and documentation headers. Not for the logo, the product interface or file icons.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "JbBP2",
+              "name": "Color",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "NW6P7",
+                  "name": "Heading",
+                  "fill": "$slate",
+                  "content": "SUBJECT",
+                  "fontFamily": "$font-text",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "text",
+                  "id": "sdywQ",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Draw a layout of our own: the dxn editor, site or documentation, ideally at several breakpoints. Never another company's page.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "u1HMIh",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Lift one element out of the page and measure it. One lifted element per image.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "jIWSt",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Measurements say one thing: the lifted element's width and height. The page size lines are optional.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jegFI",
+              "name": "Line and placement",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "asXCG",
+                  "name": "Heading",
+                  "fill": "$slate",
+                  "content": "COLOR",
+                  "fontFamily": "$font-text",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "text",
+                  "id": "iSmKq",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Surface is Paper or Ink. Lines, slab and grid are the surface with a share of the other color mixed in: solid, no transparency. The tool derives them from brand.json.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "CyUJM",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "The lifted element is Accent #4F5BFF with Paper lines, and the only use of accent in the image.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "FcOOS",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Labels are Slate on paper and Slate on Ink on ink.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "HbbW0",
+              "name": "Text and use",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "O3rWRY",
+                  "name": "Heading",
+                  "fill": "$slate",
+                  "content": "LINE AND VIEW",
+                  "fontFamily": "$font-text",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "text",
+                  "id": "J4HCmY",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Stroke 1.25px by default, 1 to 2px at any size; never thicken when scaling.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "ilaiY",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Flat isometric view by default; stacked layers only to show breakpoints. Rotate in 90 degree steps only.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "eS9py",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "The viewport is a slab and always the visible part: clip what runs past it.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "X2QhZY",
+              "name": "Text and use",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "mbe4x",
+                  "name": "Heading",
+                  "fill": "$slate",
+                  "content": "TEXT AND USE",
+                  "fontFamily": "$font-text",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 1.5
+                },
+                {
+                  "type": "text",
+                  "id": "YXPx0",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Lockup in the bottom-left corner, clear of the lifted element and its labels.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "kuDix",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "A caption under the lockup is Bold and as wide as the lockup, end to end.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "SOZBS",
+                  "name": "Rule",
+                  "fill": "$ink",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Check every image at 400px wide: the lockup and the lifted element must still read. Make it with brand/blueprint.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$font-text",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
@@ -9098,6 +9764,46 @@
     "marking-accent-soft": {
       "type": "color",
       "value": "#B3B6F5"
+    },
+    "db-ink-band": {
+      "type": "color",
+      "value": "#F5F3EE0A"
+    },
+    "db-ink-baseline": {
+      "type": "color",
+      "value": "#F5F3EE0D"
+    },
+    "db-ink-guide": {
+      "type": "color",
+      "value": "#F5F3EE33"
+    },
+    "db-ink-line": {
+      "type": "color",
+      "value": "#F5F3EE52"
+    },
+    "db-ink-ghost": {
+      "type": "color",
+      "value": "#F5F3EE14"
+    },
+    "db-paper-band": {
+      "type": "color",
+      "value": "#0E11160A"
+    },
+    "db-paper-baseline": {
+      "type": "color",
+      "value": "#0E11160D"
+    },
+    "db-paper-guide": {
+      "type": "color",
+      "value": "#0E111633"
+    },
+    "db-paper-line": {
+      "type": "color",
+      "value": "#0E111652"
+    },
+    "db-paper-ghost": {
+      "type": "color",
+      "value": "#0E111614"
     }
   },
   "fileToken": "765001bb-2c13-4de0-afb3-86e80fb4d220"
