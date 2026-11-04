@@ -1,0 +1,47 @@
+dimension TreeSitterChange = grammar | scanner | both
+enum TreeSitterParser = regenerate | keep
+enum ZedExtensionPin = update | keep
+
+## Modifying the syntax of the DXN language.
+##
+## The change begins in Tree-sitter and requires reviewing
+## the core parser, followed by checking agreement between them.
+##
+## This structure describes the propagation path.
+type ModifyDxnGrammar needs TreeSitterChange {
+  has modify-tree-sitter-package: ModifyTreeSitterPackage
+}
+
+## Modifying the Tree-sitter package. Its parser is regenerated when the grammar
+## changes, and kept when only the scanner does.
+type ModifyTreeSitterPackage needs TreeSitterChange {
+  state tree-sitter-parser: TreeSitterParser = when TreeSitterChange {
+    grammar -> regenerate
+    scanner -> keep
+    both -> regenerate
+  }
+
+  has modify-core-parser: ModifyCoreParser
+  has modify-zed-extension: ModifyZedExtension
+}
+
+## Modifying the core parser so that it reads the changed syntax.
+type ModifyCoreParser {
+  has check-parser-agreement: CheckParserAgreement
+}
+
+## Modifying the Zed extension. It pins a commit of the Tree-sitter package, and
+## `make zed` fails when `grammar.js` or anything in `src/` differs from that
+## commit. `src/scanner.c` is in `src/`, so the pin is updated for every kind of
+## change, including a scanner change that does not regenerate the parser.
+type ModifyZedExtension needs TreeSitterChange {
+  state zed-extension-pin: ZedExtensionPin = when TreeSitterChange {
+    grammar -> update
+    scanner -> update
+    both -> update
+  }
+}
+
+## Checking that Tree-sitter and the core parser agree on the changed syntax.
+## The check's result and supporting evidence are recorded separately.
+type CheckParserAgreement { }
