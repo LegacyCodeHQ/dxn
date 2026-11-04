@@ -685,7 +685,8 @@ export function renderSvg(layouts, options = {}) {
       const z = baseZ + box.layer * rise + (isLifted ? liftHeight : 0);
       const ring = outline(box);
       const top = ring.map(([x, y]) => at(x, y, z));
-      const sideDepth = isLifted ? liftThickness : thickness;
+      // Only a chosen box is a body. What it holds lies on its top face.
+      const sideDepth = leading.includes(index) ? liftThickness : thickness;
       const sides =
         sideDepth > 0
           ? visibleRuns(ring).map(({ from, to }) => {

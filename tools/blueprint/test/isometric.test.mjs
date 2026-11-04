@@ -824,3 +824,13 @@ test("a lifted slab is a solid body, in its own tone, never see-through", () => 
     assert.equal(svg.includes("opacity"), false);
   }
 });
+
+test("what a lifted element holds lies on its top face: only the chosen one gets a body", () => {
+  const withChild = lifted();
+  const withoutChild = lifted(
+    {},
+    liftable().filter((b) => b.tag !== "p"),
+  );
+  assert.equal(sideCount(withChild), sideCount(withoutChild));
+  assert.equal((withChild.match(/data-lifted="true"/g) ?? []).length, 2);
+});
