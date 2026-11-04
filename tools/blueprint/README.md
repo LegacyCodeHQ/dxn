@@ -170,3 +170,12 @@ slab's corners.
 clockwise, so the view can face any of four directions. The page's sides, its
 boxes and the cut sides of clipped boxes turn with it, and the measurement
 lines follow.
+
+## Lifting
+
+`--lift <tag>` or `--lift-index <n,...>` raises the chosen boxes, and every box
+they hold, off the page (`--lift-height`, default 90). A lifted box gets a slab
+with sides, even in a flat view. Its sides are rounded when its corners are and
+sharp when they are not. Each chosen box is measured across and up at the height
+it floats, with the same capped lines as the page, and its footprint stays on
+the page as a dashed outline. Choosing nothing is an error.

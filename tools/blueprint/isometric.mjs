@@ -416,6 +416,14 @@ function wireMarks(box, place) {
   return null;
 }
 
+// Lifted pieces draw after everything on the page.
+const LIFTED = 1e9;
+
+function matchesLift(box, index, lift) {
+  if (lift.index !== undefined) return [lift.index].flat().includes(index);
+  return lift.tag !== undefined && box.tag === lift.tag;
+}
+
 function matches(box, index, highlight) {
   if (!highlight) return false;
   if (highlight.index !== undefined) return highlight.index === index;
@@ -441,6 +449,9 @@ export function renderSvg(layouts, options = {}) {
     viewportThickness = 18,
     flat = false,
     rotate = 0,
+    lift,
+    liftHeight = 90,
+    liftThickness = 14,
     titles = false,
     wire = true,
     flatGap = 220,
@@ -515,6 +526,7 @@ export function renderSvg(layouts, options = {}) {
   };
 
   let highlighted = false;
+  let liftedAny = false;
   prepared.forEach(({ label, layout }, layoutIndex) => {
     const baseZ = flat ? 0 : layoutIndex * gap;
     const { w, h } = layout.root;
@@ -589,18 +601,97 @@ export function renderSvg(layouts, options = {}) {
       labels.push({ at: tag, text: label, size: 16, strong: true });
     }
 
-    layout.boxes.forEach((box, index) => {
+    // Lifted elements: those chosen, and everything they hold. They float above
+    // the page; each chosen one is measured and leaves its footprint behind.
+    const chosenForLift = new Set(
+      lift
+        ? layout.boxes.flatMap((box, index) => (matchesLift(box, index, lift) ? [index] : []))
+        : [],
+    );
+    const liftedBoxes = new Set(
+      layout.boxes.flatMap((box, index) =>
+        chosenForLift.has(index) || [...chosenForLift].some((c) => encloses(layout.boxes[c], box))
+          ? [index]
+          : [],
+      ),
+    );
+    const leading = [...chosenForLift].filter(
+      (index) =>
+        ![...chosenForLift].some(
+          (other) =>
+            other !== index &&
+            encloses(layout.boxes[other], layout.boxes[index]) &&
+            (!encloses(layout.boxes[index], layout.boxes[other]) || other < index),
+        ),
+    );
+    if (liftedBoxes.size > 0) liftedAny = true;
+
+    for (const index of leading) {
+      const box = layout.boxes[index];
       const z = baseZ + box.layer * rise;
+      const floatZ = z + liftHeight;
+      const footing = floatZ - liftThickness;
+      const ground = outline(box).map(([x, y]) => at(x, y, z));
+      const drops =
+        box.radius < 1
+          ? [
+              [box.x, box.y],
+              [box.x + box.w, box.y],
+              [box.x + box.w, box.y + box.h],
+              [box.x, box.y + box.h],
+            ].map(([x, y]) => [at(x, y, z), at(x, y, footing)])
+          : [];
+      const gap = 30;
+      const cap = 10;
+      const dimensions = [
+        {
+          a: at(box.x, box.y + box.h + gap, footing),
+          b: at(box.x + box.w, box.y + box.h + gap, footing),
+          caps: [box.x, box.x + box.w].map((x) => [
+            at(x, box.y + box.h + gap - cap, footing),
+            at(x, box.y + box.h + gap + cap, footing),
+          ]),
+          text: `${Math.round(box.w)} px`,
+        },
+        {
+          a: at(box.x + box.w + gap, box.y, footing),
+          b: at(box.x + box.w + gap, box.y + box.h, footing),
+          caps: [box.y, box.y + box.h].map((y) => [
+            at(box.x + box.w + gap - cap, y, footing),
+            at(box.x + box.w + gap + cap, y, footing),
+          ]),
+          text: `${Math.round(box.h)} px`,
+        },
+      ];
+      [...ground, ...drops.flat()].forEach(grow);
+      dimensions.forEach((d) => {
+        grow(d.a);
+        grow(d.b);
+        d.caps.flat().forEach(grow);
+      });
+      shapes.push({
+        order: [layoutIndex, LIFTED - 1, index],
+        kind: "footprint",
+        ring: ground,
+        drops,
+      });
+      shapes.push({ order: [layoutIndex, LIFTED + 1e9, index], kind: "dimensions", dimensions });
+    }
+
+    layout.boxes.forEach((box, index) => {
+      const isLifted = liftedBoxes.has(index);
+      const z = baseZ + box.layer * rise + (isLifted ? liftHeight : 0);
       const ring = outline(box);
       const top = ring.map(([x, y]) => at(x, y, z));
+      const sideDepth = isLifted ? liftThickness : thickness;
       const sides =
-        thickness > 0
+        sideDepth > 0
           ? visibleRuns(ring).map(({ from, to }) => {
               const upper = [];
               for (let i = from; i <= to + 1; i++) upper.push(ring[i % ring.length]);
               return [
                 ...upper.map(([x, y]) => at(x, y, z)),
-                ...upper.reverse().map(([x, y]) => at(x, y, z - thickness)),
+                ...upper.reverse().map(([x, y]) => at(x, y, z - sideDepth)),
               ];
             })
           : [];
@@ -609,7 +700,7 @@ export function renderSvg(layouts, options = {}) {
       const chosen = !highlighted && matches(box, index, highlight);
       if (chosen) highlighted = true;
       shapes.push({
-        order: [layoutIndex, flat ? -area(box) : z, box.x + box.y],
+        order: [layoutIndex, isLifted ? LIFTED - area(box) : flat ? -area(box) : z, box.x + box.y],
         kind: "box",
         top,
         sides,
@@ -617,9 +708,11 @@ export function renderSvg(layouts, options = {}) {
         control: flat && wire && box.kind === "control",
         highlight: chosen,
         merged: box.merged,
+        lifted: isLifted,
       });
     });
   });
+  if (lift && !liftedAny) throw new Error("lift matched no box in any capture");
 
   shapes.sort((a, b) => {
     for (let i = 0; i < 3; i++) if (a.order[i] !== b.order[i]) return a.order[i] - b.order[i];
@@ -659,6 +752,14 @@ export function renderSvg(layouts, options = {}) {
         .map(([a, b]) => `M${round(a.x)} ${round(a.y)}L${round(b.x)} ${round(b.y)}`)
         .join("");
       out.push(`<path d="${d}" fill="none" stroke="${colors.grid}" stroke-width="${stroke}"/>`);
+    } else if (shape.kind === "footprint") {
+      const ring = `M${shape.ring.map((p) => `${round(p.x)} ${round(p.y)}`).join("L")}Z`;
+      const legs = shape.drops
+        .map(([a, b]) => `M${round(a.x)} ${round(a.y)}L${round(b.x)} ${round(b.y)}`)
+        .join("");
+      out.push(
+        `<path data-lift="footprint" d="${ring}${legs}" fill="none" stroke="${colors.label}" stroke-width="${stroke}" stroke-dasharray="${round(6 * k)} ${round(5 * k)}"/>`,
+      );
     } else if (shape.kind === "dimensions") {
       for (const d of shape.dimensions) {
         const mid = { x: (d.a.x + d.b.x) / 2, y: (d.a.y + d.b.y) / 2 };
@@ -683,7 +784,8 @@ export function renderSvg(layouts, options = {}) {
       const width_ = shape.highlight ? accent : shape.control ? round(stroke * 1.6) : stroke;
       const attrs =
         (shape.highlight ? ' data-highlight="true"' : "") +
-        (shape.merged ? ` data-merged="${shape.merged}"` : "");
+        (shape.merged ? ` data-merged="${shape.merged}"` : "") +
+        (shape.lifted ? ' data-lifted="true"' : "");
       out.push(`<g${attrs}>`);
       for (const side of shape.sides) {
         out.push(

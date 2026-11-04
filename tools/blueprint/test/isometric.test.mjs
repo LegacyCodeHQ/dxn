@@ -747,3 +747,68 @@ test("the view can be turned in four directions", () => {
   assert.ok(draw(180) !== draw(0));
   assert.throws(() => draw(45), /rotate/);
 });
+
+const liftable = (radius = 0) => [
+  kbox("main", "structure", 0, 0, 0, 1000, 800),
+  kbox("section", "structure", 1, 100, 100, 230, 110, radius),
+  kbox("p", "text", 2, 120, 120, 100, 30),
+  kbox("aside", "structure", 1, 600, 400, 200, 100),
+];
+const lifted = (options = {}, boxes = liftable()) =>
+  renderSvg([{ label: "a", layout: layout(1000, boxes) }], {
+    flat: true,
+    merge: false,
+    lift: { tag: "section" },
+    ...options,
+  });
+const sideCount = (svg) => (svg.match(/data-face="side"/g) ?? []).length;
+const maxSidePoints = (svg) =>
+  Math.max(
+    0,
+    ...[...svg.matchAll(/data-face="side" points="([^"]+)"/g)].map((m) => m[1].split(" ").length),
+  );
+
+test("a lifted element floats: it gets a slab where flat captures have none", () => {
+  const plain = renderSvg([{ label: "a", layout: layout(1000, liftable()) }], {
+    flat: true,
+    merge: false,
+  });
+  assert.equal(sideCount(plain), 0);
+  assert.ok(sideCount(lifted()) > 0);
+});
+
+test("what a lifted element holds is lifted with it, and nothing else", () => {
+  assert.equal((lifted().match(/data-lifted="true"/g) ?? []).length, 2);
+});
+
+test("a lifted element is chosen by tag or by index", () => {
+  const byIndex = lifted({ lift: { index: [3] } });
+  assert.equal((byIndex.match(/data-lifted="true"/g) ?? []).length, 1);
+  assert.ok(byIndex.includes(">200 px<"));
+});
+
+test("a lifted element is measured across and up, at the height it floats", () => {
+  const svg = lifted();
+  assert.ok(svg.includes(">230 px<"));
+  assert.ok(svg.includes(">110 px<"));
+  assert.equal((svg.match(/data-cap=/g) ?? []).length, 8);
+});
+
+test("the place a lifted element left is outlined on the ground", () => {
+  assert.equal((lifted().match(/data-lift="footprint"/g) ?? []).length, 1);
+});
+
+test("a rounded element has rounded sides when lifted, a sharp one has sharp edges", () => {
+  assert.ok(maxSidePoints(lifted({}, liftable(24))) > maxSidePoints(lifted()) + 8);
+  assert.ok(maxSidePoints(lifted()) <= 8);
+});
+
+test("lifting nothing is an error, not a silent no-op", () => {
+  assert.throws(() => lifted({ lift: { tag: "footer" } }), /lift/);
+});
+
+test("without lift the picture is unchanged", () => {
+  const draw = (options) =>
+    renderSvg([{ label: "a", layout: layout(1000, liftable()) }], { flat: true, ...options });
+  assert.equal(draw({}), draw({ lift: undefined }));
+});

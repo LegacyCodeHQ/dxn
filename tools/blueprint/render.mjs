@@ -13,6 +13,9 @@ Options:
   --out <file>           Write the svg here (default: stdout)
   --palette ink|paper    Background and tones (default: ink)
   --rotate <deg>         Turn the view by 0, 90, 180 or 270 degrees (default: 0)
+  --lift <tag>           Raise every box with this tag, and what it holds, off the page and measure it
+  --lift-index <n,...>   Raise the boxes at these positions instead
+  --lift-height <px>     How far a lifted box floats (default: 90)
   --highlight <tag>      Draw the first box with this tag in the accent
   --highlight-index <n>  Draw the nth box of the first layout in the accent
   --min-size <px>        Skip boxes narrower or shorter than this (default: 0)
@@ -76,6 +79,9 @@ function parse(argv) {
     if (arg === "--out") out = value;
     else if (arg === "--palette") options.palette = value;
     else if (arg === "--rotate") options.rotate = Number(value);
+    else if (arg === "--lift") options.lift = { tag: value };
+    else if (arg === "--lift-index") options.lift = { index: value.split(",").map(Number) };
+    else if (arg === "--lift-height") options.liftHeight = Number(value);
     else if (arg === "--highlight") options.highlight = { tag: value };
     else if (arg === "--highlight-index") options.highlight = { index: Number(value) };
     else if (arg === "--min-size") options.minSize = Number(value);
