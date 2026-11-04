@@ -156,3 +156,10 @@ small labels appear. `--no-paint` draws every box, as before. Layouts without
 
 A capture also reports `unloadedImages`; `render.mjs` warns when it is above
 zero, since those images measure as empty boxes.
+
+## Titles and measurements
+
+A capture has no title by default. `--titles` writes its width above it, which
+helps tell several captures apart. The two measurement lines have a cap at each
+end and run level with the foot of the viewport slab, so the caps meet the
+slab's corners.

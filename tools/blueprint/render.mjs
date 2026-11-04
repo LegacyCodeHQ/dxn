@@ -20,6 +20,7 @@ Options:
   --overflow bleed|clip  Boxes that run past the viewport: draw them whole (bleed,
                          the default) or only the part inside it (clip)
   --no-paint             Draw unpainted wrappers and hit areas too (default: only what is painted)
+  --titles               Write each capture's width above it
   --no-slab              Draw the viewport as a plain plane, not a slab
   --slab-thickness <px>  Thickness of the viewport slab (default: 18)
   --flat                 A wireframe on the ground: no layers, no thickness, captures
@@ -51,6 +52,10 @@ function parse(argv) {
     }
     if (arg === "--no-paint") {
       options.paint = false;
+      continue;
+    }
+    if (arg === "--titles") {
+      options.titles = true;
       continue;
     }
     if (arg === "--no-slab") {

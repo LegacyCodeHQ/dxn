@@ -419,6 +419,7 @@ export function renderSvg(layouts, options = {}) {
     viewportSlab = true,
     viewportThickness = 18,
     flat = false,
+    titles = false,
     wire = true,
     flatGap = 220,
     highlight,
@@ -534,17 +535,19 @@ export function renderSvg(layouts, options = {}) {
     // A cap crosses the line at each end, the way a drawing marks where a
     // measurement starts and stops.
     const CAP = 14;
+    // The lines run level with the foot of the slab, so the caps meet its corners.
+    const footZ = viewportSlab ? baseZ - viewportThickness : baseZ;
     const dimensions = [
       {
-        a: at(0, h + 50, baseZ),
-        b: at(w, h + 50, baseZ),
-        caps: [0, w].map((x) => [at(x, h + 50 - CAP, baseZ), at(x, h + 50 + CAP, baseZ)]),
+        a: at(0, h + 50, footZ),
+        b: at(w, h + 50, footZ),
+        caps: [0, w].map((x) => [at(x, h + 50 - CAP, footZ), at(x, h + 50 + CAP, footZ)]),
         text: `${Math.round(w)} px`,
       },
       {
-        a: at(w + 50, 0, baseZ),
-        b: at(w + 50, h, baseZ),
-        caps: [0, h].map((y) => [at(w + 50 - CAP, y, baseZ), at(w + 50 + CAP, y, baseZ)]),
+        a: at(w + 50, 0, footZ),
+        b: at(w + 50, h, footZ),
+        caps: [0, h].map((y) => [at(w + 50 - CAP, y, footZ), at(w + 50 + CAP, y, footZ)]),
         text: `${Math.round(h)} px`,
       },
     ];
@@ -555,9 +558,11 @@ export function renderSvg(layouts, options = {}) {
     });
     shapes.push({ order: [layoutIndex, UNDER, 2], kind: "dimensions", dimensions });
 
-    const tag = flat ? at(0, -70, baseZ) : at(w + 90, 0, baseZ);
-    grow(tag);
-    labels.push({ at: tag, text: label, size: 16, strong: true });
+    if (titles) {
+      const tag = flat ? at(0, -70, baseZ) : at(w + 90, 0, baseZ);
+      grow(tag);
+      labels.push({ at: tag, text: label, size: 16, strong: true });
+    }
 
     layout.boxes.forEach((box, index) => {
       const z = baseZ + box.layer * rise;

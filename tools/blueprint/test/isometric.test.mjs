@@ -62,10 +62,13 @@ test("the highlighted box is drawn in the accent, the rest are not", () => {
 });
 
 test("several layouts stack, each labelled with its width", () => {
-  const svg = renderSvg([
-    { label: "375", layout: layout(375, [box("main", 0, 0, 0, 375, 800)]) },
-    { label: "1440", layout: layout(1440, [box("main", 0, 0, 0, 1440, 800)]) },
-  ]);
+  const svg = renderSvg(
+    [
+      { label: "375", layout: layout(375, [box("main", 0, 0, 0, 375, 800)]) },
+      { label: "1440", layout: layout(1440, [box("main", 0, 0, 0, 1440, 800)]) },
+    ],
+    { titles: true },
+  );
   assert.ok(svg.includes(">375<"));
   assert.ok(svg.includes(">1440<"));
 });
@@ -112,10 +115,13 @@ test("layers count the boxes that enclose a box, not its depth in the page", () 
 });
 
 test("the widest capture is the bottom layer, so narrower ones sit on top", () => {
-  const svg = renderSvg([
-    { label: "375", layout: layout(375, [box("main", 0, 0, 0, 375, 800)]) },
-    { label: "1440", layout: layout(1440, [box("main", 0, 0, 0, 1440, 800)]) },
-  ]);
+  const svg = renderSvg(
+    [
+      { label: "375", layout: layout(375, [box("main", 0, 0, 0, 375, 800)]) },
+      { label: "1440", layout: layout(1440, [box("main", 0, 0, 0, 1440, 800)]) },
+    ],
+    { titles: true },
+  );
   assert.ok(svg.indexOf(">1440<") < svg.indexOf(">375<"));
 });
 
@@ -227,7 +233,7 @@ const three = () => [
 ];
 
 test("only the chosen breakpoints are drawn", () => {
-  const svg = renderSvg(three(), { show: [375, 1440] });
+  const svg = renderSvg(three(), { show: [375, 1440], titles: true });
   assert.ok(svg.includes(">375<"));
   assert.ok(svg.includes(">1440<"));
   assert.equal(svg.includes(">768<"), false);
@@ -395,7 +401,7 @@ test("the wireframe marks can be turned off", () => {
 
 test("flat captures sit side by side on the ground, not stacked", () => {
   const one = renderSvg([three()[2]], { flat: true });
-  const two = renderSvg([three()[1], three()[2]], { flat: true });
+  const two = renderSvg([three()[1], three()[2]], { flat: true, titles: true });
   const width = (svg) => Number(svg.match(/viewBox="[-\d.]+ [-\d.]+ ([\d.]+)/)[1]);
   assert.ok(width(two) > width(one));
   assert.ok(two.includes(">768<"));
@@ -650,6 +656,32 @@ test("each measurement line has a cap at both ends, across the line", () => {
   assert.equal(caps.length, 4);
   const lengths = caps.map((m) => Math.hypot(m[3] - m[1], m[4] - m[2]));
   assert.ok(lengths.every((l) => l > 4));
+});
+
+test("a measurement line sits level with the foot of the slab, so its caps line up with the slab's corner", () => {
+  const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }]);
+  const num = (text) => text.split(/[ ,]+/).map(Number);
+  const feet = [...svg.matchAll(/data-face="viewport-side" points="([^"]+)"/g)].flatMap((m) =>
+    m[1].split(" ").map(num),
+  );
+  const corner = feet.reduce((a, b) => (b[1] > a[1] ? b : a));
+  const caps = [...svg.matchAll(/data-cap="[^"]*" d="M([-\d.]+) ([-\d.]+)L([-\d.]+) ([-\d.]+)"/g)];
+  // The width line's far cap: the lowest of its two.
+  const mids = caps.slice(0, 2).map((m) => [(+m[1] + +m[3]) / 2, (+m[2] + +m[4]) / 2]);
+  const far = mids.reduce((a, b) => (b[1] > a[1] ? b : a));
+  // Moving 50px along the page's height is a step of 30 degrees on screen.
+  const ratio = (far[0] - corner[0]) / (far[1] - corner[1]);
+  assert.ok(Math.abs(ratio + Math.sqrt(3)) < 0.02, `ratio ${ratio}`);
+});
+
+test("a capture has no title by default, and a width title when asked", () => {
+  const draw = (options) =>
+    renderSvg(
+      [{ label: "1440", layout: layout(1440, [box("main", 0, 0, 0, 1440, 800)]) }],
+      options,
+    );
+  assert.ok(!/font-weight="700"/.test(draw({})));
+  assert.ok(/font-weight="700"[^>]*>1440</.test(draw({ titles: true })));
 });
 
 test("the paper palette uses the paper background and no transparency", () => {
