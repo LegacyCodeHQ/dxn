@@ -9910,7 +9910,7 @@
               "fill": {
                 "type": "image",
                 "enabled": true,
-                "url": "launch/teaser/backgrounds/teaser-blueprint-paper-977273cf.png",
+                "url": "launch/teaser/backgrounds/teaser-blueprint-paper-a12e8d3e.png",
                 "mode": "cover"
               },
               "width": 1080,
@@ -11084,7 +11084,7 @@
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "launch/teaser/backgrounds/teaser-mobile-ink-bf9a2e98.png",
+                        "url": "launch/teaser/backgrounds/teaser-mobile-ink-0308ef41.png",
                         "mode": "cover"
                       },
                       "width": 679,
