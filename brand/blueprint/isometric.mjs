@@ -326,7 +326,10 @@ export function normalise(layout, options = {}) {
       (other) => (other.kind === "text" || other.kind === "control") && holds(box, other),
     );
     const large = box.w >= 96 && box.h >= 96;
-    if (inLink && (large || !holdsContent)) box.kind = "media";
+    // A small box that holds an image of its own (an avatar with an icon) is not a
+    // photo; a large photo area keeps a heart or a badge over it.
+    const holdsImage = kept.some((other) => other.kind === "media" && holds(box, other));
+    if (inLink && (large || (!holdsContent && !holdsImage))) box.kind = "media";
   }
   // Text is thin by nature: a line is wide enough to read at any height.
   const big = (box) =>

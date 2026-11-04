@@ -1045,3 +1045,17 @@ test("a measurement's text has a halo in the background color, so lines under it
     assert.ok(label.includes('stroke="#F5F3EE"'), label);
   }
 });
+
+test("a small rounded box that holds an icon is not turned into a photo, so the icon is not drawn twice", () => {
+  const boxes = [
+    pbox("main", "structure", true, 0, 0, 0, 1000, 800),
+    pbox("button", "control", true, 1, 100, 100, 84, 44, 22),
+    pbox("span", "structure", true, 2, 140, 106, 32, 32, 16),
+    pbox("svg", "media", true, 3, 146, 112, 20, 20),
+  ];
+  const svg = renderSvg([{ label: "a", layout: layout(1000, boxes) }], {
+    flat: true,
+    merge: false,
+  });
+  assert.equal((svg.match(/data-wire="cross"/g) ?? []).length, 1);
+});

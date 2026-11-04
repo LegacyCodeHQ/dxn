@@ -417,7 +417,7 @@
       "layer": 3,
       "x": 260.9,
       "y": 219,
-      "w": 52.3,
+      "w": 46.1,
       "h": 79.6,
       "radius": 16,
       "painted": false
@@ -441,39 +441,6 @@
       "y": 259,
       "w": 32.3,
       "h": 33.6,
-      "radius": 0,
-      "painted": false
-    },
-    {
-      "tag": "button",
-      "kind": "control",
-      "layer": 3,
-      "x": 319.2,
-      "y": 219,
-      "w": 60.7,
-      "h": 79.6,
-      "radius": 16,
-      "painted": false
-    },
-    {
-      "tag": "svg",
-      "kind": "media",
-      "layer": 4,
-      "x": 335.5,
-      "y": 225,
-      "w": 28,
-      "h": 28,
-      "radius": 0,
-      "painted": true
-    },
-    {
-      "tag": "span",
-      "kind": "text",
-      "layer": 4,
-      "x": 329.2,
-      "y": 259,
-      "w": 40.7,
-      "h": 16.8,
       "radius": 0,
       "painted": false
     },

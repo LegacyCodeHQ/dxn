@@ -11078,17 +11078,17 @@
                     {
                       "type": "rectangle",
                       "id": "Z1JLy",
-                      "x": -35,
-                      "y": -170,
+                      "x": -40,
+                      "y": -32,
                       "name": "Blueprint Background",
                       "fill": {
                         "type": "image",
                         "enabled": true,
-                        "url": "launch/teaser/backgrounds/teaser-blueprint-ink-8b4a2d7e.png",
+                        "url": "launch/teaser/backgrounds/teaser-mobile-ink-bf9a2e98.png",
                         "mode": "cover"
                       },
-                      "width": 670,
-                      "height": 837
+                      "width": 679,
+                      "height": 543
                     },
                     {
                       "type": "frame",

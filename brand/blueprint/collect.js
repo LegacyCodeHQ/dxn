@@ -104,12 +104,27 @@
       image.getBoundingClientRect().width > 0 && !(image.complete && image.naturalWidth > 0),
   ).length;
 
-  const visit = (element, layer) => {
+  // What a parent with overflow hidden or clipped cuts away is not on the page: a
+  // box wholly outside it is skipped, one partly outside is cut to it. A fixed box
+  // escapes its parents' clipping.
+  const clipped = (full, clip) => {
+    if (!clip) return full;
+    const left = Math.max(full.left, clip.left);
+    const top = Math.max(full.top, clip.top);
+    const right = Math.min(full.right, clip.right);
+    const bottom = Math.min(full.bottom, clip.bottom);
+    if (right - left <= 0 || bottom - top <= 0) return null;
+    return { left, top, right, bottom, width: right - left, height: bottom - top };
+  };
+
+  const visit = (element, layer, parentClip) => {
     if (boxes.length >= maxBoxes || layer > maxLayers) return;
     // A code block is one block: the code inside it is not measured again.
     if (element.tagName.toLowerCase() === "code" && element.closest("pre")) return;
-    const rect = element.getBoundingClientRect();
     const style = getComputedStyle(element);
+    const clip = style.position === "fixed" ? null : parentClip;
+    const rect = clipped(element.getBoundingClientRect(), clip);
+    if (!rect) return;
     const shown =
       style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity) > 0;
     const kind = shown ? kindOf(element, style) : "structure";
@@ -148,10 +163,12 @@
     // A leaf that drew a box is one slab. One that did not (a picture is inline)
     // is searched for the image inside it.
     if (visible && leaves.has(element.tagName.toLowerCase())) return;
-    for (const child of element.children) visit(child, visible ? layer + 1 : layer);
+    const cuts = style.overflowX !== "visible" || style.overflowY !== "visible";
+    const childClip = cuts ? rect : clip;
+    for (const child of element.children) visit(child, visible ? layer + 1 : layer, childClip);
   };
 
-  visit(root, 0);
+  visit(root, 0, null);
   return {
     viewport: { w: window.innerWidth, h: window.innerHeight },
     selector,
