@@ -857,7 +857,7 @@ export function renderSvg(layouts, options = {}) {
           );
         }
         out.push(
-          `<text x="${round(mid.x)}" y="${round(mid.y + 22 * k)}" transform="rotate(${round(angle)} ${round(mid.x)} ${round(mid.y)})" font-size="${fontSize}" fill="${colors.label}" text-anchor="middle">${escapeText(d.text)}</text>`,
+          `<text x="${round(mid.x)}" y="${round(mid.y + 22 * k)}" transform="rotate(${round(angle)} ${round(mid.x)} ${round(mid.y)})" font-size="${fontSize}" fill="${colors.label}" stroke="${colors.background}" stroke-width="${round(5 * k)}" stroke-linejoin="round" paint-order="stroke" text-anchor="middle">${escapeText(d.text)}</text>`,
         );
       }
     } else {

@@ -1035,3 +1035,13 @@ test("of text inside text on a lifted body, only the innermost is drawn", () => 
   const lines = liftedGroups(lifted({}, boxes)).filter((g) => g.includes('data-wire="lines"'));
   assert.equal(lines.length, 2);
 });
+
+test("a measurement's text has a halo in the background color, so lines under it do not cut it", () => {
+  const svg = renderSvg(one, { palette: "paper" });
+  const labels = svg.match(/<text[^>]*>\d+ px<\/text>/g) ?? [];
+  assert.equal(labels.length, 2);
+  for (const label of labels) {
+    assert.ok(label.includes('paint-order="stroke"'), label);
+    assert.ok(label.includes('stroke="#F5F3EE"'), label);
+  }
+});
