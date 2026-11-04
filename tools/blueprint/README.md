@@ -1,0 +1,102 @@
+# blueprint
+
+A prototype that measures the layout of a web page, or of one element, and
+draws it as an isometric blueprint: layers of flat slabs, dimension lines and
+one highlighted element. The output is SVG, in dxn's ink and paper tones, for
+use as a background.
+
+Only boxes are drawn: a tag, a position and a size. The page's text, images and
+attributes are never read, kept or written. An image or an inline SVG is one
+slab: what is inside it, such as the shapes of a logo, is not measured.
+
+## Three steps
+
+1. **Measure** a page at one or more widths.
+2. **Render** the measurements as an SVG.
+3. **Place** the SVG where it is needed.
+
+### 1. Measure
+
+With Playwright (not a dependency of this repository):
+
+```bash
+npm i -D playwright && npx playwright install chromium
+node tools/blueprint/capture.mjs https://example.com --selector main --widths 375,768,1440 --out out
+```
+
+That writes `out/layout-375.json`, `out/layout-768.json` and `out/layout-1440.json`.
+
+Without it, paste `collect.js` into DevTools on the page:
+
+```js
+copy(JSON.stringify((/* contents of collect.js */)({ selector: "main", minSize: 24 })));
+```
+
+and save the clipboard as a `.json` file. Resize the window and repeat for each
+breakpoint.
+
+Capture options: `selector`, `minSize` (default 16 px), `maxLayers` (8) and
+`maxBoxes` (300).
+
+### 2. Render
+
+```bash
+node tools/blueprint/render.mjs out/layout-*.json --highlight main --min-size 28 --out blueprint.svg
+node tools/blueprint/render.mjs out/layout-*.json --palette paper --out blueprint-paper.svg
+```
+
+Several captures stack as layers, the widest at the bottom, each labelled with
+its width. Capture as many breakpoints as you like and choose which to draw with
+`--only`:
+
+```bash
+node tools/blueprint/render.mjs out/layout-*.json --only 375,1440 --out blueprint.svg
+```
+
+Asking for a width that was not captured lists the widths that were. `--help` is any call without files.
+
+### 3. Place
+
+Drop the SVG into the design file or a page as a pattern-mode surface. It is a
+pattern, so do not combine it with a marking.
+
+## Keeping it readable
+
+A real page has far more boxes than a blueprint can hold. Two controls thin it
+out without losing the shape of the page:
+
+- **`--max-layer N`** keeps the first N layers. Boxes deeper than that are not
+  dropped from the picture: they fold into the box that holds them, which stays.
+- **Merging** (on by default, `--no-merge` to turn off). Boxes that are siblings,
+  sit next to each other (within `--merge-gap`, 16 px) and fill the space they
+  span together become one group slab, and what was inside them folds in. A
+  list's rows become one block; a bar's buttons become one bar.
+- **`--budget N`** picks the layer limit for you: it keeps the deepest layers
+  whose boxes, after merging, still fit in about N slabs per capture. A good way
+  to get the same density at every breakpoint.
+- **The highlighted box** (`--highlight`) is always kept, even if its layer is
+  folded away.
+- **`--min-size`** drops boxes narrower or shorter than a size before any of this.
+
+Try `--budget 30 --min-size 24`.
+
+## How it draws
+
+- **Layers.** A box's layer is the number of other boxes that enclose it. A
+  wrapper and its only child share a rectangle, so they become one slab.
+- **Projection.** `x` runs right and down, `y` runs left and down, `z` runs up,
+  at 30 degrees.
+- **Tones.** Solid, pre-blended colors, never transparency: where strokes cross
+  they cannot make a third color.
+- **One highlight**, in Accent Light on ink and Accent on paper.
+
+## Limits of the prototype
+
+- It measures what is on screen: boxes inside a closed shadow root or a
+  cross-origin frame are not seen.
+- `capture.mjs` has not been run here, because Playwright is not installed. The
+  same measuring code (`collect.js`) was run in a browser, and `render.mjs` and
+  `isometric.mjs` are tested (`node --test tools/blueprint/test/`).
+- Pages that are not yours: this draws structure only, but a recognizable page's
+  layout can still be a recognizable thing. Prefer your own pages, documentation
+  and sites whose owners agree, and leave out logos and text, as the tool does.
