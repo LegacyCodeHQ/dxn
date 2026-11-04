@@ -684,6 +684,16 @@ test("a capture has no title by default, and a width title when asked", () => {
   assert.ok(/font-weight="700"[^>]*>1440</.test(draw({ titles: true })));
 });
 
+test("each measurement's text runs along its line", () => {
+  const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }]);
+  const angles = [
+    ...svg.matchAll(/<text[^>]*transform="rotate\((-?[\d.]+) [^"]*"[^>]*>\d+ px</g),
+  ].map((m) => Number(m[1]));
+  assert.equal(angles.length, 2);
+  assert.ok(Math.abs(angles[0] - 30) < 0.5);
+  assert.ok(Math.abs(angles[1] + 30) < 0.5);
+});
+
 test("the paper palette uses the paper background and no transparency", () => {
   const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }], {
     palette: "paper",

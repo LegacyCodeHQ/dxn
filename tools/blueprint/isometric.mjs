@@ -637,6 +637,10 @@ export function renderSvg(layouts, options = {}) {
     } else if (shape.kind === "dimensions") {
       for (const d of shape.dimensions) {
         const mid = { x: (d.a.x + d.b.x) / 2, y: (d.a.y + d.b.y) / 2 };
+        // The text lies along its line, as the line lies on the ground.
+        let angle = (Math.atan2(d.b.y - d.a.y, d.b.x - d.a.x) * 180) / Math.PI;
+        if (angle > 90) angle -= 180;
+        if (angle < -90) angle += 180;
         out.push(
           `<path d="M${round(d.a.x)} ${round(d.a.y)}L${round(d.b.x)} ${round(d.b.y)}" fill="none" stroke="${colors.label}" stroke-width="${stroke}"/>`,
         );
@@ -646,7 +650,7 @@ export function renderSvg(layouts, options = {}) {
           );
         }
         out.push(
-          `<text x="${round(mid.x)}" y="${round(mid.y + 22 * k)}" font-size="${fontSize}" fill="${colors.label}" text-anchor="middle">${escapeText(d.text)}</text>`,
+          `<text x="${round(mid.x)}" y="${round(mid.y + 22 * k)}" transform="rotate(${round(angle)} ${round(mid.x)} ${round(mid.y)})" font-size="${fontSize}" fill="${colors.label}" text-anchor="middle">${escapeText(d.text)}</text>`,
         );
       }
     } else {
