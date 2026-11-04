@@ -125,6 +125,7 @@ function mergeSiblings(boxes, mergeGap) {
           w: x1 - x0,
           h: y1 - y0,
           radius: Math.max(...run.map((i) => boxes[i].radius)),
+          cut: orCuts(run.map((i) => boxes[i].cut)),
           merged: run.length,
         },
       });
@@ -144,6 +145,41 @@ function mergeSiblings(boxes, mergeGap) {
   const next = [...boxes.filter((_, index) => !gone.has(index)), ...merged.map((m) => m.box)];
   return { boxes: layered(next), changed: true };
 }
+
+// Keeps only what is inside the viewport: each box is cut to the page's own
+// rectangle, boxes wholly outside go, and a box remembers which sides were cut
+// so those corners are drawn square.
+export function clipLayout(layout) {
+  const { w, h } = layout.root;
+  const boxes = [];
+  for (const box of layout.boxes) {
+    const x0 = Math.max(0, box.x);
+    const y0 = Math.max(0, box.y);
+    const x1 = Math.min(w, box.x + box.w);
+    const y1 = Math.min(h, box.y + box.h);
+    if (x1 - x0 < 1 || y1 - y0 < 1) continue;
+    boxes.push({
+      ...box,
+      x: x0,
+      y: y0,
+      w: x1 - x0,
+      h: y1 - y0,
+      cut: {
+        l: box.x < -SAME,
+        t: box.y < -SAME,
+        r: box.x + box.w > w + SAME,
+        b: box.y + box.h > h + SAME,
+      },
+    });
+  }
+  return { ...layout, boxes };
+}
+
+const orCuts = (cuts) => {
+  const out = { l: false, t: false, r: false, b: false };
+  for (const cut of cuts) for (const side of Object.keys(out)) out[side] ||= Boolean(cut?.[side]);
+  return out;
+};
 
 // Collapses boxes that share a rectangle (a wrapper and its only child are one
 // slab, and the more customer-facing of the two wins) and counts, for each box,
@@ -173,6 +209,7 @@ export function normalise(layout, options = {}) {
       w: box.w,
       h: box.h,
       radius: box.radius ?? 0,
+      cut: box.cut,
     };
     const index = kept.findIndex((other) => sameRect(other, next));
     if (index === -1) kept.push(next);
@@ -200,29 +237,38 @@ const points = (list) => list.map((p) => `${round(p.x)},${round(p.y)}`).join(" "
 const SEGMENTS = 6;
 
 // The outline of a box on the ground plane, clockwise, with rounded corners.
+// A corner on a side the viewport cut off is square.
 function outline(box) {
   const r = Math.min(box.radius || 0, box.w / 2, box.h / 2);
-  if (!(r >= 1)) {
-    return [
-      [box.x, box.y],
-      [box.x + box.w, box.y],
-      [box.x + box.w, box.y + box.h],
-      [box.x, box.y + box.h],
-    ];
-  }
+  const cut = box.cut || {};
+  const radii = [
+    cut.l || cut.t ? 0 : r,
+    cut.r || cut.t ? 0 : r,
+    cut.r || cut.b ? 0 : r,
+    cut.l || cut.b ? 0 : r,
+  ];
+  const right = box.x + box.w;
+  const bottom = box.y + box.h;
   const corners = [
-    [box.x + r, box.y + r, 180],
-    [box.x + box.w - r, box.y + r, 270],
-    [box.x + box.w - r, box.y + box.h - r, 0],
-    [box.x + r, box.y + box.h - r, 90],
+    [box.x, box.y, 180, 1, 1],
+    [right, box.y, 270, -1, 1],
+    [right, bottom, 0, -1, -1],
+    [box.x, bottom, 90, 1, -1],
   ];
   const list = [];
-  for (const [cx, cy, start] of corners) {
+  corners.forEach(([x, y, start, sx, sy], i) => {
+    const radius = radii[i];
+    if (!(radius >= 1)) {
+      list.push([x, y]);
+      return;
+    }
+    const cx = x + sx * radius;
+    const cy = y + sy * radius;
     for (let k = 0; k <= SEGMENTS; k++) {
       const angle = ((start + (k * 90) / SEGMENTS) * Math.PI) / 180;
-      list.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+      list.push([cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)]);
     }
-  }
+  });
   return list;
 }
 
@@ -310,6 +356,7 @@ export function renderSvg(layouts, options = {}) {
     keep = DEFAULT_KEEP,
     budget,
     show,
+    overflow = "bleed",
     flat = false,
     wire = true,
     flatGap = 220,
@@ -335,7 +382,8 @@ export function renderSvg(layouts, options = {}) {
   };
 
   // The box being highlighted stays even when its layer is folded away.
-  const simplify = (layout) => {
+  const simplify = (source) => {
+    const layout = overflow === "clip" ? clipLayout(source) : source;
     const result = normalise(layout, { ...base, maxLayer: limitFor(layout) });
     if (highlight?.tag === undefined || result.boxes.some((box) => box.tag === highlight.tag))
       return result;

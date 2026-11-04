@@ -402,6 +402,58 @@ test("flat captures sit side by side on the ground, not stacked", () => {
   assert.ok(two.includes(">1440<"));
 });
 
+const viewWidth = (svg) => Number(svg.match(/viewBox="[-\d.]+ [-\d.]+ ([\d.]+)/)[1]);
+
+const overflowing = () => [
+  kbox("main", "structure", 0, 0, 0, 1000, 800),
+  kbox("div", "structure", 1, 900, 100, 300, 200),
+  kbox("div", "structure", 1, 1100, 400, 200, 100),
+];
+
+test("by default boxes bleed past the edge of the viewport", () => {
+  const svg = renderSvg([{ label: "a", layout: layout(1000, overflowing()) }], { merge: false });
+  assert.equal(tops(svg), 3);
+});
+
+test("clipping keeps only what is inside the viewport", () => {
+  const svg = renderSvg([{ label: "a", layout: layout(1000, overflowing()) }], {
+    merge: false,
+    overflow: "clip",
+  });
+  assert.equal(tops(svg), 2);
+});
+
+test("a clipped view does not grow past the viewport, a bleeding one does", () => {
+  const draw = (overflow) =>
+    viewWidth(
+      renderSvg([{ label: "a", layout: layout(1000, overflowing()) }], { merge: false, overflow }),
+    );
+  assert.ok(draw("bleed") > draw("clip"));
+});
+
+test("a box cut by the edge loses its rounded corners on the cut side", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("div", "structure", 1, 900, 100, 300, 200, 24),
+  ];
+  const draw = (overflow) =>
+    topPoints(
+      renderSvg([{ label: "a", layout: layout(1000, boxes) }], { merge: false, overflow }),
+    )[1];
+  assert.equal(draw("bleed"), 28);
+  assert.equal(draw("clip"), 16);
+});
+
+test("a box wholly inside the viewport is unchanged by clipping", () => {
+  const boxes = [
+    kbox("main", "structure", 0, 0, 0, 1000, 800),
+    kbox("div", "structure", 1, 100, 100, 300, 200, 24),
+  ];
+  const draw = (overflow) =>
+    renderSvg([{ label: "a", layout: layout(1000, boxes) }], { merge: false, overflow });
+  assert.equal(draw("clip"), draw("bleed"));
+});
+
 test("the paper palette uses the paper background and no transparency", () => {
   const svg = renderSvg([{ label: "a", layout: layout(1000, [box("main", 0, 0, 0, 1000, 800)]) }], {
     palette: "paper",

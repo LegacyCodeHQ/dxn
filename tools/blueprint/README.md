@@ -73,6 +73,14 @@ apply, so `--max-layer` and `--budget` set how much detail the wireframe shows.
 node tools/blueprint/render.mjs out/layout-*.json --flat --out wireframe.svg
 ```
 
+## Bleed or clip
+
+Boxes that run past the viewport, like a carousel's cards, can be drawn two ways:
+
+- **`--overflow bleed`** (default) draws them whole, running off the page.
+- **`--overflow clip`** draws only the part inside the viewport. Boxes wholly
+  outside go, and a box that was cut has square corners on the cut side.
+
 ## Kinds, and rounded corners
 
 Each box is tagged with what a customer sees there, never what it says:
