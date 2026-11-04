@@ -12,6 +12,7 @@ const USAGE = `Usage: node tools/blueprint/render.mjs <layout.json>... [options]
 Options:
   --out <file>           Write the svg here (default: stdout)
   --palette ink|paper    Background and tones (default: ink)
+  --rotate <deg>         Turn the view by 0, 90, 180 or 270 degrees (default: 0)
   --highlight <tag>      Draw the first box with this tag in the accent
   --highlight-index <n>  Draw the nth box of the first layout in the accent
   --min-size <px>        Skip boxes narrower or shorter than this (default: 0)
@@ -74,6 +75,7 @@ function parse(argv) {
     if (value === undefined) throw new Error(`${arg} needs a value`);
     if (arg === "--out") out = value;
     else if (arg === "--palette") options.palette = value;
+    else if (arg === "--rotate") options.rotate = Number(value);
     else if (arg === "--highlight") options.highlight = { tag: value };
     else if (arg === "--highlight-index") options.highlight = { index: Number(value) };
     else if (arg === "--min-size") options.minSize = Number(value);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { normalise, project, renderSvg } from "../isometric.mjs";
+import { normalise, project, renderSvg, rotateLayout } from "../isometric.mjs";
 
 const layout = (width, boxes) => ({
   viewport: { w: width, h: 800 },
@@ -700,4 +700,50 @@ test("the paper palette uses the paper background and no transparency", () => {
   });
   assert.ok(svg.includes("#F5F3EE"));
   assert.equal(svg.includes("opacity"), false);
+});
+
+const turned = (quarters) =>
+  rotateLayout(
+    layout(1000, [
+      {
+        ...kbox("main", "structure", 0, 0, 0, 1000, 800),
+        cut: { l: true, t: false, r: false, b: false },
+      },
+      kbox("div", "structure", 1, 100, 50, 200, 100),
+    ]),
+    quarters,
+  );
+
+test("a quarter turn swaps the page's sides and moves its boxes with it", () => {
+  const r = turned(1);
+  assert.deepEqual(r.root, { w: 800, h: 1000 });
+  const [main, div] = r.boxes;
+  assert.deepEqual([div.x, div.y, div.w, div.h], [650, 100, 100, 200]);
+  assert.deepEqual([main.x, main.y, main.w, main.h], [0, 0, 800, 1000]);
+  assert.deepEqual(main.cut, { l: false, t: true, r: false, b: false });
+});
+
+test("a half turn and a three-quarter turn", () => {
+  const half = turned(2).boxes[1];
+  assert.deepEqual([half.x, half.y, half.w, half.h], [700, 650, 200, 100]);
+  const three = turned(3);
+  assert.deepEqual(three.root, { w: 800, h: 1000 });
+  const box3 = three.boxes[1];
+  assert.deepEqual([box3.x, box3.y, box3.w, box3.h], [50, 700, 100, 200]);
+});
+
+test("four quarter turns come back to where they started", () => {
+  const start = turned(0);
+  assert.deepEqual(turned(4), start);
+  assert.deepEqual(turned(-1), turned(3));
+});
+
+test("the view can be turned in four directions", () => {
+  const wide = layout(1000, [box("main", 0, 0, 0, 1000, 800), box("div", 1, 50, 50, 300, 100)]);
+  const draw = (rotate) => renderSvg([{ label: "a", layout: wide }], { rotate });
+  assert.equal(draw(0), draw(360));
+  assert.notEqual(draw(0), draw(90));
+  assert.equal(draw(0), draw(undefined));
+  assert.ok(draw(180) !== draw(0));
+  assert.throws(() => draw(45), /rotate/);
 });

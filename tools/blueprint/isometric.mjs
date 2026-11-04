@@ -177,6 +177,27 @@ export function clipLayout(layout) {
   return { ...layout, boxes };
 }
 
+// Turns a capture a quarter at a time, clockwise as seen on the page, so the
+// view can face any of four directions. Every side of the page, and every cut
+// side of a box, moves with it.
+export function rotateLayout(layout, quarters) {
+  const turns = ((quarters % 4) + 4) % 4;
+  let result = layout;
+  for (let i = 0; i < turns; i++) {
+    const { w, h } = result.root;
+    result = {
+      ...result,
+      root: { w: h, h: w },
+      boxes: result.boxes.map((box) => {
+        const next = { ...box, x: h - (box.y + box.h), y: box.x, w: box.h, h: box.w };
+        if (box.cut) next.cut = { l: box.cut.b, t: box.cut.l, r: box.cut.t, b: box.cut.r };
+        return next;
+      }),
+    };
+  }
+  return result;
+}
+
 const orCuts = (cuts) => {
   const out = { l: false, t: false, r: false, b: false };
   for (const cut of cuts) for (const side of Object.keys(out)) out[side] ||= Boolean(cut?.[side]);
@@ -419,12 +440,15 @@ export function renderSvg(layouts, options = {}) {
     viewportSlab = true,
     viewportThickness = 18,
     flat = false,
+    rotate = 0,
     titles = false,
     wire = true,
     flatGap = 220,
     highlight,
     width = 1600,
   } = options;
+  if (!Number.isInteger(rotate / 90)) throw new Error("rotate is a multiple of 90 degrees");
+  const quarters = rotate / 90;
   const colors = PALETTES[palette];
   // The slab is the visible part of the page: whatever runs past it is cut,
   // unless asked to bleed. Without a slab there is no edge to cut at.
@@ -448,7 +472,8 @@ export function renderSvg(layouts, options = {}) {
 
   // The box being highlighted stays even when its layer is folded away.
   const simplify = (source) => {
-    const layout = overflowMode === "clip" ? clipLayout(source) : source;
+    const turned = rotateLayout(source, quarters);
+    const layout = overflowMode === "clip" ? clipLayout(turned) : turned;
     const result = normalise(layout, { ...base, maxLayer: limitFor(layout) });
     if (highlight?.tag === undefined || result.boxes.some((box) => box.tag === highlight.tag))
       return result;

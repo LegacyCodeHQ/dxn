@@ -163,3 +163,10 @@ A capture has no title by default. `--titles` writes its width above it, which
 helps tell several captures apart. The two measurement lines have a cap at each
 end and run level with the foot of the viewport slab, so the caps meet the
 slab's corners.
+
+## Rotating
+
+`--rotate 90|180|270` turns the page a quarter, half or three-quarter turn
+clockwise, so the view can face any of four directions. The page's sides, its
+boxes and the cut sides of clipped boxes turn with it, and the measurement
+lines follow.
