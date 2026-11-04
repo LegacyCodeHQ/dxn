@@ -942,3 +942,20 @@ test("the lifted color follows the brand's accent", () => {
   assert.equal(palette.liftedLine, "#FFF8F0");
   assert.ok(lifted({ palette: "paper", brand }).includes('fill="#E4572E"'));
 });
+
+test("the page's own measurements can be turned off, the lifted element's stay", () => {
+  const draw = (options) =>
+    renderSvg([{ label: "a", layout: layout(1000, liftable()) }], {
+      flat: true,
+      merge: false,
+      ...options,
+    });
+  const caps = (svg) => (svg.match(/data-cap=/g) ?? []).length;
+  assert.equal(caps(draw({})), 4);
+  assert.equal(caps(draw({ measure: false })), 0);
+  assert.equal(draw({ measure: false }).includes("1000 px"), false);
+  const withLift = draw({ measure: false, lift: { tag: "section" } });
+  assert.equal(caps(withLift), 4);
+  assert.ok(withLift.includes(">230 px<"));
+  assert.equal(withLift.includes(">1000 px<"), false);
+});

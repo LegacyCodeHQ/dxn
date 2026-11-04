@@ -505,6 +505,7 @@ export function renderSvg(layouts, options = {}) {
     liftHeight = 90,
     liftThickness = 14,
     titles = false,
+    measure = true,
     wire = true,
     flatGap = 220,
     highlight,
@@ -640,12 +641,13 @@ export function renderSvg(layouts, options = {}) {
         text: `${Math.round(h)} px`,
       },
     ];
-    dimensions.forEach((d) => {
-      grow(d.a);
-      grow(d.b);
-      d.caps.flat().forEach(grow);
-    });
-    shapes.push({ order: [layoutIndex, UNDER, 2], kind: "dimensions", dimensions });
+    if (measure)
+      dimensions.forEach((d) => {
+        grow(d.a);
+        grow(d.b);
+        d.caps.flat().forEach(grow);
+      });
+    if (measure) shapes.push({ order: [layoutIndex, UNDER, 2], kind: "dimensions", dimensions });
 
     if (titles) {
       const tag = flat ? at(0, -70, baseZ) : at(w + 90, 0, baseZ);

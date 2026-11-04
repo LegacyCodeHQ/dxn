@@ -200,3 +200,7 @@ mixed in, so they stay solid. Change a brand color and the whole picture follows
 - From code: `renderSvg(layouts, { brand, colors })` and `resolvePalette(mode, { brand, colors })`.
 
 Colors are `#RGB` or `#RRGGBB`. An unknown name or a color that is not hex is an error.
+
+`--no-measure` leaves out the page's own width and height lines. A lifted
+element keeps its measurements, so an image can say one thing: the size of the
+part that was lifted.
