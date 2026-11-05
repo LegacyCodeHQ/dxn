@@ -22,8 +22,19 @@ type ModifyTreeSitterPackage needs TreeSitterChange {
   }
 
   has modify-core-parser: ModifyCoreParser
+  has ast-adapter-impact: ASTAdapterImpact
   has modify-zed-extension: ModifyZedExtension
+  has vscode-textmate-grammar-impact: VSCodeTextMateGrammarImpact
 }
+
+## Impact on packages/language/src/syntax/tree.ts, which translates Tree-sitter
+## nodes and fields into the language AST. A grammar change can affect this
+## translation independently of the core parser's syntax reader.
+## The adapter currently handles focused declarations but is not connected to
+## the shared parse entry point. This branch represents impact on the adapter,
+## without implying that its output currently reaches the CLI or language server.
+## Implementation changes and verification results are recorded separately.
+type ASTAdapterImpact { }
 
 ## Modifying the core parser so that it reads the changed syntax.
 ## Its syntax tree reaches semantic analysis and formatting through separate paths.
@@ -78,23 +89,65 @@ type LanguageServerImpact {
 ## TextMate highlighting follows a separate propagation path.
 type VSCodeLanguageClientImpact { }
 
+## Impact on packages/vscode/syntaxes/dxn.tmLanguage.json, which independently
+## defines VS Code syntax highlighting. Tree-sitter syntax changes must be
+## considered here even when the language client needs no changes. Existing
+## patterns may already handle the syntax; implementation and verification
+## results are recorded separately from this impact path.
+type VSCodeTextMateGrammarImpact { }
+
 ## Impact on Zed from language-server diagnostics, semantic analysis results
 ## and formatting. Existing client behavior may already handle the change.
 ## Implementation and verification are recorded separately. The Tree-sitter
 ## grammar pin and highlighting queries follow separate propagation paths.
 type ZedLanguageClientImpact { }
 
-## Modifying the Zed extension. It pins a commit of the Tree-sitter package, and
-## `make zed` fails when `grammar.js` or anything in `src/` differs from that
-## commit. `src/scanner.c` is in `src/`, so the pin is updated for every kind of
-## change, including a scanner change that does not regenerate the parser.
+## Propagation from the Tree-sitter package to Zed's grammar integration.
+## Updating the pinned commit and impact on syntax-tree queries are separate
+## responsibilities. Language-server behavior follows its own propagation path.
 type ModifyZedExtension needs TreeSitterChange {
+  has update-grammar-pin: UpdateZedGrammarPin
+  has query-impact: ZedQueryImpact
+}
+
+## Updating the grammar commit in packages/zed/extension.toml. The make zed gate
+## compares the pinned commit with grammar.js and everything in src/, including
+## scanner.c. Every modeled change requires a pin update, even when generated
+## parser sources are kept. This state describes required work, not its completion.
+type UpdateZedGrammarPin needs TreeSitterChange {
   state zed-extension-pin: ZedExtensionPin = when TreeSitterChange {
     grammar -> update
     scanner -> update
     both -> update
   }
 }
+
+## Impact on Zed queries that consume Tree-sitter syntax nodes and fields.
+## Each query family is considered for every change. Existing queries may already
+## handle it; implementation changes and verification results are recorded separately.
+type ZedQueryImpact {
+  has highlighting-impact: ZedHighlightingQueryImpact
+  has outline-impact: ZedOutlineQueryImpact
+  has indentation-impact: ZedIndentationQueryImpact
+  has bracket-matching-impact: ZedBracketMatchingQueryImpact
+  has runnable-impact: ZedRunnableQueryImpact
+}
+
+## Impact on packages/zed/languages/dxn/highlights.scm, which assigns syntax colors.
+type ZedHighlightingQueryImpact { }
+
+## Impact on packages/zed/languages/dxn/outline.scm, which identifies outline entries.
+type ZedOutlineQueryImpact { }
+
+## Impact on packages/zed/languages/dxn/indents.scm, which identifies indentation regions.
+type ZedIndentationQueryImpact { }
+
+## Impact on packages/zed/languages/dxn/brackets.scm, which identifies bracket pairs.
+type ZedBracketMatchingQueryImpact { }
+
+## Impact on packages/zed/languages/dxn/runnables.scm, which identifies runnable
+## types and expectations. Their task definitions live alongside it in tasks.json.
+type ZedRunnableQueryImpact { }
 
 ## Checking that Tree-sitter and the core parser agree on the changed syntax.
 ## The check's result and supporting evidence are recorded separately.
