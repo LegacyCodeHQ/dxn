@@ -1,0 +1,36 @@
+## Interaction modes.
+## @value off No interaction.
+##   The control ignores input.
+## @value on Interaction enabled.
+enum Mode = off | on
+
+## A documented button.
+type Button {
+  ## Local focus values.
+  ## @value blurred No focus.
+  ## @value focused Keyboard focus.
+  enum Focus = blurred | focused
+
+  ## Current interaction mode.
+  ## @state mode Whether input is accepted.
+  state mode: Mode
+
+  ## Focus states.
+  ## @state focus Primary focus.
+  ## @state secondary Secondary focus.
+  state focus: Focus, secondary: Focus
+
+  ## A nested icon.
+  type Icon {
+    ## Icon mode.
+    ## @state mode Icon interaction.
+    state mode: Mode
+  }
+
+  has icon: Icon
+}
+
+record Review {
+  note: NonEmptyString
+}
+actor Reviewer records Review

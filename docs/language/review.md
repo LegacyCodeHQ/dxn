@@ -208,3 +208,12 @@ Tests cover meaning preservation and idempotence, nested state groups and types,
 inline body comments, attachment boundaries, Unicode/BOM/line endings, CLI file
 writes and CLI/language-server formatting parity. Human verification in VS Code
 and Zed and the remaining syntax migration are still pending.
+
+## Documentation editor verification preparation
+
+[The documentation example](../../examples/documentation/README.md) provides a
+valid project and a manual walkthrough for VS Code and Zed. It separates each
+client's language-server checks from its direct syntax integration checks and
+lists expected observations, including unsaved changes and incomplete syntax.
+All four human verification responsibilities remain unverified. Preparing this
+exercise and passing automated checks do not constitute human editor sign-off.

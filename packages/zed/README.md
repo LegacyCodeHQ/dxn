@@ -152,3 +152,8 @@ target (`rustup target add wasm32-wasip2`). `make check` runs it too.
 When the grammar changes, commit it, then set `commit` in `extension.toml` to
 that commit, and update `languages/dxn/highlights.scm` from the grammar's
 `queries/highlights.scm` where its nodes changed.
+
+For the documentation-comment feature, use the shared
+[editor verification project](../../examples/documentation/README.md). It includes
+expected observations for hovers, diagnostics, unsaved edits, formatting and
+direct syntax integration. Human results remain unverified until recorded.

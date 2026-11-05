@@ -102,3 +102,8 @@ every construct of the language, as VS Code does, and checks each token's
 scope. `test/bundle.test.ts` builds the extension, starts the bundled server
 with Node, and checks a file through it, as VS Code would. `make check` runs
 them.
+
+For the documentation-comment feature, use the shared
+[editor verification project](../../examples/documentation/README.md). It includes
+expected observations for hovers, diagnostics, unsaved edits, formatting and
+direct syntax integration. Human results remain unverified until recorded.
