@@ -161,3 +161,17 @@ locations; additional cases cover new values, documentation and line endings.
 Unsupported constructs and recovered syntax trees fail explicitly. The public
 reader has not switched: embedding, remaining constructs, error recovery, checker
 rules and formatting still need migration before an end-to-end review is complete.
+
+## 2026-11-05 shared documentation reader stage
+
+The shared reader now retains structured documentation on enums, types and states,
+including nested declarations, comma-separated states, continuation indentation
+and source positions. It rejects mixed attached blocks and malformed tag syntax,
+and retains documentation through declaration recovery. Tests compare lowering
+with Tree-sitter across BOM and LF/CRLF/CR input; documentation agreement fixtures
+and CLI/language-server parity scenarios cover the new reader behavior.
+
+This completes the focused documentation reader step, not the whole construct
+review. Semantic tag/target validation, duplicate-tag warnings, structured hovers,
+formatter normalization, remaining syntax migration and human editor verification
+are still pending. The shared runtime has not switched to the Tree-sitter reader.

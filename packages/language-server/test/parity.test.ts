@@ -64,6 +64,18 @@ const mixedRecords: Scenario = {
 
 const scenarios: Scenario[] = [
   {
+    title: "attached documentation on a shared parser declaration",
+    dxn: model.replace("enum Hover", "## Interaction.\n## @value rest At rest.\nenum Hover"),
+  },
+  {
+    title: "mixed ordinary and documentation comments",
+    dxn: model.replace("enum Hover", "## Interaction.\n# Ordinary.\nenum Hover"),
+  },
+  {
+    title: "malformed documentation tag syntax",
+    dxn: model.replace("enum Hover", "## @\nenum Hover"),
+  },
+  {
     title: "a file and stored records that check",
     dxn: model,
     stored: { "evidence/a.json": records(entry("rest")) },

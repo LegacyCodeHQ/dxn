@@ -1,11 +1,13 @@
 # Enum, type, state and documentation contract
 
 These decisions were agreed on 2026-11-04. This is the target contract for the
-parser migration. The Tree-sitter grammar implements the syntax portion first;
-the runtime parser, formatter and checker are not yet migrated. An internal
-Tree-sitter-to-AST adapter covers the focused declarations but is not yet wired
-into the shared reader. In particular, the existing CLI and language server do not yet interpret `##` tags
-or implement the new shadowing diagnostics. Existing runtime behavior is unchanged.
+parser migration. Tree-sitter implements the focused syntax contract. The shared
+syntax reader now preserves attached documentation on enums, types and states,
+including source locations and continuation indentation, and reports mixed comment
+blocks and malformed tag syntax. Its other syntax differences remain documented
+in the agreement fixtures. Documentation tag validation, structured hover rendering,
+formatter normalization and new shadowing diagnostics remain separate work.
+The shared reader still uses its own parser; it has not switched to Tree-sitter.
 
 ## Declaration boundaries
 
@@ -138,15 +140,31 @@ The adapter consumes the synchronous JavaScript node interface with UTF-16
 indices, and converts locations to the language's character columns, including
 BOM and all supported line endings. It contains no lexer or syntax recognition.
 
-`packages/tree-sitter-dxn/test/adapter.test.ts` runs the native generated parser
+`packages/tree-sitter-dxn/test/adapter.test.ts` runs the in-process native parser
 and compares adapter ASTs and downstream analysis against the existing reader for
-compatible inputs. The test-only bridge converts CLI byte ranges to JavaScript
-offsets. It also checks the new textual values and documentation behavior. A
-fresh wrapper for field access prevents reliance on node object identity.
+compatible inputs. It also checks the new textual values and documentation
+behavior using real UTF-16 node offsets and field wrappers.
 
-This is an internal migration entry point, not the public `read`/`parse` path.
-It rejects recovered trees and unsupported constructs explicitly. An in-process
-runtime binding, the remaining language constructs, detailed error recovery,
-checker changes and formatter normalization remain later migration stages.
+The separate `parseTreeSitter()` migration entry point embeds the grammar through
+its Node binding and runs the existing semantic analyzer after lowering. It
+rejects recovered trees and unsupported constructs explicitly. Remaining language
+constructs, detailed error recovery, semantic changes and formatter normalization
+are later migration stages; the shared `parse()` has not switched to this path.
 Zed pins grammar commit `354642ff` (see `packages/zed/extension.toml` for the
 full hash), so the distributed grammar includes the syntax contract.
+
+## Shared documentation reader stage
+
+`packages/language/test/documentation.test.ts` compares the shared reader with
+the Tree-sitter AST adapter for attached declarations, nested types, comma-separated
+states, prose, empty lines, indented continuations and source locations across
+BOM/LF/CRLF/CR input. Unknown and duplicate tags remain in the AST for later
+semantic validation. Detached documentation and documentation before other kinds
+of declaration remain ordinary comments.
+
+Mixed attached blocks produce a syntax error at the ordinary marker. Malformed
+tag syntax, such as `## @`, produces a syntax error at `@`. Recovery keeps the
+following declaration and does not transfer documentation to unrelated declarations.
+Shared agreement fixtures cover documentation acceptance and rejection, and
+language-server parity scenarios compare CLI/server diagnostics and formatting.
+These tests do not establish semantic tag validation or manual editor verification.

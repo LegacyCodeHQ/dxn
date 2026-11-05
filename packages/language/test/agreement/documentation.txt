@@ -1,0 +1,68 @@
+=== Documentation attaches to an enum
+parse.ts: ok
+tree-sitter: ok
+---
+## Modes.
+## @value off No interaction.
+##   Continued description.
+enum Mode = off | on
+type Button { state mode: Mode }
+
+=== Documentation attaches to types and comma-separated states
+parse.ts: ok
+tree-sitter: ok
+---
+enum Mode = off | on
+## A control.
+type Button {
+  ## @state mode Current mode.
+  state mode: Mode, other: Mode
+}
+
+=== Blank lines leave documentation unattached
+parse.ts: ok
+tree-sitter: ok
+---
+## Detached.
+# Still detached.
+
+enum Mode = off
+
+=== Unknown and duplicate tags are syntactically recognizable
+parse.ts: ok
+tree-sitter: ok
+---
+## @value off First.
+## @value off Second.
+## @bogus unknown
+enum Mode = off
+
+=== Ordinary comments cannot interrupt attached documentation
+parse.ts: error
+tree-sitter: error
+---
+## Modes.
+# Ordinary.
+enum Mode = off
+
+=== Documentation cannot follow ordinary comments in the same attached block
+parse.ts: error
+tree-sitter: error
+---
+# Ordinary.
+## Modes.
+enum Mode = off
+
+=== An attached tag requires a syntactically valid tag name
+parse.ts: error
+tree-sitter: error
+---
+## @
+enum Mode = off
+
+=== A bare tag without a target is syntactically recognizable
+parse.ts: ok
+tree-sitter: ok
+---
+## @value
+enum Mode = off

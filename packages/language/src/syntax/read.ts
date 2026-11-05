@@ -12,6 +12,7 @@ import type {
   Child,
   Condition,
   Declaration,
+  Documentation,
   Effect,
   Enum,
   Event,
@@ -28,6 +29,7 @@ import type {
 import { message, words } from "@language/core/message.js";
 import { isValue, reserved } from "@language/core/naming.js";
 import { conditionText } from "@language/model/condition.js";
+import { documentationBlocks } from "@language/syntax/documentation.js";
 import { describe, located, scan, type Token, type TokenKind } from "@language/syntax/scan.js";
 
 class ParseFailure extends Error {}
@@ -41,7 +43,9 @@ const lowercase = { pattern: /^[a-z]/, rule: "a lowercase letter" };
 // Reads declarations and syntax diagnostics, retaining partial declarations.
 // Names are still as written; no model is evaluated here.
 export function read(source: string): SyntaxResult {
-  const tokens = scan(source);
+  const scanned = scan(source, { comments: true });
+  const documentation = documentationBlocks(scanned);
+  const tokens = scanned.filter(({ kind }) => kind !== "comment");
   const result: SyntaxResult = {
     enums: [],
     dimensions: [],
@@ -53,6 +57,11 @@ export function read(source: string): SyntaxResult {
     actors: [],
     expectations: [],
     diagnostics: [],
+  };
+  const documentationAt = (token: Token): { documentation?: Documentation } => {
+    const block = documentation.get(token);
+    if (block) result.diagnostics.push(...block.diagnostics);
+    return block?.documentation ? { documentation: block.documentation } : {};
   };
   let position = 0;
   const peek = () => tokens[position] as Token;
@@ -344,9 +353,10 @@ export function read(source: string): SyntaxResult {
   // two differ only in what their values do later: a dimension's cascade down
   // the tree.
   const valuesDeclaration = (keyword: "enum" | "dimension", declarations: Enum[]) => {
-    next();
+    const token = next();
+    const docs = keyword === "enum" ? documentationAt(token) : {};
     const named = name(keyword, message`a ${words(keyword)} name after ${keyword}`, capitalized);
-    const declaration = keep(declarations, { ...named, values: [] });
+    const declaration = keep(declarations, { ...named, ...docs, values: [] });
     expect("=", `\`=\` after the ${keyword} name`);
     // A line break can come before or after any "|", and the values can start
     // on the next line, with a "|" before the first: "| xs" on each line.
@@ -678,10 +688,11 @@ export function read(source: string): SyntaxResult {
   // A type: "type <Name> needs <Dimension>, ... { state <field>, ... <rule> ... }",
   // with as many state lines as it needs.
   const typeDeclaration = (into: Type[] = result.types) => {
-    next();
+    const docs = documentationAt(next());
     const named = name("type", "a type name after `type`", capitalized);
     const type = keep(into, {
       ...named,
+      ...docs,
       needs: [],
       states: [],
       rules: [],
@@ -863,8 +874,8 @@ export function read(source: string): SyntaxResult {
           type.rules.push(rule());
           return;
         }
-        next();
-        const first = field();
+        const docs = documentationAt(next());
+        const first = { ...field(), ...docs };
         if (peek().kind === "=") {
           next();
           const after = peek();
@@ -887,7 +898,7 @@ export function read(source: string): SyntaxResult {
         while (peek().kind === ",") {
           next();
           carryOn();
-          type.states.push(field());
+          type.states.push({ ...field(), ...docs });
         }
         if (peek().kind === "=") {
           fail(

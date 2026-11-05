@@ -3,6 +3,7 @@ import { type Words, words } from "@language/core/message.js";
 
 export type TokenKind =
   | "word"
+  | "comment"
   | "="
   | "|"
   | "{"
@@ -33,8 +34,9 @@ const wordPart = /[A-Za-z0-9-]/;
 // character at a time for the rest, skipping spaces, tabs and comments. A
 // line ends with a line feed, a carriage return and a line feed, or a
 // carriage return alone; a byte order mark at the start is not text; and a
-// column is a character, however it is encoded.
-export function scan(source: string): Token[] {
+// column is a character, however it is encoded. With comments enabled, retain
+// their text and positions for documentation attachment instead of discarding them.
+export function scan(source: string, options: { comments?: boolean } = {}): Token[] {
   const tokens: Token[] = [];
   let line = 1;
   let column = 1;
@@ -61,9 +63,14 @@ export function scan(source: string): Token[] {
     }
     // A comment, from # to the end of the line; the line's end is kept.
     if (char === "#") {
+      const start = index;
+      const from = column;
       while (index < source.length && source[index] !== "\n" && source[index] !== "\r") {
-        index += 1;
+        index += String.fromCodePoint(source.codePointAt(index) as number).length;
         column += 1;
+      }
+      if (options.comments) {
+        tokens.push({ kind: "comment", text: source.slice(start, index), line, column: from });
       }
       continue;
     }
