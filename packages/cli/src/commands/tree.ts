@@ -4,10 +4,9 @@ import { usage } from "@cli/commands/support/usage.js";
 import { printTypeTrees, typeTrees } from "@legacycodehq/dxn-language";
 
 export const treeCommand: Command = command(usage, (args, { io, cwd }) => {
-  const {
-    json,
-    rest: [file, selected, ...rest],
-  } = options(args);
+  const { json, rest: arguments_ } = options(args);
+  const identifiers = arguments_.includes("--identifiers");
+  const [file, selected, ...rest] = arguments_.filter((arg) => arg !== "--identifiers");
   if (
     file === undefined ||
     rest.length > 0 ||
@@ -20,7 +19,7 @@ export const treeCommand: Command = command(usage, (args, { io, cwd }) => {
   if (typeof parsed === "number") return parsed;
   try {
     const trees = typeTrees(parsed, selected);
-    return report.succeed({ file, trees }, printTypeTrees(trees));
+    return report.succeed({ file, trees }, printTypeTrees(trees, { identifiers }));
   } catch (error) {
     return report.refuse((error as Error).message);
   }

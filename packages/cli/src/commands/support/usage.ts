@@ -19,6 +19,7 @@ export const commandList = `  check <file> [--expect <title>]    Parse and check
                                      containment roots when no type is named.
                                      Keep conditions and lists without evaluating
                                      state combinations; use --json for structure
+                                     Use --identifiers to show child names too
   cases <file> <type>                List the cases a type, or a child in place,
         [--combinations]             has: those that can be told apart, each
                                      with what it covers where it covers more

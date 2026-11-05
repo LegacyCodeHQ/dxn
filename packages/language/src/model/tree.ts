@@ -46,7 +46,7 @@ export function typeTrees(file: ResolvedResult, selected?: string): TypeTree[] {
 }
 
 // The same declared structure as text, suitable for a terminal or a document.
-export function printTypeTrees(trees: TypeTree[]): string {
+export function printTypeTrees(trees: TypeTree[], options: { identifiers?: boolean } = {}): string {
   if (trees.length === 0) return "No types declared.\n";
   const draw = (root: TypeTree): string => {
     const lines = [root.type];
@@ -55,7 +55,8 @@ export function printTypeTrees(trees: TypeTree[]): string {
         const last = index === parent.children.length - 1;
         const type = child.list ? `[${child.type}]` : child.type;
         const condition = child.when === undefined ? "" : ` only when ${child.when}`;
-        lines.push(`${prefix}${last ? "└── " : "├── "}${child.name}: ${type}${condition}`);
+        const label = options.identifiers ? `${child.name}: ${type}` : type;
+        lines.push(`${prefix}${last ? "└── " : "├── "}${label}${condition}`);
         children(child, prefix + (last ? "    " : "│   "));
       });
     };

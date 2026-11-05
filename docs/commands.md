@@ -66,6 +66,7 @@ Commands:
                                      containment roots when no type is named.
                                      Keep conditions and lists without evaluating
                                      state combinations; use --json for structure
+                                     Use --identifiers to show child names too
   cases <file> <type>                List the cases a type, or a child in place,
         [--combinations]             has: those that can be told apart, each
                                      with what it covers where it covers more
@@ -178,18 +179,20 @@ dxn states wordmark.dxn Wordmark
 
 Prints the declared `has` tree of a type. With no type argument, prints all
 containment roots: types not placed by any other type. A shared type expands at
-each placement, using the child name and type. Nested types can be selected by
+each placement, showing only the type name by default. Use `--identifiers` to show
+`identifier: Type` labels. Nested types can be selected by
 their qualified names, such as `Container.Inner`; a nested declaration alone is
 not a `has` placement.
 
 Conditions remain visible as `only when` expressions, and lists as `[Type]`.
-Tagged list members retain their `list.tag` names. This shows declared structure
+JSON retains placement names and paths, including tagged list members. This shows declared structure
 without filtering children by state combinations. The source must still pass
 normal language checks, including containment-cycle and expectation checks.
 
 ```bash
 dxn tree docs/architecture/dxn-codebase.dxn ModifyDxnGrammar
 dxn tree docs/architecture/dxn-codebase.dxn
+dxn tree docs/architecture/dxn-codebase.dxn --identifiers
 dxn tree docs/architecture/dxn-codebase.dxn ModifyDxnGrammar --json
 ```
 

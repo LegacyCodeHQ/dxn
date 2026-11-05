@@ -16,11 +16,39 @@ type Independent {}
 `;
 
 describe("dxn tree", () => {
-  it("prints a type's has tree, expanding shared types at each placement", () => {
+  it.each([
+    ["model.dxn", "Root", "--identifiers"],
+    ["--identifiers", "model.dxn", "Root"],
+    ["model.dxn", "--identifiers", "Root"],
+  ])("shows placement identifiers when requested: %j", (...args) => {
+    const run = inProject({ "model.dxn": source });
+    expect(run("tree", ...args)).toEqual({
+      code: 0,
+      stdout: "Root\n├── left: Branch\n│   └── tip: Leaf\n└── right: Branch\n    └── tip: Leaf\n",
+      stderr: "",
+    });
+  });
+
+  it("supports identifiers without selecting a root and preserves JSON", () => {
+    const run = inProject({ "model.dxn": source });
+    const flagged = run("tree", "model.dxn", "--identifiers");
+    expect({
+      ...flagged,
+      json: run("tree", "model.dxn", "--identifiers", "--json"),
+    }).toEqual({
+      code: 0,
+      stdout:
+        "Root\n├── left: Branch\n│   └── tip: Leaf\n└── right: Branch\n    └── tip: Leaf\n\nIndependent\n",
+      stderr: "",
+      json: run("tree", "model.dxn", "--json"),
+    });
+  });
+
+  it("prints only type names, expanding shared types at each placement", () => {
     const run = inProject({ "model.dxn": source });
     expect(run("tree", "model.dxn", "Root")).toEqual({
       code: 0,
-      stdout: "Root\n├── left: Branch\n│   └── tip: Leaf\n└── right: Branch\n    └── tip: Leaf\n",
+      stdout: "Root\n├── Branch\n│   └── Leaf\n└── Branch\n    └── Leaf\n",
       stderr: "",
     });
   });
@@ -29,8 +57,7 @@ describe("dxn tree", () => {
     const run = inProject({ "model.dxn": source });
     expect(run("tree", "model.dxn")).toEqual({
       code: 0,
-      stdout:
-        "Root\n├── left: Branch\n│   └── tip: Leaf\n└── right: Branch\n    └── tip: Leaf\n\nIndependent\n",
+      stdout: "Root\n├── Branch\n│   └── Leaf\n└── Branch\n    └── Leaf\n\nIndependent\n",
       stderr: "",
     });
   });
@@ -69,7 +96,7 @@ type Root {
     });
     expect(run("tree", "model.dxn", "Root")).toEqual({
       code: 0,
-      stdout: "Root\n├── panel: Leaf only when visibility = visible\n└── items: [Leaf]\n",
+      stdout: "Root\n├── Leaf only when visibility = visible\n└── [Leaf]\n",
       stderr: "",
     });
   });

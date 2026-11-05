@@ -13,7 +13,7 @@ describe("declared type trees", () => {
 }
 `);
     expect(printTypeTrees(typeTrees(file, "Container.Inner"))).toBe(
-      "Container.Inner\n└── leaf: Container.Inner.Leaf\n",
+      "Container.Inner\n└── Container.Inner.Leaf\n",
     );
   });
 
