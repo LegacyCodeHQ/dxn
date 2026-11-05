@@ -142,6 +142,11 @@ It does not model all package imports, execution order, implementation completio
 or verification results.
 Implementation and verification evidence belong in separate records.
 
+`DiagnosticImpact` is shared by the parser and semantic-analyzer branches. It
+covers severity, code, message and source location, then propagates to the CLI
+and language server. Direct consumer edges from the analyzer also cover its
+non-diagnostic results.
+
 Each `has` edge means “review this consumer because of this upstream change.”
 A review may conclude that its existing implementation already handles the change.
 `VSCodeExtensionImpact` makes that choice explicit with `required-change:

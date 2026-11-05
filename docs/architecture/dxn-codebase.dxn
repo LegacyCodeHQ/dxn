@@ -32,7 +32,7 @@ type ModifyCoreParser {
   has check-parser-agreement: CheckParserAgreement
   has modify-semantic-analyzer: ModifySemanticAnalyzer
   has modify-formatter: ModifyFormatter
-  has modify-parser-diagnostics: ModifyParserDiagnostics
+  has diagnostic-impact: DiagnosticImpact
 }
 
 ## Check that Tree-sitter and the core parser agree on the changed syntax.
@@ -42,6 +42,7 @@ type CheckParserAgreement { }
 ## Review name resolution and semantic validation of the changed parser output.
 ## Results and diagnostics reach both the CLI and the language server.
 type ModifySemanticAnalyzer {
+  has diagnostic-impact: DiagnosticImpact
   has cli-impact: CliImpact
   has language-server-impact: LanguageServerImpact
 }
@@ -53,9 +54,10 @@ type ModifyFormatter {
   has language-server-impact: LanguageServerImpact
 }
 
-## Review syntax diagnostics and source locations exposed through both interfaces,
-## including errors in incomplete input and errors that prevent formatting.
-type ModifyParserDiagnostics {
+## Review the shared diagnostic contract for parser and semantic-analyzer
+## errors and warnings: severity, code, message and source location. Both sources
+## reach the CLI and language server, including diagnostics for incomplete input.
+type DiagnosticImpact {
   has cli-impact: CliImpact
   has language-server-impact: LanguageServerImpact
 }
