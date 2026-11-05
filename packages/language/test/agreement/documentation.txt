@@ -29,8 +29,8 @@ tree-sitter: ok
 enum Mode = off
 
 === Unknown and duplicate tags are syntactically recognizable
-parse.ts: ok
-tree-sitter: ok
+parse.ts: error
+tree-sitter: ok (the grammar recognizes tags syntactically; shared semantic analysis rejects unknown tags)
 ---
 ## @value off First.
 ## @value off Second.
@@ -61,8 +61,8 @@ tree-sitter: error
 enum Mode = off
 
 === A bare tag without a target is syntactically recognizable
-parse.ts: ok
-tree-sitter: ok
+parse.ts: error
+tree-sitter: ok (the grammar recognizes a bare tag; shared semantic analysis requires a target)
 ---
 ## @value
 enum Mode = off

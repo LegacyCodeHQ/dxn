@@ -6,6 +6,7 @@ import type {
   Type,
 } from "@language/core/ast.js";
 import { message, words } from "@language/core/message.js";
+import { checkDocumentation } from "@language/evaluation/check-documentation.js";
 import { checkTypes } from "@language/evaluation/check-types.js";
 import {
   checkChosen,
@@ -27,6 +28,7 @@ export function validateSemantics(file: ResolvedResult): void {
   const names = new Names(file);
   checkDeclared(file, report);
   checkValues(file, report);
+  checkDocumentation(file, report);
   checkUsedEnums(file, names, report);
   checkTypes(file, names, report);
   checkEnvironments(file, names, report);

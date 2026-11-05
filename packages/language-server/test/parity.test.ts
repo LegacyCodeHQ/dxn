@@ -64,6 +64,26 @@ const mixedRecords: Scenario = {
 
 const scenarios: Scenario[] = [
   {
+    title: "an unknown documentation tag",
+    dxn: model.replace("enum Hover", "## @bogus rest Description.\nenum Hover"),
+  },
+  {
+    title: "an unknown documentation target",
+    dxn: model.replace("enum Hover", "## @value missing Description.\nenum Hover"),
+  },
+  {
+    title: "a documentation tag on the wrong declaration",
+    dxn: model.replace("enum Hover", "## @state rest Description.\nenum Hover"),
+  },
+  {
+    title: "a missing documentation target",
+    dxn: model.replace("enum Hover", "## @value\nenum Hover"),
+  },
+  {
+    title: "a later duplicate documentation warning",
+    dxn: model.replace("enum Hover", "## @value rest First.\n## @value rest Second.\nenum Hover"),
+  },
+  {
     title: "attached documentation on a shared parser declaration",
     dxn: model.replace("enum Hover", "## Interaction.\n## @value rest At rest.\nenum Hover"),
   },

@@ -8,8 +8,9 @@ export interface Located {
   length: number;
 }
 
-// Documentation retains every tag, including duplicates and unknown names.
-// Resolving targets and deciding which tags are valid belongs to the checker.
+// Syntax retains every tag, including duplicates and unknown names.
+// Semantic analysis validates targets and keeps the first valid description
+// for a repeated tag. Invalid tags remain located for diagnostics.
 export interface DocumentationTag extends Located {
   target?: Located;
   description: string;

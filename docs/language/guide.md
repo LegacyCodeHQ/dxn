@@ -1875,11 +1875,42 @@ comment     = "#" to the end of the line
 lines       = newline { blank-line | comment newline }   # in an enum or a dimension, between its values
 ```
 
+### Documentation comments
+
+Optional `##` blocks attach directly to the following enum, type or state
+declaration. A blank line breaks attachment. Attached blocks cannot mix `#` and
+`##` markers. Prose documents the declaration; `@value` documents a value of that
+enum and `@state` documents a state named by that state declaration. Indented text
+continues the preceding tag description.
+
+```dxn
+## Interaction modes.
+## @value off No interaction.
+##   Continued description.
+enum Mode = off | on
+type Button {
+  ## @state mode Current mode.
+  state mode: Mode
+}
+```
+
+Unknown tags, tags on the wrong kind of declaration, missing targets and targets
+outside the attached declaration are semantic errors. Repeating a valid tag for
+the same target warns at the later occurrence and keeps the first description.
+Descriptions may be empty; missing documentation is valid. See the
+[syntax contract](syntax-contract.md) for the complete attachment rules and
+remaining editor/formatter integration work.
+
 ### Diagnostics
 
 | Code                                                                                                                         | Severity | When                                                                                             |
 | ---------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
 | `syntax-error`                                                                                                               | error    | the text does not follow the grammar                                                             |
+| `unknown-documentation-tag`                                                                                                  | error    | a documentation tag is neither `@value` nor `@state`                                             |
+| `documentation-tag-kind`                                                                                                     | error    | a known documentation tag is attached to the wrong declaration kind                              |
+| `missing-documentation-target`                                                                                               | error    | a documentation tag has no target name                                                           |
+| `unknown-documentation-target`                                                                                               | error    | a documentation target is not declared by the attached enum or state declaration                 |
+| `duplicate-documentation-tag`                                                                                                | warning  | a later valid tag repeats a target; the first description is retained                            |
 | `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name`, `actor-name`, `profile-name`, `modifier-name` | error    | the name does not start with a capital letter, or has more than letters and digits               |
 | `state-name`, `field-name`, `child-name`                                                                                     | error    | the name does not start with a lowercase letter                                                  |
 | `action-name`                                                                                                                | error    | an action's name does not start with a lowercase letter                                          |

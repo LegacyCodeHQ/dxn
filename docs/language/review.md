@@ -175,3 +175,13 @@ This completes the focused documentation reader step, not the whole construct
 review. Semantic tag/target validation, duplicate-tag warnings, structured hovers,
 formatter normalization, remaining syntax migration and human editor verification
 are still pending. The shared runtime has not switched to the Tree-sitter reader.
+
+## 2026-11-05 documentation semantic validation stage
+
+Documentation now validates tag names, declaration kinds, required targets and
+local enum/state targets in shared semantic analysis. Later duplicate tags warn
+once and the analyzed AST keeps the first description; syntax retains all tags.
+Tests cover source positions, nested declarations, shared state blocks, empty or
+absent documentation, unused enums, CLI output and CLI/language-server parity.
+Both parser entry points use these rules. Structured hover rendering, formatter
+normalization, remaining syntax migration and human editor checks are still pending.

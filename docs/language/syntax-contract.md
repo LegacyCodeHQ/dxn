@@ -5,8 +5,10 @@ parser migration. Tree-sitter implements the focused syntax contract. The shared
 syntax reader now preserves attached documentation on enums, types and states,
 including source locations and continuation indentation, and reports mixed comment
 blocks and malformed tag syntax. Its other syntax differences remain documented
-in the agreement fixtures. Documentation tag validation, structured hover rendering,
-formatter normalization and new shadowing diagnostics remain separate work.
+in the agreement fixtures. Shared semantic analysis now validates documentation
+tags and targets, warning on later duplicate tags and keeping the first description.
+Structured hover rendering, formatter normalization and new shadowing diagnostics
+remain separate work.
 The shared reader still uses its own parser; it has not switched to Tree-sitter.
 
 ## Declaration boundaries
@@ -85,9 +87,9 @@ node, `documentation_tag` exposes `name`, `target`, and optional `description`
 fields. `documentation_text` retains whitespace, including indentation, so the
 AST adapter can distinguish a tag continuation from general description.
 Unknown tags and targets, duplicate tags and tags on the wrong declaration are
-syntactically recognizable; the checker must diagnose them.
+syntactically recognizable; semantic analysis diagnoses them.
 
-The future documentation interpretation is:
+The implemented documentation interpretation is:
 
 - `@state` applies only directly to a `state` declaration. A type's documentation
   cannot use it to document contained states.
@@ -158,7 +160,7 @@ full hash), so the distributed grammar includes the syntax contract.
 `packages/language/test/documentation.test.ts` compares the shared reader with
 the Tree-sitter AST adapter for attached declarations, nested types, comma-separated
 states, prose, empty lines, indented continuations and source locations across
-BOM/LF/CRLF/CR input. Unknown and duplicate tags remain in the AST for later
+BOM/LF/CRLF/CR input. The syntax AST retains unknown and duplicate tags for
 semantic validation. Detached documentation and documentation before other kinds
 of declaration remain ordinary comments.
 
@@ -168,3 +170,24 @@ following declaration and does not transfer documentation to unrelated declarati
 Shared agreement fixtures cover documentation acceptance and rejection, and
 language-server parity scenarios compare CLI/server diagnostics and formatting.
 These tests do not establish semantic tag validation or manual editor verification.
+
+## Documentation semantic validation stage
+
+`evaluation/check-documentation.ts` validates documentation against its direct
+declaration after scope resolution. `@value` targets only values of that enum;
+`@state` targets only names from the state declaration sharing that block,
+including comma-separated fields. Type prose is allowed, but tags targeting its
+contained declarations are not. Broken declarations defer target validation to
+avoid errors caused by incomplete input.
+
+Unknown tags, wrong declaration kinds, missing targets and unknown targets are
+errors. Each later valid duplicate produces one warning, including for a shared
+state block. The analyzed AST retains the first description without merging it
+with later text; the raw syntax AST still retains every tag. Documentation is
+optional, empty descriptions are allowed, and tags do not count as enum usage.
+
+`documentation-semantics.test.ts` covers validation, locations, nested scopes,
+state groups, usage and duplicate selection. CLI tests and language-server parity
+scenarios cover the same errors and warnings. Both shared and Tree-sitter migration
+entry points invoke this validator. Structured hovers, formatter normalization and
+manual editor verification remain separate steps.
