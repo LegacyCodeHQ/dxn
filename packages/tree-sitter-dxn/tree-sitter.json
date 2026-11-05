@@ -21,7 +21,7 @@
   "bindings": {
     "c": false,
     "go": false,
-    "node": false,
+    "node": true,
     "python": false,
     "rust": false,
     "swift": false,

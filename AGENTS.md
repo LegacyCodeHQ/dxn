@@ -46,7 +46,9 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
   both quality gates, pre-commit and CI. Rules are explicit allowlists in
   `scripts/boundaries/rules.mjs`; new source layers need a reviewed rule.
   Syntax reading and formatting cannot depend on evaluation, evidence, editor
-  code or the public barrel. Only `syntax/parse.ts` orchestrates analysis.
+  code or the public barrel. Only the parsing facades `syntax/parse.ts` and
+  `syntax/parse-tree-sitter.ts` orchestrate analysis. The Tree-sitter facade
+  alone imports the grammar binding through its public package API.
   CLI and language-server source may import the language only by its public
   package name. Tests may cross boundaries; production code cannot import tests.
 - The CLI and the language server only adapt input and output: files and

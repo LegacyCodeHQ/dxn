@@ -30,9 +30,10 @@ type ModifyTreeSitterPackage needs TreeSitterChange {
 ## Impact on packages/language/src/syntax/tree.ts, which translates Tree-sitter
 ## nodes and fields into the language AST. A grammar change can affect this
 ## translation independently of the core parser's syntax reader.
-## The adapter currently handles focused declarations but is not connected to
-## the shared parse entry point. This branch represents impact on the adapter,
-## without implying that its output currently reaches the CLI or language server.
+## Focused declarations reach semantic analysis through the separate
+## parseTreeSitter migration entry point, backed by an in-process Node binding.
+## The shared parse entry point still uses the core syntax reader. This branch
+## therefore does not yet imply propagation to the CLI or language server.
 ## Implementation changes and verification results are recorded separately.
 type ASTAdapterImpact { }
 

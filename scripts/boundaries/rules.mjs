@@ -48,7 +48,7 @@ export function layerOf(path) {
   const [, pkg, file] = match;
   if (pkg === "language") {
     if (file === "index.ts") return "language/api";
-    if (file === "syntax/parse.ts") return "language/parse";
+    if (["syntax/parse.ts", "syntax/parse-tree-sitter.ts"].includes(file)) return "language/parse";
     const layer = `language/${file.split("/")[0]}`;
     return !["language/api", "language/parse"].includes(layer) && Object.hasOwn(allowed, layer)
       ? layer

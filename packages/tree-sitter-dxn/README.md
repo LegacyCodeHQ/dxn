@@ -23,8 +23,42 @@ and language server still use it. The remaining language is described in
 - `test/guide.test.ts`: parses every dxn example in the guide, so the grammar
   and the guide cannot drift apart unnoticed.
 
-There are no language bindings: nothing here is compiled when the workspace
-is installed.
+## In-process runtime
+
+`npm ci` compiles a Node-API grammar binding, including `src/scanner.c`.
+It requires a C/C++ toolchain and Python for node-gyp (Xcode Command Line Tools
+on macOS; build-essential and Python on Linux). The language package pins
+`tree-sitter` 0.25.1, which accepts the generated parser's ABI 15.
+
+The language exposes a migration entry point separately from its main API:
+
+```js
+import { parseTreeSitter } from "@legacycodehq/dxn-language/tree-sitter";
+
+const model = parseTreeSitter(`
+## Interaction modes.
+## @value rest No interaction.
+enum Hover = rest | hovered
+type Button { state hover: Hover }
+`);
+```
+
+This is an in-process path from source to Tree-sitter to the AST adapter to the
+existing semantic analyzer. It preserves documentation and performs the same
+name resolution and semantic checks as `parse()` for supported declarations.
+It does not yet validate documentation tags. The adapter currently supports
+enums, types and states; unsupported constructs and syntax recovery trees throw
+explicitly rather than losing data or falling back to a second parser.
+
+The default `parse()` and CLI/editor bundles still use the core syntax reader.
+Before replacing it, lower the remaining constructs, implement syntax diagnostics
+and partial-declaration recovery, and pass the shared parser/editor compatibility
+tests. The separate entry point prevents this work from introducing native
+assets into editor bundles before their packaging is ready.
+
+Adapter tests run against this real binding. Agreement tests compare both the
+binding and the CLI against every shared syntax fixture, covering the external
+scanner as well as the generated parser.
 
 ## Development
 

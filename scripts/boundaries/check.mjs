@@ -121,6 +121,14 @@ export function checkProject(directory) {
           specifier === workspace.name
         )
           continue;
+        // The Tree-sitter migration facade consumes the grammar binding's
+        // public API. No other language layer may depend on the grammar.
+        if (
+          path === "packages/language/src/syntax/parse-tree-sitter.ts" &&
+          workspace.path === "packages/tree-sitter-dxn" &&
+          specifier === workspace.name
+        )
+          continue;
         report(`use an allowed public package API; cannot depend on ${JSON.stringify(specifier)}`);
         continue;
       }

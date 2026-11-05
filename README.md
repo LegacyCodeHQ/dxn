@@ -52,13 +52,13 @@ command line is wrong.
   at a time, and every diagnostic code
 - [commands.md](docs/commands.md): every command, with its usage
   and examples
-- [tree-sitter-dxn](packages/tree-sitter-dxn/README.md): a tree-sitter grammar for dxn, for highlighting
+- [tree-sitter-dxn](packages/tree-sitter-dxn/README.md): the Tree-sitter grammar and in-process Node binding for dxn
 
 ## Development
 
-Requires Node.js 22+, [gitleaks](https://github.com/gitleaks/gitleaks) and,
-optionally, [clarity](https://github.com/LegacyCodeHQ/clarity-cli) for the
-file-cycle check.
+Requires Node.js 22+, a C/C++ toolchain and Python for the Tree-sitter binding,
+[gitleaks](https://github.com/gitleaks/gitleaks) and, optionally,
+[clarity](https://github.com/LegacyCodeHQ/clarity-cli) for the file-cycle check.
 
 ```bash
 npm ci

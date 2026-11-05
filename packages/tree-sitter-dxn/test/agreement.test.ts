@@ -2,6 +2,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import Dxn from "@legacycodehq/tree-sitter-dxn";
+import Parser from "tree-sitter";
 import { afterAll, describe, expect, it } from "vitest";
 import { snippets } from "../../language/test/agreement/read.js";
 
@@ -18,6 +20,8 @@ const treeSitter = (() => {
   }
 })();
 
+const parser = new Parser();
+parser.setLanguage(Dxn);
 const shared = snippets();
 const folder = mkdtempSync(join(tmpdir(), "dxn-agreement-"));
 afterAll(() => rmSync(folder, { recursive: true, force: true }));
@@ -48,7 +52,12 @@ describe("the snippets the grammar shares with parse.ts", () => {
     "%s",
     (_, index) => {
       const file = files[index] as string;
-      expect(failed.has(file) ? "error" : "ok").toBe(shared[index]?.treeSitter);
+      const snippet = shared[index];
+      if (!snippet) throw new Error(`Missing snippet ${index}`);
+      expect({
+        cli: failed.has(file) ? "error" : "ok",
+        binding: parser.parse(snippet.source).rootNode.hasError ? "error" : "ok",
+      }).toEqual({ cli: snippet.treeSitter, binding: snippet.treeSitter });
     },
   );
 });

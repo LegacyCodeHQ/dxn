@@ -1,15 +1,29 @@
 {
   "name": "@legacycodehq/tree-sitter-dxn",
   "version": "0.1.0",
-  "description": "Tree-sitter grammar for the dxn language, for syntax highlighting.",
+  "description": "Tree-sitter grammar and Node binding for the dxn language.",
   "license": "Apache-2.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
     "generate": "tree-sitter generate",
-    "test": "tree-sitter test"
+    "test": "tree-sitter test",
+    "install": "node-gyp-build"
   },
   "devDependencies": {
     "tree-sitter-cli": "0.27.1"
+  },
+  "exports": {
+    ".": {
+      "types": "./bindings/node/index.d.mts",
+      "default": "./bindings/node/index.mjs"
+    }
+  },
+  "dependencies": {
+    "node-addon-api": "8.9.2",
+    "node-gyp-build": "4.8.4"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.25.0"
   }
 }

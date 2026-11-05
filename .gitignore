@@ -23,3 +23,6 @@ target/
 # What Zed builds when it installs packages/zed as a dev extension
 packages/zed/grammars/
 packages/zed/extension.wasm
+
+# Native Tree-sitter Node binding
+packages/tree-sitter-dxn/build/

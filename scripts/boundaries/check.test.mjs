@@ -176,3 +176,36 @@ test("rejects unresolved local imports and malformed TypeScript", (t) => {
   assert.match(problems, /cannot resolve/);
   assert.match(problems, /cannot parse/);
 });
+
+for (const [file, specifier, permitted] of [
+  ["syntax/parse-tree-sitter.ts", "@legacycodehq/tree-sitter-dxn", true],
+  ["syntax/read.ts", "@legacycodehq/tree-sitter-dxn", false],
+  ["syntax/parse.ts", "@legacycodehq/tree-sitter-dxn", false],
+  ["evaluation/evaluate.ts", "@legacycodehq/tree-sitter-dxn", false],
+  ["syntax/parse-tree-sitter.ts", "@legacycodehq/tree-sitter-dxn/bindings/node", false],
+]) {
+  test(`grammar binding dependency: ${file} -> ${specifier}`, (t) => {
+    const root = project(t, {
+      [`packages/language/src/${file}`]: `import ${JSON.stringify(specifier)};`,
+      "packages/tree-sitter-dxn/package.json": '{"name":"@legacycodehq/tree-sitter-dxn"}',
+    });
+    writeFileSync(
+      join(root, "package.json"),
+      JSON.stringify({
+        workspaces: ["packages/language", "packages/cli", "packages/tree-sitter-dxn"],
+      }),
+    );
+    assert.equal(checkProject(root).problems.length, permitted ? 0 : 1);
+  });
+}
+
+test("only parsing facades may orchestrate semantic analysis", (t) => {
+  const root = project(t, {
+    "packages/language/src/syntax/parse-tree-sitter.ts":
+      'import { analyzeSemantics } from "@language/analysis/semantic-analyzer.js";',
+    "packages/language/src/syntax/tree.ts":
+      'import { analyzeSemantics } from "@language/analysis/semantic-analyzer.js";',
+  });
+  assert.match(checkProject(root).problems.join("\n"), /syntax\/tree\.ts:1:.*cannot depend on/);
+  assert.equal(checkProject(root).problems.length, 1);
+});
