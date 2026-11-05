@@ -2,6 +2,7 @@ dimension TreeSitterChange = grammar | scanner | both
 enum TreeSitterParser = regenerate | keep
 enum ZedExtensionPin = update | keep
 enum RequiredChange = modify | keep
+enum VerificationResult = unverified | passed | failed
 
 ## A grammar change begins in Tree-sitter and propagates to its consumers.
 ## Each has node identifies a responsibility to review, not a mandatory edit.
@@ -142,3 +143,20 @@ type VerifyZedExtension { }
 ## existing support still handles the change when keep is chosen. Record the
 ## outcome, developer and evidence separately from this required work.
 type VerifyVSCodeExtension { }
+
+## Evidence recorded by the coding agent for an automated verification command.
+## The implicit context identifies the verification responsibility and combination.
+## Unverified means no decisive result has been established; the presence of a
+## record alone does not establish success. No evidence also leaves work unverified.
+## Revision identifies the source tested, output names the saved command log,
+## and at records when the verification ran. Human editor checks remain separate.
+record AutomatedVerification {
+  command: NonEmptyString
+  result: VerificationResult
+  revision: NonEmptyString
+  output: RelativePath
+  at: Timestamp
+}
+
+## The coding agent records automated checks, not human editor sign-off.
+actor CodingAgent records AutomatedVerification

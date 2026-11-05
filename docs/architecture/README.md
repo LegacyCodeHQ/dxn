@@ -166,6 +166,16 @@ who performed the checks and supporting evidence separately. Repeated placements
 identify upstream causes; one recorded verification may cover several causes
 when it exercises the affected behavior for each.
 
+`CodingAgent` records `AutomatedVerification`: the shell command, result
+(`unverified`, `passed` or `failed`), source revision, saved output path and run
+timestamp. DXN supplies the actor and context in stored evidence, identifying
+the verification responsibility and exact combination it concerns. The `output`
+field is a repository-relative log path; the log must be retained as evidence.
+Missing evidence leaves verification unverified, and a record with an `unverified`
+result is not a passing check. This interpretation does not add automatic status
+updates or a rule making an automated pass satisfy a manual editor check.
+The human actor and its evidence record will be modeled separately.
+
 The following source details support those responsibilities. They are kept here
 rather than expanded into individual nodes in the propagation tree:
 
