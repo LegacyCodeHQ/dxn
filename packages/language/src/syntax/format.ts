@@ -1,4 +1,7 @@
+import type { Declaration, Type } from "@language/core/ast.js";
+import { documentationBlocks, formatDocumentation } from "@language/syntax/documentation.js";
 import { read } from "@language/syntax/read.js";
+import { scan } from "@language/syntax/scan.js";
 
 // A piece of a line: a word, a quoted string, a sign, or a comment, which runs
 // to the end of the line.
@@ -6,11 +9,38 @@ type Piece = { kind: "word" | "string" | "sign"; text: string };
 
 // The one way a .dxn file is written, as gofmt writes Go: two spaces of
 // indentation for each brace or bracket left open, and one more for a line that continues the one
-// above it; one way to space each sign; comments kept as written; at most one
+// above it; one way to space each sign; ordinary comments kept as written;
+// attached documentation margins normalized; at most one
 // blank line in a row; line feeds, and one at the end. Nothing is reordered,
 // joined or split. A file that does not parse is left alone: nothing.
 export function format(source: string): string | undefined {
-  if (read(source).diagnostics.some(({ code }) => code === "syntax-error")) return undefined;
+  const syntax = read(source);
+  if (syntax.diagnostics.some(({ code }) => code === "syntax-error")) return undefined;
+  // Only normalize blocks consumed by the reader as declaration documentation.
+  // A keyword can also be an enum value, where preceding comments are trivia.
+  const documented = new Set<string>();
+  const remember = (declaration: Declaration) => {
+    if (declaration.documentation) documented.add(`${declaration.line}:${declaration.column}`);
+  };
+  const visit = (type: Type) => {
+    remember(type);
+    type.enums.forEach(remember);
+    type.states.forEach(remember);
+    type.types.forEach(visit);
+  };
+  syntax.enums.forEach(remember);
+  syntax.types.forEach(visit);
+  const tokens = scan(source, { comments: true });
+  const comments = new Map<number, string>();
+  const blocks = documentationBlocks(tokens);
+  for (const [index, keyword] of tokens.entries()) {
+    const block = blocks.get(keyword);
+    if (!block) continue;
+    const name = tokens[index + 1];
+    if (name && documented.has(`${name.line}:${name.column}`)) {
+      for (const [line, text] of formatDocumentation(block.lines)) comments.set(line, text);
+    }
+  }
   const written: Written[] = [];
   let depth = 0;
   // Whether the last line with code ended with |, and or or, so the next one
@@ -19,7 +49,10 @@ export function format(source: string): string | undefined {
   const lines = source
     .replace(/^﻿/, "")
     .split(/\r\n|\r|\n/)
-    .map(split);
+    .map((line, index) => {
+      const parts = split(line);
+      return { ...parts, comment: comments.get(index + 1) ?? parts.comment };
+    });
   lines.forEach(({ pieces, comment }, index) => {
     const [first] = pieces;
     // A closing brace or bracket steps back; a line that goes on with |, and
@@ -37,7 +70,9 @@ export function format(source: string): string | undefined {
     const after = comment === undefined ? "" : code === "" ? comment : `  ${comment}`;
     written.push({
       text: code === "" && comment === undefined ? "" : `${indent}${code}${after}`,
-      opens: pieces.at(-1)?.text === "{" || pieces.at(-1)?.text === "[",
+      // A blank after an inline ## block breaks documentation attachment.
+      opens:
+        !comment?.startsWith("##") && (pieces.at(-1)?.text === "{" || pieces.at(-1)?.text === "["),
       closes,
     });
     for (const { text } of pieces) {

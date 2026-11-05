@@ -1905,7 +1905,13 @@ outside the attached declaration are semantic errors. Repeating a valid tag for
 the same target warns at the later occurrence and keeps the first description.
 Descriptions may be empty; missing documentation is valid. See the
 [syntax contract](syntax-contract.md) for the complete attachment rules and
-remaining editor/formatter integration work.
+remaining editor verification work.
+
+`dxn fmt` writes attached documentation with one space after `##`, one space
+between a tag and its target, and three spaces after `##` for tag continuation
+text. It preserves prose content and blank lines that break attachment. Ordinary
+comments and detached documentation keep their content. Whitespace-only prose
+markers retain a space where it is needed to preserve documentation meaning.
 
 ### Diagnostics
 

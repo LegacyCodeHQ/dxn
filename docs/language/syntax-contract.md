@@ -212,3 +212,16 @@ Language tests cover nested scopes, shared state blocks, duplicate selection,
 empty/detached documentation and Unicode/BOM/LF/CRLF/CR input. LSP tests check
 Markdown output, ranges, unsaved updates and documentation alongside evidence
 hints. Human verification in VS Code and Zed is still pending.
+
+## Documentation formatter stage
+
+Attached documentation uses `## Prose`, `## @value target Description` (or
+`@state`) and `##   Continuation`. Only margins and tag/target separators are
+normalized; internal prose spacing is retained. Unknown and duplicate tags stay
+in source for semantic diagnostics. Blank lines that detach a block are retained,
+including after an inline opening-body comment. Empty `##` markers remain empty;
+whitespace-only declaration prose keeps a space to preserve its meaning.
+
+Formatter tests compare raw syntax meaning before and after formatting, check
+idempotence, and exercise CLI writes and language-server parity. Invalid syntax
+is not formatted. Human editor verification remains pending.

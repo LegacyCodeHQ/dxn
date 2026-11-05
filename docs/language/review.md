@@ -195,3 +195,16 @@ for those constructs; legacy comments remain supported for unmigrated constructs
 Tests cover Unicode/line endings, nested scopes, state groups, unresolved enum
 references, LSP Markdown/ranges, unsaved updates and coexistence with evidence.
 Formatter normalization and human verification in VS Code and Zed remain pending.
+
+## 2026-11-05 documentation formatter stage
+
+The shared formatter now normalizes attached documentation margins, tag/target
+spacing and continuation indentation. It preserves description text, unknown and
+duplicate tags, declaration attachment and the distinction between empty markers
+and whitespace-only prose. Ordinary comments and detached blocks keep their
+content. Invalid documentation syntax leaves the file untouched.
+
+Tests cover meaning preservation and idempotence, nested state groups and types,
+inline body comments, attachment boundaries, Unicode/BOM/line endings, CLI file
+writes and CLI/language-server formatting parity. Human verification in VS Code
+and Zed and the remaining syntax migration are still pending.

@@ -64,6 +64,13 @@ const mixedRecords: Scenario = {
 
 const scenarios: Scenario[] = [
   {
+    title: "documentation spacing and continuation formatting",
+    dxn: model.replace(
+      "enum Hover",
+      "##Interaction.\n##\t@value\trest\t At rest.\n##\t Continued prose.\nenum Hover",
+    ),
+  },
+  {
     title: "an unknown documentation tag",
     dxn: model.replace("enum Hover", "## @bogus rest Description.\nenum Hover"),
   },

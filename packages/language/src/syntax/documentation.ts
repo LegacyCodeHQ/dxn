@@ -3,6 +3,7 @@ import type { Token } from "@language/syntax/scan.js";
 
 interface DocumentationBlock {
   documentation?: Documentation;
+  lines: readonly Token[];
   diagnostics: Diagnostic[];
 }
 
@@ -37,6 +38,7 @@ export function documentationBlocks(tokens: readonly Token[]): Map<Token, Docume
       declaration,
       mixed
         ? {
+            lines,
             diagnostics: [
               {
                 severity: "error",
@@ -53,6 +55,8 @@ export function documentationBlocks(tokens: readonly Token[]): Map<Token, Docume
   return blocks;
 }
 
+const tagPattern = /^([ \t]*)@([A-Za-z][A-Za-z0-9-]*)(?:([ \t]+)([^ \t]+)(?:[ \t]+(.*))?)?$/;
+
 function readBlock(lines: readonly Token[]): DocumentationBlock {
   const diagnostics: Diagnostic[] = [];
   const description: string[] = [];
@@ -62,9 +66,7 @@ function readBlock(lines: readonly Token[]): DocumentationBlock {
     const text = line.text.slice(2);
     // An empty ## line carries no text and does not end tag continuation.
     if (text === "") continue;
-    const tag = /^([ \t]*)@([A-Za-z][A-Za-z0-9-]*)(?:([ \t]+)([^ \t]+)(?:[ \t]+(.*))?)?$/.exec(
-      text,
-    );
+    const tag = tagPattern.exec(text);
     if (tag) {
       const [, indent = "", name = "", gap = "", target, prose = ""] = tag;
       const column = line.column + 2 + indent.length + 1;
@@ -102,5 +104,35 @@ function readBlock(lines: readonly Token[]): DocumentationBlock {
       description.push(text.trim());
     }
   }
-  return { documentation: { description: description.join("\n"), tags }, diagnostics };
+  return { documentation: { description: description.join("\n"), tags }, diagnostics, lines };
+}
+
+// Normalize the margin without turning declaration prose into tag continuation.
+// Whitespace-only prose is significant; an exactly empty marker is not.
+export function formatDocumentation(lines: readonly Token[]): Map<number, string> {
+  const formatted = new Map<number, string>();
+  let active = false;
+  for (const line of lines) {
+    const text = line.text.slice(2);
+    if (text === "") {
+      formatted.set(line.line, "##");
+      continue;
+    }
+    const tag = tagPattern.exec(text);
+    if (tag) {
+      active = true;
+      const [, , name, , target, description = ""] = tag;
+      const prose = description.trim();
+      formatted.set(
+        line.line,
+        `## @${name}${target ? ` ${target}` : ""}${prose ? ` ${prose}` : ""}`,
+      );
+    } else if (active && /^(?: {2}|[ \t]*\t)/.test(text)) {
+      formatted.set(line.line, text.trim() ? `##   ${text.trim()}` : "##");
+    } else {
+      active = false;
+      formatted.set(line.line, `## ${text.trim()}`);
+    }
+  }
+  return formatted;
 }
