@@ -25,8 +25,9 @@ esbuild. The alias migration preserved all 252 source dependency edges.
 
 `evaluation` depends on `model` and `core`. Syntax reading and formatting do not
 run semantic analysis. The existing `syntax/parse.ts` entry point composes a fresh
-syntax read with `analysis/analyze.ts`, which derives record context, resolves
-names, checks declarations, analyzes conditions and executes expectations.
+syntax read with `analysis/semantic-analyzer.ts`, which derives record context, resolves
+names, validates declarations with `evaluation/semantic-validator.ts`, analyzes
+conditions and executes expectations.
 Condition analysis enumerates a type's combinations only when a condition needs
 judging, reusing them for the remaining conditions of that type. `evidence` uses
 `data`, `evaluation`, `model` and `core`; `editor` combines syntax, evaluation and

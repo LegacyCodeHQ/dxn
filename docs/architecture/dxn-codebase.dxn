@@ -26,24 +26,25 @@ type ModifyTreeSitterPackage needs TreeSitterChange {
 }
 
 ## Modifying the core parser so that it reads the changed syntax.
-## Its syntax tree reaches checking and formatting through separate paths.
+## Its syntax tree reaches semantic analysis and formatting through separate paths.
 ## Its diagnostics also reach the CLI and language server.
 type ModifyCoreParser {
   has check-parser-agreement: CheckParserAgreement
-  has modify-checker: ModifyChecker
+  has modify-semantic-analyzer: ModifySemanticAnalyzer
   has modify-formatter: ModifyFormatter
   has modify-parser-diagnostics: ModifyParserDiagnostics
 }
 
-## Adapting checking to the changed parser output. The shared analysis entry
-## point supplies checked results and diagnostics to the CLI and language server.
-type ModifyChecker {
+## Adapting name resolution and semantic validation to the changed parser output,
+## including validation that depends on evaluated combinations. The semantic
+## analyzer supplies results and diagnostics to the CLI and language server.
+type ModifySemanticAnalyzer {
   has modify-cli: ModifyCli
   has modify-language-server: ModifyLanguageServer
 }
 
 ## Adapting formatting to the changed syntax. The formatter reads syntax
-## directly, independently of the checker, and serves both interfaces.
+## directly, independently of semantic analysis, and serves both interfaces.
 type ModifyFormatter {
   has modify-cli: ModifyCli
   has modify-language-server: ModifyLanguageServer
@@ -68,11 +69,11 @@ type ModifyLanguageServer {
 }
 
 ## Adapting the VS Code integration to language-server changes in diagnostics,
-## checked language behavior and formatting. TextMate highlighting is separate.
+## semantic analysis results and formatting. TextMate highlighting is separate.
 type ModifyVSCodeLanguageClient { }
 
 ## Adapting the Zed integration to language-server changes in diagnostics,
-## checked language behavior and formatting. The Tree-sitter grammar pin and
+## semantic analysis results and formatting. The Tree-sitter grammar pin and
 ## highlighting queries are separate from this language-server path.
 type ModifyZedLanguageClient { }
 

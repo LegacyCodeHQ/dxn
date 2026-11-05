@@ -3,7 +3,7 @@
 //
 // A mistake is reported where it is, and reading skips to the next line that
 // starts a declaration; inside a type, to the next line of the type.
-// Resolution and semantic analysis belong to analysis/analyze.ts.
+// Resolution and semantic analysis belong to analysis/semantic-analyzer.ts.
 
 import type {
   Alike,

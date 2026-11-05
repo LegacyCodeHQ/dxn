@@ -1,13 +1,13 @@
 import type { ParseResult, SyntaxResult } from "@language/core/ast.js";
-import { check } from "@language/evaluation/check.js";
 import { expectations } from "@language/evaluation/expect.js";
 import { conditionsInMatrix } from "@language/evaluation/matrix.js";
+import { validateSemantics } from "@language/evaluation/semantic-validator.js";
 import { scope } from "@language/model/scope.js";
 
-// Analyzes a fresh syntax read in place, once. Scope resolution changes names
-// and adds nested declarations to the file, so an analyzed result is not input
+// Semantically analyzes a fresh syntax read in place, once. Scope resolution
+// changes names and adds nested declarations, so an analyzed result is not input
 // to this pass again. The public parse() entry point owns this sequence.
-export function analyze(syntax: SyntaxResult): ParseResult {
+export function analyzeSemantics(syntax: SyntaxResult): ParseResult {
   // A record an actor records is stored, each one about a combination: it
   // has context.
   for (const actor of syntax.actors) {
@@ -15,7 +15,7 @@ export function analyze(syntax: SyntaxResult): ParseResult {
     if (record !== undefined) record.context = true;
   }
   const result = scope(syntax);
-  check(result);
+  validateSemantics(result);
   // Conditions are checked against the combinations there really are, and
   // expectations against the tree in place: both need a file without other
   // problems. A condition error also prevents expectation execution.

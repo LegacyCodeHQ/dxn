@@ -22,7 +22,7 @@ import { around } from "@language/model/scope.js";
 // diagnostics: the file holds each name once, an enum or a dimension each
 // value once, and every name that refers to a declaration names one of the
 // right kind.
-export function check(file: ResolvedResult): void {
+export function validateSemantics(file: ResolvedResult): void {
   const report = reportTo(file.diagnostics);
   const names = new Names(file);
   checkDeclared(file, report);

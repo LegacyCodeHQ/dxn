@@ -29,7 +29,7 @@ function project(t, files) {
     "packages/language/src/core/ast.ts": "export interface Type {}",
     "packages/language/src/model/names.ts": "export const names = [];",
     "packages/language/src/evaluation/evaluate.ts": "export const states = [];",
-    "packages/language/src/analysis/analyze.ts": "export function analyze() {}",
+    "packages/language/src/analysis/semantic-analyzer.ts": "export function analyzeSemantics() {}",
     "packages/language/src/syntax/read.ts": "export function read() {}",
     "packages/language/src/syntax/parse.ts": "export function parse() {}",
     "packages/language/src/index.ts": 'export { parse } from "@language/syntax/parse.js";',
@@ -41,7 +41,7 @@ function project(t, files) {
 test("accepts the facade, lower-layer imports, and the public package API", (t) => {
   const root = project(t, {
     "packages/language/src/syntax/parse.ts":
-      'import { analyze } from "@language/analysis/analyze.js"; export function parse() { analyze(); }',
+      'import { analyzeSemantics } from "@language/analysis/semantic-analyzer.js"; export function parse() { analyzeSemantics(); }',
     "packages/language/src/syntax/read.ts":
       'import type { Type } from "../core/ast.js"; export function read(): Type { return {}; }',
     "packages/cli/src/commands/check.ts": 'import { parse } from "@legacycodehq/dxn-language";',
@@ -119,10 +119,14 @@ for (const [from, to, specifier] of [
   ],
   [
     "language/src/editor/hover.ts",
-    "language/src/analysis/analyze.ts",
-    "@language/analysis/analyze.js",
+    "language/src/analysis/semantic-analyzer.ts",
+    "@language/analysis/semantic-analyzer.js",
   ],
-  ["language/src/analysis/analyze.ts", "language/src/syntax/parse.ts", "@language/syntax/parse.js"],
+  [
+    "language/src/analysis/semantic-analyzer.ts",
+    "language/src/syntax/parse.ts",
+    "@language/syntax/parse.js",
+  ],
   ["cli/src/commands/support/context.ts", "cli/src/cli.ts", "../../cli.js"],
   ["language-server/src/protocol/range.ts", "language-server/src/server.ts", "../server.js"],
 ]) {

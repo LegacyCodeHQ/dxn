@@ -19,7 +19,7 @@ record Proof {
 actor Tester records Proof
 `;
 
-describe("source analysis phases", () => {
+describe("semantic analysis phases", () => {
   it("reads declarations without resolving names or deriving record context", () => {
     const file = read(source);
     const outer = file.types[0];
@@ -69,7 +69,7 @@ describe("source analysis phases", () => {
     `);
   });
 
-  it("formats a failing expectation without executing source analysis", () => {
+  it("formats a failing expectation without executing semantic analysis", () => {
     const conditions = vi.spyOn(matrix, "conditionsInMatrix");
     const expectations = vi.spyOn(assertions, "expectations");
     const text = `enum Flag = off | on
@@ -84,7 +84,7 @@ then flag = on
     const snapshot: unknown[] = [];
     snapshot.push(format(text));
     snapshot.push(conditions.mock.calls.length, expectations.mock.calls.length);
-    // Full analysis still executes the expectation and reports its failure.
+    // Full semantic analysis still executes the expectation and reports its failure.
     snapshot.push(parse(text).diagnostics.map(({ code }) => code));
     expect(snapshot).toMatchInlineSnapshot(`
       [

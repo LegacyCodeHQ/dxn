@@ -1,4 +1,4 @@
-import { analyze } from "@language/analysis/analyze.js";
+import { analyzeSemantics } from "@language/analysis/semantic-analyzer.js";
 import { read } from "@language/syntax/read.js";
 import { declarationsFromTree } from "@language/syntax/tree.js";
 import { describe, expect, it } from "vitest";
@@ -18,10 +18,10 @@ describe("Tree-sitter declaration adapter", () => {
     const tree = declarations(source);
     expect({
       syntax: tree,
-      analysis: analyze({ ...read(source), ...declarations(source) }),
+      analysis: analyzeSemantics({ ...read(source), ...declarations(source) }),
     }).toEqual({
       syntax: { enums: old.enums, types: old.types },
-      analysis: analyze(read(source)),
+      analysis: analyzeSemantics(read(source)),
     });
   });
 
