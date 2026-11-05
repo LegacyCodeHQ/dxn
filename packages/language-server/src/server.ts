@@ -250,9 +250,14 @@ export function serve(connection: Connection): void {
         file.types.some(({ line, column }) => line === hint.line && column === hint.column),
     );
     if (declared !== undefined) {
+      const found = hover(document.getText(), position.line + 1, position.character + 1, file);
+      const documentation =
+        found?.comment === undefined
+          ? ""
+          : `\`\`\`dxn\n${found.code}\n\`\`\`\n\n${found.comment}\n\n---\n\n`;
       const start = { line: declared.line - 1, character: declared.column - 1 };
       return {
-        contents: { kind: "markdown", value: declared.details },
+        contents: { kind: "markdown", value: `${documentation}${declared.details}` },
         range: { start, end: { ...start, character: start.character + named(declared.column) } },
       };
     }

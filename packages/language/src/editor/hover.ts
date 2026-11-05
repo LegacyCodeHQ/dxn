@@ -1,11 +1,11 @@
-import type { Enum, Located, ParseResult, Type } from "@language/core/ast.js";
+import type { Documentation, Enum, Located, ParseResult, Type } from "@language/core/ast.js";
 import { covers, links, type Span } from "@language/editor/definition.js";
 import { conditionText } from "@language/model/condition.js";
 import { parse } from "@language/syntax/parse.js";
 import { sourceLines } from "@language/syntax/scan.js";
 
 // What hovering over a name shows: the name's declaration as it is written,
-// and the comment above it.
+// and its attached documentation.
 export interface Hover {
   from: Span;
   code: string;
@@ -14,8 +14,8 @@ export interface Hover {
 
 // What the name at a line and a column of a source, both from one, is, where
 // it is used: its declaration, from elsewhere in the file. Where it is
-// declared, only what that line does not say: a state's enum, with its
-// values; nothing for any other declaration. Nothing over a keyword, or a name
+// declared, show attached documentation when present, and a state's enum
+// with its values even without documentation. Nothing over a keyword, or a name
 // the file does not declare.
 export function hover(
   source: string,
@@ -39,9 +39,26 @@ export function hover(
   const state = file.types
     .flatMap(({ states }) => states)
     .find((candidate) => candidate === declared);
-  const of = file.enums.find(({ name }) => name === state?.enum.name);
+  if (state === undefined) {
+    if (declared === undefined) return undefined;
+    const documentedDeclarations: Located[] = [
+      ...file.enums,
+      ...file.types,
+      ...file.enums.flatMap(({ values }) => values),
+    ];
+    const found = described.get(declared);
+    return !documentedDeclarations.includes(declared) || found?.comment === undefined
+      ? undefined
+      : { from: span(declared), ...found };
+  }
+  const of = file.enums.find(({ name }) => name === state.enum.name);
   const found = of === undefined ? undefined : described.get(of);
-  return state === undefined || found === undefined ? undefined : { from: span(state), ...found };
+  const own = described.get(state);
+  if (found === undefined) {
+    return own?.comment === undefined ? undefined : { from: span(state), ...own };
+  }
+  const comment = own?.comment ?? found.comment;
+  return { from: span(state), code: found.code, ...(comment ? { comment } : {}) };
 }
 
 // The comment on the lines right above a line, without its "#"; none above
@@ -56,13 +73,31 @@ function commentAbove(lines: string[], line: number): string | undefined {
   return comment.length > 0 ? comment.join("\n") : undefined;
 }
 
+// Declaration prose applies to its members; only the matching value/state
+// tag contributes a member description. Analysis already keeps the first valid
+// duplicate, and filtering by kind/target prevents invalid tags from leaking.
+function documentationComment(
+  documentation: Documentation | undefined,
+  tag?: "value" | "state",
+  target?: string,
+): string | undefined {
+  if (!documentation) return undefined;
+  const detail =
+    tag === undefined
+      ? undefined
+      : documentation.tags.find((entry) => entry.name === tag && entry.target?.name === target)
+          ?.description;
+  return [documentation.description, detail].filter(Boolean).join("\n\n") || undefined;
+}
+
 // Every declaration a name can be, with how it is shown.
 function describe(file: ParseResult, lines: string[]): Map<Located, Omit<Hover, "from">> {
   const result = new Map<Located, Omit<Hover, "from">>();
-  const add = (at: Located, code: string, line = at.line) => {
-    const comment = commentAbove(lines, line);
+  const add = (at: Located, code: string, comment?: string) => {
     result.set(at, comment === undefined ? { code } : { code, comment });
   };
+  // Constructs outside the documentation contract keep their existing comments.
+  const legacy = (at: Located, code: string) => add(at, code, commentAbove(lines, at.line));
   const listed = (declaration: Enum, keyword: string) =>
     `${keyword} ${declaration.name} = ${declaration.values.map(({ name }) => name).join(" | ")}`;
   const enumText = (name: string) => {
@@ -74,15 +109,27 @@ function describe(file: ParseResult, lines: string[]): Map<Located, Omit<Hover, 
     ["dimension", file.dimensions],
   ] as const) {
     for (const declaration of list) {
-      add(declaration, listed(declaration, keyword));
-      // A value shows its enum or dimension.
+      add(
+        declaration,
+        listed(declaration, keyword),
+        keyword === "enum"
+          ? documentationComment(declaration.documentation)
+          : commentAbove(lines, declaration.line),
+      );
+      // A value shows its enum or dimension, with only its own tag description.
       for (const value of declaration.values)
-        add(value, listed(declaration, keyword), declaration.line);
+        add(
+          value,
+          listed(declaration, keyword),
+          keyword === "enum"
+            ? documentationComment(declaration.documentation, "value", value.name)
+            : commentAbove(lines, declaration.line),
+        );
     }
   }
-  for (const type of file.types) describeType(type, add, enumText);
+  for (const type of file.types) describeType(type, add, enumText, lines);
   for (const environment of file.environments) {
-    add(
+    legacy(
       environment,
       `environment ${environment.name} = ${environment.dimensions.map(({ name }) => name).join(" x ")}`,
     );
@@ -90,14 +137,14 @@ function describe(file: ParseResult, lines: string[]): Map<Located, Omit<Hover, 
   const assignments = (values: { dimension: Located; value: Located }[]) =>
     `{ ${values.map(({ dimension, value }) => `${dimension.name} = ${value.name}`).join(", ")} }`;
   for (const profile of file.profiles) {
-    add(
+    legacy(
       profile,
       `profile ${profile.name}: ${profile.environment.name} ${assignments(profile.values)}`,
     );
   }
   for (const modifier of file.modifiers) {
     const on = modifier.on.map(({ name }) => name).join(", ");
-    add(modifier, `modifier ${modifier.name} on ${on} ${assignments(modifier.values)}`);
+    legacy(modifier, `modifier ${modifier.name} on ${on} ${assignments(modifier.values)}`);
   }
   for (const record of file.records) {
     const fields = record.fields.map(({ name, type }) => `  ${name}: ${type.name}`);
@@ -105,7 +152,7 @@ function describe(file: ParseResult, lines: string[]): Map<Located, Omit<Hover, 
     const by = file.actors
       .filter((actor) => actor.records.name === record.name)
       .map((actor) => `actor ${actor.name} records ${record.name}`);
-    add(record, [...by, `record ${record.name} {`, ...fields, "}"].join("\n"));
+    legacy(record, [...by, `record ${record.name} {`, ...fields, "}"].join("\n"));
   }
   return result;
 }
@@ -113,8 +160,9 @@ function describe(file: ParseResult, lines: string[]): Map<Located, Omit<Hover, 
 // A type, and what it declares: its states, actions, events and children.
 function describeType(
   type: Type,
-  add: (at: Located, code: string, line?: number) => void,
+  add: (at: Located, code: string, comment?: string) => void,
   enumText: (name: string) => string | undefined,
+  lines: string[],
 ): void {
   const own = type.states.filter(({ received }) => !received);
   const received = type.states.filter(({ received: is }) => is);
@@ -146,7 +194,7 @@ function describeType(
     ]),
     ...type.actions.map(({ name }) => `  action ${name.name}`),
   ];
-  add(type, [header, ...body].join("\n"));
+  add(type, [header, ...body].join("\n"), documentationComment(type.documentation));
   for (const state of type.states) {
     const value =
       state.fixed !== undefined
@@ -162,20 +210,21 @@ function describeType(
         `${keyword} ${type.name}.${state.name}: ${state.enum.name}${value}`,
         ...(of === undefined ? [] : [of]),
       ].join("\n"),
-      // A received state is on the type's line, whose comment is the type's.
-      state.received ? 0 : state.line,
+      documentationComment(state.documentation, "state", state.name),
     );
   }
   for (const action of type.actions) {
     add(
       action.name,
       `action ${type.name}.${action.name.name}: ${action.state.name} ${action.from.name} -> ${action.to.name}`,
+      commentAbove(lines, action.name.line),
     );
   }
-  for (const event of type.events) add(event, `event ${type.name}.${event.name}`);
+  for (const event of type.events)
+    add(event, `event ${type.name}.${event.name}`, commentAbove(lines, event.line));
   for (const child of type.children) {
     const when = child.when === undefined ? "" : ` only when ${conditionText(child.when)}`;
     const of = child.list ? `[${child.type.name}]` : child.type.name;
-    add(child, `has ${type.name}.${child.name}: ${of}${when}`);
+    add(child, `has ${type.name}.${child.name}: ${of}${when}`, commentAbove(lines, child.line));
   }
 }

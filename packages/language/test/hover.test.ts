@@ -3,15 +3,15 @@ import { describe, expect, it } from "vitest";
 
 const source = `dimension Pointer = mouse | touch
 
-# Whether the pointer is over it.
+## Whether the pointer is over it.
 enum Hover = rest | hovered
 enum Focus = blurred | focused
 enum Section = home | blog
 
-# A link, in the toolbar or the menu.
+## A link, in the toolbar or the menu.
 type Link needs Pointer receives current: Section {
   event press
-  # Over it, with a mouse only.
+  ## Over it, with a mouse only.
   state hover: Hover
   state focus: Focus
   hover = hovered only when Pointer = mouse
@@ -136,14 +136,14 @@ describe("hover", () => {
     `);
   });
 
-  it("shows, over a declaration, only what its line does not: a state's enum, or nothing", () => {
+  it("shows a state's enum and leaves undocumented declarations without a hover", () => {
     expect(over("state focus: ", "Focus")).toBe("[Focus]\nenum Focus = blurred | focused");
     expect(over("  state ", "focus")).toBe("[focus]\nenum Focus = blurred | focused");
     for (const [before, word] of [
-      ["enum ", "Hover"],
-      ["enum Hover = ", "rest"],
+      ["enum ", "Focus"],
+      ["enum Focus = ", "blurred"],
       ["dimension ", "Pointer"],
-      ["type ", "Link"],
+      ["type ", "Menu"],
       ["record ", "Source"],
       ["environment ", "Device"],
       ["profile ", "Laptop"],

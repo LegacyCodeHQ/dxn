@@ -7,8 +7,9 @@ including source locations and continuation indentation, and reports mixed comme
 blocks and malformed tag syntax. Its other syntax differences remain documented
 in the agreement fixtures. Shared semantic analysis now validates documentation
 tags and targets, warning on later duplicate tags and keeping the first description.
-Structured hover rendering, formatter normalization and new shadowing diagnostics
-remain separate work.
+Structured hovers now read attached AST documentation for enums, types, values
+and states. Formatter normalization and new shadowing diagnostics remain separate
+work.
 The shared reader still uses its own parser; it has not switched to Tree-sitter.
 
 ## Declaration boundaries
@@ -191,3 +192,23 @@ state groups, usage and duplicate selection. CLI tests and language-server parit
 scenarios cover the same errors and warnings. Both shared and Tree-sitter migration
 entry points invoke this validator. Structured hovers, formatter normalization and
 manual editor verification remain separate steps.
+
+## Structured hover stage
+
+`editor/hover.ts` uses attached AST documentation for enums, types and states.
+An enum or type shows its declaration prose; a value or state adds only the
+matching `@value` or `@state` description, separated from general prose by a
+blank line. Continuation text and the first duplicate description are preserved.
+Unknown tags and tags of the wrong kind do not become hover descriptions.
+
+Documented enums, types and values also show documentation at their declarations.
+State declarations retain their enum summary and show their own documentation
+when available; their own documentation remains available for unresolved enum
+references. Ordinary `#` comments and detached `##` blocks are not promoted to
+documentation for these constructs. Other, unmigrated constructs retain their
+existing comment-based hover behavior.
+
+Language tests cover nested scopes, shared state blocks, duplicate selection,
+empty/detached documentation and Unicode/BOM/LF/CRLF/CR input. LSP tests check
+Markdown output, ranges, unsaved updates and documentation alongside evidence
+hints. Human verification in VS Code and Zed is still pending.

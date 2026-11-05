@@ -57,6 +57,14 @@ A `has` line whose child is a component, such as the tabs of a tab bar, has
 no hint of its own: the component's own line counts its combinations. Hovering
 over the component's name on that line shows its declaration, with its
 count there.
+## Documentation hovers
+
+Attached `##` documentation appears in enum and type hovers. Values and states
+also show their matching `@value` or `@state` description, including indented
+continuations. Hovers use the current unsaved buffer. Type documentation stays
+visible alongside evidence details. Ordinary comments and detached documentation
+do not supply documentation for these constructs.
+
 ## Formatting
 
 A `.dxn` file is formatted when it is saved, the one way `dxn fmt` writes it:

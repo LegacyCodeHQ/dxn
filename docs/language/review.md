@@ -185,3 +185,13 @@ Tests cover source positions, nested declarations, shared state blocks, empty or
 absent documentation, unused enums, CLI output and CLI/language-server parity.
 Both parser entry points use these rules. Structured hover rendering, formatter
 normalization, remaining syntax migration and human editor checks are still pending.
+
+## 2026-11-05 structured documentation hover stage
+
+Enum/type/value/state hovers now render attached AST documentation, matching
+value/state tags and retaining the first duplicate description. Documented
+names can show prose at their declarations. Ordinary comments are not promoted
+for those constructs; legacy comments remain supported for unmigrated constructs.
+Tests cover Unicode/line endings, nested scopes, state groups, unresolved enum
+references, LSP Markdown/ranges, unsaved updates and coexistence with evidence.
+Formatter normalization and human verification in VS Code and Zed remain pending.

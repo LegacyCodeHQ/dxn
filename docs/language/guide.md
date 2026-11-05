@@ -1894,6 +1894,12 @@ type Button {
 }
 ```
 
+Hovering an enum or type shows its attached prose. Hovering a value or state
+also shows its matching `@value` or `@state` description. Documented names can
+show that information at their declarations as well as their uses. Ordinary
+`#` comments and blank-line-separated `##` blocks are not documentation for
+enums, types or states.
+
 Unknown tags, tags on the wrong kind of declaration, missing targets and targets
 outside the attached declaration are semantic errors. Repeating a valid tag for
 the same target warns at the later occurrence and keeps the first description.

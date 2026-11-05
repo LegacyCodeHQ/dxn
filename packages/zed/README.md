@@ -89,6 +89,14 @@ indented one step, and its closing `}` comes back out. A line pasted in at the
 wrong depth still belongs where its braces put it, and formatting on save
 indents it.
 
+## Documentation hovers
+
+Attached `##` documentation appears in enum and type hovers. Values and states
+also show their matching `@value` or `@state` description, including indented
+continuations. Hovers use the current unsaved buffer. Type documentation stays
+visible alongside evidence details. Ordinary comments and detached documentation
+do not supply documentation for these constructs.
+
 ## Formatting
 
 A `.dxn` file is formatted the one way `dxn fmt` writes it, by the language

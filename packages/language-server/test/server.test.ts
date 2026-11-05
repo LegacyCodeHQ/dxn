@@ -68,6 +68,116 @@ const published = (editor: MessageConnection) =>
   });
 
 describe("the language server", () => {
+  it("renders structured value documentation and refreshes it from unsaved edits", async () => {
+    const editor = connect();
+    editors.push(editor);
+    await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    const uri = "file:///spec/documentation.dxn";
+    const text =
+      "## Modes.\n## @value on Active.\nenum Mode = off | on\ntype Button {\n  state mode: Mode\n  action turn-on: mode off -> on\n}\n";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: { uri, languageId: "dxn", version: 1, text },
+    });
+    await opened;
+    const hovered = () =>
+      editor.sendRequest(HoverRequest.type, {
+        textDocument: { uri },
+        position: { line: 5, character: 30 },
+      });
+    const snapshot: unknown[] = [await hovered()];
+    const changed = published(editor);
+    await editor.sendNotification(DidChangeTextDocumentNotification.type, {
+      textDocument: { uri, version: 2 },
+      contentChanges: [{ text: text.replace("Active.", "Edited, not saved.") }],
+    });
+    await changed;
+    snapshot.push(await hovered());
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        {
+          "contents": {
+            "kind": "markdown",
+            "value": "\`\`\`dxn
+      enum Mode = off | on
+      \`\`\`
+
+      Modes.
+
+      Active.",
+          },
+          "range": {
+            "end": {
+              "character": 32,
+              "line": 5,
+            },
+            "start": {
+              "character": 30,
+              "line": 5,
+            },
+          },
+        },
+        {
+          "contents": {
+            "kind": "markdown",
+            "value": "\`\`\`dxn
+      enum Mode = off | on
+      \`\`\`
+
+      Modes.
+
+      Edited, not saved.",
+          },
+          "range": {
+            "end": {
+              "character": 32,
+              "line": 5,
+            },
+            "start": {
+              "character": 30,
+              "line": 5,
+            },
+          },
+        },
+      ]
+    `);
+  });
+
+  it("keeps type documentation visible alongside recorded-evidence details", async () => {
+    const folder = mkdtempSync(join(tmpdir(), "dxn-documentation-evidence-"));
+    try {
+      const text =
+        "enum Mode = off | on\n## A control.\ntype Button { state mode: Mode }\nrecord PenEvidence { source: PenNode }\nactor CodingAgent records PenEvidence\n";
+      writeFileSync(join(folder, "spec.dxn"), text);
+      const editor = connect();
+      editors.push(editor);
+      await editor.sendRequest(InitializeRequest.type, {
+        processId: null,
+        rootUri: null,
+        capabilities: {},
+      });
+      const uri = pathToFileURL(join(folder, "spec.dxn")).href;
+      const opened = published(editor);
+      await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: { uri, languageId: "dxn", version: 1, text },
+      });
+      await opened;
+      const found = await editor.sendRequest(HoverRequest.type, {
+        textDocument: { uri },
+        position: { line: 2, character: 6 },
+      });
+      expect((found?.contents as { value: string } | undefined)?.value).toMatch(
+        /A control\.[\s\S]*PenEvidence/,
+      );
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
   it("publishes a file's problems when it is opened, and again when it changes", async () => {
     const editor = connect();
     editors.push(editor);
@@ -271,7 +381,7 @@ describe("the language server", () => {
         uri,
         languageId: "dxn",
         version: 1,
-        text: "# Whether it has the focus.\nenum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n}\n",
+        text: "## Whether it has the focus.\nenum Focus = blurred | focused\ntype Button {\n  state focus: Focus\n}\n",
       },
     });
     await opened;
