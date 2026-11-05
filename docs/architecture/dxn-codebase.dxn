@@ -1,19 +1,19 @@
 dimension TreeSitterChange = grammar | scanner | both
 enum TreeSitterParser = regenerate | keep
 enum ZedExtensionPin = update | keep
+enum RequiredChange = modify | keep
 
-## Modifying the syntax of the DXN language.
-##
-## The change begins in Tree-sitter and requires reviewing
-## the core parser, followed by checking agreement between them.
-##
-## This structure describes the propagation path.
+## A grammar change begins in Tree-sitter and propagates to its consumers.
+## Each has node identifies a responsibility to review, not a mandatory edit.
+## Repeated consumers identify different upstream causes, not repeated work.
+## Implementation and verification evidence belong in separate records.
 type ModifyDxnGrammar needs TreeSitterChange {
   has modify-tree-sitter-package: ModifyTreeSitterPackage
 }
 
-## Modifying the Tree-sitter package. Its parser is regenerated when the grammar
-## changes, and kept when only the scanner does.
+## Review the grammar, scanner and their consumers. Regenerate parser sources
+## when the grammar changes; scanner-only changes keep those generated sources.
+## Supporting source paths and integration details are in the architecture README.
 type ModifyTreeSitterPackage needs TreeSitterChange {
   state tree-sitter-parser: TreeSitterParser = when TreeSitterChange {
     grammar -> regenerate
@@ -22,24 +22,12 @@ type ModifyTreeSitterPackage needs TreeSitterChange {
   }
 
   has modify-core-parser: ModifyCoreParser
-  has ast-adapter-impact: ASTAdapterImpact
   has modify-zed-extension: ModifyZedExtension
-  has vscode-textmate-grammar-impact: VSCodeTextMateGrammarImpact
+  has vscode-extension-impact: VSCodeExtensionImpact
 }
 
-## Impact on packages/language/src/syntax/tree.ts, which translates Tree-sitter
-## nodes and fields into the language AST. A grammar change can affect this
-## translation independently of the core parser's syntax reader.
-## Focused declarations reach semantic analysis through the separate
-## parseTreeSitter migration entry point, backed by an in-process Node binding.
-## The shared parse entry point still uses the core syntax reader. This branch
-## therefore does not yet imply propagation to the CLI or language server.
-## Implementation changes and verification results are recorded separately.
-type ASTAdapterImpact { }
-
-## Modifying the core parser so that it reads the changed syntax.
-## Its syntax tree reaches semantic analysis and formatting through separate paths.
-## Its diagnostics also reach the CLI and language server.
+## Adapt syntax reading and recovery. The parser output reaches semantic
+## analysis, formatting and diagnostics through separate propagation paths.
 type ModifyCoreParser {
   has check-parser-agreement: CheckParserAgreement
   has modify-semantic-analyzer: ModifySemanticAnalyzer
@@ -47,109 +35,108 @@ type ModifyCoreParser {
   has modify-parser-diagnostics: ModifyParserDiagnostics
 }
 
-## Adapting name resolution and semantic validation to the changed parser output,
-## including validation that depends on evaluated combinations. The semantic
-## analyzer supplies results and diagnostics to the CLI and language server.
+## Check that Tree-sitter and the core parser agree on the changed syntax.
+## The result and supporting evidence are recorded separately.
+type CheckParserAgreement { }
+
+## Review name resolution and semantic validation of the changed parser output.
+## Results and diagnostics reach both the CLI and the language server.
 type ModifySemanticAnalyzer {
   has cli-impact: CliImpact
   has language-server-impact: LanguageServerImpact
 }
 
-## Adapting formatting to the changed syntax. The formatter reads syntax
-## directly, independently of semantic analysis, and serves both interfaces.
+## Review formatting independently of semantic analysis. The formatter reads
+## syntax directly and serves both interfaces.
 type ModifyFormatter {
   has cli-impact: CliImpact
   has language-server-impact: LanguageServerImpact
 }
 
-## Adapting parser diagnostics exposed through the CLI and language server,
-## including syntax errors that prevent formatting.
+## Review syntax diagnostics and source locations exposed through both interfaces,
+## including errors in incomplete input and errors that prevent formatting.
 type ModifyParserDiagnostics {
   has cli-impact: CliImpact
   has language-server-impact: LanguageServerImpact
 }
 
-## Impact on command-line behavior exposed through the shared language library.
-## Each placement identifies an upstream cause. Shared changes may already flow
-## through the CLI; implementation records describe whether CLI code changed.
-## Verification results are recorded separately.
+## Review command-line behavior reached through the shared language library.
+## Existing CLI code may already handle the upstream change.
 type CliImpact { }
 
-## Impact on language-server behavior exposed through the shared language library.
-## Each placement identifies an upstream cause and how it reaches editor clients.
-## Implementation records describe whether server code needed changes;
-## verification results are recorded separately.
+## Review language-server behavior and how it reaches the editor clients.
+## Existing server code may already handle the upstream change.
 type LanguageServerImpact {
+  has verify-language-server: VerifyLanguageServer
   has vscode-language-client-impact: VSCodeLanguageClientImpact
   has zed-language-client-impact: ZedLanguageClientImpact
 }
 
-## Impact on VS Code from language-server diagnostics, semantic analysis results
-## and formatting. Existing client behavior may already handle the change.
-## Implementation and verification are recorded separately.
-## TextMate highlighting follows a separate propagation path.
-type VSCodeLanguageClientImpact { }
-
-## Impact on packages/vscode/syntaxes/dxn.tmLanguage.json, which independently
-## defines VS Code syntax highlighting. Tree-sitter syntax changes must be
-## considered here even when the language client needs no changes. Existing
-## patterns may already handle the syntax; implementation and verification
-## results are recorded separately from this impact path.
-type VSCodeTextMateGrammarImpact { }
-
-## Impact on Zed from language-server diagnostics, semantic analysis results
-## and formatting. Existing client behavior may already handle the change.
-## Implementation and verification are recorded separately. The Tree-sitter
-## grammar pin and highlighting queries follow separate propagation paths.
-type ZedLanguageClientImpact { }
-
-## Propagation from the Tree-sitter package to Zed's grammar integration.
-## Updating the pinned commit and impact on syntax-tree queries are separate
-## responsibilities. Language-server behavior follows its own propagation path.
-type ModifyZedExtension needs TreeSitterChange {
-  has update-grammar-pin: UpdateZedGrammarPin
-  has query-impact: ZedQueryImpact
+## Review VS Code behavior supplied by the language server.
+type VSCodeLanguageClientImpact {
+  has verify-vscode-client: VerifyVSCodeClient
 }
 
-## Updating the grammar commit in packages/zed/extension.toml. The make zed gate
-## compares the pinned commit with grammar.js and everything in src/, including
-## scanner.c. Every modeled change requires a pin update, even when generated
-## parser sources are kept. This state describes required work, not its completion.
-type UpdateZedGrammarPin needs TreeSitterChange {
+## Review Zed behavior supplied by the language server, separately from its
+## direct Tree-sitter grammar integration.
+type ZedLanguageClientImpact {
+  has verify-zed-client: VerifyZedClient
+}
+
+## Review Zed's direct grammar integration, including its pin and syntax queries.
+## Grammar and scanner changes both require updating the pinned commit.
+## This state describes required work, not completion.
+type ModifyZedExtension needs TreeSitterChange {
   state zed-extension-pin: ZedExtensionPin = when TreeSitterChange {
     grammar -> update
     scanner -> update
     both -> update
   }
+
+  has verify-zed-extension: VerifyZedExtension
 }
 
-## Impact on Zed queries that consume Tree-sitter syntax nodes and fields.
-## Each query family is considered for every change. Existing queries may already
-## handle it; implementation changes and verification results are recorded separately.
-type ZedQueryImpact {
-  has highlighting-impact: ZedHighlightingQueryImpact
-  has outline-impact: ZedOutlineQueryImpact
-  has indentation-impact: ZedIndentationQueryImpact
-  has bracket-matching-impact: ZedBracketMatchingQueryImpact
-  has runnable-impact: ZedRunnableQueryImpact
+## Review VS Code's direct syntax support: its TextMate grammar and language
+## configuration. Existing support may already handle the grammar change.
+## The required-change state allows modify or keep; it is not derived from
+## TreeSitterChange and does not describe implementation completion.
+## Language-server behavior follows the separate language-client impact path.
+type VSCodeExtensionImpact {
+  state required-change: RequiredChange
+
+  has verify-vscode-extension: VerifyVSCodeExtension
 }
 
-## Impact on packages/zed/languages/dxn/highlights.scm, which assigns syntax colors.
-type ZedHighlightingQueryImpact { }
+## Required verification of affected language-server behavior. Run the relevant
+## packages/language-server/test diagnostics, protocol and CLI parity tests,
+## including changed syntax, incomplete input and source ranges in unsaved buffers.
+## Actual editor behavior requires the developer checks in the client nodes.
+## Record the outcome, developer and evidence separately.
+type VerifyLanguageServer { }
 
-## Impact on packages/zed/languages/dxn/outline.scm, which identifies outline entries.
-type ZedOutlineQueryImpact { }
+## Required verification of affected LSP behavior in VS Code. Automated server
+## and bundle tests support this; a developer must load the development extension
+## and exercise the affected diagnostics, formatting or language features on
+## valid and incomplete source, including unsaved edits. Record results separately.
+type VerifyVSCodeClient { }
 
-## Impact on packages/zed/languages/dxn/indents.scm, which identifies indentation regions.
-type ZedIndentationQueryImpact { }
+## Required verification of affected LSP behavior in Zed. Automated server/parity
+## tests support this; a developer must load the development extension, confirm
+## server startup and exercise the affected language features in an unsaved buffer.
+## Record results separately from the direct grammar integration checks.
+type VerifyZedClient { }
 
-## Impact on packages/zed/languages/dxn/brackets.scm, which identifies bracket pairs.
-type ZedBracketMatchingQueryImpact { }
+## Required verification of Zed's direct syntax integration. Run make zed for
+## the grammar pin, parsing, query compilation and Rust extension checks.
+## A developer must also open changed syntax in Zed and inspect affected syntax
+## highlighting, outline, indentation, brackets or run actions. Record results
+## separately; passing the automated gate does not establish these manual checks.
+type VerifyZedExtension { }
 
-## Impact on packages/zed/languages/dxn/runnables.scm, which identifies runnable
-## types and expectations. Their task definitions live alongside it in tasks.json.
-type ZedRunnableQueryImpact { }
-
-## Checking that Tree-sitter and the core parser agree on the changed syntax.
-## The check's result and supporting evidence are recorded separately.
-type CheckParserAgreement { }
+## Required verification of VS Code's direct syntax support for both modify and
+## keep. Run relevant packages/vscode/test grammar and configuration checks.
+## A developer must load the development extension and inspect affected syntax
+## highlighting, comment toggling, indentation or bracket behavior. Verify that
+## existing support still handles the change when keep is chosen. Record the
+## outcome, developer and evidence separately from this required work.
+type VerifyVSCodeExtension { }
