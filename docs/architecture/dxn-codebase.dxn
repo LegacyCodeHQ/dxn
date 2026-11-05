@@ -39,43 +39,50 @@ type ModifyCoreParser {
 ## including validation that depends on evaluated combinations. The semantic
 ## analyzer supplies results and diagnostics to the CLI and language server.
 type ModifySemanticAnalyzer {
-  has modify-cli: ModifyCli
-  has modify-language-server: ModifyLanguageServer
+  has cli-impact: CliImpact
+  has language-server-impact: LanguageServerImpact
 }
 
 ## Adapting formatting to the changed syntax. The formatter reads syntax
 ## directly, independently of semantic analysis, and serves both interfaces.
 type ModifyFormatter {
-  has modify-cli: ModifyCli
-  has modify-language-server: ModifyLanguageServer
+  has cli-impact: CliImpact
+  has language-server-impact: LanguageServerImpact
 }
 
 ## Adapting parser diagnostics exposed through the CLI and language server,
 ## including syntax errors that prevent formatting.
 type ModifyParserDiagnostics {
-  has modify-cli: ModifyCli
-  has modify-language-server: ModifyLanguageServer
+  has cli-impact: CliImpact
+  has language-server-impact: LanguageServerImpact
 }
 
-## Adapting the command-line interface to changes in its shared language behavior.
-## Each placement identifies the upstream responsibility causing the impact.
-type ModifyCli { }
+## Impact on command-line behavior exposed through the shared language library.
+## Each placement identifies an upstream cause. Shared changes may already flow
+## through the CLI; implementation records describe whether CLI code changed.
+## Verification results are recorded separately.
+type CliImpact { }
 
-## Adapting the language-server interface to changes in shared language behavior.
-## Each placement identifies the upstream responsibility causing the impact.
-type ModifyLanguageServer {
-  has modify-vscode-language-client: ModifyVSCodeLanguageClient
-  has modify-zed-language-client: ModifyZedLanguageClient
+## Impact on language-server behavior exposed through the shared language library.
+## Each placement identifies an upstream cause and how it reaches editor clients.
+## Implementation records describe whether server code needed changes;
+## verification results are recorded separately.
+type LanguageServerImpact {
+  has vscode-language-client-impact: VSCodeLanguageClientImpact
+  has zed-language-client-impact: ZedLanguageClientImpact
 }
 
-## Adapting the VS Code integration to language-server changes in diagnostics,
-## semantic analysis results and formatting. TextMate highlighting is separate.
-type ModifyVSCodeLanguageClient { }
+## Impact on VS Code from language-server diagnostics, semantic analysis results
+## and formatting. Existing client behavior may already handle the change.
+## Implementation and verification are recorded separately.
+## TextMate highlighting follows a separate propagation path.
+type VSCodeLanguageClientImpact { }
 
-## Adapting the Zed integration to language-server changes in diagnostics,
-## semantic analysis results and formatting. The Tree-sitter grammar pin and
-## highlighting queries are separate from this language-server path.
-type ModifyZedLanguageClient { }
+## Impact on Zed from language-server diagnostics, semantic analysis results
+## and formatting. Existing client behavior may already handle the change.
+## Implementation and verification are recorded separately. The Tree-sitter
+## grammar pin and highlighting queries follow separate propagation paths.
+type ZedLanguageClientImpact { }
 
 ## Modifying the Zed extension. It pins a commit of the Tree-sitter package, and
 ## `make zed` fails when `grammar.js` or anything in `src/` differs from that
