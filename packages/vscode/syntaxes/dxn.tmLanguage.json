@@ -40,8 +40,39 @@
   ],
   "repository": {
     "comment": {
-      "match": "#.*$",
-      "name": "comment.line.number-sign.dxn"
+      "patterns": [
+        {
+          "begin": "##",
+          "end": "$",
+          "name": "meta.documentation.dxn",
+          "patterns": [
+            {
+              "match": "\\G[ \\t]*(@[A-Za-z][A-Za-z0-9-]*)(?:[ \\t]+([^ \\t]+))?",
+              "captures": {
+                "1": {
+                  "name": "comment.block.documentation.tag.dxn"
+                },
+                "2": {
+                  "name": "meta.documentation.target.dxn"
+                }
+              }
+            },
+            {
+              "match": ".+",
+              "name": "comment.block.documentation.dxn"
+            }
+          ],
+          "beginCaptures": {
+            "0": {
+              "name": "comment.block.documentation.dxn"
+            }
+          }
+        },
+        {
+          "match": "#.*$",
+          "name": "comment.line.number-sign.dxn"
+        }
+      ]
     },
     "string": {
       "match": "\"[^\"]*\"",

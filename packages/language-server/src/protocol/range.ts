@@ -14,7 +14,8 @@ export function rangeAt(text: string, line: number, column: number): Range {
   const start = Math.min(Math.max(column - 1, 0), content.length);
   let end = start;
   const closing = content[start] === '"' ? content.indexOf('"', start + 1) : -1;
-  if (closing !== -1) end = closing + 1;
+  if (content.startsWith("##", start)) end = start + 2;
+  else if (closing !== -1) end = closing + 1;
   else while (end < content.length && word.test(content[end] ?? "")) end++;
   if (end === start && start < content.length && content[start] !== " ") end++;
   return { start: { line: row, character: start }, end: { line: row, character: end } };

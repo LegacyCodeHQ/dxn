@@ -5,8 +5,9 @@ This project exercises the documentation feature in VS Code and Zed.
 `Review` record enables evidence details in type hovers; there are no stored
 records. It is part of the demonstration, not a verification result.
 
-Human verification is **unverified** in both editors. Automated server, bundle
-and grammar tests cannot establish that these editor interactions work.
+The Zed walkthrough has been exercised with the developer; see the observations
+below for its scope and remaining checks. VS Code verification is unverified.
+Automated server, bundle and grammar tests cannot establish editor interactions.
 
 ## Build and open
 
@@ -35,19 +36,23 @@ These observations cover `VerifyVSCodeClient` and `VerifyZedClient` in the
 | --------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Baseline                    | Open the unchanged file.                                                                 | No diagnostics.                                                                                                          |
 | Enum documentation          | Hover `Mode` in `state mode: Mode`.                                                      | `Interaction modes.` appears with the enum summary.                                                                      |
-| Value documentation         | Hover `off` in `enum Mode`.                                                              | General prose, `No interaction.` and `The control ignores input.` appear; the description of `on` does not.              |
+| Value documentation         | Hover `off` in `enum Mode`.                                                              | `Mode.off`, `No interaction.` and `The control ignores input.` appear; general enum prose and other values are absent.   |
 | Type and evidence           | Hover the `Button` declaration.                                                          | `A documented button.` remains visible alongside `Review` evidence details.                                              |
-| Shared state group          | Hover `focus`, then `secondary` in their declaration.                                    | Both show `Focus states.`; each shows only its own matching tag description.                                             |
+| Shared state group          | Hover `focus`, then `secondary` in their declaration.                                    | Each shows its own state signature and matching tag description; `Focus states.` and enum prose are absent.              |
 | Nested declarations         | Hover the nested `Icon` declaration and its `mode` state.                                | `A nested icon.` and `Icon interaction.` appear at the appropriate names.                                                |
 | Unsaved prose               | Change `No interaction.` to `Disabled while editing.` without saving; hover `off` again. | The new description appears. Undo restores the old description.                                                          |
 | Unknown target              | Change only the first `@value off` to `@value missing`.                                  | An error marks `missing`, not the declaration or another value. Undo clears it.                                          |
 | Unknown tag                 | Change only the first `@value` to `@bogus`.                                              | An error marks `bogus`. Undo clears it.                                                                                  |
 | Wrong declaration           | Change `@state mode` above the outer state to `@value mode`.                             | An error says `@value` is only valid directly on an enum.                                                                |
 | Duplicate description       | Add `## @value off Replacement.` immediately before `enum Mode`.                         | A warning marks the later tag. Hover `off` still shows the original description, without `Replacement.`.                 |
-| Detached documentation      | Insert a blank line immediately before `enum Mode`.                                      | Its documentation is absent from the `Mode` and `off` hovers; the block remains a comment.                               |
+| Detached documentation      | Insert a blank line immediately before `enum Mode`.                                      | One warning marks the first `##`; `Mode` and `off` hovers have no prose. Removing the blank line clears the warning.     |
 | Ordinary comments           | In the initial block, replace every `##` marker with `#`.                                | The block supplies no enum/value documentation. No mixing error occurs.                                                  |
 | Mixed markers               | In the initial block, replace just the first `##` marker with `#`.                       | An error reports mixing ordinary and documentation comments. Formatting leaves the invalid file unchanged.               |
 | Incomplete tag and recovery | Replace the first tag line with `## @`.                                                  | A syntax error marks the incomplete tag. Later declarations remain available to navigation/hover. Undo clears the error. |
+
+Hover `on` as well: `Mode.on` must appear as a plain code label, without
+keyword colouring. These qualified labels identify values; they are not
+standalone DXN statements.
 
 For formatting, undo all temporary edits, then replace the first block with the
 following text (the continuation starts with a tab after `##`):
@@ -79,8 +84,13 @@ separately from language-server behavior:
 
 - Inspect the initial documentation and nested blocks. Prose stays comment text,
   with no highlighting leaking into the next declaration. Exact colours depend
-  on the theme. Zed highlights tag names as keywords; VS Code currently treats
-  the whole line as a comment.
+  on the theme. With semantic highlighting enabled, markers, prose and continuation text are
+  italic in the documentation colour; tags including `@` are italic in a
+  distinct tag colour; target names use normal foreground. For medium italic targets, apply the
+  [Zed medium-weight override](../../packages/zed/README.md#medium-weight-target-names);
+  VS Code retains its bold italic default.
+  Compare `@value on` with the `on` value declaration: neither treats the target
+  as a language keyword.
 - Inspect the outline. `Button` contains `Focus`, the state declarations and
   `Icon`; `Icon` contains its own `mode`. Documentation creates no extra symbols.
 - Inside `Icon`, insert a new line before its closing brace. Check indentation
@@ -95,13 +105,44 @@ record the tester, date, source revision, editor/extension/server versions, chec
 performed, and screenshots or notes for any failure. A partial run does not pass
 all four responsibilities. A supporting automated pass is not human sign-off.
 
-| Responsibility        | Human result | Evidence |
-| --------------------- | ------------ | -------- |
-| VerifyVSCodeClient    | unverified   | Not run  |
-| VerifyVSCodeExtension | unverified   | Not run  |
-| VerifyZedClient       | unverified   | Not run  |
-| VerifyZedExtension    | unverified   | Not run  |
+| Responsibility        | Human result | Evidence                    |
+| --------------------- | ------------ | --------------------------- |
+| VerifyVSCodeClient    | unverified   | Not run                     |
+| VerifyVSCodeExtension | unverified   | Not run                     |
+| VerifyZedClient       | partial      | Developer walkthrough below |
+| VerifyZedExtension    | partial      | Developer walkthrough below |
 
 The human actor and its structured evidence record have not yet been added to
 the DXN model. This table is a manual observation worksheet, not a new record
 schema or an implementation status in the propagation tree.
+
+### Developer observations — 2026-11-06
+
+The developer performed these checks in Zed and supplied screenshots or explicit
+confirmation in the development chat. Source was the working changes based on
+`8ebdcce`, committed with this observation note. Exact Zed, font and extension
+versions were not collected. Semantic highlighting was enabled in combined mode;
+the developer applied the documented medium-weight override for One Dark/One
+Light. Screenshots remain in the chat and are not archived in this repository.
+
+Passed within the exercised scope:
+
+- Muted documentation/tag colours, normal-foreground targets and medium italic
+  target emphasis after applying the theme override.
+- Focused enum/value/state hovers, continuation text, nested declarations and
+  state-group target selection; type prose remains visible with evidence details.
+- Unsaved hover updates; unknown target, unknown tag and wrong-kind tag errors;
+  later duplicate warnings retain only the original description in the hover.
+- Blank-line detachment removes hover prose and warns on the first marker;
+  removing the blank line clears the warning and restores the hover without saving.
+- Mixed-comment errors; malformed-tag errors with a later state hover still
+  working while the malformed tag remains present.
+- Documentation formatting preserves continuation meaning; ordinary comments
+  supply no hover documentation; outline hierarchy, indentation and bracket matching.
+
+Still pending: repeat-format idempotence, formatting refusal on invalid input,
+comment toggling, exact editor/version metadata and the VS Code walkthrough.
+A rename attempt also produced a refusal involving an unchanged documentation
+target. Investigate and verify documentation-aware rename separately; it is not
+covered by the passes above. These observations are partial verification, not
+blanket sign-off for every client or direct-extension behavior.

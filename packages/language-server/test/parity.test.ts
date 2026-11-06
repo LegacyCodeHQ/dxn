@@ -64,6 +64,10 @@ const mixedRecords: Scenario = {
 
 const scenarios: Scenario[] = [
   {
+    title: "a detached documentation warning",
+    dxn: model.replace("enum Hover", "## Detached interaction documentation.\n\nenum Hover"),
+  },
+  {
     title: "documentation spacing and continuation formatting",
     dxn: model.replace(
       "enum Hover",

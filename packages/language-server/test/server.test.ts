@@ -68,6 +68,171 @@ const published = (editor: MessageConnection) =>
   });
 
 describe("the language server", () => {
+  it("clears detached documentation warnings when an unsaved edit reattaches the block", async () => {
+    const editor = connect();
+    editors.push(editor);
+    await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    const uri = "file:///spec/detached-documentation.dxn";
+    const text = "## @value off No input.\n\nenum Mode = off\ntype Button { state mode: Mode }\n";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: { uri, languageId: "dxn", version: 1, text },
+    });
+    const before = (await opened).diagnostics;
+    const changed = published(editor);
+    await editor.sendNotification(DidChangeTextDocumentNotification.type, {
+      textDocument: { uri, version: 2 },
+      contentChanges: [{ text: text.replace("\n\n", "\n") }],
+    });
+    const after = (await changed).diagnostics;
+    expect({ before, after }).toMatchInlineSnapshot(`
+      {
+        "after": [],
+        "before": [
+          {
+            "code": "unattached-documentation",
+            "message": "documentation is not attached to a declaration; remove the separating blank line or use \`#\` for an ordinary comment",
+            "range": {
+              "end": {
+                "character": 2,
+                "line": 0,
+              },
+              "start": {
+                "character": 0,
+                "line": 0,
+              },
+            },
+            "severity": 2,
+            "source": "dxn",
+          },
+        ],
+      }
+    `);
+  });
+
+  it("sends documentation style tokens with UTF-16 ranges from unsaved buffers", async () => {
+    const editor = connect();
+    editors.push(editor);
+    const initialized = await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    const legend = initialized.capabilities.semanticTokensProvider?.legend.tokenTypes ?? [];
+    const uri = "file:///spec/documentation-style.dxn";
+    const text =
+      "\uFEFF## Modes 😀.\r\n## @value on Active 😀.\r\nenum Mode = on\r\ntype Button { state mode: Mode }\r\n";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: { uri, languageId: "dxn", version: 1, text },
+    });
+    await opened;
+    const read = async (source: string) => {
+      const found = await editor.sendRequest(SemanticTokensRequest.type, { textDocument: { uri } });
+      const data = found?.data ?? [];
+      const lines = source.split(/\r\n|\r|\n/);
+      const result: unknown[] = [];
+      let line = 0;
+      let column = 0;
+      for (let at = 0; at < data.length; at += 5) {
+        const [deltaLine = 0, deltaColumn = 0, length = 0, kind = 0, modifiers = 0] = data.slice(
+          at,
+          at + 5,
+        );
+        line += deltaLine;
+        column = deltaLine ? deltaColumn : column + deltaColumn;
+        if (legend[kind]?.startsWith("dxnDocumentation"))
+          result.push({
+            text: lines[line]?.slice(column, column + length),
+            kind: legend[kind],
+            modifiers,
+          });
+      }
+      return result;
+    };
+    const snapshot = [await read(text)];
+    const edited = text.replace("Active 😀.", "Edited 😀.");
+    const changed = published(editor);
+    await editor.sendNotification(DidChangeTextDocumentNotification.type, {
+      textDocument: { uri, version: 2 },
+      contentChanges: [{ text: edited }],
+    });
+    await changed;
+    snapshot.push(await read(edited));
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "kind": "dxnDocumentation",
+            "modifiers": 0,
+            "text": "## Modes 😀.",
+          },
+          {
+            "kind": "dxnDocumentation",
+            "modifiers": 0,
+            "text": "## ",
+          },
+          {
+            "kind": "dxnDocumentationTag",
+            "modifiers": 0,
+            "text": "@value",
+          },
+          {
+            "kind": "dxnDocumentation",
+            "modifiers": 0,
+            "text": " ",
+          },
+          {
+            "kind": "dxnDocumentationTarget",
+            "modifiers": 0,
+            "text": "on",
+          },
+          {
+            "kind": "dxnDocumentation",
+            "modifiers": 0,
+            "text": " Active 😀.",
+          },
+        ],
+        [
+          {
+            "kind": "dxnDocumentation",
+            "modifiers": 0,
+            "text": "## Modes 😀.",
+          },
+          {
+            "kind": "dxnDocumentation",
+            "modifiers": 0,
+            "text": "## ",
+          },
+          {
+            "kind": "dxnDocumentationTag",
+            "modifiers": 0,
+            "text": "@value",
+          },
+          {
+            "kind": "dxnDocumentation",
+            "modifiers": 0,
+            "text": " ",
+          },
+          {
+            "kind": "dxnDocumentationTarget",
+            "modifiers": 0,
+            "text": "on",
+          },
+          {
+            "kind": "dxnDocumentation",
+            "modifiers": 0,
+            "text": " Edited 😀.",
+          },
+        ],
+      ]
+    `);
+  });
+
   it("renders structured value documentation and refreshes it from unsaved edits", async () => {
     const editor = connect();
     editors.push(editor);
@@ -102,11 +267,9 @@ describe("the language server", () => {
         {
           "contents": {
             "kind": "markdown",
-            "value": "\`\`\`dxn
-      enum Mode = off | on
+            "value": "\`\`\`text
+      Mode.on
       \`\`\`
-
-      Modes.
 
       Active.",
           },
@@ -124,11 +287,9 @@ describe("the language server", () => {
         {
           "contents": {
             "kind": "markdown",
-            "value": "\`\`\`dxn
-      enum Mode = off | on
+            "value": "\`\`\`text
+      Mode.on
       \`\`\`
-
-      Modes.
 
       Edited, not saved.",
           },

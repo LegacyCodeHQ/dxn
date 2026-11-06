@@ -217,3 +217,79 @@ client's language-server checks from its direct syntax integration checks and
 lists expected observations, including unsaved changes and incomplete syntax.
 All four human verification responsibilities remain unverified. Preparing this
 exercise and passing automated checks do not constitute human editor sign-off.
+
+## Focused member hovers after editor feedback
+
+The Zed walkthrough exposed unnecessary parent prose in enum-value hovers.
+Enum values now show a qualified identity and only their own `@value` text.
+States show their own signature and only their matching `@state` text, without
+an enum listing or inherited prose. Missing or empty member documentation has
+no parent fallback. Enum/type documentation, continuation text, duplicate
+selection, source ranges and unsaved hover updates remain covered by tests.
+The walkthrough now describes these expectations; the revised editor display
+still needs human verification in Zed and VS Code.
+
+A second Zed observation caught keyword colouring on `on` in the compact
+`Mode.on` header. Qualified value labels now use a plain-text code fence;
+actual declarations retain DXN highlighting. Tests cover the shared hover's
+language choice and LSP Markdown for the keyword-named value, including unsaved
+updates. The corrected label still needs confirmation in the actual editors.
+
+## Documentation source styling
+
+The shared semantic highlighter now emits separate documentation-text, tag and
+target tokens, including `@` in the tag. Both extensions provide italic defaults
+for all three, with bold targets, theme comment/tag colours and normal foreground
+for targets. Zed requires semantic tokens to be enabled; VS Code enables them for
+dxn by default. Grammar fallbacks distinguish the parts without enforcing fonts.
+Ordinary comments are unchanged. Styling also works for detached or incomplete
+documentation and invalid/duplicate tags, without interpreting quoted markers.
+
+Tests cover token classification, font defaults, TextMate scopes, Unicode/BOM
+and line endings, UTF-16 protocol ranges and unsaved updates. Human checks of the
+new styling in each editor remain unverified.
+
+### Palette correction after the Zed walkthrough
+
+The developer's screenshot confirmed italic documentation and bold italic targets,
+but exposed bright blue tags and inherited red parameter colouring on targets.
+Zed now uses subdued `hint` colours for tags and explicit `primary` colours for
+targets, with documentation/comment and neutral punctuation fallbacks. Its
+Tree-sitter target capture no longer classifies these names as parameters.
+VS Code tags use the muted documentation palette; target TextMate scopes no
+longer inherit a containing comment or parameter colour. Font emphasis remains
+unchanged. The revised palette still needs visual confirmation in both editors.
+
+### Medium target weight
+
+The developer confirmed Zed's corrected palette and requested lighter target
+emphasis. Target semantic tokens no longer force bold; they first select the
+`dxn.documentation.target` theme style. A mergeable settings example applies
+medium italic (500) to that style for One Dark and One Light, preserving the
+normal-foreground grammar fallback and all other documentation styling.
+Zed's semantic rule format itself supports only normal/bold, so the theme
+override is required for an exact medium weight. VS Code's existing bold/italic
+semantic default is unchanged because its semantic styling has no numeric weight.
+Medium-weight rendering still requires developer confirmation in Zed.
+
+## Unattached documentation warning
+
+The Zed walkthrough confirmed that blank lines remove enum-value hover prose
+and identified silent detachment as a usability gap. Both parsing entry points
+now emit one `unattached-documentation` warning per detached `##` block, pointing
+to its first marker. CLI JSON, diagnostic ranges and severity, CLI/editor parity,
+formatting preservation and removal after unsaved reattachment are tested.
+The new warning still needs human verification in Zed and VS Code. The earlier
+rename failure involving documentation references remains a separate open issue.
+
+## 2026-11-06 developer Zed walkthrough
+
+The developer confirmed the corrected palette and medium target styling, focused
+hovers including nested/state-group cases, unsaved updates, diagnostic severity
+and placement, duplicate selection, detachment/reattachment, mixed-comment errors,
+recovery with an invalid tag still present, formatting, ordinary-comment behavior,
+type prose with evidence details, outline hierarchy, indentation and brackets.
+[The observation worksheet](../../examples/documentation/README.md#developer-observations--2026-11-06)
+records the tested scope and limitations. VS Code and the remaining manual checks
+are still pending. A documentation-related rename refusal remains to investigate;
+it is not included in the passing checks.

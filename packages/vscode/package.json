@@ -78,9 +78,58 @@
     "configurationDefaults": {
       "[dxn]": {
         "editor.defaultFormatter": "legacycodehq.dxn",
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "editor.semanticHighlighting.enabled": true
+      },
+      "editor.semanticTokenColorCustomizations": {
+        "rules": {
+          "dxnDocumentation:dxn": {
+            "italic": true,
+            "bold": false
+          },
+          "dxnDocumentationTag:dxn": {
+            "italic": true,
+            "bold": false
+          },
+          "dxnDocumentationTarget:dxn": {
+            "italic": true,
+            "bold": true
+          }
+        }
       }
-    }
+    },
+    "semanticTokenTypes": [
+      {
+        "id": "dxnDocumentation",
+        "superType": "comment",
+        "description": "DXN documentation markers and prose."
+      },
+      {
+        "id": "dxnDocumentationTag",
+        "superType": "comment",
+        "description": "DXN documentation tag, including @."
+      },
+      {
+        "id": "dxnDocumentationTarget",
+        "description": "DXN documentation target, displayed in normal foreground."
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "dxn",
+        "scopes": {
+          "dxnDocumentation": [
+            "comment.block.documentation.dxn"
+          ],
+          "dxnDocumentationTag": [
+            "comment.block.documentation.tag.dxn"
+          ],
+          "dxnDocumentationTarget": [
+            "source.dxn"
+          ]
+        }
+      }
+    ]
   },
   "devDependencies": {
     "@types/vscode": "1.100.0",

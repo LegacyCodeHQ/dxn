@@ -89,11 +89,65 @@ indented one step, and its closing `}` comes back out. A line pasted in at the
 wrong depth still belongs where its braces put it, and formatting on save
 indents it.
 
+## Documentation comment styling
+
+The language server distinguishes documentation prose, tags (including `@`) and
+names targeted by tags. `languages/dxn/semantic_token_rules.json` supplies their
+styles when dxn semantic tokens are enabled with `"semantic_tokens": "combined"`
+as above. Reinstall the development extension after changing its language files,
+then restart the language server to load the rebuilt server.
+
+| Part                               | Colour role                                                     | Font style                          |
+| ---------------------------------- | --------------------------------------------------------------- | ----------------------------------- |
+| `##`, description and continuation | Theme documentation/comment colour                              | Italic                              |
+| `@value` / `@state`                | Theme hint colour, falling back to documentation/comment colour | Italic                              |
+| Target name                        | Normal foreground                                               | Medium italic (with override below) |
+
+Targets explicitly use the theme's `primary` colour, falling back to neutral
+`punctuation`, rather than inheriting parameter colouring. Tags use the subdued
+`hint` colour rather than a code-keyword accent. These rules do not hard-code
+light-theme colours. With semantic tokens disabled,
+Tree-sitter supplies documentation, tag and target captures; their appearance is
+controlled entirely by the theme. Ordinary `#` comments keep their existing style.
+
+### Medium-weight target names
+
+Zed's semantic-token `font_weight` accepts only `normal` or `bold`. Medium (500)
+is a theme setting, so target tokens inherit weight from the dedicated
+`dxn.documentation.target` syntax entry. Other documentation stays italic.
+
+Merge [documentation-medium.settings.json](documentation-medium.settings.json)
+into your Zed settings, preserving other overrides. It provides One Dark and
+One Light examples; for another theme, use its exact name as the key. Only the
+DXN documentation-target style is affected. Without that override, target weight
+comes from the normal-foreground fallback instead of being forced bold.
+
+```json
+{
+  "theme_overrides": {
+    "One Dark": {
+      "syntax": {
+        "dxn.documentation.target": {
+          "font_weight": 500,
+          "font_style": "italic"
+        }
+      }
+    }
+  }
+}
+```
+
+Reinstall the development extension after updating its semantic-token rules.
+Keep `"semantic_tokens": "combined"` enabled for dxn. See Zed's
+[semantic token rules](https://zed.dev/docs/semantic-tokens) and
+[theme overrides](https://zed.dev/docs/themes#theme-overrides).
+
 ## Documentation hovers
 
-Attached `##` documentation appears in enum and type hovers. Values and states
-also show their matching `@value` or `@state` description, including indented
-continuations. Hovers use the current unsaved buffer. Type documentation stays
+Attached `##` documentation appears in enum and type hovers. Enum values show
+their qualified name and only their matching `@value` description. States show
+their own signature and only their matching `@state` description. Continuations
+are retained; members do not inherit general declaration or enum prose. Hovers use the current unsaved buffer. Type documentation stays
 visible alongside evidence details. Ordinary comments and detached documentation
 do not supply documentation for these constructs.
 

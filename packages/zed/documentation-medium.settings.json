@@ -1,0 +1,20 @@
+{
+  "theme_overrides": {
+    "One Dark": {
+      "syntax": {
+        "dxn.documentation.target": {
+          "font_weight": 500,
+          "font_style": "italic"
+        }
+      }
+    },
+    "One Light": {
+      "syntax": {
+        "dxn.documentation.target": {
+          "font_weight": 500,
+          "font_style": "italic"
+        }
+      }
+    }
+  }
+}

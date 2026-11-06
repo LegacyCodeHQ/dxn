@@ -1894,11 +1894,17 @@ type Button {
 }
 ```
 
-Hovering an enum or type shows its attached prose. Hovering a value or state
-also shows its matching `@value` or `@state` description. Documented names can
+Hovering an enum or type shows its attached prose. Hovering an enum value shows
+its qualified name and only its matching `@value` description. Hovering a state
+shows its own signature and only its matching `@state` description. Members do
+not inherit general declaration prose or fall back to their enum documentation.
+Documented names can
 show that information at their declarations as well as their uses. Ordinary
 `#` comments and blank-line-separated `##` blocks are not documentation for
-enums, types or states.
+enums, types or states. An unattached `##` block produces one warning at its
+first marker. Remove the separating blank line to attach it, or use `#` when
+you intend an ordinary comment. The warning does not attach the block or make
+its text appear in a hover.
 
 Unknown tags, tags on the wrong kind of declaration, missing targets and targets
 outside the attached declaration are semantic errors. Repeating a valid tag for
@@ -1923,6 +1929,7 @@ markers retain a space where it is needed to preserve documentation meaning.
 | `missing-documentation-target`                                                                                               | error    | a documentation tag has no target name                                                           |
 | `unknown-documentation-target`                                                                                               | error    | a documentation target is not declared by the attached enum or state declaration                 |
 | `duplicate-documentation-tag`                                                                                                | warning  | a later valid tag repeats a target; the first description is retained                            |
+| `unattached-documentation`                                                                                                   | warning  | an explicit `##` block is not attached to an enum, type or state declaration                     |
 | `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name`, `actor-name`, `profile-name`, `modifier-name` | error    | the name does not start with a capital letter, or has more than letters and digits               |
 | `state-name`, `field-name`, `child-name`                                                                                     | error    | the name does not start with a lowercase letter                                                  |
 | `action-name`                                                                                                                | error    | an action's name does not start with a lowercase letter                                          |

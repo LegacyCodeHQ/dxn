@@ -76,7 +76,6 @@ describe("shared parser documentation", () => {
     "## @value off First.\n## General.\n##   More general.\nenum Mode = off",
     "type Button { ## Modes.\nenum Mode = off\n}",
     "enum Mode = off # Not documentation.\n## A control.\ntype Button {}",
-    "## Detached.\n\nenum Mode = off\n## At EOF.",
     "## Fixed.\ntype Button {\n## Mode.\nstate mode: Mode = off\n}",
   ])("preserves documentation without semantic decisions: %s", (source) => {
     const actual = read(source);
@@ -97,14 +96,17 @@ describe("shared parser documentation", () => {
     "## Not attached to a dimension.\ndimension Pointer = mouse",
     "## Not attached to a record.\nrecord Note {}",
     "# Ordinary.\nenum Mode = off",
-  ])("keeps unattached documentation as ordinary comments: %s", (source) => {
+  ])("keeps documentation detached and warns only for explicit documentation: %s", (source) => {
     const result = read(source);
     expect({
-      diagnostics: result.diagnostics,
+      diagnostics: result.diagnostics.map(({ code }) => code),
       documentation: [...result.enums, ...result.dimensions, ...result.records].map(
         (entry) => entry.documentation,
       ),
-    }).toEqual({ diagnostics: [], documentation: [undefined] });
+    }).toEqual({
+      diagnostics: source.startsWith("##") ? ["unattached-documentation"] : [],
+      documentation: [undefined],
+    });
   });
 
   it.each([

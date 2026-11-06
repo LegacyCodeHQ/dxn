@@ -9,13 +9,15 @@ import { sourceLines } from "@language/syntax/scan.js";
 export interface Hover {
   from: Span;
   code: string;
+  // Qualified member labels are display text, not standalone DXN syntax.
+  language: "dxn" | "text";
   comment?: string;
 }
 
 // What the name at a line and a column of a source, both from one, is, where
 // it is used: its declaration, from elsewhere in the file. Where it is
-// declared, show attached documentation when present, and a state's enum
-// with its values even without documentation. Nothing over a keyword, or a name
+// declared, show attached documentation when present, and identify enum values
+// and states even without documentation. Nothing over a keyword, or a name
 // the file does not declare.
 export function hover(
   source: string,
@@ -36,29 +38,16 @@ export function hover(
     return found === undefined ? undefined : { from: link.from, ...found };
   }
   const declared = [...described.keys()].find((at) => covers(span(at), line, column));
-  const state = file.types
-    .flatMap(({ states }) => states)
-    .find((candidate) => candidate === declared);
-  if (state === undefined) {
-    if (declared === undefined) return undefined;
-    const documentedDeclarations: Located[] = [
-      ...file.enums,
-      ...file.types,
-      ...file.enums.flatMap(({ values }) => values),
-    ];
-    const found = described.get(declared);
-    return !documentedDeclarations.includes(declared) || found?.comment === undefined
-      ? undefined
-      : { from: span(declared), ...found };
-  }
-  const of = file.enums.find(({ name }) => name === state.enum.name);
-  const found = of === undefined ? undefined : described.get(of);
-  const own = described.get(state);
-  if (found === undefined) {
-    return own?.comment === undefined ? undefined : { from: span(state), ...own };
-  }
-  const comment = own?.comment ?? found.comment;
-  return { from: span(state), code: found.code, ...(comment ? { comment } : {}) };
+  if (declared === undefined) return undefined;
+  const found = described.get(declared);
+  if (found === undefined) return undefined;
+  const member =
+    file.enums.some(({ values }) => values.includes(declared)) ||
+    file.types.some(({ states }) => states.some((state) => state === declared));
+  const documentedDeclarations: Located[] = [...file.enums, ...file.types];
+  return member || (documentedDeclarations.includes(declared) && found.comment !== undefined)
+    ? { from: span(declared), ...found }
+    : undefined;
 }
 
 // The comment on the lines right above a line, without its "#"; none above
@@ -73,37 +62,37 @@ function commentAbove(lines: string[], line: number): string | undefined {
   return comment.length > 0 ? comment.join("\n") : undefined;
 }
 
-// Declaration prose applies to its members; only the matching value/state
-// tag contributes a member description. Analysis already keeps the first valid
-// duplicate, and filtering by kind/target prevents invalid tags from leaking.
+// Declaration prose belongs to the declaration; members show only their matching
+// value/state tag. Analysis keeps the first valid duplicate.
 function documentationComment(
   documentation: Documentation | undefined,
   tag?: "value" | "state",
   target?: string,
 ): string | undefined {
   if (!documentation) return undefined;
-  const detail =
+  const text =
     tag === undefined
-      ? undefined
+      ? documentation.description
       : documentation.tags.find((entry) => entry.name === tag && entry.target?.name === target)
           ?.description;
-  return [documentation.description, detail].filter(Boolean).join("\n\n") || undefined;
+  return text || undefined;
 }
 
 // Every declaration a name can be, with how it is shown.
 function describe(file: ParseResult, lines: string[]): Map<Located, Omit<Hover, "from">> {
   const result = new Map<Located, Omit<Hover, "from">>();
-  const add = (at: Located, code: string, comment?: string) => {
-    result.set(at, comment === undefined ? { code } : { code, comment });
+  const add = (
+    at: Located,
+    code: string,
+    comment?: string,
+    language: Hover["language"] = "dxn",
+  ) => {
+    result.set(at, { code, language, ...(comment === undefined ? {} : { comment }) });
   };
   // Constructs outside the documentation contract keep their existing comments.
   const legacy = (at: Located, code: string) => add(at, code, commentAbove(lines, at.line));
   const listed = (declaration: Enum, keyword: string) =>
     `${keyword} ${declaration.name} = ${declaration.values.map(({ name }) => name).join(" | ")}`;
-  const enumText = (name: string) => {
-    const declaration = file.enums.find((candidate) => candidate.name === name);
-    return declaration === undefined ? undefined : listed(declaration, "enum");
-  };
   for (const [keyword, list] of [
     ["enum", file.enums],
     ["dimension", file.dimensions],
@@ -116,18 +105,19 @@ function describe(file: ParseResult, lines: string[]): Map<Located, Omit<Hover, 
           ? documentationComment(declaration.documentation)
           : commentAbove(lines, declaration.line),
       );
-      // A value shows its enum or dimension, with only its own tag description.
+      // Enum values show a qualified identity and only their own tag description.
       for (const value of declaration.values)
         add(
           value,
-          listed(declaration, keyword),
+          keyword === "enum" ? `${declaration.name}.${value.name}` : listed(declaration, keyword),
           keyword === "enum"
             ? documentationComment(declaration.documentation, "value", value.name)
             : commentAbove(lines, declaration.line),
+          keyword === "enum" ? "text" : "dxn",
         );
     }
   }
-  for (const type of file.types) describeType(type, add, enumText, lines);
+  for (const type of file.types) describeType(type, add, lines);
   for (const environment of file.environments) {
     legacy(
       environment,
@@ -161,7 +151,6 @@ function describe(file: ParseResult, lines: string[]): Map<Located, Omit<Hover, 
 function describeType(
   type: Type,
   add: (at: Located, code: string, comment?: string) => void,
-  enumText: (name: string) => string | undefined,
   lines: string[],
 ): void {
   const own = type.states.filter(({ received }) => !received);
@@ -203,13 +192,9 @@ function describeType(
           ? ` = when ${state.derived.dimension.name}`
           : "";
     const keyword = state.received ? "receives" : "state";
-    const of = enumText(state.enum.name);
     add(
       state,
-      [
-        `${keyword} ${type.name}.${state.name}: ${state.enum.name}${value}`,
-        ...(of === undefined ? [] : [of]),
-      ].join("\n"),
+      `${keyword} ${type.name}.${state.name}: ${state.enum.name}${value}`,
       documentationComment(state.documentation, "state", state.name),
     );
   }

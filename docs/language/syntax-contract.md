@@ -64,8 +64,9 @@ redefined by the enum naming contract.
 
 Ordinary comments start with `#`. Documentation starts with `##` and is optional.
 A contiguous documentation block attaches directly to the following enum, type
-or state declaration. A blank line breaks attachment. Unattached `##` lines are
-ordinary comments, with no diagnostic. Mixing ordinary and documentation markers
+or state declaration. A blank line breaks attachment. Unattached `##` blocks
+remain comments and produce one warning at their first marker. They do not supply
+hover documentation. Mixing ordinary and documentation markers
 in an attached block is a syntax error; no marker is silently promoted.
 
 ```dxn
@@ -196,13 +197,15 @@ manual editor verification remain separate steps.
 ## Structured hover stage
 
 `editor/hover.ts` uses attached AST documentation for enums, types and states.
-An enum or type shows its declaration prose; a value or state adds only the
-matching `@value` or `@state` description, separated from general prose by a
-blank line. Continuation text and the first duplicate description are preserved.
+An enum or type shows its declaration prose. An enum value shows its qualified
+name and only its matching `@value` description; a state shows its own signature
+and only its matching `@state` description. Members do not inherit declaration
+prose or fall back to enum documentation. Continuation text and the first
+duplicate description are preserved.
 Unknown tags and tags of the wrong kind do not become hover descriptions.
 
 Documented enums, types and values also show documentation at their declarations.
-State declarations retain their enum summary and show their own documentation
+State declarations show their own signature and matching tag documentation
 when available; their own documentation remains available for unresolved enum
 references. Ordinary `#` comments and detached `##` blocks are not promoted to
 documentation for these constructs. Other, unmigrated constructs retain their
@@ -225,3 +228,15 @@ whitespace-only declaration prose keeps a space to preserve its meaning.
 Formatter tests compare raw syntax meaning before and after formatting, check
 idempotence, and exercise CLI writes and language-server parity. Invalid syntax
 is not formatted. Human editor verification remains pending.
+
+## Unattached documentation warning
+
+The shared reader and Tree-sitter migration entry point report
+`unattached-documentation` as a warning, once at the first `##` of each detached
+block. This includes blank-line separation, trailing documentation, unsupported
+declaration kinds and blocks left at end of file or before a closing brace.
+Ordinary `#` comments do not warn. An attached mixed block keeps its syntax error
+without a second detached warning. The warning neither attaches nor validates
+the block's tags; formatting still preserves its detached status. CLI warnings
+return success, and the language server clears the warning when an unsaved edit
+reattaches the block.

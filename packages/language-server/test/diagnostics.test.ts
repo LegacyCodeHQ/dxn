@@ -3,6 +3,20 @@ import { describe, expect, it } from "vitest";
 import { DiagnosticSeverity } from "vscode-languageserver/node";
 
 describe("diagnose", () => {
+  it("underlines the first documentation marker of a detached block as a warning", () => {
+    expect(
+      diagnose("  ## Detached.\n\nenum Mode = off\ntype Button { state mode: Mode }\n"),
+    ).toEqual([
+      {
+        code: "unattached-documentation",
+        source: "dxn",
+        severity: 2,
+        message:
+          "documentation is not attached to a declaration; remove the separating blank line or use `#` for an ordinary comment",
+        range: { start: { line: 0, character: 2 }, end: { line: 0, character: 4 } },
+      },
+    ]);
+  });
   it("finds no problem in a file that checks", () => {
     expect(
       diagnose("enum Enabled = enabled | disabled\ntype Button {\n  state enabled: Enabled\n}\n"),

@@ -57,11 +57,23 @@ A `has` line whose child is a component, such as the tabs of a tab bar, has
 no hint of its own: the component's own line counts its combinations. Hovering
 over the component's name on that line shows its declaration, with its
 count there.
+## Documentation comment styling
+
+The extension enables semantic highlighting for dxn and supplies defaults for
+three documentation token types. Markers, descriptions and continuation text use
+the theme's documentation colour in italics; tags including `@` use the muted
+documentation-tag palette in italics; target names use normal foreground in bold italics. The
+TextMate grammar also separates these parts when semantic tokens are unavailable.
+Ordinary `#` comments keep their existing style. Theme/user overrides can still
+customize the defaults. Rebuild and reload the development extension after
+changing its manifest or grammar.
+
 ## Documentation hovers
 
-Attached `##` documentation appears in enum and type hovers. Values and states
-also show their matching `@value` or `@state` description, including indented
-continuations. Hovers use the current unsaved buffer. Type documentation stays
+Attached `##` documentation appears in enum and type hovers. Enum values show
+their qualified name and only their matching `@value` description. States show
+their own signature and only their matching `@state` description. Continuations
+are retained; members do not inherit general declaration or enum prose. Hovers use the current unsaved buffer. Type documentation stays
 visible alongside evidence details. Ordinary comments and detached documentation
 do not supply documentation for these constructs.
 

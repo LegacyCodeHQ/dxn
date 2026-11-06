@@ -163,5 +163,6 @@
 (comment) @comment
 
 ; Structured documentation, including its tag names.
-(documentation) @comment
-(documentation_tag name: (identifier) @keyword)
+(documentation) @comment.documentation
+(documentation_tag name: (identifier) @comment.documentation.tag)
+(documentation_tag target: (identifier) @variable)

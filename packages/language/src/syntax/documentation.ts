@@ -55,6 +55,34 @@ export function documentationBlocks(tokens: readonly Token[]): Map<Token, Docume
   return blocks;
 }
 
+// A ## marker is an explicit documentation intent. Warn once per contiguous
+// unattached block, without treating its contents as attached tags or prose.
+export function unattachedDocumentation(
+  tokens: readonly Token[],
+  attached: ReadonlySet<number>,
+): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+  let previous = -2;
+  for (const token of tokens) {
+    if (token.kind === "newline") continue;
+    if (token.kind !== "comment" || !token.text.startsWith("##") || attached.has(token.line)) {
+      previous = -2;
+      continue;
+    }
+    if (token.line !== previous + 1)
+      diagnostics.push({
+        severity: "warning",
+        code: "unattached-documentation",
+        message:
+          "documentation is not attached to a declaration; remove the separating blank line or use `#` for an ordinary comment",
+        line: token.line,
+        column: token.column,
+      });
+    previous = token.line;
+  }
+  return diagnostics;
+}
+
 const tagPattern = /^([ \t]*)@([A-Za-z][A-Za-z0-9-]*)(?:([ \t]+)([^ \t]+)(?:[ \t]+(.*))?)?$/;
 
 function readBlock(lines: readonly Token[]): DocumentationBlock {

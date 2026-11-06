@@ -254,7 +254,7 @@ export function serve(connection: Connection): void {
       const documentation =
         found?.comment === undefined
           ? ""
-          : `\`\`\`dxn\n${found.code}\n\`\`\`\n\n${found.comment}\n\n---\n\n`;
+          : `\`\`\`${found.language}\n${found.code}\n\`\`\`\n\n${found.comment}\n\n---\n\n`;
       const start = { line: declared.line - 1, character: declared.column - 1 };
       return {
         contents: { kind: "markdown", value: `${documentation}${declared.details}` },
@@ -278,7 +278,7 @@ export function serve(connection: Connection): void {
     return {
       contents: {
         kind: "markdown",
-        value: `\`\`\`dxn\n${found.code}\n\`\`\`${comment}${evidence}`,
+        value: `\`\`\`${found.language}\n${found.code}\n\`\`\`${comment}${evidence}`,
       },
       range: {
         start: { line: line - 1, character: column - 1 },
@@ -433,9 +433,15 @@ export function serve(connection: Connection): void {
     const document = dxnDocument(textDocument.uri);
     const builder = new SemanticTokensBuilder();
     if (document === undefined) return builder.build();
+    const lines = sourceLines(document.getText());
     for (const token of tokens(document.getText(), parsed(document))) {
       const type = tokenTypes.indexOf(tokenTypeOf[token.kind] ?? "variable");
-      builder.push(token.line - 1, token.column - 1, token.length, type, token.declaration ? 1 : 0);
+      const content = lines[token.line - 1] ?? "";
+      const bom = token.line === 1 && content.startsWith("\uFEFF") ? 1 : 0;
+      const line = [...content.slice(bom)];
+      const start = bom + line.slice(0, token.column - 1).join("").length;
+      const length = line.slice(token.column - 1, token.column - 1 + token.length).join("").length;
+      builder.push(token.line - 1, start, length, type, token.declaration ? 1 : 0);
     }
     return builder.build();
   });
@@ -531,8 +537,14 @@ const tokenTypes = [
   "method",
   "event",
   "variable",
+  "dxnDocumentation",
+  "dxnDocumentationTag",
+  "dxnDocumentationTarget",
 ];
 const tokenTypeOf: Record<string, string> = {
+  dxnDocumentation: "dxnDocumentation",
+  dxnDocumentationTag: "dxnDocumentationTag",
+  dxnDocumentationTarget: "dxnDocumentationTarget",
   enum: "enum",
   dimension: "enum",
   type: "class",

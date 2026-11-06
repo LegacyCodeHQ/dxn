@@ -29,7 +29,7 @@ import type {
 import { message, words } from "@language/core/message.js";
 import { isValue, reserved } from "@language/core/naming.js";
 import { conditionText } from "@language/model/condition.js";
-import { documentationBlocks } from "@language/syntax/documentation.js";
+import { documentationBlocks, unattachedDocumentation } from "@language/syntax/documentation.js";
 import { describe, located, scan, type Token, type TokenKind } from "@language/syntax/scan.js";
 
 class ParseFailure extends Error {}
@@ -45,6 +45,7 @@ const lowercase = { pattern: /^[a-z]/, rule: "a lowercase letter" };
 export function read(source: string): SyntaxResult {
   const scanned = scan(source, { comments: true });
   const documentation = documentationBlocks(scanned);
+  const attachedDocumentation = new Set<number>();
   const tokens = scanned.filter(({ kind }) => kind !== "comment");
   const result: SyntaxResult = {
     enums: [],
@@ -60,7 +61,10 @@ export function read(source: string): SyntaxResult {
   };
   const documentationAt = (token: Token): { documentation?: Documentation } => {
     const block = documentation.get(token);
-    if (block) result.diagnostics.push(...block.diagnostics);
+    if (block) {
+      for (const { line } of block.lines) attachedDocumentation.add(line);
+      result.diagnostics.push(...block.diagnostics);
+    }
     return block?.documentation ? { documentation: block.documentation } : {};
   };
   let position = 0;
@@ -1126,5 +1130,6 @@ export function read(source: string): SyntaxResult {
       while (peek().kind !== "end" && !starts(peek())) next();
     }
   }
+  result.diagnostics.push(...unattachedDocumentation(scanned, attachedDocumentation));
   return result;
 }

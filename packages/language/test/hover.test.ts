@@ -93,7 +93,7 @@ describe("hover", () => {
     `);
   });
 
-  it("shows a state with its enum, an action, an event, a child, and a value with its enum", () => {
+  it("shows member identities, actions, events and children", () => {
     const snapshot: unknown[] = [];
     snapshot.push(over("  ", "hover"));
     snapshot.push(over("state ", "shown"));
@@ -108,13 +108,11 @@ describe("hover", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "[hover]
-      state Link.hover: Hover
-      enum Hover = rest | hovered
-      -- Over it, with a mouse only.",
+      state Link.hover: Hover",
         "[shown]
-      enum Section = home | blog",
+      state Menu.shown: Section = blog",
         "[current]
-      enum Section = home | blog",
+      receives Link.current: Section",
         "[take-focus]
       action Link.take-focus: focus blurred -> focused
       -- Takes the focus from wherever it was.",
@@ -126,22 +124,21 @@ describe("hover", () => {
       action Link.take-focus: focus blurred -> focused
       -- Takes the focus from wherever it was.",
         "[hovered]
-      enum Hover = rest | hovered
-      -- Whether the pointer is over it.",
+      Hover.hovered",
         "[mouse]
       dimension Pointer = mouse | touch",
         "[open]
-      enum Menu.Openness = closed | open",
+      Menu.Openness.open",
       ]
     `);
   });
 
-  it("shows a state's enum and leaves undocumented declarations without a hover", () => {
+  it("identifies states and enum values without inheriting documentation", () => {
     expect(over("state focus: ", "Focus")).toBe("[Focus]\nenum Focus = blurred | focused");
-    expect(over("  state ", "focus")).toBe("[focus]\nenum Focus = blurred | focused");
+    expect(over("  state ", "focus")).toBe("[focus]\nstate Link.focus: Focus");
+    expect(over("enum Focus = ", "blurred")).toBe("[blurred]\nFocus.blurred");
     for (const [before, word] of [
       ["enum ", "Focus"],
-      ["enum Focus = ", "blurred"],
       ["dimension ", "Pointer"],
       ["type ", "Menu"],
       ["record ", "Source"],

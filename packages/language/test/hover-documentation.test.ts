@@ -27,6 +27,45 @@ function at(text: string, marker: string) {
 }
 
 describe("structured documentation hovers", () => {
+  it.each([
+    ["enum Mode = off | ^on", "text"],
+    ["action turn-on: mode off -> ^on", "text"],
+    ["state mode: ^Mode", "dxn"],
+    ["state ^mode: Mode", "dxn"],
+  ])("uses the correct code language for %s", (marker, language) => {
+    expect(at(source, marker)?.language).toBe(language);
+  });
+
+  it.each([
+    ["enum Mode = ^off | on", "Mode.off"],
+    ["action turn-on: mode ^off -> on", "Mode.off"],
+    ["state mode: Mode, ^other: Mode", "state Button.other: Mode"],
+    ["action turn-on: ^mode", "state Button.mode: Mode"],
+  ])("identifies only the hovered member: %s", (marker, code) => {
+    expect(at(source, marker as string)?.code).toBe(code);
+  });
+
+  it.each([
+    "## Parent only.\nenum Mode = off | on\ntype Button { state mode: Mode }",
+    "## Parent.\n## @value off\nenum Mode = off | on\ntype Button { state mode: Mode }",
+  ])("does not fall back to enum prose for an undocumented value: %s", (text) => {
+    const found = at(text, "enum Mode = ^off | on");
+    expect(found && { code: found.code, comment: found.comment }).toEqual({
+      code: "Mode.off",
+      comment: undefined,
+    });
+  });
+
+  it("does not fall back to state-block or enum prose for an undocumented state", () => {
+    const text =
+      "## Enum prose.\nenum Mode = off | on\ntype Button {\n  ## State prose.\n  state mode: Mode\n}";
+    const found = at(text, "state ^mode: Mode");
+    expect(found && { code: found.code, comment: found.comment }).toEqual({
+      code: "state Button.mode: Mode",
+      comment: undefined,
+    });
+  });
+
   it("keeps a state's own documentation available while its enum is unresolved", () => {
     const text = "type Button {\n  ## @state mode Current mode.\n  state mode: Missing\n}";
     expect(at(text, "  state ^mode")?.comment).toBe("Current mode.");
@@ -35,15 +74,12 @@ describe("structured documentation hovers", () => {
   it.each([
     ["state mode: ^Mode", "Modes 中文 😀."],
     ["has button: ^Button", "A control."],
-    ["action turn-on: ^mode", "Interaction states.\n\nCurrent mode."],
-    [
-      "action turn-on: mode ^off -> on",
-      "Modes 中文 😀.\n\nNo interaction.\nContinued description.",
-    ],
-    ["action turn-on: mode off -> ^on", "Modes 中文 😀.\n\nActive."],
-    ["state mode: Mode, ^other: Mode", "Interaction states.\n\nAlternate mode."],
+    ["action turn-on: ^mode", "Current mode."],
+    ["action turn-on: mode ^off -> on", "No interaction.\nContinued description."],
+    ["action turn-on: mode off -> ^on", "Active."],
+    ["state mode: Mode, ^other: Mode", "Alternate mode."],
     ["enum ^Mode", "Modes 中文 😀."],
-    ["enum Mode = ^off | on", "Modes 中文 😀.\n\nNo interaction.\nContinued description."],
+    ["enum Mode = ^off | on", "No interaction.\nContinued description."],
     ["type ^Button", "A control."],
   ])("shows the prose for the hovered declaration: %s", (marker, comment) => {
     expect(at(source, marker as string)?.comment).toBe(comment);
@@ -52,7 +88,7 @@ describe("structured documentation hovers", () => {
   it.each(["\n", "\r\n", "\r"])("reads documentation consistently with %j", (newline) => {
     expect(
       at(`\ufeff${source.replaceAll("\n", newline)}`, "action turn-on: mode off -> ^on")?.comment,
-    ).toBe("Modes 中文 😀.\n\nActive.");
+    ).toBe("Active.");
   });
 
   it("keeps only the first matching description and does not expose invalid tags", () => {
@@ -60,7 +96,7 @@ describe("structured documentation hovers", () => {
       "## @value on Active.",
       "## @value on First.\n## @value on Second.\n## @state on Wrong kind.\n## @bogus on Unknown.",
     );
-    expect(at(text, "action turn-on: mode off -> ^on")?.comment).toBe("Modes 中文 😀.\n\nFirst.");
+    expect(at(text, "action turn-on: mode off -> ^on")?.comment).toBe("First.");
   });
 
   it("uses only the attached state declaration in a nested scope", () => {

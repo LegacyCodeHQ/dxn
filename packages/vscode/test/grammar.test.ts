@@ -46,6 +46,17 @@ async function tokens(...texts: string[]): Promise<string[][]> {
 }
 
 describe("the TextMate grammar", () => {
+  it("separates documentation markers, tags, targets and prose", async () => {
+    expect(await tokens("## @value on At trigger time.")).toEqual([
+      [
+        "## comment.block.documentation.dxn",
+        "@value comment.block.documentation.tag.dxn",
+        "on meta.documentation.target.dxn",
+        "At trigger time. comment.block.documentation.dxn",
+      ],
+    ]);
+  });
+
   it("colours declarations, and the names they declare", async () => {
     expect(
       await tokens(

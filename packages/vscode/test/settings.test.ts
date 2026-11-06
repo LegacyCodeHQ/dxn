@@ -13,6 +13,7 @@ describe("the extension's settings for .dxn files", () => {
     expect(manifest.contributes.configurationDefaults?.["[dxn]"]).toEqual({
       "editor.defaultFormatter": `${manifest.publisher}.${manifest.name}`,
       "editor.formatOnSave": true,
+      "editor.semanticHighlighting.enabled": true,
     });
   });
 });
