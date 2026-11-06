@@ -79,6 +79,7 @@ export function run(argv: string[], io: Io): number {
       p.at.map((span) => ({
         code: p.code,
         ...(p.rule ? { rule: p.rule } : {}),
+        ...(p.suggestion ? { suggestion: p.suggestion } : {}),
         message: p.message,
         span,
       })),

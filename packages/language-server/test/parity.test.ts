@@ -331,6 +331,7 @@ it("gives CLI and server the same diagnostic codes, messages and ranges", async 
     ).toBe(1);
     const problems = JSON.parse(stdout).problems as {
       rule: string;
+      suggestion?: string;
       code: string;
       message: string;
       span: { start: number; end: number };
@@ -342,6 +343,7 @@ it("gives CLI and server the same diagnostic codes, messages and ranges", async 
       "E4",
       "F1",
     ]);
+    expect(problems.find((p) => p.code === "badValueName")?.suggestion).toBe("off");
     const offset = (p: { line: number; character: number }) =>
       source
         .split(/\r\n|\r|\n/)
@@ -351,6 +353,7 @@ it("gives CLI and server the same diagnostic codes, messages and ranges", async 
       diagnostics.diagnostics.map((d) => ({
         code: d.code,
         ...(d.data?.rule ? { rule: d.data.rule } : {}),
+        ...(d.data?.suggestion ? { suggestion: d.data.suggestion } : {}),
         message: d.message,
         span: { start: offset(d.range.start), end: offset(d.range.end) },
       })),

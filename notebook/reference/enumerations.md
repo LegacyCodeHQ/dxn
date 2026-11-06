@@ -233,6 +233,10 @@ The naming rules, checked one character at a time:
   checker-rule ID. The ID identifies the corresponding section of this reference.
 - **Suggestions.** Each rule above says what to suggest. The specification
   does not; a suggestion is the implementation's, and must itself be accepted.
+  Reports include a safe replacement in the message, CLI JSON `suggestion`,
+  and language-server `data.suggestion`. They do not apply edits. If the
+  replacement would collide with an existing value in that enumeration or an
+  enumeration name in the file, the report explains the collision instead.
 
 ## Decisions
 
