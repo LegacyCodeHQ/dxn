@@ -3,16 +3,18 @@ import Dxn.Enumeration
 /-!
 # Files
 
-A file is its enumeration declarations, in written order. The checker reports
-each declaration's own problems, in written order, then each enumeration name
-written more than once. A valid file's enumerations have pairwise different
-names, so no two of them share a value.
+A file holds declarations, in written order. Enumerations are the only kind of
+declaration so far, so a file here is a list of enumeration declarations; each
+new kind of declaration widens it. The checker reports each declaration's own
+problems, in written order, then each enumeration name written more than once.
+A valid file's enumerations have pairwise different names, so no two of them
+share a value.
 -/
 
 namespace Dxn
 
 -- #region file
-/-- A file as written: its enumeration declarations, in written order. -/
+/-- A file as written: its declarations, in written order. Enumerations are the only kind so far. -/
 structure File where
   decls : List EnumDecl
   deriving Repr, DecidableEq

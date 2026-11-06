@@ -2,16 +2,19 @@
 
 **Status:** Decided
 
-A file is its enumerations, in the order they are written:
+A file holds declarations, in the order they are written. Enumerations are the
+only kind of declaration so far; each new kind the language gains, such as
+dimensions, is declared in files too.
 
 ```dxn
 enum Light { off, on }
 enum Power { off, on }
 ```
 
-It is checked as a whole. Each enumeration in it is checked by the rules of
-[Enumerations](./enumerations), E1 to E4, and the file adds one rule of its
-own: no two enumerations share a name.
+A file is checked as a whole. Each declaration in it is checked by its own
+rules, which for an enumeration are those of [Enumerations](./enumerations),
+E1 to E4, and the file adds a rule of its own: no two enumerations share a
+name.
 
 The Lean specification in
 [`lean/Dxn/File.lean`](https://github.com/LegacyCodeHQ/dxn/blob/main/lean/Dxn/File.lean)
@@ -21,11 +24,13 @@ specification is right.
 ## Syntax
 
 ```text
-file = { declaration }
+file        = { declaration }
+declaration = enumeration
 ```
 
-A file is any number of enumeration declarations, one after another. A file
-with none is valid: nothing in it can be wrong. A syntax error in any
+A file is any number of declarations, one after another; `declaration` gains
+a case for each new kind. A file with none is valid: nothing in it can be
+wrong. A syntax error in any
 declaration stops reading the file there.
 
 ## Checker rules
@@ -87,6 +92,13 @@ reports, in this order:
 When two declarations share a name, their problems are told apart by position:
 point each problem at its own declaration.
 
+## In the model
+
+The specification's `File` holds enumeration declarations only, since they are
+the only kind so far. When the language gains a second kind, the model gains a
+`Declaration` with a case for each kind, and the rules here are restated for
+it.
+
 ## What an accepted file means
 
 | Fact                                                          | Lean                |
@@ -128,6 +140,7 @@ What a valid file is:
 
 ## Deferred
 
-| Question                                                                                                  | Decide when                    |
-| --------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| May two different files each declare an enumeration with the same name? Then a value's tag needs its file | A model has more than one file |
+| Question                                                                                                      | Decide when                                   |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| May two different files each declare an enumeration with the same name? Then a value's tag needs its file     | A model has more than one file                |
+| Must names be unique across kinds of declaration, such as an enumeration and a dimension both called `Light`? | The language has a second kind of declaration |
