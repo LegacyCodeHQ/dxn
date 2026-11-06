@@ -110,7 +110,7 @@ agreement:
 
 # The design notebook under notebook/, built with VitePress into notebook/.vitepress/dist.
 notebook:
-	npm run build --silent --workspace notebook
+	npx vitepress build notebook
 
 # The Zed extension: extension.toml pins a commit whose grammar is the one in
 # packages/tree-sitter-dxn, and every query compiles against it and the sample
