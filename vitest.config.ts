@@ -31,6 +31,7 @@ export default defineConfig({
         "packages/cli/**": { lines: 70, functions: 85 },
         "packages/language-server/**": { lines: 70, functions: 85 },
         "packages/vscode/**": { lines: 70, functions: 85 },
+        "packages/next/**": { lines: 70, functions: 85 },
         // Native parser tests do not execute the JavaScript grammar DSL.
         // Report its uncovered code rather than excluding it or inventing a gate.
       },

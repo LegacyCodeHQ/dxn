@@ -7,7 +7,8 @@
       "@language/*": ["./packages/language/src/*"],
       "@cli/*": ["./packages/cli/src/*"],
       "@language-server/*": ["./packages/language-server/src/*"],
-      "@vscode/*": ["./packages/vscode/src/*"]
+      "@vscode/*": ["./packages/vscode/src/*"],
+      "@next/*": ["./packages/next/src/*"]
     },
     // Type-checks both packages as one program: the dxn command imports the
     // language's sources, through the "source" export condition, not its build.

@@ -40,6 +40,11 @@ export const allowed = {
   "language-server/entry": ["language-server/entry", "language-server/protocol"],
   "language-server/protocol": ["language-server/protocol"],
   vscode: ["vscode"],
+  // The new implementation: the parsed form, reading it from text, and checking it.
+  "next/model": ["next/model"],
+  "next/syntax": ["next/model", "next/syntax"],
+  "next/check": ["next/model", "next/check"],
+  "next/api": ["next/model", "next/syntax", "next/check"],
 };
 
 export function layerOf(path) {
@@ -62,6 +67,11 @@ export function layerOf(path) {
   if (pkg === "language-server") {
     if (file.startsWith("protocol/")) return "language-server/protocol";
     if (!file.includes("/")) return "language-server/entry";
+  }
+  if (pkg === "next") {
+    if (file === "index.ts") return "next/api";
+    const layer = `next/${file.split("/")[0]}`;
+    return layer !== "next/api" && Object.hasOwn(allowed, layer) ? layer : undefined;
   }
   return pkg === "vscode" ? "vscode" : undefined;
 }

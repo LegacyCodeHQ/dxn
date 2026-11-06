@@ -10,7 +10,8 @@
     "packages/cli",
     "packages/language-server",
     "packages/vscode",
-    "packages/tree-sitter-dxn"
+    "packages/tree-sitter-dxn",
+    "packages/next"
   ],
   "engines": {
     "node": ">=22"
