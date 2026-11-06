@@ -46,6 +46,8 @@ meaningful in a file the checker rejects.
 | No two values go to the same one: the map is a bijection   | `injOn_of_renameEnum`                                   | `DxnTest/Rename.lean` |
 | Only enumeration names change; values and their order stay | `decls_values_of_renameEnum`                            | `DxnTest/Rename.lean` |
 | Renaming back undoes it                                    | `renameEnum_undo`                                       | `DxnTest/Rename.lean` |
+| Renaming to its own name gives the same file               | `renameEnum_self`                                       | `DxnTest/Rename.lean` |
+| Two renames in a row are one rename                        | `renameEnum_comp`                                       | `DxnTest/Rename.lean` |
 
 ## Implementation notes
 

@@ -69,4 +69,16 @@ example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) :
     renameEnum g new old = .ok f :=
   renameEnum_undo h
 
+-- Two renames in a row are one rename.
+#guard (do let g ← renameEnum file "Light" "Lamp"; renameEnum g "Lamp" "Bulb") =
+  renameEnum file "Light" "Bulb"
+
+example (f g h : File) (a b c : Name) (hg : renameEnum f a b = .ok g)
+    (hh : renameEnum g b c = .ok h) : renameEnum f a c = .ok h :=
+  renameEnum_comp hg hh
+
+-- Renaming to its own name gives the same file.
+example (f : File) (n : Name) (hv : f.Valid) (hn : n ∈ f.names) : renameEnum f n n = .ok f :=
+  renameEnum_self hv hn
+
 end DxnTest.Rename

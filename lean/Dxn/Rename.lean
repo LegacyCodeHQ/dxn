@@ -11,7 +11,8 @@ is allowed and changes nothing.
 
 A rename that is not refused keeps the file valid, and maps its values one to
 one onto the new file's values: each value keeps its name and takes the new
-enumeration name if it had the old one. Renaming back undoes it.
+enumeration name if it had the old one. Renaming back undoes it, renaming to
+the same name changes nothing, and two renames in a row are one rename.
 -/
 
 namespace Dxn
@@ -179,5 +180,60 @@ theorem renameEnum_undo {f g : File} {old new : Name} (h : renameEnum f old new 
         · contradiction
   unfold renameEnum
   simp only [hok, ↓reduceIte, hback]
+
+/-- Renaming to its own name gives the same file. -/
+theorem renameEnum_self {f : File} {n : Name} (hv : f.Valid) (hn : n ∈ f.names) :
+    renameEnum f n n = .ok f := by
+  have hok : renameErrors f n n = [] := by
+    rw [renameErrors_eq_nil_iff]
+    obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hn
+    exact ⟨hv, (hv.enums d hd).name, hn, .inl rfl⟩
+  have hsame : f.decls.map (EnumDecl.rename n n) = f.decls := by
+    refine (List.map_congr_left fun d _ => ?_).trans (List.map_id' _)
+    cases d
+    simp only [EnumDecl.rename, renameName]
+    split <;> simp_all
+  unfold renameEnum
+  simp only [hok, ↓reduceIte, hsame]
+
+/-- Two renames in a row are one rename: `a` to `b`, then `b` to `c`, is `a` to `c`. -/
+theorem renameEnum_comp {f g h : File} {a b c : Name} (hg : renameEnum f a b = .ok g)
+    (hh : renameEnum g b c = .ok h) : renameEnum f a c = .ok h := by
+  obtain ⟨heg, rfl⟩ := renameEnum_ok hg
+  obtain ⟨heh, rfl⟩ := renameEnum_ok hh
+  obtain ⟨hv, _, ha, hb⟩ := (renameErrors_eq_nil_iff f a b).mp heg
+  obtain ⟨_, hc, _, hcg⟩ := (renameErrors_eq_nil_iff _ b c).mp heh
+  rw [names_rename] at hcg
+  -- In the file, a name other than `a` is never `b`, and never `c` unless `c` is `a`.
+  have hnb : ∀ n ∈ f.names, n ≠ a → n ≠ b := by
+    intro n hn hna hnb
+    rcases hb with hb | hb
+    · exact hna (hnb.trans hb)
+    · exact hb (hnb ▸ hn)
+  have hca : c = a ∨ c ∉ f.names := by
+    by_cases hcb : c = b
+    · subst hcb
+      exact hb
+    · rcases hcg with hcg | hcg
+      · exact absurd hcg hcb
+      · by_cases hcf : c ∈ f.names
+        · by_cases hcea : c = a
+          · exact .inl hcea
+          · exact absurd (List.mem_map.mpr ⟨c, hcf, by simp [renameName, hcea]⟩) hcg
+        · exact .inr hcf
+  have hok : renameErrors f a c = [] := (renameErrors_eq_nil_iff f a c).mpr ⟨hv, hc, ha, hca⟩
+  have hdecls : (f.decls.map (EnumDecl.rename a b)).map (EnumDecl.rename b c) =
+      f.decls.map (EnumDecl.rename a c) := by
+    rw [List.map_map]
+    refine List.map_congr_left fun d hd => ?_
+    have hdn : d.name ∈ f.names := List.mem_map_of_mem hd
+    cases d with
+    | mk name values =>
+      simp only [Function.comp_def, EnumDecl.rename, renameName]
+      by_cases hna : name = a
+      · simp [hna]
+      · simp [hna, hnb name hdn hna]
+  unfold renameEnum
+  simp only [hok, ↓reduceIte, hdecls]
 
 end Dxn
