@@ -9,6 +9,9 @@ def light : EnumDecl := ⟨"Light", ["off", "on"]⟩
 -- Distinct names are accepted: no problems.
 #guard check light = []
 
+-- A single value is allowed.
+#guard check ⟨"Theme", ["dark"]⟩ = []
+
 -- No names: no empty enumeration.
 #guard check ⟨"Light", []⟩ = [.empty]
 
