@@ -7,6 +7,13 @@ export {
   Enum,
   type EnumProblem,
 } from "@next/check/enumeration.js";
+export {
+  type AcceptedFile,
+  acceptFile,
+  CheckedFile,
+  checkFile,
+  type FileProblem,
+} from "@next/check/file.js";
 export { isEnumName, isValueName } from "@next/check/names.js";
 export type { EnumDeclaration, Name, Span, Value } from "@next/model/enumeration.js";
 export { type ParsedFile, parse, type SyntaxProblem } from "@next/syntax/parse.js";

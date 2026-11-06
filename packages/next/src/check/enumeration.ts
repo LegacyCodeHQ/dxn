@@ -45,7 +45,7 @@ export function checkEnum(declaration: EnumDeclaration): EnumProblem[] {
 }
 
 /** A copy of a declaration that nothing can change, so what was checked stays as it was. */
-function frozen(declaration: EnumDeclaration): EnumDeclaration {
+export function frozen(declaration: EnumDeclaration): EnumDeclaration {
   const span = ({ start, end }: Span): Span => Object.freeze({ start, end });
   const name = ({ text, span: at }: Name): Name => Object.freeze({ text, span: span(at) });
   return Object.freeze({

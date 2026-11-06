@@ -1,0 +1,43 @@
+[
+  { "title": "an empty file", "declarations": [] },
+  {
+    "title": "two enumerations with the same values",
+    "declarations": [
+      { "name": "Light", "values": ["off", "on"] },
+      { "name": "Power", "values": ["off", "on"] }
+    ]
+  },
+  {
+    "title": "an enumeration name written twice",
+    "declarations": [
+      { "name": "Light", "values": ["off", "on"] },
+      { "name": "Light", "values": ["dim"] }
+    ]
+  },
+  {
+    "title": "an enumeration name written three times",
+    "declarations": [
+      { "name": "Light", "values": ["off"] },
+      { "name": "Power", "values": ["on"] },
+      { "name": "Light", "values": ["on"] },
+      { "name": "Light", "values": ["dim"] }
+    ]
+  },
+  {
+    "title": "each enumeration's problems in written order, then names written twice",
+    "declarations": [
+      { "name": "light", "values": [] },
+      { "name": "Power", "values": ["on", "on"] },
+      { "name": "light", "values": ["dim"] }
+    ]
+  },
+  {
+    "title": "two names written twice, in the order they first appear",
+    "declarations": [
+      { "name": "Power", "values": ["on"] },
+      { "name": "Light", "values": ["on"] },
+      { "name": "Light", "values": ["off"] },
+      { "name": "Power", "values": ["off"] }
+    ]
+  }
+]
