@@ -12,6 +12,11 @@ function list(key: string): string[] {
   return [...(line?.[1] ?? "").matchAll(/"([^"]*)"/g)].map(([, each]) => each as string);
 }
 
+// The text of a setting that is a string, such as `autoclose_before`.
+function text(key: string): string | undefined {
+  return config.match(new RegExp(`^${key} = "(.*)"$`, "m"))?.[1];
+}
+
 describe("the configuration", () => {
   it("selects a name with hyphens as one word", () => {
     const snapshot: string[] = [];
@@ -20,6 +25,17 @@ describe("the configuration", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "word characters: -",
+      ]
+    `);
+  });
+
+  it("closes a bracket typed before punctuation", () => {
+    const snapshot: string[] = [];
+    // `{ a = (` closes the parenthesis, as it would before a space or the end of a line.
+    snapshot.push(`autoclose before: ${text("autoclose_before")}`);
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        "autoclose before: ;:.,=}])",
       ]
     `);
   });

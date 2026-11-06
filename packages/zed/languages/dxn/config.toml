@@ -3,6 +3,7 @@ grammar = "dxn"
 path_suffixes = ["dxn"]
 line_comments = ["# "]
 word_characters = ["-"]
+autoclose_before = ";:.,=}])"
 tab_size = 2
 hard_tabs = false
 
