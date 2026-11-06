@@ -82,8 +82,9 @@ declaration has. Messages and positions belong to the implementation, and its
 own tests cover them.
 
 This tests agreement on those cases; it does not prove the implementation.
-Add a case to `cases.json` for each new rule. `make agreement` needs Lean, so
-it is not yet part of `make check`.
+Add a case to `cases.json` for each new rule. `make lean` and `make agreement`
+are part of `make check`, so the pre-push hook and CI run both, and both need
+Lean installed.
 
 ## Adding to it
 

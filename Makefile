@@ -96,15 +96,13 @@ grammar:
 	  npx tree-sitter test
 
 # The Lean model under lean/: it builds, and every claim in its tests holds.
-# Not yet part of check.
 LAKE ?= lake
 
 lean:
 	cd lean && $(LAKE) build && $(LAKE) test
 
 # The new implementation in packages/next and the Lean specification say the
-# same about shared and generated enumeration declarations. Needs Lean; not yet
-# part of check.
+# same about shared and generated enumeration declarations.
 agreement:
 	cd lean && $(LAKE) build dxn-spec
 	LAKE="$(LAKE)" npx vitest run --root packages/next --config vitest.agreement.config.ts
@@ -145,9 +143,9 @@ smoke: build
 	node scripts/smoke/run.mjs
 	node dist/main.js --version
 
-check: lint-check references boundaries cycles vocabulary brand security coverage grammar zed smoke
+check: lint-check references boundaries cycles vocabulary brand security coverage grammar zed lean agreement smoke
 
-check-fast: lint-check references boundaries cycles vocabulary brand test grammar zed smoke
+check-fast: lint-check references boundaries cycles vocabulary brand test grammar zed lean agreement smoke
 
 setup-hooks:
 	git config core.hooksPath .githooks
