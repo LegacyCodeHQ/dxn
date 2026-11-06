@@ -10,6 +10,7 @@ be distinct, and nothing but the named elements is in the set.
 
 namespace Dxn
 
+-- #region finite
 /-- A finite set of values: a list holding every value exactly once. -/
 class Finite (α : Type) where
   elems : List α
@@ -21,5 +22,6 @@ class Finite (α : Type) where
 /-- The number of elements of a finite set, its cardinality. -/
 def card (α : Type) [Finite α] : Nat :=
   (Finite.elems : List α).length
+-- #endregion finite
 
 end Dxn

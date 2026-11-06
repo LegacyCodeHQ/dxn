@@ -4,6 +4,7 @@ namespace DxnTest.FiniteSet
 
 open Dxn
 
+-- #region light
 /-- An enumeration with two names. -/
 inductive Light where
   | off
@@ -24,5 +25,6 @@ example : ∀ a : Light, a = .off ∨ a = .on := by
 
 -- One element per name.
 example : card Light = 2 := rfl
+-- #endregion light
 
 end DxnTest.FiniteSet

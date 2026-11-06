@@ -78,11 +78,11 @@ A finite set is a list holding every value exactly once: `complete` says
 nothing else is in the set, and `nodup` says every element appears once. Its
 cardinality is the length of that list.
 
-<<< @/../lean/Dxn/FiniteSet.lean{lean}
+<<< lean:lean/Dxn/FiniteSet.lean#finite
 
 Lean checks both conditions, and the count, for `Light`:
 
-<<< @/../lean/DxnTest/FiniteSet.lean{lean}
+<<< lean:lean/DxnTest/FiniteSet.lean#light
 
 ## Notation
 
