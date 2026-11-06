@@ -3,25 +3,25 @@
 
 /** Where text is in a source: from offset `start` up to, not including, `end`. */
 export interface Span {
-  start: number;
-  end: number;
+  readonly start: number;
+  readonly end: number;
 }
 
 /** A name as written, and where. */
 export interface Name {
-  text: string;
-  span: Span;
+  readonly text: string;
+  readonly span: Span;
 }
 
 /** An enumeration as written: its name and its value names, in written order. */
 export interface EnumDeclaration {
-  name: Name;
-  values: Name[];
-  span: Span;
+  readonly name: Name;
+  readonly values: readonly Name[];
+  readonly span: Span;
 }
 
 /** A value of an enumeration, tagged with the enumeration's name, as in a disjoint union. */
 export interface Value {
-  enum: string;
-  name: string;
+  readonly enum: string;
+  readonly name: string;
 }

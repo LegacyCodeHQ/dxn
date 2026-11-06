@@ -1,11 +1,17 @@
 import { acceptEnum, checkEnum, Enum } from "@next/check/enumeration.js";
-import type { EnumDeclaration } from "@next/model/enumeration.js";
 import { describe, expect, it } from "vitest";
 
 // The checker of lean/Dxn/Enumeration.lean, with the cases of
 // lean/DxnTest/Enumeration.lean. Names sit one after another, from offset 0,
-// so each span says which occurrence a problem points at.
-function declaration(name: string, values: string[]): EnumDeclaration {
+// so each span says which occurrence a problem points at. The declaration is
+// built as plain objects the test can change, as any caller's could be.
+interface Written {
+  name: { text: string; span: { start: number; end: number } };
+  values: { text: string; span: { start: number; end: number } }[];
+  span: { start: number; end: number };
+}
+
+function declaration(name: string, values: string[]): Written {
   let offset = 0;
   const at = (text: string) => {
     const span = { start: offset, end: offset + text.length };
@@ -203,5 +209,91 @@ describe("checking an enumeration", () => {
     // @ts-expect-error A look-alike object is not an Enum.
     const alike: Enum = { declaration: unchecked, values: [] };
     expect([typeof made, typeof alike]).toEqual(["function", "object"]);
+  });
+
+  it("keeps an accepted enumeration valid when the declaration it came from changes", () => {
+    const original = declaration("Light", ["off"]);
+    const light = acceptEnum(original).enum;
+    original.name.text = "light";
+    original.name.span.start = 99;
+    original.values[0] = { text: "Off", span: { start: 0, end: 0 } };
+    original.values.length = 0;
+    const snapshot: unknown[] = [];
+    snapshot.push(light?.values);
+    snapshot.push(light && checkEnum(light.declaration));
+    snapshot.push(light?.declaration.name);
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "enum": "Light",
+            "name": "off",
+          },
+        ],
+        [],
+        {
+          "span": {
+            "end": 5,
+            "start": 0,
+          },
+          "text": "Light",
+        },
+      ]
+    `);
+  });
+
+  it("does not let its own declaration be changed", () => {
+    const light = acceptEnum(declaration("Light", ["off"])).enum;
+    if (!light) throw new Error("Light { off } is valid");
+    // Each change is also a type error; the casts reach past the types to try them at run time.
+    const name = light.declaration.name as { text: string };
+    const values = light.declaration.values as unknown as { text: string }[];
+    const span = light.declaration.values[0]?.span as { start: number };
+    const attempts = {
+      rename: () => {
+        name.text = "light";
+      },
+      empty: () => {
+        values.length = 0;
+      },
+      add: () => {
+        values.push({ text: "Off" });
+      },
+      replace: () => {
+        values[0] = { text: "Off" };
+      },
+      move: () => {
+        span.start = 99;
+      },
+    };
+    const snapshot: unknown[] = [];
+    for (const [attempt, change] of Object.entries(attempts)) {
+      snapshot.push(
+        `${attempt}: ${(() => {
+          try {
+            change();
+            return "changed";
+          } catch (error) {
+            return error instanceof TypeError ? "refused" : String(error);
+          }
+        })()}`,
+      );
+    }
+    snapshot.push(light.values);
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        "rename: refused",
+        "empty: refused",
+        "add: refused",
+        "replace: refused",
+        "move: refused",
+        [
+          {
+            "enum": "Light",
+            "name": "off",
+          },
+        ],
+      ]
+    `);
   });
 });
