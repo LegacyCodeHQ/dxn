@@ -16,6 +16,8 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+.claude/launch.json
+.claude/worktrees/
 
 # Rust build output
 target/
