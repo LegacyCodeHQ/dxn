@@ -132,96 +132,73 @@ clarity show packages/language/src packages/cli/src packages/language-server/src
 dot -Tpng docs/architecture/dependencies.dot -o docs/architecture/dependencies.png
 ```
 
-## Grammar-change propagation model
+## Two separate language workstreams
 
-[dxn-codebase.dxn](dxn-codebase.dxn) models the review responsibilities triggered
-by changing `grammar.js`, `src/scanner.c`, or both. The tree stays at the main
-component level: parser agreement, semantic analysis, formatting, diagnostics,
-CLI, language server, editor clients and direct Zed/VS Code syntax support.
-It does not model all package imports, execution order, implementation completion,
-or verification results.
-Implementation and verification evidence belong in separate records.
+The models are independent and both use the current DXN syntax. Choose the
+model for the workstream being changed; a change in one does not require
+implementing the same feature in the other. They are responsibility trees,
+not execution schedules, and do not enforce mutual exclusion between tasks.
 
-`DiagnosticImpact` is shared by the parser and semantic-analyzer branches. It
-covers severity, code, message and source location, then propagates to the CLI
-and language server. Direct consumer edges from the analyzer also cover its
-non-diagnostic results.
+| Workstream           | Model                                                  | Root                  | Implementation                                  |
+| -------------------- | ------------------------------------------------------ | --------------------- | ----------------------------------------------- |
+| Current language     | [dxn-codebase.dxn](dxn-codebase.dxn)                   | `ModifyDxnGrammar`    | `packages/language` and its connected consumers |
+| Lean-backed redesign | [dxn-codebase-redesign.dxn](dxn-codebase-redesign.dxn) | `RedesignDxnLanguage` | `lean/`, `packages/next` and redesigned tools   |
 
-Each `has` edge means “review this consumer because of this upstream change.”
-A review may conclude that its existing implementation already handles the change.
-`VSCodeExtensionImpact` makes that choice explicit with `required-change:
-RequiredChange`, whose values are `modify` and `keep`. Both are permitted; the
-model does not infer the choice from whether the grammar or scanner changed.
-The state describes required work, while implementation and verification results
-remain separate records.
-A responsibility appearing in several branches identifies several causes; it
-does not instruct us to perform the same implementation change several times.
+The current-language model retains the existing Tree-sitter-first grammar
+change flow. It covers parser agreement, semantic analysis, formatting,
+diagnostics, CLI, language server and both editors. It makes no Lean claims.
 
-Verification responsibilities are explicit child nodes for the language server,
-each editor's LSP client, and each editor's direct syntax integration. Their
-model documentation distinguishes automated checks from developer-performed
-checks in the actual editor. VS Code's `keep` choice still requires verification.
-These nodes require work; they do not assert a passing result. Record outcomes,
-who performed the checks and supporting evidence separately. Repeated placements
-identify upstream causes; one recorded verification may cover several causes
-when it exercises the affected behavior for each.
+Every redesign change starts at `ModifyLeanSpecification`: review the Lean
+semantics and the syntax decisions in `lean/notes/` before implementation.
+Its children are proof verification, the syntax contract, semantic analysis and
+first-class refactoring. A syntax-only change may keep semantic definitions.
+The syntax contract reaches the redesigned core parser and Tree-sitter.
+`CheckSpecificationAgreement` compares the new implementation with executable
+Lean; `CheckParserAgreement` separately checks syntax agreement.
 
-`CodingAgent` records `AutomatedVerification`: the shell command, result
-(`unverified`, `passed` or `failed`), source revision, saved output path and run
-timestamp. DXN supplies the actor and context in stored evidence, identifying
-the verification responsibility and exact combination it concerns. The `output`
-field is a repository-relative log path; the log must be retained as evidence.
-Missing evidence leaves verification unverified, and a record with an `unverified`
-result is not a passing check. This interpretation does not add automatic status
-updates or a rule making an automated pass satisfy a manual editor check.
-The human actor and its evidence record will be modeled separately.
+All tool nodes in the redesign model mean tools for the redesigned language:
+its formatter, CLI, language server and editor extensions. These are target
+responsibilities, not assertions that those integrations already exist.
+No edge connects to `packages/language`, and no migration or cutover task is
+included. Prototype tests do not verify redesigned tool behavior merely because
+the tools have the same names. Verification must exercise the redesigned runtime
+and syntax. Deployment and migration between implementations can be planned
+separately when needed.
 
-The following source details support those responsibilities. They are kept here
-rather than expanded into individual nodes in the propagation tree:
+The redesign also covers evaluation, its own stored records and
+refactoring. Refactoring is shared language behavior serving CLI and editors.
+Lean rename properties include validity, value mapping, inverse, identity and
+composition; those laws do not automatically apply to every refactoring.
+Source-edit precision needs implementation tests. A source-rename proof does
+not establish that records were transformed correctly. Importing prototype
+records is outside this model.
 
-| Responsibility                    | Repository boundary                                                                                     |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Syntax contract and examples      | `docs/language/guide.md`, `syntax-contract.md`, shared agreement fixtures                               |
-| Generated parser and scanner      | `packages/tree-sitter-dxn/grammar.js`, `src/`, grammar/scanner change dimension                         |
-| Grammar highlighting              | `packages/tree-sitter-dxn/queries/highlights.scm`                                                       |
-| Native binding and distribution   | Grammar `binding.gyp`, `bindings/node/`, npm manifests/lock, build and CI inputs                        |
-| AST adapter and migration entry   | Language `syntax/tree.ts`, `syntax/parse-tree-sitter.ts`                                                |
-| Shared syntax reader and recovery | Language `syntax/read.ts`, `scan.ts`, partial declarations and source positions                         |
-| AST and public language contract  | Language `core/ast.ts`, `src/index.ts`                                                                  |
-| Scoping and semantic rules        | Language `analysis/`, `model/`, `evaluation/semantic-validator.ts`, `check-types.ts`, `check-values.ts` |
-| Evaluation and composition        | Language `evaluation/`, `model/profiles.ts`, `model/tree.ts`                                            |
-| Stored evidence                   | Language `evidence/`, including validation, compatibility, counts and review output                     |
-| Formatting                        | Language `syntax/format.ts`, including its own token splitting and syntax-reader gate                   |
-| Diagnostics                       | Shared severity, codes, wording and locations; CLI text/JSON and LSP conversions                        |
-| Navigation and source edits       | Language `editor/`, source/stored-name renaming and re-analysis                                         |
-| CLI and language server           | `packages/cli/src/`, `packages/language-server/src/`                                                    |
-| VS Code consumers                 | LSP client, bundled command execution, TextMate grammar and language configuration                      |
-| Zed consumers                     | LSP client, grammar pin, five query families, task commands and language configuration                  |
+`TreeSitterChange` describes the required edit rather than the origin of a
+redesign decision. The redesign model permits `none` for semantic-only changes.
+Both models retain the Zed grammar-pin and VS Code direct-syntax reviews,
+separate from language-server behavior.
 
-The Tree-sitter migration is an implementation detail of the parser work.
-`parseTreeSitter()` currently supports only focused
-declarations and rejects unsupported/recovered trees. The CLI and language server
-still use `parse()`, and formatting independently calls `read()`. Drawing an
-active migration-to-CLI/LSP path now would misrepresent the code. Review that
-connection when the migration replaces those readers, including native deployment
-in VS Code bundles.
+Each `has` edge means “review this responsibility because of this upstream
+change”, not a mandatory edit. Repeated consumers express distinct causes, not
+repeated work. Splitting the workstreams makes their scope explicit; expansion
+of shared consumers still accounts for much of each tree's size.
 
-For example, a documentation syntax change can affect attachment in the scanner,
-the generated node shape, AST lowering, semantic tag rules, formatting indentation,
-hover text, diagnostic locations, both highlighting systems and editor comment
-configuration. These details guide the component reviews; they do not imply
-that pending documentation semantics or hover integration have been implemented.
+Implementation status and verification evidence remain separate records.
+`CodingAgent` records `AutomatedVerification`: command, result (`unverified`,
+`passed` or `failed`), revision, repository-relative saved output and timestamp.
+Missing evidence means unverified. Editor verification nodes require automated
+checks and developer checks in the actual editor, including unsaved and
+incomplete source. Automated success does not establish human verification;
+the human actor and record remain to be modeled. Review a `keep` outcome too.
 
-Inspect the model with the real CLI:
+Print either independent tree with the current CLI:
 
 ```sh
 dxn check docs/architecture/dxn-codebase.dxn
 dxn tree docs/architecture/dxn-codebase.dxn
-dxn states docs/architecture/dxn-codebase.dxn ModifyTreeSitterPackage
-dxn states docs/architecture/dxn-codebase.dxn ModifyZedExtension
-dxn states docs/architecture/dxn-codebase.dxn VSCodeExtensionImpact
+
+dxn check docs/architecture/dxn-codebase-redesign.dxn
+dxn tree docs/architecture/dxn-codebase-redesign.dxn
 ```
 
-The model must have one propagation root, `ModifyDxnGrammar`. All three change
-sources require reviewing the modeled consumers and updating the Zed pin;
-only grammar changes (including `both`) regenerate the parser sources.
+Migrate the models themselves only when the redesigned language supports them.
