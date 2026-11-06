@@ -24,6 +24,7 @@ implementation is fixed, or the specification is changed on purpose first.
 | Finite sets  | [`Dxn/FiniteSet.lean`](Dxn/FiniteSet.lean)     | [`DxnTest/FiniteSet.lean`](DxnTest/FiniteSet.lean)     |                                                  |
 | Names        | [`Dxn/Name.lean`](Dxn/Name.lean)               | [`DxnTest/Name.lean`](DxnTest/Name.lean)               | [`notes/enumerations.md`](notes/enumerations.md) |
 | Enumerations | [`Dxn/Enumeration.lean`](Dxn/Enumeration.lean) | [`DxnTest/Enumeration.lean`](DxnTest/Enumeration.lean) | [`notes/enumerations.md`](notes/enumerations.md) |
+| Files        | [`Dxn/File.lean`](Dxn/File.lean)               | [`DxnTest/File.lean`](DxnTest/File.lean)               | [`notes/files.md`](notes/files.md)               |
 
 ## Using it
 
