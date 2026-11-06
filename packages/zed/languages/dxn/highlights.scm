@@ -123,6 +123,15 @@
 ((alike_declaration subject: (identifier) @property)
   (#match? @property "^[a-z]"))
 
+; What an expectation sets or expects is a dimension (capitalized) or a state.
+; The profile key is its own word, and keeps its colour.
+
+((pair key: (identifier) @type)
+  (#match? @type "^[A-Z]"))
+((pair key: (identifier) @property)
+  (#match? @property "^[a-z]")
+  (#not-eq? @property "profile"))
+
 ; Actions and events
 
 (action_declaration name: (identifier) @function)

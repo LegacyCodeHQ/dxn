@@ -1,0 +1,18 @@
+dimension Pointer = mouse | touch
+enum Hover = rest | shown
+type Menu {
+  state hover: Hover
+}
+expect "Touch never shows hover" {
+  in Menu
+  when Pointer = touch
+#      ^ type
+  then hover = rest
+#      ^ property
+}
+expect "A mouse shows hover" {
+  in Menu
+  when Pointer = mouse
+  some hover = shown
+#      ^ property
+}
