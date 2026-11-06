@@ -11,6 +11,7 @@ import type {
 import { message, words } from "@language/core/message.js";
 import { isValue } from "@language/core/naming.js";
 import { covers, links, type Span } from "@language/editor/definition.js";
+import { documentationReferences } from "@language/editor/documentation-references.js";
 import { placement } from "@language/evaluation/evaluate.js";
 import { treePaths } from "@language/evaluation/status.js";
 import {
@@ -303,7 +304,7 @@ function target(
     column: at.column,
     length: at.length,
   });
-  const all = links(source, file);
+  const all = [...links(source, file), ...documentationReferences(source, file)];
   const link = all.find(({ from }) => covers(from, line, column));
   const declared = link?.to ?? [...kinds.keys()].find((at) => covers(span(at), line, column));
   const kind = declared === undefined ? undefined : kinds.get(declared);
@@ -375,7 +376,10 @@ function apply(source: string, edits: Edit[]): string {
   const sorted = [...edits].sort((a, b) => b.line - a.line || b.column - a.column);
   for (const { line, column, length, text } of sorted) {
     const content = lines[line - 1] ?? "";
-    lines[line - 1] = `${content.slice(0, column - 1)}${text}${content.slice(column - 1 + length)}`;
+    const bom = line === 1 && content.startsWith("\uFEFF") ? "\uFEFF" : "";
+    const characters = [...content.slice(bom.length)];
+    lines[line - 1] =
+      `${bom}${characters.slice(0, column - 1).join("")}${text}${characters.slice(column - 1 + length).join("")}`;
   }
   return lines.map((content, index) => `${content}${ends[index] ?? ""}`).join("");
 }

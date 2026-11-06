@@ -293,3 +293,20 @@ type prose with evidence details, outline hierarchy, indentation and brackets.
 records the tested scope and limitations. VS Code and the remaining manual checks
 are still pending. A documentation-related rename refusal remains to investigate;
 it is not included in the passing checks.
+
+## Documentation-aware rename
+
+The rename refusal observed in Zed is reproduced by a regression test: code
+renaming left an attached `@value` target pointing to the old value. Rename now
+resolves explicit attached documentation targets by declaration position and
+includes them in the plan, with all duplicate tags retained from syntax. State
+renames similarly update matching `@state` targets. Prose, ordinary comments,
+detached blocks and members of unrelated enums/types remain unchanged.
+
+Tests cover starting from code or documentation, prepare-rename, duplicate tags,
+nested declarations, BOM/line endings, CLI dry runs and stored evidence updates,
+and CLI/LSP parity. The previous whole-source rename validation remains in place;
+the developer confirmed the Zed fix on 2026-11-06: enum-value rename updated
+the attached target, renaming from that target updated the enum, and state
+rename updated its matching tag while preserving the other state and prose.
+VS Code verification and manual duplicate/stored-evidence cases remain pending.

@@ -77,6 +77,19 @@ Hover `off` again: its meaning must be unchanged. Format a second time: no edit.
 Repeat once with a blank line between the block and `enum Mode`; formatting must
 keep that blank line and leave the block detached.
 
+## Documentation-aware rename recheck
+
+Restore the original valid source first. On line 12, rename `focused` in the
+nested enum using the editor's rename action, choosing `active`. The attached
+`@value focused` on line 11 must change to `@value active` as part of the same
+rename, with no unknown-target error. Its description stays `Keyboard focus.`.
+Undo the rename, then repeat starting on the documentation target on line 11.
+
+Rename `focus` in the shared state declaration on line 21 to `primary`. Only its
+matching `@state focus` target changes to `@state primary`; the `secondary` target
+and prose stay unchanged. Undo the rename after checking. The developer confirmed these three cases in
+Zed on 2026-11-06. VS Code verification remains pending.
+
 ## Direct extension checks
 
 These observations cover `VerifyVSCodeExtension` and `VerifyZedExtension`,
@@ -142,7 +155,10 @@ Passed within the exercised scope:
 
 Still pending: repeat-format idempotence, formatting refusal on invalid input,
 comment toggling, exact editor/version metadata and the VS Code walkthrough.
-A rename attempt also produced a refusal involving an unchanged documentation
-target. Investigate and verify documentation-aware rename separately; it is not
-covered by the passes above. These observations are partial verification, not
-blanket sign-off for every client or direct-extension behavior.
+The initial rename refusal was fixed and rechecked on 2026-11-06: renaming the
+enum value updated its documentation target, renaming from that target updated
+the enum, and state rename updated its matching tag without changing the other
+state or prose. These were confirmed through a screenshot and developer reports
+in the chat. Manual duplicate-tag and stored-evidence rename checks remain
+pending; their current coverage is automated. These observations are partial
+verification, not blanket sign-off for every client or direct-extension behavior.

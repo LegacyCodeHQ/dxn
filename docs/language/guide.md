@@ -1913,6 +1913,12 @@ Descriptions may be empty; missing documentation is valid. See the
 [syntax contract](syntax-contract.md) for the complete attachment rules and
 remaining editor verification work.
 
+Renaming an enum value updates its attached `@value` targets, including duplicate
+tags. Renaming a state likewise updates its attached `@state` targets. A rename
+can start from the target name in the documentation comment. Prose and ordinary
+or detached comments are preserved, and documentation references do not count as
+code usage for unused-enum warnings.
+
 `dxn fmt` writes attached documentation with one space after `##`, one space
 between a tag and its target, and three spaces after `##` for tag continuation
 text. It preserves prose content and blank lines that break attachment. Ordinary

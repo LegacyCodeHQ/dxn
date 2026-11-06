@@ -64,6 +64,25 @@ const mixedRecords: Scenario = {
 
 const scenarios: Scenario[] = [
   {
+    title: "rename a documented enum value and duplicate targets from code",
+    dxn: "## @value focused First.\n## @value focused Duplicate.\nenum Focus = blurred | focused\ntype Button { state focus: Focus }\nrecord Evidence {}\nactor Designer records Evidence\n",
+    stored: {
+      "evidence/a.json":
+        '[{ "context": { "type": "Button", "dimensions": {}, "states": { "focus": "focused" } }, "actor": "Designer" }]',
+    },
+    rename: { line: 3, column: 24, to: "active" },
+  },
+  {
+    title: "rename an enum value from its documentation target",
+    dxn: "## @value focused First.\nenum Focus = blurred | focused\ntype Button { state focus: Focus }\n",
+    rename: { line: 1, column: 11, to: "active" },
+  },
+  {
+    title: "rename a documented state from its target",
+    dxn: "enum Focus = blurred | focused\ntype Button {\n  ## @state focus Current.\n  state focus: Focus\n}\n",
+    rename: { line: 3, column: 13, to: "primary" },
+  },
+  {
     title: "a detached documentation warning",
     dxn: model.replace("enum Hover", "## Detached interaction documentation.\n\nenum Hover"),
   },
