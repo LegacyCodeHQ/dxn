@@ -67,8 +67,10 @@ The proofs are about the specification's own definitions; the implementation
 could change while they all still hold. The agreement checks connect the two:
 the same declarations go through both, and they must say the same.
 
-`lake exe dxn-spec <file>` reads declarations as JSON and writes, for each,
-the problems `check` reports and, when it is accepted, its values:
+`lake exe dxn-spec <file>` reads cases as JSON, each a file's declarations
+and optionally an enumeration to rename in it, and writes, for each, the
+problems `File.check` reports, the values of an accepted file, and the
+reasons a rename is refused or the declarations it gives:
 
 ```bash
 make agreement
@@ -76,12 +78,13 @@ make agreement
 
 builds it and runs
 [`packages/next/test/agreement`](../packages/next/test/agreement): the shared
-cases in `cases.json`, each again with its values reversed, and 500 generated
-ones. Each goes through the implementation's checker directly, and again as
-text through its parser. They must agree on what is accepted, which problems
-are reported for which names in which order, and which values an accepted
-declaration has. Messages and positions belong to the implementation, and its
-own tests cover them.
+cases in `cases.json` (enumerations), `files.json` and `renames.json`, each
+again with its values reversed, and generated enumerations, files and
+renames. Each goes through the implementation directly, and again as text
+through its parser. They must agree on what is accepted, which problems are
+reported for which names in which order, which values an accepted file has,
+and what each rename does or why it is refused. Messages and positions belong
+to the implementation, and its own tests cover them.
 
 This tests agreement on those cases; it does not prove the implementation.
 Add a case to `cases.json` for each new rule. `make lean` and `make agreement`

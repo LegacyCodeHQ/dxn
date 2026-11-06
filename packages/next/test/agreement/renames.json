@@ -1,0 +1,51 @@
+[
+  {
+    "title": "rename an enumeration",
+    "declarations": [
+      { "name": "Light", "values": ["off", "on"] },
+      { "name": "Power", "values": ["off", "on"] }
+    ],
+    "rename": { "from": "Light", "to": "Lamp" }
+  },
+  {
+    "title": "rename an enumeration to its own name",
+    "declarations": [{ "name": "Light", "values": ["off", "on"] }],
+    "rename": { "from": "Light", "to": "Light" }
+  },
+  {
+    "title": "rename in a file with problems",
+    "declarations": [{ "name": "Light", "values": [] }],
+    "rename": { "from": "Light", "to": "Lamp" }
+  },
+  {
+    "title": "rename to a name that breaks the naming rules",
+    "declarations": [{ "name": "Light", "values": ["off", "on"] }],
+    "rename": { "from": "Light", "to": "lamp" }
+  },
+  {
+    "title": "rename an enumeration that is not there",
+    "declarations": [{ "name": "Light", "values": ["off", "on"] }],
+    "rename": { "from": "Bulb", "to": "Lamp" }
+  },
+  {
+    "title": "rename to another enumeration's name",
+    "declarations": [
+      { "name": "Light", "values": ["off", "on"] },
+      { "name": "Power", "values": ["off", "on"] }
+    ],
+    "rename": { "from": "Light", "to": "Power" }
+  },
+  {
+    "title": "every reason at once",
+    "declarations": [
+      { "name": "Light", "values": ["off", "on"] },
+      { "name": "Power", "values": ["off", "on"] }
+    ],
+    "rename": { "from": "Bulb", "to": "Power" }
+  },
+  {
+    "title": "rename in an empty file",
+    "declarations": [],
+    "rename": { "from": "Light", "to": "Lamp" }
+  }
+]
