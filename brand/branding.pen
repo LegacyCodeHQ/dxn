@@ -1,5 +1,5 @@
 {
-  "version": "2.21",
+  "version": "2.22",
   "children": [
     {
       "type": "frame",
@@ -11628,6 +11628,1156 @@
               "fontFamily": "$font-text",
               "fontSize": 14,
               "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "q4rHAB",
+      "x": -1800,
+      "y": 12010,
+      "name": "Social Post: Performance",
+      "fill": "$canvas",
+      "layout": "vertical",
+      "gap": 40,
+      "padding": 80,
+      "children": [
+        {
+          "type": "text",
+          "id": "is5SU",
+          "name": "Title",
+          "fill": "$slate",
+          "content": "SOCIAL / PERFORMANCE: LINKEDIN 1080 x 1350, X 1600 x 900",
+          "fontFamily": "$font-text",
+          "fontSize": 12,
+          "fontWeight": "600",
+          "letterSpacing": 1.5
+        },
+        {
+          "type": "frame",
+          "id": "OcRXm",
+          "name": "Images",
+          "gap": 80,
+          "children": [
+            {
+              "type": "frame",
+              "id": "yAQyM",
+              "name": "Perf LinkedIn 1080x1350",
+              "clip": true,
+              "width": 1080,
+              "height": 1350,
+              "fill": "$paper",
+              "layout": "vertical",
+              "padding": [
+                64,
+                72
+              ],
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Gf7kA",
+                  "name": "Top",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "l2dBez",
+                      "name": "Eyebrow Row",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "H4xCC9",
+                          "name": "PERFORMANCE",
+                          "fill": "$slate",
+                          "content": "PERFORMANCE",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Pp7hj",
+                          "name": "Legend",
+                          "gap": 28,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "R87TT",
+                              "name": "Legend BEFORE",
+                              "gap": 10,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "ewMwq",
+                                  "name": "Swatch",
+                                  "fill": "$mono-tone-light",
+                                  "width": 20,
+                                  "height": 20
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "K05xZ",
+                                  "name": "BEFORE",
+                                  "fill": "$slate",
+                                  "content": "BEFORE",
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "600",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "S0uI1",
+                              "name": "Legend AFTER",
+                              "gap": 10,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "Pkusi",
+                                  "name": "Swatch",
+                                  "fill": "$accent",
+                                  "width": 20,
+                                  "height": 20
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "K1XAQ",
+                                  "name": "AFTER",
+                                  "fill": "$slate",
+                                  "content": "AFTER",
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "600",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "yL7Hy",
+                      "name": "Headline",
+                      "layout": "vertical",
+                      "padding": [
+                        40,
+                        0,
+                        0,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "zWIpN",
+                          "name": "Line 1",
+                          "fill": "$ink",
+                          "content": "Make it right,",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        },
+                        {
+                          "type": "text",
+                          "id": "EVuGe",
+                          "name": "Line 2",
+                          "fill": "$accent",
+                          "content": "then make it",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        },
+                        {
+                          "type": "text",
+                          "id": "y0EAc",
+                          "name": "Line 3",
+                          "fill": "$accent",
+                          "content": "fast.",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "i1SF0z",
+                  "name": "Chart",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 64,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "RI1Uf",
+                      "name": "Metric RESOLVER CPU TIME",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "F19A93",
+                          "name": "RESOLVER CPU TIME",
+                          "fill": "$ink",
+                          "content": "RESOLVER CPU TIME",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "yUhRw",
+                          "name": "Bars Row",
+                          "width": "fill_container",
+                          "gap": 24,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "CKtZq",
+                              "name": "Bars",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 12,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "D3WPr1",
+                                  "name": "Bar 586 ms",
+                                  "gap": 16,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "rectangle",
+                                      "id": "dvnMT",
+                                      "name": "Bar",
+                                      "fill": "$mono-tone-light",
+                                      "width": 560,
+                                      "height": 40
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "TYwJC",
+                                      "name": "Value",
+                                      "fill": "$slate",
+                                      "content": "586 ms",
+                                      "fontFamily": "$font-mark",
+                                      "fontSize": "$fs-label",
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "W8McD",
+                                  "name": "Bar 68 ms",
+                                  "gap": 16,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "rectangle",
+                                      "id": "h4NpNN",
+                                      "name": "Bar",
+                                      "fill": "$accent",
+                                      "width": 65,
+                                      "height": 40
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "WuwNH",
+                                      "name": "Value",
+                                      "fill": "$ink",
+                                      "content": "68 ms",
+                                      "fontFamily": "$font-mark",
+                                      "fontSize": "$fs-label",
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "HqWZq",
+                              "name": "Delta",
+                              "fill": "$ink",
+                              "content": "−88%",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "800",
+                              "letterSpacing": -1.9
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "RAdaH",
+                      "name": "Metric RESOLVER ALLOCATIONS",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "a6JYg",
+                          "name": "RESOLVER ALLOCATIONS",
+                          "fill": "$ink",
+                          "content": "RESOLVER ALLOCATIONS",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ZiRvS",
+                          "name": "Bars Row",
+                          "width": "fill_container",
+                          "gap": 24,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "fYJZV",
+                              "name": "Bars",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 12,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "DALZl",
+                                  "name": "Bar 1,948 MiB",
+                                  "gap": 16,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "rectangle",
+                                      "id": "ziJIj",
+                                      "name": "Bar",
+                                      "fill": "$mono-tone-light",
+                                      "width": 560,
+                                      "height": 40
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "G2mksS",
+                                      "name": "Value",
+                                      "fill": "$slate",
+                                      "content": "1,948 MiB",
+                                      "fontFamily": "$font-mark",
+                                      "fontSize": "$fs-label",
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "SLIvE",
+                                  "name": "Bar 97 MiB",
+                                  "gap": 16,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "rectangle",
+                                      "id": "x7D8k",
+                                      "name": "Bar",
+                                      "fill": "$accent",
+                                      "width": 28,
+                                      "height": 40
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "H4ni9",
+                                      "name": "Value",
+                                      "fill": "$ink",
+                                      "content": "97 MiB",
+                                      "fontFamily": "$font-mark",
+                                      "fontSize": "$fs-label",
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "w2gHTt",
+                              "name": "Delta",
+                              "fill": "$ink",
+                              "content": "−95%",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "800",
+                              "letterSpacing": -1.9
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "yThfl",
+                      "name": "Metric TOTAL ALLOCATIONS",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iy3VC",
+                          "name": "TOTAL ALLOCATIONS",
+                          "fill": "$ink",
+                          "content": "TOTAL ALLOCATIONS",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jkBMs",
+                          "name": "Bars Row",
+                          "width": "fill_container",
+                          "gap": 24,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "QG1wU",
+                              "name": "Bars",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 12,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "s6Ljn",
+                                  "name": "Bar 6,093 MiB",
+                                  "gap": 16,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "rectangle",
+                                      "id": "MEDhw",
+                                      "name": "Bar",
+                                      "fill": "$mono-tone-light",
+                                      "width": 560,
+                                      "height": 40
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "ZZ4W2",
+                                      "name": "Value",
+                                      "fill": "$slate",
+                                      "content": "6,093 MiB",
+                                      "fontFamily": "$font-mark",
+                                      "fontSize": "$fs-label",
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "xV6si",
+                                  "name": "Bar 4,267 MiB",
+                                  "gap": 16,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "rectangle",
+                                      "id": "F1DzwF",
+                                      "name": "Bar",
+                                      "fill": "$accent",
+                                      "width": 392,
+                                      "height": 40
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "Xh22K",
+                                      "name": "Value",
+                                      "fill": "$ink",
+                                      "content": "4,267 MiB",
+                                      "fontFamily": "$font-mark",
+                                      "fontSize": "$fs-label",
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "PVnXH",
+                              "name": "Delta",
+                              "fill": "$ink",
+                              "content": "−30%",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "800",
+                              "letterSpacing": -1.9
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "rF1Fn",
+                  "name": "Footer",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "c0QLWd",
+                      "name": "Lockup",
+                      "gap": 7.632,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "a2CEW",
+                          "name": "Mark Wrap",
+                          "padding": [
+                            17.2152,
+                            0,
+                            0,
+                            0
+                          ],
+                          "children": [
+                            {
+                              "id": "z9aFs",
+                              "type": "ref",
+                              "ref": "a9lLg",
+                              "name": "Logomark",
+                              "width": 59.6592,
+                              "height": 59.6592
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Gt5s7",
+                          "name": "Wordmark",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "WWqNg",
+                              "name": "d",
+                              "fill": "$ink",
+                              "content": "d",
+                              "fontFamily": "$font-mark",
+                              "fontSize": 72,
+                              "fontWeight": "800",
+                              "letterSpacing": -4.3
+                            },
+                            {
+                              "type": "text",
+                              "id": "j9Uo1A",
+                              "name": "x",
+                              "fill": "$accent",
+                              "content": "x",
+                              "fontFamily": "$font-mark",
+                              "fontSize": 72,
+                              "fontWeight": "800",
+                              "letterSpacing": -4.3
+                            },
+                            {
+                              "type": "text",
+                              "id": "VUFY0",
+                              "name": "n",
+                              "fill": "$ink",
+                              "content": "n",
+                              "fontFamily": "$font-mark",
+                              "fontSize": 72,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "LE62f",
+              "name": "Perf X 1600x900",
+              "clip": true,
+              "width": 1600,
+              "height": 900,
+              "fill": "$paper",
+              "layout": "vertical",
+              "padding": [
+                64,
+                72
+              ],
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uXrva",
+                  "name": "Top",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 40,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "oYJA1",
+                      "name": "Eyebrow Row",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Gn2hx",
+                          "name": "PERFORMANCE",
+                          "fill": "$slate",
+                          "content": "PERFORMANCE",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "GzgJQ",
+                          "name": "Legend",
+                          "gap": 28,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "skLkX",
+                              "name": "Legend BEFORE",
+                              "gap": 10,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "YheqB",
+                                  "name": "Swatch",
+                                  "fill": "$mono-tone-light",
+                                  "width": 20,
+                                  "height": 20
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "LhPxO",
+                                  "name": "BEFORE",
+                                  "fill": "$slate",
+                                  "content": "BEFORE",
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "600",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "X0NxH9",
+                              "name": "Legend AFTER",
+                              "gap": 10,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "m3SnK",
+                                  "name": "Swatch",
+                                  "fill": "$accent",
+                                  "width": 20,
+                                  "height": 20
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "uFw3c",
+                                  "name": "AFTER",
+                                  "fill": "$slate",
+                                  "content": "AFTER",
+                                  "fontFamily": "$font-text",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "600",
+                                  "letterSpacing": 1.5
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "SGY0Z",
+                      "name": "Head Row",
+                      "width": "fill_container",
+                      "gap": 72,
+                      "alignItems": "end",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "aMovB",
+                          "name": "Headline",
+                          "layout": "vertical",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QVnhN",
+                              "name": "Line 1",
+                              "fill": "$ink",
+                              "content": "Make it right,",
+                              "lineHeight": 1.05,
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-display",
+                              "fontWeight": "800",
+                              "letterSpacing": -4.2
+                            },
+                            {
+                              "type": "text",
+                              "id": "LuUPg",
+                              "name": "Line 2",
+                              "fill": "$accent",
+                              "content": "then make it fast.",
+                              "lineHeight": 1.05,
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-display",
+                              "fontWeight": "800",
+                              "letterSpacing": -4.2
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "J6mRqE",
+                  "name": "Chart",
+                  "width": "fill_container",
+                  "gap": 56,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "nn7JH",
+                      "name": "Metric RESOLVER CPU TIME",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Qs8Wt",
+                          "name": "Delta",
+                          "fill": "$ink",
+                          "content": "−88%",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "800",
+                          "letterSpacing": -1.9
+                        },
+                        {
+                          "type": "text",
+                          "id": "T51G8",
+                          "name": "RESOLVER CPU TIME",
+                          "fill": "$ink",
+                          "content": "RESOLVER CPU TIME",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KgjtT",
+                          "name": "Bars",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 12,
+                          "padding": [
+                            6,
+                            0,
+                            0,
+                            0
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "WzkJY",
+                              "name": "Bar 586 ms",
+                              "gap": 16,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "KbimH",
+                                  "name": "Bar",
+                                  "fill": "$mono-tone-light",
+                                  "width": 270,
+                                  "height": 40
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "PoP3R",
+                                  "name": "Value",
+                                  "fill": "$slate",
+                                  "content": "586 ms",
+                                  "fontFamily": "$font-mark",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "j04DKG",
+                              "name": "Bar 68 ms",
+                              "gap": 16,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "WWXNJ",
+                                  "name": "Bar",
+                                  "fill": "$accent",
+                                  "width": 31,
+                                  "height": 40
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "a0bZT2",
+                                  "name": "Value",
+                                  "fill": "$ink",
+                                  "content": "68 ms",
+                                  "fontFamily": "$font-mark",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nBURD",
+                      "name": "Metric RESOLVER ALLOCATIONS",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "F7nhx",
+                          "name": "Delta",
+                          "fill": "$ink",
+                          "content": "−95%",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "800",
+                          "letterSpacing": -1.9
+                        },
+                        {
+                          "type": "text",
+                          "id": "XPp6U",
+                          "name": "RESOLVER ALLOCATIONS",
+                          "fill": "$ink",
+                          "content": "RESOLVER ALLOCATIONS",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "aiE4u",
+                          "name": "Bars",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 12,
+                          "padding": [
+                            6,
+                            0,
+                            0,
+                            0
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "K9epRe",
+                              "name": "Bar 1,948 MiB",
+                              "gap": 16,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "MdOol",
+                                  "name": "Bar",
+                                  "fill": "$mono-tone-light",
+                                  "width": 270,
+                                  "height": 40
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Bi7UE",
+                                  "name": "Value",
+                                  "fill": "$slate",
+                                  "content": "1,948 MiB",
+                                  "fontFamily": "$font-mark",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "jlpOi",
+                              "name": "Bar 97 MiB",
+                              "gap": 16,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "w2DwH",
+                                  "name": "Bar",
+                                  "fill": "$accent",
+                                  "width": 13,
+                                  "height": 40
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "rn1Nd",
+                                  "name": "Value",
+                                  "fill": "$ink",
+                                  "content": "97 MiB",
+                                  "fontFamily": "$font-mark",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WlU7q",
+                      "name": "Metric TOTAL ALLOCATIONS",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "V28xpm",
+                          "name": "Delta",
+                          "fill": "$ink",
+                          "content": "−30%",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "800",
+                          "letterSpacing": -1.9
+                        },
+                        {
+                          "type": "text",
+                          "id": "t3Vu1w",
+                          "name": "TOTAL ALLOCATIONS",
+                          "fill": "$ink",
+                          "content": "TOTAL ALLOCATIONS",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Pa1i2",
+                          "name": "Bars",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 12,
+                          "padding": [
+                            6,
+                            0,
+                            0,
+                            0
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "uLjRK",
+                              "name": "Bar 6,093 MiB",
+                              "gap": 16,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "hUVhD",
+                                  "name": "Bar",
+                                  "fill": "$mono-tone-light",
+                                  "width": 270,
+                                  "height": 40
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "o7V1VD",
+                                  "name": "Value",
+                                  "fill": "$slate",
+                                  "content": "6,093 MiB",
+                                  "fontFamily": "$font-mark",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "bFrcU",
+                              "name": "Bar 4,267 MiB",
+                              "gap": 16,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "id": "r4wPuG",
+                                  "name": "Bar",
+                                  "fill": "$accent",
+                                  "width": 189,
+                                  "height": 40
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "w6uhN",
+                                  "name": "Value",
+                                  "fill": "$ink",
+                                  "content": "4,267 MiB",
+                                  "fontFamily": "$font-mark",
+                                  "fontSize": "$fs-label",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "AhvtN",
+                  "name": "Footer",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "h6KIa",
+                      "name": "Lockup",
+                      "gap": 7.632,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "IdV50",
+                          "name": "Mark Wrap",
+                          "padding": [
+                            17.2152,
+                            0,
+                            0,
+                            0
+                          ],
+                          "children": [
+                            {
+                              "id": "ehrOu",
+                              "type": "ref",
+                              "ref": "a9lLg",
+                              "name": "Logomark",
+                              "width": 59.6592,
+                              "height": 59.6592
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "AiqrK",
+                          "name": "Wordmark",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mPaFO",
+                              "name": "d",
+                              "fill": "$ink",
+                              "content": "d",
+                              "fontFamily": "$font-mark",
+                              "fontSize": 72,
+                              "fontWeight": "800",
+                              "letterSpacing": -4.3
+                            },
+                            {
+                              "type": "text",
+                              "id": "oJ718",
+                              "name": "x",
+                              "fill": "$accent",
+                              "content": "x",
+                              "fontFamily": "$font-mark",
+                              "fontSize": 72,
+                              "fontWeight": "800",
+                              "letterSpacing": -4.3
+                            },
+                            {
+                              "type": "text",
+                              "id": "F8ppJh",
+                              "name": "n",
+                              "fill": "$ink",
+                              "content": "n",
+                              "fontFamily": "$font-mark",
+                              "fontSize": 72,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
