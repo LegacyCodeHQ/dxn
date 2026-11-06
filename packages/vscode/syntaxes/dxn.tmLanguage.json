@@ -1,428 +1,46 @@
 {
-  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "dxn",
   "scopeName": "source.dxn",
-  "comment": "Highlighting for dxn, as packages/zed/languages/dxn/highlights.scm colours it in Zed, as near as a line's words say.",
+  "name": "DXN redesign",
   "patterns": [
     {
-      "include": "#comment"
-    },
-    {
-      "include": "#string"
-    },
-    {
-      "include": "#declaration"
-    },
-    {
-      "include": "#trigger"
-    },
-    {
-      "include": "#list"
-    },
-    {
-      "include": "#field"
-    },
-    {
-      "include": "#value"
-    },
-    {
-      "include": "#keyword"
-    },
-    {
-      "include": "#name"
-    },
-    {
-      "include": "#operator"
-    },
-    {
-      "include": "#punctuation"
-    }
-  ],
-  "repository": {
-    "comment": {
+      "begin": "\\b(enum)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.declaration.dxn"
+        }
+      },
+      "end": "(?<=\\})",
+      "name": "meta.enum.dxn",
       "patterns": [
         {
-          "begin": "##",
-          "end": "$",
-          "name": "meta.documentation.dxn",
-          "patterns": [
-            {
-              "match": "\\G[ \\t]*(@[A-Za-z][A-Za-z0-9-]*)(?:[ \\t]+([^ \\t]+))?",
-              "captures": {
-                "1": {
-                  "name": "comment.block.documentation.tag.dxn"
-                },
-                "2": {
-                  "name": "meta.documentation.target.dxn"
-                }
-              }
-            },
-            {
-              "match": ".+",
-              "name": "comment.block.documentation.dxn"
-            }
-          ],
+          "begin": "\\{",
           "beginCaptures": {
             "0": {
-              "name": "comment.block.documentation.dxn"
-            }
-          }
-        },
-        {
-          "match": "#.*$",
-          "name": "comment.line.number-sign.dxn"
-        }
-      ]
-    },
-    "string": {
-      "match": "\"[^\"]*\"",
-      "name": "string.quoted.double.dxn"
-    },
-    "declaration": {
-      "patterns": [
-        {
-          "comment": "An enum or a dimension, its values on the lines it carries on to after a | or an =, which may be keywords.",
-          "begin": "\\b(enum|dimension)\\s+([A-Z][A-Za-z0-9]*)\\s*(=)",
-          "beginCaptures": {
-            "1": {
-              "name": "keyword.control.dxn"
-            },
-            "2": {
-              "name": "entity.name.type.dxn"
-            },
-            "3": {
-              "name": "keyword.operator.dxn"
+              "name": "punctuation.section.block.begin.dxn"
             }
           },
-          "end": "(?<=[^|=\\s])\\s*$",
-          "patterns": [
-            {
-              "include": "#comment"
-            },
-            {
-              "match": "\\|",
-              "name": "keyword.operator.dxn"
-            },
-            {
-              "match": "\\b[a-z0-9][A-Za-z0-9-]*",
-              "name": "constant.other.dxn"
-            },
-            {
-              "include": "#punctuation"
-            }
-          ]
-        },
-        {
-          "comment": "A set of possibilities, by its capitalized name.",
-          "match": "\\b(type|environment|record)\\s+([A-Z][A-Za-z0-9]*)",
-          "captures": {
-            "1": {
-              "name": "keyword.control.dxn"
-            },
-            "2": {
-              "name": "entity.name.type.dxn"
-            }
-          }
-        },
-        {
-          "comment": "An action, the state it changes, and the value it changes it from.",
-          "match": "\\b(action)\\s+([a-z][A-Za-z0-9-]*)\\s*(:)\\s*([a-z][A-Za-z0-9-]*)\\s+([A-Za-z0-9][A-Za-z0-9-]*)",
-          "captures": {
-            "1": {
-              "name": "keyword.control.dxn"
-            },
-            "2": {
-              "name": "entity.name.function.dxn"
-            },
-            "3": {
-              "name": "punctuation.separator.dxn"
-            },
-            "4": {
-              "name": "variable.other.property.dxn"
-            },
-            "5": {
-              "name": "constant.other.dxn"
-            }
-          }
-        },
-        {
-          "comment": "The events a type declares.",
-          "begin": "\\b(event)\\b",
-          "end": "$",
-          "beginCaptures": {
-            "1": {
-              "name": "keyword.control.dxn"
+          "end": "\\}",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.block.end.dxn"
             }
           },
           "patterns": [
             {
-              "include": "#comment"
+              "match": "[\\p{L}\\p{N}_-]+",
+              "name": "constant.other.enum.dxn"
             },
             {
-              "match": "[a-z][A-Za-z0-9-]*",
-              "name": "entity.name.label.dxn"
-            },
-            {
-              "include": "#punctuation"
-            }
-          ]
-        },
-        {
-          "comment": "A profile or a modifier, by its name, which is named as a type is.",
-          "match": "\\b(profile|modifier)\\s+([A-Z][A-Za-z0-9]*)",
-          "captures": {
-            "1": {
-              "name": "keyword.control.dxn"
-            },
-            "2": {
-              "name": "entity.name.type.dxn"
-            }
-          }
-        },
-        {
-          "comment": "An actor, and the record it records.",
-          "match": "\\b(actor)\\s+([A-Z][A-Za-z0-9]*)\\s+(records)\\s+([A-Z][A-Za-z0-9]*)",
-          "captures": {
-            "1": {
-              "name": "keyword.control.dxn"
-            },
-            "2": {
-              "name": "entity.name.type.dxn"
-            },
-            "3": {
-              "name": "keyword.control.dxn"
-            },
-            "4": {
-              "name": "entity.name.type.dxn"
-            }
-          }
-        },
-        {
-          "match": "\\b(on)\\s+((?:[a-z][A-Za-z0-9-]*\\s*,\\s*)*[a-z][A-Za-z0-9-]*)\\s*(?=\\{)",
-          "captures": {
-            "1": {
-              "name": "keyword.control.dxn"
-            },
-            "2": {
-              "patterns": [
-                {
-                  "match": "[a-z][A-Za-z0-9-]*",
-                  "name": "variable.other.dxn"
-                },
-                {
-                  "include": "#punctuation"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "comment": "An environment's dimensions, x between them.",
-          "match": "(?<=[A-Za-z0-9])\\s+(x)\\s+(?=[A-Z])",
-          "captures": {
-            "1": {
-              "name": "keyword.operator.dxn"
-            }
-          }
-        }
-      ]
-    },
-    "trigger": {
-      "comment": "on <event>: what it does: its actions, and changes in place, until only when.",
-      "begin": "^\\s*(on)\\s+(?:([A-Z][A-Za-z0-9]*)|([a-z][A-Za-z0-9-]*(?:\\.[a-z][A-Za-z0-9-]*)*))",
-      "beginCaptures": {
-        "1": {
-          "name": "keyword.control.dxn"
-        },
-        "2": {
-          "name": "entity.name.type.dxn"
-        },
-        "3": {
-          "name": "entity.name.label.dxn"
-        }
-      },
-      "end": "$",
-      "patterns": [
-        {
-          "include": "#comment"
-        },
-        {
-          "include": "#list"
-        },
-        {
-          "begin": "(:)",
-          "beginCaptures": {
-            "1": {
+              "match": ",",
               "name": "punctuation.separator.dxn"
             }
-          },
-          "end": "(?=\\bonly\\b)|$",
-          "patterns": [
-            {
-              "match": "([a-z][A-Za-z0-9-]*)\\s*(->)\\s*([A-Za-z0-9][A-Za-z0-9-]*)",
-              "captures": {
-                "1": {
-                  "name": "variable.other.property.dxn"
-                },
-                "2": {
-                  "name": "keyword.operator.dxn"
-                },
-                "3": {
-                  "name": "constant.other.dxn"
-                }
-              }
-            },
-            {
-              "match": "[a-z][A-Za-z0-9-]*(?:\\.[a-z][A-Za-z0-9-]*)*",
-              "name": "entity.name.function.dxn"
-            },
-            {
-              "include": "#punctuation"
-            }
           ]
         },
         {
-          "include": "#value"
-        },
-        {
-          "include": "#keyword"
-        },
-        {
-          "include": "#name"
-        },
-        {
-          "include": "#operator"
-        },
-        {
-          "include": "#punctuation"
-        }
-      ]
-    },
-    "list": {
-      "comment": "in (<value>, ...): values.",
-      "begin": "\\b(in)\\s*(\\()",
-      "end": "\\)",
-      "beginCaptures": {
-        "1": {
-          "name": "keyword.control.dxn"
-        },
-        "2": {
-          "name": "punctuation.bracket.dxn"
-        }
-      },
-      "endCaptures": {
-        "0": {
-          "name": "punctuation.bracket.dxn"
-        }
-      },
-      "patterns": [
-        {
-          "match": "[A-Za-z0-9][A-Za-z0-9-]*",
-          "name": "constant.other.dxn"
-        },
-        {
-          "include": "#punctuation"
-        }
-      ]
-    },
-    "field": {
-      "comment": "<name>: <Type>: a state, a received one, a child or a field.",
-      "match": "\\b([a-z][A-Za-z0-9-]*)\\s*(:)\\s*([A-Z][A-Za-z0-9]*(?:\\.[A-Z][A-Za-z0-9]*)*)",
-      "captures": {
-        "1": {
-          "name": "variable.other.property.dxn"
-        },
-        "2": {
-          "name": "punctuation.separator.dxn"
-        },
-        "3": {
-          "name": "entity.name.type.dxn"
-        }
-      }
-    },
-    "value": {
-      "comment": "A value: after =, | or ->, but for a when; a profile with its modifiers after profile =.",
-      "patterns": [
-        {
-          "match": "\\b(profile)\\s*(=)\\s*([A-Z][A-Za-z0-9]*(?:\\+[A-Z][A-Za-z0-9]*)*)",
-          "captures": {
-            "1": {
-              "name": "keyword.control.dxn"
-            },
-            "2": {
-              "name": "keyword.operator.dxn"
-            },
-            "3": {
-              "patterns": [
-                {
-                  "match": "[A-Z][A-Za-z0-9]*",
-                  "name": "entity.name.type.dxn"
-                },
-                {
-                  "match": "\\+",
-                  "name": "keyword.operator.dxn"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "comment": "After =, but for the when that starts a derived state.",
-          "match": "(=)\\s*(?!when\\b)([a-z0-9][A-Za-z0-9-]*)",
-          "captures": {
-            "1": {
-              "name": "keyword.operator.dxn"
-            },
-            "2": {
-              "name": "constant.other.dxn"
-            }
-          }
-        },
-        {
-          "comment": "After | or ->, where a value may be named after a keyword.",
-          "match": "(\\||->)\\s*([a-z0-9][A-Za-z0-9-]*)",
-          "captures": {
-            "1": {
-              "name": "keyword.operator.dxn"
-            },
-            "2": {
-              "name": "constant.other.dxn"
-            }
-          }
-        }
-      ]
-    },
-    "keyword": {
-      "match": "\\b(enum|dimension|type|needs|receives|state|has|provides|event|action|on|alike|environment|profile|modifier|record|actor|records|expect|and|or|below|then|some|absent|only|when|else|in)\\b",
-      "name": "keyword.control.dxn"
-    },
-    "name": {
-      "patterns": [
-        {
-          "match": "\\b[A-Z][A-Za-z0-9]*\\b",
-          "name": "entity.name.type.dxn"
-        },
-        {
-          "match": "\\b[a-z][A-Za-z0-9-]*\\b",
-          "name": "variable.other.property.dxn"
-        }
-      ]
-    },
-    "operator": {
-      "match": "->|=|\\||\\+",
-      "name": "keyword.operator.dxn"
-    },
-    "punctuation": {
-      "patterns": [
-        {
-          "match": "[{}()]",
-          "name": "punctuation.bracket.dxn"
-        },
-        {
-          "match": "[,:.]",
-          "name": "punctuation.separator.dxn"
+          "match": "[\\p{L}\\p{N}_-]+",
+          "name": "entity.name.type.enum.dxn"
         }
       ]
     }
-  }
+  ]
 }

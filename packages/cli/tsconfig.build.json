@@ -9,5 +9,5 @@
     "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../language/tsconfig.build.json" }]
+  "references": [{ "path": "../next/tsconfig.build.json" }]
 }

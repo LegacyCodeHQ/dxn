@@ -35,3 +35,6 @@ lean/.lake/
 # The notebook's build output and cache
 notebook/.vitepress/cache/
 notebook/.vitepress/dist/
+
+# Isolated redesign development artifacts
+.dxn-dev/

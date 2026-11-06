@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -55,27 +55,21 @@ describe("the built extension", () => {
   });
 
   it("runs the bundled dxn command, as a code lens does", () => {
-    const settings = join(__dirname, "../../../examples/settings");
-    const run = spawnSync(
-      process.execPath,
-      [join(out, "dxn.mjs"), "states", "settings.dxn", "Help.Toggle"],
-      {
-        cwd: settings,
-        encoding: "utf8",
-      },
-    );
-    expect([run.status, run.stdout.split("\n")[0]]).toEqual([
-      0,
-      "| profiles               | Pointer | hover         | expanded     |",
-    ]);
+    const file = join(out, "model.dxn");
+    writeFileSync(file, "enum Light { off, on }\n");
+    const run = spawnSync(process.execPath, [join(out, "dxn.mjs"), "check", file, "--json"], {
+      encoding: "utf8",
+    });
+    expect({ status: run.status, problems: JSON.parse(run.stdout).problems }).toEqual({
+      status: 0,
+      problems: [],
+    });
   });
 
   it("runs the bundled server, which checks a file as the language does", async () => {
-    expect(
-      (await problems("type Button {\n  state on: Nope\n}\n")).map(({ code, message }) => [
-        code,
-        message,
-      ]),
-    ).toEqual([["unknown-enum", "`Nope` is not an enum; the file declares none"]]);
+    expect(await problems("enum Light { off, on }\n")).toEqual([]);
+    expect((await problems("enum Light = off | on\n")).map((p) => p.code)).toEqual([
+      "syntax-error",
+    ]);
   });
 });

@@ -1,47 +1,9 @@
 [
   {
-    "label": "State matrix: $ZED_CUSTOM_type",
-    "command": "dxn",
-    "args": ["states", "$ZED_RELATIVE_FILE", "$ZED_CUSTOM_type"],
+    "label": "Check DXN file",
+    "command": "node",
+    "args": ["$ZED_WORKTREE_ROOT/packages/cli/dist/main.js", "check", "$ZED_RELATIVE_FILE"],
     "cwd": "$ZED_WORKTREE_ROOT",
-    "tags": ["dxn-type"]
-  },
-  {
-    "label": "Recorded evidence: $ZED_CUSTOM_type",
-    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_type\" | while IFS= read -r line; do case \"$line\" in \"Wrote \"*) zed \"${line#Wrote }\";; *) echo \"$line\";; esac; done",
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "tags": ["dxn-type"]
-  },
-  {
-    "label": "Stale evidence: $ZED_CUSTOM_type",
-    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_type\" --stale | while IFS= read -r line; do case \"$line\" in \"Wrote \"*) zed \"${line#Wrote }\";; *) echo \"$line\";; esac; done",
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "tags": ["dxn-type"]
-  },
-  {
-    "label": "State matrix: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
-    "command": "dxn",
-    "args": ["states", "$ZED_RELATIVE_FILE", "$ZED_CUSTOM_parent.$ZED_CUSTOM_type"],
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "tags": ["dxn-nested-type"]
-  },
-  {
-    "label": "Recorded evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
-    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_parent.$ZED_CUSTOM_type\" | while IFS= read -r line; do case \"$line\" in \"Wrote \"*) zed \"${line#Wrote }\";; *) echo \"$line\";; esac; done",
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "tags": ["dxn-nested-type"]
-  },
-  {
-    "label": "Stale evidence: $ZED_CUSTOM_parent.$ZED_CUSTOM_type",
-    "command": "dxn review \"$ZED_RELATIVE_FILE\" \"$ZED_CUSTOM_parent.$ZED_CUSTOM_type\" --stale | while IFS= read -r line; do case \"$line\" in \"Wrote \"*) zed \"${line#Wrote }\";; *) echo \"$line\";; esac; done",
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "tags": ["dxn-nested-type"]
-  },
-  {
-    "label": "dxn check --expect $ZED_CUSTOM_title",
-    "command": "dxn",
-    "args": ["check", "$ZED_RELATIVE_FILE", "--expect", "$ZED_CUSTOM_title"],
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "tags": ["dxn-expect"]
+    "tags": ["dxn-check"]
   }
 ]

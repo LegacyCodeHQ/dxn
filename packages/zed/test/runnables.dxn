@@ -1,19 +1,7 @@
-# Types to run: one at the top, and one inside another.
-enum Openness = closed | open
-
-type Menu {
-  state menu: Openness
-  type Toggle {
-    state expanded: Openness
-  }
-  has toggle: Toggle
-}
-
-type Page {
-  has menu: Menu
-}
-
-expect "The menu can be open" {
-  in Page.menu
-  some menu = open
+enum Light { off, on }
+enum Mode {
+  enum,
+  type,
+  no-keyboard,
+  01
 }

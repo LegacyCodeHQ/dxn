@@ -117,7 +117,7 @@ export function checkProject(directory) {
       if (foreign) {
         if (
           ["cli", "language-server"].includes(owner) &&
-          workspace.path === "packages/language" &&
+          workspace.path === "packages/next" &&
           specifier === workspace.name
         )
           continue;

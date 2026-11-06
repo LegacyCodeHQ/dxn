@@ -1,4 +1,4 @@
-// One row per package, including packages whose executable code was not hit.
+// One row per active redesign package, including unexecuted code.
 // Missing packages are an error, so a new workspace cannot silently disappear.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -25,7 +25,8 @@ function summarize(files) {
   );
 }
 
-for (const workspace of workspaces) {
+// The retained prototype library is not part of this worktree's runtime or test suite.
+for (const workspace of workspaces.filter((path) => path !== "packages/language")) {
   const prefix = `${join(root, workspace)}/`;
   const files = Object.entries(javascript)
     .filter(([path]) => path.startsWith(prefix))

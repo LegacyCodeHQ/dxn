@@ -1,47 +1,135 @@
-import { homedir } from "node:os";
-import { join } from "node:path";
-import { commandList, language } from "@cli/commands/index.js";
-import { dispatch } from "@cli/commands/support/context.js";
-import type { Io } from "@cli/commands/support/io.js";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { version } from "@cli/version.js";
+import { analyze, format, renameEnum, type Span } from "@legacycodehq/dxn-next";
 
-const usage = `Usage: dxn <command> [options]
+export interface Io {
+  stdout(text: string): void;
+  stderr(text: string): void;
+  cwd?: string;
+}
 
-Commands:
-${commandList}
+const help = `Usage: dxn <command> <file> [options]
 
-  help [<command>]                   Show this overview, or a command's usage
+  check <file>                       Check the new DXN language
+  fmt <file> [--check | --write]      Print, check or write canonical formatting
+  rename <file> <old> <new>           Rename an enumeration
 
-Run "dxn help <command>" (or "dxn <command> --help") for a command's usage
-and options. The language is explained in docs/language/guide.md, in the dxn
-repository.
-
-Options:
-  --dry-run                          Print the files a command would write,
-                                     without writing them
-  -h, --help                         Show this help
-  -V, --version                      Print version information as JSON
+Options: --json, --dry-run (rename), --help, --version
+Supported syntax: enum Light { off, on }
 `;
 
+// Files and streams belong here; language decisions belong to packages/next.
 export function run(argv: string[], io: Io): number {
-  const cwd = io.cwd ?? process.cwd();
-  // --dry-run is accepted wherever it appears, before or after the command.
-  const dryRun = argv.includes("--dry-run");
-  const args = argv.filter((arg) => arg !== "--dry-run");
-  const [first] = args;
-  if (first === "-V" || first === "--version") {
+  const json = argv.includes("--json");
+  const emit = (data: unknown, text: string, error = false) => {
+    if (json) io.stdout(`${JSON.stringify(data)}\n`);
+    else (error ? io.stderr : io.stdout)(`${text}\n`);
+  };
+  if (argv.length === 0 || argv.includes("--help") || argv[0] === "help") {
+    io.stdout(help);
+    return 0;
+  }
+  if (argv[0] === "--version" || argv[0] === "-V") {
     io.stdout(`${JSON.stringify({ version })}\n`);
     return 0;
   }
-  return dispatch(args, { io, cwd, cache: io.cache ?? userCache(), dryRun }, usage, language);
+  const [command, ...args] = argv;
+  const flags = args.filter((arg) => arg.startsWith("--"));
+  const positional = args.filter((arg) => !arg.startsWith("--"));
+  const [file, from, to] = positional;
+  const allowed =
+    command === "check"
+      ? ["--json"]
+      : command === "fmt"
+        ? ["--json", "--check", "--write"]
+        : command === "rename"
+          ? ["--json", "--dry-run"]
+          : [];
+  if (
+    !file ||
+    !["check", "fmt", "rename"].includes(command ?? "") ||
+    flags.some((f) => !allowed.includes(f)) ||
+    positional.length !== (command === "rename" ? 3 : 1) ||
+    (flags.includes("--write") && flags.includes("--check"))
+  ) {
+    emit({ error: "invalid command or arguments" }, help, true);
+    return 2;
+  }
+  const path = resolve(io.cwd ?? process.cwd(), file);
+  let source: string;
+  try {
+    source = readFileSync(path, "utf8");
+  } catch {
+    emit({ file, error: "cannot read file" }, `${file}: cannot read file`, true);
+    return 2;
+  }
+  const write = (text: string) => {
+    try {
+      writeFileSync(path, text);
+      return true;
+    } catch {
+      emit({ file, error: "cannot write file" }, `${file}: cannot write file`, true);
+      return false;
+    }
+  };
+  if (command === "check") {
+    const result = analyze(source);
+    const located = result.problems.flatMap((p) =>
+      p.at.map((span) => ({ code: p.code, message: p.message, span })),
+    );
+    emit(
+      { file, problems: located },
+      located.length
+        ? located
+            .map((p) => `${file}:${position(source, p.span)}: ${p.code}: ${p.message}`)
+            .join("\n")
+        : `${file}: valid`,
+      located.length > 0,
+    );
+    return located.length ? 1 : 0;
+  }
+  if (command === "fmt") {
+    const formatted = format(source);
+    if (formatted === undefined) {
+      emit(
+        { file, problems: analyze(source).problems },
+        `${file}: cannot format invalid syntax; run dxn check`,
+        true,
+      );
+      return 1;
+    }
+    const changed = formatted !== source;
+    if (flags.includes("--write") && changed && !write(formatted)) return 2;
+    if (flags.includes("--check"))
+      emit(
+        { file, changed },
+        changed ? `${file}: needs formatting` : `${file}: formatted`,
+        changed,
+      );
+    else if (json) emit({ file, changed, source: formatted }, "");
+    else if (!flags.includes("--write")) io.stdout(formatted);
+    return flags.includes("--check") && changed ? 1 : 0;
+  }
+  const renamed = renameEnum(source, from as string, to as string);
+  if (!renamed.file) {
+    emit(
+      { file, refusals: renamed.refusals },
+      `${file}: rename refused: ${JSON.stringify(renamed.refusals)}`,
+      true,
+    );
+    return 1;
+  }
+  const dryRun = flags.includes("--dry-run");
+  if (!dryRun && renamed.edits.length && !write(renamed.source)) return 2;
+  emit(
+    { file, source: renamed.source, edits: renamed.edits, dryRun },
+    dryRun ? renamed.source.trimEnd() : `${file}: renamed`,
+  );
+  return 0;
 }
 
-// The user's cache folder for dxn: ~/Library/Caches/dxn on macOS, under
-// LOCALAPPDATA on Windows, and elsewhere under XDG_CACHE_HOME or ~/.cache.
-function userCache(): string {
-  if (process.platform === "darwin") return join(homedir(), "Library", "Caches", "dxn");
-  if (process.platform === "win32") {
-    return join(process.env.LOCALAPPDATA ?? join(homedir(), "AppData", "Local"), "dxn");
-  }
-  return join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "dxn");
+function position(source: string, span: Span): string {
+  const prefix = source.slice(0, span.start).split(/\r\n|\r|\n/);
+  return `${prefix.length}:${(prefix.at(-1)?.length ?? 0) + 1}`;
 }

@@ -13,13 +13,13 @@ impl zed::Extension for Dxn {
         worktree: &zed::Worktree,
     ) -> Result<zed::Command> {
         // Zed's settings may name the server and its arguments, under
-        // lsp.dxn-language-server.binary.
+        // lsp.dxn-redesign-language-server.binary.
         let binary = LspSettings::for_worktree(id.as_ref(), worktree)
             .ok()
             .and_then(|settings| settings.binary);
         let configured = binary.as_ref().and_then(|binary| binary.path.clone());
         Ok(zed::Command {
-            command: server(configured, worktree.which("dxn-language-server"))?,
+            command: server(configured)?,
             args: binary
                 .and_then(|binary| binary.arguments)
                 .unwrap_or_default(),
@@ -28,14 +28,10 @@ impl zed::Extension for Dxn {
     }
 }
 
-// The server to start: the one the settings name, or else the one on the
-// project's PATH.
-fn server(configured: Option<String>, found: Option<String>) -> Result<String> {
-    configured.or(found).ok_or_else(|| {
-        "dxn-language-server is not on the PATH; install it with \
-         `npm install -g @legacycodehq/dxn-language-server`, or set \
-         lsp.dxn-language-server.binary.path in Zed's settings"
-            .into()
+// A development extension must never start a prototype server found on PATH.
+fn server(configured: Option<String>) -> Result<String> {
+    configured.filter(|path| !path.is_empty()).ok_or_else(|| {
+        "Set lsp.dxn-redesign-language-server.binary.path and arguments to this redesign worktree's built language server; a prototype server on PATH is not used".into()
     })
 }
 
@@ -46,30 +42,15 @@ mod tests {
     use super::server;
 
     #[test]
-    fn starts_the_server_the_settings_name_first() {
+    fn starts_only_the_explicit_redesign_server() {
         assert_eq!(
-            server(
-                Some("/dev/dxn-language-server".into()),
-                Some("/usr/bin/dxn-language-server".into())
-            ),
-            Ok("/dev/dxn-language-server".into())
+            server(Some("/dev/redesign-server".into())),
+            Ok("/dev/redesign-server".into())
         );
     }
 
     #[test]
-    fn otherwise_starts_the_server_on_the_path() {
-        assert_eq!(
-            server(None, Some("/usr/bin/dxn-language-server".into())),
-            Ok("/usr/bin/dxn-language-server".into())
-        );
-    }
-
-    #[test]
-    fn says_how_to_install_the_server_when_there_is_none() {
-        let error = server(None, None).unwrap_err();
-        assert!(
-            error.contains("npm install -g @legacycodehq/dxn-language-server"),
-            "{error}"
-        );
+    fn requires_a_local_redesign_server() {
+        assert!(server(None).unwrap_err().contains("redesign"));
     }
 }

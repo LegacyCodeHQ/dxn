@@ -1,83 +1,23 @@
-================================================================================
-Enums on one line
-================================================================================
-
-enum Hover = rest | hovered
-enum Focus = blurred | focused
-
---------------------------------------------------------------------------------
-
+==================
+new enum syntax
+==================
+enum Light { off, on }
+enum Mode {
+ enum,
+ type,
+ 01
+}
+---
 (source_file
-  (enum_declaration
-    name: (identifier)
-    (value)
-    (value))
-  (enum_declaration
-    name: (identifier)
-    (value)
-    (value)))
+ (enum_declaration (type_name) (value) (value))
+ (enum_declaration (type_name) (value) (value) (value)))
 
-================================================================================
-Enums carried on before and after a pipe
-================================================================================
-
-enum Size = xs | sm | md |
-  lg | xl
-
-enum Size =
-  xs
-  | sm
-  | md
-
---------------------------------------------------------------------------------
-
+==================
+invalid names are checker input
+==================
+enum light { Off, a--b, ön }
+enum Empty {}
+---
 (source_file
-  (enum_declaration
-    name: (identifier)
-    (value)
-    (value)
-    (value)
-    (value)
-    (value))
-  (enum_declaration
-    name: (identifier)
-    (value)
-    (value)
-    (value)))
-
-================================================================================
-An enum with a single value
-================================================================================
-
-enum Actor = design-agent
-
---------------------------------------------------------------------------------
-
-(source_file
-  (enum_declaration
-    name: (identifier)
-    (value)))
-
-================================================================================
-Dimensions, with values that have hyphens and digits
-================================================================================
-
-dimension Pointer = mouse | touch
-dimension Keyboard = keyboard | no-keyboard
-dimension Gap = 19px | 2xl
-
---------------------------------------------------------------------------------
-
-(source_file
-  (dimension_declaration
-    name: (identifier)
-    (value)
-    (value))
-  (dimension_declaration
-    name: (identifier)
-    (value)
-    (value))
-  (dimension_declaration
-    name: (identifier)
-    (value)
-    (value)))
+ (enum_declaration (type_name) (value) (value) (value))
+ (enum_declaration (type_name)))

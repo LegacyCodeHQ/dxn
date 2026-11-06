@@ -14,8 +14,12 @@ function project(t, files) {
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, content);
   };
-  write("package.json", JSON.stringify({ workspaces: ["packages/language", "packages/cli"] }));
+  write(
+    "package.json",
+    JSON.stringify({ workspaces: ["packages/language", "packages/next", "packages/cli"] }),
+  );
   write("packages/language/package.json", '{"name":"@legacycodehq/dxn-language"}');
+  write("packages/next/package.json", '{"name":"@legacycodehq/dxn-next"}');
   write("packages/cli/package.json", '{"name":"@legacycodehq/dxn"}');
   write(
     "tsconfig.json",
@@ -44,7 +48,7 @@ test("accepts the facade, lower-layer imports, and the public package API", (t) 
       'import { analyzeSemantics } from "@language/analysis/semantic-analyzer.js"; export function parse() { analyzeSemantics(); }',
     "packages/language/src/syntax/read.ts":
       'import type { Type } from "../core/ast.js"; export function read(): Type { return {}; }',
-    "packages/cli/src/commands/check.ts": 'import { parse } from "@legacycodehq/dxn-language";',
+    "packages/cli/src/commands/check.ts": 'import { parse } from "@legacycodehq/dxn-next";',
   });
   assert.deepEqual(checkProject(root).problems, []);
 });
@@ -192,7 +196,12 @@ for (const [file, specifier, permitted] of [
     writeFileSync(
       join(root, "package.json"),
       JSON.stringify({
-        workspaces: ["packages/language", "packages/cli", "packages/tree-sitter-dxn"],
+        workspaces: [
+          "packages/language",
+          "packages/next",
+          "packages/cli",
+          "packages/tree-sitter-dxn",
+        ],
       }),
     );
     assert.equal(checkProject(root).problems.length, permitted ? 0 : 1);
@@ -208,4 +217,11 @@ test("only parsing facades may orchestrate semantic analysis", (t) => {
   });
   assert.match(checkProject(root).problems.join("\n"), /syntax\/tree\.ts:1:.*cannot depend on/);
   assert.equal(checkProject(root).problems.length, 1);
+});
+
+test("redesigned adapters reject the prototype public API", (t) => {
+  const root = project(t, {
+    "packages/cli/src/cli.ts": 'import { parse } from "@legacycodehq/dxn-language";',
+  });
+  assert.match(checkProject(root).problems.join("\n"), /allowed public package API/);
 });

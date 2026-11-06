@@ -46,7 +46,16 @@ export const allowed = {
   "next/syntax": ["next/model", "next/syntax"],
   "next/check": ["next/model", "next/check"],
   "next/refactor": ["next/model", "next/syntax", "next/check", "next/refactor"],
-  "next/api": ["next/model", "next/syntax", "next/check", "next/refactor"],
+  "next/analysis": ["next/model", "next/syntax", "next/check", "next/analysis"],
+  "next/editor": ["next/model", "next/syntax", "next/refactor", "next/editor"],
+  "next/api": [
+    "next/analysis",
+    "next/editor",
+    "next/model",
+    "next/syntax",
+    "next/check",
+    "next/refactor",
+  ],
 };
 
 export function layerOf(path) {

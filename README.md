@@ -1,153 +1,116 @@
-# dxn
+# DXN — Lean-backed redesign
 
-A language for the states a thing has across every dimension it varies over:
-breakpoints, pointers, themes, profiles and so on. A `.dxn` file declares
-enums, dimensions, types with their states and children, environments,
-profiles and records; `dxn` checks it, evaluates the states each type has in
-each combination, and keeps the evidence for those combinations as JSON files
-beside it.
+This worktree targets the redesigned language exclusively. Its specification is
+in `lean/`; its shared TypeScript implementation is in `packages/next`.
+The CLI, formatter, language server, Tree-sitter grammar and editor extensions
+in this worktree support that implementation.
 
-## Example
+The current supported construct is an enumeration:
 
-```text
-# wordmark.dxn: the wordmark's hover only exists with a mouse.
-enum Hover = rest | hovered
-dimension Pointer = mouse | touch
-type Wordmark needs Pointer {
-  state hover: Hover
-  hover = hovered only when Pointer = mouse
+```dxn
+enum Light { off, on }
+enum Power {
+  standby,
+  no-keyboard,
+  01
 }
-environment Device = Pointer
-profile Laptop: Device { Pointer = mouse }
-profile Phone: Device { Pointer = touch }
 ```
 
-```bash
-$ dxn check wordmark.dxn
-wordmark.dxn: 1 enum, 1 dimension, 1 type, 1 environment, 2 profiles
-$ dxn states wordmark.dxn Wordmark
-| profiles | Pointer | hover         |
-| -------- | ------- | ------------- |
-| Laptop   | mouse   | rest, hovered |
-| Phone    | touch   | rest          |
-$ dxn cases wordmark.dxn Wordmark
-Wordmark: 3 cases
+Enumeration names start with an ASCII capital letter and contain only ASCII
+letters and digits. Values use ASCII lowercase letters and digits, with single
+hyphens between them. Empty enums, duplicate members and duplicate enum names
+are checker errors. Missing separators and trailing commas are syntax errors.
+Keywords can be member names. Enum values carry their enumeration's identity.
 
-| Pointer | hover   |
-| ------- | ------- |
-| mouse   | rest    |
-| mouse   | hovered |
-| touch   | rest    |
-```
+Types, states, documentation and ordinary comments, evaluation and stored
+records have not been specified and implemented in this redesign yet. Their
+prototype syntax is rejected. `packages/language` is retained prototype source;
+none of the redesigned executable adapters import it, and its tests are outside
+the active redesign suite. Historical guides and examples describe the prototype.
 
-`dxn validate`, `attach`, `status` and `rename` work on the records stored
-beside a file. Every command prints a readable answer, or one JSON document
-with `--json`; problems are printed as `file:line:col: severity: code: message`. Exit
-code 1 means the file has a problem or the command refused, 2 means the
-command line is wrong.
+## Build and check
 
-- [tutorials](docs/tutorials/README.md): one button from nothing to a model
-  with evidence and tests, a step at a time
-- [guide.md](docs/language/guide.md): the language, one concept
-  at a time, and every diagnostic code
-- [commands.md](docs/commands.md): every command, with its usage
-  and examples
-- [tree-sitter-dxn](packages/tree-sitter-dxn/README.md): the Tree-sitter grammar and in-process Node binding for dxn
+Requires Node 22+, npm, Lean (elan reads `lean/lean-toolchain`), a C/C++ compiler
+for native grammar tests, and Rust with the `wasm32-wasip2` target for Zed.
 
-## Development
-
-Requires Node.js 22+, a C/C++ toolchain and Python for the Tree-sitter binding,
-[gitleaks](https://github.com/gitleaks/gitleaks) and, optionally,
-[clarity](https://github.com/LegacyCodeHQ/clarity-cli) for the file-cycle check.
-
-```bash
+```sh
 npm ci
-make setup-hooks
-make check
-```
-
-`make check` includes coverage for all five npm workspaces and the Zed Rust
-crate. Install the Rust coverage tools once, in addition to the Rust toolchain
-and WebAssembly target already needed by `make zed`:
-
-```bash
-rustup component add llvm-tools-preview
-cargo install cargo-llvm-cov --version 0.9.1 --locked
-```
-
-Run coverage with `npm run coverage` or `make coverage`. CI runs the same command
-and uploads the `coverage` artifact, including HTML and LCOV reports:
-
-| Report                         | Location                          |
-| ------------------------------ | --------------------------------- |
-| JavaScript and TypeScript HTML | `coverage/javascript/index.html`  |
-| JavaScript and TypeScript LCOV | `coverage/javascript/lcov.info`   |
-| Zed Rust HTML                  | `coverage/zed/html/index.html`    |
-| Zed Rust LCOV                  | `coverage/zed/lcov.info`          |
-| Summary for every package      | `coverage/workspace-summary.json` |
-
-Use `make coverage-javascript` or `make coverage-zed` to run one tool separately.
-For a single npm package, use `npm run coverage:javascript -- --project=language`
-(or `cli`, `language-server`, `vscode`, `tree-sitter-dxn`). A filtered run replaces
-the JavaScript report with that run's results; rerun the full command for the
-workspace summary.
-
-The JavaScript report includes untested source files, the VS Code bundler and
-the tree-sitter grammar DSL. The existing thresholds (70% lines, 85% functions)
-apply globally and independently to the language, CLI, language-server and
-VS Code packages. The CLI/server entry-point wrappers and VS Code-only extension
-entry point remain excluded; their portable logic is tested separately.
-Generated parsers, declarations, tests and dependencies are outside the reporting
-scope.
-
-The tree-sitter tests exercise the generated native parser, not `grammar.js`
-inside Vitest, so the DSL appears as uncovered. Its correctness is checked by
-the corpus, agreement and editor-query tests. Rust coverage includes untested
-Zed host callbacks. These reports expose the gaps; no separate threshold is
-imposed on the grammar DSL or Rust package yet. Native Rust branch coverage is
-not enabled, so the package summary shows `n/a` where a metric is unavailable.
-
-Run the CLI from source after building:
-
-```bash
 make build
-node dist/main.js --help
+make check-fast
+make coverage
+make agreement
 ```
 
-### Source imports
+The Lean checks prove properties of the specification. Agreement checks compare
+the implementation with executable Lean on shared and generated cases. They do
+not prove the TypeScript implementation.
 
-Use a package-qualified alias for TypeScript source imports, with the `.js`
-extension required by NodeNext:
+## Use the built CLI
 
-```ts
-import type { ParseResult } from "@language/core/ast.js";
-import { parse } from "@language/syntax/parse.js";
+Run this worktree's executable directly; do not replace your global installation.
+
+```sh
+node packages/cli/dist/main.js check examples/redesign/enums.dxn
+node packages/cli/dist/main.js check examples/redesign/enums.dxn --json
+node packages/cli/dist/main.js fmt examples/redesign/enums.dxn
+node packages/cli/dist/main.js fmt examples/redesign/enums.dxn --check
+node packages/cli/dist/main.js fmt examples/redesign/enums.dxn --write
+node packages/cli/dist/main.js rename examples/redesign/enums.dxn Light Lamp --dry-run
 ```
 
-| Alias                | Source directory                 |
-| -------------------- | -------------------------------- |
-| `@language/*`        | `packages/language/src/*`        |
-| `@cli/*`             | `packages/cli/src/*`             |
-| `@language-server/*` | `packages/language-server/src/*` |
-| `@vscode/*`          | `packages/vscode/src/*`          |
+`fmt` prints canonical one-line enums with spaces and a final newline. It never
+formats malformed syntax; semantic errors do not prevent formatting.
+`--write` writes the file, and `--check` exits 1 when formatting differs.
+`rename` changes only the enum-name span, preserving other text. By default it
+writes the result; `--dry-run` previews it. All rename refusals come from the
+shared implementation. Renaming a value is not supported yet.
 
-Production code uses its own package's alias. Cross-package imports use public
-package names, such as `@legacycodehq/dxn-language`; tests may use source aliases
-across packages. Test helpers and files outside `src` keep relative imports.
+Commands exit 0 on success, 1 on a language/format/refactoring failure, and 2 on
+invalid arguments or I/O failure. `--json` emits structured results on stdout;
+text diagnostics go to stderr.
 
-Root `tsconfig.json` declares all source aliases for type checking, editors,
-Vitest, esbuild and Clarity. Each compiled package's `tsconfig.build.json` maps
-only its own alias. Vitest enables Vite's tsconfig path resolution, and the
-extension bundler reads the root tsconfig automatically.
+## Editors
 
-`make build` and each package's `npm run build` run `tsc-alias` after TypeScript.
-This rewrites both JavaScript and declaration imports to relative paths. Built
-commands run directly in Node, with no runtime alias loader. Running `tsc` alone
-does not perform that rewrite; use the build commands for runnable output.
+The server supplies diagnostics, formatting, hover, enum/member outline,
+semantic highlighting, declaration navigation and enumeration rename. It reads
+unsaved buffers and returns versioned edits. Unsupported prototype features
+such as evidence hints and state commands are not advertised.
 
-`make boundaries` enforces the [source dependency rules](docs/architecture/README.md#enforced-boundaries),
-including layer direction and use of public package names across packages. It
-runs in both quality gates, pre-commit and CI, and uses the installed npm tools.
+For VS Code, build with `make build`, then use an isolated Extension Development
+Host for `packages/vscode` (separate user data and extension directories). The
+extension bundles this worktree's server and CLI. Do not install it over the
+extension you use with the current language.
+
+For Zed, run `make zed-dev` and install `.dxn-dev/zed` as a development extension.
+This stages a separate `dxn-redesign` extension with a local grammar repository
+and a real snapshot commit. It does not commit to the project's branch. The
+source `packages/zed/extension.toml` is a template, not an installable package.
+Configure `lsp.dxn-redesign-language-server.binary.path` to your Node executable and its
+`arguments` to this worktree's absolute `packages/language-server/dist/main.js`.
+Use a separate development configuration; this extension refuses to fall back
+to a potentially incompatible server on PATH. Its Check task runs this
+worktree's built CLI when the worktree is opened as the Zed project root.
+
+### Manual verification still required
+
+In each development editor, open `examples/redesign/enums.dxn` and check:
+
+- Valid enums have no diagnostics; the old `enum Light = off | on` is rejected.
+- `enum`, `on` and `type` inside braces are enum members, not keywords.
+- Hover and outline identify each enumeration and member correctly.
+- Formatting produces the same result as the CLI, including unsaved edits.
+- Rename `Light` to `Lamp`; only its name changes. A collision with `Power`
+  is refused. Renaming to the same name makes no edits.
+- Duplicate members and bad names have diagnostics at the correct spans.
+- Editing incomplete syntax does not crash the server; repairing it clears errors.
+
+Automated grammar, protocol and bundle checks do not establish these human checks.
+
+## Models
+
+The change-propagation models in `docs/architecture/` intentionally remain in the
+old DXN syntax. Inspect them using the separately built prototype CLI until the
+new language supports types. They are not examples accepted by this CLI.
 
 ## Design notebook
 

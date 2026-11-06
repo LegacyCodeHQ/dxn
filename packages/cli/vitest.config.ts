@@ -9,6 +9,5 @@ export default defineProject({
     name: "cli",
     include: ["test/**/*.test.ts"],
     environment: "node",
-    snapshotSerializers: ["test/support/serializer.ts"],
   },
 });

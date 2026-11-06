@@ -250,3 +250,12 @@ The naming rules, checked one character at a time:
 | -------------------------------------------------------------------------- | ----------------------------------------------- |
 | How to write a value when its name alone is ambiguous, such as `Light.off` | Values are first used, in combinations or rules |
 | May a value be named after a keyword, such as `enum`?                      | There are more keywords                         |
+
+## Formatter
+
+The redesigned formatter writes each enumeration on one line, with one space
+inside its braces, a space after each comma, and a final newline. Empty braces
+are written `{ }` so an invalid empty declaration is still formatable. It does
+not reorder members or change names. It refuses malformed syntax. Formatting
+is independent of semantic acceptance. This formatting policy adds no semantic
+rule to the Lean model.

@@ -1,4 +1,4 @@
-.PHONY: help install fmt lint-check typecheck references boundaries cycles vocabulary brand security test coverage coverage-javascript coverage-zed grammar lean agreement notebook zed build smoke check check-fast setup-hooks clean
+.PHONY: help install fmt lint-check typecheck references boundaries cycles vocabulary brand security test coverage coverage-javascript coverage-zed grammar lean agreement notebook zed zed-dev build smoke check check-fast setup-hooks clean
 
 help:
 	@echo "Targets:"
@@ -89,7 +89,7 @@ coverage-zed:
 # The tree-sitter grammar: the committed parser in src/ is the one grammar.js
 # generates, and the corpus tests in test/corpus pass.
 grammar:
-	cd packages/tree-sitter-dxn && \
+	cd packages/tree-sitter-dxn && export XDG_CACHE_HOME="$(CURDIR)/.dxn-dev/cache" && \
 	  generated="$$(mktemp -d)" && \
 	  trap 'rm -rf "$$generated"' EXIT && \
 	  npx tree-sitter generate --output "$$generated" && \
@@ -108,20 +108,17 @@ agreement:
 	cd lean && $(LAKE) build dxn-spec
 	LAKE="$(LAKE)" npx vitest run --root packages/next --config vitest.agreement.config.ts
 
-# The design notebook under notebook/, built with VitePress into notebook/.vitepress/dist.
+# The design notebook under notebook/, built with VitePress.
 notebook:
 	npx vitepress build notebook
 
-# The Zed extension: extension.toml pins a commit whose grammar is the one in
-# packages/tree-sitter-dxn, and every query compiles against it and the sample
-# parses without errors; and its Rust part, which starts the language server,
-# is formatted, lint-free, passes its tests, and builds for WebAssembly.
-zed:
-	@commit="$$(sed -n 's/^commit = "\(.*\)"/\1/p' packages/zed/extension.toml)" && \
-	  git diff --quiet "$$commit" -- packages/tree-sitter-dxn/grammar.js packages/tree-sitter-dxn/src || \
-	  { echo "zed: extension.toml pins a grammar commit that differs from packages/tree-sitter-dxn; update its commit" >&2; exit 1; }
-	cd packages/tree-sitter-dxn && \
-	  npx tree-sitter parse --quiet ../zed/test/highlight.dxn && \
+# Isolated local extension; its generated manifest pins a snapshot of this grammar.
+zed-dev:
+	node scripts/zed-development.mjs
+
+zed: zed-dev
+	cd packages/tree-sitter-dxn && export XDG_CACHE_HOME="$(CURDIR)/.dxn-dev/cache" && \
+	  npx tree-sitter parse --rebuild --quiet ../zed/test/highlight.dxn && \
 	  for query in ../zed/languages/dxn/*.scm; do \
 	    npx tree-sitter query "$$query" ../zed/test/highlight.dxn > /dev/null || exit 1; \
 	  done

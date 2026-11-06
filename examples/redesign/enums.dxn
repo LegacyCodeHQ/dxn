@@ -1,0 +1,3 @@
+enum Light { off, on }
+enum Power { standby, no-keyboard, 01 }
+enum Keyword { enum, on, type }

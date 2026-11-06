@@ -5,7 +5,13 @@ export default defineConfig({
   test: {
     // Packages with tests, by their configs: packages/zed holds a checkout of
     // this repository once Zed builds the extension, whose tests are not ours.
-    projects: ["packages/*/vitest.config.{ts,mts}"],
+    projects: [
+      "packages/next/vitest.config.ts",
+      "packages/cli/vitest.config.ts",
+      "packages/language-server/vitest.config.ts",
+      "packages/vscode/vitest.config.mts",
+      "packages/tree-sitter-dxn/vitest.config.mts",
+    ],
     coverage: {
       provider: "v8",
       // Also match relative to a package root when --project selects one.
@@ -16,6 +22,8 @@ export default defineConfig({
         "{packages/*/,}build.mjs",
       ],
       exclude: [
+        // Retained prototype library; redesigned consumers use packages/next.
+        "packages/language/**",
         "{packages/cli/,}src/main.ts",
         "{packages/language-server/,}src/main.ts",
         // Only VS Code can run it; what it starts is chosen in server.ts.
@@ -27,7 +35,6 @@ export default defineConfig({
       thresholds: {
         lines: 70,
         functions: 85,
-        "packages/language/**": { lines: 70, functions: 85 },
         "packages/cli/**": { lines: 70, functions: 85 },
         "packages/language-server/**": { lines: 70, functions: 85 },
         "packages/vscode/**": { lines: 70, functions: 85 },

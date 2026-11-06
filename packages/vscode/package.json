@@ -1,7 +1,7 @@
 {
   "name": "dxn",
-  "displayName": "dxn",
-  "description": "Language support for dxn: highlighting, inline errors, navigation, completion, rename, and running types and expectations.",
+  "displayName": "dxn (redesign)",
+  "description": "Lean-backed DXN enum checking, formatting, highlighting and enumeration rename.",
   "version": "0.1.0",
   "publisher": "legacycodehq",
   "license": "Apache-2.0",
@@ -43,18 +43,18 @@
     "configuration": {
       "title": "dxn",
       "properties": {
-        "dxn.server.path": {
+        "dxnRedesign.server.path": {
           "type": "string",
           "default": "",
           "description": "The language server to run instead of the one the extension bundles, such as node, or a dxn-language-server on the PATH."
         },
-        "dxn.server.arguments": {
+        "dxnRedesign.server.arguments": {
           "type": "array",
           "items": {
             "type": "string"
           },
           "default": [],
-          "description": "Arguments to the language server dxn.server.path names, such as the path to a development build's dist/main.js."
+          "description": "Arguments to the language server dxnRedesign.server.path names, such as the path to a development build's dist/main.js."
         }
       }
     },
@@ -70,7 +70,7 @@
             "items": {
               "type": "string"
             },
-            "description": "What dxn runs, after its command the file: states and a type, or check, --expect and an expectation's title."
+            "description": "Command arguments for the new DXN CLI, such as check or fmt --check."
           }
         }
       }
@@ -80,56 +80,8 @@
         "editor.defaultFormatter": "legacycodehq.dxn",
         "editor.formatOnSave": true,
         "editor.semanticHighlighting.enabled": true
-      },
-      "editor.semanticTokenColorCustomizations": {
-        "rules": {
-          "dxnDocumentation:dxn": {
-            "italic": true,
-            "bold": false
-          },
-          "dxnDocumentationTag:dxn": {
-            "italic": true,
-            "bold": false
-          },
-          "dxnDocumentationTarget:dxn": {
-            "italic": true,
-            "bold": true
-          }
-        }
       }
-    },
-    "semanticTokenTypes": [
-      {
-        "id": "dxnDocumentation",
-        "superType": "comment",
-        "description": "DXN documentation markers and prose."
-      },
-      {
-        "id": "dxnDocumentationTag",
-        "superType": "comment",
-        "description": "DXN documentation tag, including @."
-      },
-      {
-        "id": "dxnDocumentationTarget",
-        "description": "DXN documentation target, displayed in normal foreground."
-      }
-    ],
-    "semanticTokenScopes": [
-      {
-        "language": "dxn",
-        "scopes": {
-          "dxnDocumentation": [
-            "comment.block.documentation.dxn"
-          ],
-          "dxnDocumentationTag": [
-            "comment.block.documentation.tag.dxn"
-          ],
-          "dxnDocumentationTarget": [
-            "source.dxn"
-          ]
-        }
-      }
-    ]
+    }
   },
   "devDependencies": {
     "@types/vscode": "1.100.0",

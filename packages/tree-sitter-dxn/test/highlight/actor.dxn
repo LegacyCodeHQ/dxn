@@ -1,7 +1,0 @@
-record Evidence {
-}
-actor Designer records Evidence
-# <- keyword
-#     ^ type
-#              ^ keyword
-#                      ^ type
