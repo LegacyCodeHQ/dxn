@@ -2,6 +2,7 @@ name = "dxn"
 grammar = "dxn"
 path_suffixes = ["dxn"]
 line_comments = ["# "]
+word_characters = ["-"]
 tab_size = 2
 hard_tabs = false
 
