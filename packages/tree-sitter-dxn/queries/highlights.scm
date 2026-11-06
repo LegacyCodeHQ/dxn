@@ -86,6 +86,12 @@
 (profile_declaration environment: (identifier) @type)
 (assignment dimension: (identifier) @type)
 
+; Where an expectation is: a type, then the children down to it.
+
+(in_clause path: (identifier) @type)
+(in_clause path: (qualified_name (identifier) @property))
+(in_clause path: (qualified_name . (identifier) @type))
+
 ; States, children and fields
 
 (state_field name: (identifier) @property)

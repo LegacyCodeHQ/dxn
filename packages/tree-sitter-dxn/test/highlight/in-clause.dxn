@@ -1,0 +1,14 @@
+type Menu {
+}
+type Window {
+  has menu: Menu
+}
+expect "A window" {
+  in Window.menu
+#    ^ type
+#           ^ property
+}
+expect "A menu" {
+  in Menu and below
+#    ^ type
+}
