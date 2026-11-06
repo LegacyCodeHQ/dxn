@@ -7,7 +7,7 @@ import { renameAt, renameable } from "@language/editor/rename-at.js";
 import { tokens } from "@language/editor/semantic.js";
 import { symbols } from "@language/editor/symbols.js";
 import { parse } from "@language/syntax/parse.js";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 // A file written on Windows ends its lines with \r\n, and one from an old Mac
 // with \r alone: lines and columns are the same as with \n, so every answer
@@ -52,8 +52,12 @@ function answers(text: string): unknown[] {
 }
 
 describe("a file with Windows line endings", () => {
+  let baseline: unknown[];
+  beforeAll(() => {
+    baseline = answers(sample);
+  });
   it("is answered as the same file with \\n line endings is", () => {
-    expect(answers(windows)).toEqual(answers(sample));
+    expect(answers(windows)).toEqual(baseline);
   });
 
   it("has its problems at the same places, the ends of its lines too", () => {
@@ -62,7 +66,7 @@ describe("a file with Windows line endings", () => {
   });
 
   it("is answered as the same file with \\n line endings is, with \\r alone", () => {
-    expect(answers(mac)).toEqual(answers(sample));
+    expect(answers(mac)).toEqual(baseline);
   });
 
   it("keeps its line endings when renamed", () => {
