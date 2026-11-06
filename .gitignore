@@ -29,3 +29,7 @@ packages/tree-sitter-dxn/build/
 
 # Lean build output
 lean/.lake/
+
+# The notebook's build output and cache
+notebook/.vitepress/cache/
+notebook/.vitepress/dist/

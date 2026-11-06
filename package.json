@@ -11,7 +11,8 @@
     "packages/language-server",
     "packages/vscode",
     "packages/tree-sitter-dxn",
-    "packages/next"
+    "packages/next",
+    "notebook"
   ],
   "engines": {
     "node": ">=22"

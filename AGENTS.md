@@ -88,5 +88,6 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
 | `make brand`       | Test the brand tools under `brand/`                      |
 | `make lean`        | Build the Lean model under `lean/` and run its tests     |
 | `make agreement`   | Compare `packages/next` with the Lean specification      |
+| `make notebook`    | Build the design notebook under `notebook/`              |
 | `make check`       | Full gate used by pre-push and CI                        |
 | `make fmt`         | Format with Biome                                        |

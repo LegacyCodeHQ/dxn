@@ -1,0 +1,17 @@
+{
+  "name": "@legacycodehq/dxn-notebook",
+  "version": "0.0.0",
+  "description": "The dxn design notebook: the theory, decisions and specification behind the language.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "markdown-it-mathjax3": "4.3.2",
+    "vitepress": "1.6.4"
+  }
+}
