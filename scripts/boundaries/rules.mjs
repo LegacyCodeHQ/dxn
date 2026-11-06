@@ -40,11 +40,13 @@ export const allowed = {
   "language-server/entry": ["language-server/entry", "language-server/protocol"],
   "language-server/protocol": ["language-server/protocol"],
   vscode: ["vscode"],
-  // The new implementation: the parsed form, reading it from text, and checking it.
+  // The new implementation: the parsed form, reading it from text, checking it,
+  // and refactoring it.
   "next/model": ["next/model"],
   "next/syntax": ["next/model", "next/syntax"],
   "next/check": ["next/model", "next/check"],
-  "next/api": ["next/model", "next/syntax", "next/check"],
+  "next/refactor": ["next/model", "next/syntax", "next/check", "next/refactor"],
+  "next/api": ["next/model", "next/syntax", "next/check", "next/refactor"],
 };
 
 export function layerOf(path) {
