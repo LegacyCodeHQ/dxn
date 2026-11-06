@@ -13703,6 +13703,1003 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "Sm2QB",
+      "x": -1800,
+      "y": 15380,
+      "name": "Social Post: clarity v0.35.0",
+      "fill": "$canvas",
+      "layout": "vertical",
+      "gap": 40,
+      "padding": 80,
+      "children": [
+        {
+          "type": "text",
+          "id": "WkICY",
+          "name": "Title",
+          "fill": "$slate",
+          "content": "SOCIAL / CLARITY V0.35.0: LINKEDIN 1080 x 1350, X 1600 x 900",
+          "fontFamily": "$font-text",
+          "fontSize": 12,
+          "fontWeight": "600",
+          "letterSpacing": 1.5
+        },
+        {
+          "type": "frame",
+          "id": "OgvG0",
+          "name": "Images",
+          "gap": 80,
+          "children": [
+            {
+              "type": "frame",
+              "id": "c8tA8",
+              "name": "Clarity LinkedIn 1080x1350",
+              "clip": true,
+              "width": 1080,
+              "height": 1350,
+              "fill": "$paper",
+              "layout": "vertical",
+              "padding": [
+                64,
+                72
+              ],
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Kni99",
+                  "layoutPosition": "absolute",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Cutting Mat",
+                  "opacity": 0.5,
+                  "clip": true,
+                  "width": 1080,
+                  "height": 1350,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "t64E8",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 1",
+                      "x": 450,
+                      "y": 0
+                    },
+                    {
+                      "id": "k5rAs",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 2",
+                      "x": -1350,
+                      "y": 0
+                    },
+                    {
+                      "id": "prwWN",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 3",
+                      "x": 450,
+                      "y": 1200
+                    },
+                    {
+                      "id": "yoXfi",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 4",
+                      "x": -1350,
+                      "y": 1200
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "LKrI8",
+                  "name": "Top",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 32,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "R6cDO",
+                      "name": "Eyebrow Row",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "yCZu4",
+                          "name": "New Release Tag",
+                          "gap": 12,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "jFGRD",
+                              "name": "Rocket Icon",
+                              "width": 36,
+                              "height": 36,
+                              "icon": "rocket-launch-fill",
+                              "library": "phosphor",
+                              "fill": "#DC2626"
+                            },
+                            {
+                              "type": "text",
+                              "id": "U4lQc",
+                              "name": "Eyebrow Label",
+                              "fill": "$ink",
+                              "content": "NEW RELEASE  •  NEW LANGUAGES",
+                              "fontFamily": "$font-text",
+                              "fontSize": "$fs-label",
+                              "fontWeight": "600",
+                              "letterSpacing": 1.5
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jmbJm",
+                      "name": "Headline",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "v925N",
+                          "name": "Line 1",
+                          "fill": "$ink",
+                          "content": "Clarity",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        },
+                        {
+                          "type": "text",
+                          "id": "LM8hL",
+                          "name": "Line 3",
+                          "fill": "$accent",
+                          "content": "v0.35.0",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "isI5l",
+                      "name": "Body Wrap",
+                      "width": "fill_container",
+                      "padding": [
+                        8,
+                        0,
+                        0,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "G5JdSm",
+                          "name": "Body",
+                          "fill": "$slate",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": " \n",
+                          "lineHeight": 1.4,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "FLVK9",
+                  "layoutPosition": "absolute",
+                  "x": 0,
+                  "y": 556,
+                  "name": "Languages",
+                  "width": 1080,
+                  "layout": "vertical",
+                  "gap": 20,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "x7zEYm",
+                      "name": "Row",
+                      "layout": "vertical",
+                      "gap": 88,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "qEvG2",
+                          "name": "Lean 4",
+                          "gap": 44,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ETFDd",
+                              "name": "Plus",
+                              "fill": "$accent",
+                              "content": "+",
+                              "lineHeight": 1,
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-display",
+                              "fontWeight": "800"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "vIADj",
+                              "name": "Lean Logo (lean-lang.org)",
+                              "width": 357,
+                              "height": 124,
+                              "layout": "none",
+                              "children": [
+                                {
+                                  "type": "path",
+                                  "id": "Pt0gI",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Lean",
+                                  "geometry": "M206.333 5.67949h-100.666m100.666 0l36.917 78.82051m-36.917-78.82051v78.82051m36.917 0h74.299m-74.299 0l36.417 78.821 1.222-0.003 36.66-78.818m-111.216 0v78.821h-201.333v-158.321m201.333 79.5h-100.666m211.882 0l35.451-78.82051m0 0v158.32051m0-158.32051h0.667l126.666 157.77451h0.667v-158.454",
+                                  "viewBox": [
+                                    0,
+                                    0,
+                                    486,
+                                    169
+                                  ],
+                                  "width": 357,
+                                  "height": 124,
+                                  "stroke": "#386EE0",
+                                  "strokeWidth": 7.337278106508876,
+                                  "strokeLinejoin": "round",
+                                  "strokeLinecap": "round"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FQGTf",
+                          "name": "Quint",
+                          "gap": 44,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "sW5x5",
+                              "name": "Plus",
+                              "fill": "$accent",
+                              "content": "+",
+                              "lineHeight": 1,
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-display",
+                              "fontWeight": "800"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "yrPdp",
+                              "name": "Quint Logo (informalsystems/quint)",
+                              "width": 483,
+                              "height": 124,
+                              "layout": "none",
+                              "children": [
+                                {
+                                  "type": "path",
+                                  "id": "FXSLd",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Quint 1",
+                                  "geometry": "M148.66 22.36c4.16 4.12 6.24 9.22 6.24 15.3 0 4.12-1.03 7.87-3.09 11.25-2.06 3.38-4.83 5.97-8.31 7.77l7.44 9.3h-8.04l-5.52-7.14c-1.44 0.36-2.94 0.54-4.5 0.54-6.16 0-11.33-2.06-15.51-6.18-4.18-4.12-6.27-9.22-6.27-15.3s2.13-11.22 6.39-15.42c4.26-4.2 9.47-6.3 15.63-6.3s11.38 2.06 15.54 6.18z m-4.95 26.28c2.86-2.92 4.29-6.54 4.29-10.86s-1.43-7.94-4.29-10.86-6.43-4.38-10.71-4.38-7.8 1.46-10.68 4.38-4.32 6.54-4.32 10.86 1.44 7.94 4.32 10.86 6.44 4.38 10.68 4.38 7.85-1.46 10.71-4.38z",
+                                  "viewBox": [
+                                    0,
+                                    0,
+                                    350.44,
+                                    90
+                                  ],
+                                  "fill": "#2d0075",
+                                  "width": 483,
+                                  "height": 124
+                                },
+                                {
+                                  "type": "path",
+                                  "id": "aKtSv",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Quint 2",
+                                  "geometry": "M209.5 16.78v24.78c0 5.28-1.63 9.57-4.89 12.87s-7.47 4.95-12.63 4.95-9.28-1.61-12.48-4.83-4.8-7.47-4.8-12.75v-25.02h7.02v24.84c0 3.4 0.98 6.15 2.94 8.25 1.96 2.1 4.48 3.15 7.56 3.15s5.65-1.04 7.59-3.12 2.91-4.84 2.91-8.28v-24.84h6.78z",
+                                  "viewBox": [
+                                    0,
+                                    0,
+                                    350.44,
+                                    90
+                                  ],
+                                  "fill": "#2d0075",
+                                  "width": 483,
+                                  "height": 124
+                                },
+                                {
+                                  "type": "path",
+                                  "id": "HZxFx",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Quint 3",
+                                  "geometry": "M232 16.78h7.14v42h-7.14v-42z",
+                                  "viewBox": [
+                                    0,
+                                    0,
+                                    350.44,
+                                    90
+                                  ],
+                                  "fill": "#2d0075",
+                                  "width": 483,
+                                  "height": 124
+                                },
+                                {
+                                  "type": "path",
+                                  "id": "iQKk3",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Quint 4",
+                                  "geometry": "M269.02 27.04v31.74h-6.78v-42h7.2l22.68 31.2v-31.2h6.72v42h-6.72l-23.1-31.74z",
+                                  "viewBox": [
+                                    0,
+                                    0,
+                                    350.44,
+                                    90
+                                  ],
+                                  "fill": "#2d0075",
+                                  "width": 483,
+                                  "height": 124
+                                },
+                                {
+                                  "type": "path",
+                                  "id": "P9Rys",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Quint 5",
+                                  "geometry": "M337.36 22.78v36h-6.9v-36h-13.02v-6h33v6h-13.08z",
+                                  "viewBox": [
+                                    0,
+                                    0,
+                                    350.44,
+                                    90
+                                  ],
+                                  "fill": "#2d0075",
+                                  "width": 483,
+                                  "height": 124
+                                },
+                                {
+                                  "type": "path",
+                                  "id": "E8ERXJ",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Quint 6",
+                                  "geometry": "M21.04 73.28l7.57-9.79c-2.86-1.33-5.47-3.2-7.83-5.59-5.33-5.41-8-12.11-8-20.11s2.67-14.7 8-20.11c2.36-2.39 4.96-4.25 7.81-5.58l-7.42-9.59c-3.35 1.8-6.46 4.12-9.34 6.95-7.89 7.77-11.83 17.29-11.83 28.55s3.87 20.7 11.61 28.33c2.89 2.85 6.03 5.16 9.43 6.94z",
+                                  "viewBox": [
+                                    0,
+                                    0,
+                                    350.44,
+                                    90
+                                  ],
+                                  "fill": "#2d0075",
+                                  "width": 483,
+                                  "height": 124
+                                },
+                                {
+                                  "type": "path",
+                                  "id": "hEKBo",
+                                  "x": 0,
+                                  "y": 0,
+                                  "name": "Quint 7",
+                                  "geometry": "M75.38 58.39c3.81-6.26 5.72-13.2 5.72-20.83 0-11.26-3.85-20.7-11.55-28.33-4.32-4.28-9.23-7.35-14.74-9.23l-7.9 10.21c5.17 1.09 9.66 3.57 13.47 7.46 5.3 5.41 7.94 12.11 7.94 20.11s-2.65 14.7-7.94 20.11c-5.3 5.41-11.91 8.11-19.83 8.11-0.08 0-0.15 0-0.23 0l18.56 24h14.89l-13.78-17.22c6.44-3.33 11.57-8.13 15.39-14.39z",
+                                  "viewBox": [
+                                    0,
+                                    0,
+                                    350.44,
+                                    90
+                                  ],
+                                  "fill": "#9d6ce5",
+                                  "width": 483,
+                                  "height": 124
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Omgoo",
+                  "name": "Bottom",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 40,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Wz1Pz",
+                      "name": "Install",
+                      "width": "fill_container",
+                      "fill": "$ink",
+                      "gap": 20,
+                      "padding": [
+                        26,
+                        32
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "e05MZv",
+                          "name": "Prompt",
+                          "fill": "$accent-light",
+                          "content": "$",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "H5I0b",
+                          "name": "Command",
+                          "fill": "$paper",
+                          "content": "npm i -g @legacycodehq/clarity",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "au1hG",
+                      "name": "Repo Link",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "CwigO",
+                          "name": "GitHub Mark",
+                          "width": 48,
+                          "height": 48,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "TJb83",
+                              "x": 4,
+                              "y": 4.8,
+                              "name": "Octocat Fill",
+                              "fill": "#FFFFFF",
+                              "width": 40,
+                              "height": 40
+                            },
+                            {
+                              "type": "path",
+                              "id": "Bdzs2",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Mark (Primer Octicons mark-github)",
+                              "geometry": "M10.226 17.284c-2.965-0.36-5.054-2.493-5.054-5.256 0-1.123 0.404-2.336 1.078-3.144-0.292-0.741-0.247-2.314 0.09-2.965 0.898-0.112 2.111 0.36 2.83 1.01 0.853-0.269 1.752-0.404 2.853-0.404 1.1 0 1.999 0.135 2.807 0.382 0.696-0.629 1.932-1.1 2.83-0.988 0.315 0.606 0.36 2.179 0.067 2.942 0.72 0.854 1.101 2 1.101 3.167 0 2.763-2.089 4.852-5.098 5.234 0.763 0.494 1.28 1.572 1.28 2.807v2.336c0 0.674 0.561 1.056 1.235 0.786 4.066-1.55 7.255-5.615 7.255-10.646 0-6.357-5.166-11.545-11.522-11.545-6.358 0-11.478 5.188-11.478 11.545 0 4.986 3.167 9.12 7.435 10.669 0.606 0.225 1.19-0.18 1.19-0.786v-1.798a2.9 2.9 0 0 1-1.078 0.224c-1.483 0-2.359-0.808-2.987-2.313-0.247-0.607-0.517-0.966-1.034-1.033-0.27-0.023-0.359-0.135-0.359-0.27 0-0.27 0.45-0.471 0.898-0.471 0.652 0 1.213 0.404 1.797 1.235 0.45 0.651 0.921 0.943 1.483 0.943 0.561 0 0.92-0.202 1.437-0.719 0.382-0.381 0.674-0.718 0.944-0.943",
+                              "viewBox": [
+                                0,
+                                0,
+                                24,
+                                24
+                              ],
+                              "fill": "$ink",
+                              "width": 48,
+                              "height": 48
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "ZVOJZ",
+                          "name": "Repo URL",
+                          "fill": "$ink",
+                          "content": "LegacyCodeHQ/clarity-cli",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "tcowe",
+              "name": "Clarity X 1600x900",
+              "clip": true,
+              "width": 1600,
+              "height": 900,
+              "fill": "$paper",
+              "layout": "vertical",
+              "padding": [
+                64,
+                72
+              ],
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "bseoX",
+                  "layoutPosition": "absolute",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Cutting Mat",
+                  "opacity": 0.5,
+                  "clip": true,
+                  "width": 1600,
+                  "height": 900,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "Y331u",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 1",
+                      "x": 900,
+                      "y": -150
+                    },
+                    {
+                      "id": "njTIE",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 2",
+                      "x": -900,
+                      "y": -150
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "e7EN2",
+                  "name": "Eyebrow Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "O1nRaa",
+                      "name": "New Release Tag",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "EdR3m",
+                          "name": "Rocket Icon",
+                          "width": 36,
+                          "height": 36,
+                          "icon": "rocket-launch-fill",
+                          "library": "phosphor",
+                          "fill": "#DC2626"
+                        },
+                        {
+                          "type": "text",
+                          "id": "AtByF",
+                          "name": "Eyebrow Label",
+                          "fill": "$ink",
+                          "content": "NEW RELEASE  •  NEW LANGUAGES",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yuJ5d",
+                  "name": "Hero Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "fcpci",
+                      "name": "Head",
+                      "layout": "vertical",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "ceWMC",
+                          "name": "Headline",
+                          "layout": "vertical",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "AUAl4",
+                              "name": "Line 1",
+                              "fill": "$ink",
+                              "content": "Clarity",
+                              "lineHeight": 1.05,
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-display",
+                              "fontWeight": "800",
+                              "letterSpacing": -4.2
+                            },
+                            {
+                              "type": "text",
+                              "id": "S3brw",
+                              "name": "Line 2",
+                              "fill": "$accent",
+                              "content": "v0.35.0",
+                              "lineHeight": 1.05,
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-display",
+                              "fontWeight": "800",
+                              "letterSpacing": -4.2
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "KExq2",
+                          "x": 0,
+                          "y": 242,
+                          "name": "Body",
+                          "enabled": false,
+                          "fill": "$slate",
+                          "content": " ",
+                          "lineHeight": 1.4,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "L9waJ",
+                      "name": "Languages",
+                      "layout": "vertical",
+                      "gap": 20,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "D6rnO",
+                          "name": "Row",
+                          "layout": "vertical",
+                          "gap": 64,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "BVkDP",
+                              "name": "Lean 4",
+                              "gap": 44,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "A0rPoO",
+                                  "name": "Plus",
+                                  "fill": "$accent",
+                                  "content": "+",
+                                  "lineHeight": 1,
+                                  "fontFamily": "$font-mark",
+                                  "fontSize": "$fs-display",
+                                  "fontWeight": "800"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "P9JjMC",
+                                  "name": "Lean Logo (lean-lang.org)",
+                                  "width": 357,
+                                  "height": 124,
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "path",
+                                      "id": "D5oKt",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Lean",
+                                      "geometry": "M206.333 5.67949h-100.666m100.666 0l36.917 78.82051m-36.917-78.82051v78.82051m36.917 0h74.299m-74.299 0l36.417 78.821 1.222-0.003 36.66-78.818m-111.216 0v78.821h-201.333v-158.321m201.333 79.5h-100.666m211.882 0l35.451-78.82051m0 0v158.32051m0-158.32051h0.667l126.666 157.77451h0.667v-158.454",
+                                      "viewBox": [
+                                        0,
+                                        0,
+                                        486,
+                                        169
+                                      ],
+                                      "width": 357,
+                                      "height": 124,
+                                      "stroke": "#386EE0",
+                                      "strokeWidth": 7.337278106508876,
+                                      "strokeLinejoin": "round",
+                                      "strokeLinecap": "round"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "QzwaD",
+                              "name": "Quint",
+                              "gap": 44,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "CncNQ",
+                                  "name": "Plus",
+                                  "fill": "$accent",
+                                  "content": "+",
+                                  "lineHeight": 1,
+                                  "fontFamily": "$font-mark",
+                                  "fontSize": "$fs-display",
+                                  "fontWeight": "800"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "SCVob",
+                                  "name": "Quint Logo (informalsystems/quint)",
+                                  "width": 483,
+                                  "height": 124,
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "path",
+                                      "id": "xtuIi",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Quint 1",
+                                      "geometry": "M148.66 22.36c4.16 4.12 6.24 9.22 6.24 15.3 0 4.12-1.03 7.87-3.09 11.25-2.06 3.38-4.83 5.97-8.31 7.77l7.44 9.3h-8.04l-5.52-7.14c-1.44 0.36-2.94 0.54-4.5 0.54-6.16 0-11.33-2.06-15.51-6.18-4.18-4.12-6.27-9.22-6.27-15.3s2.13-11.22 6.39-15.42c4.26-4.2 9.47-6.3 15.63-6.3s11.38 2.06 15.54 6.18z m-4.95 26.28c2.86-2.92 4.29-6.54 4.29-10.86s-1.43-7.94-4.29-10.86-6.43-4.38-10.71-4.38-7.8 1.46-10.68 4.38-4.32 6.54-4.32 10.86 1.44 7.94 4.32 10.86 6.44 4.38 10.68 4.38 7.85-1.46 10.71-4.38z",
+                                      "viewBox": [
+                                        0,
+                                        0,
+                                        350.44,
+                                        90
+                                      ],
+                                      "fill": "#2d0075",
+                                      "width": 483,
+                                      "height": 124
+                                    },
+                                    {
+                                      "type": "path",
+                                      "id": "k6OOch",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Quint 2",
+                                      "geometry": "M209.5 16.78v24.78c0 5.28-1.63 9.57-4.89 12.87s-7.47 4.95-12.63 4.95-9.28-1.61-12.48-4.83-4.8-7.47-4.8-12.75v-25.02h7.02v24.84c0 3.4 0.98 6.15 2.94 8.25 1.96 2.1 4.48 3.15 7.56 3.15s5.65-1.04 7.59-3.12 2.91-4.84 2.91-8.28v-24.84h6.78z",
+                                      "viewBox": [
+                                        0,
+                                        0,
+                                        350.44,
+                                        90
+                                      ],
+                                      "fill": "#2d0075",
+                                      "width": 483,
+                                      "height": 124
+                                    },
+                                    {
+                                      "type": "path",
+                                      "id": "v350V4",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Quint 3",
+                                      "geometry": "M232 16.78h7.14v42h-7.14v-42z",
+                                      "viewBox": [
+                                        0,
+                                        0,
+                                        350.44,
+                                        90
+                                      ],
+                                      "fill": "#2d0075",
+                                      "width": 483,
+                                      "height": 124
+                                    },
+                                    {
+                                      "type": "path",
+                                      "id": "mxyiS",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Quint 4",
+                                      "geometry": "M269.02 27.04v31.74h-6.78v-42h7.2l22.68 31.2v-31.2h6.72v42h-6.72l-23.1-31.74z",
+                                      "viewBox": [
+                                        0,
+                                        0,
+                                        350.44,
+                                        90
+                                      ],
+                                      "fill": "#2d0075",
+                                      "width": 483,
+                                      "height": 124
+                                    },
+                                    {
+                                      "type": "path",
+                                      "id": "LPO81",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Quint 5",
+                                      "geometry": "M337.36 22.78v36h-6.9v-36h-13.02v-6h33v6h-13.08z",
+                                      "viewBox": [
+                                        0,
+                                        0,
+                                        350.44,
+                                        90
+                                      ],
+                                      "fill": "#2d0075",
+                                      "width": 483,
+                                      "height": 124
+                                    },
+                                    {
+                                      "type": "path",
+                                      "id": "K3tcM",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Quint 6",
+                                      "geometry": "M21.04 73.28l7.57-9.79c-2.86-1.33-5.47-3.2-7.83-5.59-5.33-5.41-8-12.11-8-20.11s2.67-14.7 8-20.11c2.36-2.39 4.96-4.25 7.81-5.58l-7.42-9.59c-3.35 1.8-6.46 4.12-9.34 6.95-7.89 7.77-11.83 17.29-11.83 28.55s3.87 20.7 11.61 28.33c2.89 2.85 6.03 5.16 9.43 6.94z",
+                                      "viewBox": [
+                                        0,
+                                        0,
+                                        350.44,
+                                        90
+                                      ],
+                                      "fill": "#2d0075",
+                                      "width": 483,
+                                      "height": 124
+                                    },
+                                    {
+                                      "type": "path",
+                                      "id": "hGkVl",
+                                      "x": 0,
+                                      "y": 0,
+                                      "name": "Quint 7",
+                                      "geometry": "M75.38 58.39c3.81-6.26 5.72-13.2 5.72-20.83 0-11.26-3.85-20.7-11.55-28.33-4.32-4.28-9.23-7.35-14.74-9.23l-7.9 10.21c5.17 1.09 9.66 3.57 13.47 7.46 5.3 5.41 7.94 12.11 7.94 20.11s-2.65 14.7-7.94 20.11c-5.3 5.41-11.91 8.11-19.83 8.11-0.08 0-0.15 0-0.23 0l18.56 24h14.89l-13.78-17.22c6.44-3.33 11.57-8.13 15.39-14.39z",
+                                      "viewBox": [
+                                        0,
+                                        0,
+                                        350.44,
+                                        90
+                                      ],
+                                      "fill": "#9d6ce5",
+                                      "width": 483,
+                                      "height": 124
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ut2Mt",
+                  "name": "Bottom",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 28,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "fKIzp",
+                      "name": "Install",
+                      "width": "fill_container",
+                      "fill": "$ink",
+                      "gap": 20,
+                      "padding": [
+                        26,
+                        32
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "xkzZY",
+                          "name": "Prompt",
+                          "fill": "$accent-light",
+                          "content": "$",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "JiCjv",
+                          "name": "Command",
+                          "fill": "$paper",
+                          "content": "npm i -g @legacycodehq/clarity",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "k1vpa",
+                      "name": "Repo Link",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "X9Rbsv",
+                          "name": "GitHub Mark",
+                          "width": 48,
+                          "height": 48,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "Kfw3Y",
+                              "x": 4,
+                              "y": 4.8,
+                              "name": "Octocat Fill",
+                              "fill": "#FFFFFF",
+                              "width": 40,
+                              "height": 40
+                            },
+                            {
+                              "type": "path",
+                              "id": "U6p0Lt",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Mark (Primer Octicons mark-github)",
+                              "geometry": "M10.226 17.284c-2.965-0.36-5.054-2.493-5.054-5.256 0-1.123 0.404-2.336 1.078-3.144-0.292-0.741-0.247-2.314 0.09-2.965 0.898-0.112 2.111 0.36 2.83 1.01 0.853-0.269 1.752-0.404 2.853-0.404 1.1 0 1.999 0.135 2.807 0.382 0.696-0.629 1.932-1.1 2.83-0.988 0.315 0.606 0.36 2.179 0.067 2.942 0.72 0.854 1.101 2 1.101 3.167 0 2.763-2.089 4.852-5.098 5.234 0.763 0.494 1.28 1.572 1.28 2.807v2.336c0 0.674 0.561 1.056 1.235 0.786 4.066-1.55 7.255-5.615 7.255-10.646 0-6.357-5.166-11.545-11.522-11.545-6.358 0-11.478 5.188-11.478 11.545 0 4.986 3.167 9.12 7.435 10.669 0.606 0.225 1.19-0.18 1.19-0.786v-1.798a2.9 2.9 0 0 1-1.078 0.224c-1.483 0-2.359-0.808-2.987-2.313-0.247-0.607-0.517-0.966-1.034-1.033-0.27-0.023-0.359-0.135-0.359-0.27 0-0.27 0.45-0.471 0.898-0.471 0.652 0 1.213 0.404 1.797 1.235 0.45 0.651 0.921 0.943 1.483 0.943 0.561 0 0.92-0.202 1.437-0.719 0.382-0.381 0.674-0.718 0.944-0.943",
+                              "viewBox": [
+                                0,
+                                0,
+                                24,
+                                24
+                              ],
+                              "fill": "$ink",
+                              "width": 48,
+                              "height": 48
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "H2ULTK",
+                          "name": "Repo URL",
+                          "fill": "$ink",
+                          "content": "LegacyCodeHQ/clarity-cli",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
