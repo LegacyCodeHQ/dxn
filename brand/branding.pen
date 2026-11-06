@@ -11678,6 +11678,53 @@
               "children": [
                 {
                   "type": "frame",
+                  "id": "O4ymFS",
+                  "layoutPosition": "absolute",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Cutting Mat",
+                  "opacity": 0.5,
+                  "clip": true,
+                  "width": 1080,
+                  "height": 1350,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "i7URvL",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 1",
+                      "x": 450,
+                      "y": 0
+                    },
+                    {
+                      "id": "Q3YYwN",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 2",
+                      "x": -1350,
+                      "y": 0
+                    },
+                    {
+                      "id": "FJhhg",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 3",
+                      "x": 450,
+                      "y": 1200
+                    },
+                    {
+                      "id": "K2AxJ",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 4",
+                      "x": -1350,
+                      "y": 1200
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
                   "id": "Gf7kA",
                   "name": "Top",
                   "width": "fill_container",
@@ -12245,6 +12292,37 @@
               ],
               "justifyContent": "space_between",
               "children": [
+                {
+                  "type": "frame",
+                  "id": "huXDQ",
+                  "layoutPosition": "absolute",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Cutting Mat",
+                  "opacity": 0.5,
+                  "clip": true,
+                  "width": 1600,
+                  "height": 900,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "G94oS",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 1",
+                      "x": 900,
+                      "y": 0
+                    },
+                    {
+                      "id": "xouCq",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 2",
+                      "x": -900,
+                      "y": 0
+                    }
+                  ]
+                },
                 {
                   "type": "frame",
                   "id": "uXrva",
@@ -12828,6 +12906,53 @@
               "children": [
                 {
                   "type": "frame",
+                  "id": "w1uGMz",
+                  "layoutPosition": "absolute",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Cutting Mat",
+                  "opacity": 0.5,
+                  "clip": true,
+                  "width": 1080,
+                  "height": 1350,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "arxyT",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 1",
+                      "x": 450,
+                      "y": 0
+                    },
+                    {
+                      "id": "Sy2JM",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 2",
+                      "x": -1350,
+                      "y": 0
+                    },
+                    {
+                      "id": "S4t1fg",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 3",
+                      "x": 450,
+                      "y": 1200
+                    },
+                    {
+                      "id": "Mc7Zq",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 4",
+                      "x": -1350,
+                      "y": 1200
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
                   "id": "hPTtX",
                   "name": "Top",
                   "width": "fill_container",
@@ -13242,6 +13367,37 @@
               ],
               "justifyContent": "space_between",
               "children": [
+                {
+                  "type": "frame",
+                  "id": "Smj6g",
+                  "layoutPosition": "absolute",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Cutting Mat",
+                  "opacity": 0.5,
+                  "clip": true,
+                  "width": 1600,
+                  "height": 900,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "id": "udmc9",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 1",
+                      "x": 900,
+                      "y": 0
+                    },
+                    {
+                      "id": "JDNDp",
+                      "type": "ref",
+                      "ref": "a16bS",
+                      "name": "Mat Pattern Paper 2",
+                      "x": -900,
+                      "y": 0
+                    }
+                  ]
+                },
                 {
                   "type": "frame",
                   "id": "b9nk4",
