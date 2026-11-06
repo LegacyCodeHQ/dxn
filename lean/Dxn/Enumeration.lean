@@ -7,8 +7,9 @@ A declaration is what is written: a name and a list of value names, in
 written order. The checker reports every problem with it: no names, or a name
 written more than once. It accepts a declaration with no problems.
 
-An accepted declaration means a finite set with one element per name. The
-written order means nothing.
+An accepted declaration means a finite set with one element per name. Each
+element is a value tagged with the enumeration's name, so enumerations with
+different names share no value. The written order means nothing.
 -/
 
 namespace Dxn
@@ -97,21 +98,47 @@ structure Enum where
   decl : EnumDecl
   valid : Valid decl
 
-/-- The elements of an enumeration: one per name. -/
-def Enum.Value (e : Enum) : Type :=
-  { v : Name // v ∈ e.decl.values }
+/-- A value of an enumeration, tagged with the enumeration's name, as in a disjoint union. -/
+structure Value where
+  enum : Name
+  name : Name
+  deriving Repr, DecidableEq
 
-instance (e : Enum) : Finite e.Value where
-  elems := e.decl.values.attach
+/-- The values of an enumeration, in written order: each name tagged with the enumeration's. -/
+def Enum.values (e : Enum) : List Value :=
+  e.decl.values.map (Value.mk e.decl.name)
+
+theorem Enum.mem_values {e : Enum} {v : Value} :
+    v ∈ e.values ↔ v.enum = e.decl.name ∧ v.name ∈ e.decl.values := by
+  cases v
+  simp only [Enum.values, List.mem_map, Value.mk.injEq]
+  constructor
+  · rintro ⟨n, hn, rfl, rfl⟩; exact ⟨rfl, hn⟩
+  · rintro ⟨rfl, hn⟩; exact ⟨_, hn, rfl, rfl⟩
+
+theorem Enum.nodup_values (e : Enum) : e.values.Nodup :=
+  e.valid.2.map _ fun _ _ hne heq => hne (Value.mk.inj heq).2
+
+/-- Enumerations with different names share no value. -/
+theorem Enum.values_disjoint {e f : Enum} (h : e.decl.name ≠ f.decl.name) (v : Value) :
+    v ∈ e.values → v ∉ f.values :=
+  fun he hf => h ((mem_values.mp he).1.symm.trans (mem_values.mp hf).1)
+
+/-- The elements of an enumeration: its values. -/
+def Enum.Elem (e : Enum) : Type :=
+  { v : Value // v ∈ e.values }
+
+instance (e : Enum) : Finite e.Elem where
+  elems := e.values.attach
   complete := List.mem_attach _
   nodup := by
-    have h : (e.decl.values.attach.map Subtype.val).Nodup := by
-      rw [List.attach_map_subtype_val]; exact e.valid.2
+    have h : (e.values.attach.map Subtype.val).Nodup := by
+      rw [List.attach_map_subtype_val]; exact e.nodup_values
     exact (List.pairwise_map.mp h).imp fun hne heq => hne (congrArg Subtype.val heq)
 
 /-- An enumeration has as many elements as names. -/
-theorem Enum.card_value (e : Enum) : card e.Value = e.decl.values.length :=
-  List.length_attach
+theorem Enum.card_elem (e : Enum) : card e.Elem = e.decl.values.length :=
+  List.length_attach.trans (List.length_map _)
 
 /-- Two declarations declare the same enumeration: the same name, the same set of names. -/
 def Same (d e : EnumDecl) : Prop :=

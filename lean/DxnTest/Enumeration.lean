@@ -34,11 +34,27 @@ example (d : EnumDecl) : (check d).Nodup := nodup_check d
 
 def lightEnum : Enum := ⟨light, by decide⟩
 
+def powerEnum : Enum := ⟨⟨"Power", ["off", "on"]⟩, by decide⟩
+
+-- Each value is tagged with its enumeration's name.
+#guard lightEnum.values = [⟨"Light", "off"⟩, ⟨"Light", "on"⟩]
+
+-- Light's off is not Power's off.
+example : (⟨"Light", "off"⟩ : Value) ≠ ⟨"Power", "off"⟩ := by decide
+
+-- Light and Power share no value, though they have the same names.
+#guard lightEnum.values.all fun v => !powerEnum.values.contains v
+
+-- Enumerations with different names share no value.
+example (e f : Enum) (h : e.decl.name ≠ f.decl.name) (v : Value) :
+    v ∈ e.values → v ∉ f.values :=
+  Enum.values_disjoint h v
+
 -- One element per name.
-example : card lightEnum.Value = 2 := rfl
+example : card lightEnum.Elem = 2 := rfl
 
 -- Every accepted declaration has as many elements as names.
-example (e : Enum) : card e.Value = e.decl.values.length := Enum.card_value e
+example (e : Enum) : card e.Elem = e.decl.values.length := Enum.card_elem e
 
 -- Order means nothing: the same names in another order declare the same enumeration.
 example : Same light ⟨"Light", ["on", "off"]⟩ := same_of_perm rfl (by decide)
