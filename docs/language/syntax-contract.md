@@ -199,8 +199,10 @@ manual editor verification remain separate steps.
 `editor/hover.ts` uses attached AST documentation for enums, types and states.
 An enum or type shows its declaration prose. An enum value shows its qualified
 name and only its matching `@value` description; a state shows its own signature
-and only its matching `@state` description. Members do not inherit declaration
-prose or fall back to enum documentation. Continuation text and the first
+and its matching `@state` description. If no matching tag exists, general prose
+applies only when exactly one state shares that documentation block. Explicit
+tags take precedence even when empty. Multi-state group prose and enum prose do
+not become individual member descriptions. Continuation text and the first
 duplicate description are preserved.
 Unknown tags and tags of the wrong kind do not become hover descriptions.
 
@@ -240,3 +242,25 @@ without a second detached warning. The warning neither attaches nor validates
 the block's tags; formatting still preserves its detached status. CLI warnings
 return success, and the language server clears the warning when an unsaved edit
 reattaches the block.
+
+## Single-state prose interpretation
+
+A documentation block on a single-state declaration can document that state
+using prose alone. Matching `@state` text takes precedence, including an explicit
+empty description; it is never concatenated with prose. With two or more states
+in the same declaration, prose describes the group and each state uses only its
+own tag. Adding/removing a comma-separated state updates that interpretation;
+separate single-state declarations remain independent. Syntax and AST attachment
+are unchanged, and the formatter preserves the distinction.
+
+## Partial state documentation
+
+Documentation remains optional. A multi-state declaration with at least one valid
+matching `@state` tag warns once on each sibling without a matching tag. The code
+is `missing-state-documentation`; the warning is located at the undocumented
+state's name. Explicit empty descriptions count as documentation. Duplicate tags
+keep their existing warning/first-description behavior and do not duplicate the
+missing-state warning. Invalid-only tags, prose-only blocks and undocumented
+blocks do not opt into per-state documentation. Coverage never crosses declaration
+boundaries or nested scopes. CLI warnings return success and LSP warnings update
+from unsaved buffers. No grammar or formatter change is required.

@@ -56,9 +56,9 @@ describe("structured documentation hovers", () => {
     });
   });
 
-  it("does not fall back to state-block or enum prose for an undocumented state", () => {
+  it("does not fall back to group or enum prose for an undocumented state", () => {
     const text =
-      "## Enum prose.\nenum Mode = off | on\ntype Button {\n  ## State prose.\n  state mode: Mode\n}";
+      "## Enum prose.\nenum Mode = off | on\ntype Button {\n  ## State prose.\n  state mode: Mode, other: Mode\n}";
     const found = at(text, "state ^mode: Mode");
     expect(found && { code: found.code, comment: found.comment }).toEqual({
       code: "state Button.mode: Mode",

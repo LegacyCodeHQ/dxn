@@ -7,6 +7,33 @@ const source = (tags: string) =>
   `${tags}\nenum Mode = off | on\ntype Button { state mode: Mode }\n`;
 
 describe("documentation diagnostics through dxn check", () => {
+  it("warns about a missing sibling description without failing check", () => {
+    const run = inProject({
+      "model.dxn":
+        "enum Mode = off | on\ntype Button {\n  ## @state mode Current.\n  state mode: Mode, other: Mode\n}\n",
+    });
+    const result = run("check", "model.dxn", "--json");
+    expect({
+      code: result.code,
+      stderr: result.stderr,
+      problems: JSON.parse(result.stdout).problems,
+    }).toMatchInlineSnapshot(`
+      {
+        "code": 0,
+        "problems": [
+          {
+            "code": "missing-state-documentation",
+            "column": 21,
+            "file": "model.dxn",
+            "line": 4,
+            "message": "state \`other\` has no documentation; this declaration documents other states",
+            "severity": "warning",
+          },
+        ],
+        "stderr": "",
+      }
+    `);
+  });
   it("reports a detached block once as a warning and exits successfully", () => {
     const run = inProject({ "model.dxn": source("## Detached.\n## @value off Still detached.\n") });
     const result = run("check", "model.dxn", "--json");

@@ -1,4 +1,4 @@
-import type { Documentation, ResolvedResult } from "@language/core/ast.js";
+import type { Documentation, ResolvedResult, State } from "@language/core/ast.js";
 import { message } from "@language/core/message.js";
 import type { Report } from "@language/evaluation/check-values.js";
 
@@ -20,14 +20,33 @@ export function checkDocumentation(file: ResolvedResult, report: Report): void {
     checkBlock(type.documentation, "type", [], report);
     // One comma-separated state declaration shares one documentation block.
     // Validate that block once against precisely the states it declares.
-    const groups = new Map<Documentation, string[]>();
+    const groups = new Map<Documentation, State[]>();
     for (const state of type.states) {
       if (!state.documentation) continue;
-      const names = groups.get(state.documentation) ?? [];
-      names.push(state.name);
-      groups.set(state.documentation, names);
+      const states = groups.get(state.documentation) ?? [];
+      states.push(state);
+      groups.set(state.documentation, states);
     }
-    for (const [documentation, names] of groups) checkBlock(documentation, "state", names, report);
+    for (const [documentation, states] of groups) {
+      const names = states.map(({ name }) => name);
+      checkBlock(documentation, "state", names, report);
+      const documented = new Set(
+        documentation.tags
+          .filter(({ name, target }) => name === "state" && target && names.includes(target.name))
+          .map(({ target }) => target?.name),
+      );
+      // Tags opt a declaration into per-state documentation. Prose-only groups
+      // and wholly undocumented declarations keep documentation optional.
+      if (states.length < 2 || documented.size === 0) continue;
+      for (const state of states) {
+        if (documented.has(state.name)) continue;
+        report.warn(
+          "missing-state-documentation",
+          message`state ${state.name} has no documentation; this declaration documents other states`,
+          state,
+        );
+      }
+    }
   }
 }
 

@@ -68,6 +68,102 @@ const published = (editor: MessageConnection) =>
   });
 
 describe("the language server", () => {
+  it("warns on a newly added undocumented sibling and clears when it gets a tag", async () => {
+    const editor = connect();
+    editors.push(editor);
+    await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    const uri = "file:///spec/partial-state-documentation.dxn";
+    const text =
+      "enum Mode = off | on\ntype Button {\n  ## @state mode Current.\n  state mode: Mode\n}\n";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: { uri, languageId: "dxn", version: 1, text },
+    });
+    const snapshot = [(await opened).diagnostics];
+    const group = text.replace("state mode: Mode", "state mode: Mode, other: Mode");
+    for (const [version, source] of [
+      [2, group],
+      [3, group.replace("  state", "  ## @state other Other.\n  state")],
+    ] as const) {
+      const changed = published(editor);
+      await editor.sendNotification(DidChangeTextDocumentNotification.type, {
+        textDocument: { uri, version },
+        contentChanges: [{ text: source }],
+      });
+      snapshot.push((await changed).diagnostics);
+    }
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        [],
+        [
+          {
+            "code": "missing-state-documentation",
+            "message": "state \`other\` has no documentation; this declaration documents other states",
+            "range": {
+              "end": {
+                "character": 25,
+                "line": 3,
+              },
+              "start": {
+                "character": 20,
+                "line": 3,
+              },
+            },
+            "severity": 2,
+            "source": "dxn",
+          },
+        ],
+        [],
+      ]
+    `);
+  });
+
+  it("updates prose fallback when an unsaved state declaration becomes a group", async () => {
+    const editor = connect();
+    editors.push(editor);
+    await editor.sendRequest(InitializeRequest.type, {
+      processId: null,
+      rootUri: null,
+      capabilities: {},
+    });
+    const uri = "file:///spec/single-state-documentation.dxn";
+    const text = "enum Mode = off | on\ntype Button {\n  ## Current mode.\n  state mode: Mode\n}\n";
+    const opened = published(editor);
+    await editor.sendNotification(DidOpenTextDocumentNotification.type, {
+      textDocument: { uri, languageId: "dxn", version: 1, text },
+    });
+    await opened;
+    const hovered = async () =>
+      (
+        await editor.sendRequest(HoverRequest.type, {
+          textDocument: { uri },
+          position: { line: 3, character: 8 },
+        })
+      )?.contents;
+    const snapshot = [await hovered()];
+    for (const [version, source] of [
+      [2, text.replace("state mode: Mode", "state mode: Mode, other: Mode")],
+      [3, text],
+    ] as const) {
+      const changed = published(editor);
+      await editor.sendNotification(DidChangeTextDocumentNotification.type, {
+        textDocument: { uri, version },
+        contentChanges: [{ text: source }],
+      });
+      await changed;
+      snapshot.push(await hovered());
+    }
+    expect(snapshot).toEqual([
+      { kind: "markdown", value: "```dxn\nstate Button.mode: Mode\n```\n\nCurrent mode." },
+      { kind: "markdown", value: "```dxn\nstate Button.mode: Mode\n```" },
+      { kind: "markdown", value: "```dxn\nstate Button.mode: Mode\n```\n\nCurrent mode." },
+    ]);
+  });
+
   it("clears detached documentation warnings when an unsaved edit reattaches the block", async () => {
     const editor = connect();
     editors.push(editor);

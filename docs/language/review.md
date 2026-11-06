@@ -310,3 +310,34 @@ the developer confirmed the Zed fix on 2026-11-06: enum-value rename updated
 the attached target, renaming from that target updated the enum, and state
 rename updated its matching tag while preserving the other state and prose.
 VS Code verification and manual duplicate/stored-evidence cases remain pending.
+
+## Single-state documentation prose
+
+A state declared alone now uses its attached prose when no matching `@state` tag
+exists. An explicit matching tag takes precedence even when empty; descriptions
+are not combined. Multi-state declarations keep group prose out of individual
+hovers. The implementation counts states sharing a documentation block rather
+than all states in a type, so separate declarations and nested types keep their
+own interpretation. Enum-value behavior remains unchanged.
+
+Failing tests established the change. Coverage includes declarations/code uses,
+fixed/unresolved states, duplicate/empty tag precedence, independent/nested
+blocks, formatting preservation, and unsaved single/group/single transitions
+through the real language server. Grammar and AST attachment are unchanged.
+The developer confirmed the single-state prose hover in Zed on 2026-11-06.
+Manual single/group/single transition checks and VS Code verification remain
+pending.
+
+## Partially documented state groups
+
+Following the single-state/group discussion, semantic analysis now warns on
+undocumented siblings when at least one valid `@state` target documents a member
+of the same multi-state declaration. Empty descriptions count as documentation;
+prose-only, invalid-only and wholly undocumented groups do not trigger the rule.
+Tests cover both parser entry points, each missing member's location, duplicates,
+optional documentation, declaration/scope isolation, CLI warning exit behavior,
+CLI/LSP parity and warning appearance/removal from unsaved editor updates.
+The developer observed the missing-sibling warning in Zed on 2026-11-06 and
+confirmed that adding the missing tag cleared it. VS Code verification and the
+remaining optional/invalid/duplicate-tag edge cases retain automated coverage
+without a new manual sign-off.

@@ -108,7 +108,8 @@ describe("hover", () => {
     expect(snapshot).toMatchInlineSnapshot(`
       [
         "[hover]
-      state Link.hover: Hover",
+      state Link.hover: Hover
+      -- Over it, with a mouse only.",
         "[shown]
       state Menu.shown: Section = blog",
         "[current]

@@ -146,8 +146,10 @@ Keep `"semantic_tokens": "combined"` enabled for dxn. See Zed's
 
 Attached `##` documentation appears in enum and type hovers. Enum values show
 their qualified name and only their matching `@value` description. States show
-their own signature and only their matching `@state` description. Continuations
-are retained; members do not inherit general declaration or enum prose. Hovers use the current unsaved buffer. Type documentation stays
+their own signature and matching `@state` description. Without a matching tag,
+prose applies to a state only when its declaration contains exactly one state.
+Explicit tags take precedence, even when empty. Continuations are retained;
+group and enum prose are not inherited by individual members. Hovers use the current unsaved buffer. Type documentation stays
 visible alongside evidence details. Ordinary comments and detached documentation
 do not supply documentation for these constructs.
 

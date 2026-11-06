@@ -62,20 +62,22 @@ function commentAbove(lines: string[], line: number): string | undefined {
   return comment.length > 0 ? comment.join("\n") : undefined;
 }
 
-// Declaration prose belongs to the declaration; members show only their matching
-// value/state tag. Analysis keeps the first valid duplicate.
+// Tags take precedence over prose, even when explicitly empty. General prose
+// applies to a state only when its declaration contains exactly one state.
 function documentationComment(
   documentation: Documentation | undefined,
   tag?: "value" | "state",
   target?: string,
+  singleState = false,
 ): string | undefined {
   if (!documentation) return undefined;
-  const text =
-    tag === undefined
-      ? documentation.description
-      : documentation.tags.find((entry) => entry.name === tag && entry.target?.name === target)
-          ?.description;
-  return text || undefined;
+  if (tag === undefined) return documentation.description || undefined;
+  const detail = documentation.tags.find(
+    (entry) => entry.name === tag && entry.target?.name === target,
+  );
+  return (
+    (detail ? detail.description : singleState ? documentation.description : undefined) || undefined
+  );
 }
 
 // Every declaration a name can be, with how it is shown.
@@ -184,6 +186,10 @@ function describeType(
     ...type.actions.map(({ name }) => `  action ${name.name}`),
   ];
   add(type, [header, ...body].join("\n"), documentationComment(type.documentation));
+  const groups = new Map<Documentation, number>();
+  for (const { documentation } of type.states) {
+    if (documentation) groups.set(documentation, (groups.get(documentation) ?? 0) + 1);
+  }
   for (const state of type.states) {
     const value =
       state.fixed !== undefined
@@ -195,7 +201,12 @@ function describeType(
     add(
       state,
       `${keyword} ${type.name}.${state.name}: ${state.enum.name}${value}`,
-      documentationComment(state.documentation, "state", state.name),
+      documentationComment(
+        state.documentation,
+        "state",
+        state.name,
+        state.documentation !== undefined && groups.get(state.documentation) === 1,
+      ),
     );
   }
   for (const action of type.actions) {

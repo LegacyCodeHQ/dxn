@@ -64,6 +64,10 @@ const mixedRecords: Scenario = {
 
 const scenarios: Scenario[] = [
   {
+    title: "a partially documented state group warning",
+    dxn: "enum Mode = off | on\ntype Button {\n  ## @state mode Current.\n  state mode: Mode, other: Mode\n}\n",
+  },
+  {
     title: "rename a documented enum value and duplicate targets from code",
     dxn: "## @value focused First.\n## @value focused Duplicate.\nenum Focus = blurred | focused\ntype Button { state focus: Focus }\nrecord Evidence {}\nactor Designer records Evidence\n",
     stored: {

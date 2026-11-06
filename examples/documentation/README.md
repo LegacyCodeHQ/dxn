@@ -77,6 +77,31 @@ Hover `off` again: its meaning must be unchanged. Format a second time: no edit.
 Repeat once with a blank line between the block and `enum Mode`; formatting must
 keep that blank line and leave the block detached.
 
+## Single-state prose recheck
+
+In the original valid source, delete line 15 (`## @state mode Whether input is
+accepted.`), keeping the prose `## Current interaction mode.` above the lone
+`state mode: Mode` declaration. Hover that state: expect `Current interaction
+mode.`. Add `, another: Mode` to that same declaration without saving: neither
+state should inherit the group prose. Remove the second state: the prose should
+reappear. Restore the original file afterward. An explicit matching `@state`
+continues to override general prose, including an explicitly empty tag.
+The developer confirmed the prose-only single-state hover in Zed on 2026-11-06.
+The full single/group/single transition and VS Code checks remain pending.
+
+## Partially documented group recheck
+
+With the original source restored, remove only the `@state secondary` line from
+its shared declaration's documentation. The `secondary` name in `state focus:
+Focus, secondary: Focus` should receive a `missing-state-documentation` warning;
+`focus` remains documented. Restore the missing tag without saving: the warning
+should disappear. Remove both state tags, leaving only group prose: neither state
+should receive a missing-documentation warning. Restore the original file.
+The developer observed the missing-sibling warning in Zed on 2026-11-06 and
+confirmed it cleared when the missing tag was added. The no-tags/prose-only
+exceptions have automated coverage; their manual recheck and VS Code checks
+remain pending.
+
 ## Documentation-aware rename recheck
 
 Restore the original valid source first. On line 12, rename `focused` in the
@@ -162,3 +187,8 @@ state or prose. These were confirmed through a screenshot and developer reports
 in the chat. Manual duplicate-tag and stored-evidence rename checks remain
 pending; their current coverage is automated. These observations are partial
 verification, not blanket sign-off for every client or direct-extension behavior.
+
+The developer also confirmed the prose-only single-state hover and reported the
+partial-group warning, then confirmed adding the missing state's tag cleared it
+in Zed on 2026-11-06. No additional screenshot or exact editor-version metadata
+was collected for these observations; VS Code verification remains pending.

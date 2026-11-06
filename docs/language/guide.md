@@ -1896,8 +1896,12 @@ type Button {
 
 Hovering an enum or type shows its attached prose. Hovering an enum value shows
 its qualified name and only its matching `@value` description. Hovering a state
-shows its own signature and only its matching `@state` description. Members do
-not inherit general declaration prose or fall back to their enum documentation.
+shows its own signature and matching `@state` description. If there is no matching
+tag and the declaration contains exactly one state, its general prose documents
+that state. In a multi-state declaration, prose describes the group and does not
+appear in individual state hovers. An explicit matching tag takes precedence,
+even if empty; prose and tag descriptions are not combined. Enum values do not
+inherit general declaration prose, and states never fall back to enum prose.
 Documented names can
 show that information at their declarations as well as their uses. Ordinary
 `#` comments and blank-line-separated `##` blocks are not documentation for
@@ -1912,6 +1916,23 @@ the same target warns at the later occurrence and keeps the first description.
 Descriptions may be empty; missing documentation is valid. See the
 [syntax contract](syntax-contract.md) for the complete attachment rules and
 remaining editor verification work.
+
+A single-state declaration therefore needs no redundant tag:
+
+```dxn
+## Whether input is accepted.
+state mode: Mode
+```
+
+Adding a second state makes that prose a group description. Use `@state` tags to
+keep individual descriptions when converting a single-state declaration into a
+group. Separate single-state declarations keep their own prose independently.
+
+Documentation stays optional. However, if a multi-state declaration has at least
+one valid `@state` target, each state without a matching tag receives a
+`missing-state-documentation` warning at its declaration name. A tag with an empty
+description still counts as explicit documentation. Prose-only groups, groups
+without documentation and invalid-only tags do not trigger this warning.
 
 Renaming an enum value updates its attached `@value` targets, including duplicate
 tags. Renaming a state likewise updates its attached `@state` targets. A rename
@@ -1936,6 +1957,7 @@ markers retain a space where it is needed to preserve documentation meaning.
 | `unknown-documentation-target`                                                                                               | error    | a documentation target is not declared by the attached enum or state declaration                 |
 | `duplicate-documentation-tag`                                                                                                | warning  | a later valid tag repeats a target; the first description is retained                            |
 | `unattached-documentation`                                                                                                   | warning  | an explicit `##` block is not attached to an enum, type or state declaration                     |
+| `missing-state-documentation`                                                                                                | warning  | a multi-state declaration documents some states with valid tags but omits others                 |
 | `enum-name`, `dimension-name`, `type-name`, `environment-name`, `record-name`, `actor-name`, `profile-name`, `modifier-name` | error    | the name does not start with a capital letter, or has more than letters and digits               |
 | `state-name`, `field-name`, `child-name`                                                                                     | error    | the name does not start with a lowercase letter                                                  |
 | `action-name`                                                                                                                | error    | an action's name does not start with a lowercase letter                                          |
