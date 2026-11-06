@@ -131,6 +131,7 @@
 ((pair key: (identifier) @property)
   (#match? @property "^[a-z]")
   (#not-eq? @property "profile"))
+(pair key: (qualified_name (identifier) @property))
 
 ; Actions and events
 

@@ -1,0 +1,13 @@
+enum Focus = blurred | focused
+type Link {
+  state focus: Focus
+}
+type Menu {
+  has link: Link
+}
+expect "A focused link" {
+  in Menu
+  then link.focus = focused
+#      ^^^^ property
+#           ^^^^^ property
+}
