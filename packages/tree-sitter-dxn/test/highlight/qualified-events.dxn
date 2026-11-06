@@ -1,0 +1,12 @@
+enum Openness = closed | open
+type Toggle {
+  event activate
+}
+type Menu {
+  state openness: Openness
+  action open: openness closed -> open
+  has toggle: Toggle
+  on toggle.activate: open
+#    ^^^^^^ property
+#           ^^^^^^^^ label
+}
