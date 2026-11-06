@@ -46,15 +46,17 @@ checker can report an enumeration with no values.
 
 These cannot be read at all, and reading stops at the first one:
 
-| Written                    | Problem                               |
-| -------------------------- | ------------------------------------- |
-| `enum Light { off, on, }`  | A trailing comma after the last value |
-| `enum Light { off on }`    | No comma between two values           |
-| `enum Light { off, , on }` | A comma with no value after it        |
-| `enum Light { off, on`     | No closing brace                      |
-| `enum Light off, on }`     | No opening brace                      |
-| `enum { off, on }`         | No enumeration name                   |
-| `Light { off, on }`        | No `enum` keyword                     |
+| Written                             | Problem                                                 |
+| ----------------------------------- | ------------------------------------------------------- |
+| `enum Light { off, on, }`           | A trailing comma after the last value                   |
+| `enum Light { off on }`             | No comma between two values                             |
+| `enum Light { off, , on }`          | A comma with no value after it                          |
+| `enum Light { off, on`              | No closing brace                                        |
+| `enum Light off, on }`              | No opening brace                                        |
+| `enum { off, on }`                  | No enumeration name                                     |
+| `Light { off, on }`                 | No `enum` keyword                                       |
+| `enum Button { enum Focus { on } }` | An enumeration inside another: enumerations do not nest |
+| `enum Result { ok Int, error Int }` | A value with data after its name: values carry no data  |
 
 ## Checker rules
 
@@ -212,20 +214,19 @@ The naming rules, checked one character at a time:
 
 ## Decisions
 
-| Decision                                               | Why                                                                                          | Rejected                                          |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Written `enum Light { off, on }`                       | Familiar from Rust, Swift, TypeScript and Java; braces match $\{\mathit{off}, \mathit{on}\}$ | `enum Light = off \| on`, `type`, `set`, `one of` |
-| Values may go one per line                             | Diffs cleanly; a value can be commented out alone                                            |                                                   |
-| No trailing comma                                      | One way to write a list                                                                      | Allowing `{ off, on, }`                           |
-| Names carry no data                                    | Every enumeration is $1 + 1 + \cdots + 1$                                                    | Left open: see Deferred                           |
-| Order means nothing                                    | A set has no order; giving it a meaning later breaks nothing                                 | Order as an ordinal, as in most languages         |
-| The checker enforces the naming rules, not the grammar | A bad name is reported by name, with what to write instead                                   | Separate tokens for each kind of name             |
+| Decision                                                             | Why                                                                                                   | Rejected                                            |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Written `enum Light { off, on }`                                     | Familiar from Rust, Swift, TypeScript and Java; braces match $\{\mathit{off}, \mathit{on}\}$          | `enum Light = off \| on`, `type`, `set`, `one of`   |
+| Values may go one per line                                           | Diffs cleanly; a value can be commented out alone                                                     |                                                     |
+| No trailing comma                                                    | One way to write a list                                                                               | Allowing `{ off, on, }`                             |
+| Names carry no data: a value is only its name                        | Every enumeration is $1 + 1 + \cdots + 1$, a set of tags with nothing inside                          | Values carrying data, such as `ok Int \| error Int` |
+| Enumerations do not nest: every one is declared at the top of a file | A value is tagged with its enumeration's name, which is then unique in the file without qualifying it | Nested enumerations, such as `Button.Focus`         |
+| Order means nothing                                                  | A set has no order; giving it a meaning later breaks nothing                                          | Order as an ordinal, as in most languages           |
+| The checker enforces the naming rules, not the grammar               | A bad name is reported by name, with what to write instead                                            | Separate tokens for each kind of name               |
 
 ## Deferred
 
 | Question                                                                   | Decide when                                     |
 | -------------------------------------------------------------------------- | ----------------------------------------------- |
-| Can enumerations nest, such as `Button.Focus`?                             | Modeling a type that contains declarations      |
 | How to write a value when its name alone is ambiguous, such as `Light.off` | Values are first used, in combinations or rules |
 | May a value be named after a keyword, such as `enum`?                      | There are more keywords                         |
-| May names carry data, such as `ok Int \| error Int`?                       | Revisited deliberately                          |

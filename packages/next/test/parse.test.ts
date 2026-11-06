@@ -167,6 +167,28 @@ describe("reading enumerations", () => {
     `);
   });
 
+  it("reads no nested enumeration and no value carrying data", () => {
+    const snapshot: unknown[] = [];
+    snapshot.push(read("enum Button { enum Focus { on } }"));
+    snapshot.push(read("enum Result { ok Int, error Int }"));
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        {
+          "declarations": [],
+          "problems": [
+            "expected ',' or '}' after a value, found 'Focus'",
+          ],
+        },
+        {
+          "declarations": [],
+          "problems": [
+            "expected ',' or '}' after a value, found 'Int'",
+          ],
+        },
+      ]
+    `);
+  });
+
   it("says where each name is", () => {
     const source = "enum Light {\n  off,\n  on\n}";
     const [light] = parse(source).declarations;
