@@ -43,6 +43,8 @@ tagged with its enumeration's name, as in a disjoint union, so `Light`'s
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------- |
 | A declaration is a name and value names in written order | `EnumDecl`                                                                                  |                            |
 | Naming rules                                             | `isEnumName`, `isValueName`                                                                 | `DxnTest/Name.lean`        |
+| The naming rules match their plain descriptions          | `isEnumName_iff`, `isValueName_iff`                                                         | `DxnTest/Name.lean`        |
+| Names are ASCII                                          | `ascii_of_isEnumName`, `ascii_of_isValueName`                                               | `DxnTest/Name.lean`        |
 | What the checker accepts                                 | `Valid`, `check`; `check_eq_nil_iff`                                                        | `DxnTest/Enumeration.lean` |
 | Each problem is reported exactly when it holds           | `badEnumName_mem_check`, `empty_mem_check`, `badValueName_mem_check`, `duplicate_mem_check` | `DxnTest/Enumeration.lean` |
 | No problem is reported twice                             | `nodup_check`                                                                               | `DxnTest/Enumeration.lean` |
