@@ -24,7 +24,7 @@ implementation is fixed, or the specification is changed on purpose first.
 | Finite sets             | [`Dxn/FiniteSet.lean`](Dxn/FiniteSet.lean)     | [`DxnTest/FiniteSet.lean`](DxnTest/FiniteSet.lean)     |                                                                               |
 | Names                   | [`Dxn/Name.lean`](Dxn/Name.lean)               | [`DxnTest/Name.lean`](DxnTest/Name.lean)               | [`notebook/reference/enumerations.md`](../notebook/reference/enumerations.md) |
 | Enumerations            | [`Dxn/Enumeration.lean`](Dxn/Enumeration.lean) | [`DxnTest/Enumeration.lean`](DxnTest/Enumeration.lean) | [`notebook/reference/enumerations.md`](../notebook/reference/enumerations.md) |
-| Files                   | [`Dxn/File.lean`](Dxn/File.lean)               | [`DxnTest/File.lean`](DxnTest/File.lean)               | [`notes/files.md`](notes/files.md)                                            |
+| Files                   | [`Dxn/File.lean`](Dxn/File.lean)               | [`DxnTest/File.lean`](DxnTest/File.lean)               | [`notebook/reference/files.md`](../notebook/reference/files.md)               |
 | Renaming an enumeration | [`Dxn/Rename.lean`](Dxn/Rename.lean)           | [`DxnTest/Rename.lean`](DxnTest/Rename.lean)           | [`notes/renaming.md`](notes/renaming.md)                                      |
 
 ## Using it

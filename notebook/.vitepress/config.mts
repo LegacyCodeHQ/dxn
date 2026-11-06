@@ -21,7 +21,10 @@ export default defineConfig({
       },
       {
         text: "Language reference",
-        items: [{ text: "Enumerations", link: "/reference/enumerations" }],
+        items: [
+          { text: "Enumerations", link: "/reference/enumerations" },
+          { text: "Files", link: "/reference/files" },
+        ],
       },
     ],
     outline: { level: [2, 3] },

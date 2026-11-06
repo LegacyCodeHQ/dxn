@@ -11,15 +11,18 @@ names, so no two of them share a value.
 
 namespace Dxn
 
+-- #region file
 /-- A file as written: its enumeration declarations, in written order. -/
 structure File where
   decls : List EnumDecl
   deriving Repr, DecidableEq
+-- #endregion file
 
 /-- The enumeration names of a file, in written order. -/
 def File.names (f : File) : List Name :=
   f.decls.map (·.name)
 
+-- #region errors
 /-- Why the checker rejects a file, in the order the checker reports them. -/
 inductive FileError where
   /-- A problem with the enumeration of this name. -/
@@ -27,7 +30,9 @@ inductive FileError where
   /-- The enumeration name is written more than once. -/
   | duplicateEnum (name : Name)
   deriving Repr, DecidableEq
+-- #endregion errors
 
+-- #region check
 /--
 Check a file: each declaration's own problems, in written order, then each enumeration name
 written more than once, once, in the order it first appears. No problems means it is accepted.
@@ -35,11 +40,14 @@ written more than once, once, in the order it first appears. No problems means i
 def File.check (f : File) : List FileError :=
   f.decls.flatMap (fun d => (Dxn.check d).map (.enum d.name)) ++
   (duplicates f.names).map .duplicateEnum
+-- #endregion check
 
+-- #region valid
 /-- A file is valid when every declaration is, and no two have the same name. -/
 structure File.Valid (f : File) : Prop where
   enums : ∀ d ∈ f.decls, Dxn.Valid d
   nodup : f.names.Nodup
+-- #endregion valid
 
 theorem File.valid_iff (f : File) : f.Valid ↔ (∀ d ∈ f.decls, Dxn.Valid d) ∧ f.names.Nodup :=
   ⟨fun ⟨a, b⟩ => ⟨a, b⟩, fun ⟨a, b⟩ => ⟨a, b⟩⟩
