@@ -6,17 +6,31 @@ open Dxn
 
 def light : EnumDecl := ⟨"Light", ["off", "on"]⟩
 
--- Distinct names are accepted.
-#guard check light = none
+-- Distinct names are accepted: no problems.
+#guard check light = []
 
 -- No names: no empty enumeration.
-#guard check ⟨"Light", []⟩ = some .empty
+#guard check ⟨"Light", []⟩ = [.empty]
 
 -- A name written twice is rejected, and the error names it.
-#guard check ⟨"Light", ["on", "off", "on"]⟩ = some (.duplicate "on")
+#guard check ⟨"Light", ["on", "off", "on"]⟩ = [.duplicate "on"]
+
+-- Every repeated name is reported, each once, in the order it first appears.
+#guard check ⟨"Light", ["on", "off", "on", "dim", "off", "on"]⟩ =
+  [.duplicate "on", .duplicate "off"]
 
 -- The checker accepts exactly the valid declarations.
-example (d : EnumDecl) : check d = none ↔ Valid d := check_eq_none_iff d
+example (d : EnumDecl) : check d = [] ↔ Valid d := check_eq_nil_iff d
+
+-- It reports a duplicate exactly for each name written more than once.
+example (d : EnumDecl) (v : Name) : .duplicate v ∈ check d ↔ 2 ≤ d.values.count v :=
+  duplicate_mem_check d v
+
+-- It reports an empty declaration exactly when there are no names.
+example (d : EnumDecl) : .empty ∈ check d ↔ d.values = [] := empty_mem_check d
+
+-- It reports no problem twice.
+example (d : EnumDecl) : (check d).Nodup := nodup_check d
 
 def lightEnum : Enum := ⟨light, by decide⟩
 
