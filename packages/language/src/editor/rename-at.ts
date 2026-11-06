@@ -85,7 +85,7 @@ export function renameable(
 ): { from: Span; name: string } | { refusal: string } {
   const found = target(file, source, line, column);
   if ("refusal" in found) return found;
-  return { from: found.from, name: found.name };
+  return { from: { ...found.from }, name: found.name };
 }
 
 // Renames the declaration whose name is at a line and a column of a source,

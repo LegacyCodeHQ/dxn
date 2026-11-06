@@ -39,9 +39,14 @@ export interface Span {
 // A span of the source that refers to a declaration, and the name in that
 // declaration it refers to.
 interface Link {
-  from: Span;
-  to: Located;
+  readonly from: Readonly<Span>;
+  readonly to: Located;
 }
+
+// A parsed result represents one source version. Reuse the resolved graph across
+// editor queries without retaining models after their document/version is gone.
+// Check the source too, so a reused model identity never supplies stale spans.
+const linkIndexes = new WeakMap<ParseResult, { source: string; links: readonly Link[] }>();
 
 // Where the name at a line and a column of a source, both from one, is
 // declared: the name in its declaration, and the name it goes from, whole, or
@@ -53,7 +58,8 @@ export function definition(
   column: number,
   file: ParseResult = parse(source),
 ): { from: Span; to: Located } | undefined {
-  return links(source, file).find(({ from }) => covers(from, line, column));
+  const found = links(source, file).find(({ from }) => covers(from, line, column));
+  return found === undefined ? undefined : { from: { ...found.from }, to: found.to };
 }
 
 // Where the name at a line and a column of a source, both from one, is
@@ -78,7 +84,7 @@ export function usages(
   if (target === undefined) return undefined;
   return {
     declaration: span(target),
-    usages: all.filter(({ to }) => to === target).map(({ from }) => from),
+    usages: all.filter(({ to }) => to === target).map(({ from }) => ({ ...from })),
   };
 }
 
@@ -93,7 +99,9 @@ export const wordAt = (lines: string[], line: number, column: number) =>
 // Every span of the source that refers to a declaration, in the order they are
 // written, each with the name it refers to; a path into children, a span for
 // each of its parts.
-export function links(source: string, file: ParseResult = parse(source)): Link[] {
+export function links(source: string, file: ParseResult = parse(source)): readonly Link[] {
+  const cached = linkIndexes.get(file);
+  if (cached?.source === source) return cached.links;
   const lines = sourceLines(source);
   const declared = declarations(file);
   const result: Link[] = [];
@@ -135,7 +143,9 @@ export function links(source: string, file: ParseResult = parse(source)): Link[]
     }
   }
   result.push(...expectationLinks(file, lines, declared));
-  return result.sort((a, b) => a.from.line - b.from.line || a.from.column - b.from.column);
+  result.sort((a, b) => a.from.line - b.from.line || a.from.column - b.from.column);
+  linkIndexes.set(file, { source, links: result });
+  return result;
 }
 
 // Follows a path from a type through its children to its part at an index:

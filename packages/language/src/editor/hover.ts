@@ -35,7 +35,7 @@ export function hover(
   const link = links(source, file).find(({ from }) => covers(from, line, column));
   if (link !== undefined) {
     const found = described.get(link.to);
-    return found === undefined ? undefined : { from: link.from, ...found };
+    return found === undefined ? undefined : { from: { ...link.from }, ...found };
   }
   const declared = [...described.keys()].find((at) => covers(span(at), line, column));
   if (declared === undefined) return undefined;
