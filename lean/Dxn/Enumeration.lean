@@ -6,7 +6,8 @@ import Dxn.Name
 
 A declaration is what is written: a name and a list of value names, in
 written order. The checker reports every problem with it: a name that breaks
-the naming rules, no names, or a name written more than once. It accepts a declaration with no problems.
+the naming rules, no names, or a name written more than once. It accepts a
+declaration with no problems.
 
 An accepted declaration means a finite set with one element per name. Each
 element is a value tagged with the enumeration's name, so enumerations with
@@ -21,16 +22,16 @@ structure EnumDecl where
   values : List Name
   deriving Repr, DecidableEq
 
-/-- Why the checker rejects a declaration. -/
+/-- Why the checker rejects a declaration, in the order the checker reports them. -/
 inductive EnumError where
   /-- The enumeration's name breaks the naming rules. -/
   | badEnumName (name : Name)
   /-- The declaration has no names. -/
   | empty
-  /-- The name is written more than once. -/
-  | duplicate (value : Name)
   /-- The value name breaks the naming rules. -/
   | badValueName (value : Name)
+  /-- The name is written more than once. -/
+  | duplicate (value : Name)
   deriving Repr, DecidableEq
 
 /-- A declaration is valid when its names follow the naming rules, and it has at least one
