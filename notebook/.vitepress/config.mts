@@ -17,7 +17,10 @@ export default defineConfig({
       { text: "Start here", link: "/" },
       {
         text: "Concepts",
-        items: [{ text: "Finite sets", link: "/concepts/finite-sets" }],
+        items: [
+          { text: "Finite sets", link: "/concepts/finite-sets" },
+          { text: "Bijections", link: "/concepts/bijections" },
+        ],
       },
       {
         text: "Language reference",
