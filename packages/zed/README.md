@@ -11,3 +11,6 @@ never used. No user settings or global installations are changed by the build.
 The Check task expects this repository as the project root and runs its built CLI.
 
 See the root README for supported syntax and the pending manual verification.
+
+Naming quick fixes come from the redesigned language server and return versioned
+edits for the current unsaved buffer. No extension-specific correction logic is needed.

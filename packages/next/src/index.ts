@@ -16,6 +16,7 @@ export {
   type FileProblem,
 } from "@next/check/file.js";
 export { isEnumName, isValueName } from "@next/check/names.js";
+export { type NamingFix, quickFixes } from "@next/editor/quick-fixes.js";
 export { renameAt, semanticTokens, symbolAt } from "@next/editor/tools.js";
 export type { EnumDeclaration, Name, Span, Value } from "@next/model/enumeration.js";
 export { type Edit, type Renamed, type RenameRefusal, renameEnum } from "@next/refactor/rename.js";

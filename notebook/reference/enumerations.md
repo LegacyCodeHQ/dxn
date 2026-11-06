@@ -265,3 +265,23 @@ are written `{ }` so an invalid empty declaration is still formatable. It does
 not reorder members or change names. It refuses malformed syntax. Formatting
 is independent of semantic acceptance. This formatting policy adds no semantic
 rule to the Lean model.
+
+## Naming corrections in editors
+
+A naming diagnostic with a safe suggestion offers a Quick Fix for that name.
+The shared language library computes one precise text edit per action from the
+current source. Each action corrects one occurrence, preserving all other text,
+including whitespace and line endings. It does not combine actions into Fix All.
+
+The correction is offered only for the selected name and only when its candidate
+follows the naming rules and does not collide in the current declaration or file.
+No actions are offered while the file has syntax errors: reading stops at the
+first one, so later declarations could hide a collision. Other semantic errors
+need not prevent a safe individual correction. After any edit, suggestions and
+collisions are recomputed.
+
+The language server uses the current unsaved buffer rather than suggestions
+returned in an earlier diagnostic. Its edit identifies the document version, so
+an edit for old text cannot be applied silently to a newer version. These are
+corrections of invalid source, separate from semantic rename between accepted
+models; the Lean rename proofs do not establish their correctness.

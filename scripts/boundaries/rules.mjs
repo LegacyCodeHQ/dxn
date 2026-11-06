@@ -47,7 +47,7 @@ export const allowed = {
   "next/check": ["next/model", "next/check"],
   "next/refactor": ["next/model", "next/syntax", "next/check", "next/refactor"],
   "next/analysis": ["next/model", "next/syntax", "next/check", "next/analysis"],
-  "next/editor": ["next/model", "next/syntax", "next/refactor", "next/editor"],
+  "next/editor": ["next/analysis", "next/model", "next/syntax", "next/refactor", "next/editor"],
   "next/api": [
     "next/analysis",
     "next/editor",

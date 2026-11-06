@@ -72,7 +72,8 @@ text diagnostics go to stderr.
 ## Editors
 
 The server supplies diagnostics, formatting, hover, enum/member outline,
-semantic highlighting, declaration navigation and enumeration rename. It reads
+semantic highlighting, declaration navigation, enumeration rename and safe naming
+quick fixes. It reads
 unsaved buffers and returns versioned edits. Unsupported prototype features
 such as evidence hints and state commands are not advertised.
 
@@ -102,6 +103,8 @@ In each development editor, open `examples/redesign/enums.dxn` and check:
 - Rename `Light` to `Lamp`; only its name changes. A collision with `Power`
   is refused. Renaming to the same name makes no edits.
 - Duplicate members and bad names have diagnostics at the correct spans.
+- Naming quick fixes replace only the selected name. A conflicting replacement
+  offers no action; an action from older text must not edit a newer buffer.
 - Editing incomplete syntax does not crash the server; repairing it clears errors.
 
 Automated grammar, protocol and bundle checks do not establish these human checks.

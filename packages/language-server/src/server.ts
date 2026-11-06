@@ -1,13 +1,17 @@
 import {
   analyze,
   format,
+  type Problem,
+  quickFixes,
   renameAt,
   type Span,
   semanticTokens,
   symbolAt,
 } from "@legacycodehq/dxn-next";
 import {
+  CodeActionKind,
   type Connection,
+  type Diagnostic,
   ErrorCodes,
   type Range,
   ResponseError,
@@ -29,29 +33,30 @@ export function serve(connection: Connection): void {
     start: d.positionAt(span.start),
     end: d.positionAt(span.end),
   });
+  const diagnostic = (d: TextDocument, p: Problem, at: Span): Diagnostic => ({
+    range: range(d, at),
+    severity: 1,
+    code: p.code,
+    ...(p.rule
+      ? { data: { rule: p.rule, ...(p.suggestion ? { suggestion: p.suggestion } : {}) } }
+      : {}),
+    message: p.message,
+    source: "dxn",
+  });
   const publish = (d: TextDocument) => {
     if (d.languageId !== "dxn") return;
-    const { problems } = analyze(d.getText());
     connection.sendDiagnostics({
       uri: d.uri,
       version: d.version,
-      diagnostics: problems.flatMap((p) =>
-        p.at.map((at) => ({
-          range: range(d, at),
-          severity: 1,
-          code: p.code,
-          ...(p.rule
-            ? { data: { rule: p.rule, ...(p.suggestion ? { suggestion: p.suggestion } : {}) } }
-            : {}),
-          message: p.message,
-          source: "dxn",
-        })),
+      diagnostics: analyze(d.getText()).problems.flatMap((p) =>
+        p.at.map((at) => diagnostic(d, p, at)),
       ),
     });
   };
   connection.onInitialize(() => ({
     capabilities: {
       textDocumentSync: TextDocumentSyncKind.Incremental,
+      codeActionProvider: { codeActionKinds: [CodeActionKind.QuickFix] },
       hoverProvider: true,
       definitionProvider: true,
       referencesProvider: true,
@@ -69,6 +74,31 @@ export function serve(connection: Connection): void {
   documents.onDidClose(({ document: d }) =>
     connection.sendDiagnostics({ uri: d.uri, diagnostics: [] }),
   );
+  connection.onCodeAction(({ textDocument, range: selection, context }) => {
+    if (
+      context.only?.length &&
+      !context.only.some((kind) => kind === "" || kind === CodeActionKind.QuickFix)
+    )
+      return [];
+    const d = document(textDocument.uri);
+    if (!d) return [];
+    return quickFixes(d.getText(), {
+      start: d.offsetAt(selection.start),
+      end: d.offsetAt(selection.end),
+    }).map((fix) => ({
+      title: fix.title,
+      kind: CodeActionKind.QuickFix,
+      diagnostics: [diagnostic(d, fix.problem, fix.at)],
+      edit: {
+        documentChanges: [
+          {
+            textDocument: { uri: d.uri, version: d.version },
+            edits: fix.edits.map((e) => ({ range: range(d, e.span), newText: e.text })),
+          },
+        ],
+      },
+    }));
+  });
   connection.onHover(({ textDocument, position }) => {
     const d = document(textDocument.uri);
     if (!d) return null;

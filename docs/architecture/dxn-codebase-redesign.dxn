@@ -70,7 +70,7 @@ type ModifyCoreParser {
 ## This tests implementation agreement; syntax recovery has its own production tests.
 type CheckSpecificationAgreement { }
 
-## Review hover, completion, navigation, symbols and semantic tokens against
+## Review hover, completion, navigation, symbols, naming quick fixes and semantic tokens against
 ## the new parser and analyzer, including documentation and incomplete source.
 type ModifyEditorFeatures {
   has language-server-impact: LanguageServerImpact

@@ -527,3 +527,84 @@ it("uses the same formatter and rename transformation as the CLI", async () => {
     rmSync(folder, { recursive: true, force: true });
   }
 });
+
+it("offers a versioned naming correction from the current unsaved text, not client-supplied suggestions", async () => {
+  const { CodeActionRequest } = await import("vscode-languageserver/node");
+  const { editor, uri, initialized, diagnostics, published } = await connect(
+    "enum Light { noKeyboard }",
+  );
+  expect(initialized.capabilities.codeActionProvider).toBeTruthy();
+  const changed = published();
+  await editor.sendNotification(DidChangeTextDocumentNotification.type, {
+    textDocument: { uri, version: 2 },
+    contentChanges: [{ text: "enum Light { Off }" }],
+  });
+  const current = await changed;
+  const actions = await editor.sendRequest(CodeActionRequest.type, {
+    textDocument: { uri },
+    range: { start: { line: 0, character: 13 }, end: { line: 0, character: 16 } },
+    context: {
+      diagnostics: diagnostics.diagnostics.map((d) => ({
+        ...d,
+        data: { rule: "E3", suggestion: "malicious" },
+      })),
+    },
+  });
+  expect(actions).toHaveLength(1);
+  const action = actions?.[0];
+  if (!action || !("edit" in action)) throw new Error("expected code action");
+  expect(action).toMatchObject({
+    title: "Replace 'Off' with 'off'",
+    kind: "quickfix",
+    diagnostics: current.diagnostics,
+    edit: {
+      documentChanges: [
+        {
+          textDocument: { uri, version: 2 },
+          edits: [
+            {
+              range: { start: { line: 0, character: 13 }, end: { line: 0, character: 16 } },
+              newText: "off",
+            },
+          ],
+        },
+      ],
+    },
+  });
+  expect(
+    await editor.sendRequest(CodeActionRequest.type, {
+      textDocument: { uri },
+      range: { start: { line: 0, character: 13 }, end: { line: 0, character: 16 } },
+      context: { diagnostics: [], only: ["refactor"] },
+    }),
+  ).toEqual([]);
+});
+
+it("removes naming actions after an unsaved collision or syntax error appears", async () => {
+  const { CodeActionRequest } = await import("vscode-languageserver/node");
+  const { editor, uri, published } = await connect("enum Light { Off }");
+  const request = {
+    textDocument: { uri },
+    range: { start: { line: 0, character: 13 }, end: { line: 0, character: 16 } },
+    context: { diagnostics: [] },
+  };
+  expect(await editor.sendRequest(CodeActionRequest.type, request)).toHaveLength(1);
+  for (const [version, text] of [
+    [2, "enum Light { Off, off }"],
+    [3, "enum Light { Off } enum Broken {"],
+  ] as const) {
+    const changed = published();
+    await editor.sendNotification(DidChangeTextDocumentNotification.type, {
+      textDocument: { uri, version },
+      contentChanges: [{ text }],
+    });
+    await changed;
+    expect(await editor.sendRequest(CodeActionRequest.type, request)).toEqual([]);
+  }
+  expect(
+    await editor.sendRequest(CodeActionRequest.type, {
+      ...request,
+      textDocument: { uri: "file:///not-open.dxn" },
+    }),
+  ).toEqual([]);
+});
