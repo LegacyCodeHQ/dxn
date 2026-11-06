@@ -125,12 +125,13 @@ first one included.
 Order means nothing to the meaning, but tools keep it: the formatter never
 reorders values, and output lists them in written order.
 
+Enumeration names must be unique in a file: see [`files.md`](files.md).
+
 ## Deferred
 
 | Question                                                                                                             | Decide when                                           |
 | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | Can enumerations nest, such as `Button.Focus`? Then a value's tag becomes a qualified path, and names need resolving | Modeling a file, or a type that contains declarations |
-| Must enumeration names be unique in a file?                                                                          | Modeling a file of declarations                       |
 | How to write a value when its name alone is ambiguous, such as `Light.off`                                           | Values are first used, in combinations or rules       |
 | May a value be named after a keyword, such as `enum`?                                                                | There are more keywords                               |
 | May names carry data, such as `ok Int \| error Int`?                                                                 | Revisited deliberately                                |
