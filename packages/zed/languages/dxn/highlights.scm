@@ -107,6 +107,8 @@
 (state_change state: (identifier) @property)
 (binding state: (identifier) @property)
 (binding from: (identifier) @property)
+; The children an action is reached through; the action itself, last, is a function.
+(action_call (qualified_name (identifier) @property))
 
 ; A condition, a when or an alike is on a dimension (capitalized) or a state.
 
