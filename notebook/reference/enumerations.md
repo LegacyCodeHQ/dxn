@@ -227,8 +227,10 @@ The naming rules, checked one character at a time:
 
 - **Positions.** The specification has no positions. Point each problem at
   the name it concerns, and E4 at every occurrence.
-- **Rule IDs.** Name the rule with each problem, such as `E2`, so a report
-  links to its section here.
+- **Rule IDs.** Reports show the rule in the message, such as `[E2]`,
+  alongside the existing diagnostic code. CLI JSON exposes it as `rule`;
+  language-server diagnostics expose it as `data.rule`. Syntax errors have no
+  checker-rule ID. The ID identifies the corresponding section of this reference.
 - **Suggestions.** Each rule above says what to suggest. The specification
   does not; a suggestion is the implementation's, and must itself be accepted.
 

@@ -1,6 +1,6 @@
 // The new dxn implementation, built to the Lean specification in lean/.
 
-export { analyze, type Problem } from "@next/analysis/analyze.js";
+export { analyze, type Problem, type RuleId } from "@next/analysis/analyze.js";
 export {
   type Accepted,
   acceptEnum,

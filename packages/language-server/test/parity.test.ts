@@ -314,7 +314,7 @@ it("renames unsaved buffers with precise edits and refuses value rename and coll
  `);
 });
 it("gives CLI and server the same diagnostic codes, messages and ranges", async () => {
-  const source = "enum Light { on, on }\r\nenum Light { Off }";
+  const source = "enum light { }\r\nenum Light { on, on }\r\nenum Light { Off }";
   const { diagnostics } = await connect(source);
   const folder = mkdtempSync(join(tmpdir(), "dxn-parity-"));
   try {
@@ -330,10 +330,18 @@ it("gives CLI and server the same diagnostic codes, messages and ranges", async 
       }),
     ).toBe(1);
     const problems = JSON.parse(stdout).problems as {
+      rule: string;
       code: string;
       message: string;
       span: { start: number; end: number };
     }[];
+    expect([...new Set(problems.map((p) => p.rule))].sort()).toEqual([
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "F1",
+    ]);
     const offset = (p: { line: number; character: number }) =>
       source
         .split(/\r\n|\r|\n/)
@@ -342,6 +350,7 @@ it("gives CLI and server the same diagnostic codes, messages and ranges", async 
     expect(
       diagnostics.diagnostics.map((d) => ({
         code: d.code,
+        ...(d.data?.rule ? { rule: d.data.rule } : {}),
         message: d.message,
         span: { start: offset(d.range.start), end: offset(d.range.end) },
       })),

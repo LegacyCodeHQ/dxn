@@ -76,7 +76,12 @@ export function run(argv: string[], io: Io): number {
   if (command === "check") {
     const result = analyze(source);
     const located = result.problems.flatMap((p) =>
-      p.at.map((span) => ({ code: p.code, message: p.message, span })),
+      p.at.map((span) => ({
+        code: p.code,
+        ...(p.rule ? { rule: p.rule } : {}),
+        message: p.message,
+        span,
+      })),
     );
     emit(
       { file, problems: located },

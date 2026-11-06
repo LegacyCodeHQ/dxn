@@ -40,6 +40,7 @@ export function serve(connection: Connection): void {
           range: range(d, at),
           severity: 1,
           code: p.code,
+          ...(p.rule ? { data: { rule: p.rule } } : {}),
           message: p.message,
           source: "dxn",
         })),

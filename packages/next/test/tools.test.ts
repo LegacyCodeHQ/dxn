@@ -55,7 +55,8 @@ describe("enum tools", () => {
               },
             ],
             "code": "duplicate",
-            "message": "'on': a value is declared more than once; remove the repeated declaration",
+            "message": "[E4] 'on': a value is declared more than once; remove the repeated declaration",
+            "rule": "E4",
           },
         ],
         [
@@ -184,4 +185,21 @@ describe("enum tools", () => {
       analyze(text).declarations.map((d) => [d.name.text, d.values.map((v) => v.text)]);
     expect(names(formatted ?? "")).toEqual(names(source));
   });
+});
+
+it.each([
+  ["enum light { off }", "E1"],
+  ["enum Light {}", "E2"],
+  ["enum Light { Off }", "E3"],
+  ["enum Light { on, on }", "E4"],
+  ["enum Light { off } enum Light { on }", "F1"],
+] as const)("identifies the notebook rule for %s as %s", (source, rule) => {
+  const problems = analyze(source).problems;
+  expect(problems).toHaveLength(1);
+  expect(problems[0]).toHaveProperty("rule", rule);
+  expect(problems[0]?.message).toContain(`[${rule}]`);
+});
+
+it("does not assign a checker-rule ID to a syntax error", () => {
+  expect(analyze("enum Light = off").problems[0]).not.toHaveProperty("rule");
 });

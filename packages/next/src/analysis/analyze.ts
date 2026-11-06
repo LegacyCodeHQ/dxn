@@ -2,7 +2,11 @@ import { checkFile, type FileProblem } from "@next/check/file.js";
 import type { Span } from "@next/model/enumeration.js";
 import { parse } from "@next/syntax/parse.js";
 
+/** Stable IDs of the language rules in notebook/reference. Syntax errors have no checker rule. */
+export type RuleId = "E1" | "E2" | "E3" | "E4" | "F1";
+
 export interface Problem {
+  rule?: RuleId;
   code: string;
   message: string;
   at: readonly Span[];
@@ -12,7 +16,8 @@ function problem(p: FileProblem): Problem {
   if (p.kind === "duplicateEnum")
     return {
       code: p.kind,
-      message: `enumeration '${p.name}' is declared more than once; give each enumeration a distinct name`,
+      rule: "F1",
+      message: `[F1] enumeration '${p.name}' is declared more than once; give each enumeration a distinct name`,
       at: p.at,
     };
   const e = p.problem;
@@ -24,9 +29,13 @@ function problem(p: FileProblem): Problem {
     empty: "an enumeration must declare at least one value",
     duplicate: "a value is declared more than once; remove the repeated declaration",
   };
+  const rule = ({ badEnumName: "E1", empty: "E2", badValueName: "E3", duplicate: "E4" } as const)[
+    e.kind
+  ];
   return {
     code: e.kind,
-    message: `${"name" in e ? `'${e.name}': ` : ""}${messages[e.kind]}`,
+    rule,
+    message: `[${rule}] ${"name" in e ? `'${e.name}': ` : ""}${messages[e.kind]}`,
     at: e.at,
   };
 }
