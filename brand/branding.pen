@@ -12782,6 +12782,771 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "j09W5a",
+      "x": -1800,
+      "y": 13695,
+      "name": "Social Post: tree-sitter-quint v0.33.0",
+      "fill": "$canvas",
+      "layout": "vertical",
+      "gap": 40,
+      "padding": 80,
+      "children": [
+        {
+          "type": "text",
+          "id": "fXSGd",
+          "name": "Title",
+          "fill": "$slate",
+          "content": "SOCIAL / TREE-SITTER-QUINT V0.33.0: LINKEDIN 1080 x 1350, X 1600 x 900",
+          "fontFamily": "$font-text",
+          "fontSize": 12,
+          "fontWeight": "600",
+          "letterSpacing": 1.5
+        },
+        {
+          "type": "frame",
+          "id": "YNZIX",
+          "name": "Images",
+          "gap": 80,
+          "children": [
+            {
+              "type": "frame",
+              "id": "x4p4AW",
+              "name": "TSQ LinkedIn 1080x1350",
+              "clip": true,
+              "width": 1080,
+              "height": 1350,
+              "fill": "$paper",
+              "layout": "vertical",
+              "padding": [
+                64,
+                72
+              ],
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "hPTtX",
+                  "name": "Top",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 32,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "d1sxiy",
+                      "name": "Eyebrow Row",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "d8KHSo",
+                          "name": "New Release Tag",
+                          "gap": 12,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "HUlEj",
+                              "name": "Rocket Icon",
+                              "width": 36,
+                              "height": 36,
+                              "icon": "rocket-launch-fill",
+                              "library": "phosphor",
+                              "fill": "#DC2626"
+                            },
+                            {
+                              "type": "text",
+                              "id": "VTuz2",
+                              "name": "NEW RELEASE",
+                              "fill": "$ink",
+                              "content": "NEW RELEASE",
+                              "fontFamily": "$font-text",
+                              "fontSize": "$fs-label",
+                              "fontWeight": "600",
+                              "letterSpacing": 1.5
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "irqA0",
+                      "name": "Headline",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "p7EVH",
+                          "name": "Line 1",
+                          "fill": "$ink",
+                          "content": "tree-sitter-",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        },
+                        {
+                          "type": "text",
+                          "id": "dlL8i",
+                          "name": "Line 2",
+                          "fill": "$ink",
+                          "content": "quint",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        },
+                        {
+                          "type": "text",
+                          "id": "W2Xkn",
+                          "name": "Line 3",
+                          "fill": "$accent",
+                          "content": "v0.33.0",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rWRJF",
+                      "name": "Body Wrap",
+                      "padding": [
+                        8,
+                        0,
+                        0,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kUcDN",
+                          "name": "Body",
+                          "fill": "$slate",
+                          "content": "A Tree-sitter grammar for Quint.",
+                          "lineHeight": 1.4,
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DxBwP",
+                  "name": "Bindings",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 20,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "KYTHJ",
+                      "name": "BINDINGS",
+                      "fill": "$slate",
+                      "content": "BINDINGS",
+                      "fontFamily": "$font-text",
+                      "fontSize": "$fs-label",
+                      "fontWeight": "600",
+                      "letterSpacing": 1.5
+                    },
+                    {
+                      "type": "frame",
+                      "id": "p3ZaBP",
+                      "name": "Row",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "NeeVi",
+                          "name": "Cell C",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "lP7Eu",
+                              "name": "C",
+                              "fill": "$ink",
+                              "content": "C",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "itOWD",
+                          "name": "Cell Go",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "spjLQ",
+                              "name": "Go",
+                              "fill": "$ink",
+                              "content": "Go",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "b1cbi",
+                          "name": "Cell Java",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QpQo4",
+                              "name": "Java",
+                              "fill": "$ink",
+                              "content": "Java",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "N1l0W",
+                          "name": "Cell Node",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "K5hxD6",
+                              "name": "Node",
+                              "fill": "$ink",
+                              "content": "Node",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "W9vvR",
+                      "name": "Row",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "L3soh",
+                          "name": "Cell Python",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "XH6dP",
+                              "name": "Python",
+                              "fill": "$ink",
+                              "content": "Python",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "MDsXR",
+                          "name": "Cell Rust",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "XdLDg",
+                              "name": "Rust",
+                              "fill": "$ink",
+                              "content": "Rust",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "zSYTT",
+                          "name": "Cell Swift",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "rpo37",
+                              "name": "Swift",
+                              "fill": "$ink",
+                              "content": "Swift",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jCmpt",
+                          "name": "Cell Zig",
+                          "width": "fill_container",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "XRc07",
+                              "name": "Zig",
+                              "fill": "$ink",
+                              "content": "Zig",
+                              "fontFamily": "$font-mark",
+                              "fontSize": "$fs-lead",
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "YMuzs",
+                  "name": "Bottom",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 40,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "cuTd2",
+                      "name": "Install",
+                      "width": "fill_container",
+                      "fill": "$ink",
+                      "gap": 20,
+                      "padding": [
+                        26,
+                        32
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "U1bbSk",
+                          "name": "Prompt",
+                          "fill": "$accent-light",
+                          "content": "$",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Ryxnd",
+                          "name": "Command",
+                          "fill": "$paper",
+                          "content": "npm i @legacycodehq/tree-sitter-quint",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cAyqS",
+                      "name": "Repo Link",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "t3i9va",
+                          "name": "GitHub Mark",
+                          "width": 48,
+                          "height": 48,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "uJfh1",
+                              "x": 4,
+                              "y": 4.8,
+                              "name": "Octocat Fill",
+                              "fill": "#FFFFFF",
+                              "width": 40,
+                              "height": 40
+                            },
+                            {
+                              "type": "path",
+                              "id": "uhDvK",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Mark (Primer Octicons mark-github)",
+                              "geometry": "M10.226 17.284c-2.965-0.36-5.054-2.493-5.054-5.256 0-1.123 0.404-2.336 1.078-3.144-0.292-0.741-0.247-2.314 0.09-2.965 0.898-0.112 2.111 0.36 2.83 1.01 0.853-0.269 1.752-0.404 2.853-0.404 1.1 0 1.999 0.135 2.807 0.382 0.696-0.629 1.932-1.1 2.83-0.988 0.315 0.606 0.36 2.179 0.067 2.942 0.72 0.854 1.101 2 1.101 3.167 0 2.763-2.089 4.852-5.098 5.234 0.763 0.494 1.28 1.572 1.28 2.807v2.336c0 0.674 0.561 1.056 1.235 0.786 4.066-1.55 7.255-5.615 7.255-10.646 0-6.357-5.166-11.545-11.522-11.545-6.358 0-11.478 5.188-11.478 11.545 0 4.986 3.167 9.12 7.435 10.669 0.606 0.225 1.19-0.18 1.19-0.786v-1.798a2.9 2.9 0 0 1-1.078 0.224c-1.483 0-2.359-0.808-2.987-2.313-0.247-0.607-0.517-0.966-1.034-1.033-0.27-0.023-0.359-0.135-0.359-0.27 0-0.27 0.45-0.471 0.898-0.471 0.652 0 1.213 0.404 1.797 1.235 0.45 0.651 0.921 0.943 1.483 0.943 0.561 0 0.92-0.202 1.437-0.719 0.382-0.381 0.674-0.718 0.944-0.943",
+                              "viewBox": [
+                                0,
+                                0,
+                                24,
+                                24
+                              ],
+                              "fill": "$ink",
+                              "width": 48,
+                              "height": 48
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "hqw6s",
+                          "name": "Repo URL",
+                          "fill": "$ink",
+                          "content": "LegacyCodeHQ/tree-sitter-quint",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "dKZ1t",
+              "name": "TSQ X 1600x900",
+              "clip": true,
+              "width": 1600,
+              "height": 900,
+              "fill": "$paper",
+              "layout": "vertical",
+              "padding": [
+                64,
+                72
+              ],
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "b9nk4",
+                  "name": "Eyebrow Row",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ro0cv",
+                      "name": "New Release Tag",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "IHR3g",
+                          "name": "Rocket Icon",
+                          "width": 36,
+                          "height": 36,
+                          "icon": "rocket-launch-fill",
+                          "library": "phosphor",
+                          "fill": "#DC2626"
+                        },
+                        {
+                          "type": "text",
+                          "id": "v9z9tV",
+                          "name": "NEW RELEASE",
+                          "fill": "$ink",
+                          "content": "NEW RELEASE",
+                          "fontFamily": "$font-text",
+                          "fontSize": "$fs-label",
+                          "fontWeight": "600",
+                          "letterSpacing": 1.5
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "x4W8TE",
+                  "name": "Head",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "inZpC",
+                      "name": "Headline",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Fb8rw",
+                          "name": "Line 1",
+                          "fill": "$ink",
+                          "content": "tree-sitter-quint",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        },
+                        {
+                          "type": "text",
+                          "id": "F7H1Ty",
+                          "name": "Line 2",
+                          "fill": "$accent",
+                          "content": "v0.33.0",
+                          "lineHeight": 1.05,
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-display",
+                          "fontWeight": "800",
+                          "letterSpacing": -4.2
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "AGNAY",
+                      "name": "Body",
+                      "fill": "$slate",
+                      "content": " ",
+                      "lineHeight": 1.4,
+                      "fontFamily": "$font-text",
+                      "fontSize": "$fs-body",
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "r2dLv",
+                  "name": "Bindings",
+                  "layout": "vertical",
+                  "gap": 20,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "R6Ixsc",
+                      "name": "BINDINGS",
+                      "fill": "$slate",
+                      "content": "BINDINGS",
+                      "fontFamily": "$font-text",
+                      "fontSize": "$fs-label",
+                      "fontWeight": "600",
+                      "letterSpacing": 1.5
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kJMjO",
+                      "name": "Row",
+                      "gap": 48,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "z0cSE",
+                          "name": "C",
+                          "fill": "$ink",
+                          "content": "C",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "pcqfB",
+                          "name": "Go",
+                          "fill": "$ink",
+                          "content": "Go",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "f0gZSt",
+                          "name": "Java",
+                          "fill": "$ink",
+                          "content": "Java",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TwOmx",
+                          "name": "Node",
+                          "fill": "$ink",
+                          "content": "Node",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "w9KGSl",
+                          "name": "Python",
+                          "fill": "$ink",
+                          "content": "Python",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "qFpzG",
+                          "name": "Rust",
+                          "fill": "$ink",
+                          "content": "Rust",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "nJuCM",
+                          "name": "Swift",
+                          "fill": "$ink",
+                          "content": "Swift",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "IQqd3",
+                          "name": "Zig",
+                          "fill": "$ink",
+                          "content": "Zig",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-lead",
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "I1qVJ",
+                  "name": "Bottom",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 28,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "NWm2Z",
+                      "name": "Install",
+                      "width": "fill_container",
+                      "fill": "$ink",
+                      "gap": 20,
+                      "padding": [
+                        26,
+                        32
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "j1o8Z",
+                          "name": "Prompt",
+                          "fill": "$accent-light",
+                          "content": "$",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "qrPhI",
+                          "name": "Command",
+                          "fill": "$paper",
+                          "content": "npm i @legacycodehq/tree-sitter-quint",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AQ1sb",
+                      "name": "Repo Link",
+                      "gap": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "jO5sh",
+                          "name": "GitHub Mark",
+                          "width": 48,
+                          "height": 48,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "bHidI",
+                              "x": 4,
+                              "y": 4.8,
+                              "name": "Octocat Fill",
+                              "fill": "#FFFFFF",
+                              "width": 40,
+                              "height": 40
+                            },
+                            {
+                              "type": "path",
+                              "id": "yrq9l",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Mark (Primer Octicons mark-github)",
+                              "geometry": "M10.226 17.284c-2.965-0.36-5.054-2.493-5.054-5.256 0-1.123 0.404-2.336 1.078-3.144-0.292-0.741-0.247-2.314 0.09-2.965 0.898-0.112 2.111 0.36 2.83 1.01 0.853-0.269 1.752-0.404 2.853-0.404 1.1 0 1.999 0.135 2.807 0.382 0.696-0.629 1.932-1.1 2.83-0.988 0.315 0.606 0.36 2.179 0.067 2.942 0.72 0.854 1.101 2 1.101 3.167 0 2.763-2.089 4.852-5.098 5.234 0.763 0.494 1.28 1.572 1.28 2.807v2.336c0 0.674 0.561 1.056 1.235 0.786 4.066-1.55 7.255-5.615 7.255-10.646 0-6.357-5.166-11.545-11.522-11.545-6.358 0-11.478 5.188-11.478 11.545 0 4.986 3.167 9.12 7.435 10.669 0.606 0.225 1.19-0.18 1.19-0.786v-1.798a2.9 2.9 0 0 1-1.078 0.224c-1.483 0-2.359-0.808-2.987-2.313-0.247-0.607-0.517-0.966-1.034-1.033-0.27-0.023-0.359-0.135-0.359-0.27 0-0.27 0.45-0.471 0.898-0.471 0.652 0 1.213 0.404 1.797 1.235 0.45 0.651 0.921 0.943 1.483 0.943 0.561 0 0.92-0.202 1.437-0.719 0.382-0.381 0.674-0.718 0.944-0.943",
+                              "viewBox": [
+                                0,
+                                0,
+                                24,
+                                24
+                              ],
+                              "fill": "$ink",
+                              "width": 48,
+                              "height": 48
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "U3Cn0",
+                          "name": "Repo URL",
+                          "fill": "$ink",
+                          "content": "LegacyCodeHQ/tree-sitter-quint",
+                          "fontFamily": "$font-mark",
+                          "fontSize": "$fs-body",
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
