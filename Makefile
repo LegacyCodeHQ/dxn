@@ -1,4 +1,4 @@
-.PHONY: help install fmt lint-check typecheck references boundaries cycles vocabulary brand security test coverage coverage-javascript coverage-zed grammar zed build smoke check check-fast setup-hooks clean
+.PHONY: help install fmt lint-check typecheck references boundaries cycles vocabulary brand security test coverage coverage-javascript coverage-zed grammar lean zed build smoke check check-fast setup-hooks clean
 
 help:
 	@echo "Targets:"
@@ -17,6 +17,7 @@ help:
 	@echo "  coverage-javascript - Run Vitest coverage with package thresholds"
 	@echo "  coverage-zed - Report native Rust coverage (needs cargo-llvm-cov and LLVM tools)"
 	@echo "  grammar     - Check the tree-sitter grammar's generated parser and run its corpus tests"
+	@echo "  lean        - Build the Lean model under lean/ and run its tests"
 	@echo "  zed         - Check the Zed extension's grammar commit and queries"
 	@echo "  build       - Compile packages/*/src/ to packages/*/dist/, and add dist/main.js"
 	@echo "  smoke       - Run every built command, and dist/main.js, once"
@@ -92,6 +93,13 @@ grammar:
 	  npx tree-sitter generate --output "$$generated" && \
 	  { diff -r -x scanner.c "$$generated" src || { echo "grammar: src/ is stale; run 'npx tree-sitter generate' in packages/tree-sitter-dxn" >&2; exit 1; }; } && \
 	  npx tree-sitter test
+
+# The Lean model under lean/: it builds, and every claim in its tests holds.
+# Not yet part of check.
+LAKE ?= lake
+
+lean:
+	cd lean && $(LAKE) build && $(LAKE) test
 
 # The Zed extension: extension.toml pins a commit whose grammar is the one in
 # packages/tree-sitter-dxn, and every query compiles against it and the sample

@@ -6,7 +6,12 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!packages/tree-sitter-dxn/src", "!brand/launch/sources/*.html"]
+    "includes": [
+      "**",
+      "!packages/tree-sitter-dxn/src",
+      "!brand/launch/sources/*.html",
+      "!lean/lake-manifest.json"
+    ]
   },
   "formatter": {
     "enabled": true,

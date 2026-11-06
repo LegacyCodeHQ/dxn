@@ -80,5 +80,6 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
 | `make lint-check`  | Biome format + lint, then `tsc --noEmit`                 |
 | `make boundaries`  | Enforce source-layer and public package dependency rules |
 | `make brand`       | Test the brand tools under `brand/`                      |
+| `make lean`        | Build the Lean model under `lean/` and run its tests     |
 | `make check`       | Full gate used by pre-push and CI                        |
 | `make fmt`         | Format with Biome                                        |

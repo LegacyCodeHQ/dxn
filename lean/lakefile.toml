@@ -1,0 +1,10 @@
+name = "dxn"
+defaultTargets = ["Dxn"]
+testDriver = "DxnTest"
+
+[[lean_lib]]
+name = "Dxn"
+
+# Each test is a claim Lean checks while it builds this library.
+[[lean_lib]]
+name = "DxnTest"

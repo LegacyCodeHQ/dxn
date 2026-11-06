@@ -26,3 +26,6 @@ packages/zed/extension.wasm
 
 # Native Tree-sitter Node binding
 packages/tree-sitter-dxn/build/
+
+# Lean build output
+lean/.lake/
