@@ -1,11 +1,12 @@
 import Dxn.FiniteSet
+import Dxn.Name
 
 /-!
 # Enumerations
 
 A declaration is what is written: a name and a list of value names, in
-written order. The checker reports every problem with it: no names, or a name
-written more than once. It accepts a declaration with no problems.
+written order. The checker reports every problem with it: a name that breaks
+the naming rules, no names, or a name written more than once. It accepts a declaration with no problems.
 
 An accepted declaration means a finite set with one element per name. Each
 element is a value tagged with the enumeration's name, so enumerations with
@@ -13,9 +14,6 @@ different names share no value. The written order means nothing.
 -/
 
 namespace Dxn
-
-/-- A name as written. -/
-abbrev Name := String
 
 /-- An enumeration as written: its name and its value names, in written order. -/
 structure EnumDecl where
@@ -25,26 +23,49 @@ structure EnumDecl where
 
 /-- Why the checker rejects a declaration. -/
 inductive EnumError where
+  /-- The enumeration's name breaks the naming rules. -/
+  | badEnumName (name : Name)
   /-- The declaration has no names. -/
   | empty
   /-- The name is written more than once. -/
   | duplicate (value : Name)
+  /-- The value name breaks the naming rules. -/
+  | badValueName (value : Name)
   deriving Repr, DecidableEq
 
-/-- A declaration is valid when it has at least one name and no name twice. -/
-def Valid (d : EnumDecl) : Prop :=
-  d.values ≠ [] ∧ d.values.Nodup
+/-- A declaration is valid when its names follow the naming rules, and it has at least one
+value name and none twice. -/
+structure Valid (d : EnumDecl) : Prop where
+  name : isEnumName d.name
+  values : ∀ v ∈ d.values, isValueName v
+  nonempty : d.values ≠ []
+  nodup : d.values.Nodup
+
+theorem valid_iff (d : EnumDecl) :
+    Valid d ↔ isEnumName d.name ∧ (∀ v ∈ d.values, isValueName v) ∧ d.values ≠ [] ∧
+      d.values.Nodup :=
+  ⟨fun ⟨a, b, c, e⟩ => ⟨a, b, c, e⟩, fun ⟨a, b, c, e⟩ => ⟨a, b, c, e⟩⟩
 
 instance (d : EnumDecl) : Decidable (Valid d) :=
-  inferInstanceAs (Decidable (_ ∧ _))
+  decidable_of_iff _ (valid_iff d).symm
+
+/-- The value names that break the naming rules, each once, in the order they first appear. -/
+def badValueNames (l : List Name) : List Name :=
+  l.eraseDups.filter fun v => !isValueName v
 
 /-- The names written more than once, each once, in the order they first appear. -/
 def duplicates (l : List Name) : List Name :=
   l.eraseDups.filter fun v => 2 ≤ l.count v
 
-/-- Check a declaration: every problem with it, each once. No problems means it is accepted. -/
+/--
+Check a declaration: every problem with it, each once. No problems means it is accepted. A bad
+enumeration name comes first, then no names, then bad value names, then names written twice.
+-/
 def check (d : EnumDecl) : List EnumError :=
-  if d.values = [] then [.empty] else (duplicates d.values).map .duplicate
+  (if isEnumName d.name then [] else [.badEnumName d.name]) ++
+  (if d.values = [] then [.empty] else []) ++
+  (badValueNames d.values).map .badValueName ++
+  (duplicates d.values).map .duplicate
 
 theorem nodup_eraseDups (l : List Name) : l.eraseDups.Nodup := by
   match l with
@@ -69,29 +90,59 @@ theorem duplicates_eq_nil_iff (l : List Name) : duplicates l = [] ↔ l.Nodup :=
   simp only [mem_duplicates]
   exact ⟨fun h v => by have := h v; omega, fun h v => by have := h v; omega⟩
 
+theorem mem_badValueNames {l : List Name} {v : Name} :
+    v ∈ badValueNames l ↔ v ∈ l ∧ isValueName v = false := by
+  simp [badValueNames, List.mem_filter, List.mem_eraseDups]
+
+theorem nodup_badValueNames (l : List Name) : (badValueNames l).Nodup :=
+  (nodup_eraseDups l).sublist (List.filter_sublist)
+
+theorem badValueNames_eq_nil_iff (l : List Name) :
+    badValueNames l = [] ↔ ∀ v ∈ l, isValueName v := by
+  rw [List.eq_nil_iff_forall_not_mem]
+  simp only [mem_badValueNames]
+  exact ⟨fun h v hv => by simpa [hv] using h v, fun h v ⟨hv, hb⟩ => by simp [h v hv] at hb⟩
+
 /-- The checker accepts exactly the valid declarations. -/
 theorem check_eq_nil_iff (d : EnumDecl) : check d = [] ↔ Valid d := by
-  unfold check Valid
-  by_cases h : d.values = [] <;> simp [h, duplicates_eq_nil_iff]
+  rw [valid_iff, ← badValueNames_eq_nil_iff, ← duplicates_eq_nil_iff]
+  unfold check
+  by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;> simp [hn, he]
+
+/-- The checker reports a bad enumeration name exactly when the name breaks the rules. -/
+theorem badEnumName_mem_check (d : EnumDecl) (n : Name) :
+    .badEnumName n ∈ check d ↔ n = d.name ∧ isEnumName d.name = false := by
+  unfold check
+  by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;> simp [hn, he, eq_comm]
+
+/-- The checker reports a bad value name exactly for each written name that breaks the rules. -/
+theorem badValueName_mem_check (d : EnumDecl) (v : Name) :
+    .badValueName v ∈ check d ↔ v ∈ d.values ∧ isValueName v = false := by
+  unfold check
+  by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;>
+    simp [hn, he, mem_badValueNames]
 
 /-- The checker reports a duplicate exactly for each name written more than once. -/
 theorem duplicate_mem_check (d : EnumDecl) (v : Name) :
     .duplicate v ∈ check d ↔ 2 ≤ d.values.count v := by
   unfold check
-  by_cases h : d.values = [] <;> simp [h, mem_duplicates]
+  by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;>
+    simp [hn, he, mem_duplicates]
 
 /-- The checker reports an empty declaration exactly when it has no names. -/
 theorem empty_mem_check (d : EnumDecl) : .empty ∈ check d ↔ d.values = [] := by
   unfold check
-  by_cases h : d.values = [] <;> simp [h]
+  by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;> simp [hn, he]
 
 /-- The checker reports no problem twice. -/
 theorem nodup_check (d : EnumDecl) : (check d).Nodup := by
+  have hb : ((badValueNames d.values).map EnumError.badValueName).Nodup :=
+    (nodup_badValueNames d.values).map _ fun _ _ hne heq => hne (EnumError.badValueName.inj heq)
+  have hd : ((duplicates d.values).map EnumError.duplicate).Nodup :=
+    (nodup_duplicates d.values).map _ fun _ _ hne heq => hne (EnumError.duplicate.inj heq)
   unfold check
-  split
-  · simp
-  · exact (nodup_duplicates _).map EnumError.duplicate fun _ _ hne heq =>
-      hne (EnumError.duplicate.inj heq)
+  by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;>
+    simp_all [List.nodup_append]
 
 /-- A declaration the checker accepted. -/
 structure Enum where
@@ -117,7 +168,7 @@ theorem Enum.mem_values {e : Enum} {v : Value} :
   · rintro ⟨rfl, hn⟩; exact ⟨_, hn, rfl, rfl⟩
 
 theorem Enum.nodup_values (e : Enum) : e.values.Nodup :=
-  e.valid.2.map _ fun _ _ hne heq => hne (Value.mk.inj heq).2
+  e.valid.nodup.map _ fun _ _ hne heq => hne (Value.mk.inj heq).2
 
 /-- Enumerations with different names share no value. -/
 theorem Enum.values_disjoint {e f : Enum} (h : e.decl.name ≠ f.decl.name) (v : Value) :
@@ -149,8 +200,13 @@ theorem same_of_perm {d e : EnumDecl} (hn : d.name = e.name) (hp : d.values.Perm
     Same d e :=
   ⟨hn, fun _ => hp.mem_iff⟩
 
-/-- Reordering keeps a declaration valid. -/
-theorem valid_of_perm {d e : EnumDecl} (hp : d.values.Perm e.values) : Valid d → Valid e :=
-  fun ⟨hne, hnd⟩ => ⟨fun h => hne (List.Perm.eq_nil (h ▸ hp)), hp.nodup_iff.mp hnd⟩
+/-- Reordering the names keeps a declaration valid. -/
+theorem valid_of_perm {d e : EnumDecl} (hn : d.name = e.name) (hp : d.values.Perm e.values) :
+    Valid d → Valid e :=
+  fun h => {
+    name := hn ▸ h.name
+    values := fun v hv => h.values v (hp.mem_iff.mpr hv)
+    nonempty := fun he => h.nonempty (List.Perm.eq_nil (he ▸ hp))
+    nodup := hp.nodup_iff.mp h.nodup }
 
 end Dxn
