@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkEnum, enumValues } from "@next/check/enumeration.js";
+import { acceptEnum } from "@next/check/enumeration.js";
 import type { EnumDeclaration, Value } from "@next/model/enumeration.js";
 import { parse } from "@next/syntax/parse.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -74,10 +74,11 @@ const declaration = ({ name, values }: Case): EnumDeclaration => ({
 });
 
 function said(d: EnumDeclaration): Said {
-  const problems = checkEnum(d).map((problem) =>
+  const accepted = acceptEnum(d);
+  const problems = accepted.problems.map((problem) =>
     "name" in problem ? { kind: problem.kind, name: problem.name } : { kind: problem.kind },
   );
-  return { problems, values: problems.length === 0 ? enumValues(d) : null };
+  return { problems, values: accepted.enum?.values ?? null };
 }
 
 // A case as text, when every name can be written as a word.

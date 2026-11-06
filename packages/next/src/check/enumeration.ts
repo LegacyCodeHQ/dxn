@@ -44,7 +44,35 @@ export function checkEnum(declaration: EnumDeclaration): EnumProblem[] {
   return problems;
 }
 
-/** The values of a declaration, in written order, each tagged with the enumeration's name. */
-export function enumValues(declaration: EnumDeclaration): Value[] {
-  return declaration.values.map(({ text }) => ({ enum: declaration.name.text, name: text }));
+/**
+ * A declaration the checker accepted, as Lean's `Enum` is a declaration with a proof that it is
+ * valid. Only `acceptEnum` makes one: the constructor is private, and the private member keeps a
+ * look-alike object from passing as one.
+ */
+export class Enum {
+  declare private readonly accepted: true;
+
+  private constructor(readonly declaration: EnumDeclaration) {}
+
+  /** Check a declaration: an enumeration when it has no problems, else its problems. */
+  static accept(declaration: EnumDeclaration): Accepted {
+    const problems = checkEnum(declaration);
+    return problems.length === 0
+      ? { enum: new Enum(declaration), problems: [] }
+      : { enum: undefined, problems };
+  }
+
+  /** Its values, in written order, each tagged with the enumeration's name. */
+  get values(): Value[] {
+    const { name, values } = this.declaration;
+    return values.map(({ text }) => ({ enum: name.text, name: text }));
+  }
+}
+
+/** What checking a declaration gives: an enumeration, or the problems that stop it being one. */
+export type Accepted = { enum: Enum; problems: [] } | { enum: undefined; problems: EnumProblem[] };
+
+/** Check a declaration: an enumeration when it has no problems, else its problems. */
+export function acceptEnum(declaration: EnumDeclaration): Accepted {
+  return Enum.accept(declaration);
 }

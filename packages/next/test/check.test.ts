@@ -1,4 +1,4 @@
-import { checkEnum, enumValues } from "@next/check/enumeration.js";
+import { acceptEnum, checkEnum, Enum } from "@next/check/enumeration.js";
 import type { EnumDeclaration } from "@next/model/enumeration.js";
 import { describe, expect, it } from "vitest";
 
@@ -143,8 +143,8 @@ describe("checking an enumeration", () => {
 
   it("tags each value with its enumeration's name, in written order", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(enumValues(declaration("Light", ["off", "on"])));
-    snapshot.push(enumValues(declaration("Power", ["off", "on"])));
+    snapshot.push(acceptEnum(declaration("Light", ["off", "on"])).enum?.values);
+    snapshot.push(acceptEnum(declaration("Power", ["off", "on"])).enum?.values);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
@@ -169,5 +169,39 @@ describe("checking an enumeration", () => {
         ],
       ]
     `);
+  });
+
+  it("gives an enumeration only for a declaration with no problems", () => {
+    const snapshot: unknown[] = [];
+    const accepted = acceptEnum(declaration("Light", ["off", "on"]));
+    snapshot.push({ accepted: accepted.enum instanceof Enum, problems: accepted.problems });
+    const rejected = acceptEnum(declaration("light", ["on", "on"]));
+    snapshot.push({ accepted: rejected.enum !== undefined, problems: said("light", ["on", "on"]) });
+    expect(snapshot).toMatchInlineSnapshot(`
+      [
+        {
+          "accepted": true,
+          "problems": [],
+        },
+        {
+          "accepted": false,
+          "problems": [
+            "badEnumName light",
+            "duplicate on",
+          ],
+        },
+      ]
+    `);
+  });
+
+  it("makes an enumeration only by checking it", () => {
+    // Checked by the type checker: neither line compiles, so values come only
+    // from a declaration acceptEnum accepted, as Lean's Enum needs a proof.
+    const unchecked = declaration("light", []);
+    // @ts-expect-error The constructor is private.
+    const made = () => new Enum(unchecked);
+    // @ts-expect-error A look-alike object is not an Enum.
+    const alike: Enum = { declaration: unchecked, values: [] };
+    expect([typeof made, typeof alike]).toEqual(["function", "object"]);
   });
 });
