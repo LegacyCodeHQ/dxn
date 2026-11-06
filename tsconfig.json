@@ -19,6 +19,7 @@
     "packages/*/test/**/*.ts",
     "vitest.config.ts",
     "packages/*/vitest.config.ts",
-    "packages/*/vitest.config.mts"
+    "packages/*/vitest.config.mts",
+    "packages/next/vitest.agreement.config.ts"
   ]
 }

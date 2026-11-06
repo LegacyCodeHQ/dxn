@@ -5,6 +5,12 @@ files, written in a language for the states a thing has and the dimensions it
 varies over, and evaluates every combination they give. Evidence for those
 combinations is stored as JSON files beside each `.dxn` file.
 
+The language is being redesigned from scratch. `lean/` holds its specification
+in Lean, with notes on each decision (see `lean/README.md`), and
+`packages/next` is the new implementation built to it. The other packages are
+the prototype it replaces. A new construct is decided and specified in `lean/`
+first, then implemented in `packages/next`, with cases for `make agreement`.
+
 ## Workflow
 
 - Write a failing test first, confirm it fails, then implement the smallest
@@ -81,5 +87,6 @@ Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
 | `make boundaries`  | Enforce source-layer and public package dependency rules |
 | `make brand`       | Test the brand tools under `brand/`                      |
 | `make lean`        | Build the Lean model under `lean/` and run its tests     |
+| `make agreement`   | Compare `packages/next` with the Lean specification      |
 | `make check`       | Full gate used by pre-push and CI                        |
 | `make fmt`         | Format with Biome                                        |

@@ -1,0 +1,35 @@
+[
+  { "title": "two values", "name": "Light", "values": ["off", "on"] },
+  { "title": "a single value", "name": "Theme", "values": ["dark"] },
+  { "title": "no values", "name": "Light", "values": [] },
+  { "title": "a value written twice", "name": "Light", "values": ["on", "off", "on"] },
+  {
+    "title": "values written twice, reported in written order",
+    "name": "Light",
+    "values": ["on", "off", "on", "dim", "off", "on"]
+  },
+  { "title": "the same values under another name", "name": "Power", "values": ["off", "on"] },
+  { "title": "the same values in another order", "name": "Light", "values": ["on", "off"] },
+  { "title": "a lowercase enumeration name", "name": "light", "values": ["off", "on"] },
+  { "title": "a digit first in an enumeration name", "name": "2Light", "values": ["off"] },
+  { "title": "an acronym as an enumeration name", "name": "UIState", "values": ["idle"] },
+  {
+    "title": "bad value names, one also written twice",
+    "name": "Light",
+    "values": ["Off", "on", "Off", "dim-"]
+  },
+  { "title": "every problem at once", "name": "light", "values": [] },
+  {
+    "title": "hyphens and digits in value names",
+    "name": "Keyboard",
+    "values": ["no-keyboard", "19px", "2", "700", "a-1"]
+  },
+  {
+    "title": "hyphens and underscores in the wrong places",
+    "name": "Keyboard",
+    "values": ["-a", "a-", "a--b", "no_keyboard"]
+  },
+  { "title": "names that are not ASCII", "name": "Lïght", "values": ["ön", "off"] },
+  { "title": "a keyword as a value name", "name": "Light", "values": ["enum"] },
+  { "title": "an empty value name", "name": "Light", "values": [""] }
+]

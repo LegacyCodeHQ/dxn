@@ -1,4 +1,4 @@
-.PHONY: help install fmt lint-check typecheck references boundaries cycles vocabulary brand security test coverage coverage-javascript coverage-zed grammar lean zed build smoke check check-fast setup-hooks clean
+.PHONY: help install fmt lint-check typecheck references boundaries cycles vocabulary brand security test coverage coverage-javascript coverage-zed grammar lean agreement zed build smoke check check-fast setup-hooks clean
 
 help:
 	@echo "Targets:"
@@ -18,6 +18,7 @@ help:
 	@echo "  coverage-zed - Report native Rust coverage (needs cargo-llvm-cov and LLVM tools)"
 	@echo "  grammar     - Check the tree-sitter grammar's generated parser and run its corpus tests"
 	@echo "  lean        - Build the Lean model under lean/ and run its tests"
+	@echo "  agreement   - Compare packages/next with the Lean specification (needs Lean)"
 	@echo "  zed         - Check the Zed extension's grammar commit and queries"
 	@echo "  build       - Compile packages/*/src/ to packages/*/dist/, and add dist/main.js"
 	@echo "  smoke       - Run every built command, and dist/main.js, once"
@@ -100,6 +101,13 @@ LAKE ?= lake
 
 lean:
 	cd lean && $(LAKE) build && $(LAKE) test
+
+# The new implementation in packages/next and the Lean specification say the
+# same about shared and generated enumeration declarations. Needs Lean; not yet
+# part of check.
+agreement:
+	cd lean && $(LAKE) build dxn-spec
+	LAKE="$(LAKE)" npx vitest run --root packages/next --config vitest.agreement.config.ts
 
 # The Zed extension: extension.toml pins a commit whose grammar is the one in
 # packages/tree-sitter-dxn, and every query compiles against it and the sample
