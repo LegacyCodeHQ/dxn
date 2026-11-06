@@ -12,6 +12,9 @@ decision that changes is updated in place.
 
 - **Concepts** pages each explain one mathematical idea and the programming
   idea it matches, such as a finite set and an `enum`.
+- **Language reference** pages each say how one part of the language is
+  written and every rule the checker applies to it, each with an ID such as
+  `E2`, a reason, and what to write instead.
 - Each page states every claim in plain words first. The Lean that checks it
   follows, for readers who want to see how; every argument can be followed
   without it.

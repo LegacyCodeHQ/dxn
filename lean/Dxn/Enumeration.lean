@@ -22,6 +22,7 @@ structure EnumDecl where
   values : List Name
   deriving Repr, DecidableEq
 
+-- #region errors
 /-- Why the checker rejects a declaration, in the order the checker reports them. -/
 inductive EnumError where
   /-- The enumeration's name breaks the naming rules. -/
@@ -33,7 +34,9 @@ inductive EnumError where
   /-- The name is written more than once. -/
   | duplicate (value : Name)
   deriving Repr, DecidableEq
+-- #endregion errors
 
+-- #region valid
 /-- A declaration is valid when its names follow the naming rules, and it has at least one
 value name and none twice. -/
 structure Valid (d : EnumDecl) : Prop where
@@ -41,6 +44,7 @@ structure Valid (d : EnumDecl) : Prop where
   values : ∀ v ∈ d.values, isValueName v
   nonempty : d.values ≠ []
   nodup : d.values.Nodup
+-- #endregion valid
 
 theorem valid_iff (d : EnumDecl) :
     Valid d ↔ isEnumName d.name ∧ (∀ v ∈ d.values, isValueName v) ∧ d.values ≠ [] ∧
@@ -50,6 +54,7 @@ theorem valid_iff (d : EnumDecl) :
 instance (d : EnumDecl) : Decidable (Valid d) :=
   decidable_of_iff _ (valid_iff d).symm
 
+-- #region check
 /-- The value names that break the naming rules, each once, in the order they first appear. -/
 def badValueNames (l : List Name) : List Name :=
   l.eraseDups.filter fun v => !isValueName v
@@ -67,6 +72,7 @@ def check (d : EnumDecl) : List EnumError :=
   (if d.values = [] then [.empty] else []) ++
   (badValueNames d.values).map .badValueName ++
   (duplicates d.values).map .duplicate
+-- #endregion check
 
 theorem nodup_eraseDups (l : List Name) : l.eraseDups.Nodup := by
   match l with

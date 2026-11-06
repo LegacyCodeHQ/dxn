@@ -10,6 +10,7 @@ namespace Dxn
 /-- A name as written. -/
 abbrev Name := String
 
+-- #region names
 /-- An enumeration name: a capital letter, then letters and digits, as `Light` or `UIState`. -/
 def isEnumName (n : Name) : Bool :=
   match n.toList with
@@ -32,6 +33,7 @@ A value name: lowercase letters and digits, with single hyphens only between the
 -/
 def isValueName (n : Name) : Bool :=
   valueNameRest true n.toList
+-- #endregion names
 
 /-! ## The rules as their plain descriptions -/
 

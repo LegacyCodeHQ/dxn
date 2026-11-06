@@ -19,6 +19,10 @@ export default defineConfig({
         text: "Concepts",
         items: [{ text: "Finite sets", link: "/concepts/finite-sets" }],
       },
+      {
+        text: "Language reference",
+        items: [{ text: "Enumerations", link: "/reference/enumerations" }],
+      },
     ],
     outline: { level: [2, 3] },
   },
