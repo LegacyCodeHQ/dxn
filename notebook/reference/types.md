@@ -129,6 +129,71 @@ Each part of a combination is a value tagged with its enumeration, as in a
 The order is how combinations are listed, not part of what they mean: the same
 combinations listed another way are the same type.
 
+## Listing combinations
+
+The command line lists a file's combinations, and an editor shows each type's
+count. Both call one shared function, so they never disagree; the editor may
+show less, never something else.
+
+### The command
+
+```text
+dxn combinations <file> [Type]
+```
+
+With no type named, it lists every type in the file, in written order. With
+one, only that type.
+
+**Text** is a table per type: one column per enumeration, headed by its name,
+and one row per combination, in the order above, with each value written as it
+is declared:
+
+```text
+Button: 4 combinations
+
+  #  Kind       State
+  1  primary    normal
+  2  primary    disabled
+  3  secondary  normal
+  4  secondary  disabled
+
+Logo: 1 combination (varies over nothing)
+```
+
+**JSON**, with `--json`, gives each combination as an object keyed by
+enumeration name, which says what a table row says:
+
+```json
+{
+  "types": [
+    {
+      "type": "Button",
+      "varies": ["Kind", "State"],
+      "count": 4,
+      "combinations": [
+        { "Kind": "primary", "State": "normal" },
+        { "Kind": "primary", "State": "disabled" },
+        { "Kind": "secondary", "State": "normal" },
+        { "Kind": "secondary", "State": "disabled" }
+      ]
+    },
+    { "type": "Logo", "varies": [], "count": 1, "combinations": [{}] }
+  ]
+}
+```
+
+**When the file has problems,** no combinations are listed: a file's
+combinations are defined only when the checker accepts it. The command reports
+the problems as `check` does, and exits with `1`.
+
+**When the named type does not exist,** it is a usage error: the command lists
+the types the file has, and exits with `2`.
+
+### The editor
+
+Above each type, the count of its combinations, such as `4 combinations`.
+Choosing it shows the same table. A file with problems shows no counts.
+
 ## In Lean
 
 A type:
@@ -161,23 +226,33 @@ A type's combinations in a file:
   name is listed.
 - **Rule IDs.** Name the rule with each problem, such as `T2`.
 - **Listing combinations.** List them in the order above, so output can be
-  compared directly.
+  compared directly. Their count and order come from the specification's
+  `File.combinations`, which the agreement checks compare.
+- **T2 for a type's name.** When the missing name is a type's, say so: "`Button`
+  is a type, not an enumeration; a type varies over enumerations only". The
+  rule and the problem are the same; only the message says more.
 
 ## Decisions
 
-| Decision                                                            | Why                                                                               | Rejected                                |
-| ------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------- |
-| Each type lists what it varies over                                 | Everything about a type's combinations is in one place, exclusions later included | A named product shared by types         |
-| The keyword is `type`                                               | Domain-free: it fits any system with states                                       | `component`, `thing`                    |
-| A type varies over a list of enumerations                           | The simplest form; varying over the same enumeration twice is rare                | Named dimensions, until they are needed |
-| A type may vary over nothing, with one combination                  | A thing that does not vary yet is still a valid model                             | Requiring at least one enumeration      |
-| Combinations are listed in written order, first enumeration slowest | Predictable, and matches how the type is written                                  | Last enumeration slowest                |
+| Decision                                                                                     | Why                                                                               | Rejected                                                              |
+| -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Each type lists what it varies over                                                          | Everything about a type's combinations is in one place, exclusions later included | A named product shared by types                                       |
+| The keyword is `type`                                                                        | Domain-free: it fits any system with states                                       | `component`, `thing`                                                  |
+| A type varies over a list of enumerations                                                    | The simplest form; varying over the same enumeration twice is rare                | Named dimensions, until they are needed                               |
+| A type may vary over nothing, with one combination                                           | A thing that does not vary yet is still a valid model                             | Requiring at least one enumeration                                    |
+| Combinations are listed in written order, first enumeration slowest                          | Predictable, and matches how the type is written                                  | Last enumeration slowest                                              |
+| Combinations are listed as a table in text, and as objects keyed by enumeration name in JSON | A table reads well; an object says the same for an agent                          | Writing combinations in the language's own notation, before it exists |
+| The command line lists combinations first, then the editor shows counts                      | Agents read the command line; people see counts as they write                     | One without the other                                                 |
+| No combinations are listed for a file with problems                                          | Combinations are defined only for an accepted file                                | Listing the types that are fine                                       |
 
 ## Deferred
 
-| Question                                                                 | Decide when                      |
-| ------------------------------------------------------------------------ | -------------------------------- |
-| Combinations that do not exist, such as a tertiary button never disabled | Exclusion rules are designed     |
-| Varying over the same enumeration twice, through named dimensions        | A model needs it                 |
-| Sharing a list of enumerations across types                              | Repeating lists becomes a burden |
-| What a type has besides what it varies over, such as states              | Types gain a body                |
+| Question                                                                             | Decide when                      |
+| ------------------------------------------------------------------------------------ | -------------------------------- |
+| Combinations that do not exist, such as a tertiary button never disabled             | Exclusion rules are designed     |
+| Varying over the same enumeration twice, through named dimensions                    | A model needs it                 |
+| Sharing a list of enumerations across types                                          | Repeating lists becomes a burden |
+| What a type has besides what it varies over, such as states                          | Types gain a body                |
+| How a combination or a value is written inside the language, such as `Kind.tertiary` | Exclusions need to name one      |
+| Whether each combination needs a stable identity                                     | Evidence is designed             |
+| A limit on very large tables                                                         | A real model needs one           |
