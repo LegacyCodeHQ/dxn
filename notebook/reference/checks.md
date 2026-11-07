@@ -46,7 +46,12 @@ field  = name ":" name
 
 The `check` block comes after the record's own fields. It always has braces.
 Its fields are written as a record's are, one per line, each an enumeration or
-a record of the file.
+a record of the file. A block with one field may sit on one line, as a record
+with one field may:
+
+```dxn
+check { verdict: Verdict }
+```
 
 - **`check { }`**, with no fields: the checker records only that the entry was
   checked.
@@ -250,6 +255,7 @@ check (`File.valuesWithin`).
 | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | Checking is declared inside the record, in a `check` block                 | What is checked and how it is checked are read in one place                               | A separate check record that names the record it checks    |
 | The block always has braces, empty or not                                  | One form for every check; empty braces say "checked, nothing more"                        | A bare `check` with no braces                              |
+| A block with one field may sit on one line                                 | As a record with one field may; it needs no separator                                     | Always one field per line                                  |
 | A check has no built-in outcome: it holds only its fields                  | Whether a check approves is for whoever reads the data, in the model's own words          | A built-in `approved` or `rejected` outcome on every check |
 | Status has four values: missing, waiting, stale, checked                   | They are what the language can tell from what was recorded                                | Approved and rejected as statuses                          |
 | A check's fields never decide status                                       | The language gives them no meaning                                                        | Fields that affect status, such as "`changes` blocks"      |
