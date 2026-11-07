@@ -38,19 +38,16 @@ meaningful in a file the checker rejects.
 
 ## Where each rule lives
 
-| Rule                                                                 | Lean                                                                                         | Tests                 |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------- |
-| When a rename is refused, and why                                    | `renameErrors`, `renameEnum`; `renameErrors_eq_nil_iff`                                      | `DxnTest/Rename.lean` |
-| A file with problems gives that as the only reason                   | `renameErrors_of_not_valid`                                                                  | `DxnTest/Rename.lean` |
-| In a valid file, each reason is given exactly when it applies        | `badEnumName_mem_renameErrors`, `noSuchEnum_mem_renameErrors`, `enumExists_mem_renameErrors` | `DxnTest/Rename.lean` |
-| No reason is given twice, and the reasons come in their stated order | `nodup_renameErrors`, `RenameError.rank`, `renameErrors_sorted`                              | `DxnTest/Rename.lean` |
-| A rename keeps the file valid                                        | `valid_of_renameEnum`                                                                        | `DxnTest/Rename.lean` |
-| Each value goes to its renamed value                                 | `Value.renameEnum`, `values_of_renameEnum`                                                   | `DxnTest/Rename.lean` |
-| No two values go to the same one: the map is a bijection             | `injOn_of_renameEnum`                                                                        | `DxnTest/Rename.lean` |
-| Only enumeration names change; values and their order stay           | `decls_values_of_renameEnum`                                                                 | `DxnTest/Rename.lean` |
-| Renaming back undoes it                                              | `renameEnum_undo`                                                                            | `DxnTest/Rename.lean` |
-| Renaming to its own name gives the same file                         | `renameEnum_self`                                                                            | `DxnTest/Rename.lean` |
-| Two renames in a row are one rename                                  | `renameEnum_comp`                                                                            | `DxnTest/Rename.lean` |
+| Rule                                                       | Lean                                                    | Tests                 |
+| ---------------------------------------------------------- | ------------------------------------------------------- | --------------------- |
+| When a rename is refused, and why                          | `renameErrors`, `renameEnum`; `renameErrors_eq_nil_iff` | `DxnTest/Rename.lean` |
+| A rename keeps the file valid                              | `valid_of_renameEnum`                                   | `DxnTest/Rename.lean` |
+| Each value goes to its renamed value                       | `Value.renameEnum`, `values_of_renameEnum`              | `DxnTest/Rename.lean` |
+| No two values go to the same one: the map is a bijection   | `injOn_of_renameEnum`                                   | `DxnTest/Rename.lean` |
+| Only enumeration names change; values and their order stay | `decls_values_of_renameEnum`                            | `DxnTest/Rename.lean` |
+| Renaming back undoes it                                    | `renameEnum_undo`                                       | `DxnTest/Rename.lean` |
+| Renaming to its own name gives the same file               | `renameEnum_self`                                       | `DxnTest/Rename.lean` |
+| Two renames in a row are one rename                        | `renameEnum_comp`                                       | `DxnTest/Rename.lean` |
 
 ## Implementation notes
 

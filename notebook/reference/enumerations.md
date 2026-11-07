@@ -89,6 +89,10 @@ An enumeration name is a capital letter, then letters and digits. It is ASCII.
 confused with `light`. ASCII, because look-alike letters from other alphabets
 are different characters, and two names that look the same would not be.
 
+No name follows both this rule and E3's, so a name's case alone says whether it
+is an enumeration or a value. Lean proves it
+(`not_isValueName_of_isEnumName`).
+
 **Suggest:** for `light`, `Light`, capitalizing the first letter. For
 `ui-state`, `UiState`, dropping the separator and capitalizing the next letter.
 For `2Light` or `Lïght`, no name: say what the rule is.

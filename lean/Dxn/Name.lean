@@ -2,7 +2,8 @@
 # Names
 
 Names are ASCII. Their case says which kind of name they are: an enumeration
-name starts with a capital letter, and a value name is lowercase.
+name starts with a capital letter, and a value name is lowercase, so no name is
+both.
 -/
 
 namespace Dxn
@@ -102,6 +103,40 @@ theorem isValueName_iff (n : Name) :
   rw [valueNameRest_iff]
   simp only [NoDoubleHyphen, Bool.true_eq_false, imp_false, forall_const]
   exact ⟨fun ⟨a, b, c, d, e⟩ => ⟨b, a, c, d, e⟩, fun ⟨b, a, c, d, e⟩ => ⟨a, b, c, d, e⟩⟩
+
+/-! ## The case tells the kind of name -/
+
+/-- An uppercase letter is not a lowercase letter, a digit or a hyphen: it cannot appear in a
+value name. -/
+theorem not_valueChar_of_isUpper {c : Char} (h : c.isUpper = true) :
+    ¬(c.isLower = true ∨ c.isDigit = true ∨ c = '-') := by
+  rintro (hl | hd | rfl)
+  · unfold Char.isUpper at h
+    unfold Char.isLower at hl
+    simp only [decide_eq_true_eq, Bool.and_eq_true] at h hl
+    have := UInt32.le_iff_toNat_le.mp h.2
+    have := UInt32.le_iff_toNat_le.mp hl.1
+    have : ('Z' : Char).val.toNat = 90 := rfl
+    have : ('a' : Char).val.toNat = 97 := rfl
+    omega
+  · unfold Char.isUpper at h
+    unfold Char.isDigit at hd
+    simp only [decide_eq_true_eq, Bool.and_eq_true] at h hd
+    have := UInt32.le_iff_toNat_le.mp h.1
+    have := UInt32.le_iff_toNat_le.mp hd.2
+    have : ('A' : Char).val.toNat = 65 := rfl
+    have : ('9' : Char).val.toNat = 57 := rfl
+    omega
+  · exact absurd h (by decide)
+
+/-- No name is both an enumeration name and a value name, so its case tells which kind it is. -/
+theorem not_isValueName_of_isEnumName {n : Name} (h : isEnumName n = true) :
+    isValueName n = false := by
+  obtain ⟨c, cs, hn, hc, _⟩ := (isEnumName_iff n).mp h
+  cases hv : isValueName n
+  · rfl
+  · have hc' := ((isValueName_iff n).mp hv).2.1 c (by rw [hn]; exact List.mem_cons_self ..)
+    exact absurd hc' (not_valueChar_of_isUpper hc)
 
 /-! ## Names are ASCII -/
 

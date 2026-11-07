@@ -25,6 +25,12 @@ example (n : Name) : isValueName n = true ↔
     ∀ p ∈ n.toList.zip n.toList.tail, ¬(p.1 = '-' ∧ p.2 = '-') :=
   isValueName_iff n
 
+-- The case tells an enumeration name from a value name: no name is both.
+example (n : Name) (h : isEnumName n = true) : isValueName n = false :=
+  not_isValueName_of_isEnumName h
+#guard ["Light", "UIState", "L", "off", "2", "no-keyboard", "light"].all fun n =>
+  !(isEnumName n && isValueName n)
+
 -- Names are ASCII.
 example (n : Name) (h : isEnumName n) : ∀ c ∈ n.toList, c.toNat < 128 := ascii_of_isEnumName h
 example (n : Name) (h : isValueName n) : ∀ c ∈ n.toList, c.toNat < 128 :=
