@@ -28,6 +28,19 @@ def lamp : File :=
   .ok ⟨[.enum ⟨"Glow", ["off", "on"]⟩, .enum ⟨"Power", ["mains", "battery"]⟩,
     .type ⟨"Lamp", ["Glow", "Power"]⟩]⟩
 
+def reviewed : File :=
+  ⟨[.enum ⟨"Verdict", ["approved", "changes"]⟩,
+    .record ⟨"Review", [("verdict", "Verdict")]⟩]⟩
+
+-- A record field of the enumeration follows the rename; the field keeps its name.
+#guard renameEnum reviewed "Verdict" "Decision" =
+  .ok ⟨[.enum ⟨"Decision", ["approved", "changes"]⟩,
+    .record ⟨"Review", [("verdict", "Decision")]⟩]⟩
+
+-- A record's name is not an enumeration's, and a new name may not be a record's.
+#guard renameEnum reviewed "Review" "Opinion" = .error [.noSuchEnum "Review"]
+#guard renameEnum reviewed "Verdict" "Review" = .error [.nameExists "Review"]
+
 -- Only an enumeration is renamed: a type's name is not an enumeration's.
 #guard renameEnum lamp "Lamp" "Bulb" = .error [.noSuchEnum "Lamp"]
 
@@ -100,6 +113,11 @@ example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) :
 example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) :
     g.enums.map (·.values) = f.enums.map (·.values) :=
   enums_values_of_renameEnum h
+
+-- Every record keeps its name and fields, each field's type renamed.
+example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) :
+    g.records = f.records.map (RecordDecl.rename old new) :=
+  records_of_renameEnum h
 
 -- Every type keeps its name, and varies over the same enumerations, renamed.
 example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) :

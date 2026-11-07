@@ -7,8 +7,9 @@ import Dxn
 Reads files of declarations as JSON and writes what the specification says
 about each, so an implementation can be compared with it. The input is a file
 holding an array of cases, each a file's declarations and, optionally, an
-enumeration to rename in it. A declaration is an enumeration, or a type when
-its `kind` is `type`:
+enumeration to rename in it. A declaration is an enumeration, a type when its
+`kind` is `type`, or a record when its `kind` is `record`, with fields such as
+`{"name": "verdict", "type": "Verdict"}`:
 
     [{"declarations": [{"name": "Light", "values": ["off", "on"]},
                        {"kind": "type", "name": "Lamp", "varies": ["Light"]}],
@@ -43,6 +44,16 @@ def typeProblemJson (error : TypeError) : Json :=
   | .duplicateVaries name =>
     Json.mkObj [("rule", error.ruleId), ("kind", "duplicateVaries"), ("name", name)]
 
+def recordProblemJson (error : RecordError) : Json :=
+  let named (kind name : String) := Json.mkObj [("rule", error.ruleId), ("kind", kind), ("name", name)]
+  match error with
+  | .badRecordName name => named "badRecordName" name
+  | .noFields => Json.mkObj [("rule", error.ruleId), ("kind", "noFields")]
+  | .badFieldName name => named "badFieldName" name
+  | .duplicateField name => named "duplicateField" name
+  | .noSuchFieldType name => named "noSuchFieldType" name
+  | .containsItself => Json.mkObj [("rule", error.ruleId), ("kind", "containsItself")]
+
 def fileProblemJson (problem : FileError) : Json :=
   match problem with
   | .enum name error =>
@@ -50,6 +61,9 @@ def fileProblemJson (problem : FileError) : Json :=
   | .type name error =>
     Json.mkObj [("rule", problem.ruleId), ("kind", "type"), ("name", name),
       ("problem", typeProblemJson error)]
+  | .record name error =>
+    Json.mkObj [("rule", problem.ruleId), ("kind", "record"), ("name", name),
+      ("problem", recordProblemJson error)]
   | .duplicateName name => Json.mkObj [("rule", problem.ruleId), ("kind", "duplicateName"), ("name", name)]
 
 def renameErrorJson (error : RenameError) : Json :=
@@ -63,6 +77,9 @@ def declJson : Decl → Json
   | .enum d => Json.mkObj [("name", d.name), ("values", Json.arr (d.values.map Json.str).toArray)]
   | .type t =>
     Json.mkObj [("kind", "type"), ("name", t.name), ("varies", Json.arr (t.varies.map Json.str).toArray)]
+  | .record r =>
+    Json.mkObj [("kind", "record"), ("name", r.name),
+      ("fields", Json.arr (r.fields.map fun (n, t) => Json.mkObj [("name", n), ("type", t)]).toArray)]
 
 def combinationsJson (f : File) (t : TypeDecl) : Json :=
   Json.mkObj [("type", t.name),
@@ -95,6 +112,10 @@ def declOfJson (json : Json) : Except String Decl := do
   | .ok "type" =>
     let varies ← json.getObjValAs? (Array String) "varies"
     return .type ⟨name, varies.toList⟩
+  | .ok "record" =>
+    let fields ← json.getObjVal? "fields" >>= (·.getArr?) >>= (·.mapM fun field => do
+      return ((← field.getObjValAs? String "name"), (← field.getObjValAs? String "type")))
+    return .record ⟨name, fields.toList⟩
   | _ =>
     let values ← json.getObjValAs? (Array String) "values"
     return .enum ⟨name, values.toList⟩
