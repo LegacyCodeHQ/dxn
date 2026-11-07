@@ -1,6 +1,6 @@
 # Cartesian products
 
-**Status:** Proposed
+**Status:** Decided
 
 Something can vary in more than one way at once. A lamp can be off or on, and
 also run on mains or on battery:
