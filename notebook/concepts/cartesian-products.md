@@ -14,7 +14,8 @@ Every state the lamp can be in is one value of each: off on mains, off on
 battery, on on mains, on on battery. The _Cartesian product_ is the set of
 every such combination. Counting it says how many cases there are to check.
 In dxn, a [type](../reference/types) lists the enumerations it varies over, and
-its combinations are their product.
+its combinations are their product. A record is a product too, with its parts
+named: see [Named products](./named-products).
 
 | In mathematics                                             | In programming                                        |
 | ---------------------------------------------------------- | ----------------------------------------------------- |

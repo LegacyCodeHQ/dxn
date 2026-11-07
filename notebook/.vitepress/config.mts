@@ -25,6 +25,7 @@ export default defineConfig({
           { text: "Disjoint unions", link: "/concepts/disjoint-unions" },
           { text: "Bijections", link: "/concepts/bijections" },
           { text: "Cartesian products", link: "/concepts/cartesian-products" },
+          { text: "Named products", link: "/concepts/named-products" },
         ],
       },
       {
@@ -33,6 +34,7 @@ export default defineConfig({
           { text: "Files", link: "/reference/files" },
           { text: "Enumerations", link: "/reference/enumerations" },
           { text: "Types", link: "/reference/types" },
+          { text: "Records", link: "/reference/records" },
         ],
       },
       {
