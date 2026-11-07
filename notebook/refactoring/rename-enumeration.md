@@ -132,8 +132,11 @@ The rename:
 - **One edit.** A rename changes one name, so the editor gets one text edit, at
   the declared name. The command line rewrites only that name in the file,
   leaving the rest of the text as it was.
-- **Refusal IDs.** Name the reason with each refusal, such as `RE4`, so it
-  links to its section here.
+- **Refusal IDs.** Each shared refusal carries its ID in `rule`, such as
+  `RE4`. The Lean executable emits the same ID, and agreement checks compare
+  it. CLI JSON preserves it; LSP rename failures preserve the refusals in
+  error data. Both interfaces display the shared refusal rather than assigning
+  their own IDs.
 - **Messages.** Each reason above says what to do instead. Give the checker's
   problems for RE1, its suggestion for RE2, the names there are for RE3, and
   where the taken name is declared for RE4.

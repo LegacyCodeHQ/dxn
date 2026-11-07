@@ -30,9 +30,17 @@ interface Case {
 }
 
 interface Said {
-  problems: { kind: string; name: string; problem?: { kind: string; name?: string } }[];
+  problems: {
+    kind: string;
+    rule: string;
+    name: string;
+    problem?: { kind: string; rule: string; name?: string };
+  }[];
   values: Value[] | null;
-  rename?: { refusals: { kind: string; name?: string }[]; declarations: Declaration[] | null };
+  rename?: {
+    refusals: { kind: string; rule: string; name?: string }[];
+    declarations: Declaration[] | null;
+  };
 }
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -132,14 +140,19 @@ function said(declarations: readonly EnumDeclaration[]): Said {
   const accepted = acceptFile(declarations);
   const problems = accepted.problems.map((problem) =>
     problem.kind === "duplicateEnum"
-      ? { kind: problem.kind, name: problem.name }
+      ? { kind: problem.kind, rule: problem.rule, name: problem.name }
       : {
           kind: problem.kind,
+          rule: problem.rule,
           name: problem.name,
           problem:
             "name" in problem.problem
-              ? { kind: problem.problem.kind, name: problem.problem.name }
-              : { kind: problem.problem.kind },
+              ? {
+                  kind: problem.problem.kind,
+                  rule: problem.problem.rule,
+                  name: problem.problem.name,
+                }
+              : { kind: problem.problem.kind, rule: problem.problem.rule },
         },
   );
   return { problems, values: accepted.file?.values ?? null };
@@ -187,7 +200,9 @@ function renamed(source: string, { from, to }: { from: string; to: string }): Sa
   const result = renameEnum(source, from, to);
   return {
     refusals: result.refusals.map((refusal) =>
-      "name" in refusal ? { kind: refusal.kind, name: refusal.name } : { kind: refusal.kind },
+      "name" in refusal
+        ? { kind: refusal.kind, rule: refusal.rule, name: refusal.name }
+        : { kind: refusal.kind, rule: refusal.rule },
     ),
     declarations:
       result.source === undefined
@@ -250,6 +265,14 @@ describe("this implementation and the Lean specification", () => {
     const done = renames.filter(({ rename }) => rename?.declarations !== null).length;
     expect({
       kinds: [...kinds].sort(),
+      rules: [
+        ...new Set(
+          spec.flatMap((result) => [
+            ...result.problems.map((p) => p.rule),
+            ...(result.rename?.refusals.map((r) => r.rule) ?? []),
+          ]),
+        ),
+      ].sort(),
       accepted: accepted > 0,
       rejected: accepted < spec.length,
       refusals: [...refusals].sort(),
@@ -274,6 +297,17 @@ describe("this implementation and the Lean specification", () => {
         "refused": true,
         "rejected": true,
         "renamed": true,
+        "rules": [
+          "E1",
+          "E2",
+          "E3",
+          "E4",
+          "F1",
+          "RE1",
+          "RE2",
+          "RE3",
+          "RE4",
+        ],
       }
     `);
   });

@@ -22,24 +22,27 @@ for a rename, every reason it is refused or the renamed declarations:
 
 open Lean Dxn
 
-def problemJson : EnumError → Json
-  | .badEnumName name => Json.mkObj [("kind", "badEnumName"), ("name", name)]
-  | .empty => Json.mkObj [("kind", "empty")]
-  | .badValueName value => Json.mkObj [("kind", "badValueName"), ("name", value)]
-  | .duplicate value => Json.mkObj [("kind", "duplicate"), ("name", value)]
+def problemJson (error : EnumError) : Json :=
+  match error with
+  | .badEnumName name => Json.mkObj [("rule", error.ruleId), ("kind", "badEnumName"), ("name", name)]
+  | .empty => Json.mkObj [("rule", error.ruleId), ("kind", "empty")]
+  | .badValueName value => Json.mkObj [("rule", error.ruleId), ("kind", "badValueName"), ("name", value)]
+  | .duplicate value => Json.mkObj [("rule", error.ruleId), ("kind", "duplicate"), ("name", value)]
 
 def valueJson (value : Value) : Json :=
   Json.mkObj [("enum", value.enum), ("name", value.name)]
 
-def fileProblemJson : FileError → Json
-  | .enum name error => Json.mkObj [("kind", "enum"), ("name", name), ("problem", problemJson error)]
-  | .duplicateEnum name => Json.mkObj [("kind", "duplicateEnum"), ("name", name)]
+def fileProblemJson (problem : FileError) : Json :=
+  match problem with
+  | .enum name error => Json.mkObj [("rule", problem.ruleId), ("kind", "enum"), ("name", name), ("problem", problemJson error)]
+  | .duplicateEnum name => Json.mkObj [("rule", problem.ruleId), ("kind", "duplicateEnum"), ("name", name)]
 
-def renameErrorJson : RenameError → Json
-  | .fileHasProblems => Json.mkObj [("kind", "fileHasProblems")]
-  | .badEnumName name => Json.mkObj [("kind", "badEnumName"), ("name", name)]
-  | .noSuchEnum name => Json.mkObj [("kind", "noSuchEnum"), ("name", name)]
-  | .enumExists name => Json.mkObj [("kind", "enumExists"), ("name", name)]
+def renameErrorJson (error : RenameError) : Json :=
+  match error with
+  | .fileHasProblems => Json.mkObj [("rule", error.ruleId), ("kind", "fileHasProblems")]
+  | .badEnumName name => Json.mkObj [("rule", error.ruleId), ("kind", "badEnumName"), ("name", name)]
+  | .noSuchEnum name => Json.mkObj [("rule", error.ruleId), ("kind", "noSuchEnum"), ("name", name)]
+  | .enumExists name => Json.mkObj [("rule", error.ruleId), ("kind", "enumExists"), ("name", name)]
 
 def declJson (d : EnumDecl) : Json :=
   Json.mkObj [("name", d.name), ("values", Json.arr (d.values.map Json.str).toArray)]
@@ -74,11 +77,11 @@ def main (args : List String) : IO UInt32 := do
   let caseOfJson (json : Json) : Except String (File × Option (Dxn.Name × Dxn.Name)) := do
     let decls ← json.getObjVal? "declarations" >>= (·.getArr?) >>= (·.mapM declOfJson)
     let rename ← match json.getObjVal? "rename" with
-      | .ok r => do
+    | .ok r => do
         let old ← r.getObjValAs? String "from"
         let new ← r.getObjValAs? String "to"
         pure (some (old, new))
-      | .error _ => pure none
+    | .error _ => pure none
     return (⟨decls.toList⟩, rename)
   match Json.parse input >>= fun json => json.getArr? >>= (·.mapM caseOfJson) with
   | .error message =>

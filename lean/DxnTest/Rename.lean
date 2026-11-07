@@ -103,4 +103,6 @@ example (f g h : File) (a b c : Name) (hg : renameEnum f a b = .ok g)
 example (f : File) (n : Name) (hv : f.Valid) (hn : n ∈ f.names) : renameEnum f n n = .ok f :=
   renameEnum_self hv hn
 
+#guard ([RenameError.fileHasProblems, .badEnumName "lamp", .noSuchEnum "Missing", .enumExists "Power"].map RenameError.ruleId) = ["RE1", "RE2", "RE3", "RE4"]
+
 end DxnTest.Rename

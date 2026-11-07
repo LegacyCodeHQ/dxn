@@ -117,9 +117,12 @@ describe("renaming an enumeration", () => {
                     },
                   ],
                   "kind": "empty",
+                  "rule": "E2",
                 },
+                "rule": "E2",
               },
             ],
+            "rule": "RE1",
           },
         ],
         [
@@ -134,6 +137,7 @@ describe("renaming an enumeration", () => {
                 "message": "a trailing comma is not allowed after the last value",
               },
             ],
+            "rule": "RE1",
           },
         ],
         [
@@ -144,6 +148,7 @@ describe("renaming an enumeration", () => {
             },
             "kind": "enumExists",
             "name": "Power",
+            "rule": "RE4",
           },
         ],
       ]

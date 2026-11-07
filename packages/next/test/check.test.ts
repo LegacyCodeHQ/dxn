@@ -90,6 +90,7 @@ describe("checking an enumeration", () => {
             ],
             "kind": "duplicate",
             "name": "on",
+            "rule": "E4",
           },
         ],
         [
@@ -102,6 +103,7 @@ describe("checking an enumeration", () => {
             ],
             "kind": "badEnumName",
             "name": "light",
+            "rule": "E1",
           },
           {
             "at": [
@@ -116,6 +118,7 @@ describe("checking an enumeration", () => {
             ],
             "kind": "badValueName",
             "name": "Off",
+            "rule": "E3",
           },
           {
             "at": [
@@ -130,6 +133,7 @@ describe("checking an enumeration", () => {
             ],
             "kind": "duplicate",
             "name": "Off",
+            "rule": "E4",
           },
         ],
         [
@@ -141,6 +145,7 @@ describe("checking an enumeration", () => {
               },
             ],
             "kind": "empty",
+            "rule": "E2",
           },
         ],
       ]

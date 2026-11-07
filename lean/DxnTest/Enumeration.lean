@@ -104,4 +104,6 @@ example (d e : EnumDecl) (hn : d.name = e.name) (h : d.values.Perm e.values) :
 -- Enumerations with different names are different, even with the same values.
 example : ¬ Same light ⟨"Power", ["off", "on"]⟩ := fun h => absurd h.1 (by decide)
 
+#guard ([EnumError.badEnumName "light", .empty, .badValueName "Off", .duplicate "on"].map EnumError.ruleId) = ["E1", "E2", "E3", "E4"]
+
 end DxnTest.Enumeration

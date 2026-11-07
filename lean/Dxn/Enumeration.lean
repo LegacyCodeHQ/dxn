@@ -36,6 +36,14 @@ inductive EnumError where
   /-- The name is written more than once. -/
   | duplicate (value : Name)
   deriving Repr, DecidableEq
+
+/-- The stable notebook rule ID belonging to this problem. -/
+def EnumError.ruleId : EnumError → String
+  | .badEnumName _ => "E1"
+  | .empty => "E2"
+  | .badValueName _ => "E3"
+  | .duplicate _ => "E4"
+
 -- #endregion errors
 
 -- #region valid

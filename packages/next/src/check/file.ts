@@ -6,8 +6,8 @@ import { acceptEnum, checkEnum, type Enum, type EnumProblem, frozen } from "./en
 
 /** A problem with a file: one of an enumeration's own, or an enumeration name written twice. */
 export type FileProblem =
-  | { kind: "enum"; name: string; problem: EnumProblem }
-  | { kind: "duplicateEnum"; name: string; at: Span[] };
+  | { kind: "enum"; rule: EnumProblem["rule"]; name: string; problem: EnumProblem }
+  | { kind: "duplicateEnum"; rule: "F1"; name: string; at: Span[] };
 
 /**
  * Every problem with a file's declarations: each declaration's own, in written order, then each
@@ -18,7 +18,7 @@ export function checkFile(declarations: readonly EnumDeclaration[]): FileProblem
   const problems: FileProblem[] = [];
   for (const declaration of declarations) {
     for (const problem of checkEnum(declaration)) {
-      problems.push({ kind: "enum", name: declaration.name.text, problem });
+      problems.push({ kind: "enum", rule: problem.rule, name: declaration.name.text, problem });
     }
   }
   const written = new Map<string, Span[]>();
@@ -28,7 +28,7 @@ export function checkFile(declarations: readonly EnumDeclaration[]): FileProblem
     else written.set(name.text, [name.span]);
   }
   for (const [name, at] of written) {
-    if (at.length > 1) problems.push({ kind: "duplicateEnum", name, at });
+    if (at.length > 1) problems.push({ kind: "duplicateEnum", rule: "F1", name, at });
   }
   return problems;
 }

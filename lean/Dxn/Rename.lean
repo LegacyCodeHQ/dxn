@@ -29,6 +29,14 @@ inductive RenameError where
   /-- Another enumeration already has the new name. -/
   | enumExists (name : Name)
   deriving Repr, DecidableEq
+
+/-- The stable notebook ID belonging to this refusal. -/
+def RenameError.ruleId : RenameError → String
+  | .fileHasProblems => "RE1"
+  | .badEnumName _ => "RE2"
+  | .noSuchEnum _ => "RE3"
+  | .enumExists _ => "RE4"
+
 -- #endregion refusals
 
 -- #region map

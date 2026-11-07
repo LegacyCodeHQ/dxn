@@ -32,6 +32,12 @@ inductive FileError where
   /-- The enumeration name is written more than once. -/
   | duplicateEnum (name : Name)
   deriving Repr, DecidableEq
+
+/-- Enumeration rules retain their IDs; duplicate declarations break F1. -/
+def FileError.ruleId : FileError → String
+  | .enum _ error => error.ruleId
+  | .duplicateEnum _ => "F1"
+
 -- #endregion errors
 
 -- #region check

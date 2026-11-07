@@ -227,7 +227,8 @@ The naming rules, checked one character at a time:
 
 - **Positions.** The specification has no positions. Point each problem at
   the name it concerns, and E4 at every occurrence.
-- **Rule IDs.** Reports show the rule in the message, such as `[E2]`,
+- **Rule IDs.** Core checker problems carry the rule ID before presentation, and the Lean
+  executable emits it for agreement checks. Reports show it in the message, such as `[E2]`,
   alongside the existing diagnostic code. CLI JSON exposes it as `rule`;
   language-server diagnostics expose it as `data.rule`. Syntax errors have no
   checker-rule ID. The ID identifies the corresponding section of this reference.

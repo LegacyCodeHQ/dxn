@@ -1,10 +1,10 @@
 import { namingAdvice } from "@next/analysis/suggestions.js";
 import { checkFile, type FileProblem } from "@next/check/file.js";
 import type { Span } from "@next/model/enumeration.js";
+import type { RuleId } from "@next/model/rules.js";
 import { parse } from "@next/syntax/parse.js";
 
-/** Stable IDs of the language rules in notebook/reference. Syntax errors have no checker rule. */
-export type RuleId = "E1" | "E2" | "E3" | "E4" | "F1";
+export type { RuleId } from "@next/model/rules.js";
 
 export interface Problem {
   rule?: RuleId;
@@ -22,8 +22,8 @@ function problem(
   if (p.kind === "duplicateEnum")
     return {
       code: p.kind,
-      rule: "F1",
-      message: `[F1] enumeration '${p.name}' is declared more than once; give each enumeration a distinct name`,
+      rule: p.rule,
+      message: `[${p.rule}] enumeration '${p.name}' is declared more than once; give each enumeration a distinct name`,
       at: p.at,
     };
   const e = p.problem;
@@ -35,9 +35,7 @@ function problem(
     empty: "an enumeration must declare at least one value",
     duplicate: "a value is declared more than once; remove the repeated declaration",
   };
-  const rule = ({ badEnumName: "E1", empty: "E2", badValueName: "E3", duplicate: "E4" } as const)[
-    e.kind
-  ];
+  const rule = e.rule;
   const taken = e.kind === "badEnumName" ? enumNames : valueNames.get(e.at[0]?.start ?? -1);
   const advice =
     taken && (e.kind === "badEnumName" || e.kind === "badValueName")

@@ -51,4 +51,7 @@ example (f : File) : List.Sublist (duplicateEnumsOf f.check) f.names.eraseDups :
 -- In a valid file, no two enumerations share a value.
 example (f : File) (h : f.Valid) : f.values.Nodup := File.nodup_values h
 
+#guard (FileError.enum "Light" (.badValueName "Off")).ruleId = "E3"
+#guard (FileError.duplicateEnum "Light").ruleId = "F1"
+
 end DxnTest.File

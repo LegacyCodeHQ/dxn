@@ -82,7 +82,8 @@ cases in `cases.json` (enumerations), `files.json` and `renames.json`, each
 again with its values reversed, and generated enumerations, files and
 renames. Each goes through the implementation directly, and again as text
 through its parser. They must agree on what is accepted, which problems are
-reported for which names in which order, which values an accepted file has,
+reported for which names in which order, the E1–E4/F1 problem IDs and
+RE1–RE4 refusal IDs, which values an accepted file has,
 and what each rename does or why it is refused. Messages and positions belong
 to the implementation, and its own tests cover them.
 

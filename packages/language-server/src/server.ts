@@ -135,7 +135,9 @@ export function serve(connection: Connection): void {
     if (!renamed)
       throw new ResponseError(ErrorCodes.InvalidParams, "only enumeration names can be renamed");
     if (!renamed.file)
-      throw new ResponseError(ErrorCodes.InvalidParams, JSON.stringify(renamed.refusals));
+      throw new ResponseError(ErrorCodes.InvalidParams, JSON.stringify(renamed.refusals), {
+        refusals: renamed.refusals,
+      });
     return {
       documentChanges: [
         {

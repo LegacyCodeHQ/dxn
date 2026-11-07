@@ -6,10 +6,10 @@ import { isEnumName, isValueName } from "./names.js";
 
 /** A problem with an enumeration declaration, and every place it is written. */
 export type EnumProblem =
-  | { kind: "badEnumName"; name: string; at: Span[] }
-  | { kind: "empty"; at: Span[] }
-  | { kind: "badValueName"; name: string; at: Span[] }
-  | { kind: "duplicate"; name: string; at: Span[] };
+  | { kind: "badEnumName"; rule: "E1"; name: string; at: Span[] }
+  | { kind: "empty"; rule: "E2"; at: Span[] }
+  | { kind: "badValueName"; rule: "E3"; name: string; at: Span[] }
+  | { kind: "duplicate"; rule: "E4"; name: string; at: Span[] };
 
 /** Each name, once, in the order it is first written, with every place it is written. */
 function occurrences(names: readonly Name[]): Map<string, Span[]> {
@@ -31,15 +31,15 @@ export function checkEnum(declaration: EnumDeclaration): EnumProblem[] {
   const problems: EnumProblem[] = [];
   const { name, values } = declaration;
   if (!isEnumName(name.text)) {
-    problems.push({ kind: "badEnumName", name: name.text, at: [name.span] });
+    problems.push({ kind: "badEnumName", rule: "E1", name: name.text, at: [name.span] });
   }
-  if (values.length === 0) problems.push({ kind: "empty", at: [declaration.span] });
+  if (values.length === 0) problems.push({ kind: "empty", rule: "E2", at: [declaration.span] });
   const written = occurrences(values);
   for (const [text, at] of written) {
-    if (!isValueName(text)) problems.push({ kind: "badValueName", name: text, at });
+    if (!isValueName(text)) problems.push({ kind: "badValueName", rule: "E3", name: text, at });
   }
   for (const [text, at] of written) {
-    if (at.length > 1) problems.push({ kind: "duplicate", name: text, at });
+    if (at.length > 1) problems.push({ kind: "duplicate", rule: "E4", name: text, at });
   }
   return problems;
 }

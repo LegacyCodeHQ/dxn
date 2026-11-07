@@ -267,51 +267,52 @@ it("renames unsaved buffers with precise edits and refuses value rename and coll
     });
   } catch (e) {
     snapshot.push((e as Error).message);
+    expect((e as { data?: unknown }).data).toMatchObject({ refusals: [{ rule: "RE4" }] });
   }
   expect(snapshot).toMatchInlineSnapshot(`
-   [
-     {
-       "placeholder": "Light",
-       "range": {
-         "end": {
-           "character": 10,
-           "line": 0,
-         },
-         "start": {
-           "character": 5,
-           "line": 0,
-         },
-       },
-     },
-     {
-       "documentChanges": [
-         {
-           "edits": [
-             {
-               "newText": "Lamp",
-               "range": {
-                 "end": {
-                   "character": 10,
-                   "line": 0,
-                 },
-                 "start": {
-                   "character": 5,
-                   "line": 0,
-                 },
-               },
-             },
-           ],
-           "textDocument": {
-             "uri": "file:///new-language.dxn",
-             "version": 1,
-           },
-         },
-       ],
-     },
-     null,
-     "[{"kind":"enumExists","name":"Power","at":{"start":28,"end":33}}]",
-   ]
- `);
+    [
+      {
+        "placeholder": "Light",
+        "range": {
+          "end": {
+            "character": 10,
+            "line": 0,
+          },
+          "start": {
+            "character": 5,
+            "line": 0,
+          },
+        },
+      },
+      {
+        "documentChanges": [
+          {
+            "edits": [
+              {
+                "newText": "Lamp",
+                "range": {
+                  "end": {
+                    "character": 10,
+                    "line": 0,
+                  },
+                  "start": {
+                    "character": 5,
+                    "line": 0,
+                  },
+                },
+              },
+            ],
+            "textDocument": {
+              "uri": "file:///new-language.dxn",
+              "version": 1,
+            },
+          },
+        ],
+      },
+      null,
+      "[{"kind":"enumExists","rule":"RE4","name":"Power","at":{"start":28,"end":33}}]",
+    ]
+  `);
 });
 it("gives CLI and server the same diagnostic codes, messages and ranges", async () => {
   const source = "enum light { }\r\nenum Light { on, on }\r\nenum Light { Off }";

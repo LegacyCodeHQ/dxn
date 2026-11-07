@@ -104,30 +104,30 @@ it("renames through the shared refactoring and leaves a refused rename untouched
     refused,
     source: readFileSync(join(cwd, "test.dxn"), "utf8"),
   }).toMatchInlineSnapshot(`
-   {
-     "changed": {
-       "code": 0,
-       "stderr": "",
-       "stdout": "{"file":"test.dxn","source":"enum Lamp { off, on }\\nenum Power { off }\\n","edits":[{"span":{"start":5,"end":10},"text":"Lamp"}],"dryRun":false}
-   ",
-     },
-     "preview": {
-       "code": 0,
-       "stderr": "",
-       "stdout": "{"file":"test.dxn","source":"enum Lamp { off, on }\\nenum Power { off }\\n","edits":[{"span":{"start":5,"end":10},"text":"Lamp"}],"dryRun":true}
-   ",
-     },
-     "refused": {
-       "code": 1,
-       "stderr": "",
-       "stdout": "{"file":"test.dxn","refusals":[{"kind":"enumExists","name":"Power","at":{"start":27,"end":32}}]}
-   ",
-     },
-     "source": "enum Lamp { off, on }
-   enum Power { off }
-   ",
-   }
- `);
+    {
+      "changed": {
+        "code": 0,
+        "stderr": "",
+        "stdout": "{"file":"test.dxn","source":"enum Lamp { off, on }\\nenum Power { off }\\n","edits":[{"span":{"start":5,"end":10},"text":"Lamp"}],"dryRun":false}
+    ",
+      },
+      "preview": {
+        "code": 0,
+        "stderr": "",
+        "stdout": "{"file":"test.dxn","source":"enum Lamp { off, on }\\nenum Power { off }\\n","edits":[{"span":{"start":5,"end":10},"text":"Lamp"}],"dryRun":true}
+    ",
+      },
+      "refused": {
+        "code": 1,
+        "stderr": "",
+        "stdout": "{"file":"test.dxn","refusals":[{"kind":"enumExists","rule":"RE4","name":"Power","at":{"start":27,"end":32}}]}
+    ",
+      },
+      "source": "enum Lamp { off, on }
+    enum Power { off }
+    ",
+    }
+  `);
 });
 it("rejects unavailable commands and invalid options without changing a file", () => {
   const { invoke } = setup("enum Light { off }");

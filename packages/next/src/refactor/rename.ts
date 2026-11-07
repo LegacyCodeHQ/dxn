@@ -9,10 +9,10 @@ import { parse, type SyntaxProblem } from "@next/syntax/parse.js";
 
 /** Why a rename is refused, in the order they are reported. */
 export type RenameRefusal =
-  | { kind: "fileHasProblems"; problems: readonly (SyntaxProblem | FileProblem)[] }
-  | { kind: "badEnumName"; name: string }
-  | { kind: "noSuchEnum"; name: string; names: string[] }
-  | { kind: "enumExists"; name: string; at: Span };
+  | { kind: "fileHasProblems"; rule: "RE1"; problems: readonly (SyntaxProblem | FileProblem)[] }
+  | { kind: "badEnumName"; rule: "RE2"; name: string }
+  | { kind: "noSuchEnum"; rule: "RE3"; name: string; names: string[] }
+  | { kind: "enumExists"; rule: "RE4"; name: string; at: Span };
 
 /** Replace the text at `span` with `text`. */
 export interface Edit {
@@ -51,17 +51,18 @@ function applied(source: string, edits: readonly Edit[]): string {
 export function renameEnum(source: string, from: string, to: string): Renamed {
   const parsed = parse(source);
   if (parsed.problems.length > 0)
-    return refused([{ kind: "fileHasProblems", problems: parsed.problems }]);
+    return refused([{ kind: "fileHasProblems", rule: "RE1", problems: parsed.problems }]);
   const accepted = acceptFile(parsed.declarations);
-  if (!accepted.file) return refused([{ kind: "fileHasProblems", problems: accepted.problems }]);
+  if (!accepted.file)
+    return refused([{ kind: "fileHasProblems", rule: "RE1", problems: accepted.problems }]);
 
   const declarations = parsed.declarations;
   const names = declarations.map(({ name }) => name.text);
   const refusals: RenameRefusal[] = [];
-  if (!isEnumName(to)) refusals.push({ kind: "badEnumName", name: to });
-  if (!names.includes(from)) refusals.push({ kind: "noSuchEnum", name: from, names });
+  if (!isEnumName(to)) refusals.push({ kind: "badEnumName", rule: "RE2", name: to });
+  if (!names.includes(from)) refusals.push({ kind: "noSuchEnum", rule: "RE3", name: from, names });
   const taken = to === from ? undefined : declarations.find(({ name }) => name.text === to);
-  if (taken) refusals.push({ kind: "enumExists", name: to, at: taken.name.span });
+  if (taken) refusals.push({ kind: "enumExists", rule: "RE4", name: to, at: taken.name.span });
   if (refusals.length > 0) return refused(refusals);
 
   const edits =

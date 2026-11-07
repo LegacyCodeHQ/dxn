@@ -19,6 +19,7 @@ export { isEnumName, isValueName } from "@next/check/names.js";
 export { type NamingFix, quickFixes } from "@next/editor/quick-fixes.js";
 export { renameAt, semanticTokens, symbolAt } from "@next/editor/tools.js";
 export type { EnumDeclaration, Name, Span, Value } from "@next/model/enumeration.js";
+export type { EnumRuleId, RefusalId } from "@next/model/rules.js";
 export { type Edit, type Renamed, type RenameRefusal, renameEnum } from "@next/refactor/rename.js";
 export { format } from "@next/syntax/format.js";
 export { type ParsedFile, parse, type SyntaxProblem } from "@next/syntax/parse.js";
