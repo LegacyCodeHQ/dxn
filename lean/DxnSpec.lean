@@ -4,20 +4,24 @@ import Dxn
 /-!
 # The specification as a program
 
-Reads files of enumeration declarations as JSON and writes what the
-specification says about each, so an implementation can be compared with it.
-The input is a file holding an array of cases, each a file's declarations and,
-optionally, an enumeration to rename in it:
+Reads files of declarations as JSON and writes what the specification says
+about each, so an implementation can be compared with it. The input is a file
+holding an array of cases, each a file's declarations and, optionally, an
+enumeration to rename in it. A declaration is an enumeration, or a type when
+its `kind` is `type`:
 
-    [{"declarations": [{"name": "Light", "values": ["off", "on"]}],
-      "rename": {"from": "Light", "to": "Lamp"}}]
+    [{"declarations": [{"name": "Light", "values": ["off", "on"]},
+                       {"kind": "type", "name": "Lamp", "varies": ["Light"]}],
+      "rename": {"from": "Light", "to": "Glow"}}]
 
 The output, on stdout, is one result per case, in the same order: the file's
-problems, as `File.check` reports them, its values when it is accepted, and,
-for a rename, every reason it is refused or the renamed declarations:
+problems, as `File.check` reports them; when it is accepted, its values and
+each type's combinations; and, for a rename, every reason it is refused or the
+renamed declarations:
 
     [{"problems": [], "values": [{"enum": "Light", "name": "off"}, ...],
-      "rename": {"refusals": [], "declarations": [{"name": "Lamp", ...}]}}]
+      "combinations": [{"type": "Lamp", "combinations": [[{"enum": "Light", ...}], ...]}],
+      "rename": {"refusals": [], "declarations": [{"name": "Glow", ...}, ...]}}]
 -/
 
 open Lean Dxn
@@ -32,20 +36,37 @@ def problemJson (error : EnumError) : Json :=
 def valueJson (value : Value) : Json :=
   Json.mkObj [("enum", value.enum), ("name", value.name)]
 
+def typeProblemJson (error : TypeError) : Json :=
+  match error with
+  | .badTypeName name => Json.mkObj [("rule", error.ruleId), ("kind", "badTypeName"), ("name", name)]
+  | .noSuchEnum name => Json.mkObj [("rule", error.ruleId), ("kind", "noSuchEnum"), ("name", name)]
+  | .duplicateVaries name =>
+    Json.mkObj [("rule", error.ruleId), ("kind", "duplicateVaries"), ("name", name)]
+
 def fileProblemJson (problem : FileError) : Json :=
   match problem with
-  | .enum name error => Json.mkObj [("rule", problem.ruleId), ("kind", "enum"), ("name", name), ("problem", problemJson error)]
-  | .duplicateEnum name => Json.mkObj [("rule", problem.ruleId), ("kind", "duplicateEnum"), ("name", name)]
+  | .enum name error =>
+    Json.mkObj [("rule", problem.ruleId), ("kind", "enum"), ("name", name), ("problem", problemJson error)]
+  | .type name error =>
+    Json.mkObj [("rule", problem.ruleId), ("kind", "type"), ("name", name),
+      ("problem", typeProblemJson error)]
+  | .duplicateName name => Json.mkObj [("rule", problem.ruleId), ("kind", "duplicateName"), ("name", name)]
 
 def renameErrorJson (error : RenameError) : Json :=
   match error with
   | .fileHasProblems => Json.mkObj [("rule", error.ruleId), ("kind", "fileHasProblems")]
   | .badEnumName name => Json.mkObj [("rule", error.ruleId), ("kind", "badEnumName"), ("name", name)]
   | .noSuchEnum name => Json.mkObj [("rule", error.ruleId), ("kind", "noSuchEnum"), ("name", name)]
-  | .enumExists name => Json.mkObj [("rule", error.ruleId), ("kind", "enumExists"), ("name", name)]
+  | .nameExists name => Json.mkObj [("rule", error.ruleId), ("kind", "nameExists"), ("name", name)]
 
-def declJson (d : EnumDecl) : Json :=
-  Json.mkObj [("name", d.name), ("values", Json.arr (d.values.map Json.str).toArray)]
+def declJson : Decl → Json
+  | .enum d => Json.mkObj [("name", d.name), ("values", Json.arr (d.values.map Json.str).toArray)]
+  | .type t =>
+    Json.mkObj [("kind", "type"), ("name", t.name), ("varies", Json.arr (t.varies.map Json.str).toArray)]
+
+def combinationsJson (f : File) (t : TypeDecl) : Json :=
+  Json.mkObj [("type", t.name),
+    ("combinations", Json.arr ((f.combinations t).map fun c => Json.arr (c.map valueJson).toArray).toArray)]
 
 /-- What the specification says about a rename: why it is refused, or what it gives. -/
 def renameJson (f : File) (old new : Dxn.Name) : Json :=
@@ -60,15 +81,23 @@ accepted file. -/
 def resultJson (f : File) (rename : Option (Dxn.Name × Dxn.Name)) : Json :=
   let problems := f.check
   let values := if problems = [] then Json.arr (f.values.map valueJson).toArray else Json.null
-  let fields := [("problems", Json.arr (problems.map fileProblemJson).toArray), ("values", values)]
+  let combinations :=
+    if problems = [] then Json.arr (f.types.map (combinationsJson f)).toArray else Json.null
+  let fields := [("problems", Json.arr (problems.map fileProblemJson).toArray), ("values", values),
+    ("combinations", combinations)]
   Json.mkObj (match rename with
     | some (old, new) => fields ++ [("rename", renameJson f old new)]
     | none => fields)
 
-def declOfJson (json : Json) : Except String EnumDecl := do
+def declOfJson (json : Json) : Except String Decl := do
   let name ← json.getObjValAs? String "name"
-  let values ← json.getObjValAs? (Array String) "values"
-  return ⟨name, values.toList⟩
+  match json.getObjValAs? String "kind" with
+  | .ok "type" =>
+    let varies ← json.getObjValAs? (Array String) "varies"
+    return .type ⟨name, varies.toList⟩
+  | _ =>
+    let values ← json.getObjValAs? (Array String) "values"
+    return .enum ⟨name, values.toList⟩
 
 def main (args : List String) : IO UInt32 := do
   let [path] := args

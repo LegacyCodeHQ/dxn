@@ -13,17 +13,32 @@ instance {ε α : Type} [DecidableEq ε] [DecidableEq α] : DecidableEq (Except 
   | .ok _, .error _ => isFalse fun e => by cases e
   | .error _, .ok _ => isFalse fun e => by cases e
 
-def file : File := ⟨[⟨"Light", ["off", "on"]⟩, ⟨"Power", ["off", "on"]⟩]⟩
+def file : File := ⟨[.enum ⟨"Light", ["off", "on"]⟩, .enum ⟨"Power", ["off", "on"]⟩]⟩
 
 -- Renaming changes the enumeration's name, and nothing else.
 #guard renameEnum file "Light" "Lamp" =
-  .ok ⟨[⟨"Lamp", ["off", "on"]⟩, ⟨"Power", ["off", "on"]⟩]⟩
+  .ok ⟨[.enum ⟨"Lamp", ["off", "on"]⟩, .enum ⟨"Power", ["off", "on"]⟩]⟩
+
+def lamp : File :=
+  ⟨[.enum ⟨"Light", ["off", "on"]⟩, .enum ⟨"Power", ["mains", "battery"]⟩,
+    .type ⟨"Lamp", ["Light", "Power"]⟩]⟩
+
+-- A type that varies over the enumeration follows the rename.
+#guard renameEnum lamp "Light" "Glow" =
+  .ok ⟨[.enum ⟨"Glow", ["off", "on"]⟩, .enum ⟨"Power", ["mains", "battery"]⟩,
+    .type ⟨"Lamp", ["Glow", "Power"]⟩]⟩
+
+-- Only an enumeration is renamed: a type's name is not an enumeration's.
+#guard renameEnum lamp "Lamp" "Bulb" = .error [.noSuchEnum "Lamp"]
+
+-- Refused onto a name any declaration has, a type's included.
+#guard renameEnum lamp "Light" "Lamp" = .error [.nameExists "Lamp"]
 
 -- Renaming to its own name is allowed and changes nothing.
 #guard renameEnum file "Light" "Light" = .ok file
 
 -- Refused while the file has problems.
-#guard renameEnum ⟨[⟨"Light", []⟩]⟩ "Light" "Lamp" = .error [.fileHasProblems]
+#guard renameEnum ⟨[.enum ⟨"Light", []⟩]⟩ "Light" "Lamp" = .error [.fileHasProblems]
 
 -- Refused when the new name breaks the naming rules.
 #guard renameEnum file "Light" "lamp" = .error [.badEnumName "lamp"]
@@ -31,18 +46,18 @@ def file : File := ⟨[⟨"Light", ["off", "on"]⟩, ⟨"Power", ["off", "on"]�
 -- Refused when no enumeration has the old name.
 #guard renameEnum file "Bulb" "Lamp" = .error [.noSuchEnum "Bulb"]
 
--- Refused when another enumeration already has the new name.
-#guard renameEnum file "Light" "Power" = .error [.enumExists "Power"]
+-- Refused when another declaration already has the new name.
+#guard renameEnum file "Light" "Power" = .error [.nameExists "Power"]
 
 -- Every reason at once, in this order.
 #guard renameEnum file "Bulb" "power" = .error [.badEnumName "power", .noSuchEnum "Bulb"]
-#guard renameEnum file "Bulb" "Power" = .error [.noSuchEnum "Bulb", .enumExists "Power"]
+#guard renameEnum file "Bulb" "Power" = .error [.noSuchEnum "Bulb", .nameExists "Power"]
 
 -- A rename happens exactly when the file is valid, the new name follows the rules, the old
--- name is an enumeration's, and the new name is no other enumeration's.
+-- name is an enumeration's, and the new name is no other declaration's.
 example (f : File) (old new : Name) :
     renameErrors f old new = [] ↔
-      f.Valid ∧ isEnumName new ∧ old ∈ f.names ∧ (new = old ∨ new ∉ f.names) :=
+      f.Valid ∧ isEnumName new ∧ old ∈ f.enumNames ∧ (new = old ∨ new ∉ f.names) :=
   renameErrors_eq_nil_iff f old new
 
 -- A file with problems gives that as the only reason.
@@ -55,11 +70,11 @@ example (f : File) (old new n : Name) (hv : f.Valid) :
     .badEnumName n ∈ renameErrors f old new ↔ n = new ∧ isEnumName new = false :=
   badEnumName_mem_renameErrors hv
 example (f : File) (old new n : Name) (hv : f.Valid) :
-    .noSuchEnum n ∈ renameErrors f old new ↔ n = old ∧ old ∉ f.names :=
+    .noSuchEnum n ∈ renameErrors f old new ↔ n = old ∧ old ∉ f.enumNames :=
   noSuchEnum_mem_renameErrors hv
 example (f : File) (old new n : Name) (hv : f.Valid) :
-    .enumExists n ∈ renameErrors f old new ↔ n = new ∧ new ≠ old ∧ new ∈ f.names :=
-  enumExists_mem_renameErrors hv
+    .nameExists n ∈ renameErrors f old new ↔ n = new ∧ new ≠ old ∧ new ∈ f.names :=
+  nameExists_mem_renameErrors hv
 
 -- No reason is given twice, and the reasons come in their stated order.
 example (f : File) (old new : Name) : (renameErrors f old new).Nodup := nodup_renameErrors f old new
@@ -81,10 +96,15 @@ example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) :
     ∀ v ∈ f.values, ∀ w ∈ f.values, v.renameEnum old new = w.renameEnum old new → v = w :=
   injOn_of_renameEnum h
 
--- Only enumeration names change: every enumeration keeps its values, in written order.
+-- Only names change: every enumeration keeps its values, in written order.
 example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) :
-    g.decls.map (·.values) = f.decls.map (·.values) :=
-  decls_values_of_renameEnum h
+    g.enums.map (·.values) = f.enums.map (·.values) :=
+  enums_values_of_renameEnum h
+
+-- Every type keeps its name, and varies over the same enumerations, renamed.
+example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) :
+    g.types = f.types.map (TypeDecl.rename old new) :=
+  types_of_renameEnum h
 
 -- Renaming back undoes it.
 example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) :
@@ -100,9 +120,9 @@ example (f g h : File) (a b c : Name) (hg : renameEnum f a b = .ok g)
   renameEnum_comp hg hh
 
 -- Renaming to its own name gives the same file.
-example (f : File) (n : Name) (hv : f.Valid) (hn : n ∈ f.names) : renameEnum f n n = .ok f :=
+example (f : File) (n : Name) (hv : f.Valid) (hn : n ∈ f.enumNames) : renameEnum f n n = .ok f :=
   renameEnum_self hv hn
 
-#guard ([RenameError.fileHasProblems, .badEnumName "lamp", .noSuchEnum "Missing", .enumExists "Power"].map RenameError.ruleId) = ["RE1", "RE2", "RE3", "RE4"]
+#guard ([RenameError.fileHasProblems, .badEnumName "lamp", .noSuchEnum "Missing", .nameExists "Power"].map RenameError.ruleId) = ["RE1", "RE2", "RE3", "RE4"]
 
 end DxnTest.Rename
