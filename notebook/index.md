@@ -15,6 +15,8 @@ decision that changes is updated in place.
 - **Language reference** pages each say how one part of the language is
   written and every rule the checker applies to it, each with an ID such as
   `E2`, a reason, and what to write instead.
+- **Refactoring** pages define how the language changes a model's shape
+  without breaking it, and what every refactoring promises.
 - Each page states every claim in plain words first. The Lean that checks it
   follows, for readers who want to see how; every argument can be followed
   without it.
@@ -23,5 +25,6 @@ decision that changes is updated in place.
 
 | Status   | Means                                     |
 | -------- | ----------------------------------------- |
+| Proposed | Written down for discussion, not decided  |
 | Decided  | Settled, specified in Lean and checked    |
 | Deferred | An open question, with when it is decided |

@@ -29,6 +29,10 @@ export default defineConfig({
           { text: "Files", link: "/reference/files" },
         ],
       },
+      {
+        text: "Refactoring",
+        items: [{ text: "Overview", link: "/refactoring/" }],
+      },
     ],
     outline: { level: [2, 3] },
   },
