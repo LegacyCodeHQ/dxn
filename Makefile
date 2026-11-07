@@ -148,9 +148,9 @@ smoke: build
 	node scripts/smoke/run.mjs
 	node dist/main.js --version
 
-check: lint-check references boundaries cycles vocabulary brand security coverage grammar zed lean agreement smoke
+check: lint-check references boundaries cycles vocabulary brand security coverage grammar zed lean agreement notebook smoke
 
-check-fast: lint-check references boundaries cycles vocabulary brand test grammar zed lean agreement smoke
+check-fast: lint-check references boundaries cycles vocabulary brand test grammar zed lean agreement notebook smoke
 
 setup-hooks:
 	git config core.hooksPath .githooks

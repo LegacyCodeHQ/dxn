@@ -148,3 +148,18 @@ does not perform that rewrite; use the build commands for runnable output.
 `make boundaries` enforces the [source dependency rules](docs/architecture/README.md#enforced-boundaries),
 including layer direction and use of public package names across packages. It
 runs in both quality gates, pre-commit and CI, and uses the installed npm tools.
+
+## Design notebook
+
+The language decisions, reference rules and Lean excerpts live in
+[`notebook/`](notebook/index.md). Build them locally with `make notebook`.
+Both `make check` and `make check-fast`, and the CI quality job, build the
+notebook; missing Lean regions and broken internal page links fail that gate.
+
+The publication target is [the DXN design notebook](https://legacycodehq.github.io/dxn/).
+CI publishes the notebook from `main` only after the entire quality job passes.
+Pull requests build it without publishing. GitHub Pages must have **GitHub
+Actions** selected as its publishing source in the repository's Pages settings.
+After the one-time setup, a push to `main` or a manual CI run publishes it.
+Local development and builds use `/`. CI sets `NOTEBOOK_BASE=/dxn/` for
+GitHub Pages; use that environment variable only when reproducing a Pages build.

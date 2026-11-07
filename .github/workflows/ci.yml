@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -123,5 +124,38 @@ jobs:
       - name: Check the new implementation against the specification
         run: make agreement
 
+      - name: Build and check the design notebook
+        run: make notebook
+        env:
+          NOTEBOOK_BASE: /dxn/
+
+      - name: Upload the design notebook
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: notebook/.vitepress/dist
+
       - name: Smoke-test the CLI
         run: make smoke
+
+  publish-notebook:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: quality
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: notebook-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Publish the design notebook
+        id: deployment
+        uses: actions/deploy-pages@v4

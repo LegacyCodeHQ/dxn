@@ -10,7 +10,10 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 export default defineConfig({
   title: "dxn Design Notebook",
   description: "The theory, decisions and specification behind the dxn language.",
+  // Local development stays at /; the Pages build supplies /dxn/.
+  base: process.env.NOTEBOOK_BASE ?? "/",
   cleanUrls: true,
+  ignoreDeadLinks: false,
   markdown: { math: true, config: (md) => leanSnippets(md, root) },
   themeConfig: {
     sidebar: [
