@@ -285,6 +285,17 @@ So products can hold sums, but sums cannot hold products:
 dxn has algebraic data types, in a restricted form: everything is built by
 multiplying sums of plain names.
 
+## In Lean
+
+A value a field can hold, and reading a field by its name:
+
+<<< lean:lean/Dxn/RecordValue.lean#value
+
+Lean proves that two values of a record are equal exactly when every field is
+(`FieldValue.record_eq_iff_get`), and that a record's number of values is the
+product of its fields' numbers of values (`File.length_valuesWithin_record`).
+How a record is checked is in [Records](../reference/records).
+
 ## Notation
 
 | Symbol                            | Read as                                               | Example                                                                                         |

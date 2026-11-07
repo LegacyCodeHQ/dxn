@@ -2,8 +2,8 @@
 
 **Status:** Decided
 
-A file holds declarations, in the order they are written: enumerations, and
-types that vary over them.
+A file holds declarations, in the order they are written: enumerations, types
+that vary over them, and records.
 
 ```dxn
 enum Kind { primary, secondary }
@@ -12,12 +12,18 @@ enum State { normal, disabled }
 type Button {
   varies Kind, State
 }
+
+record Review {
+  kind: Kind
+}
 ```
 
-A file is checked as a whole. Each declaration is checked by its own rules:
-an enumeration by those of [Enumerations](./enumerations), E1 to E4, and a type
-by those of [Types](./types), T1 to T3, against the file's enumerations. The
-file adds a rule of its own: no two declarations share a name.
+A file is checked as a whole. Each declaration is checked by its own rules: an
+enumeration by those of [Enumerations](./enumerations), E1 to E4; a type by
+those of [Types](./types), T1 to T3, against the file's enumerations; and a
+record by those of [Records](./records), R1 to R6, against the file's
+enumerations and records. The file adds a rule of its own: no two declarations
+share a name.
 
 The Lean specification in
 [`lean/Dxn/File.lean`](https://github.com/LegacyCodeHQ/dxn/blob/main/lean/Dxn/File.lean)
@@ -28,11 +34,11 @@ specification is right.
 
 ```text
 file        = { declaration }
-declaration = enumeration | type
+declaration = enumeration | type | record
 ```
 
-A file is any number of declarations, of either kind, in any order. A type may
-vary over an enumeration declared before it or after it. A file with no
+A file is any number of declarations, of any kind, in any order. A type or a
+record may name a declaration written before it or after it. A file with no
 declarations is valid: nothing in it can be wrong. A syntax error in any
 declaration stops reading the file there.
 
@@ -42,6 +48,7 @@ declaration stops reading the file there.
 | --------- | ------------------------------------------ | --------------------------------------------- | ------------------------- |
 | E1–E4     | Each enumeration follows its own rules     | `enum Light { }`                              | `Light: empty`            |
 | T1–T3     | Each type follows its own rules            | `type Button { varies Size }`, with no `Size` | `Button: noSuchEnum Size` |
+| R1–R6     | Each record follows its own rules          | `record Review { reply: Review }`             | `Review: containsItself`  |
 | [F1](#f1) | No two declarations in a file share a name | `enum Light { off }`<br>`type Light { }`      | `duplicateName Light`     |
 
 A file is accepted exactly when it breaks none of them. Lean proves this
@@ -49,7 +56,8 @@ A file is accepted exactly when it breaks none of them. Lean proves this
 
 A declaration's own problem is reported with the name of the declaration it
 belongs to, such as `Light: empty`. Lean proves each is reported exactly when
-that declaration has it (`File.enum_mem_check`, `File.type_mem_check`).
+that declaration has it (`File.enum_mem_check`, `File.type_mem_check`,
+`File.record_mem_check`).
 
 ### F1: No two declarations in a file share a name {#f1}
 
@@ -62,7 +70,8 @@ type Button { }          -- Button is declared twice, once of each kind
 ```
 
 A name written twice is reported once, in the order it first appears, however
-many times it is written, whatever kinds of declaration it names.
+many times it is written, whatever kinds of declaration it names: an
+enumeration, a type and a record may not share a name either.
 
 **Why:** a name in the file must mean exactly one thing. Each value is tagged
 with its enumeration's name, as in a
@@ -112,15 +121,16 @@ point each problem at its own declaration.
 
 ## What an accepted file means
 
-| Fact                                                                 | Lean                                                   |
-| -------------------------------------------------------------------- | ------------------------------------------------------ |
-| Its values are every enumeration's values, in written order          | `File.values`                                          |
-| No two enumerations share a value, and none has a value twice        | `File.nodup_values`                                    |
-| Each type's combinations are the product of its enumerations' values | `File.combinations`; see [Types](./types#combinations) |
+| Fact                                                                 | Lean                                                              |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Its values are every enumeration's values, in written order          | `File.values`                                                     |
+| No two enumerations share a value, and none has a value twice        | `File.nodup_values`                                               |
+| Each type's combinations are the product of its enumerations' values | `File.combinations`; see [Types](./types#combinations)            |
+| Each record's values are the product of its fields' values           | `File.recordValues`; see [Records](./records#values-and-equality) |
 
 ## In Lean
 
-A file, and the two kinds of declaration:
+A file, and its three kinds of declaration:
 
 <<< lean:lean/Dxn/File.lean#file
 
@@ -144,12 +154,12 @@ What a valid file is:
 
 ## Decisions
 
-| Decision                                                                              | Why                                                          | Rejected                                              |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------- |
-| Two declarations in a file with the same name are a check error, whatever their kinds | A name means one thing; two enumerations' values would merge | Names unique only within each kind                    |
-| Each declaration's problems first, in written order, then names written twice         | Matches an enumeration, which reports its duplicates last    | Names written twice first                             |
-| A file with no declarations is valid                                                  | Nothing in it can be wrong                                   |                                                       |
-| A type may vary over an enumeration declared after it                                 | Order in a file means nothing                                | Declaring an enumeration before any type that uses it |
+| Decision                                                                              | Why                                                          | Rejected                                      |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
+| Two declarations in a file with the same name are a check error, whatever their kinds | A name means one thing; two enumerations' values would merge | Names unique only within each kind            |
+| Each declaration's problems first, in written order, then names written twice         | Matches an enumeration, which reports its duplicates last    | Names written twice first                     |
+| A file with no declarations is valid                                                  | Nothing in it can be wrong                                   |                                               |
+| A type or record may name a declaration written after it                              | Order in a file means nothing                                | Declaring a name before anything that uses it |
 
 ## Deferred
 

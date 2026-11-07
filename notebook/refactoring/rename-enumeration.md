@@ -3,11 +3,12 @@
 **Status:** Decided
 
 Renaming an enumeration gives it a new name, and every type that varies over
-it follows:
+it and every record field of its type follow:
 
 ```dxn
 enum Light { off, on }               enum Glow { off, on }
 type Lamp { varies Light }   becomes   type Lamp { varies Glow }
+record Shot { light: Light }         record Shot { light: Glow }
 ```
 
 It keeps every promise of [Refactoring](./). It is reversible: renaming back
@@ -20,8 +21,9 @@ specification is right.
 
 ## What it does
 
-**In the text,** the enumeration's name changes where it is declared, and
-wherever a type varies over it. The values, their order, every type's name and
+**In the text,** the enumeration's name changes where it is declared, wherever
+a type varies over it, and wherever a record field has it as its type. The
+values, their order, every type's and record's name, every field's name and
 everything else stay as they were.
 
 **In the meaning,** every value of the enumeration changes. A value is a pair
@@ -116,6 +118,8 @@ and changes nothing.
 | No two values go to the same one: it is a bijection                      | `injOn_of_renameEnum`        |
 | Only names change: every enumeration keeps its values, in order          | `enums_values_of_renameEnum` |
 | Every type keeps its name and varies over the same enumerations, renamed | `types_of_renameEnum`        |
+| Every record keeps its name and fields, each field's type renamed        | `records_of_renameEnum`      |
+| Which records contain themselves does not change                         | `containsItself_rename`      |
 | Renaming back undoes it: it is reversible                                | `renameEnum_undo`            |
 | Renaming to its own name gives back the model                            | `renameEnum_self`            |
 | Two renames in a row are one rename                                      | `renameEnum_comp`            |
@@ -136,8 +140,8 @@ The rename:
 
 ## Implementation notes
 
-- **Edits.** A rename changes the declared name and every place a type lists
-  it, so the editor gets one text edit for each. The command line rewrites
+- **Edits.** A rename changes the declared name, every place a type lists it
+  and every record field of its type, so the editor gets one text edit for each. The command line rewrites
   only those names in the file, leaving the rest of the text as it was.
 - **Refusal IDs.** Each shared refusal carries its ID in `rule`, such as
   `RE4`. The Lean executable emits the same ID, and agreement checks compare
@@ -150,13 +154,14 @@ The rename:
 
 ## Decisions
 
-| Decision                                                       | Why                                                       |
-| -------------------------------------------------------------- | --------------------------------------------------------- |
-| Refused while any file has problems, with that the only reason | A rename goes from one accepted model to another          |
-| Every reason that applies is given, in a fixed order           | The command line says every fact                          |
-| Refused onto a name any declaration has, a type's included     | Values would merge, or a name would mean two things       |
-| A type that varies over the enumeration follows the rename     | A rename must update every reference, or the model breaks |
-| Renaming to its own name is allowed                            | It is the identity: a bijection that changes nothing      |
+| Decision                                                                            | Why                                                                           |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Refused while any file has problems, with that the only reason                      | A rename goes from one accepted model to another                              |
+| Every reason that applies is given, in a fixed order                                | The command line says every fact                                              |
+| Refused onto a name any declaration has, a type's included                          | Values would merge, or a name would mean two things                           |
+| A type that varies over the enumeration follows the rename                          | A rename must update every reference, or the model breaks                     |
+| A record field of the enumeration's type follows the rename, and keeps its own name | A field names the enumeration it holds; its own name is not the enumeration's |
+| Renaming to its own name is allowed                                                 | It is the identity: a bijection that changes nothing                          |
 
 ## Deferred
 
