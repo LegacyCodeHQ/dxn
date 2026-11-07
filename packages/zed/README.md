@@ -20,3 +20,7 @@ counts. Clicking one invokes the server's `dxn.combinations` command, which
 recomputes from the unsaved buffer and displays the canonical table in an LSP
 information message. No local file or prototype CLI is used for this action.
 Files with syntax or checker errors show no combination counts.
+
+The staged grammar and queries cover records, newline-separated fields, field names
+and type references. Declaration rename and record diagnostics use the same LSP
+runtime as the CLI; no editor-specific semantic rules are introduced.

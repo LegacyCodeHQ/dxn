@@ -155,7 +155,7 @@ describe("reading enumerations", () => {
         {
           "declarations": [],
           "problems": [
-            "expected 'enum' or 'type', found 'Light'",
+            "expected 'enum', 'type' or 'record', found 'Light'",
           ],
         },
         {

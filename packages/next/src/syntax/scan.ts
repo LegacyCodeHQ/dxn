@@ -6,7 +6,7 @@ import type { Span } from "@next/model/enumeration.js";
 
 export type Token =
   | { kind: "word"; text: string; span: Span }
-  | { kind: "{" | "}" | ","; span: Span }
+  | { kind: "{" | "}" | "," | ":"; span: Span }
   | { kind: "unexpected"; text: string; span: Span }
   | { kind: "end"; span: Span };
 
@@ -33,7 +33,7 @@ export function scan(source: string): Token[] {
     }
     const character = String.fromCodePoint(source.codePointAt(offset) ?? 0);
     const span = { start: offset, end: offset + character.length };
-    if (character === "{" || character === "}" || character === ",") {
+    if (character === "{" || character === "}" || character === "," || character === ":") {
       tokens.push({ kind: character, span });
     } else {
       tokens.push({ kind: "unexpected", text: character, span });

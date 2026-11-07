@@ -5,7 +5,7 @@ in `lean/`; its shared TypeScript implementation is in `packages/next`.
 The CLI, formatter, language server, Tree-sitter grammar and editor extensions
 in this worktree support that implementation.
 
-The current supported constructs are enumerations and types:
+The current supported constructs are enumerations, types and records:
 
 ```dxn
 enum Light { off, on }
@@ -17,6 +17,11 @@ enum Power {
 
 type Lamp { varies Light, Power }
 type Logo { }
+record Shot { light: Light }
+record Review {
+  shot: Shot
+  power: Power
+}
 ```
 
 Enumeration names start with an ASCII capital letter and contain only ASCII
@@ -30,8 +35,15 @@ type has their Cartesian product of values; a type with no factors has one empty
 combination. A type name follows the enumeration naming rule. Missing or repeated
 factors are checker errors.
 
+Records are named groups of typed fields, one per line without commas. Fields
+hold enum values or nested records, with forward references allowed. Empty
+records, invalid or duplicate field names, unknown field types and direct or
+indirect self-containment are errors R1–R6. The shared runtime enumerates their
+finite values on explicit request and compares nested values by field name,
+independent of field order, retaining enum identity at the leaves.
+
 States, documentation and ordinary comments, executable evaluation and stored
-records have not been specified and implemented in this redesign yet. Their
+facts have not been specified and implemented in this redesign yet. Their
 prototype syntax is rejected. `packages/language` is retained prototype source;
 none of the redesigned executable adapters import it, and its tests are outside
 the active redesign suite. Historical guides and examples describe the prototype.
@@ -71,10 +83,11 @@ node packages/cli/dist/main.js combinations examples/redesign/types.dxn Lamp --j
 `fmt` prints canonical one-line declarations with spaces and a final newline. It never
 formats malformed syntax; semantic errors do not prevent formatting.
 `--write` writes the file, and `--check` exits 1 when formatting differs.
-`rename` changes the enum declaration and every `varies` reference to it,
-preserving other text. A new name cannot collide with an enum or a type. By default it
+`rename` changes an enum, type or record declaration and every reference to it,
+including `varies` lists and record field types,
+preserving other text. A new name cannot collide with any declaration. By default it
 writes the result; `--dry-run` previews it. All rename refusals come from the
-shared implementation. Renaming types and values is not supported yet.
+shared implementation. Renaming fields and enum values is deferred until something refers to them.
 
 `combinations <file> [Type]` lists all types or one selected type. Text output is
 one table per type; `--json` returns rows keyed by enumeration name. Invalid files
@@ -87,8 +100,8 @@ text diagnostics go to stderr.
 
 ## Editors
 
-The server supplies diagnostics, formatting, hover, enum/member/type outline,
-semantic highlighting, declaration and reference navigation, enumeration rename and safe naming
+The server supplies diagnostics, formatting, hover, enum/member/type/record/field outline,
+semantic highlighting, declaration and reference navigation, declaration rename and safe naming
 quick fixes. Each valid type also has a clickable combination-count code lens.
 Counts use exact integer arithmetic without enumerating the product. Clicking
 recomputes the table from the current unsaved buffer. VS Code opens a plaintext
@@ -115,8 +128,13 @@ worktree's built CLI when the worktree is opened as the Zed project root.
 ### Manual verification still required
 
 In each development editor, open `examples/redesign/enums.dxn` and
-`examples/redesign/types.dxn` and check:
+`examples/redesign/types.dxn` and `examples/redesign/records.dxn` and check:
 
+- Records show field names and their types in hover, outline and highlighting.
+  Definition/references find nested record declarations. Rename `Decision` to
+  `Finding` and verify every record field type follows, while field names stay.
+- Creating a record cycle reports R6 with the fields that lead back. A field
+  typed as `Button` reports R5 explaining that it names a type.
 - Above each type, check its combination count. Click to view the same table as
   `dxn combinations`; unsaved edits must affect the displayed rows. Introducing a
   syntax or checker error anywhere in the file must remove all counts.

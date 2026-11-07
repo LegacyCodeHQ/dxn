@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptFile, analyze, format, parse, renameEnum } from "../src/index.js";
+import { acceptFile, analyze, format, parse, renameDecl } from "../src/index.js";
 
 describe("types from the Lean specification", () => {
   it.each([
@@ -114,12 +114,14 @@ describe("types from the Lean specification", () => {
   it("renames an enumeration and all references, leaving type names and unrelated text alone", () => {
     const source =
       "type Lamp { varies Light, Power }\nenum Light{off,on}\nenum Power { off }\ntype Other { varies Light }\n";
-    const result = renameEnum(source, "Light", "Glow");
+    const result = renameDecl(source, "Light", "Glow");
     expect(result.source).toBe(source.replaceAll("Light", "Glow"));
     expect(result.edits).toHaveLength(3);
-    expect(renameEnum(result.source ?? "", "Glow", "Light").source).toBe(source);
-    expect(renameEnum(source, "Light", "Lamp").refusals.map((r) => r.rule)).toEqual(["RE4"]);
-    expect(renameEnum(source, "Lamp", "Glow").refusals.map((r) => r.rule)).toEqual(["RE3"]);
+    expect(renameDecl(result.source ?? "", "Glow", "Light").source).toBe(source);
+    expect(renameDecl(source, "Light", "Lamp").refusals.map((r) => r.rule)).toEqual(["RE4"]);
+    expect(renameDecl(source, "Lamp", "Glow").source).toBe(
+      source.replace("type Lamp", "type Glow"),
+    );
   });
 });
 

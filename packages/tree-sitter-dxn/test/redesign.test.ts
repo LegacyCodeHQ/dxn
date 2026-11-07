@@ -214,3 +214,43 @@ it.each([
     })),
   ).toEqual(parse(source).declarations);
 });
+
+it.each([
+  ["record Empty {}", true],
+  ["record Review { verdict: Verdict }", true],
+  ["record Review { verdict: Verdict\nurgency: Urgency }", true],
+  ["record Review { verdict: Verdict urgency: Urgency }", false],
+  ["record Review { verdict: Verdict,\nurgency: Urgency }", false],
+  ["record Review { verdict:\nVerdict }", false],
+  ["record Review { verdict: Verdict", false],
+] as const)("agrees with the core parser on record field boundaries: %s", (source, accepted) => {
+  expect(!parser.parse(source).rootNode.hasError).toBe(accepted);
+  expect(parse(source).problems.length === 0).toBe(accepted);
+});
+
+it.each(["\n", "\r\n", "\r", "\u2028", "\u2029"])(
+  "preserves record fields and UTF-16 spans with line ending %j",
+  (newline) => {
+    const source = `\uFEFFrecord Review {${newline}  record: 𐐀${newline}  type: Verdict${newline}}`;
+    const tree = parser.parse(source);
+    expect(tree.rootNode.hasError).toBe(false);
+    const named = (n: Parser.SyntaxNode) => ({
+      text: n.text,
+      span: { start: n.startIndex, end: n.endIndex },
+    });
+    expect(
+      tree.rootNode.namedChildren.map((n) => ({
+        kind: "record",
+        name: named(n.childForFieldName("name") as Parser.SyntaxNode),
+        fields: n.namedChildren
+          .filter((c) => c.type === "record_field")
+          .map((f) => ({
+            name: named(f.childForFieldName("name") as Parser.SyntaxNode),
+            type: named(f.childForFieldName("type") as Parser.SyntaxNode),
+          })),
+        body: { start: source.indexOf("{"), end: source.length },
+        span: { start: n.startIndex, end: n.endIndex },
+      })),
+    ).toEqual(parse(source).declarations);
+  },
+);

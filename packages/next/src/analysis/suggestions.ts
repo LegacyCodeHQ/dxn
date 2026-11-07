@@ -5,6 +5,7 @@ export function namingAdvice(
   kind: "badEnumName" | "badValueName",
   name: string,
   taken: ReadonlySet<string>,
+  container: "enumeration" | "record" = "enumeration",
 ): { suggestion?: string; advice: string } {
   let candidate: string;
   if (kind === "badEnumName") {
@@ -26,7 +27,7 @@ export function namingAdvice(
   }
   if (taken.has(candidate)) {
     return {
-      advice: `; '${candidate}' is already declared ${kind === "badEnumName" ? "in this file" : "in this enumeration"}; choose a distinct name`,
+      advice: `; '${candidate}' is already declared ${kind === "badEnumName" ? "in this file" : `in this ${container}`}; choose a distinct name`,
     };
   }
   return { suggestion: candidate, advice: `; use '${candidate}'` };

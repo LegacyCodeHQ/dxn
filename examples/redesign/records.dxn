@@ -1,0 +1,8 @@
+enum Verdict { approved, changes }
+enum Urgency { low, high }
+record Decision { verdict: Verdict }
+record Review {
+  decision: Decision
+  urgent: Urgency
+}
+type Button { varies Verdict, Urgency }

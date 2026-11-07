@@ -1,8 +1,16 @@
 import type { Span, Value } from "@next/model/enumeration.js";
+import type { FieldValue, RecordDeclaration } from "@next/model/record.js";
 import { fileRules } from "@next/model/rules.js";
-import { type Declaration, isEnumeration, isType, type TypeDeclaration } from "@next/model/type.js";
+import {
+  type Declaration,
+  isEnumeration,
+  isRecord,
+  isType,
+  type TypeDeclaration,
+} from "@next/model/type.js";
 import { acceptEnum, checkEnum, type Enum, type EnumProblem, frozen } from "./enumeration.js";
 import { product } from "./product.js";
+import { checkRecord, frozenRecord, type RecordProblem, recordCycle } from "./record.js";
 import { checkType, frozenType, type TypeProblem } from "./type.js";
 
 // The file checker of lean/Dxn/File.lean. It reports the same problems, for the
@@ -12,6 +20,7 @@ import { checkType, frozenType, type TypeProblem } from "./type.js";
 export type FileProblem =
   | { kind: "enum"; rule: EnumProblem["rule"]; name: string; problem: EnumProblem }
   | { kind: "type"; rule: TypeProblem["rule"]; name: string; problem: TypeProblem }
+  | { kind: "record"; rule: RecordProblem["rule"]; name: string; problem: RecordProblem }
   | { kind: "duplicateName"; rule: typeof fileRules.duplicateName; name: string; at: Span[] };
 
 /**
@@ -22,8 +31,16 @@ export type FileProblem =
 export function checkFile(declarations: readonly Declaration[]): FileProblem[] {
   const problems: FileProblem[] = [];
   const enums = new Set(declarations.filter(isEnumeration).map((d) => d.name.text));
+  const records = declarations.filter(isRecord);
+  const recordNames = new Set(records.map((r) => r.name.text));
   for (const declaration of declarations) {
-    if (isType(declaration)) {
+    if (isRecord(declaration)) {
+      const own = checkRecord(enums, recordNames, declaration);
+      const cycle = recordCycle(records, declaration.name.text);
+      if (cycle) own.push({ kind: "containsItself", rule: "R6", ...cycle });
+      for (const problem of own)
+        problems.push({ kind: "record", rule: problem.rule, name: declaration.name.text, problem });
+    } else if (isType(declaration)) {
       for (const problem of checkType(enums, declaration)) {
         problems.push({ kind: "type", rule: problem.rule, name: declaration.name.text, problem });
       }
@@ -56,16 +73,23 @@ export class CheckedFile {
   private constructor(
     readonly enums: readonly Enum[],
     readonly types: readonly TypeDeclaration[],
+    readonly records: readonly RecordDeclaration[],
   ) {}
 
   /** Check a file: a checked file when it has no problems, else its problems. */
   static accept(declarations: readonly Declaration[]): AcceptedFile {
-    const copies = declarations.map((d) => (isType(d) ? frozenType(d) : frozen(d)));
+    const copies = declarations.map((d) =>
+      isType(d) ? frozenType(d) : isRecord(d) ? frozenRecord(d) : frozen(d),
+    );
     const problems = checkFile(copies);
     if (problems.length > 0) return { file: undefined, problems };
     const enums = copies.filter(isEnumeration).flatMap((copy) => acceptEnum(copy).enum ?? []);
     return {
-      file: new CheckedFile(Object.freeze(enums), Object.freeze(copies.filter(isType))),
+      file: new CheckedFile(
+        Object.freeze(enums),
+        Object.freeze(copies.filter(isType)),
+        Object.freeze(copies.filter(isRecord)),
+      ),
       problems: [],
     };
   }
@@ -88,6 +112,30 @@ export class CheckedFile {
   /** The Cartesian product for each type, in written order, first factor changing slowest. */
   get combinations(): { type: string; combinations: Value[][] }[] {
     return this.products.map((p) => ({ type: p.type, combinations: [...p.rows()] }));
+  }
+
+  /** Enumerate finite nested record values on explicit demand, retaining enum identity. */
+  recordValues(name: string): FieldValue[] {
+    const memo = new Map<string, FieldValue[]>();
+    const values = (n: string): FieldValue[] => {
+      const saved = memo.get(n);
+      if (saved) return saved;
+      const record = this.records.find((r) => r.name.text === n);
+      const result: FieldValue[] = record
+        ? [...product(record.fields.map((f) => values(f.type.text)))].map((row) => ({
+            kind: "record",
+            fields: Object.fromEntries(
+              record.fields.map((f, i) => [f.name.text, row[i]]),
+            ) as Record<string, FieldValue>,
+          }))
+        : (this.enums.find((e) => e.declaration.name.text === n)?.values ?? []).map((value) => ({
+            kind: "enum",
+            value,
+          }));
+      memo.set(n, result);
+      return result;
+    };
+    return values(name);
   }
 
   /** Its values, in written order, each tagged with its enumeration's name. */

@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import { combinationCounts, listCombinations } from "@next/analysis/combinations.js";
 import { acceptFile } from "@next/check/file.js";
 import type { Value } from "@next/model/enumeration.js";
-import { isType, type Declaration as ParsedDeclaration } from "@next/model/type.js";
-import { renameEnum } from "@next/refactor/rename.js";
+import { isRecord, isType, type Declaration as ParsedDeclaration } from "@next/model/type.js";
+import { renameDecl } from "@next/refactor/rename.js";
 import { parse } from "@next/syntax/parse.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -22,7 +22,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 type Declaration =
   | { name: string; values: string[] }
-  | { kind: "type"; name: string; varies: string[] };
+  | { kind: "type"; name: string; varies: string[] }
+  | { kind: "record"; name: string; fields: { name: string; type: string }[] };
 type Enumeration = Extract<Declaration, { values: string[] }>;
 
 interface Case {
@@ -40,6 +41,7 @@ interface Said {
   }[];
   values: Value[] | null;
   combinations: { type: string; combinations: Value[][] }[] | null;
+  recordValues: { record: string; values: import("@next/model/record.js").FieldValue[] }[] | null;
   rename?: {
     refusals: { kind: string; rule: string; name?: string }[];
     declarations: Declaration[] | null;
@@ -57,6 +59,7 @@ const shared: Case[] = [
   })),
   ...read<Case[]>("files.json"),
   ...read<Case[]>("types.json"),
+  ...read<Case[]>("records.json"),
   ...read<Case[]>("renames.json"),
 ];
 
@@ -141,6 +144,39 @@ function generatedTypes(): Case[] {
   });
 }
 
+function generatedRecords(): Case[] {
+  const next = random(20261108);
+  const pick = (xs: string[]) => xs[Math.floor(next() * xs.length)] ?? "";
+  return Array.from({ length: 150 }, (_, i) => {
+    const records: Declaration[] = ["Note", "Review", "Report"].map((name, j) => ({
+      kind: "record",
+      name: i % 2 ? name : pick([name, "Bad-Name", "note"]),
+      fields: Array.from(
+        { length: i % 2 ? 1 + Math.floor(next() * 2) : Math.floor(next() * 3) },
+        (_, k) => ({
+          name: i % 2 ? `field${k}` : pick(["field", "Bad", "2", "a--b"]),
+          type:
+            i % 2
+              ? pick(["Verdict", ...["Note", "Review"].slice(0, j)])
+              : pick(["Verdict", "Missing", "Note", "Review", "Report", "Button"]),
+        }),
+      ),
+    }));
+    return {
+      title: `generated record file ${i}`,
+      declarations: [
+        ...records,
+        { name: "Verdict", values: ["approved", "changes"] },
+        { kind: "type", name: "Button", varies: ["Verdict"] },
+      ],
+      rename: {
+        from: pick(["Verdict", "Note", "Review", "Button", "Missing"]),
+        to: pick(["Finding", "Verdict", "Note", "bad"]),
+      },
+    };
+  });
+}
+
 // Each case again with its values reversed: order must mean nothing to either.
 const reversed = (cases: Case[]): Case[] =>
   cases.map(({ title, declarations, rename }) => ({
@@ -148,7 +184,9 @@ const reversed = (cases: Case[]): Case[] =>
     declarations: declarations.map((d) =>
       "values" in d
         ? { name: d.name, values: [...d.values].reverse() }
-        : { ...d, varies: [...d.varies].reverse() },
+        : "varies" in d
+          ? { ...d, varies: [...d.varies].reverse() }
+          : { ...d, fields: [...d.fields].reverse() },
     ),
     ...(rename && { rename }),
   }));
@@ -161,7 +199,13 @@ const canonical = (value: unknown): string =>
       : v,
   );
 
-const cases = [...shared, ...reversed(shared), ...generated(500, 300), ...generatedTypes()];
+const cases = [
+  ...shared,
+  ...reversed(shared),
+  ...generated(500, 300),
+  ...generatedTypes(),
+  ...generatedRecords(),
+];
 
 // A declaration as the parser would give it; positions do not matter here.
 const at = { start: 0, end: 0 };
@@ -172,12 +216,23 @@ const declaration = (d: Declaration): ParsedDeclaration =>
         values: d.values.map((text) => ({ text, span: at })),
         span: at,
       }
-    : {
-        kind: "type",
-        name: { text: d.name, span: at },
-        varies: d.varies.map((text) => ({ text, span: at })),
-        span: at,
-      };
+    : "fields" in d
+      ? {
+          kind: "record",
+          name: { text: d.name, span: at },
+          fields: d.fields.map((f) => ({
+            name: { text: f.name, span: at },
+            type: { text: f.type, span: at },
+          })),
+          body: at,
+          span: at,
+        }
+      : {
+          kind: "type",
+          name: { text: d.name, span: at },
+          varies: d.varies.map((text) => ({ text, span: at })),
+          span: at,
+        };
 
 function said(declarations: readonly ParsedDeclaration[]): Said {
   const accepted = acceptFile(declarations);
@@ -202,6 +257,12 @@ function said(declarations: readonly ParsedDeclaration[]): Said {
     problems,
     values: accepted.file?.values ?? null,
     combinations: accepted.file?.combinations ?? null,
+    recordValues: accepted.file
+      ? accepted.file.records.map((r) => ({
+          record: r.name.text,
+          values: accepted.file.recordValues(r.name.text),
+        }))
+      : null,
   };
 }
 
@@ -209,13 +270,22 @@ function said(declarations: readonly ParsedDeclaration[]): Said {
 const word = /^[\p{L}\p{N}_-]+$/u;
 const text = ({ declarations }: Case) =>
   declarations.every((d) =>
-    [d.name, ...("values" in d ? d.values : d.varies)].every((n) => word.test(n)),
+    [
+      d.name,
+      ...("values" in d
+        ? d.values
+        : "varies" in d
+          ? d.varies
+          : d.fields.flatMap((f) => [f.name, f.type])),
+    ].every((n) => word.test(n)),
   )
     ? declarations
         .map((d) =>
           "values" in d
             ? `enum ${d.name} {\n${d.values.map((v) => `  ${v}`).join(",\n")}\n}\n`
-            : `type ${d.name} {${d.varies.length ? ` varies ${d.varies.join(", ")} ` : " "}}\n`,
+            : "fields" in d
+              ? `record ${d.name} {\n${d.fields.map((f) => `  ${f.name}: ${f.type}`).join("\n")}\n}\n`
+              : `type ${d.name} {${d.varies.length ? ` varies ${d.varies.join(", ")} ` : " "}}\n`,
         )
         .join("")
     : undefined;
@@ -244,12 +314,12 @@ afterAll(() => {
 });
 
 // What the specification says about the file itself, without the rename.
-const checked = ({ problems, values, combinations }: Said) =>
-  canonical({ problems, values, combinations });
+const checked = ({ problems, values, combinations, recordValues }: Said) =>
+  canonical({ problems, values, combinations, recordValues });
 
 // What this implementation says about a rename, done on the case written as text.
 function renamed(source: string, { from, to }: { from: string; to: string }): Said["rename"] {
-  const result = renameEnum(source, from, to);
+  const result = renameDecl(source, from, to);
   return {
     refusals: result.refusals.map((refusal) =>
       "name" in refusal
@@ -262,7 +332,13 @@ function renamed(source: string, { from, to }: { from: string; to: string }): Sa
         : parse(result.source).declarations.map((d) =>
             isType(d)
               ? { kind: "type", name: d.name.text, varies: d.varies.map((n) => n.text) }
-              : { name: d.name.text, values: d.values.map((v) => v.text) },
+              : isRecord(d)
+                ? {
+                    kind: "record",
+                    name: d.name.text,
+                    fields: d.fields.map((f) => ({ name: f.name.text, type: f.type.text })),
+                  }
+                : { name: d.name.text, values: d.values.map((v) => v.text) },
           ),
   };
 }
@@ -363,19 +439,25 @@ describe("this implementation and the Lean specification", () => {
         "accepted": true,
         "kinds": [
           "badEnumName",
+          "badFieldName",
+          "badRecordName",
           "badTypeName",
           "badValueName",
+          "containsItself",
           "duplicate",
+          "duplicateField",
           "duplicateName",
           "duplicateVaries",
           "empty",
+          "noFields",
           "noSuchEnum",
+          "noSuchFieldType",
         ],
         "refusals": [
-          "badEnumName",
+          "badName",
           "fileHasProblems",
           "nameExists",
-          "noSuchEnum",
+          "noSuchName",
         ],
         "refused": true,
         "rejected": true,
@@ -386,6 +468,12 @@ describe("this implementation and the Lean specification", () => {
           "E3",
           "E4",
           "F1",
+          "R1",
+          "R2",
+          "R3",
+          "R4",
+          "R5",
+          "R6",
           "RE1",
           "RE2",
           "RE3",

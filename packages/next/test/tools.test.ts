@@ -142,6 +142,7 @@ describe("enum tools", () => {
                 },
               },
             ],
+            "records": [],
             "types": [],
           },
           "refusals": [],
@@ -196,7 +197,9 @@ describe("enum tools", () => {
     const names = (text: string) =>
       analyze(text).declarations.map((d) => [
         d.name.text,
-        ("values" in d ? d.values : d.varies).map((v) => v.text),
+        ("values" in d ? d.values : "varies" in d ? d.varies : d.fields.map((f) => f.name)).map(
+          (v) => v.text,
+        ),
       ]);
     expect(names(formatted ?? "")).toEqual(names(source));
   });

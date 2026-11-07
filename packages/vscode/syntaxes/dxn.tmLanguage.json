@@ -92,6 +92,52 @@
           "name": "entity.name.type.dxn"
         }
       ]
+    },
+    {
+      "begin": "\\b(record)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.declaration.dxn"
+        }
+      },
+      "end": "(?<=\\})",
+      "name": "meta.record.dxn",
+      "patterns": [
+        {
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.block.begin.dxn"
+            }
+          },
+          "end": "\\}",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.block.end.dxn"
+            }
+          },
+          "patterns": [
+            {
+              "match": "([\\p{L}\\p{N}_-]+)(\\s*)(:)([ \\t]*)([\\p{L}\\p{N}_-]+)",
+              "captures": {
+                "1": {
+                  "name": "variable.other.property.dxn"
+                },
+                "3": {
+                  "name": "punctuation.separator.key-value.dxn"
+                },
+                "5": {
+                  "name": "entity.name.type.dxn"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "match": "[\\p{L}\\p{N}_-]+",
+          "name": "entity.name.type.dxn"
+        }
+      ]
     }
   ]
 }

@@ -16,13 +16,26 @@ export const fileRules = { duplicateName: "F1" } as const;
 /** Each reason renaming an enumeration is refused, and its ID. */
 export const renameRefusals = {
   fileHasProblems: "RE1",
-  badEnumName: "RE2",
-  noSuchEnum: "RE3",
+  badName: "RE2",
+  noSuchName: "RE3",
   nameExists: "RE4",
 } as const;
 
 export type EnumRuleId = (typeof enumRules)[keyof typeof enumRules];
 export const typeRules = { badTypeName: "T1", noSuchEnum: "T2", duplicateVaries: "T3" } as const;
 export type TypeRuleId = (typeof typeRules)[keyof typeof typeRules];
-export type RuleId = EnumRuleId | TypeRuleId | (typeof fileRules)[keyof typeof fileRules];
+export const recordRules = {
+  badRecordName: "R1",
+  noFields: "R2",
+  badFieldName: "R3",
+  duplicateField: "R4",
+  noSuchFieldType: "R5",
+  containsItself: "R6",
+} as const;
+export type RecordRuleId = (typeof recordRules)[keyof typeof recordRules];
+export type RuleId =
+  | EnumRuleId
+  | TypeRuleId
+  | RecordRuleId
+  | (typeof fileRules)[keyof typeof fileRules];
 export type RefusalId = (typeof renameRefusals)[keyof typeof renameRefusals];

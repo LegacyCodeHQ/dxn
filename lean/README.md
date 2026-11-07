@@ -70,7 +70,7 @@ could change while they all still hold. The agreement checks connect the two:
 the same declarations go through both, and they must say the same.
 
 `lake exe dxn-spec <file>` reads cases as JSON, each a file's declarations,
-enumerations and types, and optionally a declaration to rename in it, and
+enumerations, types and records, and optionally a declaration to rename in it, and
 writes, for each, the problems `File.check` reports, the values and each
 type's combinations of an accepted file, and the reasons a rename is refused
 or the declarations it gives:
@@ -81,12 +81,12 @@ make agreement
 
 builds it and runs
 [`packages/next/test/agreement`](../packages/next/test/agreement): the shared
-cases in `cases.json` (enumerations), `files.json`, `types.json` and `renames.json`, each
+cases in `cases.json` (enumerations), `files.json`, `types.json`, `records.json` and `renames.json`, each
 again with its values reversed, and generated enumerations, mixed files and
 renames. Each goes through the implementation directly, and again as text
 through its parser. They must agree on what is accepted, which problems are
-reported for which names in which order, the E1–E4, T1–T3 and F1 problem IDs
-and RE1–RE4 refusal IDs, which values and combinations an accepted file has,
+reported for which names in which order, the E1–E4, T1–T3, R1–R6 and F1 problem IDs
+and RE1–RE4 refusal IDs, which enum values, nested record values and type combinations an accepted file has,
 and what each rename does or why it is refused. Messages and positions belong
 to the implementation, and its own tests cover them.
 
@@ -118,26 +118,26 @@ source dependency graph. Parser and checker results both reach diagnostics,
 formatting and refactoring feed both interfaces, and LSP features reach both
 editors even though those consumers are not repeated under every producer.
 
-| Responsibility                | What to review                                                                                                | Implementation and verification                                                   |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Specification and decisions   | Meaning, validity, laws, syntax, rule IDs and deferred questions                                              | `Dxn/`, `DxnTest/`, notebook; `make lean`                                         |
-| Syntax contract               | Valid, invalid and incomplete examples; tokens and separators                                                 | Notebook reference and shared syntax cases                                        |
-| Tree-sitter                   | Grammar, optional scanner, generated sources and parsed fields                                                | `packages/tree-sitter-dxn`; `make grammar` and parser agreement                   |
-| Core parser                   | Manually implemented reading, parsed declarations, spans, syntax errors and stop/recovery behavior            | `packages/next/src/syntax`; parser tests and parser agreement                     |
-| Semantic analyzer             | Acceptance, identity, resolution and checker errors                                                           | `packages/next/src/check` and `analysis`; `make agreement`                        |
-| Parser fixes                  | Whether a safe syntax correction is specified, its scope and precise edits                                    | Review explicitly; not implemented yet                                            |
-| Checker suggestions and fixes | Accepted, non-colliding candidates, exact edits and unchanged surrounding text                                | Shared analysis/editor code; naming corrections currently implemented             |
-| Formatter                     | Canonical output, member order, idempotence and invalid-input behavior                                        | Shared syntax formatter; preservation tests and CLI/LSP parity                    |
-| Refactoring                   | Preconditions, refusals, result, transformation laws and source edits                                         | `Dxn/Rename.lean`, shared `refactor/`; agreement and edit tests                   |
-| Evaluation                    | Cartesian products and counts; executable behavior when specified                                             | Shared products and listing compared with Lean; executable behavior not specified |
-| Stored records/evidence       | Validation, identity and transformations of the redesigned language's records                                 | Not implemented yet; separate from evidence for this workflow                     |
-| Diagnostic contract           | Shared severity, codes, rule IDs, messages, locations and correction metadata                                 | Shared analysis; CLI text/JSON and LSP parity tests                               |
-| Shared editor features        | Hover, completion, navigation, outline, semantic tokens and actions actually supported                        | Shared editor code; range and correction tests                                    |
-| CLI                           | Commands, text/JSON, exit codes, reads/writes and dry runs                                                    | `packages/cli`; actual executable and parity tests                                |
-| Language server               | Capabilities, current unsaved buffers, diagnostics, formatting, actions and versioned edits                   | `packages/language-server`; protocol and parity tests                             |
-| VS Code                       | Direct TextMate syntax/configuration, client startup and bundled tools                                        | `packages/vscode`; grammar/bundle tests and human checks                          |
-| Zed                           | Direct grammar snapshot/queries, configuration, tasks and client startup                                      | `packages/zed`; `make zed` and human checks                                       |
-| Build and distribution        | Dependencies, boundaries, generated artifacts, entry points, alias rewriting, bundles and development staging | `make build`, `make smoke`, grammar and extension checks                          |
+| Responsibility                | What to review                                                                                                | Implementation and verification                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Specification and decisions   | Meaning, validity, laws, syntax, rule IDs and deferred questions                                              | `Dxn/`, `DxnTest/`, notebook; `make lean`                                                        |
+| Syntax contract               | Valid, invalid and incomplete examples; tokens and separators                                                 | Notebook reference and shared syntax cases                                                       |
+| Tree-sitter                   | Grammar, optional scanner, generated sources and parsed fields                                                | `packages/tree-sitter-dxn`; `make grammar` and parser agreement                                  |
+| Core parser                   | Manually implemented reading, parsed declarations, spans, syntax errors and stop/recovery behavior            | `packages/next/src/syntax`; parser tests and parser agreement                                    |
+| Semantic analyzer             | Acceptance, identity, resolution and checker errors                                                           | `packages/next/src/check` and `analysis`; `make agreement`                                       |
+| Parser fixes                  | Whether a safe syntax correction is specified, its scope and precise edits                                    | Review explicitly; not implemented yet                                                           |
+| Checker suggestions and fixes | Accepted, non-colliding candidates, exact edits and unchanged surrounding text                                | Shared analysis/editor code; naming corrections currently implemented                            |
+| Formatter                     | Canonical output, member order, idempotence and invalid-input behavior                                        | Shared syntax formatter; preservation tests and CLI/LSP parity                                   |
+| Refactoring                   | Preconditions, refusals, result, transformation laws and source edits                                         | `Dxn/Rename.lean`, shared `refactor/`; agreement and edit tests                                  |
+| Evaluation                    | Cartesian products and counts; executable behavior when specified                                             | Shared products, record values and listing compared with Lean; executable behavior not specified |
+| Stored records/evidence       | Validation, identity and transformations of the redesigned language's records                                 | Not implemented yet; separate from evidence for this workflow                                    |
+| Diagnostic contract           | Shared severity, codes, rule IDs, messages, locations and correction metadata                                 | Shared analysis; CLI text/JSON and LSP parity tests                                              |
+| Shared editor features        | Hover, completion, navigation, outline, semantic tokens and actions actually supported                        | Shared editor code; range and correction tests                                                   |
+| CLI                           | Commands, text/JSON, exit codes, reads/writes and dry runs                                                    | `packages/cli`; actual executable and parity tests                                               |
+| Language server               | Capabilities, current unsaved buffers, diagnostics, formatting, actions and versioned edits                   | `packages/language-server`; protocol and parity tests                                            |
+| VS Code                       | Direct TextMate syntax/configuration, client startup and bundled tools                                        | `packages/vscode`; grammar/bundle tests and human checks                                         |
+| Zed                           | Direct grammar snapshot/queries, configuration, tasks and client startup                                      | `packages/zed`; `make zed` and human checks                                                      |
+| Build and distribution        | Dependencies, boundaries, generated artifacts, entry points, alias rewriting, bundles and development staging | `make build`, `make smoke`, grammar and extension checks                                         |
 
 A Tree-sitter **grammar** change requires regenerating parser sources. A
 **scanner-only** change does not; a semantic-only change may require neither.

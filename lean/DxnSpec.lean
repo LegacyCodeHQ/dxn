@@ -37,6 +37,16 @@ def problemJson (error : EnumError) : Json :=
 def valueJson (value : Value) : Json :=
   Json.mkObj [("enum", value.enum), ("name", value.name)]
 
+mutual
+  def fieldValueJson : FieldValue → Json
+    | .enum value => Json.mkObj [("kind", "enum"), ("value", valueJson value)]
+    | .record fields => Json.mkObj [("kind", "record"), ("fields", Json.mkObj (fieldValuesJson fields))]
+
+  def fieldValuesJson : List (Dxn.Name × FieldValue) → List (String × Json)
+    | [] => []
+    | (name, value) :: rest => (name, fieldValueJson value) :: fieldValuesJson rest
+end
+
 def typeProblemJson (error : TypeError) : Json :=
   match error with
   | .badTypeName name => Json.mkObj [("rule", error.ruleId), ("kind", "badTypeName"), ("name", name)]
@@ -100,7 +110,11 @@ def resultJson (f : File) (rename : Option (Dxn.Name × Dxn.Name)) : Json :=
   let values := if problems = [] then Json.arr (f.values.map valueJson).toArray else Json.null
   let combinations :=
     if problems = [] then Json.arr (f.types.map (combinationsJson f)).toArray else Json.null
-  let fields := [("problems", Json.arr (problems.map fileProblemJson).toArray), ("values", values),
+  let records := if problems = [] then
+    Json.arr (f.records.map fun r => Json.mkObj [("record", r.name),
+      ("values", Json.arr ((f.recordValues r.name).map fieldValueJson).toArray)]).toArray
+    else Json.null
+  let fields := [("recordValues", records), ("problems", Json.arr (problems.map fileProblemJson).toArray), ("values", values),
     ("combinations", combinations)]
   Json.mkObj (match rename with
     | some (old, new) => fields ++ [("rename", renameJson f old new)]

@@ -402,3 +402,40 @@ counts, tables/JSON and exit codes, current-buffer command refusals, CLI/LSP par
 VS Code display adapters and Lean agreement. Actual table rendering and placement
 in VS Code and Zed remain **unverified by a human**. The root README has the
 manual steps. No editor settings or global installations were changed.
+
+## 2026-11-07 redesigned records and declaration rename
+
+Records follow `lean/Dxn/Record.lean`, `RecordValue.lean`, `File.lean` and
+`notebook/reference/records.md`. Declaration rename follows `Rename.lean` and
+`notebook/refactoring/rename-declaration.md`; the updated specification was
+committed on main before implementing the broader operation.
+
+Changed responsibilities: both parsers and generated grammar; record declarations,
+fields, braces and spans; R1–R6 in rule/declaration order; forward field-type
+resolution; cross-kind F1; deterministic cycle witnesses; immutable accepted
+records; nested record values and equality by field name; canonical record
+formatting; declaration rename and its references; shared diagnostics and safe
+record/field naming corrections; LSP navigation, outline, hover and tokens;
+TextMate and Zed queries; examples and distribution documentation.
+
+The executable Lean bridge now serializes record values, so agreement tests
+compare them with the production runtime alongside errors, rule IDs, combinations
+and rename results. Shared and generated cases include cycles, invalid field
+types, duplicate declarations, nested finite values and each declaration kind's
+rename. Fields and enum values remain non-renamable, as explicitly deferred.
+The new grammar requires newlines between fields; commas and several fields on
+one line are errors. Enums and varies lists retain their prior whitespace policy.
+
+Reviewed without further behavioral changes: combination command/table/count
+adapters, CLI I/O, VS Code table display, Zed Rust launcher and build entrypoints.
+Record errors correctly suppress type counts and all combination listings.
+Stored facts, actors, persistence, scalar fields and coverage of recorded facts
+remain deferred; these record declarations do not implement those features.
+
+Verification covers red tests before implementation, parser acceptance and UTF-16
+spans across BOM/line endings, R1–R6 and cycle paths, immutable copies, nested
+values and equality, reversible precise edits, formatter preservation/idempotence,
+shared CLI/LSP diagnostics and record-reference rename, and syntax queries/bundles.
+Actual human verification of the new record editor behavior remains unverified;
+the root README lists the procedure. Topiary remains deferred with no dependency
+added.

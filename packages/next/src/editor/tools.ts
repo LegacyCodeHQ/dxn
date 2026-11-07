@@ -1,6 +1,7 @@
 import type { Span } from "@next/model/enumeration.js";
-import { isEnumeration, isType } from "@next/model/type.js";
-import { renameEnum } from "@next/refactor/rename.js";
+import { isEnumeration, isRecord, isType } from "@next/model/type.js";
+import { renameDecl } from "@next/refactor/rename.js";
+import { formatDeclaration } from "@next/syntax/format.js";
 import { parse } from "@next/syntax/parse.js";
 
 const contains = (span: Span, offset: number) => span.start <= offset && offset < span.end;
@@ -9,33 +10,43 @@ const contains = (span: Span, offset: number) => span.start <= offset && offset 
 export function symbolAt(source: string, offset: number) {
   const declarations = parse(source).declarations;
   for (const d of declarations) {
+    const signature = formatDeclaration;
     if (contains(d.name.span, offset))
       return {
-        kind: isType(d) ? ("type" as const) : ("enum" as const),
+        kind: isType(d) ? ("type" as const) : isRecord(d) ? ("record" as const) : ("enum" as const),
         name: d.name.text,
         span: d.name.span,
         definition: d.name.span,
-        signature: isType(d)
-          ? `type ${d.name.text} {${d.varies.length ? ` varies ${d.varies.map((n) => n.text).join(", ")} ` : " "}}`
-          : `enum ${d.name.text} { ${d.values.map((v) => v.text).join(", ")} }`,
+        signature: signature(d),
       };
-    if (isType(d)) {
-      for (const n of d.varies) {
-        if (!contains(n.span, offset)) continue;
-        const targets = declarations.filter(isEnumeration).filter((e) => e.name.text === n.text);
-        const target = targets.length === 1 ? targets[0] : undefined;
-        return {
-          kind: "enumReference" as const,
-          name: n.text,
-          span: n.span,
-          definition: target?.name.span,
-          signature: target
-            ? `enum ${target.name.text} { ${target.values.map((v) => v.text).join(", ")} }`
-            : n.text,
-        };
-      }
-    } else {
-      for (const v of d.values) {
+    const names = isType(d) ? d.varies : isRecord(d) ? d.fields.map((f) => f.type) : [];
+    for (const n of names) {
+      if (!contains(n.span, offset)) continue;
+      const targets = declarations.filter(
+        (e) => (isType(d) ? isEnumeration(e) : !isType(e)) && e.name.text === n.text,
+      );
+      const target = targets.length === 1 ? targets[0] : undefined;
+      return {
+        kind:
+          target && isRecord(target) ? ("recordReference" as const) : ("enumReference" as const),
+        name: n.text,
+        span: n.span,
+        definition: target?.name.span,
+        signature: target ? signature(target) : n.text,
+      };
+    }
+    if (isRecord(d)) {
+      for (const f of d.fields)
+        if (contains(f.name.span, offset))
+          return {
+            kind: "field" as const,
+            name: f.name.text,
+            span: f.name.span,
+            definition: f.name.span,
+            signature: `${d.name.text}.${f.name.text}: ${f.type.text}`,
+          };
+    } else if (isEnumeration(d)) {
+      for (const v of d.values)
         if (contains(v.span, offset))
           return {
             kind: "value" as const,
@@ -44,39 +55,46 @@ export function symbolAt(source: string, offset: number) {
             definition: v.span,
             signature: `${d.name.text}.${v.text}`,
           };
-      }
     }
   }
   return undefined;
 }
 
-/** Enumeration declarations and references support rename; types and values have no specified rename. */
+/** Declarations and their references support rename; fields and enum values do not. */
 export function renameAt(source: string, offset: number, name: string) {
   const symbol = symbolAt(source, offset);
-  return symbol?.kind === "enum" || symbol?.kind === "enumReference"
-    ? renameEnum(source, symbol.name, name)
+  return symbol &&
+    ["enum", "enumReference", "type", "record", "recordReference"].includes(symbol.kind)
+    ? renameDecl(source, symbol.name, name)
     : undefined;
 }
 
-/** Enumeration references plus, optionally, its declaration. Other symbols have only a declaration. */
+/** Declaration references plus, optionally, the declaration itself. Fields and values are local. */
 export function referencesAt(source: string, offset: number, includeDeclaration: boolean): Span[] {
   const symbol = symbolAt(source, offset);
   if (!symbol?.definition) return [];
-  if (symbol.kind !== "enum" && symbol.kind !== "enumReference")
+  if (!["enum", "enumReference", "record", "recordReference"].includes(symbol.kind))
     return includeDeclaration ? [symbol.span] : [];
   return parse(source).declarations.flatMap((d) =>
     isType(d)
       ? d.varies.filter((n) => n.text === symbol.name).map((n) => n.span)
-      : includeDeclaration && d.name.text === symbol.name
-        ? [d.name.span]
-        : [],
+      : isRecord(d)
+        ? [
+            ...(includeDeclaration && d.name.text === symbol.name ? [d.name.span] : []),
+            ...d.fields.filter((f) => f.type.text === symbol.name).map((f) => f.type.span),
+          ]
+        : includeDeclaration && d.name.text === symbol.name
+          ? [d.name.span]
+          : [],
   );
 }
 
 export function semanticTokens(source: string) {
-  return parse(source).declarations.flatMap<{
+  const declarations = parse(source).declarations;
+  const enums = new Set(declarations.filter(isEnumeration).map((d) => d.name.text));
+  return declarations.flatMap<{
     span: Span;
-    kind: "type" | "enum" | "enumMember";
+    kind: "type" | "enum" | "enumMember" | "property" | "struct";
     declaration: boolean;
   }>((d) =>
     isType(d)
@@ -84,13 +102,25 @@ export function semanticTokens(source: string) {
           { span: d.name.span, kind: "type" as const, declaration: true },
           ...d.varies.map((n) => ({ span: n.span, kind: "enum" as const, declaration: false })),
         ]
-      : [
-          { span: d.name.span, kind: "enum" as const, declaration: true },
-          ...d.values.map((v) => ({
-            span: v.span,
-            kind: "enumMember" as const,
-            declaration: true,
-          })),
-        ],
+      : isRecord(d)
+        ? [
+            { span: d.name.span, kind: "struct", declaration: true },
+            ...d.fields.flatMap((f) => [
+              { span: f.name.span, kind: "property" as const, declaration: true },
+              {
+                span: f.type.span,
+                kind: (enums.has(f.type.text) ? "enum" : "struct") as "enum" | "struct",
+                declaration: false,
+              },
+            ]),
+          ]
+        : [
+            { span: d.name.span, kind: "enum" as const, declaration: true },
+            ...d.values.map((v) => ({
+              span: v.span,
+              kind: "enumMember" as const,
+              declaration: true,
+            })),
+          ],
   );
 }

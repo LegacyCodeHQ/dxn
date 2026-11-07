@@ -1,4 +1,5 @@
 import type { EnumDeclaration, Name, Span } from "@next/model/enumeration.js";
+import type { RecordDeclaration, RecordField } from "@next/model/record.js";
 import type { Declaration, TypeDeclaration } from "@next/model/type.js";
 import { scan, type Token } from "./scan.js";
 
@@ -58,7 +59,7 @@ export function parse(source: string): ParsedFile {
     next++;
     return { text: token.text, span: token.span };
   };
-  const punctuation = (kind: "{" | "}" | ",", expected: string): Span => {
+  const punctuation = (kind: "{" | "}" | "," | ":", expected: string): Span => {
     const token = peek();
     if (token.kind !== kind) return fail(expected);
     next++;
@@ -114,11 +115,44 @@ export function parse(source: string): ParsedFile {
     const close = punctuation("}", varies.length ? "',' or '}' after an enumeration name" : "'}'");
     return { kind: "type", name, varies, span: { start: keyword.span.start, end: close.end } };
   };
+  const recordDeclaration = (): RecordDeclaration => {
+    const keyword = peek();
+    next++;
+    const name = word("a record name after 'record'");
+    const open = punctuation("{", "'{' after the record name");
+    const fields: RecordField[] = [];
+    const requireSameLine = (previous: Span) => {
+      if (/[\r\n\u2028\u2029]/u.test(source.slice(previous.end, peek().span.start)))
+        fail("a field name, ':' and its type on the same line");
+    };
+    while (peek().kind !== "}") {
+      const field = word("a field name or '}'");
+      requireSameLine(field.span);
+      const colon = punctuation(":", "':' after the field name");
+      requireSameLine(colon);
+      const type = word("an enumeration or record name after ':'");
+      fields.push({ name: field, type });
+      if (
+        peek().kind !== "}" &&
+        !/[\r\n\u2028\u2029]/u.test(source.slice(type.span.end, peek().span.start))
+      )
+        fail("a newline between fields or '}'");
+    }
+    const close = punctuation("}", "'}' after the record fields");
+    return {
+      kind: "record",
+      name,
+      fields,
+      body: { start: open.start, end: close.end },
+      span: { start: keyword.span.start, end: close.end },
+    };
+  };
   const declaration = (): Declaration => {
     const token = peek();
+    if (token.kind === "word" && token.text === "record") return recordDeclaration();
     if (token.kind === "word" && token.text === "type") return typeDeclaration();
     if (token.kind === "word" && token.text === "enum") return enumeration();
-    return fail("'enum' or 'type'");
+    return fail("'enum', 'type' or 'record'");
   };
   const declarations: Declaration[] = [];
   try {

@@ -1,7 +1,7 @@
 {
   "name": "dxn",
   "displayName": "dxn (redesign)",
-  "description": "Lean-backed DXN enums, types, combination tables, formatting and enumeration rename.",
+  "description": "Lean-backed DXN enums, types, records, combination tables, formatting and declaration rename.",
   "version": "0.1.0",
   "publisher": "legacycodehq",
   "license": "Apache-2.0",

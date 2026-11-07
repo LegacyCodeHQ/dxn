@@ -2,10 +2,10 @@ import { acceptFile, type CheckedFile, type FileProblem } from "@next/check/file
 import { isEnumName } from "@next/check/names.js";
 import type { Span } from "@next/model/enumeration.js";
 import { renameRefusals } from "@next/model/rules.js";
-import { isEnumeration, isType } from "@next/model/type.js";
+import { isRecord, isType } from "@next/model/type.js";
 import { parse, type SyntaxProblem } from "@next/syntax/parse.js";
 
-// Renaming an enumeration, as lean/Dxn/Rename.lean specifies. It refuses for
+// Renaming a declaration, as lean/Dxn/Rename.lean specifies. It refuses for
 // the same reasons, in the same order, and updates its declaration and every type reference;
 // it adds the text edit and where each reason is.
 
@@ -15,8 +15,8 @@ type Ruled<K extends keyof typeof renameRefusals> = { kind: K; rule: (typeof ren
 /** Why a rename is refused, in the order they are reported. */
 export type RenameRefusal =
   | (Ruled<"fileHasProblems"> & { problems: readonly (SyntaxProblem | FileProblem)[] })
-  | (Ruled<"badEnumName"> & { name: string })
-  | (Ruled<"noSuchEnum"> & { name: string; names: string[] })
+  | (Ruled<"badName"> & { name: string })
+  | (Ruled<"noSuchName"> & { name: string; names: string[] })
   | (Ruled<"nameExists"> & { name: string; at: Span });
 
 /** Replace the text at `span` with `text`. */
@@ -49,11 +49,11 @@ function applied(source: string, edits: readonly Edit[]): string {
 }
 
 /**
- * Rename the enumeration `from` to `to` in a source, or say every reason it is refused: the file
- * has problems, the new name breaks the naming rules, no enumeration has the old name, or another
+ * Rename the declaration `from` to `to` in a source, or say every reason it is refused: the file
+ * has problems, the new name breaks the naming rules, no declaration has the old name, or another
  * declaration already has the new name. Renaming to the same name changes nothing.
  */
-export function renameEnum(source: string, from: string, to: string): Renamed {
+export function renameDecl(source: string, from: string, to: string): Renamed {
   const parsed = parse(source);
   if (parsed.problems.length > 0)
     return refused([
@@ -70,12 +70,11 @@ export function renameEnum(source: string, from: string, to: string): Renamed {
     ]);
 
   const declarations = parsed.declarations;
-  const names = declarations.filter(isEnumeration).map(({ name }) => name.text);
+  const names = declarations.map(({ name }) => name.text);
   const refusals: RenameRefusal[] = [];
-  if (!isEnumName(to))
-    refusals.push({ kind: "badEnumName", rule: renameRefusals.badEnumName, name: to });
+  if (!isEnumName(to)) refusals.push({ kind: "badName", rule: renameRefusals.badName, name: to });
   if (!names.includes(from))
-    refusals.push({ kind: "noSuchEnum", rule: renameRefusals.noSuchEnum, name: from, names });
+    refusals.push({ kind: "noSuchName", rule: renameRefusals.noSuchName, name: from, names });
   const taken = to === from ? undefined : declarations.find(({ name }) => name.text === to);
   if (taken)
     refusals.push({
@@ -90,7 +89,7 @@ export function renameEnum(source: string, from: string, to: string): Renamed {
     to === from
       ? []
       : declarations.flatMap((d) =>
-          (isType(d) ? d.varies : [d.name])
+          [d.name, ...(isType(d) ? d.varies : isRecord(d) ? d.fields.map((f) => f.type) : [])]
             .filter((name) => name.text === from)
             .map((name) => ({ span: name.span, text: to })),
         );

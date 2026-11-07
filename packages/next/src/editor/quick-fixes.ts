@@ -28,7 +28,9 @@ export function quickFixes(source: string, selection: Span): NamingFix[] {
     if (
       !suggestion ||
       !rule ||
-      !["badEnumName", "badTypeName", "badValueName"].includes(problem.code)
+      !["badEnumName", "badTypeName", "badValueName", "badRecordName", "badFieldName"].includes(
+        problem.code,
+      )
     )
       return [];
     return problem.at

@@ -7,7 +7,7 @@ import {
   format,
   listCombinations,
   type Problem,
-  renameEnum,
+  renameDecl,
   renderCombinationTables,
   type Span,
 } from "@legacycodehq/dxn-next";
@@ -132,7 +132,7 @@ export function run(argv: string[], io: Io): number {
     else if (!flags.includes("--write")) io.stdout(formatted);
     return flags.includes("--check") && changed ? 1 : 0;
   }
-  const renamed = renameEnum(source, from as string, to as string);
+  const renamed = renameDecl(source, from as string, to as string);
   if (!renamed.file) {
     emit(
       { file, refusals: renamed.refusals },

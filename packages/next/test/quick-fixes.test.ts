@@ -5,6 +5,8 @@ import { expect, it } from "vitest";
 it.each([
   ["enum light { off }", "light", "Light", "E1"],
   ["type button {}", "button", "Button", "T1"],
+  ["record review { v: Verdict } enum Verdict { approved }", "review", "Review", "R1"],
+  ["record Review { Verdict: Verdict } enum Verdict { approved }", "Verdict", "verdict", "R3"],
   ["enum Light { noKeyboard }", "noKeyboard", "no-keyboard", "E3"],
   ["enum Light {\r\n  Off,\r\n  on\r\n}", "Off", "off", "E3"],
 ] as const)("corrects only the offending name in %s", (source, name, replacement, rule) => {
@@ -56,4 +58,12 @@ it.each([
   [{ start: 0, end: 99 }, 0],
 ] satisfies [Span, number][])("selects only intersecting names at %j", (selection, count) => {
   expect(quickFixes("enum Light { Off }", selection)).toHaveLength(count);
+});
+
+it("checks record field suggestions in their own record and names the right container", () => {
+  const source = "record Review { Verdict: Verdict\nverdict: Verdict } enum Verdict { approved }";
+  expect(quickFixes(source, { start: 0, end: source.length })).toEqual([]);
+  expect(analyze(source).problems.find((p) => p.rule === "R3")?.message).toContain(
+    "in this record",
+  );
 });

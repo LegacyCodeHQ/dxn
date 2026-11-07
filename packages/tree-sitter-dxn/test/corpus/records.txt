@@ -1,0 +1,14 @@
+==================
+records with newline-separated fields
+==================
+record Review {
+ decision: Decision
+ urgency: Urgency
+}
+record Decision { verdict: Verdict }
+record Empty {}
+---
+(source_file
+ (record_declaration (type_name) (record_field (field_name) (type_name)) (record_field (field_name) (type_name)))
+ (record_declaration (type_name) (record_field (field_name) (type_name)))
+ (record_declaration (type_name)))

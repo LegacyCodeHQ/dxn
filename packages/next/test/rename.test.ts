@@ -1,4 +1,4 @@
-import { renameEnum } from "@next/refactor/rename.js";
+import { renameDecl } from "@next/refactor/rename.js";
 import { describe, expect, it } from "vitest";
 
 // Renaming an enumeration, as lean/Dxn/Rename.lean specifies, with the cases
@@ -8,7 +8,7 @@ const source = "enum Light { off, on }\nenum Power { off, on }\n";
 
 // What a rename says: the new text, or why it is refused.
 const said = (text: string, from: string, to: string) => {
-  const renamed = renameEnum(text, from, to);
+  const renamed = renameDecl(text, from, to);
   return (
     renamed.source ?? renamed.refusals.map((r) => ("name" in r ? `${r.kind} ${r.name}` : r.kind))
   );
@@ -39,8 +39,8 @@ describe("renaming an enumeration", () => {
 
   it("is one edit, at the enumeration's name, and none when the name stays", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(renameEnum(source, "Power", "Energy").edits);
-    snapshot.push(renameEnum(source, "Light", "Light").edits);
+    snapshot.push(renameDecl(source, "Power", "Energy").edits);
+    snapshot.push(renameDecl(source, "Light", "Light").edits);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
@@ -75,20 +75,20 @@ describe("renaming an enumeration", () => {
           "fileHasProblems",
         ],
         [
-          "badEnumName lamp",
+          "badName lamp",
         ],
         [
-          "noSuchEnum Bulb",
+          "noSuchName Bulb",
         ],
         [
           "nameExists Power",
         ],
         [
-          "badEnumName power",
-          "noSuchEnum Bulb",
+          "badName power",
+          "noSuchName Bulb",
         ],
         [
-          "noSuchEnum Bulb",
+          "noSuchName Bulb",
           "nameExists Power",
         ],
       ]
@@ -97,9 +97,9 @@ describe("renaming an enumeration", () => {
 
   it("says why a file with problems is refused, and where the new name is taken", () => {
     const snapshot: unknown[] = [];
-    snapshot.push(renameEnum("enum Light { }", "Light", "Lamp").refusals);
-    snapshot.push(renameEnum("enum Light { off, }", "Light", "Lamp").refusals);
-    snapshot.push(renameEnum(source, "Light", "Power").refusals);
+    snapshot.push(renameDecl("enum Light { }", "Light", "Lamp").refusals);
+    snapshot.push(renameDecl("enum Light { off, }", "Light", "Lamp").refusals);
+    snapshot.push(renameDecl(source, "Light", "Power").refusals);
     expect(snapshot).toMatchInlineSnapshot(`
       [
         [
@@ -156,9 +156,9 @@ describe("renaming an enumeration", () => {
   });
 
   it("gives the renamed file, checked, and renaming back undoes it", () => {
-    const renamed = renameEnum(source, "Light", "Lamp");
+    const renamed = renameDecl(source, "Light", "Lamp");
     const back =
-      renamed.source === undefined ? undefined : renameEnum(renamed.source, "Lamp", "Light");
+      renamed.source === undefined ? undefined : renameDecl(renamed.source, "Lamp", "Light");
     const snapshot: unknown[] = [];
     snapshot.push(renamed.file?.values);
     snapshot.push(back?.source === source);

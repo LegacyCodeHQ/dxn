@@ -1,0 +1,83 @@
+[
+  {
+    "title": "record forward types and nested values",
+    "declarations": [
+      {
+        "kind": "record",
+        "name": "Review",
+        "fields": [
+          { "name": "decision", "type": "Decision" },
+          { "name": "urgent", "type": "Urgency" }
+        ]
+      },
+      {
+        "kind": "record",
+        "name": "Decision",
+        "fields": [{ "name": "verdict", "type": "Verdict" }]
+      },
+      { "name": "Verdict", "values": ["approved", "changes"] },
+      { "name": "Urgency", "values": ["low", "high"] }
+    ],
+    "rename": { "from": "Decision", "to": "Finding" }
+  },
+  {
+    "title": "all record-local rules",
+    "declarations": [
+      {
+        "kind": "record",
+        "name": "review",
+        "fields": [{ "name": "Bad", "type": "Missing" }, { "name": "Bad", "type": "review" }]
+      }
+    ]
+  },
+  {
+    "title": "R2 empty record",
+    "declarations": [{ "kind": "record", "name": "Empty", "fields": [] }]
+  },
+  {
+    "title": "R5 type is not a field type",
+    "declarations": [
+      { "kind": "type", "name": "Button", "varies": [] },
+      { "kind": "record", "name": "Review", "fields": [{ "name": "button", "type": "Button" }] }
+    ]
+  },
+  {
+    "title": "R6 two records on a cycle and one outside",
+    "declarations": [
+      { "kind": "record", "name": "A", "fields": [{ "name": "b", "type": "B" }] },
+      { "kind": "record", "name": "B", "fields": [{ "name": "a", "type": "A" }] },
+      { "kind": "record", "name": "Outside", "fields": [{ "name": "a", "type": "A" }] }
+    ]
+  },
+  {
+    "title": "duplicate records follow first declaration in reachability",
+    "declarations": [
+      { "kind": "record", "name": "A", "fields": [{ "name": "x", "type": "Kind" }] },
+      { "kind": "record", "name": "A", "fields": [{ "name": "a", "type": "A" }] },
+      { "name": "Kind", "values": ["ok"] }
+    ]
+  },
+  {
+    "title": "cross-kind record collision",
+    "declarations": [
+      { "name": "Review", "values": ["ok"] },
+      { "kind": "record", "name": "Review", "fields": [{ "name": "r", "type": "Review" }] }
+    ]
+  },
+  {
+    "title": "enum rename reaches record fields",
+    "declarations": [
+      { "name": "Verdict", "values": ["approved"] },
+      { "kind": "record", "name": "Review", "fields": [{ "name": "verdict", "type": "Verdict" }] }
+    ],
+    "rename": { "from": "Verdict", "to": "Decision" }
+  },
+  {
+    "title": "type rename has no references",
+    "declarations": [
+      { "kind": "type", "name": "Button", "varies": [] },
+      { "name": "Kind", "values": ["on"] }
+    ],
+    "rename": { "from": "Button", "to": "Menu" }
+  }
+]

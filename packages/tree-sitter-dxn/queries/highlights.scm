@@ -4,3 +4,6 @@
 (value) @constant
 ["{" "}"] @punctuation.bracket
 "," @punctuation.delimiter
+(record_declaration "record" @keyword)
+(field_name) @property
+":" @punctuation.delimiter

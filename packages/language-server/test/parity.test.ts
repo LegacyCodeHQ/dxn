@@ -824,3 +824,100 @@ it("returns the same table and JSON as the CLI to a table-capable editor without
     rmSync(folder, { recursive: true, force: true });
   }
 });
+
+it("navigates and renames a record reference using the same transformation as the CLI", async () => {
+  const { DefinitionRequest } = await import("vscode-languageserver/node");
+  const source =
+    "record Review { finding: Finding }\nrecord Finding { verdict: Verdict }\nenum Verdict { approved, changes }\ntype Button { varies Verdict }\n";
+  const { editor, uri, diagnostics } = await connect(source);
+  expect(diagnostics.diagnostics).toEqual([]);
+  const textDocument = { uri },
+    position = { line: 0, character: 26 };
+  expect(await editor.sendRequest(DefinitionRequest.type, { textDocument, position })).toEqual({
+    uri,
+    range: { start: { line: 1, character: 7 }, end: { line: 1, character: 14 } },
+  });
+  const renamed = await editor.sendRequest(RenameRequest.type, {
+    textDocument,
+    position,
+    newName: "Issue",
+  });
+  const change = renamed?.documentChanges?.[0];
+  if (!change || !("edits" in change)) throw new Error("expected text changes");
+  const { TextDocument } = await import("vscode-languageserver-textdocument");
+  const edits = change.edits.map((e) => {
+    if (!("newText" in e)) throw new Error("expected plain edit");
+    return e;
+  });
+  const applied = TextDocument.applyEdits(TextDocument.create(uri, "dxn", 1, source), edits);
+  const folder = mkdtempSync(join(tmpdir(), "dxn-record-parity-"));
+  try {
+    writeFileSync(join(folder, "a.dxn"), source);
+    let stdout = "";
+    expect(
+      run(["rename", "a.dxn", "Finding", "Issue", "--dry-run", "--json"], {
+        cwd: folder,
+        stdout: (s) => {
+          stdout += s;
+        },
+        stderr: () => {},
+      }),
+    ).toBe(0);
+    expect(applied).toBe(JSON.parse(stdout).source);
+    expect(applied).toBe(source.replaceAll("Finding", "Issue"));
+    expect(
+      await editor.sendRequest(PrepareRenameRequest.type, {
+        textDocument,
+        position: { line: 3, character: 6 },
+      }),
+    ).toBeTruthy();
+    expect(
+      await editor.sendRequest(PrepareRenameRequest.type, {
+        textDocument,
+        position: { line: 0, character: 18 },
+      }),
+    ).toBeNull();
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+});
+
+it("reports contextual R5 and R6 through the shared CLI/LSP contract", async () => {
+  const source = "type Button {} record Review { button: Button\nreply: Review }";
+  const { diagnostics } = await connect(source);
+  const folder = mkdtempSync(join(tmpdir(), "dxn-record-diagnostics-"));
+  try {
+    writeFileSync(join(folder, "a.dxn"), source);
+    let output = "";
+    expect(
+      run(["check", "a.dxn", "--json"], {
+        cwd: folder,
+        stdout: (text) => {
+          output += text;
+        },
+        stderr: () => {},
+      }),
+    ).toBe(1);
+    expect(
+      JSON.parse(output).problems.map((p: { code: string; rule: string; message: string }) => [
+        p.code,
+        p.rule,
+        p.message,
+      ]),
+    ).toEqual(diagnostics.diagnostics.map((d) => [d.code, d.data?.rule, d.message]));
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+  expect(diagnostics.diagnostics.map((d) => [d.data?.rule, d.message])).toMatchInlineSnapshot(`
+    [
+      [
+        "R5",
+        "[R5] 'Button' is a type; a field's type is an enumeration or a record",
+      ],
+      [
+        "R6",
+        "[R6] record 'Review' contains itself: Review -> Review; remove a field that leads back",
+      ],
+    ]
+  `);
+});

@@ -2,6 +2,7 @@ import {
   analyze,
   combinationCounts,
   format,
+  isRecord,
   isType,
   listCombinations,
   type Problem,
@@ -75,7 +76,10 @@ export function serve(connection: Connection): void {
         renameProvider: { prepareProvider: true },
         codeLensProvider: { resolveProvider: false },
         semanticTokensProvider: {
-          legend: { tokenTypes: ["enum", "enumMember", "type"], tokenModifiers: ["declaration"] },
+          legend: {
+            tokenTypes: ["enum", "enumMember", "type", "property", "struct"],
+            tokenModifiers: ["declaration"],
+          },
           full: true,
         },
       },
@@ -135,7 +139,8 @@ export function serve(connection: Connection): void {
     const d = document(textDocument.uri);
     if (!d) return null;
     const symbol = symbolAt(d.getText(), d.offsetAt(position));
-    return symbol?.kind === "enum" || symbol?.kind === "enumReference"
+    return symbol &&
+      ["enum", "enumReference", "type", "record", "recordReference"].includes(symbol.kind)
       ? { range: range(d, symbol.span), placeholder: symbol.name }
       : null;
   });
@@ -144,7 +149,10 @@ export function serve(connection: Connection): void {
     if (!d) return null;
     const renamed = renameAt(d.getText(), d.offsetAt(position), newName);
     if (!renamed)
-      throw new ResponseError(ErrorCodes.InvalidParams, "only enumeration names can be renamed");
+      throw new ResponseError(
+        ErrorCodes.InvalidParams,
+        "only declaration names and references can be renamed",
+      );
     if (!renamed.file)
       throw new ResponseError(ErrorCodes.InvalidParams, JSON.stringify(renamed.refusals), {
         refusals: renamed.refusals,
@@ -163,15 +171,23 @@ export function serve(connection: Connection): void {
     if (!d) return [];
     return analyze(d.getText()).declarations.map((e) => ({
       name: e.name.text,
-      kind: isType(e) ? SymbolKind.Struct : SymbolKind.Enum,
+      kind: isType(e) || isRecord(e) ? SymbolKind.Struct : SymbolKind.Enum,
       range: range(d, e.span),
       selectionRange: range(d, e.name.span),
-      children: (isType(e) ? e.varies : e.values).map((v) => ({
-        name: v.text,
-        kind: isType(e) ? SymbolKind.Enum : SymbolKind.EnumMember,
-        range: range(d, v.span),
-        selectionRange: range(d, v.span),
-      })),
+      children: isRecord(e)
+        ? e.fields.map((f) => ({
+            name: f.name.text,
+            detail: f.type.text,
+            kind: SymbolKind.Field,
+            range: range(d, { start: f.name.span.start, end: f.type.span.end }),
+            selectionRange: range(d, f.name.span),
+          }))
+        : (isType(e) ? e.varies : e.values).map((v) => ({
+            name: v.text,
+            kind: isType(e) ? SymbolKind.Enum : SymbolKind.EnumMember,
+            range: range(d, v.span),
+            selectionRange: range(d, v.span),
+          })),
     }));
   });
   connection.onDocumentFormatting(({ textDocument }) => {
@@ -193,7 +209,7 @@ export function serve(connection: Connection): void {
           at.line,
           at.character,
           token.span.end - token.span.start,
-          token.kind === "enum" ? 0 : token.kind === "enumMember" ? 1 : 2,
+          ["enum", "enumMember", "type", "property", "struct"].indexOf(token.kind),
           token.declaration ? 1 : 0,
         );
       }

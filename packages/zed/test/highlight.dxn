@@ -7,3 +7,7 @@ enum Mode {
 }
 type Lamp { varies Light, Mode }
 type Logo { }
+record Shot {
+  light: Light
+  mode: Mode
+}

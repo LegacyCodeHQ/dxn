@@ -138,3 +138,34 @@ it("colors a type declaration, varies keyword and enumeration references context
     ]
   `);
 });
+
+it("colors record fields contextually, including keyword-shaped field names", async () => {
+  const grammar = await registry.loadGrammar("source.dxn");
+  if (!grammar) throw new Error("missing grammar");
+  const source = "record record { type: Verdict }";
+  expect(
+    grammar
+      .tokenizeLine(source, INITIAL)
+      .tokens.filter((t) => /^(record|type|Verdict)$/.test(source.slice(t.startIndex, t.endIndex)))
+      .map((t) => [source.slice(t.startIndex, t.endIndex), t.scopes.at(-1)]),
+  ).toMatchInlineSnapshot(`
+    [
+      [
+        "record",
+        "keyword.declaration.dxn",
+      ],
+      [
+        "record",
+        "entity.name.type.dxn",
+      ],
+      [
+        "type",
+        "variable.other.property.dxn",
+      ],
+      [
+        "Verdict",
+        "entity.name.type.dxn",
+      ],
+    ]
+  `);
+});

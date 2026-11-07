@@ -1,4 +1,4 @@
-import { checkEnum, checkFile, renameEnum } from "@next/index.js";
+import { checkEnum, checkFile, renameDecl } from "@next/index.js";
 import { expect, it } from "vitest";
 
 const span = { start: 0, end: 0 };
@@ -25,5 +25,5 @@ it.each([
   ["enum Light { off } enum Power { on }", "Light", "Power", ["RE4"]],
   ["enum Light { off } enum Power { on }", "Missing", "Power", ["RE3", "RE4"]],
 ] as const)("carries refusal IDs for %s: %s to %s", (source, from, to, ids) => {
-  expect(renameEnum(source, from, to).refusals.map((p) => p.rule)).toEqual(ids);
+  expect(renameDecl(source, from, to).refusals.map((p) => p.rule)).toEqual(ids);
 });
