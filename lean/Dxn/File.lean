@@ -8,9 +8,10 @@ A file holds declarations, in written order: enumerations, types and records.
 The checker reports each declaration's own problems, in written order, then
 each name written more than once (F1), across every kind. A type is checked
 against the file's enumerations, and a record against its enumerations and
-records, including whether it contains itself (R6). A valid file's declarations
-have pairwise different names, so no two enumerations share a value, and each
-type's combinations are the product of its enumerations' values.
+records, its `check` blocks included, and whether it contains itself (R6). A
+valid file's declarations have pairwise different names, so no two
+enumerations share a value, and each type's combinations are the product of
+its enumerations' values.
 -/
 
 namespace Dxn
@@ -162,7 +163,7 @@ def File.containsItself (f : File) (n : Name) : Bool :=
 -- #endregion contains
 
 -- #region check
-/-- A record's own problems in its file: R1 to R5, then R6. -/
+/-- A record's own problems in its file: R1 to R5, C1 to C4 for its `check` blocks, then R6. -/
 def File.checkRecordIn (f : File) (r : RecordDecl) : List RecordError :=
   checkRecord f.enumNames f.recordNames r ++
     (if f.containsItself r.name then [.containsItself] else [])
