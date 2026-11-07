@@ -177,8 +177,10 @@ enum light { Off, on, Off, dim- }
 reports E1 `badEnumName light`, E3 `badValueName Off`, E3 `badValueName dim-`,
 then E4 `duplicate Off`. A name that breaks two rules is reported for each.
 
-Lean proves this order for every declaration, stated without reference to how
-the checker is written, so any checker that changed it would fail the proof:
+Lean proves this order for every declaration processed by its specification's
+checker. Changing that checker to violate the order would invalidate the proof.
+The TypeScript implementation is checked separately by agreement tests; these
+proofs do not establish its correctness:
 
 | Fact                                                       | Lean                            |
 | ---------------------------------------------------------- | ------------------------------- |
