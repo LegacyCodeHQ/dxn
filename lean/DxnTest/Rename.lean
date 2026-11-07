@@ -45,6 +45,28 @@ example (f : File) (old new : Name) :
       f.Valid ∧ isEnumName new ∧ old ∈ f.names ∧ (new = old ∨ new ∉ f.names) :=
   renameErrors_eq_nil_iff f old new
 
+-- A file with problems gives that as the only reason.
+example (f : File) (old new : Name) (h : ¬f.Valid) :
+    renameErrors f old new = [.fileHasProblems] :=
+  renameErrors_of_not_valid h
+
+-- In a valid file, each reason is given exactly when it applies.
+example (f : File) (old new n : Name) (hv : f.Valid) :
+    .badEnumName n ∈ renameErrors f old new ↔ n = new ∧ isEnumName new = false :=
+  badEnumName_mem_renameErrors hv
+example (f : File) (old new n : Name) (hv : f.Valid) :
+    .noSuchEnum n ∈ renameErrors f old new ↔ n = old ∧ old ∉ f.names :=
+  noSuchEnum_mem_renameErrors hv
+example (f : File) (old new n : Name) (hv : f.Valid) :
+    .enumExists n ∈ renameErrors f old new ↔ n = new ∧ new ≠ old ∧ new ∈ f.names :=
+  enumExists_mem_renameErrors hv
+
+-- No reason is given twice, and the reasons come in their stated order.
+example (f : File) (old new : Name) : (renameErrors f old new).Nodup := nodup_renameErrors f old new
+example (f : File) (old new : Name) :
+    (renameErrors f old new).Pairwise (fun a b => a.rank ≤ b.rank) :=
+  renameErrors_sorted f old new
+
 -- A rename keeps the file valid.
 example (f g : File) (old new : Name) (h : renameEnum f old new = .ok g) : g.Valid :=
   valid_of_renameEnum h

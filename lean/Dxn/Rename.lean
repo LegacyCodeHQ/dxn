@@ -67,6 +67,63 @@ theorem renameErrors_eq_nil_iff (f : File) (old new : Name) :
       by_cases he : new = old <;> by_cases hm : new ∈ f.names <;> simp [hn, ho, he, hm]
   · simp [hc]
 
+/-! ## Which reasons are given, and in what order -/
+
+/-- A file with problems gives that as the only reason. -/
+theorem renameErrors_of_not_valid {f : File} {old new : Name} (h : ¬f.Valid) :
+    renameErrors f old new = [.fileHasProblems] := by
+  unfold renameErrors
+  rw [← File.check_eq_nil_iff] at h
+  simp [h]
+
+/-- In a valid file, a bad new name is given exactly when the new name breaks the rules. -/
+theorem badEnumName_mem_renameErrors {f : File} {old new n : Name} (hv : f.Valid) :
+    .badEnumName n ∈ renameErrors f old new ↔ n = new ∧ isEnumName new = false := by
+  unfold renameErrors
+  rw [(File.check_eq_nil_iff f).mpr hv]
+  by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.names <;>
+    by_cases he : new = old <;> by_cases hm : new ∈ f.names <;> simp_all
+
+/-- In a valid file, a missing enumeration is given exactly when no enumeration has the old
+name. -/
+theorem noSuchEnum_mem_renameErrors {f : File} {old new n : Name} (hv : f.Valid) :
+    .noSuchEnum n ∈ renameErrors f old new ↔ n = old ∧ old ∉ f.names := by
+  unfold renameErrors
+  rw [(File.check_eq_nil_iff f).mpr hv]
+  by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.names <;>
+    by_cases he : new = old <;> by_cases hm : new ∈ f.names <;> simp_all
+
+/-- In a valid file, a taken name is given exactly when another enumeration has the new name. -/
+theorem enumExists_mem_renameErrors {f : File} {old new n : Name} (hv : f.Valid) :
+    .enumExists n ∈ renameErrors f old new ↔ n = new ∧ new ≠ old ∧ new ∈ f.names := by
+  unfold renameErrors
+  rw [(File.check_eq_nil_iff f).mpr hv]
+  by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.names <;>
+    by_cases he : new = old <;> by_cases hm : new ∈ f.names <;> simp_all
+
+/-- No reason is given twice. -/
+theorem nodup_renameErrors (f : File) (old new : Name) : (renameErrors f old new).Nodup := by
+  unfold renameErrors
+  by_cases hc : f.check = [] <;> by_cases hn : isEnumName new <;>
+    by_cases ho : old ∈ f.names <;> by_cases he : new = old <;> by_cases hm : new ∈ f.names <;>
+    simp_all [List.nodup_append]
+
+/-- A reason's place in the order: the file's problems, then a bad new name, then a missing
+enumeration, then a taken name. -/
+def RenameError.rank : RenameError → Nat
+  | .fileHasProblems => 0
+  | .badEnumName _ => 1
+  | .noSuchEnum _ => 2
+  | .enumExists _ => 3
+
+/-- The reasons come in their stated order. -/
+theorem renameErrors_sorted (f : File) (old new : Name) :
+    (renameErrors f old new).Pairwise (fun a b => a.rank ≤ b.rank) := by
+  unfold renameErrors
+  by_cases hc : f.check = [] <;> by_cases hn : isEnumName new <;>
+    by_cases ho : old ∈ f.names <;> by_cases he : new = old <;> by_cases hm : new ∈ f.names <;>
+    simp_all [List.pairwise_append, RenameError.rank]
+
 theorem renameEnum_ok {f g : File} {old new : Name} (h : renameEnum f old new = .ok g) :
     renameErrors f old new = [] ∧ g = ⟨f.decls.map (EnumDecl.rename old new)⟩ := by
   unfold renameEnum at h
