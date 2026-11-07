@@ -25,7 +25,12 @@ export function quickFixes(source: string, selection: Span): NamingFix[] {
   if (problems.some((p) => p.code === "syntax-error")) return [];
   return problems.flatMap((problem) => {
     const { suggestion, rule } = problem;
-    if (!suggestion || !rule || !["badEnumName", "badValueName"].includes(problem.code)) return [];
+    if (
+      !suggestion ||
+      !rule ||
+      !["badEnumName", "badTypeName", "badValueName"].includes(problem.code)
+    )
+      return [];
     return problem.at
       .filter((at) =>
         selection.start === selection.end

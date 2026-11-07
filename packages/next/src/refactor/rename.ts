@@ -2,10 +2,11 @@ import { acceptFile, type CheckedFile, type FileProblem } from "@next/check/file
 import { isEnumName } from "@next/check/names.js";
 import type { Span } from "@next/model/enumeration.js";
 import { renameRefusals } from "@next/model/rules.js";
+import { isEnumeration, isType } from "@next/model/type.js";
 import { parse, type SyntaxProblem } from "@next/syntax/parse.js";
 
 // Renaming an enumeration, as lean/Dxn/Rename.lean specifies. It refuses for
-// the same reasons, in the same order, and changes only the enumeration's name;
+// the same reasons, in the same order, and updates its declaration and every type reference;
 // it adds the text edit and where each reason is.
 
 /** A reason a rename is refused, with its ID. */
@@ -16,7 +17,7 @@ export type RenameRefusal =
   | (Ruled<"fileHasProblems"> & { problems: readonly (SyntaxProblem | FileProblem)[] })
   | (Ruled<"badEnumName"> & { name: string })
   | (Ruled<"noSuchEnum"> & { name: string; names: string[] })
-  | (Ruled<"enumExists"> & { name: string; at: Span });
+  | (Ruled<"nameExists"> & { name: string; at: Span });
 
 /** Replace the text at `span` with `text`. */
 export interface Edit {
@@ -50,7 +51,7 @@ function applied(source: string, edits: readonly Edit[]): string {
 /**
  * Rename the enumeration `from` to `to` in a source, or say every reason it is refused: the file
  * has problems, the new name breaks the naming rules, no enumeration has the old name, or another
- * enumeration already has the new name. Renaming to the same name changes nothing.
+ * declaration already has the new name. Renaming to the same name changes nothing.
  */
 export function renameEnum(source: string, from: string, to: string): Renamed {
   const parsed = parse(source);
@@ -69,7 +70,7 @@ export function renameEnum(source: string, from: string, to: string): Renamed {
     ]);
 
   const declarations = parsed.declarations;
-  const names = declarations.map(({ name }) => name.text);
+  const names = declarations.filter(isEnumeration).map(({ name }) => name.text);
   const refusals: RenameRefusal[] = [];
   if (!isEnumName(to))
     refusals.push({ kind: "badEnumName", rule: renameRefusals.badEnumName, name: to });
@@ -78,8 +79,8 @@ export function renameEnum(source: string, from: string, to: string): Renamed {
   const taken = to === from ? undefined : declarations.find(({ name }) => name.text === to);
   if (taken)
     refusals.push({
-      kind: "enumExists",
-      rule: renameRefusals.enumExists,
+      kind: "nameExists",
+      rule: renameRefusals.nameExists,
       name: to,
       at: taken.name.span,
     });
@@ -88,9 +89,11 @@ export function renameEnum(source: string, from: string, to: string): Renamed {
   const edits =
     to === from
       ? []
-      : declarations
-          .filter(({ name }) => name.text === from)
-          .map(({ name }) => ({ span: name.span, text: to }));
+      : declarations.flatMap((d) =>
+          (isType(d) ? d.varies : [d.name])
+            .filter((name) => name.text === from)
+            .map((name) => ({ span: name.span, text: to })),
+        );
   const renamed = applied(source, edits);
   // The specification proves a rename keeps a file valid; a file that is not is a bug here.
   const file = acceptFile(parse(renamed).declarations).file;

@@ -41,6 +41,57 @@
           "name": "entity.name.type.enum.dxn"
         }
       ]
+    },
+    {
+      "begin": "\\b(type)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.declaration.dxn"
+        }
+      },
+      "end": "(?<=\\})",
+      "name": "meta.type.dxn",
+      "patterns": [
+        {
+          "begin": "\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.block.begin.dxn"
+            }
+          },
+          "end": "\\}",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.block.end.dxn"
+            }
+          },
+          "patterns": [
+            {
+              "begin": "\\b(varies)\\b",
+              "beginCaptures": {
+                "1": {
+                  "name": "keyword.other.dxn"
+                }
+              },
+              "end": "(?=\\})",
+              "patterns": [
+                {
+                  "match": "[\\p{L}\\p{N}_-]+",
+                  "name": "entity.name.type.enum.dxn"
+                },
+                {
+                  "match": ",",
+                  "name": "punctuation.separator.dxn"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "match": "[\\p{L}\\p{N}_-]+",
+          "name": "entity.name.type.dxn"
+        }
+      ]
     }
   ]
 }

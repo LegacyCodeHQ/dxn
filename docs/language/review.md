@@ -341,3 +341,64 @@ The developer observed the missing-sibling warning in Zed on 2026-11-06 and
 confirmed that adding the missing tag cleared it. VS Code verification and the
 remaining optional/invalid/duplicate-tag edge cases retain automated coverage
 without a new manual sign-off.
+
+## 2026-11-07 redesigned types and Cartesian products
+
+The redesigned `type Name { varies Enum, Other }` construct follows
+`lean/Dxn/Type.lean`, `File.lean`, `Rename.lean` and the notebook's types
+reference. This is separate from the prototype's types and states above.
+
+| Responsibility                         | Implementation review                                                                                                                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Specification and syntax               | Reviewed, no change needed: the latest main defines types, T1–T3, cross-kind F1, Cartesian products and reference-aware enum rename.                                                              |
+| Core parser and Tree-sitter            | Changed: mixed top-level declarations, empty types, comma-separated factors, contextual keywords, spans and first-error stop; generated parser sources and corpus cases updated.                  |
+| Semantic analysis and combinations     | Changed: forward enum resolution, type diagnostics, immutable accepted declarations, written-order products including the empty product.                                                          |
+| Refactoring                            | Changed: enum declaration and factor-reference edits; RE3 accepts only enum targets; RE4 checks every declaration kind. Type/value rename remains unspecified.                                    |
+| Formatter                              | Changed: canonical one-line types, syntax-error refusal, order preservation and idempotence.                                                                                                      |
+| Shared editor features and diagnostics | Changed: type hover/outline/tokens, factor navigation/references and enum rename from references; shared T1 naming corrections respect cross-kind collisions.                                     |
+| CLI and language server                | Changed: help and protocol adapters; shared diagnostics and reference-aware rename are exercised by parity scenarios. The combinations command and editor display are recorded in the next stage. |
+| VS Code and Zed                        | Changed: contextual type/varies syntax and enum references; Zed outline, indentation, runnables and grammar snapshot staging cover types.                                                         |
+| Build and distribution                 | Reviewed: existing generated-parser, native binding, bundling and local extension staging commands apply.                                                                                         |
+| Parser fixes and stored evidence       | Not yet implemented; neither is specified by this construct. No syntax recovery or new record schema is introduced.                                                                               |
+
+Verification is separate from that implementation review. Automated coverage
+includes valid/invalid syntax, fields and spans, type checker ordering, products,
+immutable copies, formatting preservation, Lean agreement on shared and generated
+mixed files, and CLI/LSP diagnostics and rename parity. The core parser deliberately
+stops at its first syntax error; Tree-sitter's editor recovery is not used as a
+semantic result. Comments and nested declarations remain unsupported.
+
+Human verification of types in VS Code and Zed remains **unverified**. The root
+README and `examples/redesign/types.dxn` provide the manual exercise; automated
+query and protocol tests do not replace it.
+
+
+## 2026-11-07 combination listings and editor counts
+
+The types reference now decides `dxn combinations <file> [Type]`, text tables,
+keyed JSON, editor counts and the contextual T2 message. Shared listing logic in
+`packages/next/src/analysis/combinations.ts` implements these decisions; CLI and
+LSP adapters reuse the diagnostics and canonical table renderer. Unknown types
+are usage errors; invalid files never list even an otherwise valid type.
+
+Counts are exact decimal integers and do not enumerate products. The row generator
+preserves Lean's first-factor-slowest order, including one empty combination for
+zero factors. Agreement checks compare tagged products, keyed rows and counts.
+The editor fetches tables afresh on activation; a stale lens cannot display rows
+from a now-invalid file. VS Code opens a plaintext document through its client;
+other LSP clients receive the same table as an information message. The language
+server writes no files. Zed's existing generic LSP support handles that command;
+its Rust launcher and syntax queries need no further change for this stage.
+
+Responsibilities changed: combination evaluation/listing, diagnostic presentation,
+CLI, shared editor features, LSP commands, VS Code table display and development
+documentation. Lean rules, syntax, formatter, Tree-sitter artifacts and rename
+were reviewed without further changes for this stage. Stored evidence, parser
+fixes, type/value rename and future executable behavior remain unspecified or
+unimplemented, as recorded above and in the notebook's deferred decisions.
+
+Verification includes red CLI/protocol tests before implementation, exact large
+counts, tables/JSON and exit codes, current-buffer command refusals, CLI/LSP parity,
+VS Code display adapters and Lean agreement. Actual table rendering and placement
+in VS Code and Zed remain **unverified by a human**. The root README has the
+manual steps. No editor settings or global installations were changed.

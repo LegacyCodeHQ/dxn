@@ -14,3 +14,9 @@ See the root README for supported syntax and the pending manual verification.
 
 Naming quick fixes come from the redesigned language server and return versioned
 edits for the current unsaved buffer. No extension-specific correction logic is needed.
+
+With code lenses enabled (`"code_lens": "on"`), valid types show exact combination
+counts. Clicking one invokes the server's `dxn.combinations` command, which
+recomputes from the unsaved buffer and displays the canonical table in an LSP
+information message. No local file or prototype CLI is used for this action.
+Files with syntax or checker errors show no combination counts.

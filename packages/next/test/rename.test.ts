@@ -81,7 +81,7 @@ describe("renaming an enumeration", () => {
           "noSuchEnum Bulb",
         ],
         [
-          "enumExists Power",
+          "nameExists Power",
         ],
         [
           "badEnumName power",
@@ -89,7 +89,7 @@ describe("renaming an enumeration", () => {
         ],
         [
           "noSuchEnum Bulb",
-          "enumExists Power",
+          "nameExists Power",
         ],
       ]
     `);
@@ -146,7 +146,7 @@ describe("renaming an enumeration", () => {
               "end": 33,
               "start": 28,
             },
-            "kind": "enumExists",
+            "kind": "nameExists",
             "name": "Power",
             "rule": "RE4",
           },

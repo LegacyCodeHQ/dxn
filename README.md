@@ -5,7 +5,7 @@ in `lean/`; its shared TypeScript implementation is in `packages/next`.
 The CLI, formatter, language server, Tree-sitter grammar and editor extensions
 in this worktree support that implementation.
 
-The current supported construct is an enumeration:
+The current supported constructs are enumerations and types:
 
 ```dxn
 enum Light { off, on }
@@ -14,15 +14,23 @@ enum Power {
   no-keyboard,
   01
 }
+
+type Lamp { varies Light, Power }
+type Logo { }
 ```
 
 Enumeration names start with an ASCII capital letter and contain only ASCII
 letters and digits. Values use ASCII lowercase letters and digits, with single
-hyphens between them. Empty enums, duplicate members and duplicate enum names
+hyphens between them. Empty enums, duplicate members and duplicate declaration names
 are checker errors. Missing separators and trailing commas are syntax errors.
 Keywords can be member names. Enum values carry their enumeration's identity.
 
-Types, states, documentation and ordinary comments, evaluation and stored
+Types list the enumerations they vary over, including forward references. Each
+type has their Cartesian product of values; a type with no factors has one empty
+combination. A type name follows the enumeration naming rule. Missing or repeated
+factors are checker errors.
+
+States, documentation and ordinary comments, executable evaluation and stored
 records have not been specified and implemented in this redesign yet. Their
 prototype syntax is rejected. `packages/language` is retained prototype source;
 none of the redesigned executable adapters import it, and its tests are outside
@@ -56,14 +64,22 @@ node packages/cli/dist/main.js fmt examples/redesign/enums.dxn
 node packages/cli/dist/main.js fmt examples/redesign/enums.dxn --check
 node packages/cli/dist/main.js fmt examples/redesign/enums.dxn --write
 node packages/cli/dist/main.js rename examples/redesign/enums.dxn Light Lamp --dry-run
+node packages/cli/dist/main.js combinations examples/redesign/types.dxn
+node packages/cli/dist/main.js combinations examples/redesign/types.dxn Lamp --json
 ```
 
-`fmt` prints canonical one-line enums with spaces and a final newline. It never
+`fmt` prints canonical one-line declarations with spaces and a final newline. It never
 formats malformed syntax; semantic errors do not prevent formatting.
 `--write` writes the file, and `--check` exits 1 when formatting differs.
-`rename` changes only the enum-name span, preserving other text. By default it
+`rename` changes the enum declaration and every `varies` reference to it,
+preserving other text. A new name cannot collide with an enum or a type. By default it
 writes the result; `--dry-run` previews it. All rename refusals come from the
-shared implementation. Renaming a value is not supported yet.
+shared implementation. Renaming types and values is not supported yet.
+
+`combinations <file> [Type]` lists all types or one selected type. Text output is
+one table per type; `--json` returns rows keyed by enumeration name. Invalid files
+report the same diagnostics as `check` and exit 1. An unknown type lists available
+types and exits 2. A type varying over nothing has one empty combination.
 
 Commands exit 0 on success, 1 on a language/format/refactoring failure, and 2 on
 invalid arguments or I/O failure. `--json` emits structured results on stdout;
@@ -71,10 +87,14 @@ text diagnostics go to stderr.
 
 ## Editors
 
-The server supplies diagnostics, formatting, hover, enum/member outline,
-semantic highlighting, declaration navigation, enumeration rename and safe naming
-quick fixes. It reads
-unsaved buffers and returns versioned edits. Unsupported prototype features
+The server supplies diagnostics, formatting, hover, enum/member/type outline,
+semantic highlighting, declaration and reference navigation, enumeration rename and safe naming
+quick fixes. Each valid type also has a clickable combination-count code lens.
+Counts use exact integer arithmetic without enumerating the product. Clicking
+recomputes the table from the current unsaved buffer. VS Code opens a plaintext
+document; Zed and other LSP clients display the same table in an information
+message. Invalid files show no counts and stale activations refuse to list rows.
+The server reads unsaved buffers and returns versioned edits. Unsupported prototype features
 such as evidence hints and state commands are not advertised.
 
 For VS Code, build with `make build`, then use an isolated Extension Development
@@ -94,13 +114,24 @@ worktree's built CLI when the worktree is opened as the Zed project root.
 
 ### Manual verification still required
 
-In each development editor, open `examples/redesign/enums.dxn` and check:
+In each development editor, open `examples/redesign/enums.dxn` and
+`examples/redesign/types.dxn` and check:
 
-- Valid enums have no diagnostics; the old `enum Light = off | on` is rejected.
+- Above each type, check its combination count. Click to view the same table as
+  `dxn combinations`; unsaved edits must affect the displayed rows. Introducing a
+  syntax or checker error anywhere in the file must remove all counts.
+- In Zed, enable `code_lens: "on"` if code lenses are disabled; the table appears
+  in an LSP information message. VS Code opens a plaintext document.
+- Use `type Menu { varies Lamp }` to check that T2 explains that `Lamp` is a type.
+- Hover and outline show types and their factors. Definition on `Light` in
+  `varies` navigates to its enum; references include each factor occurrence.
+- Renaming `Light` from its declaration or a factor updates both. Renaming it to
+  `Lamp` is refused because a type already has that name.
+- Valid enums and types have no diagnostics; the old `enum Light = off | on` is rejected.
 - `enum`, `on` and `type` inside braces are enum members, not keywords.
 - Hover and outline identify each enumeration and member correctly.
 - Formatting produces the same result as the CLI, including unsaved edits.
-- Rename `Light` to `Lamp`; only its name changes. A collision with `Power`
+- In the enum-only example, rename `Light` to `Lamp`; only its name changes. A collision with `Power`
   is refused. Renaming to the same name makes no edits.
 - Duplicate members and bad names have diagnostics at the correct spans.
 - Naming quick fixes replace only the selected name. A conflicting replacement
@@ -113,7 +144,7 @@ Automated grammar, protocol and bundle checks do not establish these human check
 
 The change-propagation models in `docs/architecture/` intentionally remain in the
 old DXN syntax. Inspect them using the separately built prototype CLI until the
-new language supports types. They are not examples accepted by this CLI.
+new language supports their remaining constructs, including `has` and states. They are not examples accepted by this CLI.
 
 ## Design notebook
 

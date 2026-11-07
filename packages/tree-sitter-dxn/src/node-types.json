@@ -37,8 +37,38 @@
         {
           "type": "enum_declaration",
           "named": true
+        },
+        {
+          "type": "type_declaration",
+          "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "type_declaration",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_name",
+            "named": true
+          }
+        ]
+      },
+      "varies": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "type_name",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -50,12 +80,20 @@
     "named": false
   },
   {
+    "type": "type",
+    "named": false
+  },
+  {
     "type": "type_name",
     "named": true
   },
   {
     "type": "value",
     "named": true
+  },
+  {
+    "type": "varies",
+    "named": false
   },
   {
     "type": "{",

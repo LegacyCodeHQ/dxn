@@ -3,8 +3,10 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { combinationCounts, listCombinations } from "@next/analysis/combinations.js";
 import { acceptFile } from "@next/check/file.js";
-import type { EnumDeclaration, Value } from "@next/model/enumeration.js";
+import type { Value } from "@next/model/enumeration.js";
+import { isType, type Declaration as ParsedDeclaration } from "@next/model/type.js";
 import { renameEnum } from "@next/refactor/rename.js";
 import { parse } from "@next/syntax/parse.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -18,10 +20,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 //
 // This tests agreement on these cases; it does not prove the implementation.
 
-interface Declaration {
-  name: string;
-  values: string[];
-}
+type Declaration =
+  | { name: string; values: string[] }
+  | { kind: "type"; name: string; varies: string[] };
+type Enumeration = Extract<Declaration, { values: string[] }>;
 
 interface Case {
   title: string;
@@ -37,6 +39,7 @@ interface Said {
     problem?: { kind: string; rule: string; name?: string };
   }[];
   values: Value[] | null;
+  combinations: { type: string; combinations: Value[][] }[] | null;
   rename?: {
     refusals: { kind: string; rule: string; name?: string }[];
     declarations: Declaration[] | null;
@@ -53,6 +56,7 @@ const shared: Case[] = [
     declarations: [declaration],
   })),
   ...read<Case[]>("files.json"),
+  ...read<Case[]>("types.json"),
   ...read<Case[]>("renames.json"),
 ];
 
@@ -77,7 +81,7 @@ const valueNames = [
 function generated(enums: number, files: number): Case[] {
   const next = random(20261106);
   const pick = (names: string[]) => names[Math.floor(next() * names.length)] ?? "";
-  const declaration = (names: string[]): Declaration => ({
+  const declaration = (names: string[]): Enumeration => ({
     name: pick(names),
     values: Array.from({ length: Math.floor(next() * 7) }, () => pick(valueNames)),
   });
@@ -87,7 +91,7 @@ function generated(enums: number, files: number): Case[] {
   const renameNames = ["Light", "Power", "Theme", "Lamp", "Bulb", "light"];
   const rename = () => ({ from: pick(renameNames), to: pick(renameNames) });
   // Files with no problems, so that most renames get past the file's own check.
-  const valid = (): Declaration[] =>
+  const valid = (): Enumeration[] =>
     ["Light", "Power", "Theme"]
       .filter(() => next() < 0.6)
       .map((name) => ({ name, values: ["off", "on", "dim"].filter(() => next() < 0.7) }))
@@ -110,11 +114,42 @@ function generated(enums: number, files: number): Case[] {
   ];
 }
 
+// Mixed declarations exercise forward resolution, cross-kind collisions and rename references.
+function generatedTypes(): Case[] {
+  const next = random(20261107);
+  const pick = (xs: string[]) => xs[Math.floor(next() * xs.length)] ?? "";
+  return Array.from({ length: 250 }, (_, index) => {
+    const enums: Declaration[] = ["Kind", "State"].map((name) => ({
+      name,
+      values: next() < 0.5 ? ["off"] : ["off", "on"],
+    }));
+    const types: Declaration[] = ["Button", "Menu"].map((name) => ({
+      kind: "type",
+      name: next() < 0.15 ? "button" : name,
+      varies: Array.from({ length: Math.floor(next() * 4) }, () =>
+        pick(["Kind", "State", "Missing", "Button"]),
+      ),
+    }));
+    return {
+      title: `generated mixed file ${index}`,
+      declarations: index % 2 ? [...enums, ...types] : [...types, ...enums],
+      rename: {
+        from: pick(["Kind", "State", "Button", "Missing"]),
+        to: pick(["Glow", "Kind", "State", "Button", "bad"]),
+      },
+    };
+  });
+}
+
 // Each case again with its values reversed: order must mean nothing to either.
 const reversed = (cases: Case[]): Case[] =>
   cases.map(({ title, declarations, rename }) => ({
     title: `${title}, reversed`,
-    declarations: declarations.map(({ name, values }) => ({ name, values: [...values].reverse() })),
+    declarations: declarations.map((d) =>
+      "values" in d
+        ? { name: d.name, values: [...d.values].reverse() }
+        : { ...d, varies: [...d.varies].reverse() },
+    ),
     ...(rename && { rename }),
   }));
 
@@ -126,20 +161,28 @@ const canonical = (value: unknown): string =>
       : v,
   );
 
-const cases = [...shared, ...reversed(shared), ...generated(500, 300)];
+const cases = [...shared, ...reversed(shared), ...generated(500, 300), ...generatedTypes()];
 
 // A declaration as the parser would give it; positions do not matter here.
 const at = { start: 0, end: 0 };
-const declaration = ({ name, values }: Declaration): EnumDeclaration => ({
-  name: { text: name, span: at },
-  values: values.map((text) => ({ text, span: at })),
-  span: at,
-});
+const declaration = (d: Declaration): ParsedDeclaration =>
+  "values" in d
+    ? {
+        name: { text: d.name, span: at },
+        values: d.values.map((text) => ({ text, span: at })),
+        span: at,
+      }
+    : {
+        kind: "type",
+        name: { text: d.name, span: at },
+        varies: d.varies.map((text) => ({ text, span: at })),
+        span: at,
+      };
 
-function said(declarations: readonly EnumDeclaration[]): Said {
+function said(declarations: readonly ParsedDeclaration[]): Said {
   const accepted = acceptFile(declarations);
   const problems = accepted.problems.map((problem) =>
-    problem.kind === "duplicateEnum"
+    problem.kind === "duplicateName"
       ? { kind: problem.kind, rule: problem.rule, name: problem.name }
       : {
           kind: problem.kind,
@@ -155,16 +198,24 @@ function said(declarations: readonly EnumDeclaration[]): Said {
               : { kind: problem.problem.kind, rule: problem.problem.rule },
         },
   );
-  return { problems, values: accepted.file?.values ?? null };
+  return {
+    problems,
+    values: accepted.file?.values ?? null,
+    combinations: accepted.file?.combinations ?? null,
+  };
 }
 
 // A case as text, when every name can be written as a word.
 const word = /^[\p{L}\p{N}_-]+$/u;
 const text = ({ declarations }: Case) =>
-  declarations.every(({ name, values }) => [name, ...values].every((n) => word.test(n)))
+  declarations.every((d) =>
+    [d.name, ...("values" in d ? d.values : d.varies)].every((n) => word.test(n)),
+  )
     ? declarations
-        .map(
-          ({ name, values }) => `enum ${name} {\n${values.map((v) => `  ${v}`).join(",\n")}\n}\n`,
+        .map((d) =>
+          "values" in d
+            ? `enum ${d.name} {\n${d.values.map((v) => `  ${v}`).join(",\n")}\n}\n`
+            : `type ${d.name} {${d.varies.length ? ` varies ${d.varies.join(", ")} ` : " "}}\n`,
         )
         .join("")
     : undefined;
@@ -193,7 +244,8 @@ afterAll(() => {
 });
 
 // What the specification says about the file itself, without the rename.
-const checked = ({ problems, values }: Said) => canonical({ problems, values });
+const checked = ({ problems, values, combinations }: Said) =>
+  canonical({ problems, values, combinations });
 
 // What this implementation says about a rename, done on the case written as text.
 function renamed(source: string, { from, to }: { from: string; to: string }): Said["rename"] {
@@ -207,10 +259,11 @@ function renamed(source: string, { from, to }: { from: string; to: string }): Sa
     declarations:
       result.source === undefined
         ? null
-        : parse(result.source).declarations.map(({ name, values }) => ({
-            name: name.text,
-            values: values.map((value) => value.text),
-          })),
+        : parse(result.source).declarations.map((d) =>
+            isType(d)
+              ? { kind: "type", name: d.name.text, varies: d.varies.map((n) => n.text) }
+              : { name: d.name.text, values: d.values.map((v) => v.text) },
+          ),
   };
 }
 
@@ -253,6 +306,33 @@ describe("this implementation and the Lean specification", () => {
     expect(disagreements).toEqual([]);
   });
 
+  it("lists and counts exactly the combinations Lean gives each accepted file", () => {
+    const disagreements = cases.flatMap((c, index) => {
+      const source = text(c),
+        expected = spec[index];
+      if (source === undefined || !expected || expected.combinations === null) return [];
+      const listed = listCombinations(source);
+      const counts = combinationCounts(source).map(({ type, count }) => ({ type, count }));
+      const combinations = expected.combinations.map((t) => ({
+        type: t.type,
+        count: t.combinations.length,
+        combinations: t.combinations.map((row) =>
+          Object.fromEntries(row.map((v) => [v.enum, v.name])),
+        ),
+      }));
+      const ours =
+        listed.kind === "listed"
+          ? listed.types.map(({ type, count, combinations }) => ({ type, count, combinations }))
+          : listed;
+      const wantedCounts = combinations.map(({ type, count }) => ({ type, count: String(count) }));
+      return canonical(ours) === canonical(combinations) &&
+        canonical(counts) === canonical(wantedCounts)
+        ? []
+        : [{ case: c, ours, combinations, counts }];
+    });
+    expect(disagreements).toEqual([]);
+  });
+
   it("cover accepted and rejected cases, and every kind of problem and refusal", () => {
     const kinds = new Set(
       spec.flatMap(({ problems }) => problems.map(({ kind, problem }) => problem?.kind ?? kind)),
@@ -283,15 +363,18 @@ describe("this implementation and the Lean specification", () => {
         "accepted": true,
         "kinds": [
           "badEnumName",
+          "badTypeName",
           "badValueName",
           "duplicate",
-          "duplicateEnum",
+          "duplicateName",
+          "duplicateVaries",
           "empty",
+          "noSuchEnum",
         ],
         "refusals": [
           "badEnumName",
-          "enumExists",
           "fileHasProblems",
+          "nameExists",
           "noSuchEnum",
         ],
         "refused": true,
@@ -307,6 +390,9 @@ describe("this implementation and the Lean specification", () => {
           "RE2",
           "RE3",
           "RE4",
+          "T1",
+          "T2",
+          "T3",
         ],
       }
     `);

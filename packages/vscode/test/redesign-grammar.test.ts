@@ -99,3 +99,42 @@ it("colors enum members contextually, including keyword spellings", async () => 
    ]
  `);
 });
+
+it("colors a type declaration, varies keyword and enumeration references contextually", async () => {
+  const grammar = await registry.loadGrammar("source.dxn");
+  if (!grammar) throw new Error("missing grammar");
+  const source = "type type { varies Kind, varies, enum }";
+  const tokens = grammar.tokenizeLine(source, INITIAL).tokens;
+  expect(
+    tokens
+      .filter((t) => /^(type|varies|Kind|enum)$/.test(source.slice(t.startIndex, t.endIndex)))
+      .map((t) => [source.slice(t.startIndex, t.endIndex), t.scopes.at(-1)]),
+  ).toMatchInlineSnapshot(`
+    [
+      [
+        "type",
+        "keyword.declaration.dxn",
+      ],
+      [
+        "type",
+        "entity.name.type.dxn",
+      ],
+      [
+        "varies",
+        "keyword.other.dxn",
+      ],
+      [
+        "Kind",
+        "entity.name.type.enum.dxn",
+      ],
+      [
+        "varies",
+        "entity.name.type.enum.dxn",
+      ],
+      [
+        "enum",
+        "entity.name.type.enum.dxn",
+      ],
+    ]
+  `);
+});

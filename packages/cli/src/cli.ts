@@ -1,23 +1,22 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { help } from "@cli/commands/support/usage.js";
 import { version } from "@cli/version.js";
-import { analyze, format, renameEnum, type Span } from "@legacycodehq/dxn-next";
+import {
+  analyze,
+  format,
+  listCombinations,
+  type Problem,
+  renameEnum,
+  renderCombinationTables,
+  type Span,
+} from "@legacycodehq/dxn-next";
 
 export interface Io {
   stdout(text: string): void;
   stderr(text: string): void;
   cwd?: string;
 }
-
-const help = `Usage: dxn <command> <file> [options]
-
-  check <file>                       Check the new DXN language
-  fmt <file> [--check | --write]      Print, check or write canonical formatting
-  rename <file> <old> <new>           Rename an enumeration
-
-Options: --json, --dry-run (rename), --help, --version
-Supported syntax: enum Light { off, on }
-`;
 
 // Files and streams belong here; language decisions belong to packages/next.
 export function run(argv: string[], io: Io): number {
@@ -39,7 +38,7 @@ export function run(argv: string[], io: Io): number {
   const positional = args.filter((arg) => !arg.startsWith("--"));
   const [file, from, to] = positional;
   const allowed =
-    command === "check"
+    command === "check" || command === "combinations"
       ? ["--json"]
       : command === "fmt"
         ? ["--json", "--check", "--write"]
@@ -48,9 +47,11 @@ export function run(argv: string[], io: Io): number {
           : [];
   if (
     !file ||
-    !["check", "fmt", "rename"].includes(command ?? "") ||
+    !["check", "fmt", "rename", "combinations"].includes(command ?? "") ||
     flags.some((f) => !allowed.includes(f)) ||
-    positional.length !== (command === "rename" ? 3 : 1) ||
+    (command === "combinations"
+      ? positional.length < 1 || positional.length > 2
+      : positional.length !== (command === "rename" ? 3 : 1)) ||
     (flags.includes("--write") && flags.includes("--check"))
   ) {
     emit({ error: "invalid command or arguments" }, help, true);
@@ -73,9 +74,8 @@ export function run(argv: string[], io: Io): number {
       return false;
     }
   };
-  if (command === "check") {
-    const result = analyze(source);
-    const located = result.problems.flatMap((p) =>
+  const reportProblems = (problems: readonly Problem[]) => {
+    const located = problems.flatMap((p) =>
       p.at.map((span) => ({
         code: p.code,
         ...(p.rule ? { rule: p.rule } : {}),
@@ -94,6 +94,21 @@ export function run(argv: string[], io: Io): number {
       located.length > 0,
     );
     return located.length ? 1 : 0;
+  };
+  if (command === "check") return reportProblems(analyze(source).problems);
+  if (command === "combinations") {
+    const result = listCombinations(source, from);
+    if (result.kind === "invalid") return reportProblems(result.problems);
+    if (result.kind === "unknownType") {
+      emit(
+        { file, error: result.message, types: result.available },
+        `${file}: ${result.message}`,
+        true,
+      );
+      return 2;
+    }
+    emit({ types: result.types }, renderCombinationTables(result.types));
+    return 0;
   }
   if (command === "fmt") {
     const formatted = format(source);

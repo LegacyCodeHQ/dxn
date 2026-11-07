@@ -66,7 +66,7 @@ type VerifyCoreParser { }
 
 ## Review the redesigned grammar, optional external scanner, and generated artifacts.
 ## A grammar change requires regeneration; a scanner-only change keeps parser sources.
-## The current enum grammar has no external scanner. A semantic-only change uses none.
+## The current enum/type grammar has no external scanner. A semantic-only change uses none.
 type ModifyTreeSitterPackage needs TreeSitterChange {
   state tree-sitter-parser: TreeSitterParser = when TreeSitterChange {
     grammar -> regenerate
@@ -108,14 +108,16 @@ type ModifyCheckerFixes { }
 type CheckSpecificationAgreement { }
 
 ## Review evaluation when a specified construct introduces combinations or executable
-## behavior. The redesigned evaluator is not implemented yet; enum checking alone
-## does not establish evaluation. Decide and specify it before implementation.
+## behavior. Types now introduce Cartesian products and counts; review the shared
+## listing, CLI tables and editor counts against Lean. Executable behavior beyond
+## these combinations remains unspecified; checker acceptance alone is not evaluation.
 type ModifyEvaluator {
   has check-evaluation-agreement: CheckEvaluationAgreement
 }
 
-## When evaluation is specified, expose it through dxn-spec and compare results.
-## Until then record not-yet-implemented, rather than treating checker tests as coverage.
+## Compare type combinations and counts with dxn-spec, including order and empty products.
+## Compare CLI/editor tables separately. Future executable behavior needs its own
+## specification and agreement cases; existing checker tests do not establish it.
 type CheckEvaluationAgreement { }
 
 ## Refactoring is shared language behavior with explicit preconditions and results.
@@ -171,7 +173,8 @@ type ReviewLanguageToolchain needs TreeSitterChange {
 ## Only applicable checker diagnostics carry checker-rule IDs. CLI and LSP adapt this data.
 type ReviewDiagnosticContract { }
 
-## Review hover, completion, navigation, symbols, semantic tokens and quick-fix actions
+## Review hover, completion, navigation, symbols, semantic tokens, combination-count
+## lenses and table display, and quick-fix actions
 ## for the specified constructs. Rename delegates to shared refactoring; corrections
 ## delegate to shared fix logic. Advertise only features actually implemented.
 type ModifyEditorFeatures {

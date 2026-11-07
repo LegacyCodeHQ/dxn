@@ -1,0 +1,4 @@
+type Lamp { varies Light, Power }
+enum Light { off, on }
+enum Power { mains, battery }
+type Logo { }

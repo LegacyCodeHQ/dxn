@@ -9,8 +9,8 @@ const declarations = (source: string) => parse(source).declarations;
 // What the checker says, without positions: the part Lean also says.
 const said = (source: string) =>
   checkFile(declarations(source)).map((problem) =>
-    problem.kind === "duplicateEnum"
-      ? `duplicateEnum ${problem.name}`
+    problem.kind === "duplicateName"
+      ? `duplicateName ${problem.name}`
       : `${problem.name}: ${problem.problem.kind}${"name" in problem.problem ? ` ${problem.problem.name}` : ""}`,
   );
 
@@ -26,14 +26,14 @@ describe("checking a file", () => {
         [],
         [],
         [
-          "duplicateEnum Light",
+          "duplicateName Light",
         ],
         [
           "light: badEnumName light",
           "light: empty",
           "Power: duplicate on",
           "light: badEnumName light",
-          "duplicateEnum light",
+          "duplicateName light",
         ],
       ]
     `);
@@ -44,7 +44,7 @@ describe("checking a file", () => {
     const [problem] = checkFile(declarations(source));
     const snapshot: unknown[] = [];
     snapshot.push(
-      problem?.kind === "duplicateEnum" &&
+      problem?.kind === "duplicateName" &&
         problem.at.map(({ start, end }) => source.slice(start, end)),
     );
     expect(snapshot).toMatchInlineSnapshot(`

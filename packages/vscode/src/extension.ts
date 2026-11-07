@@ -3,6 +3,7 @@
 // can run; what it starts is chosen in server.ts, and what a lens runs in
 // run.ts.
 import { dirname, relative } from "node:path";
+import { showCombinations } from "@vscode/combinations.js";
 import { dxn } from "@vscode/run.js";
 import { serverOptions } from "@vscode/server.js";
 import {
@@ -13,6 +14,7 @@ import {
   TaskScope,
   tasks,
   Uri,
+  window,
   workspace,
 } from "vscode";
 import { LanguageClient, type ServerOptions, TransportKind } from "vscode-languageclient/node";
@@ -50,8 +52,27 @@ export async function activate(context: ExtensionContext): Promise<void> {
       : { command: chosen.command, args: chosen.args, transport: TransportKind.stdio };
   client = new LanguageClient("dxn", "dxn language server", server, {
     documentSelector: [{ language: "dxn" }],
+    initializationOptions: { combinationTables: true },
   });
   await client.start();
+  context.subscriptions.push(
+    commands.registerCommand("dxn.combinations", async (uri: string, type: string) => {
+      const running = client;
+      if (!running) return;
+      await showCombinations(
+        uri,
+        type,
+        (params) => running.sendRequest("workspace/executeCommand", params),
+        async (table) => {
+          const document = await workspace.openTextDocument({
+            language: "plaintext",
+            content: `${table}\n`,
+          });
+          await window.showTextDocument(document, { preview: true });
+        },
+      );
+    }),
+  );
 }
 
 export async function deactivate(): Promise<void> {

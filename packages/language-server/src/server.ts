@@ -1,9 +1,14 @@
 import {
   analyze,
+  combinationCounts,
   format,
+  isType,
+  listCombinations,
   type Problem,
   quickFixes,
+  referencesAt,
   renameAt,
+  renderCombinationTables,
   type Span,
   semanticTokens,
   symbolAt,
@@ -16,6 +21,7 @@ import {
   type Range,
   ResponseError,
   SemanticTokensBuilder,
+  ShowMessageNotification,
   SymbolKind,
   TextDocumentSyncKind,
   TextDocuments,
@@ -53,23 +59,28 @@ export function serve(connection: Connection): void {
       ),
     });
   };
-  connection.onInitialize(() => ({
-    capabilities: {
-      textDocumentSync: TextDocumentSyncKind.Incremental,
-      codeActionProvider: { codeActionKinds: [CodeActionKind.QuickFix] },
-      hoverProvider: true,
-      definitionProvider: true,
-      referencesProvider: true,
-      documentSymbolProvider: true,
-      documentFormattingProvider: true,
-      renameProvider: { prepareProvider: true },
-      codeLensProvider: { resolveProvider: false },
-      semanticTokensProvider: {
-        legend: { tokenTypes: ["enum", "enumMember"], tokenModifiers: ["declaration"] },
-        full: true,
+  let tableClient = false;
+  connection.onInitialize((params) => {
+    tableClient = params.initializationOptions?.combinationTables === true;
+    return {
+      capabilities: {
+        executeCommandProvider: { commands: ["dxn.combinations"] },
+        textDocumentSync: TextDocumentSyncKind.Incremental,
+        codeActionProvider: { codeActionKinds: [CodeActionKind.QuickFix] },
+        hoverProvider: true,
+        definitionProvider: true,
+        referencesProvider: true,
+        documentSymbolProvider: true,
+        documentFormattingProvider: true,
+        renameProvider: { prepareProvider: true },
+        codeLensProvider: { resolveProvider: false },
+        semanticTokensProvider: {
+          legend: { tokenTypes: ["enum", "enumMember", "type"], tokenModifiers: ["declaration"] },
+          full: true,
+        },
       },
-    },
-  }));
+    };
+  });
   documents.onDidChangeContent(({ document: d }) => publish(d));
   documents.onDidClose(({ document: d }) =>
     connection.sendDiagnostics({ uri: d.uri, diagnostics: [] }),
@@ -111,20 +122,20 @@ export function serve(connection: Connection): void {
     const d = document(textDocument.uri);
     if (!d) return null;
     const symbol = symbolAt(d.getText(), d.offsetAt(position));
-    return symbol ? { uri: d.uri, range: range(d, symbol.span) } : null;
+    return symbol?.definition ? { uri: d.uri, range: range(d, symbol.definition) } : null;
   });
   connection.onReferences(({ textDocument, position, context }) => {
     const d = document(textDocument.uri);
-    if (!d || !context.includeDeclaration) return [];
-    const symbol = symbolAt(d.getText(), d.offsetAt(position));
-    // Enums currently have no reference syntax; each member is a declaration too.
-    return symbol ? [{ uri: d.uri, range: range(d, symbol.span) }] : [];
+    if (!d) return [];
+    return referencesAt(d.getText(), d.offsetAt(position), context.includeDeclaration).map(
+      (at) => ({ uri: d.uri, range: range(d, at) }),
+    );
   });
   connection.onPrepareRename(({ textDocument, position }) => {
     const d = document(textDocument.uri);
     if (!d) return null;
     const symbol = symbolAt(d.getText(), d.offsetAt(position));
-    return symbol?.kind === "enum"
+    return symbol?.kind === "enum" || symbol?.kind === "enumReference"
       ? { range: range(d, symbol.span), placeholder: symbol.name }
       : null;
   });
@@ -152,12 +163,12 @@ export function serve(connection: Connection): void {
     if (!d) return [];
     return analyze(d.getText()).declarations.map((e) => ({
       name: e.name.text,
-      kind: SymbolKind.Enum,
+      kind: isType(e) ? SymbolKind.Struct : SymbolKind.Enum,
       range: range(d, e.span),
       selectionRange: range(d, e.name.span),
-      children: e.values.map((v) => ({
+      children: (isType(e) ? e.varies : e.values).map((v) => ({
         name: v.text,
-        kind: SymbolKind.EnumMember,
+        kind: isType(e) ? SymbolKind.Enum : SymbolKind.EnumMember,
         range: range(d, v.span),
         selectionRange: range(d, v.span),
       })),
@@ -182,24 +193,59 @@ export function serve(connection: Connection): void {
           at.line,
           at.character,
           token.span.end - token.span.start,
-          token.kind === "enum" ? 0 : 1,
-          1,
+          token.kind === "enum" ? 0 : token.kind === "enumMember" ? 1 : 2,
+          token.declaration ? 1 : 0,
         );
       }
     return { data: builder.build().data };
+  });
+  connection.onExecuteCommand(({ command, arguments: args }) => {
+    const [uri, type] = args ?? [];
+    if (command !== "dxn.combinations" || typeof uri !== "string" || typeof type !== "string")
+      throw new ResponseError(
+        ErrorCodes.InvalidParams,
+        "expected an open DXN document and a type name",
+      );
+    const d = document(uri);
+    if (!d) throw new ResponseError(ErrorCodes.InvalidParams, "the DXN document is not open");
+    const result = listCombinations(d.getText(), type);
+    if (result.kind === "invalid")
+      throw new ResponseError(ErrorCodes.InvalidParams, result.message, {
+        problems: result.problems,
+      });
+    if (result.kind === "unknownType")
+      throw new ResponseError(ErrorCodes.InvalidParams, result.message, {
+        types: result.available,
+      });
+    const table = renderCombinationTables(result.types);
+    // VS Code opens a plaintext buffer. Generic LSP clients display the same table as an info message.
+    if (!tableClient)
+      connection.sendNotification(ShowMessageNotification.type, { type: 3, message: table });
+    return { types: result.types, table };
   });
   connection.onCodeLens(({ textDocument }) => {
     const d = document(textDocument.uri);
     if (!d) return [];
     const first = analyze(d.getText()).declarations[0];
-    return first
-      ? [
-          {
-            range: range(d, first.name.span),
-            command: { title: "Check", command: "dxn.run", arguments: [d.uri, ["check"]] },
-          },
-        ]
-      : [];
+    const counts = combinationCounts(d.getText()).map((t) => ({
+      range: range(d, t.span),
+      command: {
+        title: `${t.count} ${t.count === "1" ? "combination" : "combinations"}`,
+        command: "dxn.combinations",
+        arguments: [d.uri, t.type],
+      },
+    }));
+    return [
+      ...(first
+        ? [
+            {
+              range: range(d, first.name.span),
+              command: { title: "Check", command: "dxn.run", arguments: [d.uri, ["check"]] },
+            },
+          ]
+        : []),
+      ...counts,
+    ];
   });
   documents.listen(connection);
   connection.listen();

@@ -1,0 +1,73 @@
+[
+  {
+    "title": "forward references and Cartesian product",
+    "declarations": [
+      { "kind": "type", "name": "Button", "varies": ["Kind", "State"] },
+      { "name": "Kind", "values": ["primary", "secondary"] },
+      { "name": "State", "values": ["normal", "disabled"] }
+    ],
+    "rename": { "from": "Kind", "to": "Role" }
+  },
+  {
+    "title": "a type that does not vary",
+    "declarations": [{ "kind": "type", "name": "Logo", "varies": [] }]
+  },
+  {
+    "title": "T1 T2 T3 in rule order",
+    "declarations": [
+      { "kind": "type", "name": "button", "varies": ["Size", "Kind", "Kind", "Size"] },
+      { "name": "Kind", "values": ["primary"] }
+    ]
+  },
+  {
+    "title": "cross-kind name collision",
+    "declarations": [
+      { "name": "Button", "values": ["primary"] },
+      { "kind": "type", "name": "Button", "varies": ["Button"] }
+    ]
+  },
+  {
+    "title": "a type is not an enumeration",
+    "declarations": [
+      { "kind": "type", "name": "Button", "varies": [] },
+      { "kind": "type", "name": "Menu", "varies": ["Button"] }
+    ]
+  },
+  {
+    "title": "types may not share names",
+    "declarations": [
+      { "kind": "type", "name": "Button", "varies": [] },
+      { "kind": "type", "name": "Button", "varies": [] }
+    ]
+  },
+  {
+    "title": "rename is refused onto a type name",
+    "declarations": [
+      { "name": "Kind", "values": ["primary"] },
+      { "kind": "type", "name": "Button", "varies": ["Kind"] }
+    ],
+    "rename": { "from": "Kind", "to": "Button" }
+  },
+  {
+    "title": "a type cannot be the enumeration to rename",
+    "declarations": [{ "kind": "type", "name": "Button", "varies": [] }],
+    "rename": { "from": "Button", "to": "Menu" }
+  },
+  {
+    "title": "renaming to itself keeps references",
+    "declarations": [
+      { "name": "Kind", "values": ["primary"] },
+      { "kind": "type", "name": "Button", "varies": ["Kind"] }
+    ],
+    "rename": { "from": "Kind", "to": "Kind" }
+  },
+  {
+    "title": "every referencing type follows rename",
+    "declarations": [
+      { "kind": "type", "name": "Button", "varies": ["Kind"] },
+      { "name": "Kind", "values": ["primary", "secondary"] },
+      { "kind": "type", "name": "Menu", "varies": ["Kind"] }
+    ],
+    "rename": { "from": "Kind", "to": "Role" }
+  }
+]

@@ -14,12 +14,18 @@ it("agrees with the core parser on enum syntax and reads keyword values contextu
     "enum Light {\n off,\n on\n}",
     "enum Light {}",
     "enum light { Off, a--b, ön }",
-    "enum Light { enum, on, type, 01 }",
+    "enum Light { enum, on, type, varies, 01 }",
     "enum Light { off } enum Power { off }",
     "enum Light { on, }",
     "enum Light { on off }",
     "enum Light = off | on",
     "type Button {}",
+    "type Button { varies Kind, State } enum Kind { primary }",
+    "type type { varies enum, type, varies }",
+    "type Button { varies Kind, }",
+    "type Button { varies }",
+    "type Button { varies Kind State }",
+    "type Button { Kind }",
     "# note\nenum Light { off }",
     "enum Light { off",
   ];
@@ -30,65 +36,89 @@ it("agrees with the core parser on enum syntax and reads keyword values contextu
     return { source, accepted };
   });
   expect(snapshot).toMatchInlineSnapshot(`
-   [
-     {
-       "accepted": true,
-       "source": "",
-     },
-     {
-       "accepted": true,
-       "source": "enum Light{off,on}",
-     },
-     {
-       "accepted": true,
-       "source": "enum Light {
-    off,
-    on
-   }",
-     },
-     {
-       "accepted": true,
-       "source": "enum Light {}",
-     },
-     {
-       "accepted": true,
-       "source": "enum light { Off, a--b, ön }",
-     },
-     {
-       "accepted": true,
-       "source": "enum Light { enum, on, type, 01 }",
-     },
-     {
-       "accepted": true,
-       "source": "enum Light { off } enum Power { off }",
-     },
-     {
-       "accepted": false,
-       "source": "enum Light { on, }",
-     },
-     {
-       "accepted": false,
-       "source": "enum Light { on off }",
-     },
-     {
-       "accepted": false,
-       "source": "enum Light = off | on",
-     },
-     {
-       "accepted": false,
-       "source": "type Button {}",
-     },
-     {
-       "accepted": false,
-       "source": "# note
-   enum Light { off }",
-     },
-     {
-       "accepted": false,
-       "source": "enum Light { off",
-     },
-   ]
- `);
+    [
+      {
+        "accepted": true,
+        "source": "",
+      },
+      {
+        "accepted": true,
+        "source": "enum Light{off,on}",
+      },
+      {
+        "accepted": true,
+        "source": "enum Light {
+     off,
+     on
+    }",
+      },
+      {
+        "accepted": true,
+        "source": "enum Light {}",
+      },
+      {
+        "accepted": true,
+        "source": "enum light { Off, a--b, ön }",
+      },
+      {
+        "accepted": true,
+        "source": "enum Light { enum, on, type, varies, 01 }",
+      },
+      {
+        "accepted": true,
+        "source": "enum Light { off } enum Power { off }",
+      },
+      {
+        "accepted": false,
+        "source": "enum Light { on, }",
+      },
+      {
+        "accepted": false,
+        "source": "enum Light { on off }",
+      },
+      {
+        "accepted": false,
+        "source": "enum Light = off | on",
+      },
+      {
+        "accepted": true,
+        "source": "type Button {}",
+      },
+      {
+        "accepted": true,
+        "source": "type Button { varies Kind, State } enum Kind { primary }",
+      },
+      {
+        "accepted": true,
+        "source": "type type { varies enum, type, varies }",
+      },
+      {
+        "accepted": false,
+        "source": "type Button { varies Kind, }",
+      },
+      {
+        "accepted": false,
+        "source": "type Button { varies }",
+      },
+      {
+        "accepted": false,
+        "source": "type Button { varies Kind State }",
+      },
+      {
+        "accepted": false,
+        "source": "type Button { Kind }",
+      },
+      {
+        "accepted": false,
+        "source": "# note
+    enum Light { off }",
+      },
+      {
+        "accepted": false,
+        "source": "enum Light { off",
+      },
+    ]
+  `);
 });
 it("compiles every Zed syntax query against the redesigned grammar", () => {
   for (const file of ["highlights", "indents", "outline", "brackets", "runnables", "overrides"]) {
@@ -162,4 +192,25 @@ it("preserves the same names, values and UTF-16 spans as the core parser", () =>
     }));
     expect(declarations, source).toEqual(parse(source).declarations);
   }
+});
+
+it.each([
+  "type Logo {}",
+  "type Button { varies Kind, State }",
+  "type button { varies Missing, Missing }",
+])("reads type fields and spans consistently: %s", (source) => {
+  const tree = parser.parse(source);
+  expect(tree.rootNode.hasError).toBe(false);
+  const named = (n: Parser.SyntaxNode) => ({
+    text: n.text,
+    span: { start: n.startIndex, end: n.endIndex },
+  });
+  expect(
+    tree.rootNode.namedChildren.map((n) => ({
+      kind: "type",
+      name: named(n.childForFieldName("name") as Parser.SyntaxNode),
+      varies: n.childrenForFieldName("varies").map(named),
+      span: { start: n.startIndex, end: n.endIndex },
+    })),
+  ).toEqual(parse(source).declarations);
 });

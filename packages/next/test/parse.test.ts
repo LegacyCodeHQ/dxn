@@ -1,3 +1,4 @@
+import { isEnumeration } from "@next/model/type.js";
 import { parse } from "@next/syntax/parse.js";
 import { describe, expect, it } from "vitest";
 
@@ -8,9 +9,11 @@ import { describe, expect, it } from "vitest";
 const read = (source: string) => {
   const { declarations, problems } = parse(source);
   return {
-    declarations: declarations.map(
-      ({ name, values }) => `${name.text} { ${values.map((value) => value.text).join(", ")} }`,
-    ),
+    declarations: declarations
+      .filter(isEnumeration)
+      .map(
+        ({ name, values }) => `${name.text} { ${values.map((value) => value.text).join(", ")} }`,
+      ),
     problems: problems.map(({ message }) => message),
   };
 };
@@ -152,7 +155,7 @@ describe("reading enumerations", () => {
         {
           "declarations": [],
           "problems": [
-            "expected 'enum', found 'Light'",
+            "expected 'enum' or 'type', found 'Light'",
           ],
         },
         {
@@ -191,7 +194,7 @@ describe("reading enumerations", () => {
 
   it("says where each name is", () => {
     const source = "enum Light {\n  off,\n  on\n}";
-    const [light] = parse(source).declarations;
+    const [light] = parse(source).declarations.filter(isEnumeration);
     const where = ({ text, span }: { text: string; span: { start: number; end: number } }) =>
       `${text} ${span.start}-${span.end} ${JSON.stringify(source.slice(span.start, span.end))}`;
     const snapshot: unknown[] = [];

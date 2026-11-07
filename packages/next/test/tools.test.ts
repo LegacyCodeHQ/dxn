@@ -85,6 +85,10 @@ describe("enum tools", () => {
     }).toMatchInlineSnapshot(`
       {
         "name": {
+          "definition": {
+            "end": 10,
+            "start": 5,
+          },
           "kind": "enum",
           "name": "Light",
           "signature": "enum Light { enum, on }",
@@ -138,12 +142,14 @@ describe("enum tools", () => {
                 },
               },
             ],
+            "types": [],
           },
           "refusals": [],
           "source": "enum Lamp { enum, on }",
         },
         "tokens": [
           {
+            "declaration": true,
             "kind": "enum",
             "span": {
               "end": 10,
@@ -151,6 +157,7 @@ describe("enum tools", () => {
             },
           },
           {
+            "declaration": true,
             "kind": "enumMember",
             "span": {
               "end": 17,
@@ -158,6 +165,7 @@ describe("enum tools", () => {
             },
           },
           {
+            "declaration": true,
             "kind": "enumMember",
             "span": {
               "end": 21,
@@ -166,6 +174,10 @@ describe("enum tools", () => {
           },
         ],
         "value": {
+          "definition": {
+            "end": 21,
+            "start": 19,
+          },
           "kind": "value",
           "name": "on",
           "signature": "Light.on",
@@ -182,7 +194,10 @@ describe("enum tools", () => {
     const formatted = format(source);
     expect(format(formatted ?? "")).toBe(formatted);
     const names = (text: string) =>
-      analyze(text).declarations.map((d) => [d.name.text, d.values.map((v) => v.text)]);
+      analyze(text).declarations.map((d) => [
+        d.name.text,
+        ("values" in d ? d.values : d.varies).map((v) => v.text),
+      ]);
     expect(names(formatted ?? "")).toEqual(names(source));
   });
 });

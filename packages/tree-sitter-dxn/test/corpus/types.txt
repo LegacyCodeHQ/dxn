@@ -1,0 +1,23 @@
+==================
+types and forward references
+==================
+type Button { varies Kind, State }
+enum Kind { primary, secondary }
+enum State { normal, disabled }
+type Logo {}
+---
+(source_file
+ (type_declaration (type_name) (type_name) (type_name))
+ (enum_declaration (type_name) (value) (value))
+ (enum_declaration (type_name) (value) (value))
+ (type_declaration (type_name)))
+
+==================
+keywords and invalid names remain names
+==================
+type type { varies enum, type, varies }
+type button { varies Missing, Missing }
+---
+(source_file
+ (type_declaration (type_name) (type_name) (type_name) (type_name))
+ (type_declaration (type_name) (type_name) (type_name)))

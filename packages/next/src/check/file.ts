@@ -1,25 +1,36 @@
-import type { EnumDeclaration, Span, Value } from "@next/model/enumeration.js";
+import type { Span, Value } from "@next/model/enumeration.js";
 import { fileRules } from "@next/model/rules.js";
+import { type Declaration, isEnumeration, isType, type TypeDeclaration } from "@next/model/type.js";
 import { acceptEnum, checkEnum, type Enum, type EnumProblem, frozen } from "./enumeration.js";
+import { product } from "./product.js";
+import { checkType, frozenType, type TypeProblem } from "./type.js";
 
 // The file checker of lean/Dxn/File.lean. It reports the same problems, for the
 // same names, in the same order; it adds where each one is written.
 
-/** A problem with a file: one of an enumeration's own, or an enumeration name written twice. */
+/** A problem with a file: a declaration's own problem, or a name written twice. */
 export type FileProblem =
   | { kind: "enum"; rule: EnumProblem["rule"]; name: string; problem: EnumProblem }
-  | { kind: "duplicateEnum"; rule: typeof fileRules.duplicateEnum; name: string; at: Span[] };
+  | { kind: "type"; rule: TypeProblem["rule"]; name: string; problem: TypeProblem }
+  | { kind: "duplicateName"; rule: typeof fileRules.duplicateName; name: string; at: Span[] };
 
 /**
  * Every problem with a file's declarations: each declaration's own, in written order, then each
- * enumeration name written more than once, once, in the order it first appears, with every
+ * declaration name written more than once, once, in the order it first appears, with every
  * declaration that has it. No problems means it is accepted.
  */
-export function checkFile(declarations: readonly EnumDeclaration[]): FileProblem[] {
+export function checkFile(declarations: readonly Declaration[]): FileProblem[] {
   const problems: FileProblem[] = [];
+  const enums = new Set(declarations.filter(isEnumeration).map((d) => d.name.text));
   for (const declaration of declarations) {
-    for (const problem of checkEnum(declaration)) {
-      problems.push({ kind: "enum", rule: problem.rule, name: declaration.name.text, problem });
+    if (isType(declaration)) {
+      for (const problem of checkType(enums, declaration)) {
+        problems.push({ kind: "type", rule: problem.rule, name: declaration.name.text, problem });
+      }
+    } else {
+      for (const problem of checkEnum(declaration)) {
+        problems.push({ kind: "enum", rule: problem.rule, name: declaration.name.text, problem });
+      }
     }
   }
   const written = new Map<string, Span[]>();
@@ -30,7 +41,7 @@ export function checkFile(declarations: readonly EnumDeclaration[]): FileProblem
   }
   for (const [name, at] of written) {
     if (at.length > 1)
-      problems.push({ kind: "duplicateEnum", rule: fileRules.duplicateEnum, name, at });
+      problems.push({ kind: "duplicateName", rule: fileRules.duplicateName, name, at });
   }
   return problems;
 }
@@ -42,15 +53,41 @@ export function checkFile(declarations: readonly EnumDeclaration[]): FileProblem
 export class CheckedFile {
   declare private readonly checked: true;
 
-  private constructor(readonly enums: readonly Enum[]) {}
+  private constructor(
+    readonly enums: readonly Enum[],
+    readonly types: readonly TypeDeclaration[],
+  ) {}
 
   /** Check a file: a checked file when it has no problems, else its problems. */
-  static accept(declarations: readonly EnumDeclaration[]): AcceptedFile {
-    const copies = declarations.map(frozen);
+  static accept(declarations: readonly Declaration[]): AcceptedFile {
+    const copies = declarations.map((d) => (isType(d) ? frozenType(d) : frozen(d)));
     const problems = checkFile(copies);
     if (problems.length > 0) return { file: undefined, problems };
-    const enums = copies.flatMap((copy) => acceptEnum(copy).enum ?? []);
-    return { file: new CheckedFile(Object.freeze(enums)), problems: [] };
+    const enums = copies.filter(isEnumeration).flatMap((copy) => acceptEnum(copy).enum ?? []);
+    return {
+      file: new CheckedFile(Object.freeze(enums), Object.freeze(copies.filter(isType))),
+      problems: [],
+    };
+  }
+
+  /** Count without enumerating; rows are generated only when the caller asks for them. */
+  get products() {
+    const values = new Map(this.enums.map((e) => [e.declaration.name.text, e.values]));
+    return this.types.map((t) => {
+      const factors = t.varies.map((n) => values.get(n.text) ?? []);
+      return {
+        type: t.name.text,
+        span: t.name.span,
+        varies: t.varies.map((n) => n.text),
+        count: factors.reduce((size, factor) => size * BigInt(factor.length), 1n),
+        rows: () => product(factors),
+      };
+    });
+  }
+
+  /** The Cartesian product for each type, in written order, first factor changing slowest. */
+  get combinations(): { type: string; combinations: Value[][] }[] {
+    return this.products.map((p) => ({ type: p.type, combinations: [...p.rows()] }));
   }
 
   /** Its values, in written order, each tagged with its enumeration's name. */
@@ -65,6 +102,6 @@ export type AcceptedFile =
   | { file: undefined; problems: FileProblem[] };
 
 /** Check a file: a checked file when it has no problems, else its problems. */
-export function acceptFile(declarations: readonly EnumDeclaration[]): AcceptedFile {
+export function acceptFile(declarations: readonly Declaration[]): AcceptedFile {
   return CheckedFile.accept(declarations);
 }

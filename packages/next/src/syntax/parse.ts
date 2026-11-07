@@ -1,10 +1,13 @@
 import type { EnumDeclaration, Name, Span } from "@next/model/enumeration.js";
+import type { Declaration, TypeDeclaration } from "@next/model/type.js";
 import { scan, type Token } from "./scan.js";
 
-// The grammar of lean/notes/enumerations.md:
+// The syntax contract in notebook/reference/{enumerations,types}.md:
 //
 //   file        = declaration*
-//   declaration = "enum" word "{" [ word { "," word } ] "}"
+//   declaration = enumeration | type
+//   enumeration = "enum" word "{" [ word { "," word } ] "}"
+//   type        = "type" word "{" [ "varies" word { "," word } ] "}"
 //
 // Empty braces are read, so the checker can report an enumeration with no
 // values. A trailing comma is a syntax error. Reading stops at the first
@@ -18,7 +21,7 @@ export interface SyntaxProblem {
 
 /** What a source reads as: its declarations, and the syntax error that stopped reading, if any. */
 export interface ParsedFile {
-  declarations: EnumDeclaration[];
+  declarations: Declaration[];
   problems: SyntaxProblem[];
 }
 
@@ -39,7 +42,7 @@ function shown(token: Token): string {
   }
 }
 
-/** Read a source's enumeration declarations. */
+/** Read a source's enumeration and type declarations. */
 export function parse(source: string): ParsedFile {
   const tokens = scan(source);
   const end: Token = { kind: "end", span: { start: source.length, end: source.length } };
@@ -62,7 +65,7 @@ export function parse(source: string): ParsedFile {
     return token.span;
   };
 
-  const declaration = (): EnumDeclaration => {
+  const enumeration = (): EnumDeclaration => {
     const keyword = peek();
     if (keyword.kind !== "word" || keyword.text !== "enum") fail("'enum'");
     next++;
@@ -86,7 +89,38 @@ export function parse(source: string): ParsedFile {
     return { name, values, span: { start: keyword.span.start, end: close.end } };
   };
 
-  const declarations: EnumDeclaration[] = [];
+  const typeDeclaration = (): TypeDeclaration => {
+    const keyword = peek();
+    next++;
+    const name = word("a type name after 'type'");
+    punctuation("{", "'{' after the type name");
+    const varies: Name[] = [];
+    if (peek().kind !== "}") {
+      const token = peek();
+      if (token.kind !== "word" || token.text !== "varies") fail("'varies' or '}'");
+      next++;
+      varies.push(word("an enumeration name after 'varies'"));
+      while (peek().kind === ",") {
+        const comma = punctuation(",", "','");
+        if (peek().kind === "}") {
+          throw new Stop({
+            message: "a trailing comma is not allowed after the last enumeration",
+            at: comma,
+          });
+        }
+        varies.push(word("an enumeration name after ','"));
+      }
+    }
+    const close = punctuation("}", varies.length ? "',' or '}' after an enumeration name" : "'}'");
+    return { kind: "type", name, varies, span: { start: keyword.span.start, end: close.end } };
+  };
+  const declaration = (): Declaration => {
+    const token = peek();
+    if (token.kind === "word" && token.text === "type") return typeDeclaration();
+    if (token.kind === "word" && token.text === "enum") return enumeration();
+    return fail("'enum' or 'type'");
+  };
+  const declarations: Declaration[] = [];
   try {
     while (peek().kind !== "end") declarations.push(declaration());
   } catch (error) {

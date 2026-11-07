@@ -120,7 +120,7 @@ it("renames through the shared refactoring and leaves a refused rename untouched
       "refused": {
         "code": 1,
         "stderr": "",
-        "stdout": "{"file":"test.dxn","refusals":[{"kind":"enumExists","rule":"RE4","name":"Power","at":{"start":27,"end":32}}]}
+        "stdout": "{"file":"test.dxn","refusals":[{"kind":"nameExists","rule":"RE4","name":"Power","at":{"start":27,"end":32}}]}
     ",
       },
       "source": "enum Lamp { off, on }
@@ -147,4 +147,66 @@ it("does not overwrite malformed source when formatting is requested", () => {
   expect(result.code).toBe(1);
   expect(JSON.parse(result.stdout).problems[0].code).toBe("syntax-error");
   expect(readFileSync(join(cwd, "test.dxn"), "utf8")).toBe(source);
+});
+
+it("lists all types or a selected type as the documented table and keyed JSON", () => {
+  const { invoke } = setup(
+    "type Button { varies Kind, State } enum Kind { primary, secondary } enum State { normal, disabled } type Logo {}",
+  );
+  expect(invoke(["combinations", "test.dxn"])).toMatchInlineSnapshot(`
+    {
+      "code": 0,
+      "stderr": "",
+      "stdout": "Button: 4 combinations
+
+      #  Kind       State
+      1  primary    normal
+      2  primary    disabled
+      3  secondary  normal
+      4  secondary  disabled
+
+    Logo: 1 combination (varies over nothing)
+    ",
+    }
+  `);
+  const selected = invoke(["combinations", "test.dxn", "Button", "--json"]);
+  expect(selected.code).toBe(0);
+  expect(JSON.parse(selected.stdout)).toEqual({
+    types: [
+      {
+        type: "Button",
+        varies: ["Kind", "State"],
+        count: 4,
+        combinations: [
+          { Kind: "primary", State: "normal" },
+          { Kind: "primary", State: "disabled" },
+          { Kind: "secondary", State: "normal" },
+          { Kind: "secondary", State: "disabled" },
+        ],
+      },
+    ],
+  });
+  expect(JSON.parse(invoke(["combinations", "test.dxn", "Logo", "--json"]).stdout)).toEqual({
+    types: [{ type: "Logo", varies: [], count: 1, combinations: [{}] }],
+  });
+});
+
+it("reports invalid files exactly as check and unknown types as usage errors", () => {
+  const invalid = setup("type Button { varies Missing }");
+  expect(invalid.invoke(["combinations", "test.dxn", "--json"])).toEqual(
+    invalid.invoke(["check", "test.dxn", "--json"]),
+  );
+  const valid = setup("type Logo {}");
+  expect(valid.invoke(["combinations", "test.dxn", "Missing", "--json"])).toMatchInlineSnapshot(`
+    {
+      "code": 2,
+      "stderr": "",
+      "stdout": "{"file":"test.dxn","error":"type 'Missing' is not declared; available types: Logo","types":["Logo"]}
+    ",
+    }
+  `);
+  expect(valid.invoke(["combinations", "test.dxn", "Missing"]).code).toBe(2);
+  expect(setup("enum Kind { primary }").invoke(["combinations", "test.dxn"]).stdout).toBe(
+    "no types declared\n",
+  );
 });

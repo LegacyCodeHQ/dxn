@@ -4,6 +4,7 @@ import { expect, it } from "vitest";
 
 it.each([
   ["enum light { off }", "light", "Light", "E1"],
+  ["type button {}", "button", "Button", "T1"],
   ["enum Light { noKeyboard }", "noKeyboard", "no-keyboard", "E3"],
   ["enum Light {\r\n  Off,\r\n  on\r\n}", "Off", "off", "E3"],
 ] as const)("corrects only the offending name in %s", (source, name, replacement, rule) => {
@@ -24,6 +25,8 @@ it.each([
 });
 
 it.each([
+  "type button {} enum Button { primary }",
+  "enum button { primary } type Button {}",
   "enum Light { Off, off }",
   "enum light { off } enum Light { on }",
   "enum Light { ön }",
