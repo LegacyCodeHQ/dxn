@@ -34,7 +34,7 @@ specified in Lean yet.
 ## Syntax
 
 ```text
-record = "record" name "{" [ field { newline field } ] [ check ] "}"
+record = "record" name "{" [ field { newline field } ] { check } "}"
 check  = "check" "{" [ field { newline field } ] "}"
 field  = name ":" name
 ```
@@ -47,6 +47,9 @@ a record of the file.
 - **`check { … }`**, with fields: the checker records the outcome and the
   fields.
 - **No `check` block:** the record's entries are made only.
+
+The grammar reads any number of `check` blocks, so the checker can report a
+second one, [C1](#c1), as it reports a record with no fields.
 
 ## What a check holds
 
@@ -90,10 +93,19 @@ and never changes status.
 
 ## Which entry a check is of
 
-A check is of one specific entry: the one equal, field by field, to what the
-checker saw, as [equality](./records#values-and-equality) of record values
-says. If the maker records a different entry for the same combination, the
-earlier check is not of it. That is what will let a check go out of date.
+A record's value does not say which entry it is. Two combinations may each
+have an entry with the value `{ fidelity: final }`: the values are
+[equal](./records#values-and-equality), but approving one entry must not
+approve the other.
+
+So an entry is at least the combination it is about and its value, and a check
+is of that pair. A check of one combination's entry never counts for another
+combination. If the maker records a different value for the same combination,
+the earlier check is not of it. That is what will let a check go out of date.
+
+If an entry's value changes and then changes back, from A to B and back to A,
+whether the earlier check of A counts again depends on which check is current.
+That is deferred with the order: see [Deferred](#deferred).
 
 ## Checker rules
 
@@ -106,8 +118,23 @@ Fields in a `check` block follow the rules for a record's fields:
 | [C3](#c3) | No two check fields share a name                                   | `severity: Severity` twice in `check`  | `duplicateCheckField severity`   |
 | [C4](#c4) | Every check field's type is an enumeration or a record of the file | `when: Timestamp`, with no `Timestamp` | `noSuchCheckFieldType Timestamp` |
 
-[R6](./records#r6), a record containing itself, follows check fields too: a
-record used in a check may not contain the record it checks.
+A record's values are its own fields' values only. A check is a separate
+value about an entry, not part of the record's value, so a record value nested
+in another never includes a check. A check field may therefore name the record
+it checks:
+
+```dxn
+record Design {
+  fidelity: Fidelity
+
+  check {
+    snapshot: Design
+  }
+}
+```
+
+`snapshot` holds a value of `Design`'s own fields, which is finite, so
+[R6](./records#r6), a record containing itself, does not follow check fields.
 
 The record's fields and the check's fields are separate scopes: a check field
 may share a name with a field of the record, such as `fidelity` in both, for
@@ -146,21 +173,23 @@ As [R5](./records#r5).
 
 ## Decisions
 
-| Decision                                                                   | Why                                                                                   | Rejected                                                    |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Checking is declared inside the record, in a `check` block                 | What is checked and how it is checked are read in one place                           | A separate check record that names the record it checks     |
-| The block always has braces, empty or not                                  | One form for every check; empty braces say "outcome only"                             | A bare `check` with no braces                               |
-| Every check has a built-in outcome, `approved` or `rejected`               | Checking needs no enumeration of its own, and nothing refers to an enumeration value  | Each model declares its verdict and says which value passes |
-| The outcome decides status; the block's fields never do                    | Status means the same in every model, and the language decides it once for every tool | Fields that affect status, such as "`major` blocks"         |
-| A check field's type is an enumeration or a record, as a record field's is | One way to write data                                                                 |                                                             |
-| The maker and the checker are implicit                                     | Every record's entries are made; a `check` block adds a checker                       | Declaring actors on each record                             |
-| A check field may share a name with a field of the record                  | The two are separate scopes: what the maker records and what the checker records      | Names unique across both, with a rule against reuse         |
+| Decision                                                                   | Why                                                                                       | Rejected                                                    |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Checking is declared inside the record, in a `check` block                 | What is checked and how it is checked are read in one place                               | A separate check record that names the record it checks     |
+| The block always has braces, empty or not                                  | One form for every check; empty braces say "outcome only"                                 | A bare `check` with no braces                               |
+| Every check has a built-in outcome, `approved` or `rejected`               | Checking needs no enumeration of its own, and nothing refers to an enumeration value      | Each model declares its verdict and says which value passes |
+| The outcome decides status; the block's fields never do                    | Status means the same in every model, and the language decides it once for every tool     | Fields that affect status, such as "`major` blocks"         |
+| A check field's type is an enumeration or a record, as a record field's is | One way to write data                                                                     |                                                             |
+| The maker and the checker are implicit                                     | Every record's entries are made; a `check` block adds a checker                           | Declaring actors on each record                             |
+| A record's values never include checks; R6 does not follow check fields    | A check is a separate value about an entry; a check field naming its own record is finite | Extending R6 to check fields                                |
+| A check field may share a name with a field of the record                  | The two are separate scopes: what the maker records and what the checker records          | Names unique across both, with a rule against reuse         |
 
 ## Deferred
 
-| Question                                                        | Decide when                 |
-| --------------------------------------------------------------- | --------------------------- |
-| Who the maker and the checker are, and whether they must differ | Recording facts is designed |
-| Where entries and checks are kept                               | Recording facts is designed |
-| Which entry and which check are current: their order            | Recording facts is designed |
-| When a check goes out of date                                   | Recording facts is designed |
+| Question                                                            | Decide when                 |
+| ------------------------------------------------------------------- | --------------------------- |
+| Who the maker and the checker are, and whether they must differ     | Recording facts is designed |
+| Where entries and checks are kept                                   | Recording facts is designed |
+| Which entry and which check are current: their order                | Recording facts is designed |
+| Whether a check counts again when a value changes back, A to B to A | Recording facts is designed |
+| When a check goes out of date                                       | Recording facts is designed |
