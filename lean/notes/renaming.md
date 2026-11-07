@@ -1,6 +1,6 @@
-# Renaming an enumeration
+# Renaming a declaration
 
-The decisions, reasons for refusing and implementation notes for renaming an
-enumeration are in the design notebook:
-[`notebook/refactoring/rename-enumeration.md`](../../notebook/refactoring/rename-enumeration.md).
+The decisions, reasons for refusing and implementation notes for renaming a
+declaration are in the design notebook:
+[`notebook/refactoring/rename-declaration.md`](../../notebook/refactoring/rename-declaration.md).
 Its reasons for refusing have the IDs RE1 to RE4.

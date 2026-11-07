@@ -120,7 +120,7 @@ that changes nothing. Renaming `Light` to `Light` is the identity.
 
 ## In Lean
 
-Renaming an enumeration is where the language uses a bijection. The function
+Renaming a declaration is where the language uses a bijection. The function
 that sends each name, declaration and value to its renamed one:
 
 <<< lean:lean/Dxn/Rename.lean#map
@@ -129,15 +129,15 @@ Lean proves, for every file and every rename that is not refused:
 
 | Idea                                                    | Lean                   |
 | ------------------------------------------------------- | ---------------------- |
-| Each value goes to its renamed value                    | `values_of_renameEnum` |
-| No two values go to the same one: the map is one-to-one | `injOn_of_renameEnum`  |
-| The inverse: renaming back gives back the model         | `renameEnum_undo`      |
-| Composition: two renames in a row are one rename        | `renameEnum_comp`      |
-| The identity: renaming to its own name changes nothing  | `renameEnum_self`      |
+| Each value goes to its renamed value                    | `values_of_renameDecl` |
+| No two values go to the same one: the map is one-to-one | `injOn_of_renameDecl`  |
+| The inverse: renaming back gives back the model         | `renameDecl_undo`      |
+| Composition: two renames in a row are one rename        | `renameDecl_comp`      |
+| The identity: renaming to its own name changes nothing  | `renameDecl_self`      |
 
 The first two together say the map is a bijection onto the new model's values:
 every new value comes from exactly one old value. How a rename is checked and
-refused is in [Renaming an enumeration](../refactoring/rename-enumeration).
+refused is in [Renaming a declaration](../refactoring/rename-declaration).
 
 ## Notation
 

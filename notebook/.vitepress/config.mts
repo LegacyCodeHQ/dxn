@@ -41,7 +41,7 @@ export default defineConfig({
         text: "Refactoring",
         items: [
           { text: "Overview", link: "/refactoring/" },
-          { text: "Renaming an enumeration", link: "/refactoring/rename-enumeration" },
+          { text: "Renaming a declaration", link: "/refactoring/rename-declaration" },
         ],
       },
     ],
