@@ -32,7 +32,10 @@ export default defineConfig({
       },
       {
         text: "Refactoring",
-        items: [{ text: "Overview", link: "/refactoring/" }],
+        items: [
+          { text: "Overview", link: "/refactoring/" },
+          { text: "Renaming an enumeration", link: "/refactoring/rename-enumeration" },
+        ],
       },
     ],
     outline: { level: [2, 3] },

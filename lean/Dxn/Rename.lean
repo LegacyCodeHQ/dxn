@@ -17,6 +17,7 @@ the same name changes nothing, and two renames in a row are one rename.
 
 namespace Dxn
 
+-- #region refusals
 /-- Why a rename is refused, in the order they are reported. -/
 inductive RenameError where
   /-- The file has problems: a rename starts only from a file the checker accepts. -/
@@ -28,7 +29,9 @@ inductive RenameError where
   /-- Another enumeration already has the new name. -/
   | enumExists (name : Name)
   deriving Repr, DecidableEq
+-- #endregion refusals
 
+-- #region map
 /-- A name after the rename: the new name if it was the old one, else as it was. -/
 def renameName (old new n : Name) : Name :=
   if n = old then new else n
@@ -40,7 +43,9 @@ def EnumDecl.rename (old new : Name) (d : EnumDecl) : EnumDecl :=
 /-- A value after the rename: it keeps its name, and takes the new enumeration name. -/
 def Value.renameEnum (old new : Name) (v : Value) : Value :=
   { v with enum := renameName old new v.enum }
+-- #endregion map
 
+-- #region rename
 /-- Every reason a rename is refused. None means it is done. -/
 def renameErrors (f : File) (old new : Name) : List RenameError :=
   if f.check = [] then
@@ -53,6 +58,7 @@ def renameErrors (f : File) (old new : Name) : List RenameError :=
 def renameEnum (f : File) (old new : Name) : Except (List RenameError) File :=
   if renameErrors f old new = [] then .ok ⟨f.decls.map (EnumDecl.rename old new)⟩
   else .error (renameErrors f old new)
+-- #endregion rename
 
 /-- A rename happens exactly when the file is valid, the new name follows the rules, the old
 name is an enumeration's, and the new name is no other enumeration's. -/
