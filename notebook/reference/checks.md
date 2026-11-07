@@ -128,7 +128,7 @@ Fields in a `check` block follow the rules for a record's fields:
 | --------- | ------------------------------------------------------------------ | -------------------------------------- | -------------------------------- |
 | [C1](#c1) | A record has at most one `check` block                             | `check { }` twice                      | `duplicateCheck`                 |
 | [C2](#c2) | Every check field name follows the naming rules for values         | `Severity: Severity` in `check`        | `badCheckFieldName Severity`     |
-| [C3](#c3) | No two check fields share a name                                   | `severity: Severity` twice in `check`  | `duplicateCheckField severity`   |
+| [C3](#c3) | No two check fields in one `check` block share a name              | `severity: Severity` twice in `check`  | `duplicateCheckField severity`   |
 | [C4](#c4) | Every check field's type is an enumeration or a record of the file | `when: Timestamp`, with no `Timestamp` | `noSuchCheckFieldType Timestamp` |
 
 A record is accepted exactly when it breaks none of R1 to R6 and C1 to C4.
@@ -177,10 +177,12 @@ As [R3](./records#r3).
 
 **Lean:** `badCheckFieldName_mem_checkRecord`.
 
-### C3: No two check fields share a name {#c3}
+### C3: No two check fields in one `check` block share a name {#c3}
 
-As [R4](./records#r4). With more than one `check` block, which C1 reports, the
-names are compared across every block, as they would be once merged.
+As [R4](./records#r4). Names are compared within each block only. A second
+block is C1's to report: deleting it may be the fix, so a name it repeats is
+not reported. Each name is reported once, block by block, in the order it is
+first written.
 
 **Why:** fields are found by name.
 
@@ -211,8 +213,8 @@ record design {
 ```
 
 reports R1 `badRecordName design`, R2 `noFields`, C1 `duplicateCheck`, C2
-`badCheckFieldName Bad`, C3 `duplicateCheckField Bad`, then C4
-`noSuchCheckFieldType Missing`.
+`badCheckFieldName Bad`, then C4 `noSuchCheckFieldType Missing`. `Bad` in both
+blocks is not C3: each block has it once.
 
 ## In Lean
 
@@ -255,6 +257,7 @@ check (`File.valuesWithin`).
 | The maker and the checker are implicit                                     | Every record's entries are made; a `check` block adds a checker                           | Declaring actors on each record                            |
 | A record's values never include checks; R6 does not follow check fields    | A check is a separate value about an entry; a check field naming its own record is finite | Extending R6 to check fields                               |
 | A check field may share a name with a field of the record                  | The two are separate scopes: what the maker records and what the checker records          | Names unique across both, with a rule against reuse        |
+| C3 compares check field names within each block only                       | C1 reports a second block, and deleting it may be the fix                                 | Comparing names across every block, as if merged           |
 
 ## Deferred
 

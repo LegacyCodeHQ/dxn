@@ -16,7 +16,7 @@ on the file's other records, so a file checks it.
 A record may have `check` blocks, each a list of fields the checker records
 about an entry. Each is read as written, so a second block can be reported
 (C1). Check fields follow the rules for fields: names for values (C2), none
-twice (C3) and types the file has (C4). A record's values are its own fields'
+twice within a block (C3) and types the file has (C4). A record's values are its own fields'
 only, so R6 does not follow check fields.
 -/
 
@@ -46,6 +46,11 @@ def RecordDecl.checkFields (r : RecordDecl) : List (Name × Name) :=
 /-- The names of a record's check fields, in written order. -/
 def RecordDecl.checkFieldNames (r : RecordDecl) : List Name :=
   r.checkFields.map (·.1)
+
+/-- The check field names written more than once within a `check` block, each once, block by
+block in written order. -/
+def RecordDecl.duplicateCheckFieldNames (r : RecordDecl) : List Name :=
+  (r.checks.flatMap fun block => duplicates (block.map (·.1))).eraseDups
 
 /-- The types of a record's check fields, in written order. -/
 def RecordDecl.checkFieldTypes (r : RecordDecl) : List Name :=
@@ -113,7 +118,7 @@ def checkRecord (enums records : List Name) (r : RecordDecl) : List RecordError 
   (unknownFieldTypes enums records r).map .noSuchFieldType ++
   (if 2 ≤ r.checks.length then [.duplicateCheck] else []) ++
   (badValueNames r.checkFieldNames).map .badCheckFieldName ++
-  (duplicates r.checkFieldNames).map .duplicateCheckField ++
+  r.duplicateCheckFieldNames.map .duplicateCheckField ++
   (unknownCheckFieldTypes enums records r).map .noSuchCheckFieldType
 -- #endregion check
 
@@ -129,7 +134,7 @@ structure RecordDecl.Valid (enums records : List Name) (r : RecordDecl) : Prop w
   known : ∀ n ∈ r.fieldTypes, n ∈ enums ∨ n ∈ records
   oneCheck : r.checks.length ≤ 1
   checkFieldNames : ∀ n ∈ r.checkFieldNames, isValueName n
-  checkNodup : r.checkFieldNames.Nodup
+  checkNodup : ∀ block ∈ r.checks, (block.map (·.1)).Nodup
   checkKnown : ∀ n ∈ r.checkFieldTypes, n ∈ enums ∨ n ∈ records
 -- #endregion valid
 
@@ -138,7 +143,8 @@ theorem RecordDecl.valid_iff (enums records : List Name) (r : RecordDecl) :
       isEnumName r.name ∧ r.fields ≠ [] ∧ (∀ n ∈ r.fieldNames, isValueName n) ∧
         r.fieldNames.Nodup ∧ (∀ n ∈ r.fieldTypes, n ∈ enums ∨ n ∈ records) ∧
         r.checks.length ≤ 1 ∧ (∀ n ∈ r.checkFieldNames, isValueName n) ∧
-        r.checkFieldNames.Nodup ∧ (∀ n ∈ r.checkFieldTypes, n ∈ enums ∨ n ∈ records) :=
+        (∀ block ∈ r.checks, (block.map (·.1)).Nodup) ∧
+        (∀ n ∈ r.checkFieldTypes, n ∈ enums ∨ n ∈ records) :=
   ⟨fun ⟨a, b, c, d, e, f, g, h, i⟩ => ⟨a, b, c, d, e, f, g, h, i⟩,
     fun ⟨a, b, c, d, e, f, g, h, i⟩ => ⟨a, b, c, d, e, f, g, h, i⟩⟩
 
@@ -163,11 +169,29 @@ theorem unknownCheckFieldTypes_eq_nil_iff (enums records : List Name) (r : Recor
       ∀ n ∈ r.checkFieldTypes, n ∈ enums ∨ n ∈ records :=
   unknown_eq_nil_iff enums records r.checkFieldTypes
 
+theorem RecordDecl.mem_duplicateCheckFieldNames {r : RecordDecl} {n : Name} :
+    n ∈ r.duplicateCheckFieldNames ↔ ∃ block ∈ r.checks, 2 ≤ (block.map (·.1)).count n := by
+  simp [RecordDecl.duplicateCheckFieldNames, List.mem_eraseDups, mem_duplicates]
+
+theorem RecordDecl.duplicateCheckFieldNames_eq_nil_iff (r : RecordDecl) :
+    r.duplicateCheckFieldNames = [] ↔ ∀ block ∈ r.checks, (block.map (·.1)).Nodup := by
+  rw [List.eq_nil_iff_forall_not_mem]
+  simp only [RecordDecl.mem_duplicateCheckFieldNames, not_exists, not_and]
+  constructor
+  · intro h block hb
+    rw [← duplicates_eq_nil_iff, List.eq_nil_iff_forall_not_mem]
+    exact fun n hn => h n block hb (mem_duplicates.mp hn)
+  · intro h n block hb hc
+    have := (duplicates_eq_nil_iff _).mpr (h block hb)
+    rw [List.eq_nil_iff_forall_not_mem] at this
+    exact this n (mem_duplicates.mpr hc)
+
 /-- The checker accepts exactly the records valid on their own. -/
 theorem checkRecord_eq_nil_iff (enums records : List Name) (r : RecordDecl) :
     checkRecord enums records r = [] ↔ r.Valid enums records := by
   rw [RecordDecl.valid_iff, ← badValueNames_eq_nil_iff, ← badValueNames_eq_nil_iff,
-    ← duplicates_eq_nil_iff, ← duplicates_eq_nil_iff, ← unknownFieldTypes_eq_nil_iff,
+    ← duplicates_eq_nil_iff, ← RecordDecl.duplicateCheckFieldNames_eq_nil_iff,
+    ← unknownFieldTypes_eq_nil_iff,
     ← unknownCheckFieldTypes_eq_nil_iff]
   unfold checkRecord
   by_cases hn : isEnumName r.name <;> by_cases hf : r.fields = [] <;>
@@ -225,14 +249,16 @@ theorem badCheckFieldName_mem_checkRecord (enums records : List Name) (r : Recor
   by_cases hn : isEnumName r.name <;> by_cases hf : r.fields = [] <;>
     by_cases hc : 2 ≤ r.checks.length <;> simp [hn, hf, hc, mem_badValueNames]
 
-/-- C3 is reported exactly for each check field name written more than once, across every
-`check` block. -/
+/-- C3 is reported exactly for each check field name written more than once within one `check`
+block. -/
 theorem duplicateCheckField_mem_checkRecord (enums records : List Name) (r : RecordDecl)
     (n : Name) :
-    .duplicateCheckField n ∈ checkRecord enums records r ↔ 2 ≤ r.checkFieldNames.count n := by
+    .duplicateCheckField n ∈ checkRecord enums records r ↔
+      ∃ block ∈ r.checks, 2 ≤ (block.map (·.1)).count n := by
+  rw [← RecordDecl.mem_duplicateCheckFieldNames]
   unfold checkRecord
   by_cases hn : isEnumName r.name <;> by_cases hf : r.fields = [] <;>
-    by_cases hc : 2 ≤ r.checks.length <;> simp [hn, hf, hc, mem_duplicates]
+    by_cases hc : 2 ≤ r.checks.length <;> simp [hn, hf, hc]
 
 /-- C4 is reported exactly for each check field type the file has no enumeration or record for. -/
 theorem noSuchCheckFieldType_mem_checkRecord (enums records : List Name) (r : RecordDecl)

@@ -448,7 +448,10 @@ theorem valid_of_renameDecl {f g : File} {old new : Name} (h : renameDecl f old 
       · exact .inr (List.mem_map_of_mem hr')
     · simpa [RecordDecl.rename] using hrv.oneCheck
     · rw [hcn]; exact hrv.checkFieldNames
-    · rw [hcn]; exact hrv.checkNodup
+    · intro block hb
+      simp only [RecordDecl.rename, List.mem_map] at hb
+      obtain ⟨b, hb, rfl⟩ := hb
+      simpa [List.map_map, Function.comp_def] using hrv.checkNodup b hb
     · intro t ht
       rw [hct] at ht
       obtain ⟨m, hm, rfl⟩ := List.mem_map.mp ht
