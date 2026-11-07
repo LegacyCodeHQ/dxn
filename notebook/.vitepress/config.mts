@@ -26,6 +26,7 @@ export default defineConfig({
           { text: "Bijections", link: "/concepts/bijections" },
           { text: "Cartesian products", link: "/concepts/cartesian-products" },
           { text: "Named products", link: "/concepts/named-products" },
+          { text: "Images of functions", link: "/concepts/images-of-functions" },
         ],
       },
       {
