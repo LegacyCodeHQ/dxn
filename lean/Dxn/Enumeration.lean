@@ -11,7 +11,9 @@ declaration with no problems.
 
 An accepted declaration means a finite set with one element per name. Each
 element is a value tagged with the enumeration's name, so enumerations with
-different names share no value. The written order means nothing.
+different names share no value. The written order means nothing: two valid
+declarations declare the same enumeration exactly when they list the same
+values in some order.
 -/
 
 namespace Dxn
@@ -264,5 +266,12 @@ theorem valid_of_perm {d e : EnumDecl} (hn : d.name = e.name) (hp : d.values.Per
     values := fun v hv => h.values v (hp.mem_iff.mpr hv)
     nonempty := fun he => h.nonempty (List.Perm.eq_nil (he ▸ hp))
     nodup := hp.nodup_iff.mp h.nodup }
+
+/-- For valid declarations, the same enumeration is exactly the same values in some order:
+reordering is the only change to the values that keeps the enumeration the same. -/
+theorem same_iff_perm {d e : EnumDecl} (hd : Valid d) (he : Valid e) :
+    Same d e ↔ d.name = e.name ∧ d.values.Perm e.values :=
+  ⟨fun ⟨hn, hm⟩ => ⟨hn, (List.perm_ext_iff_of_nodup hd.nodup he.nodup).mpr hm⟩,
+    fun ⟨hn, hp⟩ => same_of_perm hn hp⟩
 
 end Dxn

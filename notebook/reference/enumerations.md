@@ -193,12 +193,12 @@ directly.
 
 ## What an accepted enumeration means
 
-| Fact                                                                        | Lean                            |
-| --------------------------------------------------------------------------- | ------------------------------- |
-| It has one value per name: `Light` has 2                                    | `Enum.card_elem`                |
-| Each value is tagged with its enumeration: $(\mathit{Light}, \mathit{off})$ | `Value`, `Enum.values`          |
-| Enumerations with different names share no value                            | `Enum.values_disjoint`          |
-| The written order means nothing: `{ off, on }` is `{ on, off }`             | `same_of_perm`, `valid_of_perm` |
+| Fact                                                                                                                                   | Lean                                             |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| It has one value per name: `Light` has 2                                                                                               | `Enum.card_elem`                                 |
+| Each value is tagged with its enumeration: $(\mathit{Light}, \mathit{off})$                                                            | `Value`, `Enum.values`                           |
+| Enumerations with different names share no value                                                                                       | `Enum.values_disjoint`                           |
+| The written order means nothing: `{ off, on }` is `{ on, off }`, and reordering is the only change that keeps the enumeration the same | `same_of_perm`, `valid_of_perm`, `same_iff_perm` |
 
 Tools still keep the written order: a formatter never reorders values, and
 output lists them as written.

@@ -91,6 +91,11 @@ example (e : Enum) : card e.Elem = e.decl.values.length := Enum.card_elem e
 -- Order means nothing: the same names in another order declare the same enumeration.
 example : Same light ⟨"Light", ["on", "off"]⟩ := same_of_perm rfl (by decide)
 
+-- For valid declarations, the same enumeration is exactly the same values in some order.
+example (d e : EnumDecl) (hd : Valid d) (he : Valid e) :
+    Same d e ↔ d.name = e.name ∧ d.values.Perm e.values :=
+  same_iff_perm hd he
+
 -- Reordering the names keeps a declaration valid.
 example (d e : EnumDecl) (hn : d.name = e.name) (h : d.values.Perm e.values) :
     Valid d → Valid e :=
