@@ -109,6 +109,10 @@ Fields in a `check` block follow the rules for a record's fields:
 [R6](./records#r6), a record containing itself, follows check fields too: a
 record used in a check may not contain the record it checks.
 
+The record's fields and the check's fields are separate scopes: a check field
+may share a name with a field of the record, such as `fidelity` in both, for
+the maker's value and the checker's.
+
 ### C1: A record has at most one `check` block {#c1}
 
 **Why:** a check is one judgement with one set of fields; two blocks would
@@ -150,12 +154,7 @@ As [R5](./records#r5).
 | The outcome decides status; the block's fields never do                    | Status means the same in every model, and the language decides it once for every tool | Fields that affect status, such as "`major` blocks"         |
 | A check field's type is an enumeration or a record, as a record field's is | One way to write data                                                                 |                                                             |
 | The maker and the checker are implicit                                     | Every record's entries are made; a `check` block adds a checker                       | Declaring actors on each record                             |
-
-## Open questions
-
-| Question                                                            | Leaning                                                                      |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| May a check field share a name with one of the record's own fields? | Yes: one group is what the maker records, the other what the checker records |
+| A check field may share a name with a field of the record                  | The two are separate scopes: what the maker records and what the checker records      | Names unique across both, with a rule against reuse         |
 
 ## Deferred
 
