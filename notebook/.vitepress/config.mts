@@ -24,6 +24,7 @@ export default defineConfig({
           { text: "Finite sets", link: "/concepts/finite-sets" },
           { text: "Disjoint unions", link: "/concepts/disjoint-unions" },
           { text: "Bijections", link: "/concepts/bijections" },
+          { text: "Cartesian products", link: "/concepts/cartesian-products" },
         ],
       },
       {
