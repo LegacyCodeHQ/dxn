@@ -2,19 +2,22 @@
 
 **Status:** Decided
 
-A file holds declarations, in the order they are written. Enumerations are the
-only kind of declaration so far; each new kind the language gains, such as
-dimensions, is declared in files too.
+A file holds declarations, in the order they are written: enumerations, and
+types that vary over them.
 
 ```dxn
-enum Light { off, on }
-enum Power { off, on }
+enum Kind { primary, secondary }
+enum State { normal, disabled }
+
+type Button {
+  varies Kind, State
+}
 ```
 
-A file is checked as a whole. Each declaration in it is checked by its own
-rules, which for an enumeration are those of [Enumerations](./enumerations),
-E1 to E4, and the file adds a rule of its own: no two enumerations share a
-name.
+A file is checked as a whole. Each declaration is checked by its own rules:
+an enumeration by those of [Enumerations](./enumerations), E1 to E4, and a type
+by those of [Types](./types), T1 to T3, against the file's enumerations. The
+file adds a rule of its own: no two declarations share a name.
 
 The Lean specification in
 [`lean/Dxn/File.lean`](https://github.com/LegacyCodeHQ/dxn/blob/main/lean/Dxn/File.lean)
@@ -25,60 +28,65 @@ specification is right.
 
 ```text
 file        = { declaration }
-declaration = enumeration
+declaration = enumeration | type
 ```
 
-A file is any number of declarations, one after another; `declaration` gains
-a case for each new kind. A file with none is valid: nothing in it can be
-wrong. A syntax error in any
+A file is any number of declarations, of either kind, in any order. A type may
+vary over an enumeration declared before it or after it. A file with no
+declarations is valid: nothing in it can be wrong. A syntax error in any
 declaration stops reading the file there.
 
 ## Checker rules
 
-| ID        | Rule                                       | Breaks it                                    | Reported              |
-| --------- | ------------------------------------------ | -------------------------------------------- | --------------------- |
-| E1–E4     | Each enumeration follows its own rules     | `enum Light { }`                             | `Light: empty`        |
-| [F1](#f1) | No two enumerations in a file share a name | `enum Light { off }`<br>`enum Light { dim }` | `duplicateEnum Light` |
+| ID        | Rule                                       | Breaks it                                     | Reported                  |
+| --------- | ------------------------------------------ | --------------------------------------------- | ------------------------- |
+| E1–E4     | Each enumeration follows its own rules     | `enum Light { }`                              | `Light: empty`            |
+| T1–T3     | Each type follows its own rules            | `type Button { varies Size }`, with no `Size` | `Button: noSuchEnum Size` |
+| [F1](#f1) | No two declarations in a file share a name | `enum Light { off }`<br>`type Light { }`      | `duplicateName Light`     |
 
 A file is accepted exactly when it breaks none of them. Lean proves this
 (`File.check_eq_nil_iff`).
 
-An enumeration's own problem is reported with the name of the enumeration it
+A declaration's own problem is reported with the name of the declaration it
 belongs to, such as `Light: empty`. Lean proves each is reported exactly when
-that enumeration has it (`File.enum_mem_check`).
+that declaration has it (`File.enum_mem_check`, `File.type_mem_check`).
 
-### F1: No two enumerations in a file share a name {#f1}
+### F1: No two declarations in a file share a name {#f1}
 
 ```dxn
 enum Light { off, on }
 enum Light { dim }       -- Light is declared twice
+
+enum Button { primary, secondary }
+type Button { }          -- Button is declared twice, once of each kind
 ```
 
 A name written twice is reported once, in the order it first appears, however
-many times it is written.
+many times it is written, whatever kinds of declaration it names.
 
-**Why:** each value is tagged with its enumeration's name, as in a
-[disjoint union](../concepts/disjoint-unions), so
-$(\mathit{Light}, \mathit{off})$ is `Light`'s `off`. Two enumerations called
-`Light` would share their tags, and their values would merge: the file would
-no longer say which `Light` a value belongs to. With names unique, no two
-enumerations in a file share a value. Lean proves it
-(`File.nodup_values`).
+**Why:** a name in the file must mean exactly one thing. Each value is tagged
+with its enumeration's name, as in a
+[disjoint union](../concepts/disjoint-unions), so two enumerations called
+`Light` would share their tags, and their values would merge. A type and an
+enumeration with the same name would leave `varies Button` unclear about which
+it means. With names unique, no two enumerations in a file share a value. Lean
+proves it (`File.nodup_values`).
 
 **Suggest:** rename one of them, and point at every declaration with the name,
 the first one included.
 
-**Lean:** `File.duplicateEnum_mem_check` proves `duplicateEnum` is reported
+**Lean:** `File.duplicateName_mem_check` proves `duplicateName` is reported
 exactly for each name written more than once.
 
 ## The order of reported problems
 
-Each enumeration's own problems come first, in the order the enumerations are
-written, then F1 for each name written more than once, in the order it first
-appears:
+Each declaration's own problems come first, in the order the declarations are
+written, whatever their kind, then F1 for each name written more than once, in
+the order it first appears:
 
 ```dxn
 enum light { }
+type button { varies Size }
 enum Power { on, on }
 enum light { dim }
 ```
@@ -86,38 +94,33 @@ enum light { dim }
 reports, in this order:
 
 1. `light`: E1 `badEnumName light`, then E2 `empty`
-2. `Power`: E4 `duplicate on`
-3. `light`: E1 `badEnumName light`
-4. F1 `duplicateEnum light`
+2. `button`: T1 `badTypeName button`, then T2 `noSuchEnum Size`
+3. `Power`: E4 `duplicate on`
+4. `light`: E1 `badEnumName light`
+5. F1 `duplicateName light`
 
 Lean proves this order for every file:
 
-| Fact                                                                    | Lean                                  |
-| ----------------------------------------------------------------------- | ------------------------------------- |
-| An enumeration's own problems come before every F1                      | `File.check_sorted`                   |
-| The enumerations' own problems are each declaration's, in written order | `File.enumProblemsOf_check`           |
-| Under F1, names come in the order they are first written                | `File.duplicateEnumsOf_check_sublist` |
+| Fact                                                            | Lean                                  |
+| --------------------------------------------------------------- | ------------------------------------- |
+| A declaration's own problems come before every F1               | `File.check_sorted`                   |
+| The declarations' own problems are each one's, in written order | `File.declProblemsOf_check`           |
+| Under F1, names come in the order they are first written        | `File.duplicateNamesOf_check_sublist` |
 
 When two declarations share a name, their problems are told apart by position:
 point each problem at its own declaration.
 
-## In the model
-
-The specification's `File` holds enumeration declarations only, since they are
-the only kind so far. When the language gains a second kind, the model gains a
-`Declaration` with a case for each kind, and the rules here are restated for
-it.
-
 ## What an accepted file means
 
-| Fact                                                          | Lean                |
-| ------------------------------------------------------------- | ------------------- |
-| Its values are every enumeration's values, in written order   | `File.values`       |
-| No two enumerations share a value, and none has a value twice | `File.nodup_values` |
+| Fact                                                                 | Lean                                                   |
+| -------------------------------------------------------------------- | ------------------------------------------------------ |
+| Its values are every enumeration's values, in written order          | `File.values`                                          |
+| No two enumerations share a value, and none has a value twice        | `File.nodup_values`                                    |
+| Each type's combinations are the product of its enumerations' values | `File.combinations`; see [Types](./types#combinations) |
 
 ## In Lean
 
-A file:
+A file, and the two kinds of declaration:
 
 <<< lean:lean/Dxn/File.lean#file
 
@@ -135,21 +138,21 @@ What a valid file is:
 
 ## Implementation notes
 
-- **Positions.** Point an enumeration's problem at its own declaration, and F1
+- **Positions.** Point a declaration's problem at its own declaration, and F1
   at every declaration with the name.
 - **Rule IDs.** Name the rule with each problem, such as `F1`.
 
 ## Decisions
 
-| Decision                                                                      | Why                                                              | Rejected                                           |
-| ----------------------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
-| Two enumerations in a file with the same name are a check error               | Values are tagged with their enumeration's name; two would merge | Allowing it, and telling them apart some other way |
-| Each enumeration's problems first, in written order, then names written twice | Matches an enumeration, which reports its duplicates last        | Names written twice first                          |
-| A file with no enumerations is valid                                          | Nothing in it can be wrong                                       |                                                    |
+| Decision                                                                              | Why                                                          | Rejected                                              |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------- |
+| Two declarations in a file with the same name are a check error, whatever their kinds | A name means one thing; two enumerations' values would merge | Names unique only within each kind                    |
+| Each declaration's problems first, in written order, then names written twice         | Matches an enumeration, which reports its duplicates last    | Names written twice first                             |
+| A file with no declarations is valid                                                  | Nothing in it can be wrong                                   |                                                       |
+| A type may vary over an enumeration declared after it                                 | Order in a file means nothing                                | Declaring an enumeration before any type that uses it |
 
 ## Deferred
 
-| Question                                                                                                      | Decide when                                   |
-| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| May two different files each declare an enumeration with the same name? Then a value's tag needs its file     | A model has more than one file                |
-| Must names be unique across kinds of declaration, such as an enumeration and a dimension both called `Light`? | The language has a second kind of declaration |
+| Question                                                                                                  | Decide when                    |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| May two different files each declare an enumeration with the same name? Then a value's tag needs its file | A model has more than one file |

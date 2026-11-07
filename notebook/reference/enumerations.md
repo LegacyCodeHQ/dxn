@@ -70,8 +70,8 @@ problem's report can name:
 | [E3](#e3) | Every value name follows the naming rules     | `enum Light { Off }`         | `badValueName Off`  |
 | [E4](#e4) | No value is written twice                     | `enum Light { on, off, on }` | `duplicate on`      |
 
-In a file, no two enumerations may share a name: see [Files](./files), rule
-[F1](./files#f1).
+In a file, no two declarations may share a name, an enumeration's and a type's
+included: see [Files](./files), rule [F1](./files#f1).
 
 A declaration is accepted exactly when it breaks none of them. Lean proves
 this (`check_eq_nil_iff`), and that each problem is reported exactly when its

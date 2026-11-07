@@ -24,6 +24,7 @@ implementation is fixed, or the specification is changed on purpose first.
 | Finite sets             | [`Dxn/FiniteSet.lean`](Dxn/FiniteSet.lean)     | [`DxnTest/FiniteSet.lean`](DxnTest/FiniteSet.lean)     |                                                                                               |
 | Names                   | [`Dxn/Name.lean`](Dxn/Name.lean)               | [`DxnTest/Name.lean`](DxnTest/Name.lean)               | [`notebook/reference/enumerations.md`](../notebook/reference/enumerations.md)                 |
 | Enumerations            | [`Dxn/Enumeration.lean`](Dxn/Enumeration.lean) | [`DxnTest/Enumeration.lean`](DxnTest/Enumeration.lean) | [`notebook/reference/enumerations.md`](../notebook/reference/enumerations.md)                 |
+| Types                   | [`Dxn/Type.lean`](Dxn/Type.lean)               | [`DxnTest/Type.lean`](DxnTest/Type.lean)               | [`notebook/reference/types.md`](../notebook/reference/types.md)                               |
 | Files                   | [`Dxn/File.lean`](Dxn/File.lean)               | [`DxnTest/File.lean`](DxnTest/File.lean)               | [`notebook/reference/files.md`](../notebook/reference/files.md)                               |
 | Renaming an enumeration | [`Dxn/Rename.lean`](Dxn/Rename.lean)           | [`DxnTest/Rename.lean`](DxnTest/Rename.lean)           | [`notebook/refactoring/rename-enumeration.md`](../notebook/refactoring/rename-enumeration.md) |
 
@@ -67,10 +68,11 @@ The proofs are about the specification's own definitions; the implementation
 could change while they all still hold. The agreement checks connect the two:
 the same declarations go through both, and they must say the same.
 
-`lake exe dxn-spec <file>` reads cases as JSON, each a file's declarations
-and optionally an enumeration to rename in it, and writes, for each, the
-problems `File.check` reports, the values of an accepted file, and the
-reasons a rename is refused or the declarations it gives:
+`lake exe dxn-spec <file>` reads cases as JSON, each a file's declarations,
+enumerations and types, and optionally an enumeration to rename in it, and
+writes, for each, the problems `File.check` reports, the values and each
+type's combinations of an accepted file, and the reasons a rename is refused
+or the declarations it gives:
 
 ```bash
 make agreement
@@ -82,8 +84,8 @@ cases in `cases.json` (enumerations), `files.json` and `renames.json`, each
 again with its values reversed, and generated enumerations, files and
 renames. Each goes through the implementation directly, and again as text
 through its parser. They must agree on what is accepted, which problems are
-reported for which names in which order, the E1–E4/F1 problem IDs and
-RE1–RE4 refusal IDs, which values an accepted file has,
+reported for which names in which order, the E1–E4, T1–T3 and F1 problem IDs
+and RE1–RE4 refusal IDs, which values and combinations an accepted file has,
 and what each rename does or why it is refused. Messages and positions belong
 to the implementation, and its own tests cover them.
 

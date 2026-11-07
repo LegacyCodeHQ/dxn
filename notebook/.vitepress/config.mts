@@ -32,6 +32,7 @@ export default defineConfig({
         items: [
           { text: "Files", link: "/reference/files" },
           { text: "Enumerations", link: "/reference/enumerations" },
+          { text: "Types", link: "/reference/types" },
         ],
       },
       {

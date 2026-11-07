@@ -13,6 +13,8 @@ enum Power { mains, battery }
 Every state the lamp can be in is one value of each: off on mains, off on
 battery, on on mains, on on battery. The _Cartesian product_ is the set of
 every such combination. Counting it says how many cases there are to check.
+In dxn, a [type](../reference/types) lists the enumerations it varies over, and
+its combinations are their product.
 
 | In mathematics                                             | In programming                                        |
 | ---------------------------------------------------------- | ----------------------------------------------------- |
