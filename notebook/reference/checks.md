@@ -168,7 +168,8 @@ the maker's value and the checker's.
 which one applies unclear.
 
 **Suggest:** either delete all but one of the blocks, or merge their fields into
-one block.
+one block. C1 does not look ahead: if merged blocks share a field name, the
+merged block breaks [C3](#c3), which reports it then.
 
 **Lean:** `duplicateCheck_mem_checkRecord`.
 
@@ -264,6 +265,7 @@ check (`File.valuesWithin`).
 | A record's values never include checks; R6 does not follow check fields    | A check is a separate value about an entry; a check field naming its own record is finite | Extending R6 to check fields                               |
 | A check field may share a name with a field of the record                  | The two are separate scopes: what the maker records and what the checker records          | Names unique across both, with a rule against reuse        |
 | C3 compares check field names within each block only                       | C1 reports a second block, and deleting it may be the fix                                 | Comparing names across every block, as if merged           |
+| C1 suggests deleting or merging, whatever the blocks' field names          | One step at a time: a name clash after merging is C3's to report                          | Warning about clashes before merging                       |
 
 ## Deferred
 
