@@ -36,6 +36,7 @@ export default defineConfig({
           { text: "Enumerations", link: "/reference/enumerations" },
           { text: "Types", link: "/reference/types" },
           { text: "Records", link: "/reference/records" },
+          { text: "Checks", link: "/reference/checks" },
         ],
       },
       {

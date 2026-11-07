@@ -135,8 +135,8 @@ such as the time each was recorded.
 
 ## In Lean
 
-Not specified yet: entries, checks and status are designed after this page is
-settled.
+Not specified yet. How a record declares that its entries are checked is in
+[Checks](../reference/checks).
 
 ## Notation
 

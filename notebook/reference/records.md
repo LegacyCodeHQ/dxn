@@ -19,8 +19,10 @@ record Review {
 }
 ```
 
-Who records a record, where recorded facts are kept and which combination each
-is about are not decided yet: see [Deferred](#deferred).
+A record may also say each of its values must be checked: see
+[Checks](./checks), proposed. Who records a record, where recorded facts are
+kept and which combination each is about are not decided yet: see
+[Deferred](#deferred).
 
 The Lean specification in
 [`lean/Dxn/Record.lean`](https://github.com/LegacyCodeHQ/dxn/blob/main/lean/Dxn/Record.lean),
