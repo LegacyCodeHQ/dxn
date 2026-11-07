@@ -74,15 +74,21 @@ That is why `check { }` is allowed, while a record with no fields is not
 
 ## Status
 
-The outcome decides status, the same way everywhere. For a checked record, a
+Status comes from what the maker and the checker have recorded, and the
+outcome decides it, the same way everywhere. For a checked record, a
 combination is:
 
-| Status   | When                                                  |
-| -------- | ----------------------------------------------------- |
-| missing  | no entry is about it                                  |
-| waiting  | its current entry has no check                        |
-| approved | its current entry's current check is `approved`: done |
-| rejected | its current entry's current check is `rejected`       |
+| Maker         | Checker                                  | Status   |
+| ------------- | ---------------------------------------- | -------- |
+| no entry      | no check                                 | missing  |
+| current entry | no check                                 | waiting  |
+| current entry | a check of an older entry only           | stale    |
+| current entry | a check of the current entry, `approved` | approved |
+| current entry | a check of the current entry, `rejected` | rejected |
+
+Only approved is done. A check is always of an entry, so there is no row with
+a check and no entry. Stale is waiting with a history: the entry was checked,
+then changed, and the new entry has not been checked.
 
 An entry of a record with no `check` block is done once it is made.
 
@@ -101,7 +107,7 @@ approve the other.
 So an entry is at least the combination it is about and its value, and a check
 is of that pair. A check of one combination's entry never counts for another
 combination. If the maker records a different value for the same combination,
-the earlier check is not of it. That is what will let a check go out of date.
+the earlier check is not of it, and the combination is stale.
 
 If an entry's value changes and then changes back, from A to B and back to A,
 whether the earlier check of A counts again depends on which check is current.
@@ -173,16 +179,17 @@ As [R5](./records#r5).
 
 ## Decisions
 
-| Decision                                                                   | Why                                                                                       | Rejected                                                    |
-| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Checking is declared inside the record, in a `check` block                 | What is checked and how it is checked are read in one place                               | A separate check record that names the record it checks     |
-| The block always has braces, empty or not                                  | One form for every check; empty braces say "outcome only"                                 | A bare `check` with no braces                               |
-| Every check has a built-in outcome, `approved` or `rejected`               | Checking needs no enumeration of its own, and nothing refers to an enumeration value      | Each model declares its verdict and says which value passes |
-| The outcome decides status; the block's fields never do                    | Status means the same in every model, and the language decides it once for every tool     | Fields that affect status, such as "`major` blocks"         |
-| A check field's type is an enumeration or a record, as a record field's is | One way to write data                                                                     |                                                             |
-| The maker and the checker are implicit                                     | Every record's entries are made; a `check` block adds a checker                           | Declaring actors on each record                             |
-| A record's values never include checks; R6 does not follow check fields    | A check is a separate value about an entry; a check field naming its own record is finite | Extending R6 to check fields                                |
-| A check field may share a name with a field of the record                  | The two are separate scopes: what the maker records and what the checker records          | Names unique across both, with a rule against reuse         |
+| Decision                                                                   | Why                                                                                       | Rejected                                                            |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Checking is declared inside the record, in a `check` block                 | What is checked and how it is checked are read in one place                               | A separate check record that names the record it checks             |
+| The block always has braces, empty or not                                  | One form for every check; empty braces say "outcome only"                                 | A bare `check` with no braces                                       |
+| Every check has a built-in outcome, `approved` or `rejected`               | Checking needs no enumeration of its own, and nothing refers to an enumeration value      | Each model declares its verdict and says which value passes         |
+| Status has five values: missing, waiting, stale, approved, rejected        | A maker needs to tell a rejected or stale entry from one nobody has looked at             | A check that only means approved, with rejection recorded in fields |
+| The outcome decides status; the block's fields never do                    | Status means the same in every model, and the language decides it once for every tool     | Fields that affect status, such as "`major` blocks"                 |
+| A check field's type is an enumeration or a record, as a record field's is | One way to write data                                                                     |                                                                     |
+| The maker and the checker are implicit                                     | Every record's entries are made; a `check` block adds a checker                           | Declaring actors on each record                                     |
+| A record's values never include checks; R6 does not follow check fields    | A check is a separate value about an entry; a check field naming its own record is finite | Extending R6 to check fields                                        |
+| A check field may share a name with a field of the record                  | The two are separate scopes: what the maker records and what the checker records          | Names unique across both, with a rule against reuse                 |
 
 ## Deferred
 
@@ -192,4 +199,3 @@ As [R5](./records#r5).
 | Where entries and checks are kept                                   | Recording facts is designed |
 | Which entry and which check are current: their order                | Recording facts is designed |
 | Whether a check counts again when a value changes back, A to B to A | Recording facts is designed |
-| When a check goes out of date                                       | Recording facts is designed |

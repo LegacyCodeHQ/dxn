@@ -120,15 +120,18 @@ _current_ check:
 | -------- | ------------------------------------------------------------------------- |
 | missing  | is outside the image of $\mathit{about}$: no entry is about it            |
 | waiting  | has a current entry outside the image of $\mathit{of}$: no check is of it |
+| stale    | has a current entry no check is of, and an older entry a check is of      |
 | approved | has a current entry whose current check's outcome is $\mathit{approved}$  |
 | rejected | has a current entry whose current check's outcome is $\mathit{rejected}$  |
 
-The approved combinations are an image too: of the current checks that
-approve, under the composition,
+The approved combinations are an image too: of the checks that approve, each
+the current check of a current entry, under the composition,
 
 $$
-(\mathit{about} \circ \mathit{of})\,[\{\, c \in \mathit{Checks} \mid c \text{ is current and approved} \,\}]
+(\mathit{about} \circ \mathit{of})\,[\{\, c \in \mathit{Checks} \mid c \text{ is the current check of a current entry, and approved} \,\}]
 $$
+
+A check of an entry that is no longer current does not count.
 
 Which entry and which check are current is not decided yet: it needs an order,
 such as the time each was recorded.
