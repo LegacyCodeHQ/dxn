@@ -162,7 +162,8 @@ the maker's value and the checker's.
 **Why:** a check is one record with one set of fields; two blocks would leave
 which one applies unclear.
 
-**Suggest:** merge the blocks' fields into one.
+**Suggest:** either delete all but one of the blocks, or merge their fields into
+one block.
 
 **Lean:** `duplicateCheck_mem_checkRecord`.
 
