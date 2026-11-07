@@ -39,6 +39,11 @@ $$
 The number $n$ is the set's _cardinality_, written $|A| = n$.
 :::
 
+A set can be listed in more than one order, such as $[\mathit{off}, \mathit{on}]$
+or $[\mathit{on}, \mathit{off}]$. Any two lists that each hold every element
+exactly once are reorderings of each other, so they have the same length. The
+number of elements is therefore one number, whichever listing is used.
+
 ## Enumerations
 
 An enumeration defines a finite set by naming each element:
@@ -79,6 +84,11 @@ nothing else is in the set, and `nodup` says every element appears once. Its
 cardinality is the length of that list.
 
 <<< lean:lean/Dxn/FiniteSet.lean#finite
+
+Any two such lists have the same length, so the cardinality does not depend on
+which list is used:
+
+<<< lean:lean/Dxn/FiniteSet.lean#unique
 
 Lean checks both conditions, and the count, for `Light`:
 
