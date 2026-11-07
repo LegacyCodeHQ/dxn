@@ -169,9 +169,9 @@ The rename:
 
 ## Deferred
 
-| Question                                                          | Decide when                    |
-| ----------------------------------------------------------------- | ------------------------------ |
-| Renaming a field, or a value of an enumeration                    | Next, one at a time            |
-| With several files, is the new name checked against all of them?  | A model has more than one file |
-| How a reference to a value, such as `Light.off`, follows a rename | Something refers to a value    |
-| How recorded facts follow a rename                                | Recording facts is designed    |
+| Question                                                                                                                          | Decide when                                                                        |
+| --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Renaming a field, or a value of an enumeration: today each is one edit inside its own declaration, since nothing refers to either | Something first refers to a field or a value, such as recorded facts or exclusions |
+| With several files, is the new name checked against all of them?                                                                  | A model has more than one file                                                     |
+| How a reference to a value, such as `Light.off`, follows a rename                                                                 | Something refers to a value                                                        |
+| How recorded facts follow a rename                                                                                                | Recording facts is designed                                                        |
