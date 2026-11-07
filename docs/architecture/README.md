@@ -148,13 +148,33 @@ The current-language model retains the existing Tree-sitter-first grammar
 change flow. It covers parser agreement, semantic analysis, formatting,
 diagnostics, CLI, language server and both editors. It makes no Lean claims.
 
-Every redesign change starts at `ModifyLeanSpecification`: review the Lean
-semantics and the syntax decisions in `lean/notes/` before implementation.
-Its children are proof verification, the syntax contract, semantic analysis and
-first-class refactoring. A syntax-only change may keep semantic definitions.
-The syntax contract reaches the redesigned core parser and Tree-sitter.
-`CheckSpecificationAgreement` compares the new implementation with executable
-Lean; `CheckParserAgreement` separately checks syntax agreement.
+Every redesign change starts at `ModifyLeanSpecification`: review Lean semantics
+and the syntax/implementation decisions in the design notebook before implementing
+anything. Its children cover Lean verification, syntax, semantic analysis,
+evaluation, refactoring, stored evidence, formatting and the shared toolchain.
+Syntax-only changes may keep semantic definitions unchanged.
+
+The canonical implementation checklist and review/evidence conventions are in
+[`lean/README.md`](../../lean/README.md#implementing-a-specification-across-the-toolchain).
+The redesigned model is its component-level map. Parser diagnostics and possible
+parser fixes are explicit and separate from checker diagnostics and checker fixes.
+The parser currently stops at the first syntax error; parser fixes, evaluation
+and stored evidence remain open responsibilities, not implemented capabilities.
+
+`CheckSpecificationAgreement` compares semantic implementation with executable
+Lean. `CheckParserAgreement` compares the core parser and Tree-sitter.
+`CheckRefactoringAgreement` compares transformations and refusals. Evaluation
+agreement is required when an evaluator is specified. Source edits, formatting
+and diagnostic presentation also need their own implementation tests.
+
+Common consumers appear once beneath `ReviewLanguageToolchain`: the shared
+diagnostic contract, editor features, CLI, language server, both extensions,
+and build/distribution. This keeps the expanded tree compact. It is a review
+obligation tree, not a complete dependency graph or execution schedule: review
+combined syntax, semantic, correction and refactoring impact at these shared
+consumers. Both interfaces must use shared implementations and agree where their
+behavior mirrors; the language server then reaches both clients. Each extension
+retains separate direct-syntax and language-client verification responsibilities.
 
 All tool nodes in the redesign model mean tools for the redesigned language:
 its formatter, CLI, language server and editor extensions. These are target
@@ -179,9 +199,9 @@ Both models retain the Zed grammar-pin and VS Code direct-syntax reviews,
 separate from language-server behavior.
 
 Each `has` edge means “review this responsibility because of this upstream
-change”, not a mandatory edit. Repeated consumers express distinct causes, not
-repeated work. Splitting the workstreams makes their scope explicit; expansion
-of shared consumers still accounts for much of each tree's size.
+change”, not a mandatory edit. Record **changed**, **reviewed, no change needed**,
+or **not yet implemented**, with a reason and affected paths, in the change
+summary. These review outcomes do not establish that verification passed.
 
 Implementation status and verification evidence remain separate records.
 `CodingAgent` records `AutomatedVerification`: command, result (`unverified`,

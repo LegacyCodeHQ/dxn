@@ -4,44 +4,69 @@ enum ZedExtensionPin = update | keep
 enum RequiredChange = modify | keep
 enum VerificationResult = unverified | passed | failed
 
-## The new language is redesigned from agreed syntax and Lean semantics.
-## This model concerns lean/ and packages/next and their future consumers.
-## Every component below belongs to the redesigned language, including its tools.
-## No edge asks for changes to the prototype or migration between implementations.
-## Each has node identifies a responsibility to review, not a mandatory edit.
-## Repeated consumers identify different upstream causes, not repeated work.
-## This is the target change flow; a node does not assert an implementation exists.
-## Implementation and verification evidence belong in separate records.
+## Responsibilities for implementing the redesigned language from its specification.
+## Every component belongs to lean/, packages/next and the redesigned tools.
+## A has edge requires a review, not an edit, execution order or proof of completion.
+## Shared consumers appear once under ReviewLanguageToolchain instead of being
+## expanded after every upstream cause. This is a responsibility tree, not an import graph.
+## Record implementation decisions separately from automated and human verification.
 type RedesignDxnLanguage needs TreeSitterChange {
   has modify-lean-specification: ModifyLeanSpecification
 }
 
-## Record written syntax and examples in lean/notes. Review both syntax implementations
-## and their agreement. TreeSitterChange describes the required Tree-sitter edit;
-## a semantic-only change can keep the existing syntax and use none.
-type ModifySyntaxContract needs TreeSitterChange {
-  has modify-core-parser: ModifyCoreParser
-  has modify-tree-sitter-package: ModifyTreeSitterPackage
-}
-
-## Specify the meaning and validity of parsed declarations in Lean definitions and proofs.
-## Every redesign decision starts here, including syntax decisions in lean/notes.
-## A syntax-only change may retain the semantic definitions and proofs.
-## Semantic implementation must agree with this specification.
+## Begin every change by reviewing Lean definitions, proofs and concrete cases,
+## together with written syntax and implementation guidance in the design notebook.
+## Syntax-only or presentation-only changes may retain the semantic definitions.
+## Lean proves its own definitions; TypeScript follows them through agreement tests.
 type ModifyLeanSpecification needs TreeSitterChange {
   has verify-lean-specification: VerifyLeanSpecification
   has modify-syntax-contract: ModifySyntaxContract
   has modify-semantic-analyzer: ModifySemanticAnalyzer
+  has modify-evaluator: ModifyEvaluator
   has modify-refactorings: ModifyRefactorings
+  has stored-evidence-impact: StoredEvidenceImpact
+  has modify-formatter: ModifyFormatter
+  has review-language-toolchain: ReviewLanguageToolchain
 }
 
-## Build the specification and check its proofs and concrete examples with make lean.
-## These proofs establish properties of Lean definitions, not of the TypeScript implementation.
+## Run make lean for definitions, proofs and concrete examples.
+## A passing proof does not establish that an executable or editor follows it.
 type VerifyLeanSpecification { }
 
-## Review the grammar, scanner and their consumers. Regenerate parser sources
-## when the grammar changes; scanner-only changes keep those generated sources.
-## Supporting source paths and integration details are in the architecture README.
+## Record grammar and valid, invalid and incomplete examples in notebook/reference.
+## Review both syntax implementations and compare their acceptance and parsed names.
+## TreeSitterChange describes implementation impact, not where decisions originate.
+type ModifySyntaxContract needs TreeSitterChange {
+  has modify-core-parser: ModifyCoreParser
+  has modify-tree-sitter-package: ModifyTreeSitterPackage
+  has check-parser-agreement: CheckParserAgreement
+}
+
+## Implement the core parser by hand, including parsed declarations, source spans
+## and specified handling of incomplete input. It currently stops at the first error;
+## recovery is a separate behavior to decide, not an existing guarantee.
+type ModifyCoreParser {
+  has modify-parser-diagnostics: ModifyParserDiagnostics
+  has review-parser-fixes: ReviewParserFixes
+  has verify-core-parser: VerifyCoreParser
+}
+
+## Review syntax-error conditions, wording and locations. Syntax errors remain
+## distinct from checker rules. Both use the shared diagnostic contract below.
+type ModifyParserDiagnostics { }
+
+## Decide whether syntax corrections can be offered safely, and specify their edits.
+## Parser fixes are not implemented yet. Record that outcome explicitly; this node
+## does not require guessing a repair, or claim that checker naming fixes repair syntax.
+type ReviewParserFixes { }
+
+## Test valid and incomplete source, malformed tokens, exact spans and line endings.
+## Verify the agreed stop or recovery behavior without silently accepting invalid syntax.
+type VerifyCoreParser { }
+
+## Review the redesigned grammar, optional external scanner, and generated artifacts.
+## A grammar change requires regeneration; a scanner-only change keeps parser sources.
+## The current enum grammar has no external scanner. A semantic-only change uses none.
 type ModifyTreeSitterPackage needs TreeSitterChange {
   state tree-sitter-parser: TreeSitterParser = when TreeSitterChange {
     grammar -> regenerate
@@ -49,134 +74,146 @@ type ModifyTreeSitterPackage needs TreeSitterChange {
     both -> regenerate
     none -> keep
   }
-
-  has check-parser-agreement: CheckParserAgreement
-  has modify-zed-extension: ModifyZedExtension
-  has vscode-extension-impact: VSCodeExtensionImpact
+  has verify-tree-sitter-parser: VerifyTreeSitterParser
 }
 
-## Adapt syntax reading, parsed declarations and recovery. Review formatting, editor
-## features and syntax diagnostics of the redesigned language. Parsed-output changes also
-## inform the semantic implementation reviewed under ModifyLeanSpecification.
-type ModifyCoreParser {
-  has modify-formatter: ModifyFormatter
-  has modify-editor-features: ModifyEditorFeatures
-  has modify-refactorings: ModifyRefactorings
-  has diagnostic-impact: DiagnosticImpact
-}
+## Run make grammar, native parsing tests and generated-source consistency checks.
+## Direct editor queries are verified under the extension responsibilities.
+type VerifyTreeSitterParser { }
 
-## Compare the accepted declarations, problems and values of packages/next with Lean.
-## Run make agreement on shared and generated cases, directly and through the parser.
-## This tests implementation agreement; syntax recovery has its own production tests.
-type CheckSpecificationAgreement { }
-
-## Review hover, completion, navigation, symbols, naming quick fixes and semantic tokens against
-## the new parser and analyzer, including documentation and incomplete source.
-type ModifyEditorFeatures {
-  has language-server-impact: LanguageServerImpact
-}
-
-## Refactoring is a shared language operation, not an editor-only feature. Review
-## Lean preconditions, refusals and the mapping from old values to new values;
-## a rename preserves validity and maps values bijectively. Review identity,
-## inverse and composition laws where applicable, not for every kind of refactoring.
-## Parser changes affect source ranges and edits; semantic changes affect validity
-## and references. Both the CLI and language server must use the shared operation.
-## Preserve unrelated source text and review the redesigned language's stored records;
-## a source-rename proof alone does not establish record transformations.
-type ModifyRefactorings {
-  has check-refactoring-agreement: CheckRefactoringAgreement
-  has stored-evidence-impact: StoredEvidenceImpact
-  has cli-impact: CliImpact
-  has language-server-impact: LanguageServerImpact
-}
-
-## Compare shared refactoring refusals and accepted results with executable Lean.
-## Implementation tests additionally check precise edits, unchanged surrounding text,
-## and re-parsing and re-checking the resulting source. CLI/LSP and manual editor
-## verification remain responsibilities of the consumer branches.
-type CheckRefactoringAgreement { }
-
-## Check that Tree-sitter and the core parser agree on the changed syntax.
-## The result and supporting evidence are recorded separately.
+## Compare core and Tree-sitter syntax acceptance, parsed names and source spans.
+## Expected recovery differences must be explicit. This is separate from Lean agreement.
 type CheckParserAgreement { }
 
-## Review name resolution and semantic validation of the changed parser output.
-## Results and diagnostics reach both the CLI and the language server.
+## Implement acceptance, identity, scope and semantic rules as they are specified.
+## Review checker errors and corrections, then compare behavior with executable Lean.
 type ModifySemanticAnalyzer {
-  has modify-refactorings: ModifyRefactorings
+  has modify-semantic-diagnostics: ModifySemanticDiagnostics
+  has modify-checker-fixes: ModifyCheckerFixes
   has check-specification-agreement: CheckSpecificationAgreement
-  has modify-evaluator: ModifyEvaluator
-  has diagnostic-impact: DiagnosticImpact
-  has cli-impact: CliImpact
-  has language-server-impact: LanguageServerImpact
 }
 
-## Review combinations, conditions and evaluation of the redesigned constructs.
-## Changed meaning can affect stored evidence and the results exposed by both interfaces.
+## Review semantic errors, severity, codes, notebook rule IDs, messages and spans.
+## Keep these consistent with CLI and LSP presentations through the shared contract.
+type ModifySemanticDiagnostics { }
+
+## Review checker suggestions and precise corrections in shared language code.
+## Currently these are naming fixes. Candidates must be valid and avoid collisions;
+## corrections use current text and preserve unrelated text. They are not semantic rename.
+type ModifyCheckerFixes { }
+
+## Extend dxn-spec and shared/generated cases, then run make agreement.
+## Compare acceptance, problems and values directly and through the core parser.
+## Diagnostic wording, suggestions and positions require implementation tests too.
+type CheckSpecificationAgreement { }
+
+## Review evaluation when a specified construct introduces combinations or executable
+## behavior. The redesigned evaluator is not implemented yet; enum checking alone
+## does not establish evaluation. Decide and specify it before implementation.
 type ModifyEvaluator {
-  has stored-evidence-impact: StoredEvidenceImpact
-  has cli-impact: CliImpact
-  has language-server-impact: LanguageServerImpact
+  has check-evaluation-agreement: CheckEvaluationAgreement
 }
 
-## Review validation, identity and review counts for records of the redesigned language.
-## Refactoring may require transforming these records or reporting their invalidation.
+## When evaluation is specified, expose it through dxn-spec and compare results.
+## Until then record not-yet-implemented, rather than treating checker tests as coverage.
+type CheckEvaluationAgreement { }
+
+## Refactoring is shared language behavior with explicit preconditions and results.
+## Review Lean transformation laws and precise source edits. Rename currently preserves
+## validity and maps values bijectively; inverse and composition laws are rename-specific.
+## Parser and semantic changes can affect this responsibility even without a new operation.
+type ModifyRefactorings {
+  has check-refactoring-agreement: CheckRefactoringAgreement
+}
+
+## Compare transformation results and refusals with Lean. Separately verify exact edits,
+## unchanged surrounding text, and re-parsing/re-checking of transformed source.
+type CheckRefactoringAgreement { }
+
+## Review records and evidence belonging to the redesigned language, including identity,
+## validation and transformations needed by refactoring. This runtime is not implemented
+## yet. Verification records for this workflow are separate from this language feature.
 ## Importing prototype records is outside this model.
 type StoredEvidenceImpact {
-  has cli-impact: CliImpact
-  has language-server-impact: LanguageServerImpact
+  has verify-stored-evidence: VerifyStoredEvidence
 }
 
-## Review formatting independently of semantic analysis. The formatter reads
-## syntax directly and serves both interfaces.
+## When implemented, test stored-record validation, compatibility and transformations.
+## A source-rename proof does not establish that stored evidence was transformed correctly.
+type VerifyStoredEvidence { }
+
+## Review the notebook's formatting policy independently of semantic acceptance.
+## Preserve names, meaning and written member order; do not format malformed syntax.
 type ModifyFormatter {
-  has cli-impact: CliImpact
-  has language-server-impact: LanguageServerImpact
+  has verify-formatter: VerifyFormatter
 }
 
-## Review the shared diagnostic contract for parser and semantic-analyzer
-## errors and warnings: severity, code, message and source location. Both sources
-## reach the CLI and language server, including diagnostics for incomplete input.
-type DiagnosticImpact {
+## Test canonical output, idempotence, preservation of parsed declarations and line endings.
+## CLI and editor formatting must exercise this same shared implementation.
+type VerifyFormatter { }
+
+## Review consumers once for all changed upstream responsibilities: syntax, checker,
+## corrections, evaluation, records, formatting and refactoring. Each consumer must
+## exercise the redesigned runtime. These children are not isolated from one another;
+## their agreement and actual builds are checked explicitly.
+type ReviewLanguageToolchain needs TreeSitterChange {
+  has review-diagnostic-contract: ReviewDiagnosticContract
+  has modify-editor-features: ModifyEditorFeatures
   has cli-impact: CliImpact
   has language-server-impact: LanguageServerImpact
+  has vscode-extension-impact: VSCodeExtensionImpact
+  has modify-zed-extension: ModifyZedExtension
+  has modify-build-and-distribution: ModifyBuildAndDistribution
 }
 
-## Review command-line behavior reached through the shared language library.
-## The redesigned CLI must exercise the shared packages/next behavior.
+## Reconcile parser and checker diagnostics and suggestions into one shared contract:
+## severity, machine code, optional rule ID, message, spans and safe correction metadata.
+## Only applicable checker diagnostics carry checker-rule IDs. CLI and LSP adapt this data.
+type ReviewDiagnosticContract { }
+
+## Review hover, completion, navigation, symbols, semantic tokens and quick-fix actions
+## for the specified constructs. Rename delegates to shared refactoring; corrections
+## delegate to shared fix logic. Advertise only features actually implemented.
+type ModifyEditorFeatures {
+  has verify-editor-features: VerifyEditorFeatures
+}
+
+## Test current source and source ranges, incomplete input, selected corrections and
+## collision checks. LSP additionally tests unsaved versions and rejection of stale edits.
+type VerifyEditorFeatures { }
+
+## Review supported executable commands, text/JSON reporting, exit codes and file writes.
+## CLI language decisions, formatting, corrections and refactoring come from packages/next.
 type CliImpact {
   has verify-cli: VerifyCli
 }
 
-## Exercise the affected commands through the executable, including text and JSON,
-## exit codes, diagnostics, formatting and parity with language-server behavior.
-## Record automated command output separately from implementation completion.
+## Run the actual executable, including invalid input, dry runs and write behavior.
+## Test CLI/LSP parity for mirrored behavior. Retain command output as evidence.
 type VerifyCli { }
 
-## Review language-server behavior and how it reaches the editor clients.
-## The redesigned language server must exercise shared packages/next behavior.
+## Review the LSP adapter and advertised capabilities for diagnostics, formatting,
+## shared editor features and refactoring. Use current unsaved buffers and versioned edits.
 type LanguageServerImpact {
   has verify-language-server: VerifyLanguageServer
-  has vscode-language-client-impact: VSCodeLanguageClientImpact
-  has zed-language-client-impact: ZedLanguageClientImpact
 }
 
-## Review VS Code behavior supplied by the language server.
-type VSCodeLanguageClientImpact {
+## Test protocol requests, diagnostic ranges, unsaved edits, capability filtering and
+## CLI parity against the redesigned runtime. Protocol tests do not verify actual editors.
+type VerifyLanguageServer { }
+
+## Review redesigned VS Code TextMate syntax, language configuration, client startup,
+## bundled commands and LSP behavior. The required-change state describes the work
+## decision, not implementation completion or verification success.
+type VSCodeExtensionImpact {
+  state required-change: RequiredChange
+  has verify-vscode-extension: VerifyVSCodeExtension
   has verify-vscode-client: VerifyVSCodeClient
 }
 
-## Review Zed behavior supplied by the language server, separately from its
-## direct Tree-sitter grammar integration.
-type ZedLanguageClientImpact {
-  has verify-zed-client: VerifyZedClient
-}
-
-## Review Zed's direct grammar integration, including its pin and syntax queries.
-## Grammar and scanner changes both require updating the pinned commit.
-## A semantic-only change keeps the pin and reviews existing syntax behavior.
-## This state describes required work, not completion.
+## Review redesigned Zed grammar integration, queries, language configuration, tasks
+## and LSP startup. Development staging pins a real local grammar snapshot; changed
+## grammar or scanner requires a new snapshot. LSP-only changes keep the grammar pin.
 type ModifyZedExtension needs TreeSitterChange {
   state zed-extension-pin: ZedExtensionPin = when TreeSitterChange {
     grammar -> update
@@ -184,54 +221,41 @@ type ModifyZedExtension needs TreeSitterChange {
     both -> update
     none -> keep
   }
-
   has verify-zed-extension: VerifyZedExtension
+  has verify-zed-client: VerifyZedClient
 }
 
-## Review VS Code's direct syntax support: its TextMate grammar and language
-## configuration. Existing support may already handle the grammar change.
-## The required-change state allows modify or keep; it is not derived from
-## TreeSitterChange and does not describe implementation completion.
-## Language-server behavior follows the separate language-client impact path.
-type VSCodeExtensionImpact {
-  state required-change: RequiredChange
+## Run syntax/configuration and bundle tests. A human must also load the redesigned
+## development extension and inspect highlighting, indentation and bracket behavior.
+## A keep decision still requires verification of affected behavior.
+type VerifyVSCodeExtension { }
 
-  has verify-vscode-extension: VerifyVSCodeExtension
-}
-
-## Verify the language server against the redesigned runtime, including
-## diagnostics, protocol and CLI parity tests,
-## including changed syntax, incomplete input and source ranges in unsaved buffers.
-## Actual editor behavior requires the developer checks in the client nodes.
-## Record the outcome, developer and evidence separately.
-type VerifyLanguageServer { }
-
-## Required verification of affected LSP behavior in VS Code. Automated server
-## and bundle tests support this; a developer must load the development extension
-## and exercise the affected diagnostics, formatting or language features on
-## valid and incomplete source, including unsaved edits. Record results separately.
+## Protocol and bundle tests support this responsibility. A human must exercise affected
+## diagnostics, formatting, navigation, fixes and refactoring in VS Code, including unsaved
+## and incomplete source. Skipped checks remain unverified; record human evidence separately.
 type VerifyVSCodeClient { }
 
-## Required verification of affected LSP behavior in Zed. Automated server/parity
-## tests support this; a developer must load the development extension, confirm
-## server startup and exercise the affected language features in an unsaved buffer.
-## Record results separately from the direct grammar integration checks.
-type VerifyZedClient { }
-
-## Verify Zed against the redesigned grammar and runtime: grammar pin, parsing,
-## query compilation and extension build checks. Prototype checks alone do not suffice.
-## A developer must also open changed syntax in Zed and inspect affected syntax
-## highlighting, outline, indentation, brackets or run actions. Record results
-## separately; passing the automated gate does not establish these manual checks.
+## Run grammar/query and extension checks with make zed. A human must also load the
+## redesigned development extension and inspect syntax, outline, indentation and tasks.
+## Automated success does not establish human editor verification.
 type VerifyZedExtension { }
 
-## Required verification of VS Code's direct syntax support for both modify and
-## keep. Run grammar and configuration checks against the redesigned syntax.
-## A developer must load the development extension and inspect affected syntax
-## highlighting, comment toggling, indentation or bracket behavior. Verify that
-## existing support still handles the change when keep is chosen. Record the
-## outcome, developer and evidence separately from this required work.
-type VerifyVSCodeExtension { }
+## A human must confirm redesigned server startup and affected LSP behavior in Zed,
+## including unsaved and incomplete source. Protocol tests are supporting evidence;
+## skipped human checks remain unverified and never become a pass automatically.
+type VerifyZedClient { }
+
+## Review package boundaries, dependencies, native grammar bindings, generated artifacts,
+## executable entry points, alias rewriting, VS Code bundles and Zed development staging.
+## This concerns distribution of the redesigned language, not a prototype cutover.
+type ModifyBuildAndDistribution {
+  has verify-build-and-distribution: VerifyBuildAndDistribution
+}
+
+## Run make build, make smoke and applicable grammar/extension build checks.
+## Test the actual bundled server and CLI. Do not replace global tools or user settings
+## as part of a build; loading an editor remains a separate human verification step.
+type VerifyBuildAndDistribution { }
 
 # Evidence recorded by the coding agent for an automated verification command.
 # The implicit context identifies the verification responsibility and combination.
