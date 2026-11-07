@@ -6,8 +6,8 @@ import Dxn
 
 Reads files of declarations as JSON and writes what the specification says
 about each, so an implementation can be compared with it. The input is a file
-holding an array of cases, each a file's declarations and, optionally, an
-enumeration to rename in it. A declaration is an enumeration, a type when its
+holding an array of cases, each a file's declarations and, optionally, a
+declaration to rename in it. A declaration is an enumeration, a type when its
 `kind` is `type`, or a record when its `kind` is `record`, with fields such as
 `{"name": "verdict", "type": "Verdict"}`:
 
@@ -69,8 +69,8 @@ def fileProblemJson (problem : FileError) : Json :=
 def renameErrorJson (error : RenameError) : Json :=
   match error with
   | .fileHasProblems => Json.mkObj [("rule", error.ruleId), ("kind", "fileHasProblems")]
-  | .badEnumName name => Json.mkObj [("rule", error.ruleId), ("kind", "badEnumName"), ("name", name)]
-  | .noSuchEnum name => Json.mkObj [("rule", error.ruleId), ("kind", "noSuchEnum"), ("name", name)]
+  | .badName name => Json.mkObj [("rule", error.ruleId), ("kind", "badName"), ("name", name)]
+  | .noSuchName name => Json.mkObj [("rule", error.ruleId), ("kind", "noSuchName"), ("name", name)]
   | .nameExists name => Json.mkObj [("rule", error.ruleId), ("kind", "nameExists"), ("name", name)]
 
 def declJson : Decl → Json
@@ -87,7 +87,7 @@ def combinationsJson (f : File) (t : TypeDecl) : Json :=
 
 /-- What the specification says about a rename: why it is refused, or what it gives. -/
 def renameJson (f : File) (old new : Dxn.Name) : Json :=
-  match renameEnum f old new with
+  match renameDecl f old new with
   | .ok g =>
     Json.mkObj [("refusals", Json.arr #[]), ("declarations", Json.arr (g.decls.map declJson).toArray)]
   | .error errors =>

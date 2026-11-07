@@ -191,6 +191,16 @@ structure File.Valid (f : File) : Prop where
   nodup : f.names.Nodup
 -- #endregion valid
 
+/-- In a valid file, every declaration's name follows the naming rule for declarations: E1, T1 and
+R1 are the same rule. -/
+theorem File.isEnumName_of_mem_names {f : File} (hv : f.Valid) {n : Name} (hn : n ∈ f.names) :
+    isEnumName n := by
+  obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hn
+  cases x with
+  | enum d => exact (hv.enums d (File.mem_enums.mpr hx)).name
+  | type t => exact (hv.types t (File.mem_types.mpr hx)).name
+  | record r => exact (hv.records r (File.mem_records.mpr hx)).1.name
+
 theorem File.valid_iff (f : File) :
     f.Valid ↔
       (∀ d ∈ f.enums, Dxn.Valid d) ∧ (∀ t ∈ f.types, t.Valid f.enumNames) ∧

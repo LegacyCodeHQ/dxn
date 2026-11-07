@@ -1,12 +1,13 @@
 import Dxn.File
 
 /-!
-# Renaming an enumeration
+# Renaming a declaration
 
-A rename changes one enumeration's name in a file, every place a type varies
-over it, and every record field of that type, and nothing else. It is refused, with every reason that
-applies, when the file has problems, when the new name breaks the naming
-rules, when no enumeration has the old name, or when another declaration
+A rename changes one declaration's name in a file, an enumeration's, a type's
+or a record's, and every place that refers to it: a type varying over it, or a
+record field of its type. Nothing else changes. It is refused, with every
+reason that applies, when the file has problems, when the new name breaks the
+naming rules, when no declaration has the old name, or when another declaration
 already has the new name. Renaming to the same name is allowed and changes
 nothing.
 
@@ -24,9 +25,9 @@ inductive RenameError where
   /-- The file has problems: a rename starts only from a file the checker accepts. -/
   | fileHasProblems
   /-- The new name breaks the naming rules. -/
-  | badEnumName (name : Name)
-  /-- No enumeration has the old name. -/
-  | noSuchEnum (name : Name)
+  | badName (name : Name)
+  /-- No declaration has the old name. -/
+  | noSuchName (name : Name)
   /-- Another declaration, of any kind, already has the new name. -/
   | nameExists (name : Name)
   deriving Repr, DecidableEq
@@ -34,8 +35,8 @@ inductive RenameError where
 /-- The stable notebook ID belonging to this refusal. -/
 def RenameError.ruleId : RenameError → String
   | .fileHasProblems => "RE1"
-  | .badEnumName _ => "RE2"
-  | .noSuchEnum _ => "RE3"
+  | .badName _ => "RE2"
+  | .noSuchName _ => "RE3"
   | .nameExists _ => "RE4"
 
 -- #endregion refusals
@@ -73,27 +74,27 @@ def Value.renameEnum (old new : Name) (v : Value) : Value :=
 /-- Every reason a rename is refused. None means it is done. -/
 def renameErrors (f : File) (old new : Name) : List RenameError :=
   if f.check = [] then
-    (if isEnumName new then [] else [.badEnumName new]) ++
-    (if old ∈ f.enumNames then [] else [.noSuchEnum old]) ++
+    (if isEnumName new then [] else [.badName new]) ++
+    (if old ∈ f.names then [] else [.noSuchName old]) ++
     (if new ≠ old ∧ new ∈ f.names then [.nameExists new] else [])
   else [.fileHasProblems]
 
-/-- Rename the enumeration `old` to `new` in a file, or say every reason it is refused. -/
-def renameEnum (f : File) (old new : Name) : Except (List RenameError) File :=
+/-- Rename the declaration `old` to `new` in a file, or say every reason it is refused. -/
+def renameDecl (f : File) (old new : Name) : Except (List RenameError) File :=
   if renameErrors f old new = [] then .ok ⟨f.decls.map (Decl.rename old new)⟩
   else .error (renameErrors f old new)
 -- #endregion rename
 
 /-- A rename happens exactly when the file is valid, the new name follows the rules, the old
-name is an enumeration's, and the new name is no other declaration's. -/
+name is a declaration's, and the new name is no other declaration's. -/
 theorem renameErrors_eq_nil_iff (f : File) (old new : Name) :
     renameErrors f old new = [] ↔
-      f.Valid ∧ isEnumName new ∧ old ∈ f.enumNames ∧ (new = old ∨ new ∉ f.names) := by
+      f.Valid ∧ isEnumName new ∧ old ∈ f.names ∧ (new = old ∨ new ∉ f.names) := by
   unfold renameErrors
   rw [← File.check_eq_nil_iff]
   by_cases hc : f.check = []
   · simp only [hc, ↓reduceIte, List.append_eq_nil_iff, true_and]
-    by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.enumNames <;>
+    by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.names <;>
       by_cases he : new = old <;> by_cases hm : new ∈ f.names <;> simp [hn, ho, he, hm]
   · simp [hc]
 
@@ -107,20 +108,19 @@ theorem renameErrors_of_not_valid {f : File} {old new : Name} (h : ¬f.Valid) :
   simp [h]
 
 /-- In a valid file, a bad new name is given exactly when the new name breaks the rules. -/
-theorem badEnumName_mem_renameErrors {f : File} {old new n : Name} (hv : f.Valid) :
-    .badEnumName n ∈ renameErrors f old new ↔ n = new ∧ isEnumName new = false := by
+theorem badName_mem_renameErrors {f : File} {old new n : Name} (hv : f.Valid) :
+    .badName n ∈ renameErrors f old new ↔ n = new ∧ isEnumName new = false := by
   unfold renameErrors
   rw [(File.check_eq_nil_iff f).mpr hv]
-  by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.enumNames <;>
+  by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.names <;>
     by_cases he : new = old <;> by_cases hm : new ∈ f.names <;> simp_all
 
-/-- In a valid file, a missing enumeration is given exactly when no enumeration has the old
-name. -/
-theorem noSuchEnum_mem_renameErrors {f : File} {old new n : Name} (hv : f.Valid) :
-    .noSuchEnum n ∈ renameErrors f old new ↔ n = old ∧ old ∉ f.enumNames := by
+/-- In a valid file, a missing name is given exactly when no declaration has the old name. -/
+theorem noSuchName_mem_renameErrors {f : File} {old new n : Name} (hv : f.Valid) :
+    .noSuchName n ∈ renameErrors f old new ↔ n = old ∧ old ∉ f.names := by
   unfold renameErrors
   rw [(File.check_eq_nil_iff f).mpr hv]
-  by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.enumNames <;>
+  by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.names <;>
     by_cases he : new = old <;> by_cases hm : new ∈ f.names <;> simp_all
 
 /-- In a valid file, a taken name is given exactly when another declaration has the new name. -/
@@ -128,22 +128,22 @@ theorem nameExists_mem_renameErrors {f : File} {old new n : Name} (hv : f.Valid)
     .nameExists n ∈ renameErrors f old new ↔ n = new ∧ new ≠ old ∧ new ∈ f.names := by
   unfold renameErrors
   rw [(File.check_eq_nil_iff f).mpr hv]
-  by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.enumNames <;>
+  by_cases hn : isEnumName new <;> by_cases ho : old ∈ f.names <;>
     by_cases he : new = old <;> by_cases hm : new ∈ f.names <;> simp_all
 
 /-- No reason is given twice. -/
 theorem nodup_renameErrors (f : File) (old new : Name) : (renameErrors f old new).Nodup := by
   unfold renameErrors
   by_cases hc : f.check = [] <;> by_cases hn : isEnumName new <;>
-    by_cases ho : old ∈ f.enumNames <;> by_cases he : new = old <;> by_cases hm : new ∈ f.names <;>
+    by_cases ho : old ∈ f.names <;> by_cases he : new = old <;> by_cases hm : new ∈ f.names <;>
     simp_all
 
 /-- A reason's place in the order: the file's problems, then a bad new name, then a missing
 enumeration, then a taken name. -/
 def RenameError.rank : RenameError → Nat
   | .fileHasProblems => 0
-  | .badEnumName _ => 1
-  | .noSuchEnum _ => 2
+  | .badName _ => 1
+  | .noSuchName _ => 2
   | .nameExists _ => 3
 
 /-- The reasons come in their stated order. -/
@@ -151,12 +151,12 @@ theorem renameErrors_sorted (f : File) (old new : Name) :
     (renameErrors f old new).Pairwise (fun a b => a.rank ≤ b.rank) := by
   unfold renameErrors
   by_cases hc : f.check = [] <;> by_cases hn : isEnumName new <;>
-    by_cases ho : old ∈ f.enumNames <;> by_cases he : new = old <;> by_cases hm : new ∈ f.names <;>
+    by_cases ho : old ∈ f.names <;> by_cases he : new = old <;> by_cases hm : new ∈ f.names <;>
     simp_all [RenameError.rank]
 
-theorem renameEnum_ok {f g : File} {old new : Name} (h : renameEnum f old new = .ok g) :
+theorem renameDecl_ok {f g : File} {old new : Name} (h : renameDecl f old new = .ok g) :
     renameErrors f old new = [] ∧ g = ⟨f.decls.map (Decl.rename old new)⟩ := by
-  unfold renameEnum at h
+  unfold renameDecl at h
   split at h
   · exact ⟨by assumption, (Except.ok.inj h).symm⟩
   · cases h
@@ -369,9 +369,9 @@ end graph
 /-! ## What a rename keeps -/
 
 /-- A rename keeps the file valid. -/
-theorem valid_of_renameEnum {f g : File} {old new : Name} (h : renameEnum f old new = .ok g) :
+theorem valid_of_renameDecl {f g : File} {old new : Name} (h : renameDecl f old new = .ok g) :
     g.Valid := by
-  obtain ⟨he, rfl⟩ := renameEnum_ok h
+  obtain ⟨he, rfl⟩ := renameDecl_ok h
   obtain ⟨hv, hn, _, hnew⟩ := (renameErrors_eq_nil_iff f old new).mp he
   have hinj : ∀ a ∈ f.names, ∀ b ∈ f.names, renameName old new a = renameName old new b → a = b :=
     renameName_injOn hnew
@@ -431,18 +431,18 @@ theorem valid_of_renameEnum {f g : File} {old new : Name} (h : renameEnum f old 
       hne (hinj _ ha _ hb heq))
 
 /-- Each value goes to its renamed value: only its enumeration's name changes. -/
-theorem values_of_renameEnum {f g : File} {old new : Name} (h : renameEnum f old new = .ok g) :
+theorem values_of_renameDecl {f g : File} {old new : Name} (h : renameDecl f old new = .ok g) :
     g.values = f.values.map (Value.renameEnum old new) := by
-  obtain ⟨_, rfl⟩ := renameEnum_ok h
+  obtain ⟨_, rfl⟩ := renameDecl_ok h
   simp only [File.values, enums_rename, List.flatMap_map, List.map_flatMap]
   congr 1
   funext d
   simp [EnumDecl.tagged, EnumDecl.rename, Value.renameEnum, List.map_map, Function.comp_def]
 
 /-- No two values go to the same one, so the map onto the new values is a bijection. -/
-theorem injOn_of_renameEnum {f g : File} {old new : Name} (h : renameEnum f old new = .ok g) :
+theorem injOn_of_renameDecl {f g : File} {old new : Name} (h : renameDecl f old new = .ok g) :
     ∀ v ∈ f.values, ∀ w ∈ f.values, v.renameEnum old new = w.renameEnum old new → v = w := by
-  obtain ⟨he, _⟩ := renameEnum_ok h
+  obtain ⟨he, _⟩ := renameDecl_ok h
   obtain ⟨_, _, _, hnew⟩ := (renameErrors_eq_nil_iff f old new).mp he
   have enum_mem : ∀ v ∈ f.values, v.enum ∈ f.names := by
     intro v hv
@@ -458,30 +458,30 @@ theorem injOn_of_renameEnum {f g : File} {old new : Name} (h : renameEnum f old 
   rw [hen, hna]
 
 /-- Only names change: every enumeration keeps its values, in written order. -/
-theorem enums_values_of_renameEnum {f g : File} {old new : Name}
-    (h : renameEnum f old new = .ok g) : g.enums.map (·.values) = f.enums.map (·.values) := by
-  obtain ⟨_, rfl⟩ := renameEnum_ok h
+theorem enums_values_of_renameDecl {f g : File} {old new : Name}
+    (h : renameDecl f old new = .ok g) : g.enums.map (·.values) = f.enums.map (·.values) := by
+  obtain ⟨_, rfl⟩ := renameDecl_ok h
   simp [enums_rename, EnumDecl.rename, List.map_map, Function.comp_def]
 
 /-- Every record keeps its name and fields, each field's type renamed. -/
-theorem records_of_renameEnum {f g : File} {old new : Name}
-    (h : renameEnum f old new = .ok g) : g.records = f.records.map (RecordDecl.rename old new) := by
-  obtain ⟨_, rfl⟩ := renameEnum_ok h
+theorem records_of_renameDecl {f g : File} {old new : Name}
+    (h : renameDecl f old new = .ok g) : g.records = f.records.map (RecordDecl.rename old new) := by
+  obtain ⟨_, rfl⟩ := renameDecl_ok h
   exact records_rename f old new
 
 /-- Every type keeps its name, and varies over the same enumerations, renamed. -/
-theorem types_of_renameEnum {f g : File} {old new : Name}
-    (h : renameEnum f old new = .ok g) : g.types = f.types.map (TypeDecl.rename old new) := by
-  obtain ⟨_, rfl⟩ := renameEnum_ok h
+theorem types_of_renameDecl {f g : File} {old new : Name}
+    (h : renameDecl f old new = .ok g) : g.types = f.types.map (TypeDecl.rename old new) := by
+  obtain ⟨_, rfl⟩ := renameDecl_ok h
   exact types_rename f old new
 
 /-! ## Undoing and repeating a rename -/
 
 /-- Renaming back undoes a rename. -/
-theorem renameEnum_undo {f g : File} {old new : Name} (h : renameEnum f old new = .ok g) :
-    renameEnum g new old = .ok f := by
-  have hg := valid_of_renameEnum h
-  obtain ⟨he, rfl⟩ := renameEnum_ok h
+theorem renameDecl_undo {f g : File} {old new : Name} (h : renameDecl f old new = .ok g) :
+    renameDecl g new old = .ok f := by
+  have hg := valid_of_renameDecl h
+  obtain ⟨he, rfl⟩ := renameDecl_ok h
   obtain ⟨hv, _, hold, hnew⟩ := (renameErrors_eq_nil_iff f old new).mp he
   have hname : ∀ m ∈ f.names, renameName new old (renameName old new m) = m := by
     intro m hm
@@ -499,9 +499,8 @@ theorem renameEnum_undo {f g : File} {old new : Name} (h : renameEnum f old new 
     simp only [Function.comp_def, Decl.rename_eq_mapNames, Decl.mapNames_mapNames]
     exact Decl.mapNames_id fun m hm => hname m (File.mentions_subset hv hx m hm)
   have hok : renameErrors ⟨f.decls.map (Decl.rename old new)⟩ new old = [] := by
-    rw [renameErrors_eq_nil_iff, names_rename, enumNames_rename]
-    obtain ⟨d, hd, hdo⟩ := List.mem_map.mp hold
-    refine ⟨hg, hdo ▸ (hv.enums d hd).name, ?_, ?_⟩
+    rw [renameErrors_eq_nil_iff, names_rename]
+    refine ⟨hg, File.isEnumName_of_mem_names hv hold, ?_, ?_⟩
     · exact List.mem_map.mpr ⟨old, hold, by simp [renameName]⟩
     · by_cases hno : new = old
       · exact .inl hno.symm
@@ -511,28 +510,27 @@ theorem renameEnum_undo {f g : File} {old new : Name} (h : renameEnum f old new 
         split at hm
         · exact hno hm
         · contradiction
-  unfold renameEnum
+  unfold renameDecl
   simp only [hok, ↓reduceIte, hback]
 
 /-- Renaming to its own name gives the same file. -/
-theorem renameEnum_self {f : File} {n : Name} (hv : f.Valid) (hn : n ∈ f.enumNames) :
-    renameEnum f n n = .ok f := by
+theorem renameDecl_self {f : File} {n : Name} (hv : f.Valid) (hn : n ∈ f.names) :
+    renameDecl f n n = .ok f := by
   have hok : renameErrors f n n = [] := by
     rw [renameErrors_eq_nil_iff]
-    obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hn
-    exact ⟨hv, (hv.enums d hd).name, hn, .inl rfl⟩
+    exact ⟨hv, File.isEnumName_of_mem_names hv hn, hn, .inl rfl⟩
   have hsame : f.decls.map (Decl.rename n n) = f.decls := by
     refine (List.map_congr_left fun x _ => ?_).trans (List.map_id' _)
     rw [Decl.rename_eq_mapNames]
     exact Decl.mapNames_id fun m _ => by unfold renameName; split <;> simp_all
-  unfold renameEnum
+  unfold renameDecl
   simp only [hok, ↓reduceIte, hsame]
 
 /-- Two renames in a row are one rename: `a` to `b`, then `b` to `c`, is `a` to `c`. -/
-theorem renameEnum_comp {f g h : File} {a b c : Name} (hg : renameEnum f a b = .ok g)
-    (hh : renameEnum g b c = .ok h) : renameEnum f a c = .ok h := by
-  obtain ⟨heg, rfl⟩ := renameEnum_ok hg
-  obtain ⟨heh, rfl⟩ := renameEnum_ok hh
+theorem renameDecl_comp {f g h : File} {a b c : Name} (hg : renameDecl f a b = .ok g)
+    (hh : renameDecl g b c = .ok h) : renameDecl f a c = .ok h := by
+  obtain ⟨heg, rfl⟩ := renameDecl_ok hg
+  obtain ⟨heh, rfl⟩ := renameDecl_ok hh
   obtain ⟨hv, _, ha, hb⟩ := (renameErrors_eq_nil_iff f a b).mp heg
   obtain ⟨_, hc, _, hcg⟩ := (renameErrors_eq_nil_iff _ b c).mp heh
   rw [names_rename] at hcg
@@ -566,7 +564,7 @@ theorem renameEnum_comp {f g h : File} {a b c : Name} (hg : renameEnum f a b = .
     refine List.map_congr_left fun x hx => ?_
     simp only [Function.comp_def, Decl.rename_eq_mapNames, Decl.mapNames_mapNames]
     exact Decl.mapNames_congr fun m hm => hname m (File.mentions_subset hv hx m hm)
-  unfold renameEnum
+  unfold renameDecl
   simp only [hok, ↓reduceIte, hdecls]
 
 end Dxn
