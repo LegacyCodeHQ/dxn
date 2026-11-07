@@ -19,16 +19,10 @@ merges nothing.
 
 ## Values carry their enumeration's name
 
-A value is not just `off`: it is `Light`'s `off`. Each value is a pair of its
-enumeration's name and its own, so two enumerations can both have an `off`
-without sharing it:
-
-$$
-(\mathit{Light}, \mathit{off}) \neq (\mathit{Power}, \mathit{off})
-$$
-
-So renaming an enumeration changes every one of its values, though no value's
-own name changes.
+Each value is a pair of its enumeration's name and its own, as explained in
+[Disjoint unions](./disjoint-unions): `Light`'s `off` is
+$(\mathit{Light}, \mathit{off})$. So renaming an enumeration changes every one
+of its values, though no value's own name changes.
 
 ## Functions
 

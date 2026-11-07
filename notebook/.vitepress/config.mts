@@ -19,6 +19,7 @@ export default defineConfig({
         text: "Concepts",
         items: [
           { text: "Finite sets", link: "/concepts/finite-sets" },
+          { text: "Disjoint unions", link: "/concepts/disjoint-unions" },
           { text: "Bijections", link: "/concepts/bijections" },
         ],
       },

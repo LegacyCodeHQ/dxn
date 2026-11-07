@@ -125,6 +125,7 @@ theorem File.duplicateEnumsOf_check_sublist (f : File) :
   rw [this]
   exact List.filter_sublist
 
+-- #region values
 /-- A declaration's values, in written order, each tagged with its enumeration's name. -/
 def EnumDecl.tagged (d : EnumDecl) : List Value :=
   d.values.map (Value.mk d.name)
@@ -132,6 +133,7 @@ def EnumDecl.tagged (d : EnumDecl) : List Value :=
 /-- A file's values, in written order, each tagged with its enumeration's name. -/
 def File.values (f : File) : List Value :=
   f.decls.flatMap EnumDecl.tagged
+-- #endregion values
 
 /-- In a valid file, no two enumerations share a value, and none has a value twice. -/
 theorem File.nodup_values {f : File} (h : f.Valid) : f.values.Nodup := by

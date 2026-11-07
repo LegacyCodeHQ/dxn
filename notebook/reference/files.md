@@ -57,7 +57,8 @@ enum Light { dim }       -- Light is declared twice
 A name written twice is reported once, in the order it first appears, however
 many times it is written.
 
-**Why:** each value is tagged with its enumeration's name, so
+**Why:** each value is tagged with its enumeration's name, as in a
+[disjoint union](../concepts/disjoint-unions), so
 $(\mathit{Light}, \mathit{off})$ is `Light`'s `off`. Two enumerations called
 `Light` would share their tags, and their values would merge: the file would
 no longer say which `Light` a value belongs to. With names unique, no two

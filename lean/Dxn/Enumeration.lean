@@ -207,6 +207,7 @@ structure Enum where
   decl : EnumDecl
   valid : Valid decl
 
+-- #region value
 /-- A value of an enumeration, tagged with the enumeration's name, as in a disjoint union. -/
 structure Value where
   enum : Name
@@ -216,6 +217,7 @@ structure Value where
 /-- The values of an enumeration, in written order: each name tagged with the enumeration's. -/
 def Enum.values (e : Enum) : List Value :=
   e.decl.values.map (Value.mk e.decl.name)
+-- #endregion value
 
 theorem Enum.mem_values {e : Enum} {v : Value} :
     v ∈ e.values ↔ v.enum = e.decl.name ∧ v.name ∈ e.decl.values := by
