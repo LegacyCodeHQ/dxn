@@ -173,8 +173,19 @@ enum light { Off, on, Off, dim- }
 reports E1 `badEnumName light`, E3 `badValueName Off`, E3 `badValueName dim-`,
 then E4 `duplicate Off`. A name that breaks two rules is reported for each.
 
-The tests check this order, and the implementation reports problems in the
-same order, so the two can be compared directly.
+Lean proves this order for every declaration, stated without reference to how
+the checker is written, so any checker that changed it would fail the proof:
+
+| Fact                                                       | Lean                            |
+| ---------------------------------------------------------- | ------------------------------- |
+| Problems are sorted by rule: E1, then E2, then E3, then E4 | `check_sorted`                  |
+| Within E3, names come in the order they are first written  | `badValueNamesOf_check_sublist` |
+| Within E4, names come in the order they are first written  | `duplicatesOf_check_sublist`    |
+
+"In the order they are first written" is a subsequence of the declaration's
+names listed once each, in the order each first appears. The implementation
+reports problems in the same order, and the agreement checks compare the two
+directly.
 
 ## What an accepted enumeration means
 

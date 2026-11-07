@@ -52,6 +52,15 @@ example (d : EnumDecl) (v : Name) :
 -- It reports an empty declaration exactly when there are no names.
 example (d : EnumDecl) : .empty ∈ check d ↔ d.values = [] := empty_mem_check d
 
+-- Problems are sorted by rule: E1, then E2, then E3, then E4.
+example (d : EnumDecl) : (check d).Pairwise (fun a b => a.rank ≤ b.rank) := check_sorted d
+
+-- Within E3, and within E4, names come in the order they are first written.
+example (d : EnumDecl) : List.Sublist (badValueNamesOf (check d)) d.values.eraseDups :=
+  badValueNamesOf_check_sublist d
+example (d : EnumDecl) : List.Sublist (duplicatesOf (check d)) d.values.eraseDups :=
+  duplicatesOf_check_sublist d
+
 -- It reports no problem twice.
 example (d : EnumDecl) : (check d).Nodup := nodup_check d
 

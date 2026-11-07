@@ -89,6 +89,14 @@ reports, in this order:
 3. `light`: E1 `badEnumName light`
 4. F1 `duplicateEnum light`
 
+Lean proves this order for every file:
+
+| Fact                                                                    | Lean                                  |
+| ----------------------------------------------------------------------- | ------------------------------------- |
+| An enumeration's own problems come before every F1                      | `File.check_sorted`                   |
+| The enumerations' own problems are each declaration's, in written order | `File.enumProblemsOf_check`           |
+| Under F1, names come in the order they are first written                | `File.duplicateEnumsOf_check_sublist` |
+
 When two declarations share a name, their problems are told apart by position:
 point each problem at its own declaration.
 

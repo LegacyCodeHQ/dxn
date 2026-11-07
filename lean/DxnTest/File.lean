@@ -32,6 +32,18 @@ example (f : File) (n : Name) (e : EnumError) :
     .enum n e ∈ f.check ↔ ∃ d ∈ f.decls, d.name = n ∧ e ∈ check d :=
   File.enum_mem_check f n e
 
+-- An enumeration's own problems come before every name written twice.
+example (f : File) : f.check.Pairwise (fun a b => a.rank ≤ b.rank) := File.check_sorted f
+
+-- The enumerations' own problems are each declaration's, in the order the declarations are written.
+example (f : File) :
+    enumProblemsOf f.check = f.decls.flatMap (fun d => (check d).map (.enum d.name)) :=
+  File.enumProblemsOf_check f
+
+-- Names written twice come in the order they are first written.
+example (f : File) : List.Sublist (duplicateEnumsOf f.check) f.names.eraseDups :=
+  File.duplicateEnumsOf_check_sublist f
+
 -- A file's values, in written order, each tagged with its enumeration.
 #guard file.values =
   [⟨"Light", "off"⟩, ⟨"Light", "on"⟩, ⟨"Power", "off"⟩, ⟨"Power", "on"⟩]

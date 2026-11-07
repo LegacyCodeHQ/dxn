@@ -78,6 +78,53 @@ theorem File.enum_mem_check (f : File) (n : Name) (e : EnumError) :
   · rintro ⟨d, hd, rfl, he⟩
     exact .inl ⟨d, hd, e, he, rfl⟩
 
+/-! ## The order of reported problems -/
+
+/-- A problem's place in the order: an enumeration's own problems, then F1. -/
+def FileError.rank : FileError → Nat
+  | .enum _ _ => 0
+  | .duplicateEnum _ => 1
+
+/-- The enumerations' own problems, in the order they are reported. -/
+def enumProblemsOf (errors : List FileError) : List FileError :=
+  errors.filter fun
+    | .enum _ _ => true
+    | _ => false
+
+/-- The names reported under F1, in the order they are reported. -/
+def duplicateEnumsOf (errors : List FileError) : List Name :=
+  errors.filterMap fun
+    | .duplicateEnum n => some n
+    | _ => none
+
+/-- An enumeration's own problems come before every name written twice. -/
+theorem File.check_sorted (f : File) : f.check.Pairwise (fun a b => a.rank ≤ b.rank) := by
+  simp [-List.mem_map, -List.mem_append, -List.mem_flatMap, File.check, List.pairwise_append,
+    List.pairwise_map, FileError.rank, List.pairwise_of_forall, List.forall_mem_map,
+    List.pairwise_flatMap]
+  intro a _ _ _
+  cases a <;> simp
+
+/-- The enumerations' own problems are each declaration's, in the order the declarations are
+written. -/
+theorem File.enumProblemsOf_check (f : File) :
+    enumProblemsOf f.check = f.decls.flatMap (fun d => (Dxn.check d).map (.enum d.name)) := by
+  have keep : ∀ l : List EnumError, l.filter (fun _ => true) = l := fun _ =>
+    List.filter_eq_self.mpr fun _ _ => rfl
+  have drop : ∀ l : List Name, l.filter (fun _ => false) = [] := fun _ =>
+    List.filter_eq_nil_iff.mpr fun _ _ => Bool.false_ne_true
+  simp [File.check, enumProblemsOf, List.filter_append, List.filter_flatMap, List.filter_map,
+    Function.comp_def, keep, drop]
+
+/-- Names written twice come in the order they are first written. -/
+theorem File.duplicateEnumsOf_check_sublist (f : File) :
+    List.Sublist (duplicateEnumsOf f.check) f.names.eraseDups := by
+  have : duplicateEnumsOf f.check = duplicates f.names := by
+    simp [File.check, duplicateEnumsOf, List.filterMap_append, List.filterMap_flatMap,
+      List.filterMap_map, Function.comp_def]
+  rw [this]
+  exact List.filter_sublist
+
 /-- A declaration's values, in written order, each tagged with its enumeration's name. -/
 def EnumDecl.tagged (d : EnumDecl) : List Value :=
   d.values.map (Value.mk d.name)

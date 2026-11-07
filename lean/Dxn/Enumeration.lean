@@ -151,6 +151,55 @@ theorem nodup_check (d : EnumDecl) : (check d).Nodup := by
   by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;>
     simp_all [List.nodup_append]
 
+/-! ## The order of reported problems -/
+
+/-- A problem's rule, as its place in the order: E1, E2, E3, E4. -/
+def EnumError.rank : EnumError → Nat
+  | .badEnumName _ => 0
+  | .empty => 1
+  | .badValueName _ => 2
+  | .duplicate _ => 3
+
+/-- The names reported under E3, in the order they are reported. -/
+def badValueNamesOf (errors : List EnumError) : List Name :=
+  errors.filterMap fun
+    | .badValueName v => some v
+    | _ => none
+
+/-- The names reported under E4, in the order they are reported. -/
+def duplicatesOf (errors : List EnumError) : List Name :=
+  errors.filterMap fun
+    | .duplicate v => some v
+    | _ => none
+
+/-- Problems are sorted by rule: E1, then E2, then E3, then E4. -/
+theorem check_sorted (d : EnumDecl) : (check d).Pairwise (fun a b => a.rank ≤ b.rank) := by
+  unfold check
+  by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;>
+    simp [-List.mem_map, -List.mem_append, hn, he, List.pairwise_append, List.pairwise_map,
+      EnumError.rank, List.pairwise_of_forall, List.forall_mem_map, List.forall_mem_append]
+
+/-- Within E3, names come in the order they are first written: as a subsequence of the names
+listed once each, in the order they first appear. -/
+theorem badValueNamesOf_check_sublist (d : EnumDecl) :
+    List.Sublist (badValueNamesOf (check d)) d.values.eraseDups := by
+  have : badValueNamesOf (check d) = badValueNames d.values := by
+    unfold check badValueNamesOf
+    by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;>
+      simp [hn, he, List.filterMap_append, List.filterMap_map, Function.comp_def]
+  rw [this]
+  exact List.filter_sublist
+
+/-- Within E4, names come in the order they are first written. -/
+theorem duplicatesOf_check_sublist (d : EnumDecl) :
+    List.Sublist (duplicatesOf (check d)) d.values.eraseDups := by
+  have : duplicatesOf (check d) = duplicates d.values := by
+    unfold check duplicatesOf
+    by_cases hn : isEnumName d.name <;> by_cases he : d.values = [] <;>
+      simp [hn, he, List.filterMap_append, List.filterMap_map, Function.comp_def]
+  rw [this]
+  exact List.filter_sublist
+
 /-- A declaration the checker accepted. -/
 structure Enum where
   decl : EnumDecl
