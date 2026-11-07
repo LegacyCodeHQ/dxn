@@ -54,10 +54,12 @@ def EnumDecl.rename (old new : Name) (d : EnumDecl) : EnumDecl :=
 def TypeDecl.rename (old new : Name) (t : TypeDecl) : TypeDecl :=
   { name := renameName old new t.name, varies := t.varies.map (renameName old new) }
 
-/-- A record after the rename: its fields keep their names, and their types follow the rename. -/
+/-- A record after the rename: its fields and check fields keep their names, and their types
+follow the rename. -/
 def RecordDecl.rename (old new : Name) (r : RecordDecl) : RecordDecl :=
   { name := renameName old new r.name,
-    fields := r.fields.map fun field => (field.1, renameName old new field.2) }
+    fields := r.fields.map fun field => (field.1, renameName old new field.2),
+    checks := r.checks.map fun block => block.map fun field => (field.1, renameName old new field.2) }
 
 /-- A declaration after the rename. -/
 def Decl.rename (old new : Name) : Decl → Decl
@@ -179,17 +181,24 @@ theorem renameName_injOn {names : List Name} {old new : Name}
 
 /-! ## Renaming every name a declaration mentions -/
 
-/-- Every name a declaration mentions: its own, and for a type, those it varies over. -/
+/-- Every name a declaration mentions: its own, for a type those it varies over, and for a record
+its fields' and check fields' types. -/
 def Decl.mentions : Decl → List Name
   | .enum d => [d.name]
   | .type t => t.name :: t.varies
-  | .record r => r.name :: r.fieldTypes
+  | .record r => r.name :: (r.fieldTypes ++ r.checkFieldTypes)
+
+/-- A record with its name, and its fields' and check fields' types, sent through `φ`. -/
+def RecordDecl.mapNames (φ : Name → Name) (r : RecordDecl) : RecordDecl :=
+  { name := φ r.name,
+    fields := r.fields.map fun field => (field.1, φ field.2),
+    checks := r.checks.map fun block => block.map fun field => (field.1, φ field.2) }
 
 /-- A declaration with every name it mentions sent through `φ`. -/
 def Decl.mapNames (φ : Name → Name) : Decl → Decl
   | .enum d => .enum { d with name := φ d.name }
   | .type t => .type { name := φ t.name, varies := t.varies.map φ }
-  | .record r => .record { name := φ r.name, fields := r.fields.map fun field => (field.1, φ field.2) }
+  | .record r => .record (r.mapNames φ)
 
 theorem Decl.rename_eq_mapNames (old new : Name) (x : Decl) :
     x.rename old new = x.mapNames (renameName old new) := by
@@ -197,7 +206,7 @@ theorem Decl.rename_eq_mapNames (old new : Name) (x : Decl) :
 
 theorem Decl.mapNames_mapNames (φ ψ : Name → Name) (x : Decl) :
     (x.mapNames φ).mapNames ψ = x.mapNames (ψ ∘ φ) := by
-  cases x <;> simp [Decl.mapNames, List.map_map, Function.comp_def]
+  cases x <;> simp [Decl.mapNames, RecordDecl.mapNames, List.map_map, Function.comp_def]
 
 theorem Decl.mapNames_congr {φ ψ : Name → Name} {x : Decl}
     (h : ∀ n ∈ x.mentions, φ n = ψ n) : x.mapNames φ = x.mapNames ψ := by
@@ -207,15 +216,18 @@ theorem Decl.mapNames_congr {φ ψ : Name → Name} {x : Decl}
     simp only [Decl.mentions, List.mem_cons, forall_eq_or_imp] at h
     simp [Decl.mapNames, h.1, List.map_congr_left h.2]
   | record r =>
-    simp only [Decl.mentions, List.mem_cons, forall_eq_or_imp, RecordDecl.fieldTypes,
-      List.mem_map] at h
-    simp only [Decl.mapNames, h.1, Decl.record.injEq, RecordDecl.mk.injEq, true_and]
-    exact List.map_congr_left fun field hf => by rw [h.2 _ ⟨field, hf, rfl⟩]
+    simp only [Decl.mentions, List.mem_cons, forall_eq_or_imp, List.mem_append] at h
+    simp only [Decl.mapNames, RecordDecl.mapNames, h.1, Decl.record.injEq, RecordDecl.mk.injEq,
+      true_and]
+    refine ⟨List.map_congr_left fun field hf => ?_,
+      List.map_congr_left fun block hb => List.map_congr_left fun field hf => ?_⟩
+    · rw [h.2 _ (.inl (List.mem_map_of_mem hf))]
+    · rw [h.2 _ (.inr (List.mem_map_of_mem (List.mem_flatten.mpr ⟨block, hb, hf⟩)))]
 
 theorem Decl.mapNames_id {φ : Name → Name} {x : Decl} (h : ∀ n ∈ x.mentions, φ n = n) :
     x.mapNames φ = x := by
   rw [Decl.mapNames_congr (ψ := id) h]
-  cases x <;> simp [Decl.mapNames]
+  cases x <;> simp [Decl.mapNames, RecordDecl.mapNames]
 
 /-- In a valid file, every name a declaration mentions is one of the file's names. -/
 theorem File.mentions_subset {f : File} (hv : f.Valid) {x : Decl} (hx : x ∈ f.decls) :
@@ -230,11 +242,16 @@ theorem File.mentions_subset {f : File} (hv : f.Valid) {x : Decl} (hx : x ∈ f.
     · exact File.enumNames_subset ((hv.types t (File.mem_types.mpr hx)).known n hn)
   | record r =>
     intro n hn
+    have hrv := (hv.records r (File.mem_records.mpr hx)).1
     rcases List.mem_cons.mp hn with rfl | hn
     · exact hname
-    · rcases ((hv.records r (File.mem_records.mpr hx)).1.known n hn) with he | hr
-      · exact File.enumNames_subset he
-      · exact File.recordNames_subset hr
+    · rcases List.mem_append.mp hn with hn | hn
+      · rcases hrv.known n hn with he | hr
+        · exact File.enumNames_subset he
+        · exact File.recordNames_subset hr
+      · rcases hrv.checkKnown n hn with he | hr
+        · exact File.enumNames_subset he
+        · exact File.recordNames_subset hr
 
 theorem names_rename (f : File) (old new : Name) :
     (⟨f.decls.map (Decl.rename old new)⟩ : File).names = f.names.map (renameName old new) := by
@@ -406,7 +423,13 @@ theorem valid_of_renameDecl {f g : File} {old new : Name} (h : renameDecl f old 
     rintro _ ⟨r, hr, rfl⟩
     obtain ⟨hrv, hself⟩ := hv.records r hr
     have hrn : r.name ∈ f.names := File.recordNames_subset (List.mem_map_of_mem hr)
-    refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+    have hcn : (r.rename old new).checkFieldNames = r.checkFieldNames := by
+      simp [RecordDecl.rename, RecordDecl.checkFieldNames, RecordDecl.checkFields, List.map_flatten,
+        List.map_map, Function.comp_def]
+    have hct : (r.rename old new).checkFieldTypes = r.checkFieldTypes.map (renameName old new) := by
+      simp [RecordDecl.rename, RecordDecl.checkFieldTypes, RecordDecl.checkFields, List.map_flatten,
+        List.map_map, Function.comp_def]
+    refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
     · unfold RecordDecl.rename renameName
       split
       · exact hn
@@ -421,6 +444,15 @@ theorem valid_of_renameDecl {f g : File} {old new : Name} (h : renameDecl f old 
         List.mem_map] at ht
       obtain ⟨field, hfield, rfl⟩ := ht
       rcases hrv.known field.2 (List.mem_map_of_mem hfield) with he | hr'
+      · exact .inl (List.mem_map_of_mem he)
+      · exact .inr (List.mem_map_of_mem hr')
+    · simpa [RecordDecl.rename] using hrv.oneCheck
+    · rw [hcn]; exact hrv.checkFieldNames
+    · rw [hcn]; exact hrv.checkNodup
+    · intro t ht
+      rw [hct] at ht
+      obtain ⟨m, hm, rfl⟩ := List.mem_map.mp ht
+      rcases hrv.checkKnown m hm with he | hr'
       · exact .inl (List.mem_map_of_mem he)
       · exact .inr (List.mem_map_of_mem hr')
     · show (⟨f.decls.map (Decl.rename old new)⟩ : File).containsItself

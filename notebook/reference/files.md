@@ -21,8 +21,8 @@ record Review {
 A file is checked as a whole. Each declaration is checked by its own rules: an
 enumeration by those of [Enumerations](./enumerations), E1 to E4; a type by
 those of [Types](./types), T1 to T3, against the file's enumerations; and a
-record by those of [Records](./records), R1 to R6, against the file's
-enumerations and records. The file adds a rule of its own: no two declarations
+record by those of [Records](./records), R1 to R6, and of
+[Checks](./checks), C1 to C4, against the file's enumerations and records. The file adds a rule of its own: no two declarations
 share a name.
 
 The Lean specification in
@@ -44,12 +44,13 @@ declaration stops reading the file there.
 
 ## Checker rules
 
-| ID        | Rule                                       | Breaks it                                     | Reported                  |
-| --------- | ------------------------------------------ | --------------------------------------------- | ------------------------- |
-| E1–E4     | Each enumeration follows its own rules     | `enum Light { }`                              | `Light: empty`            |
-| T1–T3     | Each type follows its own rules            | `type Button { varies Size }`, with no `Size` | `Button: noSuchEnum Size` |
-| R1–R6     | Each record follows its own rules          | `record Review { reply: Review }`             | `Review: containsItself`  |
-| [F1](#f1) | No two declarations in a file share a name | `enum Light { off }`<br>`type Light { }`      | `duplicateName Light`     |
+| ID        | Rule                                          | Breaks it                                     | Reported                  |
+| --------- | --------------------------------------------- | --------------------------------------------- | ------------------------- |
+| E1–E4     | Each enumeration follows its own rules        | `enum Light { }`                              | `Light: empty`            |
+| T1–T3     | Each type follows its own rules               | `type Button { varies Size }`, with no `Size` | `Button: noSuchEnum Size` |
+| R1–R6     | Each record follows its own rules             | `record Review { reply: Review }`             | `Review: containsItself`  |
+| C1–C4     | Each record's `check` block follows its rules | `check { }` twice                             | `Design: duplicateCheck`  |
+| [F1](#f1) | No two declarations in a file share a name    | `enum Light { off }`<br>`type Light { }`      | `duplicateName Light`     |
 
 A file is accepted exactly when it breaks none of them. Lean proves this
 (`File.check_eq_nil_iff`).

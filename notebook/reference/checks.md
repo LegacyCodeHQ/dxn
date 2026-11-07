@@ -28,8 +28,13 @@ theory, entries and checks as functions and status as their images, is in
 [Images of functions](../concepts/images-of-functions).
 
 Who the maker and the checker are, where entries and checks are kept, and
-which entry is current are not decided yet: see [Deferred](#deferred). Not
-specified in Lean yet.
+which entry is current are not decided yet: see [Deferred](#deferred).
+
+The `check` block, its rules and a check's values are specified in
+[`lean/Dxn/Record.lean`](https://github.com/LegacyCodeHQ/dxn/blob/main/lean/Dxn/Record.lean)
+and
+[`lean/Dxn/RecordValue.lean`](https://github.com/LegacyCodeHQ/dxn/blob/main/lean/Dxn/RecordValue.lean).
+Entries, checks and status are not specified yet.
 
 ## Syntax
 
@@ -126,6 +131,10 @@ Fields in a `check` block follow the rules for a record's fields:
 | [C3](#c3) | No two check fields share a name                                   | `severity: Severity` twice in `check`  | `duplicateCheckField severity`   |
 | [C4](#c4) | Every check field's type is an enumeration or a record of the file | `when: Timestamp`, with no `Timestamp` | `noSuchCheckFieldType Timestamp` |
 
+A record is accepted exactly when it breaks none of R1 to R6 and C1 to C4.
+Lean proves C1 to C4 are reported exactly when broken (`checkRecord_eq_nil_iff`
+and the `…_mem_checkRecord` theorems).
+
 A record's values are its own fields' values only. A check is a separate
 value about an entry, not part of the record's value, so a record value nested
 in another never includes a check. A check field may therefore name the record
@@ -155,6 +164,8 @@ which one applies unclear.
 
 **Suggest:** merge the blocks' fields into one.
 
+**Lean:** `duplicateCheck_mem_checkRecord`.
+
 ### C2: Every check field name follows the naming rules for values {#c2}
 
 As [R3](./records#r3).
@@ -163,13 +174,18 @@ As [R3](./records#r3).
 
 **Suggest:** the name E3 would suggest, such as `severity` for `Severity`.
 
+**Lean:** `badCheckFieldName_mem_checkRecord`.
+
 ### C3: No two check fields share a name {#c3}
 
-As [R4](./records#r4).
+As [R4](./records#r4). With more than one `check` block, which C1 reports, the
+names are compared across every block, as they would be once merged.
 
 **Why:** fields are found by name.
 
 **Suggest:** rename one of them; point at every check field with the name.
+
+**Lean:** `duplicateCheckField_mem_checkRecord`.
 
 ### C4: Every check field's type is an enumeration or a record of the file {#c4}
 
@@ -178,6 +194,52 @@ As [R5](./records#r5).
 **Why:** a field's values are its type's values.
 
 **Suggest:** the enumeration and record names there are.
+
+**Lean:** `noSuchCheckFieldType_mem_checkRecord`.
+
+## The order of reported problems
+
+A record's problems are reported in the order R1 to R5, then C1 to C4, then
+R6, and within a rule in the order the names are first written:
+
+```dxn
+record design {
+  check { Bad: Missing }
+  check { Bad: Urgency }
+}
+```
+
+reports R1 `badRecordName design`, R2 `noFields`, C1 `duplicateCheck`, C2
+`badCheckFieldName Bad`, C3 `duplicateCheckField Bad`, then C4
+`noSuchCheckFieldType Missing`.
+
+## In Lean
+
+A record with its `check` blocks, and its check fields:
+
+<<< lean:lean/Dxn/Record.lean#record
+
+Why the checker rejects a record, C1 to C4 included:
+
+<<< lean:lean/Dxn/Record.lean#errors
+
+The rules checked on each record, R1 to R5 and C1 to C4:
+
+<<< lean:lean/Dxn/Record.lean#check
+
+What a valid record is:
+
+<<< lean:lean/Dxn/Record.lean#valid
+
+A check's values:
+
+<<< lean:lean/Dxn/RecordValue.lean#checkValues
+
+Lean proves that a check's number of values is the product of its fields'
+numbers of values (`File.length_checkValues`), and that an empty block has
+exactly one, the empty record (`File.checkValues_nil`). R6 follows a record's
+own fields only (`File.fieldRecords`), and a record's values never include a
+check (`File.valuesWithin`).
 
 ## Decisions
 

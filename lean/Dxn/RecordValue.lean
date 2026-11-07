@@ -10,6 +10,10 @@ its fields' values, with the parts named.
 
 Two values of a record are equal exactly when every field is, comparing nested
 records field by field down to enumeration values.
+
+A check's value is a value for each field of its `check` block, found by name,
+as a record's is. A block with no fields has one value, the empty record. A
+record's own values never include a check.
 -/
 
 namespace Dxn
@@ -81,6 +85,23 @@ an enumeration's values one level below, so this depth lists them all. -/
 def File.recordValues (f : File) (n : Name) : List FieldValue :=
   f.valuesWithin (f.records.length + 1) n
 -- #endregion values
+
+-- #region checkValues
+/-- The values a check of this `check` block can hold: every way to give each of its fields a
+value, in written order, first field slowest. -/
+def File.checkValues (f : File) (block : List (Name × Name)) : List FieldValue :=
+  (product (block.map fun field => f.recordValues field.2)).map fun vs =>
+    .record ((block.map (·.1)).zip vs)
+-- #endregion checkValues
+
+/-- The number of a check's values is the product of its fields' numbers of values. -/
+theorem File.length_checkValues (f : File) (block : List (Name × Name)) :
+    (f.checkValues block).length =
+      (block.map fun field => (f.recordValues field.2).length).foldr (· * ·) 1 := by
+  simp [File.checkValues, length_product, List.map_map, Function.comp_def]
+
+/-- A `check` block with no fields has exactly one value: the empty record. -/
+theorem File.checkValues_nil (f : File) : f.checkValues [] = [.record []] := rfl
 
 /-- The number of a record's values is the product of its fields' numbers of values. -/
 theorem File.length_valuesWithin_record {f : File} {k : Nat} {r : RecordDecl}

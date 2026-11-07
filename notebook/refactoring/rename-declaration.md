@@ -4,7 +4,7 @@
 
 Renaming a declaration gives an enumeration, a type or a record a new name, and
 everything that refers to it follows: a type that varies over an enumeration,
-and a record field of an enumeration's or a record's type.
+and a record field or check field of an enumeration's or a record's type.
 
 ```dxn
 enum Light { off, on }               enum Glow { off, on }
@@ -23,15 +23,15 @@ specification is right.
 ## What it does
 
 **In the text,** the declaration's name changes where it is declared, and
-wherever it is referred to: in a type's `varies` list, and as a record field's
-type. Values, their order, every other declaration's name, every field's own
+wherever it is referred to: in a type's `varies` list, and as the type of a
+record field or a [check field](../reference/checks). Values, their order, every other declaration's name, every field's own
 name and everything else stay as they were.
 
-| Renaming       | Also changes                              | Nothing refers to it yet     |
-| -------------- | ----------------------------------------- | ---------------------------- |
-| An enumeration | `varies` lists, record fields of its type |                              |
-| A record       | Record fields of its type                 |                              |
-| A type         |                                           | A type is named nowhere else |
+| Renaming       | Also changes                                        | Nothing refers to it yet     |
+| -------------- | --------------------------------------------------- | ---------------------------- |
+| An enumeration | `varies` lists, record and check fields of its type |                              |
+| A record       | Record and check fields of its type                 |                              |
+| A type         |                                                     | A type is named nowhere else |
 
 **In the meaning,** renaming an enumeration changes every one of its values. A
 value is a pair of its enumeration's name and its own, as in a
@@ -117,18 +117,18 @@ changes nothing.
 
 ## The promises
 
-| Promise                                                  | Lean                         |
-| -------------------------------------------------------- | ---------------------------- |
-| A rename that is not refused keeps the model valid       | `valid_of_renameDecl`        |
-| Each value goes to its renamed value                     | `values_of_renameDecl`       |
-| No two values go to the same one: it is a bijection      | `injOn_of_renameDecl`        |
-| Every enumeration keeps its values, in order             | `enums_values_of_renameDecl` |
-| Every type varies over the same enumerations, renamed    | `types_of_renameDecl`        |
-| Every record keeps its fields, each field's type renamed | `records_of_renameDecl`      |
-| Which records contain themselves does not change         | `containsItself_rename`      |
-| Renaming back undoes it: it is reversible                | `renameDecl_undo`            |
-| Renaming to its own name gives back the model            | `renameDecl_self`            |
-| Two renames in a row are one rename                      | `renameDecl_comp`            |
+| Promise                                                           | Lean                         |
+| ----------------------------------------------------------------- | ---------------------------- |
+| A rename that is not refused keeps the model valid                | `valid_of_renameDecl`        |
+| Each value goes to its renamed value                              | `values_of_renameDecl`       |
+| No two values go to the same one: it is a bijection               | `injOn_of_renameDecl`        |
+| Every enumeration keeps its values, in order                      | `enums_values_of_renameDecl` |
+| Every type varies over the same enumerations, renamed             | `types_of_renameDecl`        |
+| Every record keeps its fields and check fields, each type renamed | `records_of_renameDecl`      |
+| Which records contain themselves does not change                  | `containsItself_rename`      |
+| Renaming back undoes it: it is reversible                         | `renameDecl_undo`            |
+| Renaming to its own name gives back the model                     | `renameDecl_self`            |
+| Two renames in a row are one rename                               | `renameDecl_comp`            |
 
 ## In Lean
 

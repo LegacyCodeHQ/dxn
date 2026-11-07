@@ -98,32 +98,45 @@ example (f : File) (t : TypeDecl) (h : f.Valid) : (f.combinations t).Nodup :=
 def review : File :=
   ⟨[.enum ⟨"Verdict", ["approved", "changes"]⟩, .enum ⟨"Severity", ["minor", "major"]⟩,
     .enum ⟨"Area", ["layout", "colour"]⟩,
-    .record ⟨"Finding", [("severity", "Severity"), ("area", "Area")]⟩,
-    .record ⟨"Review", [("verdict", "Verdict"), ("finding", "Finding")]⟩]⟩
+    .record ⟨"Finding", [("severity", "Severity"), ("area", "Area")], []⟩,
+    .record ⟨"Review", [("verdict", "Verdict"), ("finding", "Finding")], []⟩]⟩
 
 -- Records whose fields are the file's enumerations and records: no problems.
 #guard review.check = []
 
 -- A record may name a record or enumeration declared after it.
-#guard (⟨[.record ⟨"Review", [("verdict", "Verdict")]⟩, .enum ⟨"Verdict", ["approved"]⟩]⟩ :
+#guard (⟨[.record ⟨"Review", [("verdict", "Verdict")], []⟩, .enum ⟨"Verdict", ["approved"]⟩]⟩ :
   File).check = []
 
 -- R6: a record may not contain itself.
 #guard (⟨[.enum ⟨"Verdict", ["approved"]⟩,
-    .record ⟨"Review", [("verdict", "Verdict"), ("reply", "Review")]⟩]⟩ : File).check =
+    .record ⟨"Review", [("verdict", "Verdict"), ("reply", "Review")], []⟩]⟩ : File).check =
   [.record "Review" .containsItself]
 
 -- R6: nor through other records; each record on the cycle is reported.
-#guard (⟨[.record ⟨"Note", [("review", "Review")]⟩, .record ⟨"Review", [("note", "Note")]⟩]⟩ :
+#guard (⟨[.record ⟨"Note", [("review", "Review")], []⟩, .record ⟨"Review", [("note", "Note")], []⟩]⟩ :
   File).check = [.record "Note" .containsItself, .record "Review" .containsItself]
 
+-- R6 does not follow check fields: a check may hold a value of the record it checks.
+#guard (⟨[.enum ⟨"Fidelity", ["sketch", "final"]⟩,
+    .record ⟨"Design", [("fidelity", "Fidelity")], [[("snapshot", "Design")]]⟩]⟩ : File).check = []
+
+-- A record's problems in a file: R1 to R5, C1 to C4, then R6.
+#guard (⟨[.record ⟨"Review", [("reply", "Review")], [[], []]⟩]⟩ : File).check =
+  [.record "Review" .duplicateCheck, .record "Review" .containsItself]
+
+-- C4: a check field's type is an enumeration or a record, never a type.
+#guard (⟨[.enum ⟨"Fidelity", ["final"]⟩, .type ⟨"Button", []⟩,
+    .record ⟨"Design", [("fidelity", "Fidelity")], [[("of", "Button")]]⟩]⟩ : File).check =
+  [.record "Design" (.noSuchCheckFieldType "Button")]
+
 -- R5: a field's type is an enumeration or a record, never a type.
-#guard (⟨[.type ⟨"Button", []⟩, .record ⟨"Shot", [("of", "Button")]⟩]⟩ : File).check =
+#guard (⟨[.type ⟨"Button", []⟩, .record ⟨"Shot", [("of", "Button")], []⟩]⟩ : File).check =
   [.record "Shot" (.noSuchFieldType "Button")]
 
 -- F1 covers records too.
 #guard (⟨[.enum ⟨"Verdict", ["approved"]⟩, .enum ⟨"Urgency", ["low"]⟩,
-    .record ⟨"Verdict", [("urgent", "Urgency")]⟩]⟩ : File).check = [.duplicateName "Verdict"]
+    .record ⟨"Verdict", [("urgent", "Urgency")], []⟩]⟩ : File).check = [.duplicateName "Verdict"]
 
 -- It reports a record's problem exactly when that record has it.
 example (f : File) (n : Name) (e : RecordError) :

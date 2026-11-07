@@ -26,6 +26,7 @@ implementation is fixed, or the specification is changed on purpose first.
 | Enumerations           | [`Dxn/Enumeration.lean`](Dxn/Enumeration.lean)                                       | [`DxnTest/Enumeration.lean`](DxnTest/Enumeration.lean)                                               | [`notebook/reference/enumerations.md`](../notebook/reference/enumerations.md)                 |
 | Types                  | [`Dxn/Type.lean`](Dxn/Type.lean)                                                     | [`DxnTest/Type.lean`](DxnTest/Type.lean)                                                             | [`notebook/reference/types.md`](../notebook/reference/types.md)                               |
 | Records                | [`Dxn/Record.lean`](Dxn/Record.lean), [`Dxn/RecordValue.lean`](Dxn/RecordValue.lean) | [`DxnTest/Record.lean`](DxnTest/Record.lean), [`DxnTest/RecordValue.lean`](DxnTest/RecordValue.lean) | [`notebook/reference/records.md`](../notebook/reference/records.md)                           |
+| Checks                 | [`Dxn/Record.lean`](Dxn/Record.lean), [`Dxn/RecordValue.lean`](Dxn/RecordValue.lean) | [`DxnTest/Record.lean`](DxnTest/Record.lean), [`DxnTest/RecordValue.lean`](DxnTest/RecordValue.lean) | [`notebook/reference/checks.md`](../notebook/reference/checks.md)                             |
 | Files                  | [`Dxn/File.lean`](Dxn/File.lean)                                                     | [`DxnTest/File.lean`](DxnTest/File.lean)                                                             | [`notebook/reference/files.md`](../notebook/reference/files.md)                               |
 | Renaming a declaration | [`Dxn/Rename.lean`](Dxn/Rename.lean)                                                 | [`DxnTest/Rename.lean`](DxnTest/Rename.lean)                                                         | [`notebook/refactoring/rename-declaration.md`](../notebook/refactoring/rename-declaration.md) |
 
@@ -70,10 +71,11 @@ could change while they all still hold. The agreement checks connect the two:
 the same declarations go through both, and they must say the same.
 
 `lake exe dxn-spec <file>` reads cases as JSON, each a file's declarations,
-enumerations, types and records, and optionally a declaration to rename in it, and
-writes, for each, the problems `File.check` reports, the values and each
-type's combinations of an accepted file, and the reasons a rename is refused
-or the declarations it gives:
+enumerations, types and records, a record's `check` blocks included, and
+optionally a declaration to rename in it, and writes, for each, the problems
+`File.check` reports, the values, each type's combinations, each record's
+values and the values its check can hold of an accepted file, and the reasons
+a rename is refused or the declarations it gives:
 
 ```bash
 make agreement

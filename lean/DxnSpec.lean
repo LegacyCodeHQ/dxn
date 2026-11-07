@@ -9,16 +9,20 @@ about each, so an implementation can be compared with it. The input is a file
 holding an array of cases, each a file's declarations and, optionally, a
 declaration to rename in it. A declaration is an enumeration, a type when its
 `kind` is `type`, or a record when its `kind` is `record`, with fields such as
-`{"name": "verdict", "type": "Verdict"}`:
+`{"name": "verdict", "type": "Verdict"}` and, optionally, `checks`: its
+`check` blocks, each a list of fields:
 
     [{"declarations": [{"name": "Light", "values": ["off", "on"]},
-                       {"kind": "type", "name": "Lamp", "varies": ["Light"]}],
+                       {"kind": "type", "name": "Lamp", "varies": ["Light"]},
+                       {"kind": "record", "name": "Design",
+                        "fields": [{"name": "light", "type": "Light"}], "checks": [[]]}],
       "rename": {"from": "Light", "to": "Glow"}}]
 
 The output, on stdout, is one result per case, in the same order: the file's
-problems, as `File.check` reports them; when it is accepted, its values and
-each type's combinations; and, for a rename, every reason it is refused or the
-renamed declarations:
+problems, as `File.check` reports them; when it is accepted, its values, each
+type's combinations, each record's values and, for a record with a `check`
+block, the values a check can hold; and, for a rename, every reason it is
+refused or the renamed declarations:
 
     [{"problems": [], "values": [{"enum": "Light", "name": "off"}, ...],
       "combinations": [{"type": "Lamp", "combinations": [[{"enum": "Light", ...}], ...]}],
@@ -63,6 +67,10 @@ def recordProblemJson (error : RecordError) : Json :=
   | .duplicateField name => named "duplicateField" name
   | .noSuchFieldType name => named "noSuchFieldType" name
   | .containsItself => Json.mkObj [("rule", error.ruleId), ("kind", "containsItself")]
+  | .duplicateCheck => Json.mkObj [("rule", error.ruleId), ("kind", "duplicateCheck")]
+  | .badCheckFieldName name => named "badCheckFieldName" name
+  | .duplicateCheckField name => named "duplicateCheckField" name
+  | .noSuchCheckFieldType name => named "noSuchCheckFieldType" name
 
 def fileProblemJson (problem : FileError) : Json :=
   match problem with
@@ -88,8 +96,10 @@ def declJson : Decl → Json
   | .type t =>
     Json.mkObj [("kind", "type"), ("name", t.name), ("varies", Json.arr (t.varies.map Json.str).toArray)]
   | .record r =>
-    Json.mkObj [("kind", "record"), ("name", r.name),
-      ("fields", Json.arr (r.fields.map fun (n, t) => Json.mkObj [("name", n), ("type", t)]).toArray)]
+    let fieldsJson (fields : List (Dxn.Name × Dxn.Name)) : Json :=
+      Json.arr (fields.map fun (n, t) => Json.mkObj [("name", n), ("type", t)]).toArray
+    Json.mkObj ([("kind", Json.str "record"), ("name", Json.str r.name), ("fields", fieldsJson r.fields)] ++
+      if r.checks = [] then [] else [("checks", Json.arr (r.checks.map fieldsJson).toArray)])
 
 def combinationsJson (f : File) (t : TypeDecl) : Json :=
   Json.mkObj [("type", t.name),
@@ -111,8 +121,11 @@ def resultJson (f : File) (rename : Option (Dxn.Name × Dxn.Name)) : Json :=
   let combinations :=
     if problems = [] then Json.arr (f.types.map (combinationsJson f)).toArray else Json.null
   let records := if problems = [] then
-    Json.arr (f.records.map fun r => Json.mkObj [("record", r.name),
-      ("values", Json.arr ((f.recordValues r.name).map fieldValueJson).toArray)]).toArray
+    Json.arr (f.records.map fun r => Json.mkObj ([("record", r.name),
+      ("values", Json.arr ((f.recordValues r.name).map fieldValueJson).toArray)] ++
+      match r.checks with
+      | [block] => [("checkValues", Json.arr ((f.checkValues block).map fieldValueJson).toArray)]
+      | _ => [])).toArray
     else Json.null
   let fields := [("recordValues", records), ("problems", Json.arr (problems.map fileProblemJson).toArray), ("values", values),
     ("combinations", combinations)]
@@ -127,9 +140,17 @@ def declOfJson (json : Json) : Except String Decl := do
     let varies ← json.getObjValAs? (Array String) "varies"
     return .type ⟨name, varies.toList⟩
   | .ok "record" =>
-    let fields ← json.getObjVal? "fields" >>= (·.getArr?) >>= (·.mapM fun field => do
-      return ((← field.getObjValAs? String "name"), (← field.getObjValAs? String "type")))
-    return .record ⟨name, fields.toList⟩
+    let fieldsOf (fields : Json) : Except String (List (Dxn.Name × Dxn.Name)) := do
+      let fields ← fields.getArr? >>= (·.mapM fun field => do
+        return ((← field.getObjValAs? String "name"), (← field.getObjValAs? String "type")))
+      return fields.toList
+    let fields ← json.getObjVal? "fields" >>= fieldsOf
+    let checks ← match json.getObjVal? "checks" with
+      | .ok blocks => do
+        let blocks ← blocks.getArr? >>= (·.mapM fieldsOf)
+        pure blocks.toList
+      | .error _ => pure []
+    return .record ⟨name, fields, checks⟩
   | _ =>
     let values ← json.getObjValAs? (Array String) "values"
     return .enum ⟨name, values.toList⟩

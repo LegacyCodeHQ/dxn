@@ -46,6 +46,8 @@ or after it. A record with one field may sit on one line.
 The grammar reads empty braces and any names, so the checker can report a
 record with no fields or a badly named field, as it does for enumerations.
 
+After its fields, a record may have `check` blocks: see [Checks](./checks).
+
 ## Checker rules
 
 | ID        | Rule                                                         | Breaks it                              | Reported                    |
@@ -153,7 +155,8 @@ there are records suffice.
 
 ## The order of reported problems
 
-A record's problems are reported in the order of their rules, R1 to R6, and
+A record's problems are reported in the order of their rules, R1 to R5, then
+the rules for its `check` block, C1 to C4 on [Checks](./checks), then R6, and
 within a rule in the order the names are first written:
 
 ```dxn
@@ -198,7 +201,7 @@ Why the checker rejects a record:
 
 <<< lean:lean/Dxn/Record.lean#errors
 
-The rules checked on each record, R1 to R5:
+The rules checked on each record, R1 to R5, and C1 to C4 for its `check` block:
 
 <<< lean:lean/Dxn/Record.lean#check
 

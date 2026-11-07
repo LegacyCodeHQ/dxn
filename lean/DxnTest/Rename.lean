@@ -30,21 +30,34 @@ def lamp : File :=
 
 def reviewed : File :=
   ⟨[.enum ⟨"Verdict", ["approved", "changes"]⟩,
-    .record ⟨"Review", [("verdict", "Verdict")]⟩]⟩
+    .record ⟨"Review", [("verdict", "Verdict")], []⟩]⟩
 
 -- A record field of the enumeration follows the rename; the field keeps its name.
 #guard renameDecl reviewed "Verdict" "Decision" =
   .ok ⟨[.enum ⟨"Decision", ["approved", "changes"]⟩,
-    .record ⟨"Review", [("verdict", "Decision")]⟩]⟩
+    .record ⟨"Review", [("verdict", "Decision")], []⟩]⟩
 
 -- A record is renamed too, and every field of its type follows.
 def nested : File :=
-  ⟨[.enum ⟨"Verdict", ["approved", "changes"]⟩, .record ⟨"Finding", [("verdict", "Verdict")]⟩,
-    .record ⟨"Review", [("finding", "Finding")]⟩]⟩
+  ⟨[.enum ⟨"Verdict", ["approved", "changes"]⟩, .record ⟨"Finding", [("verdict", "Verdict")], []⟩,
+    .record ⟨"Review", [("finding", "Finding")], []⟩]⟩
 
 #guard renameDecl nested "Finding" "Issue" =
-  .ok ⟨[.enum ⟨"Verdict", ["approved", "changes"]⟩, .record ⟨"Issue", [("verdict", "Verdict")]⟩,
-    .record ⟨"Review", [("finding", "Issue")]⟩]⟩
+  .ok ⟨[.enum ⟨"Verdict", ["approved", "changes"]⟩, .record ⟨"Issue", [("verdict", "Verdict")], []⟩,
+    .record ⟨"Review", [("finding", "Issue")], []⟩]⟩
+
+-- A check field of the enumeration follows the rename too; the field keeps its name.
+def designed : File :=
+  ⟨[.enum ⟨"Verdict", ["approved", "changes"]⟩,
+    .record ⟨"Design", [("verdict", "Verdict")], [[("verdict", "Verdict"), ("snapshot", "Design")]]⟩]⟩
+
+#guard renameDecl designed "Verdict" "Decision" =
+  .ok ⟨[.enum ⟨"Decision", ["approved", "changes"]⟩,
+    .record ⟨"Design", [("verdict", "Decision")], [[("verdict", "Decision"), ("snapshot", "Design")]]⟩]⟩
+
+#guard renameDecl designed "Design" "Drawing" =
+  .ok ⟨[.enum ⟨"Verdict", ["approved", "changes"]⟩,
+    .record ⟨"Drawing", [("verdict", "Verdict")], [[("verdict", "Verdict"), ("snapshot", "Drawing")]]⟩]⟩
 
 -- A new name may not be a record's.
 #guard renameDecl reviewed "Verdict" "Review" = .error [.nameExists "Review"]
