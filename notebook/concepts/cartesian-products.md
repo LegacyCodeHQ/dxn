@@ -126,6 +126,24 @@ Each $(a, x)$ matches exactly one $a$, so $A \times \{x\} \cong A$. This is why
 an enumeration with a single value is allowed: `enum Theme { dark }` is a way a
 thing could vary that does not vary yet, and it costs no extra cases.
 
+## In Lean
+
+The product of lists: every way to pick one element of each, in written order,
+with the first list changing slowest.
+
+<<< lean:lean/Dxn/Type.lean#product
+
+Lean proves, for every list of lists:
+
+| Idea                                               | Lean                        |
+| -------------------------------------------------- | --------------------------- |
+| The count is the product of the sizes              | `length_product`            |
+| A factor with no elements leaves no combinations   | `product_eq_nil_of_nil_mem` |
+| With no repeats in any factor, none in the product | `nodup_product`             |
+
+A type's combinations are this product of its enumerations' values: see
+[Types](../reference/types#combinations).
+
 ## Notation
 
 | Symbol              | Read as                                            | Example                                           |

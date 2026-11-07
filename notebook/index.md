@@ -20,6 +20,9 @@ decision that changes is updated in place.
 - Each page states every claim in plain words first. The Lean that checks it
   follows, for readers who want to see how; every argument can be followed
   without it.
+- Every Concepts page has an **In Lean** section, before its notation: where
+  the specification defines or proves the idea, and the language feature that
+  uses it.
 
 ## Status
 
