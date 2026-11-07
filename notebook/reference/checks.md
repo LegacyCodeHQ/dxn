@@ -3,18 +3,18 @@
 **Status:** Proposed
 
 A record's values are entries a maker records. A `check` block says each entry
-must also be checked: a checker judges it, approved or rejected, and records
-any fields the block declares.
+must also be checked: a checker records a check of it, with the fields the
+block declares.
 
 ```dxn
 enum Fidelity { sketch, final }
-enum Severity { minor, major }
+enum Verdict { approved, changes }
 
 record Design {
   fidelity: Fidelity
 
   check {
-    severity: Severity
+    verdict: Verdict
   }
 }
 
@@ -28,7 +28,7 @@ theory, entries and checks as functions and status as their images, is in
 [Images of functions](../concepts/images-of-functions).
 
 Who the maker and the checker are, where entries and checks are kept, and
-which ones are current are not decided yet: see [Deferred](#deferred). Not
+which entry is current are not decided yet: see [Deferred](#deferred). Not
 specified in Lean yet.
 
 ## Syntax
@@ -43,9 +43,9 @@ The `check` block comes after the record's own fields. It always has braces.
 Its fields are written as a record's are, one per line, each an enumeration or
 a record of the file.
 
-- **`check { }`**, with no fields: the checker records only the outcome.
-- **`check { … }`**, with fields: the checker records the outcome and the
-  fields.
+- **`check { }`**, with no fields: the checker records only that the entry was
+  checked.
+- **`check { … }`**, with fields: the checker records the fields.
 - **No `check` block:** the record's entries are made only.
 
 The grammar reads any number of `check` blocks, so the checker can report a
@@ -53,56 +53,57 @@ second one, [C1](#c1), as it reports a record with no fields.
 
 ## What a check holds
 
-Every check has an _outcome_, built into the language: `approved` or
-`rejected`. The block's fields are recorded alongside it. A check is the
-outcome and the fields together, a product of a sum and a
+A check's value is the block's fields, a
 [named product](../concepts/named-products):
 
 $$
-\mathit{Check} \cong \mathit{Outcome} \times \mathit{Fields}, \qquad
-\mathit{Outcome} = \{\, \mathit{approved}, \mathit{rejected} \,\} \cong 1 + 1
+\mathit{CheckValue} \cong \mathit{Fields}
 $$
 
-With no fields, the product has one value, so a check is just its outcome:
+With no fields, the product has one value, so a check of `check { }` says only
+that the entry was checked:
 
 $$
-\mathit{Outcome} \times 1 \cong \mathit{Outcome}
+\mathit{CheckValue} \cong 1
 $$
+
+A check is not its value. It is a value recorded of one entry, so checks of
+different entries are different checks, even when their values are equal, as
+every check of `check { }` is. The same holds for entries: an entry is a
+record's value about one combination, not the value alone.
 
 That is why `check { }` is allowed, while a record with no fields is not
-([R2](./records#r2)): the outcome itself carries information.
+([R2](./records#r2)): that a check exists is what status needs.
+
+The language gives the fields no meaning. It makes sure each holds a value of
+its type, so `verdict` can only be `approved` or `changes`. What a value means,
+such as `changes` meaning "draw it again", is for whoever reads the data.
 
 ## Status
 
-Status comes from what the maker and the checker have recorded, and the
-outcome decides it, the same way everywhere. For a checked record, a
-combination is:
+Status comes from what the maker and the checker have recorded, never from
+what a check says. For a checked record, a combination is:
 
-| Maker         | Checker                                  | Status   |
-| ------------- | ---------------------------------------- | -------- |
-| no entry      | no check                                 | missing  |
-| current entry | no check                                 | waiting  |
-| current entry | a check of an older entry only           | stale    |
-| current entry | a check of the current entry, `approved` | approved |
-| current entry | a check of the current entry, `rejected` | rejected |
+| Maker         | Checker                        | Status  |
+| ------------- | ------------------------------ | ------- |
+| no entry      | no check                       | missing |
+| current entry | no check                       | waiting |
+| current entry | a check of an older entry only | stale   |
+| current entry | a check of the current entry   | checked |
 
-Only approved is done. A check is always of an entry, so there is no row with
-a check and no entry. Stale is waiting with a history: the entry was checked,
-then changed, and the new entry has not been checked.
+A check is always of an entry, so there is no row with a check and no entry.
+Stale is waiting with a history: the entry was checked, then changed, and the
+new entry has not been checked. Checked does not mean approved: whether it is
+is in the check's fields.
 
-An entry of a record with no `check` block is done once it is made.
-
-The fields are information. The checker makes sure each holds a value of its
-type, so `severity` can only be `minor` or `major`. What a value means, such as
-"fix `major` before release", is for the people and agents using the model,
-and never changes status.
+An entry of a record with no `check` block is complete once it is made.
 
 ## Which entry a check is of
 
 A record's value does not say which entry it is. Two combinations may each
 have an entry with the value `{ fidelity: final }`: the values are
-[equal](./records#values-and-equality), but approving one entry must not
-approve the other.
+[equal](./records#values-and-equality), but checking one entry must not
+check the other.
 
 So an entry is at least the combination it is about and its value, and a check
 is of that pair. A check of one combination's entry never counts for another
@@ -110,8 +111,9 @@ combination. If the maker records a different value for the same combination,
 the earlier check is not of it, and the combination is stale.
 
 If an entry's value changes and then changes back, from A to B and back to A,
-whether the earlier check of A counts again depends on which check is current.
-That is deferred with the order: see [Deferred](#deferred).
+whether the earlier check of A counts again depends on whether an entry is
+only its combination and value, or also when it was recorded. That is deferred
+with the order: see [Deferred](#deferred).
 
 ## Checker rules
 
@@ -148,8 +150,8 @@ the maker's value and the checker's.
 
 ### C1: A record has at most one `check` block {#c1}
 
-**Why:** a check is one judgement with one set of fields; two blocks would
-leave which one applies unclear.
+**Why:** a check is one record with one set of fields; two blocks would leave
+which one applies unclear.
 
 **Suggest:** merge the blocks' fields into one.
 
@@ -179,17 +181,17 @@ As [R5](./records#r5).
 
 ## Decisions
 
-| Decision                                                                   | Why                                                                                       | Rejected                                                            |
-| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Checking is declared inside the record, in a `check` block                 | What is checked and how it is checked are read in one place                               | A separate check record that names the record it checks             |
-| The block always has braces, empty or not                                  | One form for every check; empty braces say "outcome only"                                 | A bare `check` with no braces                                       |
-| Every check has a built-in outcome, `approved` or `rejected`               | Checking needs no enumeration of its own, and nothing refers to an enumeration value      | Each model declares its verdict and says which value passes         |
-| Status has five values: missing, waiting, stale, approved, rejected        | A maker needs to tell a rejected or stale entry from one nobody has looked at             | A check that only means approved, with rejection recorded in fields |
-| The outcome decides status; the block's fields never do                    | Status means the same in every model, and the language decides it once for every tool     | Fields that affect status, such as "`major` blocks"                 |
-| A check field's type is an enumeration or a record, as a record field's is | One way to write data                                                                     |                                                                     |
-| The maker and the checker are implicit                                     | Every record's entries are made; a `check` block adds a checker                           | Declaring actors on each record                                     |
-| A record's values never include checks; R6 does not follow check fields    | A check is a separate value about an entry; a check field naming its own record is finite | Extending R6 to check fields                                        |
-| A check field may share a name with a field of the record                  | The two are separate scopes: what the maker records and what the checker records          | Names unique across both, with a rule against reuse                 |
+| Decision                                                                   | Why                                                                                       | Rejected                                                   |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Checking is declared inside the record, in a `check` block                 | What is checked and how it is checked are read in one place                               | A separate check record that names the record it checks    |
+| The block always has braces, empty or not                                  | One form for every check; empty braces say "checked, nothing more"                        | A bare `check` with no braces                              |
+| A check has no built-in outcome: it holds only its fields                  | Whether a check approves is for whoever reads the data, in the model's own words          | A built-in `approved` or `rejected` outcome on every check |
+| Status has four values: missing, waiting, stale, checked                   | They are what the language can tell from what was recorded                                | Approved and rejected as statuses                          |
+| A check's fields never decide status                                       | The language gives them no meaning                                                        | Fields that affect status, such as "`changes` blocks"      |
+| A check field's type is an enumeration or a record, as a record field's is | One way to write data                                                                     |                                                            |
+| The maker and the checker are implicit                                     | Every record's entries are made; a `check` block adds a checker                           | Declaring actors on each record                            |
+| A record's values never include checks; R6 does not follow check fields    | A check is a separate value about an entry; a check field naming its own record is finite | Extending R6 to check fields                               |
+| A check field may share a name with a field of the record                  | The two are separate scopes: what the maker records and what the checker records          | Names unique across both, with a rule against reuse        |
 
 ## Deferred
 
@@ -197,5 +199,5 @@ As [R5](./records#r5).
 | ------------------------------------------------------------------- | --------------------------- |
 | Who the maker and the checker are, and whether they must differ     | Recording facts is designed |
 | Where entries and checks are kept                                   | Recording facts is designed |
-| Which entry and which check are current: their order                | Recording facts is designed |
+| Which entry is current: their order                                 | Recording facts is designed |
 | Whether a check counts again when a value changes back, A to B to A | Recording facts is designed |

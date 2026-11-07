@@ -18,11 +18,12 @@ Three questions matter, in this order:
 
 1. Which combinations have a design?
 2. Which designs are waiting to be checked?
-3. Which designs are approved?
+3. Which designs are checked?
 
 An _entry_ is one fact the maker records: a value of a record, such as a
-design, about one combination. A _check_ is one judgement of an entry by the
-checker, with an outcome: approved or rejected. Each question is answered by following functions, from checks to the
+design, about one combination. The entry is not its value: two entries about
+different combinations are different, even when their values are equal. A _check_ is one record the checker makes of an
+entry, holding whatever the checker records. Each question is answered by following functions, from checks to the
 entries they check, and from entries to the combinations they are about, and
 asking what each function reaches.
 
@@ -113,28 +114,26 @@ checked design.
 ## Status, from the chain
 
 The images answer the three questions. Since neither function is one-to-one,
-a combination's status comes from its _current_ entry, and that entry's
-_current_ check:
+a combination's status comes from its _current_ entry:
 
-| Status   | The combination                                                           |
-| -------- | ------------------------------------------------------------------------- |
-| missing  | is outside the image of $\mathit{about}$: no entry is about it            |
-| waiting  | has a current entry outside the image of $\mathit{of}$: no check is of it |
-| stale    | has a current entry no check is of, and an older entry a check is of      |
-| approved | has a current entry whose current check's outcome is $\mathit{approved}$  |
-| rejected | has a current entry whose current check's outcome is $\mathit{rejected}$  |
+| Status  | The combination                                                                    |
+| ------- | ---------------------------------------------------------------------------------- |
+| missing | is outside the image of $\mathit{about}$: no entry is about it                     |
+| waiting | has a current entry outside the image of $\mathit{of}$, and no older one inside it |
+| stale   | has a current entry no check is of, and an older entry a check is of               |
+| checked | has a current entry inside the image of $\mathit{of}$: a check is of it            |
 
-The approved combinations are an image too: of the checks that approve, each
-the current check of a current entry, under the composition,
+The checked combinations are an image too: of the checks of current entries,
+under the composition,
 
 $$
-(\mathit{about} \circ \mathit{of})\,[\{\, c \in \mathit{Checks} \mid c \text{ is the current check of a current entry, and approved} \,\}]
+(\mathit{about} \circ \mathit{of})\,[\{\, c \in \mathit{Checks} \mid c \text{ is of a current entry} \,\}]
 $$
 
 A check of an entry that is no longer current does not count.
 
-Which entry and which check are current is not decided yet: it needs an order,
-such as the time each was recorded.
+Which entry is current is not decided yet: it needs an order, such as the time
+each was recorded.
 
 ## In Lean
 
