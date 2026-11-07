@@ -1,18 +1,22 @@
 import { acceptFile, type CheckedFile, type FileProblem } from "@next/check/file.js";
 import { isEnumName } from "@next/check/names.js";
 import type { Span } from "@next/model/enumeration.js";
+import { renameRefusals } from "@next/model/rules.js";
 import { parse, type SyntaxProblem } from "@next/syntax/parse.js";
 
 // Renaming an enumeration, as lean/Dxn/Rename.lean specifies. It refuses for
 // the same reasons, in the same order, and changes only the enumeration's name;
 // it adds the text edit and where each reason is.
 
+/** A reason a rename is refused, with its ID. */
+type Ruled<K extends keyof typeof renameRefusals> = { kind: K; rule: (typeof renameRefusals)[K] };
+
 /** Why a rename is refused, in the order they are reported. */
 export type RenameRefusal =
-  | { kind: "fileHasProblems"; rule: "RE1"; problems: readonly (SyntaxProblem | FileProblem)[] }
-  | { kind: "badEnumName"; rule: "RE2"; name: string }
-  | { kind: "noSuchEnum"; rule: "RE3"; name: string; names: string[] }
-  | { kind: "enumExists"; rule: "RE4"; name: string; at: Span };
+  | (Ruled<"fileHasProblems"> & { problems: readonly (SyntaxProblem | FileProblem)[] })
+  | (Ruled<"badEnumName"> & { name: string })
+  | (Ruled<"noSuchEnum"> & { name: string; names: string[] })
+  | (Ruled<"enumExists"> & { name: string; at: Span });
 
 /** Replace the text at `span` with `text`. */
 export interface Edit {
@@ -51,18 +55,34 @@ function applied(source: string, edits: readonly Edit[]): string {
 export function renameEnum(source: string, from: string, to: string): Renamed {
   const parsed = parse(source);
   if (parsed.problems.length > 0)
-    return refused([{ kind: "fileHasProblems", rule: "RE1", problems: parsed.problems }]);
+    return refused([
+      { kind: "fileHasProblems", rule: renameRefusals.fileHasProblems, problems: parsed.problems },
+    ]);
   const accepted = acceptFile(parsed.declarations);
   if (!accepted.file)
-    return refused([{ kind: "fileHasProblems", rule: "RE1", problems: accepted.problems }]);
+    return refused([
+      {
+        kind: "fileHasProblems",
+        rule: renameRefusals.fileHasProblems,
+        problems: accepted.problems,
+      },
+    ]);
 
   const declarations = parsed.declarations;
   const names = declarations.map(({ name }) => name.text);
   const refusals: RenameRefusal[] = [];
-  if (!isEnumName(to)) refusals.push({ kind: "badEnumName", rule: "RE2", name: to });
-  if (!names.includes(from)) refusals.push({ kind: "noSuchEnum", rule: "RE3", name: from, names });
+  if (!isEnumName(to))
+    refusals.push({ kind: "badEnumName", rule: renameRefusals.badEnumName, name: to });
+  if (!names.includes(from))
+    refusals.push({ kind: "noSuchEnum", rule: renameRefusals.noSuchEnum, name: from, names });
   const taken = to === from ? undefined : declarations.find(({ name }) => name.text === to);
-  if (taken) refusals.push({ kind: "enumExists", rule: "RE4", name: to, at: taken.name.span });
+  if (taken)
+    refusals.push({
+      kind: "enumExists",
+      rule: renameRefusals.enumExists,
+      name: to,
+      at: taken.name.span,
+    });
   if (refusals.length > 0) return refused(refusals);
 
   const edits =

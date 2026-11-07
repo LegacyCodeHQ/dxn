@@ -1,4 +1,5 @@
 import type { EnumDeclaration, Span, Value } from "@next/model/enumeration.js";
+import { fileRules } from "@next/model/rules.js";
 import { acceptEnum, checkEnum, type Enum, type EnumProblem, frozen } from "./enumeration.js";
 
 // The file checker of lean/Dxn/File.lean. It reports the same problems, for the
@@ -7,7 +8,7 @@ import { acceptEnum, checkEnum, type Enum, type EnumProblem, frozen } from "./en
 /** A problem with a file: one of an enumeration's own, or an enumeration name written twice. */
 export type FileProblem =
   | { kind: "enum"; rule: EnumProblem["rule"]; name: string; problem: EnumProblem }
-  | { kind: "duplicateEnum"; rule: "F1"; name: string; at: Span[] };
+  | { kind: "duplicateEnum"; rule: typeof fileRules.duplicateEnum; name: string; at: Span[] };
 
 /**
  * Every problem with a file's declarations: each declaration's own, in written order, then each
@@ -28,7 +29,8 @@ export function checkFile(declarations: readonly EnumDeclaration[]): FileProblem
     else written.set(name.text, [name.span]);
   }
   for (const [name, at] of written) {
-    if (at.length > 1) problems.push({ kind: "duplicateEnum", rule: "F1", name, at });
+    if (at.length > 1)
+      problems.push({ kind: "duplicateEnum", rule: fileRules.duplicateEnum, name, at });
   }
   return problems;
 }

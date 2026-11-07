@@ -1,15 +1,19 @@
 import type { EnumDeclaration, Name, Span, Value } from "@next/model/enumeration.js";
+import { enumRules } from "@next/model/rules.js";
 import { isEnumName, isValueName } from "./names.js";
 
 // The checker of lean/Dxn/Enumeration.lean. It reports the same problems, for
 // the same names, in the same order; it adds where each one is written.
 
+/** A kind of enumeration problem, with the ID of the rule it breaks. */
+type Ruled<K extends keyof typeof enumRules> = { kind: K; rule: (typeof enumRules)[K] };
+
 /** A problem with an enumeration declaration, and every place it is written. */
 export type EnumProblem =
-  | { kind: "badEnumName"; rule: "E1"; name: string; at: Span[] }
-  | { kind: "empty"; rule: "E2"; at: Span[] }
-  | { kind: "badValueName"; rule: "E3"; name: string; at: Span[] }
-  | { kind: "duplicate"; rule: "E4"; name: string; at: Span[] };
+  | (Ruled<"badEnumName"> & { name: string; at: Span[] })
+  | (Ruled<"empty"> & { at: Span[] })
+  | (Ruled<"badValueName"> & { name: string; at: Span[] })
+  | (Ruled<"duplicate"> & { name: string; at: Span[] });
 
 /** Each name, once, in the order it is first written, with every place it is written. */
 function occurrences(names: readonly Name[]): Map<string, Span[]> {
@@ -31,15 +35,23 @@ export function checkEnum(declaration: EnumDeclaration): EnumProblem[] {
   const problems: EnumProblem[] = [];
   const { name, values } = declaration;
   if (!isEnumName(name.text)) {
-    problems.push({ kind: "badEnumName", rule: "E1", name: name.text, at: [name.span] });
+    problems.push({
+      kind: "badEnumName",
+      rule: enumRules.badEnumName,
+      name: name.text,
+      at: [name.span],
+    });
   }
-  if (values.length === 0) problems.push({ kind: "empty", rule: "E2", at: [declaration.span] });
+  if (values.length === 0)
+    problems.push({ kind: "empty", rule: enumRules.empty, at: [declaration.span] });
   const written = occurrences(values);
   for (const [text, at] of written) {
-    if (!isValueName(text)) problems.push({ kind: "badValueName", rule: "E3", name: text, at });
+    if (!isValueName(text))
+      problems.push({ kind: "badValueName", rule: enumRules.badValueName, name: text, at });
   }
   for (const [text, at] of written) {
-    if (at.length > 1) problems.push({ kind: "duplicate", rule: "E4", name: text, at });
+    if (at.length > 1)
+      problems.push({ kind: "duplicate", rule: enumRules.duplicate, name: text, at });
   }
   return problems;
 }
